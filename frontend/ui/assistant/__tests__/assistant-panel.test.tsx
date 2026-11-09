@@ -1,14 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import type { ChatThread } from '@/shared/contracts/chat';
 
-// The sign-in CTA dismisses the overlay before it navigates, which asks the
-// router; the anchor itself is what this test reads.
+const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }));
+
+// The sign-in CTA and the panel's own links dismiss the overlay before they
+// navigate; the router is what that dismissal releases.
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
+  useRouter: () => router,
   usePathname: () => '/',
 }));
+
+// The history entry an open dialogue pushes is how the back button closes it.
+// A unit test has no real traversal, so the wait resolves immediately and the
+// navigation the link would have made is what gets asserted.
+vi.mock('@/frontend/ui/primitives/overlay-back', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/frontend/ui/primitives/overlay-back')>();
+  return { ...actual, whenGuardDropped: () => Promise.resolve() };
+});
 
 const session = vi.hoisted(() => ({
   user: { id: 'u-1' } as { id: string } | null,
@@ -96,6 +106,8 @@ import { AssistantPanel } from '@/frontend/ui/assistant/assistant-panel';
  */
 describe('AssistantPanel', () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    router.push.mockReset();
     session.user = { id: 'u-1' };
     session.loading = false;
     assistant.available = true;
@@ -115,7 +127,7 @@ describe('AssistantPanel', () => {
 
   it('invites a guest to sign in instead of drawing a composer', async () => {
     session.user = null;
-    render(<AssistantPanel onDismiss={vi.fn()} />);
+    render(<AssistantPanel open onDismiss={vi.fn()} />);
 
     expect(await screen.findByText('تحدّث مع نور')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /تسجيل الدخول/ })).toBeInTheDocument();
@@ -129,7 +141,7 @@ describe('AssistantPanel', () => {
       project: { used: 0, limit: 900 },
       resetsAt: '2026-11-10T00:00:00.000Z',
     };
-    render(<AssistantPanel onDismiss={vi.fn()} />);
+    render(<AssistantPanel open onDismiss={vi.fn()} />);
 
     expect(await screen.findByText('نور متاحة لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'ترقية الخطة' })).toHaveAttribute('href', '/pricing');
@@ -137,13 +149,13 @@ describe('AssistantPanel', () => {
 
   it('says the assistant is unavailable when no provider key is configured', async () => {
     assistant.available = false;
-    render(<AssistantPanel onDismiss={vi.fn()} />);
+    render(<AssistantPanel open onDismiss={vi.fn()} />);
 
     expect(await screen.findByText('نور غير متاحة حالياً.')).toBeInTheDocument();
   });
 
   it('opens the thread with the introduction and the composer', async () => {
-    render(<AssistantPanel onDismiss={vi.fn()} />);
+    render(<AssistantPanel open onDismiss={vi.fn()} />);
 
     expect(
       await screen.findByText(
@@ -156,5 +168,44 @@ describe('AssistantPanel', () => {
       'href',
       '/chats/a-1'
     );
+  });
+
+  it('dismisses before it upgrades, so the navigation is not lost', async () => {
+    assistant.allowance = {
+      plan: 'free',
+      member: { used: 0, cap: 0 },
+      project: { used: 0, limit: 900 },
+      resetsAt: '2026-11-10T00:00:00.000Z',
+    };
+    const onDismiss = vi.fn();
+    render(<AssistantPanel open onDismiss={onDismiss} />);
+
+    fireEvent.click(await screen.findByRole('link', { name: 'ترقية الخطة' }));
+
+    expect(onDismiss).toHaveBeenCalled();
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/pricing'));
+  });
+
+  it('dismisses before it opens the full thread', async () => {
+    const onDismiss = vi.fn();
+    render(<AssistantPanel open onDismiss={onDismiss} />);
+
+    fireEvent.click(await screen.findByRole('link', { name: 'فتح المحادثة كاملة' }));
+
+    expect(onDismiss).toHaveBeenCalled();
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/chats/a-1'));
+  });
+
+  it('revalidates on reopen without creating a second thread', async () => {
+    const { rerender } = render(<AssistantPanel open onDismiss={vi.fn()} />);
+    await screen.findByText('ما الخدمات التي تقدّمونها؟');
+    expect(api.startAssistantChat).toHaveBeenCalledTimes(1);
+    const reads = api.getChatMessages.mock.calls.length;
+
+    rerender(<AssistantPanel open={false} onDismiss={vi.fn()} />);
+    rerender(<AssistantPanel open onDismiss={vi.fn()} />);
+
+    await waitFor(() => expect(api.getChatMessages.mock.calls.length).toBeGreaterThan(reads));
+    expect(api.startAssistantChat).toHaveBeenCalledTimes(1);
   });
 });

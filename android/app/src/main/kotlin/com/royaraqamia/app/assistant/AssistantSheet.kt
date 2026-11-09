@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +58,7 @@ import com.royaraqamia.app.contracts.generated.ChatAssistantStateResponseAllowan
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItem
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItemSenderKind
 import com.royaraqamia.app.contracts.generated.ChatThreadResponseThreadAttachmentQuota
+import com.royaraqamia.app.contracts.generated.ChatThreadsResponseThreadsItemKind
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
@@ -89,6 +91,10 @@ const val ASSISTANT_SHEET_TAG = "assistant-sheet"
 fun AssistantSheet(
     repository: ChatsRepository,
     signedIn: Boolean,
+    /** What the shell last painted; null on the first open of this process. */
+    snapshot: AssistantSnapshot?,
+    /** Records the page the shell keeps for the next open (ADR-0150). */
+    onSnapshot: (AssistantSnapshot) -> Unit,
     onDismiss: () -> Unit,
     onSignIn: () -> Unit,
     onUpgrade: () -> Unit,
@@ -101,17 +107,24 @@ fun AssistantSheet(
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val listState = rememberLazyListState()
+    val report = rememberUpdatedState(onSnapshot)
 
     var state by remember {
-        mutableStateOf(if (signedIn) AssistantUiState.Loading else AssistantUiState.Guest)
+        mutableStateOf(
+            when {
+                !signedIn -> AssistantUiState.Guest
+                // A reopen paints the face the last one ended on; the live read
+                // below corrects it if the plan or the deployment changed.
+                snapshot != null -> snapshot.face()
+                else -> AssistantUiState.Loading
+            }
+        )
     }
-    var threadId by remember { mutableStateOf<String?>(null) }
-    var quota by remember { mutableStateOf<ChatThreadResponseThreadAttachmentQuota?>(null) }
-    var messages by remember {
-        mutableStateOf<List<ChatMessagePageResponseMessagesItem>>(emptyList())
-    }
-    var available by remember { mutableStateOf(true) }
-    var allowance by remember { mutableStateOf<ChatAssistantStateResponseAllowance?>(null) }
+    var threadId by remember { mutableStateOf(snapshot?.threadId) }
+    var quota by remember { mutableStateOf(snapshot?.quota) }
+    var messages by remember { mutableStateOf(snapshot?.messages ?: emptyList()) }
+    var available by remember { mutableStateOf(snapshot?.available ?: true) }
+    var allowance by remember { mutableStateOf(snapshot?.allowance) }
     var streaming by remember { mutableStateOf("") }
     var tools by remember { mutableStateOf<List<String>>(emptyList()) }
     var notice by remember { mutableStateOf<String?>(null) }
@@ -164,14 +177,63 @@ fun AssistantSheet(
         return readFailed
     }
 
+    /** Hands the page just painted to the shell, for the next open. */
+    fun publish() {
+        report.value(
+            AssistantSnapshot(
+                threadId = threadId,
+                quota = quota,
+                messages = messages,
+                available = available,
+                allowance = allowance,
+            )
+        )
+    }
+
     LaunchedEffect(signedIn, attempt) {
         if (!signedIn) {
             state = AssistantUiState.Guest
             return@LaunchedEffect
         }
 
-        state = AssistantUiState.Loading
+        // A snapshot means this is a reopen: the conversation is already on
+        // screen, so the read below must not blank it to a spinner.
+        if (snapshot == null && threadId == null) state = AssistantUiState.Loading
         notice = null
+
+        // A process that was killed still has the thread on the device; the
+        // list's stored row is how its id is found without asking the server.
+        if (snapshot == null && threadId == null) {
+            val cached =
+                repository.cachedThreads().firstOrNull {
+                    it.kind == ChatThreadsResponseThreadsItemKind.AGENT
+                }
+            val header = cached?.let { repository.cachedThread(it.id) }
+            if (cached != null && header != null) {
+                threadId = cached.id
+                quota = header.attachmentQuota
+                val held = repository.cachedMessages(cached.id)
+                if (held.isNotEmpty()) messages = held
+                state = AssistantUiState.Ready
+            }
+        }
+
+        val known = threadId
+        if (known != null) {
+            // Read through the cached thread directly: the open call is only
+            // needed when no thread has ever been seen.
+            val readFailed = load(known)
+            refreshAssistant()
+            state =
+                when {
+                    !available -> AssistantUiState.Unavailable
+                    allowance?.member?.cap == 0.0 -> AssistantUiState.Locked
+                    readFailed && messages.isEmpty() && snapshot == null -> AssistantUiState.Failed
+                    else -> AssistantUiState.Ready
+                }
+            publish()
+            return@LaunchedEffect
+        }
 
         when (val started = repository.startAssistant()) {
             is ApiResult.Success -> {
@@ -190,14 +252,31 @@ fun AssistantSheet(
                         allowance?.member?.cap == 0.0 -> AssistantUiState.Locked
                         else -> AssistantUiState.Ready
                     }
+                publish()
             }
             is ApiResult.Failure -> state = AssistantUiState.Failed
         }
     }
 
     LaunchedEffect(messages.size, streaming) {
-        val target = if (state == AssistantUiState.Asking) messages.size else messages.lastIndex
-        if (target >= 0) listState.animateScrollToItem(target)
+        // The last row is the streaming bubble while a turn is in flight, and
+        // may be preceded by the tools line; the list itself knows the index.
+        val target =
+            if (state == AssistantUiState.Asking) {
+                (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
+            } else {
+                messages.lastIndex
+            }
+        if (target < 0) return@LaunchedEffect
+
+        // Follow only while the reader is at the bottom: an earlier answer they
+        // scrolled back to must not be pulled away by the next token. A direct
+        // scroll, not an animation, because a token restarts the effect.
+        val visible = listState.layoutInfo.visibleItemsInfo
+        val atBottom =
+            visible.isEmpty() ||
+                visible.last().index >= listState.layoutInfo.totalItemsCount - 2
+        if (atBottom) listState.scrollToItem(target)
     }
 
     fun stage(picked: List<ChatComposeFile>) {
@@ -240,6 +319,7 @@ fun AssistantSheet(
                     else -> AssistantUiState.Ready
                 }
             streaming = ""
+            publish()
         }
     }
 

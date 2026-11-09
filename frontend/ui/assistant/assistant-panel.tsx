@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
 
 import {
@@ -13,7 +12,17 @@ import {
   rejectChatAgentAction,
   startAssistantChat,
 } from '@/frontend/api/chats';
+import {
+  forgetAssistantThread,
+  readAssistantSnapshot,
+  readCachedConversation,
+  saveCachedConversation,
+  writeAssistantSnapshot,
+  type AssistantSnapshot,
+} from '@/frontend/api/chats/assistant-cache';
+import { rememberAssistantOpened } from './assistant-hint';
 import { useChatAssistant } from '@/frontend/state/chats/use-chat-assistant';
+import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
 import {
@@ -23,8 +32,10 @@ import {
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
+import { DismissThenNavigateLink } from '@/frontend/ui/shared/dismiss-then-navigate';
 import { ActionCard } from '@/frontend/ui/chats/chat-agent-action-card';
 import { AssistantComposer } from '@/frontend/ui/chats/chat-assistant-composer';
+import { AssistantMark } from '@/frontend/ui/chats/assistant-mark';
 import { ASSISTANT_COPY } from '@/frontend/ui/chats/assistant-copy';
 import { AttachmentChip } from '@/frontend/ui/chats/attachment-chip';
 import { ChatImage } from '@/frontend/ui/chats/chat-image';
@@ -59,8 +70,16 @@ type PanelState = 'loading' | 'guest' | 'locked' | 'unavailable' | 'failed' | 'r
  * spent (the composer says so itself). A guest sees the invitation, not a
  * composer that would refuse every question.
  */
-export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
+export function AssistantPanel({
+  open,
+  onDismiss,
+}: {
+  /** Kept mounted across closes so a reopen paints what the last look held. */
+  open: boolean;
+  onDismiss: () => void;
+}) {
   const { user, isLoading: sessionLoading } = useSession();
+  const { identity } = useLocalIdentity();
   const userId = user?.id ?? null;
   const [threadId, setThreadId] = useState<string | null>(null);
   const [thread, setThread] = useState<ChatThread | null>(null);
@@ -70,66 +89,188 @@ export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
   const [failure, setFailure] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [draft, setDraft] = useState('');
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [remembered, setRemembered] = useState<AssistantSnapshot | null>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  /** Whether the reader is at the bottom: only then may a new line move them. */
+  const pinnedRef = useRef(true);
+  /** True once this panel has ever had a page to draw, cached or live. */
+  const paintedRef = useRef(false);
+  /** The thread the effect has settled on, readable without re-running it. */
+  const threadIdRef = useRef<string | null>(null);
+
+  const rememberThread = useCallback((id: string | null) => {
+    threadIdRef.current = id;
+    setThreadId(id);
+  }, []);
+
+  // A different member is a different conversation. The panel is mounted at the
+  // root and outlives a sign-out, so nothing of the previous identity may stay
+  // in the component — not the thread, its messages, the draft or the painted
+  // flag that would otherwise keep them on screen.
+  useEffect(() => {
+    rememberThread(null);
+    setThread(null);
+    setMessages([]);
+    setActions([]);
+    setDraft('');
+    setFailure(null);
+    setRemembered(null);
+    paintedRef.current = false;
+    setOpening(true);
+  }, [identity, rememberThread]);
+
+  // A fresh open starts at the newest line; an earlier scroll belongs to the
+  // page that was on screen before the close.
+  useEffect(() => {
+    if (open) pinnedRef.current = true;
+  }, [open]);
 
   /** One read of the header and the newest page, and the watermark it stamps. */
-  const loadMessages = useCallback(async (id: string) => {
-    const [header, page] = await Promise.all([getChatThread(id), getChatMessages(id)]);
-    // The composer needs the thread's own quota, so a read that answers lines
-    // but no header is not a drawable panel: it is the failure it looks like.
-    if (!header) throw new Error('the assistant thread is not readable');
-    setThread(header);
-    setMessages(page.messages);
-    setActions(page.actions ?? []);
-    // Seen is stamped once per open, the way the thread's screen does: the
-    // badge counts what the reader has not looked at, and this panel is a look.
-    if (page.messages.length > 0) void markChatRead(id);
-  }, []);
+  const loadMessages = useCallback(
+    async (id: string) => {
+      const [header, page] = await Promise.all([getChatThread(id), getChatMessages(id)]);
+      // The composer needs the thread's own quota, so a read that answers lines
+      // but no header is not a drawable panel: it is the failure it looks like.
+      if (!header) throw new Error('the assistant thread is not readable');
+      setThread(header);
+      setMessages(page.messages);
+      setActions(page.actions ?? []);
+      paintedRef.current = true;
+      // Seen is stamped once per open, the way the thread's screen does: the
+      // badge counts what the reader has not looked at, and this panel is a look.
+      if (page.messages.length > 0) void markChatRead(id);
+      // The page the panel just read is the page the full thread will open to.
+      void saveCachedConversation(identity, header, page.messages);
+    },
+    [identity]
+  );
 
   // Opening is idempotent, so the effect can re-run on a retry without
   // inventing a second thread. A guest ends here too, with no request made.
   useEffect(() => {
-    if (sessionLoading) return;
+    if (!open || sessionLoading) return;
     if (!userId) {
       setOpening(false);
       return;
     }
 
     let alive = true;
-    setOpening(true);
     setFailure(null);
 
-    void startAssistantChat()
-      .then(async (result) => {
+    const snapshot = readAssistantSnapshot(identity);
+    if (snapshot) setRemembered(snapshot);
+
+    void (async () => {
+      // The device is the first answer: paint the newest page it already holds,
+      // then revalidate behind it. A reopen within this page load is already
+      // painted, so this only reads on a cold start.
+      if (!paintedRef.current && snapshot?.threadId) {
+        const cached = await readCachedConversation(identity, snapshot.threadId);
         if (!alive) return;
-        if (!result.conversationId) {
-          setFailure(result.error ?? ASSISTANT_PANEL_COPY.failed);
-          return;
+        if (cached) {
+          rememberThread(snapshot.threadId);
+          setThread(cached.thread);
+          setMessages(cached.messages);
+          setActions([]);
+          paintedRef.current = true;
+          setOpening(false);
         }
-        setThreadId(result.conversationId);
-        await loadMessages(result.conversationId).catch(() => {
-          if (alive) setFailure(ASSISTANT_PANEL_COPY.failed);
+      }
+
+      if (!paintedRef.current) setOpening(true);
+
+      let id = threadIdRef.current ?? snapshot?.threadId ?? null;
+
+      try {
+        // A remembered thread is read directly; the open call is only needed
+        // when the member has never opened the panel or the thread is gone.
+        if (id) {
+          try {
+            await loadMessages(id);
+          } catch {
+            // A failed read with a page already on screen is an offline open,
+            // not a vanished thread: keep it rather than forgetting the id.
+            if (!paintedRef.current) {
+              forgetAssistantThread(identity);
+              rememberThread(null);
+              id = null;
+            }
+          }
+        }
+
+        if (!id) {
+          const result = await startAssistantChat();
+          if (!alive) return;
+          if (!result.conversationId) {
+            setFailure(result.error ?? ASSISTANT_PANEL_COPY.failed);
+            return;
+          }
+          id = result.conversationId;
+          rememberThread(id);
+          await loadMessages(id);
+        }
+
+        if (!alive) return;
+        writeAssistantSnapshot(identity, {
+          threadId: id,
+          available: snapshot?.available ?? true,
+          allowance: snapshot?.allowance ?? null,
         });
-      })
-      .catch(() => {
+        rememberAssistantOpened();
+      } catch {
         if (alive) setFailure(ASSISTANT_PANEL_COPY.failed);
-      })
-      .finally(() => {
+      } finally {
         if (alive) setOpening(false);
-      });
+      }
+    })();
 
     return () => {
       alive = false;
     };
-  }, [userId, sessionLoading, retryKey, loadMessages]);
+  }, [open, userId, identity, sessionLoading, retryKey, loadMessages, rememberThread]);
 
   const assistant = useChatAssistant(threadId ?? '', Boolean(userId && threadId), () => {
-    if (threadId) void loadMessages(threadId).catch(() => undefined);
+    if (threadIdRef.current) {
+      void loadMessages(threadIdRef.current).catch(() => undefined);
+    }
   });
 
+  // A reopen revalidates the meters without blanking the conversation. The
+  // first open is already the hook's own read, so it is not asked twice.
+  const refreshedOnceRef = useRef(false);
+  const refreshAssistant = assistant.refresh;
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length, assistant.streamingText]);
+    if (!open || !userId || !threadId) return;
+    if (!refreshedOnceRef.current) {
+      refreshedOnceRef.current = true;
+      return;
+    }
+    void refreshAssistant();
+  }, [open, userId, threadId, refreshAssistant]);
+
+  // The live answer replaces the remembered one the moment it lands.
+  useEffect(() => {
+    if (!userId || !threadId || assistant.allowance === null) return;
+    writeAssistantSnapshot(identity, {
+      threadId,
+      available: assistant.available,
+      allowance: assistant.allowance,
+    });
+  }, [identity, userId, threadId, assistant.available, assistant.allowance]);
+
+  // One frame per change, and only while the reader is at the bottom: a long
+  // answer must not pull the screen away from an earlier message they opened.
+  // `scrollIntoView` would also scroll the page behind the dialog; scrolling
+  // the panel's own element keeps the movement inside the conversation.
+  useEffect(() => {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
+      const element = scrollerRef.current;
+      if (!element || !pinnedRef.current) return;
+      element.scrollTop = element.scrollHeight;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open, messages.length, assistant.streamingText]);
 
   const actionByMessage = useMemo(() => {
     const byMessage = new Map<string, ChatAgentAction>();
@@ -137,9 +278,15 @@ export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
     return byMessage;
   }, [actions]);
 
-  const allowance = assistant.allowance;
+  // Before the live read answers, the last remembered face is the honest one:
+  // a Free member sees the upgrade immediately instead of a composer that would
+  // refuse the turn a moment later.
+  const measured = assistant.allowance !== null;
+  const available = measured ? assistant.available : (remembered?.available ?? true);
+  const allowance = assistant.allowance ?? remembered?.allowance ?? null;
+
   const state: PanelState =
-    sessionLoading || opening
+    sessionLoading || (opening && !thread)
       ? 'loading'
       : !userId
         ? 'guest'
@@ -149,7 +296,7 @@ export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
             ? 'failed'
             : !thread
               ? 'loading'
-              : !assistant.available
+              : !available
                 ? 'unavailable'
                 : allowance && allowance.member.cap === 0
                   ? 'locked'
@@ -159,28 +306,33 @@ export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
     if (await assistant.ask(body, files)) setDraft('');
   }
 
-  async function resolveAction(
-    actionId: string,
-    answer: 'confirm' | 'reject'
-  ): Promise<string | null> {
-    if (!threadId) return ASSISTANT_PANEL_COPY.failed;
-    try {
-      const updated =
-        answer === 'confirm'
-          ? await confirmChatAgentAction(threadId, actionId)
-          : await rejectChatAgentAction(threadId, actionId);
-      setActions((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-      return null;
-    } catch (error) {
-      return error instanceof Error && error.message ? error.message : ASSISTANT_PANEL_COPY.failed;
-    }
-  }
+  const resolveAction = useCallback(
+    async (actionId: string, answer: 'confirm' | 'reject'): Promise<string | null> => {
+      if (!threadId) return ASSISTANT_PANEL_COPY.failed;
+      try {
+        const updated =
+          answer === 'confirm'
+            ? await confirmChatAgentAction(threadId, actionId)
+            : await rejectChatAgentAction(threadId, actionId);
+        setActions((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+        return null;
+      } catch (error) {
+        return error instanceof Error && error.message
+          ? error.message
+          : ASSISTANT_PANEL_COPY.failed;
+      }
+    },
+    [threadId]
+  );
 
-  async function download(attachment: ChatAttachment) {
-    if (!threadId) return;
-    const signed = await getChatAttachmentUrl(threadId, attachment.id);
-    if (signed) window.location.assign(signed.url);
-  }
+  const download = useCallback(
+    async (attachment: ChatAttachment) => {
+      if (!threadId) return;
+      const signed = await getChatAttachmentUrl(threadId, attachment.id);
+      if (signed) window.location.assign(signed.url);
+    },
+    [threadId]
+  );
 
   /**
    * A state that is not a conversation does not need a conversation's height:
@@ -192,7 +344,7 @@ export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
     state === 'guest' || state === 'locked' || state === 'unavailable' || state === 'failed';
 
   return (
-    <Dialog open onOpenChange={(next) => !next && onDismiss()}>
+    <Dialog open={open} onOpenChange={(next) => !next && onDismiss()}>
       <DialogContent
         data-assistant-panel
         className={cn(
@@ -217,16 +369,25 @@ export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
         </header>
 
         {threadId ? (
-          <Link
+          <DismissThenNavigateLink
             href={`/chats/${threadId}`}
-            onClick={onDismiss}
-            className="block shrink-0 border-b border-border/40 px-4 py-2 text-[11px] font-bold text-primary transition-safe hover:bg-primary/5 hover:underline"
+            dismiss={onDismiss}
+            className="flex min-h-11 shrink-0 items-center border-b border-border/40 px-4 text-xs font-bold text-primary transition-safe hover:bg-primary/5 hover:underline"
           >
             {ASSISTANT_PANEL_COPY.openThread}
-          </Link>
+          </DismissThenNavigateLink>
         ) : null}
 
-        <div className="min-h-0 flex-1 overflow-y-auto dialog-scrollbar px-4 py-4">
+        <div
+          ref={scrollerRef}
+          onScroll={() => {
+            const element = scrollerRef.current;
+            pinnedRef.current = element
+              ? element.scrollHeight - element.scrollTop - element.clientHeight < 96
+              : true;
+          }}
+          className="min-h-0 flex-1 overscroll-contain overflow-y-auto dialog-scrollbar px-4 py-4"
+        >
           {state === 'loading' ? (
             <PanelLoading />
           ) : state === 'guest' ? (
@@ -238,7 +399,12 @@ export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
           ) : state === 'failed' ? (
             <PanelFailed onRetry={() => setRetryKey((key) => key + 1)} />
           ) : (
-            <div className="space-y-3">
+            <div
+              role="log"
+              aria-live="polite"
+              aria-busy={assistant.isStreaming}
+              className="space-y-3"
+            >
               {messages.length === 0 && !assistant.isStreaming ? (
                 <PanelIntro onPick={setDraft} />
               ) : null}
@@ -278,8 +444,6 @@ export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
                   )}
                 </AgentBubble>
               ) : null}
-
-              <div ref={bottomRef} />
             </div>
           )}
         </div>
@@ -300,8 +464,14 @@ export function AssistantPanel({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
-/** One line of the thread: the member's on the end, نور's on the start. */
-function PanelMessage({
+/**
+ * One line of the thread: the member's on the end, نور's on the start.
+ *
+ * Memoized because a streaming answer re-renders the panel on every frame; the
+ * message rows themselves do not change while the newest bubble grows, and a
+ * long thread must not be re-drawn per token.
+ */
+const PanelMessage = memo(function PanelMessage({
   message,
   action,
   onResolve,
@@ -370,7 +540,7 @@ function PanelMessage({
       )}
     </div>
   );
-}
+});
 
 /**
  * The assistant's side of the line: a small orb, then the bubble. The orb is
@@ -380,7 +550,9 @@ function PanelMessage({
 function AgentBubble({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex max-w-[92%] items-end gap-2">
-      <AssistantOrb className="mb-0.5 size-6 shrink-0" glyphClassName="size-[52%]" />
+      {/* A still mark per line: the animated orb belongs to the door and the
+          header, not to every answer in a thread that may hold dozens. */}
+      <AssistantMark className="mb-0.5 size-6 shrink-0" glyphClassName="size-[58%]" />
       <div className="rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
         {children}
       </div>
@@ -408,7 +580,7 @@ function PanelIntro({ onPick }: { onPick: (question: string) => void }) {
             key={question}
             type="button"
             onClick={() => onPick(question)}
-            className="rounded-full border border-border/70 bg-background/60 px-3 py-1.5 text-[11px] font-bold text-foreground transition-safe hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex min-h-9 items-center rounded-full border border-border/70 bg-background/60 px-3 py-2 text-[11px] font-bold text-foreground transition-safe hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {question}
           </button>
@@ -446,13 +618,13 @@ function PanelLocked({ onDismiss }: { onDismiss: () => void }) {
       <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
         {ASSISTANT_PANEL_COPY.locked}
       </p>
-      <Link
+      <DismissThenNavigateLink
         href="/pricing"
-        onClick={onDismiss}
-        className="mt-4 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-safe hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        dismiss={onDismiss}
+        className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition-safe hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {ASSISTANT_PANEL_COPY.upgrade}
-      </Link>
+      </DismissThenNavigateLink>
     </div>
   );
 }

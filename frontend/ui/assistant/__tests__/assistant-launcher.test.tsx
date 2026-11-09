@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 const navigation = vi.hoisted(() => ({ pathname: '/' }));
 
@@ -7,9 +7,16 @@ vi.mock('next/navigation', () => ({
   usePathname: () => navigation.pathname,
 }));
 
-// The conversation chunk is not this test's subject; the door is.
+// The conversation chunk is not this test's subject; the door and the hand-off
+// to the panel are. The stub keeps `open` so a close can be observed.
 vi.mock('@/frontend/ui/assistant/assistant-panel', () => ({
-  AssistantPanel: () => <div data-testid="assistant-panel" />,
+  AssistantPanel: ({ open, onDismiss }: { open: boolean; onDismiss: () => void }) => (
+    <div data-testid="assistant-panel" data-open={open}>
+      <button type="button" onClick={onDismiss}>
+        إغلاق
+      </button>
+    </div>
+  ),
 }));
 
 import { AssistantLauncher } from '@/frontend/ui/assistant/assistant-launcher';
@@ -21,6 +28,7 @@ import { AssistantLauncher } from '@/frontend/ui/assistant/assistant-launcher';
 describe('AssistantLauncher', () => {
   beforeEach(() => {
     navigation.pathname = '/';
+    window.localStorage.clear();
   });
 
   it('offers the assistant on a normal screen', () => {
@@ -48,5 +56,21 @@ describe('AssistantLauncher', () => {
     render(<AssistantLauncher />);
 
     expect(screen.getByRole('button', { name: /اسأل نور/ })).toBeInTheDocument();
+  });
+
+  it('keeps the conversation mounted after it closes (ADR-0150)', async () => {
+    render(<AssistantLauncher />);
+
+    fireEvent.click(screen.getByRole('button', { name: /اسأل نور/ }));
+
+    const panel = await screen.findByTestId('assistant-panel');
+    expect(panel).toHaveAttribute('data-open', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'إغلاق' }));
+
+    // Closed, not thrown away: the next open paints what the last one held
+    // instead of fetching the same thread again.
+    expect(panel).toHaveAttribute('data-open', 'false');
+    expect(screen.getByTestId('assistant-panel')).toBe(panel);
   });
 });
