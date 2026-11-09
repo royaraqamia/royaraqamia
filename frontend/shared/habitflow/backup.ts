@@ -1,16 +1,11 @@
 import type { Habit, HabitLog } from '@/shared/contracts/habitflow';
+import { escapeCsvLiteral, escapeCsvText } from '@/shared/csv';
 
 export interface HabitBackupPayload {
   version: string;
   exportedAt: string;
   habits: Habit[];
   logs: HabitLog[];
-}
-
-function csvEscape(value: string | number | boolean | null | undefined): string {
-  if (value === null || value === undefined) return '';
-  const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 export function buildBackupPayload(habits: Habit[], logs: HabitLog[]): HabitBackupPayload {
@@ -29,17 +24,15 @@ export function buildBackupCsv(habits: Habit[], logs: HabitLog[]): string {
   for (const habit of habits) {
     rows.push(
       [
-        habit.id,
-        habit.name,
-        habit.frequency,
-        habit.target ?? '',
-        habit.targetPeriod ?? '',
-        habit.reminderTime ?? '',
-        habit.archived,
-        habit.createdAt,
-      ]
-        .map(csvEscape)
-        .join(',')
+        escapeCsvLiteral(habit.id),
+        escapeCsvText(habit.name),
+        escapeCsvLiteral(habit.frequency),
+        escapeCsvLiteral(habit.target),
+        escapeCsvLiteral(habit.targetPeriod),
+        escapeCsvLiteral(habit.reminderTime),
+        escapeCsvLiteral(habit.archived ? 'true' : 'false'),
+        escapeCsvLiteral(habit.createdAt),
+      ].join(',')
     );
   }
   rows.push('');
@@ -47,9 +40,14 @@ export function buildBackupCsv(habits: Habit[], logs: HabitLog[]): string {
   rows.push('habit_id,date,completed,kind,note,completed_at');
   for (const log of logs) {
     rows.push(
-      [log.habitId, log.date, log.completed, log.kind ?? '', log.note ?? '', log.completedAt ?? '']
-        .map(csvEscape)
-        .join(',')
+      [
+        escapeCsvLiteral(log.habitId),
+        escapeCsvLiteral(log.date),
+        escapeCsvLiteral(log.completed ? 'true' : 'false'),
+        escapeCsvLiteral(log.kind),
+        escapeCsvText(log.note),
+        escapeCsvLiteral(log.completedAt),
+      ].join(',')
     );
   }
   return rows.join('\n');

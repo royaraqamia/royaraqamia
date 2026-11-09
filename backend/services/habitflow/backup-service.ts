@@ -1,4 +1,5 @@
 import { HabitRepository, Habit, HabitLog, HabitRestoreSchema } from '@/shared/contracts/habitflow';
+import { escapeCsvLiteral, escapeCsvText } from '@/shared/csv';
 import { damascusDateKey } from '@/shared/time';
 import { AppError } from '@/backend/shared/errors';
 
@@ -35,12 +36,6 @@ function isPlanCapRefusal(error: unknown): boolean {
   );
 }
 
-function csvEscape(value: string | number | boolean | null | undefined): string {
-  if (value === null || value === undefined) return '';
-  const s = String(value);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
 export class HabitBackupService {
   constructor(private repository: HabitRepository) {}
 
@@ -71,17 +66,15 @@ export class HabitBackupService {
     for (const h of habits) {
       rows.push(
         [
-          h.id,
-          h.name,
-          h.frequency,
-          h.target ?? '',
-          h.targetPeriod ?? '',
-          h.reminderTime ?? '',
-          h.archived,
-          h.createdAt,
-        ]
-          .map(csvEscape)
-          .join(',')
+          escapeCsvLiteral(h.id),
+          escapeCsvText(h.name),
+          escapeCsvLiteral(h.frequency),
+          escapeCsvLiteral(h.target),
+          escapeCsvLiteral(h.targetPeriod),
+          escapeCsvLiteral(h.reminderTime),
+          escapeCsvLiteral(h.archived ? 'true' : 'false'),
+          escapeCsvLiteral(h.createdAt),
+        ].join(',')
       );
     }
     rows.push('');
@@ -89,9 +82,14 @@ export class HabitBackupService {
     rows.push('habit_id,date,completed,kind,note,completed_at');
     for (const l of logs) {
       rows.push(
-        [l.habitId, l.date, l.completed, l.kind ?? '', l.note ?? '', l.completedAt ?? '']
-          .map(csvEscape)
-          .join(',')
+        [
+          escapeCsvLiteral(l.habitId),
+          escapeCsvLiteral(l.date),
+          escapeCsvLiteral(l.completed ? 'true' : 'false'),
+          escapeCsvLiteral(l.kind),
+          escapeCsvText(l.note),
+          escapeCsvLiteral(l.completedAt),
+        ].join(',')
       );
     }
 
