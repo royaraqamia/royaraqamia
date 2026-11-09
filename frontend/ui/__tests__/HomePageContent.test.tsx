@@ -1,25 +1,60 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { HomePageContent } from '../HomePageContent';
-import { UIProvider } from '../../state/UIContext';
+import * as home from '@/frontend/state/home-services-provider';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ replace: vi.fn() }),
 }));
 
-function renderWithProviders(ui: React.ReactElement) {
-  return render(<UIProvider>{ui}</UIProvider>);
+vi.mock('@/frontend/state/home-services-provider', () => ({ useHomeServices: vi.fn() }));
+
+const useHomeServices = vi.mocked(home.useHomeServices);
+
+function says(order: string[], status: 'loading' | 'ready' | 'failed' = 'ready') {
+  useHomeServices.mockReturnValue({
+    order: order as never,
+    status,
+    reload: async () => {},
+    add: async () => null,
+    remove: async () => null,
+  });
 }
 
+/** The door (ADR-0146): empty state, then the member's strip. */
 describe('HomePageContent', () => {
-  it('renders the main landmark', () => {
-    renderWithProviders(<HomePageContent />);
-    expect(screen.getByRole('main')).toBeInTheDocument();
+  beforeEach(() => {
+    useHomeServices.mockReset();
   });
 
-  it('renders Hero section', () => {
-    renderWithProviders(<HomePageContent />);
-    expect(screen.getByText('شريكك الاستراتيجي')).toBeInTheDocument();
+  it('renders the main landmark', () => {
+    says([]);
+    render(<HomePageContent />);
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content');
+  });
+
+  it('draws the empty state when the member has no apps', () => {
+    says([]);
+    render(<HomePageContent />);
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('ابدأ بتطبيقك الأوَّل');
+    expect(screen.getByRole('button', { name: 'أضِف تطبيقًا' })).toBeInTheDocument();
+  });
+
+  it('draws the strip in the stored order', () => {
+    says(['/athkar', '/quran']);
+    render(<HomePageContent />);
+
+    const links = screen.getAllByRole('link');
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/athkar', '/quran']);
+  });
+
+  it('draws the skeleton while the read settles', () => {
+    says([], 'loading');
+    const { container } = render(<HomePageContent />);
+
+    expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
   });
 });

@@ -17,10 +17,17 @@ import { HomeTabStrip } from './home/HomeTabStrip';
 export function HomePageContent() {
   const { order, status } = useHomeServices();
 
-  if (status === 'loading') return <HomeSkeleton />;
-  if (order.length === 0) return <HomeEmptyState />;
-
-  return <HomeTabStrip />;
+  return (
+    <main id="main-content">
+      {status === 'loading' ? (
+        <HomeSkeleton />
+      ) : order.length === 0 ? (
+        <HomeEmptyState />
+      ) : (
+        <HomeTabStrip />
+      )}
+    </main>
+  );
 }
 
 function HomeSkeleton() {
