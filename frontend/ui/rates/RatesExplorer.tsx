@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
@@ -11,10 +11,12 @@ import { resolveDefaultPair } from '@/frontend/ui/rates/rates-defaults';
 import { SegmentedControl, type SegmentedOption } from '@/frontend/ui/rates/SegmentedControl';
 import { useDefaultCountry } from '@/frontend/ui/shared/default-country';
 import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
+import { replaceSearch } from '@/frontend/shared/replace-search';
 import { type RateBasis, type RatesBoard } from '@/shared/contracts/rates';
 import { OLD_SYP_PER_NEW_SYP } from '@/shared/currency';
 import { convertAmount, isParallelRate } from '@/shared/rates';
 import { RATES_CONVERTER_COPY } from './rates-converter-copy';
+import { ratesSearch, ratesSelectionFrom, type RatesSelection } from './rates-url';
 
 interface RatesExplorerProps {
   board: RatesBoard;
@@ -37,29 +39,41 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   );
 
   const [amount, setAmount] = useState('1');
-  const [from, setFrom] = useState(defaultPair.from);
-  const [to, setTo] = useState(defaultPair.to);
-  const [basis, setBasis] = useState<RateBasis>('parallel');
-  const [market, setMarket] = useState<string | null>(null);
 
-  // The first render matches the server (SYP); once the visitor's location
-  // resolves on the client we adopt their pair, unless they already chose.
-  const touchedRef = useRef(false);
-  useEffect(() => {
-    if (touchedRef.current) return;
-    setFrom(defaultPair.from);
-    setTo(defaultPair.to);
-  }, [defaultPair]);
+  // The address bar is read after mount: the document is prerendered for every
+  // visitor, so the server cannot know a member's query string (ADR-0031).
+  const [query, setQuery] = useState<string | null>(null);
+  useEffect(() => setQuery(window.location.search), []);
 
-  const handleFromChange = (value: string) => {
-    touchedRef.current = true;
-    setFrom(value);
+  // What the URL names, validated against the board. Null when it names
+  // nothing, so the visitor-location default keeps winning.
+  const fromUrl = useMemo(
+    () => (query === null ? null : ratesSelectionFrom(query, defaultPair, board)),
+    [query, defaultPair, board]
+  );
+
+  // A change writes all four, so the address bar is the one truth from the
+  // moment the member chooses and the country default stops moving it.
+  const [chosen, setChosen] = useState<RatesSelection | null>(null);
+
+  const selection: RatesSelection = chosen ??
+    fromUrl ?? {
+      from: defaultPair.from,
+      to: defaultPair.to,
+      basis: 'parallel',
+      market: null,
+    };
+  const { from, to, basis, market } = selection;
+
+  const commit = (patch: Partial<RatesSelection>) => {
+    const next = { ...selection, ...patch };
+    setChosen(next);
+    replaceSearch(ratesSearch(next));
   };
 
-  const handleToChange = (value: string) => {
-    touchedRef.current = true;
-    setTo(value);
-  };
+  const handleFromChange = (value: string) => commit({ from: value });
+
+  const handleToChange = (value: string) => commit({ to: value });
 
   const marketOptions = useMemo(() => marketOptionsFor(board, [from, to]), [board, from, to]);
   const activeMarket =
@@ -114,11 +128,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
       ? marketAsOf
       : null;
 
-  const swap = () => {
-    touchedRef.current = true;
-    setFrom(to);
-    setTo(from);
-  };
+  const swap = () => commit({ from: to, to: from });
 
   return (
     <div className="space-y-10">
@@ -202,7 +212,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
               label={RATES_CONVERTER_COPY.basisAria}
               value={basis}
               options={BASIS_OPTIONS}
-              onValueChange={setBasis}
+              onValueChange={(next) => commit({ basis: next })}
             />
           </div>
         ) : null}
@@ -216,7 +226,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
               label={RATES_CONVERTER_COPY.marketAria}
               value={activeMarket ?? ''}
               options={marketOptions.map((option) => ({ value: option.key, label: option.name }))}
-              onValueChange={setMarket}
+              onValueChange={(next) => commit({ market: next })}
             />
           </div>
         ) : null}

@@ -167,7 +167,7 @@ const SURFACE_ELEMENTS = [
   },
   {
     label: 'row',
-    selector: 'nav[aria-label] a',
+    selector: 'nav[data-visual="quran-list"] a',
     properties: [
       'height',
       'gap',
@@ -181,7 +181,7 @@ const SURFACE_ELEMENTS = [
   },
   {
     label: 'row-number',
-    selector: 'nav[aria-label] a > span:first-child',
+    selector: 'nav[data-visual="quran-list"] a > span:first-child',
     properties: [
       'width',
       'height',
@@ -195,12 +195,12 @@ const SURFACE_ELEMENTS = [
   },
   {
     label: 'row-name',
-    selector: 'nav[aria-label] a > span:nth-child(2) > span:first-child',
+    selector: 'nav[data-visual="quran-list"] a > span:nth-child(2) > span:first-child',
     properties: ['color', 'font-family', 'font-size', 'font-weight'],
   },
   {
     label: 'row-meta',
-    selector: 'nav[aria-label] a > span:nth-child(2) > span:nth-child(2)',
+    selector: 'nav[data-visual="quran-list"] a > span:nth-child(2) > span:nth-child(2)',
     properties: ['color', 'font-family', 'font-size', 'line-height'],
   },
 ] as const;

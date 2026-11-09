@@ -3,11 +3,14 @@
 import { usePathname } from 'next/navigation';
 
 import { BackButton } from '@/frontend/ui/shared/back-button';
-import { isPrimaryRoute } from './route-kind';
+import { chromeFor } from './route-kind';
 
 /**
- * The chrome a secondary page wears instead of the app: a single floating back
- * control pinned to the top corner.
+ * The chrome a page that is not an app root wears instead of the app: a single
+ * floating back control pinned to the top corner. A public entry (a printed
+ * certificate, an unlock link) keeps the top nav and only skips the member's
+ * tab bar, so it gets no control here — the page before it is not "back", it is
+ * the link that brought the visitor (ADR-0149).
  *
  * It is rendered once by the root layout rather than by each page, and that is
  * load-bearing: `/community/[slug]` and `/account/posts` sit under layouts that
@@ -21,8 +24,11 @@ import { isPrimaryRoute } from './route-kind';
  */
 export function SecondaryHeader() {
   const pathname = usePathname();
+  const chrome = chromeFor(pathname);
 
-  if (isPrimaryRoute(pathname)) return null;
+  // The app chrome and a public entry get the top nav instead; on the public
+  // entry the nav owns the skip link too, so neither control is drawn twice.
+  if (chrome !== 'back') return null;
 
   // An open conversation draws its own back control inside the thread's flat
   // header: two of them in the same corner read as one broken control.
@@ -30,7 +36,8 @@ export function SecondaryHeader() {
 
   return (
     <>
-      {/* Skip Navigation Link for Accessibility — the top nav owns this on primary pages */}
+      {/* Skip Navigation Link for Accessibility — the top nav owns this on the
+          pages that have one. */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:inset-s-4 focus:z-100 focus:inline-flex focus:items-center focus:gap-2 focus:px-4 focus:py-2.5 focus:rounded-xl focus:bg-violet-600 focus:text-white focus:font-medium focus:text-sm focus:shadow-xl focus:shadow-violet-600/25 focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-neutral-950 focus:outline-none transition-safe duration-200"

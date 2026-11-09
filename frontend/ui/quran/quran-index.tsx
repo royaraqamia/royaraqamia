@@ -33,7 +33,7 @@ export function QuranIndexPage({
   pages?: readonly number[];
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:py-14">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 pt-10 pb-28 sm:pt-14 sm:pb-32">
       <header className="flex flex-col items-center gap-3 text-center">
         <div data-visual="quran-title">
           <SectionTitle as="h1">

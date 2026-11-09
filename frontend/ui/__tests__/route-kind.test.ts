@@ -2,9 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+import { HOME_SERVICE_ROUTES } from '@/shared/contracts/home-services-catalog';
 import {
+  APP_ROUTES,
   LAYOUT_ONLY_PATHS,
   PRIMARY_ROUTES,
+  chromeFor,
+  isAppRoot,
   isPrimaryRoute,
   parentRouteOf,
 } from '../navbar/route-kind';
@@ -60,32 +64,62 @@ function matchesLayoutOnly(point: string): boolean {
 }
 
 describe('route kinds', () => {
-  it('lists exactly the three bottom-tab destinations as primary', () => {
+  it('keeps the three bottom-tab destinations separate from the app roots', () => {
     expect([...PRIMARY_ROUTES].sort()).toEqual(['/', '/account', '/community']);
+    expect([...APP_ROUTES]).toEqual([...HOME_SERVICE_ROUTES]);
   });
 
-  it.each(['/', '/community', '/account', '/account/', '/community?page=2'])(
-    'treats %s as primary',
-    (pathname) => {
-      expect(isPrimaryRoute(pathname)).toBe(true);
-    }
-  );
+  it.each([
+    '/',
+    '/community',
+    '/account',
+    '/community?page=2',
+    '/quran',
+    '/athkar',
+    '/athkar/evening',
+    '/rates',
+    '/rates?from=USD&to=EUR',
+    '/mcp/guide#install',
+  ])('treats %s as app chrome', (pathname) => {
+    expect(isPrimaryRoute(pathname)).toBe(true);
+    expect(chromeFor(pathname)).toBe('app');
+  });
 
   it.each([
     '/community/some-post',
     '/account/posts',
     '/admin',
     '/auth/login',
-    '/rates',
     '/blogpress',
+    '/quran/2',
     '/spendtrack/categories',
-  ])('treats %s as secondary', (pathname) => {
+  ])('treats %s as a drill-down', (pathname) => {
     expect(isPrimaryRoute(pathname)).toBe(false);
+    expect(chromeFor(pathname)).toBe('back');
   });
 
-  it('treats an unresolved pathname as secondary', () => {
+  it.each(['/verify/ABC-123', '/linksnap/unlock/abc123'])(
+    'gives the public entry %s the top nav without a tab bar',
+    (pathname) => {
+      expect(chromeFor(pathname)).toBe('top');
+      expect(isPrimaryRoute(pathname)).toBe(false);
+    }
+  );
+
+  it('treats an unresolved pathname as a drill-down', () => {
     expect(isPrimaryRoute(null)).toBe(false);
     expect(isPrimaryRoute(undefined)).toBe(false);
+    expect(chromeFor(null)).toBe('back');
+  });
+
+  it('keeps the Home tab lit on the homepage and the app roots only', () => {
+    for (const pathname of ['/', '/quran', '/athkar/evening', '/mcp/guide']) {
+      expect(isAppRoot(pathname)).toBe(true);
+    }
+
+    for (const pathname of ['/community', '/account', '/quran/2', '/privacy']) {
+      expect(isAppRoot(pathname)).toBe(false);
+    }
   });
 
   it('keeps LAYOUT_ONLY_PATHS in step with the folders under app/', () => {
@@ -125,6 +159,7 @@ describe('parentRouteOf', () => {
     ['/admin/training/cohorts', '/admin'],
     ['/admin/certificates/ABC/edit', '/admin/certificates'],
     ['/spendtrack/categories', '/spendtrack'],
+    ['/athkar/evening', '/athkar'],
   ])('%s goes up to %s', (pathname, expected) => {
     const parent = parentRouteOf(pathname);
 

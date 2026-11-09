@@ -1,8 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 
 /**
- * The app-chrome split: the three primary routes keep the top nav and the
- * bottom tab bar, and every other page drops both for a floating back control.
+ * The app-chrome split: the homepage, the account and community doors and the
+ * eleven app roots keep the top nav and the bottom tab bar, a drill-down drops
+ * to a floating back control, and a public entry a stranger lands on gets the
+ * top nav without the tab bar (ADR-0146, ADR-0149).
  *
  * The chrome pieces are marked rather than classed — `data-app-navbar`,
  * `data-bottom-tabbar` and `data-secondary-header` — because a fixed bar's
@@ -96,7 +98,23 @@ async function expectSecondaryChrome(page: Page) {
 }
 
 test.describe('primary pages', () => {
-  for (const path of ['/', '/community', '/account']) {
+  for (const path of [
+    '/',
+    '/community',
+    '/account',
+    '/quran',
+    '/athkar',
+    '/athkar/evening',
+    '/rates',
+    '/scan',
+    '/verify',
+    '/news',
+    '/notes',
+    '/spendtrack',
+    '/habitflow',
+    '/linksnap',
+    '/mcp/guide',
+  ]) {
     test(`${path} keeps the top nav and the bottom tab bar`, async ({ page }) => {
       await page.goto(path);
 
@@ -163,15 +181,7 @@ test.describe('a secondary child of a primary shell', () => {
 });
 
 test.describe('secondary pages', () => {
-  for (const path of [
-    '/rates',
-    '/privacy',
-    '/terms',
-    '/security',
-    '/verify',
-    '/app-info',
-    '/news',
-  ]) {
+  for (const path of ['/privacy', '/terms', '/security', '/app-info', '/quran/2']) {
     test(`${path} drops the app chrome for a back header`, async ({ page }) => {
       await page.goto(path);
 
@@ -180,7 +190,7 @@ test.describe('secondary pages', () => {
   }
 
   test('the back control floats in the corner instead of a full-width bar', async ({ page }) => {
-    await page.goto('/rates');
+    await page.goto('/privacy');
 
     const header = page.locator(BACK_HEADER);
     await expect(header).toBeVisible();
@@ -193,11 +203,11 @@ test.describe('secondary pages', () => {
   });
 
   test('back goes up to the section when the page was opened cold', async ({ page }) => {
-    await page.goto('/verify/UNKNOWN-CODE');
+    await page.goto('/quran/2');
 
     await backControl(page).click();
 
-    await expect(page).toHaveURL(/\/verify$/);
+    await expect(page).toHaveURL(/\/quran$/);
   });
 
   test('back steps over a folder that is not a page', async ({ page }) => {
@@ -226,6 +236,21 @@ test.describe('secondary pages', () => {
 });
 
 /**
+ * A printed certificate is a public entry (ADR-0149): the top nav is the way
+ * into the site, and the member's tab bar plus a "back" to a page the visitor
+ * never saw would both be noise.
+ */
+test.describe('a public entry a stranger can land on', () => {
+  test('shows the top nav without a tab bar or a back control', async ({ page }) => {
+    await page.goto('/verify/UNKNOWN-CODE');
+
+    await expect(page.locator(TOP_NAV)).toBeVisible();
+    await expect(page.locator(BOTTOM_BAR)).toHaveCount(0);
+    await expect(page.locator(BACK_HEADER)).toHaveCount(0);
+  });
+});
+
+/**
  * The control floats in the corner instead of sitting in a bar, so on its own it
  * lands on whatever a page starts with — a publisher chip, a profile card, a form
  * heading. `app/global.css` reserves the band it occupies; these are the routes
@@ -239,9 +264,8 @@ test.describe('the floating control never covers page content', () => {
     '/consultation/book',
     '/hire',
     '/request-project',
-    '/rates',
+    '/quran/2',
     '/account/faq',
-    '/news',
   ]) {
     test(`${path} starts below it`, async ({ page }) => {
       await page.goto(path);
@@ -342,7 +366,7 @@ test.describe('phone widths', () => {
   });
 
   test('secondary pages get the same split on a phone', async ({ page }) => {
-    await page.goto('/rates');
+    await page.goto('/privacy');
 
     await expectSecondaryChrome(page);
   });
@@ -391,7 +415,7 @@ test.describe('the system-bar band', () => {
   });
 
   test('the lone back control clears the band', async ({ page }) => {
-    await page.goto('/rates');
+    await page.goto('/privacy');
     await withSystemBar(page);
 
     const back = await backControl(page).boundingBox();

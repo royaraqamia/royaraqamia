@@ -102,6 +102,14 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
+    // The evening sitting is its own page (ADR-0147), not a toggle: it is what a
+    // shared link opens, and it is in the sitemap so the link has a landing page
+    // a crawler can reach.
+    path: '/athkar/evening',
+    changeFrequency: 'monthly',
+    priority: 0.6,
+  },
+  {
     path: '/verify',
     changeFrequency: 'monthly',
     priority: 0.6,

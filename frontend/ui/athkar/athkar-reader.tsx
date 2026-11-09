@@ -1,6 +1,7 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { useId, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { cn } from '@/frontend/shared/cn';
 import {
@@ -14,24 +15,24 @@ import { useAthkarCounts } from './use-athkar-counts';
 
 interface AthkarReaderProps {
   collections: Record<AthkarPeriod, AthkarCollection>;
+  /** The sitting the URL asks for: morning at `/athkar`, evening at `/athkar/evening`. */
+  period: AthkarPeriod;
 }
 
 /**
  * The two sittings as one surface: a tab per collection and a count per dhikr.
  *
- * The tab is local state, not part of the URL: the page is one route and the
- * two lists are the same kind of thing, so a link to "the evening tab" would be
- * a link to a toggle, and a shared `#` never survives a reload into the right
- * panel reliably. The default is the morning one because it is also what a
- * prerendered page can show without waiting for a clock, and the tabs are the
- * first thing after the heading.
+ * The sitting is the URL (ADR-0147): `/athkar` is the morning and
+ * `/athkar/evening` the evening, so a refresh, Back and a shared link all land
+ * on the list the sender was reading. The counts stay device-local; only the
+ * chosen sitting is addressable.
  *
- * The tablist is the only thing left in the row above the lists — the daily
- * total and the note about the midnight reset went, so what the sitting has
- * done is read from the cards themselves.
+ * The tabs are the first thing after the heading, and the daily total and the
+ * note about the midnight reset are gone: what the sitting has done is read from
+ * the cards themselves.
  */
-export function AthkarReader({ collections }: AthkarReaderProps) {
-  const [period, setPeriod] = useState<AthkarPeriod>('morning');
+export function AthkarReader({ collections, period }: AthkarReaderProps) {
+  const router = useRouter();
   const { counts, ready, increment, reset } = useAthkarCounts();
   const baseId = useId();
   const tabRefs = useRef<Partial<Record<AthkarPeriod, HTMLButtonElement | null>>>({});
@@ -39,10 +40,11 @@ export function AthkarReader({ collections }: AthkarReaderProps) {
   const collection = collections[period];
 
   const select = (next: AthkarPeriod) => {
-    setPeriod(next);
     // Selecting with the keyboard moves focus with the selection; selecting with
     // a pointer leaves it where the pointer put it.
     tabRefs.current[next]?.focus();
+    if (next === period) return;
+    router.push(next === 'morning' ? '/athkar' : '/athkar/evening');
   };
 
   const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {

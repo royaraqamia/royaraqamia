@@ -18,7 +18,7 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `quran` | `/quran` | local-store | store | outbox | precached | `quran-reader.spec.ts`<br>`quran-marks.spec.ts`<br>`quran-sync.spec.ts` | `paint:quran` | #493 |
 | `notes` | `/notes` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`notes-offline.spec.ts`<br>`notes.spec.ts` | `paint:notes` |  |
 | `quran-surah` | `/quran/[surah]` | local-store | store | outbox | swr | `quran-reader.spec.ts` |  | #559 |
-| `athkar` | `/athkar` | static | swr | none | precached | `athkar.spec.ts` |  |  |
+| `athkar` | `/athkar`<br>`/athkar/evening` | static | swr | none | precached | `athkar.spec.ts` |  |  |
 | `account` | `/account` | local-store | store | outbox | precached | _ungated_ |  | #493 |
 | `account-links` | `/account/links` | local-store | store | outbox | precached | _ungated_ |  | #493 |
 | `account-posts` | `/account/posts` | local-store | store | outbox | precached | _ungated_ |  | #493 |

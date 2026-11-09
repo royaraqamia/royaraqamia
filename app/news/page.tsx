@@ -47,8 +47,8 @@ export const metadata: Metadata = {
  */
 export default function NewsPage() {
   return (
-    <div className="relative flex min-h-dvh flex-col bg-background font-sans text-foreground antialiased selection:bg-primary/20 selection:text-primary">
-      <main id="main-content" dir="rtl" className="flex-1 pt-10 pb-20 md:pb-28">
+    <div className="relative flex min-h-[var(--roy-page-height)] flex-col bg-background font-sans text-foreground antialiased selection:bg-primary/20 selection:text-primary">
+      <main id="main-content" dir="rtl" className="flex-1 pt-10 pb-28 md:pb-32">
         <div className="mx-auto max-w-4xl px-4">
           <header className="mb-8 text-center" data-visual="news-title">
             <SectionTitle as="h1">

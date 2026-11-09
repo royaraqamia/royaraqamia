@@ -4,6 +4,7 @@ import { AthkarReader } from './athkar-reader';
 
 interface AthkarPageProps {
   collections: Record<AthkarPeriod, AthkarCollection>;
+  period: AthkarPeriod;
 }
 
 /**
@@ -15,16 +16,16 @@ interface AthkarPageProps {
  * description, the Hijri date and the daily counter's note all went, so the
  * first thing under the title is the tab that picks the sitting.
  */
-export function AthkarPage({ collections }: AthkarPageProps) {
+export function AthkarPage({ collections, period }: AthkarPageProps) {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-10 sm:py-14">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 pt-10 pb-28 sm:pt-14 sm:pb-32">
       <header className="flex flex-col items-center gap-3 text-center">
         <SectionTitle as="h1" size="display">
           <SectionTitleHighlight>أذكار الصَّباح والمساء</SectionTitleHighlight>
         </SectionTitle>
       </header>
 
-      <AthkarReader collections={collections} />
+      <AthkarReader collections={collections} period={period} />
     </div>
   );
 }

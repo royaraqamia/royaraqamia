@@ -40,8 +40,20 @@ describe('SecondaryHeader', () => {
     expect(screen.queryByRole('button', { name: 'رجوع' })).not.toBeInTheDocument();
   });
 
+  it('leaves a public entry without a back control', () => {
+    mockPathname.mockReturnValue('/verify/ABC-123');
+
+    render(<SecondaryHeader />);
+
+    // A stranger landed from a printed link: the top nav is the way in, and a
+    // floating "back" would point at a page they never saw (ADR-0149). The nav
+    // owns the skip link on that entry, so this renders nothing at all.
+    expect(header()).toBeNull();
+    expect(screen.queryByRole('button', { name: 'رجوع' })).not.toBeInTheDocument();
+  });
+
   it('renders the back control on a secondary route', () => {
-    mockPathname.mockReturnValue('/rates');
+    mockPathname.mockReturnValue('/privacy');
 
     render(<SecondaryHeader />);
 
@@ -49,7 +61,7 @@ describe('SecondaryHeader', () => {
   });
 
   it('is a floating control with no bar and no page title', () => {
-    mockPathname.mockReturnValue('/rates');
+    mockPathname.mockReturnValue('/privacy');
     document.title = `أسعار الصَّرف | ${SITE_TITLE}`;
 
     render(<SecondaryHeader />);
@@ -83,8 +95,8 @@ describe('SecondaryHeader', () => {
 
   it('pops real in-app history when there is some', () => {
     recordPathname('/');
-    mockPathname.mockReturnValue('/rates');
-    recordPathname('/rates');
+    mockPathname.mockReturnValue('/privacy');
+    recordPathname('/privacy');
 
     render(<SecondaryHeader />);
     fireEvent.click(screen.getByRole('button', { name: 'رجوع' }));
@@ -98,10 +110,10 @@ describe('SecondaryHeader', () => {
     // The loop this replaces: /rates → /community/x → back → /rates, and the
     // control believed it could pop again (a counter never comes down), so it
     // went back into /community/x and the two pages traded places.
-    recordPathname('/rates');
+    recordPathname('/privacy');
     recordPathname('/community/x');
-    recordPathname('/rates');
-    mockPathname.mockReturnValue('/rates');
+    recordPathname('/privacy');
+    mockPathname.mockReturnValue('/privacy');
 
     render(<SecondaryHeader />);
     fireEvent.click(screen.getByRole('button', { name: 'رجوع' }));

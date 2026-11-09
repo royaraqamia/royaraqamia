@@ -465,7 +465,7 @@ export function ScanPage() {
   const scanning = status === 'scanning';
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10 sm:py-16">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 pt-10 pb-28 sm:pt-16 sm:pb-32">
       <p className="sr-only" role="status" aria-live="polite">
         {classification
           ? `تمَّ قراءة الرَّمز. النَّوع: ${SCAN_RESULT_KIND_LABELS[classification.kind]}`

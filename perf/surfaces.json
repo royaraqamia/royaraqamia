@@ -101,7 +101,7 @@
     },
     {
       "id": "athkar",
-      "routes": ["/athkar"],
+      "routes": ["/athkar", "/athkar/evening"],
       "owner": "static",
       "read": "swr",
       "write": "none",

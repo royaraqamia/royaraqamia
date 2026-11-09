@@ -2,8 +2,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import type { AthkarCollection, AthkarItem } from '@/shared/contracts/athkar';
-import { AthkarReader } from '../athkar-reader';
 import { ATHKAR_COUNTS_KEY } from '../count-store';
+
+const { mockPush } = vi.hoisted(() => ({ mockPush: vi.fn() }));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
+import { AthkarReader } from '../athkar-reader';
 
 function item(id: string, repeat: number, text = `ذكر ${id}`): AthkarItem {
   return { id, text, repeat, source: { label: 'صحيح البخاري', ref: '1' } };
@@ -26,11 +33,12 @@ const counter = (index: number) => screen.getByRole('button', { name: `عدّ ا
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.clearAllMocks();
 });
 
 describe('AthkarReader', () => {
-  it('opens on the morning sitting and keeps the evening one out of the DOM', () => {
-    render(<AthkarReader collections={COLLECTIONS} />);
+  it('opens on the sitting the URL names and keeps the other out of the DOM', () => {
+    render(<AthkarReader collections={COLLECTIONS} period="morning" />);
 
     expect(screen.getByRole('tab', { name: 'أذكار الصَّباح' })).toHaveAttribute(
       'aria-selected',
@@ -40,10 +48,8 @@ describe('AthkarReader', () => {
     expect(screen.queryByText('ذكر evening-one')).not.toBeInTheDocument();
   });
 
-  it('switches sittings from the tab', () => {
-    render(<AthkarReader collections={COLLECTIONS} />);
-
-    fireEvent.click(screen.getByRole('tab', { name: 'أذكار المساء' }));
+  it('opens the evening sitting from its own URL', () => {
+    render(<AthkarReader collections={COLLECTIONS} period="evening" />);
 
     expect(screen.getByRole('tab', { name: 'أذكار المساء' })).toHaveAttribute(
       'aria-selected',
@@ -53,19 +59,26 @@ describe('AthkarReader', () => {
     expect(screen.queryByText('ذكر first')).not.toBeInTheDocument();
   });
 
+  it('navigates to the evening page when the tab changes the sitting', () => {
+    render(<AthkarReader collections={COLLECTIONS} period="morning" />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'أذكار المساء' }));
+
+    // The sitting is the URL (ADR-0147), so the tab is a navigation, not a
+    // second copy of the collection kept in component state.
+    expect(mockPush).toHaveBeenCalledWith('/athkar/evening');
+  });
+
   it('moves between sittings with the arrow keys, in reading order for RTL', () => {
-    render(<AthkarReader collections={COLLECTIONS} />);
+    render(<AthkarReader collections={COLLECTIONS} period="morning" />);
 
     fireEvent.keyDown(screen.getByRole('tab', { name: 'أذكار الصَّباح' }), { key: 'ArrowLeft' });
 
-    expect(screen.getByRole('tab', { name: 'أذكار المساء' })).toHaveAttribute(
-      'aria-selected',
-      'true'
-    );
+    expect(mockPush).toHaveBeenCalledWith('/athkar/evening');
   });
 
   it('counts to the stated number and stops there', () => {
-    render(<AthkarReader collections={COLLECTIONS} />);
+    render(<AthkarReader collections={COLLECTIONS} period="morning" />);
 
     const second = counter(2);
     expect(second).toHaveTextContent('0 من 3');
@@ -82,7 +95,7 @@ describe('AthkarReader', () => {
   });
 
   it('undoes a mistap with إعادة', () => {
-    render(<AthkarReader collections={COLLECTIONS} />);
+    render(<AthkarReader collections={COLLECTIONS} period="morning" />);
 
     fireEvent.click(counter(3));
     expect(counter(3)).toHaveTextContent('1 من 2');
@@ -94,11 +107,11 @@ describe('AthkarReader', () => {
   });
 
   it('remembers the count across a reload', () => {
-    const first = render(<AthkarReader collections={COLLECTIONS} />);
+    const first = render(<AthkarReader collections={COLLECTIONS} period="morning" />);
     fireEvent.click(counter(2));
     first.unmount();
 
-    render(<AthkarReader collections={COLLECTIONS} />);
+    render(<AthkarReader collections={COLLECTIONS} period="morning" />);
 
     expect(counter(2)).toHaveTextContent('1 من 3');
   });
@@ -111,7 +124,7 @@ describe('AthkarReader', () => {
       JSON.stringify({ day: '2026-10-27', morning: { second: 3 }, evening: {} })
     );
 
-    render(<AthkarReader collections={COLLECTIONS} />);
+    render(<AthkarReader collections={COLLECTIONS} period="morning" />);
 
     expect(counter(2)).toHaveTextContent('0 من 3');
   });
@@ -130,6 +143,7 @@ describe('AthkarReader', () => {
             ],
           },
         }}
+        period="morning"
       />
     );
 
