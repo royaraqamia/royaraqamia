@@ -384,15 +384,14 @@ class ShellActivity : ComponentActivity() {
                                     onCopy = ::copyToClipboard,
                                 )
                             // The new-conversation panel (#934): the member
-                            // directory, the direct picker and the group form.
-                            // Ported and off until the visual gate passes
-                            // (ADR-0117), so the document still opens on top of
-                            // it; the direct pick opens the site's own preview.
+                            // directory and the direct picker. Ported and off
+                            // until the visual gate passes (ADR-0117), so the
+                            // document still opens on top of it; the direct pick
+                            // opens the site's own preview.
                             "/chats/new" ->
                                 ChatNewScreen(
                                     repository = graph.chats,
                                     onOpenPeer = ::openChatPreview,
-                                    onOpenThread = { openRoute(ChatRoutes.threadOf(it)) },
                                 )
                             // The community feed (#658): public like the page, so
                             // a guest reads it, and the last page read is painted

@@ -17,7 +17,6 @@ export const HiddenServiceKeySchema = z.enum([
   '/verify',
   '/consultation/book',
   '/rates',
-  '/downloader',
   '/scan',
   '/quran',
   '/athkar',

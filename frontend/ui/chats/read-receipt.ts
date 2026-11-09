@@ -25,7 +25,7 @@ function readPast(lastReadAt: string | null, createdAt: number): boolean {
  * Nobody's own message reads as read to itself, a tombstone carries no receipt,
  * and a line no one has reached yet says nothing at all.
  */
-export type ChatReadReceipt = { kind: 'peer' } | { kind: 'group'; count: number };
+export type ChatReadReceipt = { kind: 'peer' };
 
 export function readReceiptOf(
   thread: ChatThread,
@@ -46,25 +46,15 @@ export function readReceiptOf(
   );
 
   if (readers.length === 0) return null;
-  if (thread.kind === 'group') return { kind: 'group', count: readers.length };
   if (thread.kind === 'direct') return { kind: 'peer' };
   return null;
 }
 
 /**
  * Who is writing, as the thread words it. A direct thread already names the peer
- * in its header, so it needs only the act; a group has to say who (#816).
+ * in its header, so it needs only the act (#816).
  */
-export function typingLabel(thread: ChatThread, typers: string[]): string | null {
+export function typingLabel(_thread: ChatThread, typers: string[]): string | null {
   if (typers.length === 0) return null;
-  if (thread.kind !== 'group') return 'يكتب الآن...';
-
-  const nameOf = (userId: string) => {
-    const peer = thread.participants.find((participant) => participant.userId === userId)?.peer;
-    return peer?.name ?? peer?.username ?? null;
-  };
-
-  const first = nameOf(typers[0] ?? '');
-  if (!first) return 'يكتب أحد الأعضاء...';
-  return typers.length === 1 ? `${first} يكتب...` : `${first} وآخرون يكتبون...`;
+  return 'يكتب الآن...';
 }

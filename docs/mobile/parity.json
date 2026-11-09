@@ -261,10 +261,6 @@
           "copy": "rates"
         },
         {
-          "name": "Downloader",
-          "copy": "downloader"
-        },
-        {
           "name": "Scan",
           "copy": "scan"
         },
@@ -1481,12 +1477,16 @@
       "copySource": "shared/copy/chat-new.json",
       "states": [
         {
-          "name": "Direct",
-          "copy": "typeDirect"
+          "name": "Search",
+          "copy": "searchPlaceholder"
         },
         {
-          "name": "Group",
-          "copy": "typeGroup"
+          "name": "Searching",
+          "copy": "searching"
+        },
+        {
+          "name": "NoResults",
+          "copy": "noResults"
         }
       ]
     },

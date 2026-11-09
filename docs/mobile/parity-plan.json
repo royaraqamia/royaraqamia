@@ -62,7 +62,8 @@
     {
       "surface": "downloader",
       "phase": "public-content",
-      "state": "todo"
+      "state": "blocked",
+      "blockedBy": "hidden from the UI; the page stays reachable by direct URL but is not a port target"
     },
     {
       "surface": "community",

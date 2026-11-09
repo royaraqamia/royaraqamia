@@ -82,11 +82,6 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
-    path: '/downloader',
-    changeFrequency: 'monthly',
-    priority: 0.7,
-  },
-  {
     // The MCP setup guide. `/mcp` itself is disallowed in `robots.ts`; this is
     // the one crawlable page under that prefix, and `robots.ts` allows it.
     path: '/mcp/guide',

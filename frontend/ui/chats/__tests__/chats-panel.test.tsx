@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 
 import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
 
@@ -33,14 +33,12 @@ vi.mock('@/frontend/state/chats/use-chat-threads', () => ({
 
 const api = vi.hoisted(() => ({
   searchChatMembers: vi.fn(),
-  createChatGroup: vi.fn(),
   getChatAssistant: vi.fn(),
   startAssistantChat: vi.fn(),
 }));
 
 vi.mock('@/frontend/api/chats', () => ({
   searchChatMembers: api.searchChatMembers,
-  createChatGroup: api.createChatGroup,
   getChatAssistant: api.getChatAssistant,
   startAssistantChat: api.startAssistantChat,
 }));
@@ -99,7 +97,6 @@ describe('ChatsPanel', () => {
     hooks.start.mockReset().mockResolvedValue('c-1');
     hooks.respond.mockReset().mockResolvedValue(null);
     api.searchChatMembers.mockReset().mockResolvedValue([PEER]);
-    api.createChatGroup.mockReset();
     api.startAssistantChat.mockReset().mockResolvedValue({ success: true, conversationId: 'a-1' });
     // A Pro member by default: the row is offered, which is what the other tests
     // here assume. The lock has its own test below.
@@ -129,47 +126,15 @@ describe('ChatsPanel', () => {
   });
 
   /**
-   * A group is a row like a direct thread, so the list draws it by its name
-   * rather than by whichever member the read happened to order first.
+   * Group threads are hidden with the group feature: a row the member can no
+   * longer open is a row that lies.
    */
-  it('draws a group by its name with no member’s face', () => {
-    hooks.threads = [GROUP];
+  it('draws no group thread', () => {
+    hooks.threads = [GROUP, THREAD];
     render(<ChatsPanel />);
 
-    expect(screen.getByText('فريق التصميم')).toBeInTheDocument();
-    expect(screen.queryByRole('img')).not.toBeInTheDocument();
-  });
-
-  it('creates a named group from the picked members and enters it', async () => {
-    api.createChatGroup.mockResolvedValue({ success: true, conversationId: 'g-9' });
-    render(<ChatsPanel />);
-
-    fireEvent.click(screen.getByRole('button', { name: /محادثة جديدة/ }));
-    fireEvent.click(screen.getByRole('tab', { name: 'مجموعة' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'اسم المجموعة' }), {
-      target: { value: 'فريق التصميم' },
-    });
-    fireEvent.change(screen.getByRole('textbox', { name: 'البحث عن عضو' }), {
-      target: { value: 'al' },
-    });
-    fireEvent.click(await screen.findByRole('button', { name: /Alber Tabsi/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'إنشاء المجموعة' }));
-
-    await waitFor(() =>
-      expect(api.createChatGroup).toHaveBeenCalledWith('فريق التصميم', [PEER.id])
-    );
-    expect(navigation.push).toHaveBeenCalledWith('/chats/g-9');
-  });
-
-  it('says why a group with no name is refused, before any write', async () => {
-    render(<ChatsPanel />);
-
-    fireEvent.click(screen.getByRole('button', { name: /محادثة جديدة/ }));
-    fireEvent.click(screen.getByRole('tab', { name: 'مجموعة' }));
-    fireEvent.click(screen.getByRole('button', { name: 'إنشاء المجموعة' }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('اسم المجموعة مطلوب');
-    expect(api.createChatGroup).not.toHaveBeenCalled();
+    expect(screen.queryByText('فريق التصميم')).not.toBeInTheDocument();
+    expect(screen.getByText(PEER.name!)).toBeInTheDocument();
   });
 
   /**

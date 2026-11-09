@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Briefcase,
   CalendarCheck2,
-  Download,
   Flag,
   GraduationCap,
   Link2,
@@ -51,12 +50,6 @@ const SECTIONS = [
     label: 'اختصار الرَّوابط',
     description: 'إحصاءات المنصَّة ودليل الرَّوابط وحظر الرَّوابط',
     icon: Link2,
-  },
-  {
-    href: '/admin/downloader',
-    label: 'مُنزِّل الوسائط',
-    description: 'طلبات التَّنزيل، قائمة الحظر، المنصّات، والحدود',
-    icon: Download,
   },
   {
     href: '/admin/announcements',

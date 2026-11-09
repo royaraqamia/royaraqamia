@@ -128,12 +128,6 @@ fun ChatThread(
     var busy by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<String?>(null) }
     var editingText by remember { mutableStateOf("") }
-    var inviting by remember { mutableStateOf(false) }
-    var inviteQuery by remember { mutableStateOf("") }
-    var inviteResults by remember {
-        mutableStateOf<List<com.royaraqamia.app.contracts.generated.ChatMembersResponseMembersItem>>(emptyList())
-    }
-    var invited by remember { mutableStateOf<Set<String>>(emptySet()) }
     /** The newest line already stamped read: a re-read must not write again for it. */
     var markedLine by remember { mutableStateOf<String?>(null) }
     /** The lines the queue still owes, by their client id (#1127). */
@@ -304,10 +298,6 @@ fun ChatThread(
                     menuOpen = menuOpen,
                     editing = editing,
                     editingText = editingText,
-                    inviting = inviting,
-                    inviteQuery = inviteQuery,
-                    inviteResults = inviteResults,
-                    invited = invited,
                     pendingLines = pendingLines,
                     onRetry = { message ->
                         message.clientId?.let { clientId ->
@@ -356,43 +346,6 @@ fun ChatThread(
                                         ChatFailure.sentenceOf(result.error)
                                             ?: ChatThreadCopy.DOWNLOAD_FAILED
                             }
-                        }
-                    },
-                    onInviteOpen = {
-                        inviting = true
-                        inviteQuery = ""
-                        inviteResults = emptyList()
-                        invited = emptySet()
-                    },
-                    onInviteClose = { inviting = false },
-                    onInviteQuery = { query ->
-                        inviteQuery = query
-                        if (query.trim().length >= 2) {
-                            scope.launch {
-                                inviteResults =
-                                    when (val result = repository.members(query)) {
-                                        is ApiResult.Success -> result.value
-                                        is ApiResult.Failure -> emptyList()
-                                    }
-                            }
-                        } else {
-                            inviteResults = emptyList()
-                        }
-                    },
-                    onInviteToggle = { peerId ->
-                        invited =
-                            if (invited.contains(peerId)) invited - peerId else invited + peerId
-                    },
-                    onInviteSubmit = {
-                        scope.launch {
-                            busy = true
-                            val result = repository.invite(conversationId, invited.toList())
-                            busy = false
-                            if (result is ApiResult.Success) {
-                                inviting = false
-                                invited = emptySet()
-                            }
-                            report(result, ChatThreadCopy.REQUEST_FAILED)
                         }
                     },
                     onRespond = { accept -> dialog = ChatDialog.Respond(accept) },
@@ -474,8 +427,6 @@ private sealed interface ChatDialog {
 
     data object Block : ChatDialog
 
-    data object Leave : ChatDialog
-
     data class Delete(val messageId: String) : ChatDialog
 }
 
@@ -491,10 +442,6 @@ private fun ThreadBody(
     menuOpen: Boolean,
     editing: String?,
     editingText: String,
-    inviting: Boolean,
-    inviteQuery: String,
-    inviteResults: List<com.royaraqamia.app.contracts.generated.ChatMembersResponseMembersItem>,
-    invited: Set<String>,
     pendingLines: Map<String, ChatPending>,
     onRetry: (ChatMessagePageResponseMessagesItem) -> Unit,
     onDraft: (String) -> Unit,
@@ -508,11 +455,6 @@ private fun ThreadBody(
     onEditCancel: () -> Unit,
     onEditSave: (ChatMessagePageResponseMessagesItem) -> Unit,
     onDownload: (String) -> Unit,
-    onInviteOpen: () -> Unit,
-    onInviteClose: () -> Unit,
-    onInviteQuery: (String) -> Unit,
-    onInviteToggle: (String) -> Unit,
-    onInviteSubmit: () -> Unit,
     onRespond: (Boolean) -> Unit,
     onWithdraw: () -> Unit,
     onRequest: () -> Unit,
@@ -539,23 +481,7 @@ private fun ThreadBody(
             menuOpen = menuOpen,
             onMenu = onMenu,
             onBlock = { onDialog(ChatDialog.Block) },
-            onLeave = { onDialog(ChatDialog.Leave) },
         )
-
-        if (thread.kind == ChatThreadResponseThreadKind.GROUP) {
-            Roster(
-                thread = thread,
-                inviting = inviting,
-                query = inviteQuery,
-                results = inviteResults,
-                selected = invited,
-                onOpen = onInviteOpen,
-                onClose = onInviteClose,
-                onQuery = onInviteQuery,
-                onToggle = onInviteToggle,
-                onSubmit = onInviteSubmit,
-            )
-        }
 
         if (failure != null) {
             Text(
@@ -639,7 +565,6 @@ private fun ThreadHeader(
     menuOpen: Boolean,
     onMenu: (Boolean) -> Unit,
     onBlock: () -> Unit,
-    onLeave: () -> Unit,
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
@@ -660,27 +585,10 @@ private fun ThreadHeader(
             modifier = Modifier.size(Recipes.Glyph.md),
         )
 
-        if (thread.kind == ChatThreadResponseThreadKind.GROUP) {
-            Box(
-                modifier =
-                    Modifier.size(36.dp)
-                        .clip(CircleShape)
-                        .background(RoyColors.muted.copy(alpha = 0.6f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = LucideVectors.Users,
-                    contentDescription = null,
-                    tint = RoyColors.mutedForeground,
-                    modifier = Modifier.size(Recipes.Glyph.sm),
-                )
-            }
-        } else {
-            Avatar(
-                name = thread.counterpart?.name ?: thread.counterpart?.username ?: thread.title,
-                url = thread.counterpart?.avatarUrl,
-            )
-        }
+        Avatar(
+            name = thread.counterpart?.name ?: thread.counterpart?.username ?: thread.title,
+            url = thread.counterpart?.avatarUrl,
+        )
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -691,15 +599,7 @@ private fun ThreadHeader(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text =
-                    if (thread.kind == ChatThreadResponseThreadKind.DIRECT && counterpart != null) {
-                        "@$counterpart"
-                    } else {
-                        ChatThreadCopy.MEMBERS_COUNT.replace(
-                            "{count}",
-                            ChatText.membersOf(thread).size.toString(),
-                        )
-                    },
+                text = counterpart?.let { "@$it" } ?: "",
                 style = type.xs,
                 color = RoyColors.mutedForeground.copy(alpha = 0.7f),
                 maxLines = 1,
@@ -734,188 +634,11 @@ private fun ThreadHeader(
                         onClick = onBlock,
                     )
                 }
-                if (thread.kind == ChatThreadResponseThreadKind.GROUP) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                text = ChatThreadCopy.LEAVE,
-                                style = type.xs.copy(fontWeight = FontWeight.Medium),
-                                color = RoyColors.destructive,
-                            )
-                        },
-                        onClick = onLeave,
-                    )
-                }
             }
         }
     }
 
     HorizontalDivider(color = RoyColors.border.copy(alpha = 0.4f))
-}
-
-/** A group's roster and the invite panel that adds to it. */
-@Composable
-private fun Roster(
-    thread: ChatThreadResponseThread,
-    inviting: Boolean,
-    query: String,
-    results: List<com.royaraqamia.app.contracts.generated.ChatMembersResponseMembersItem>,
-    selected: Set<String>,
-    onOpen: () -> Unit,
-    onClose: () -> Unit,
-    onQuery: (String) -> Unit,
-    onToggle: (String) -> Unit,
-    onSubmit: () -> Unit,
-) {
-    val type = LocalRoyTypeScale.current
-    val spacing = LocalRoySpacing.current
-    val members = ChatText.membersOf(thread)
-    val canInvite = thread.me?.status == ChatThreadResponseThreadMeStatus.ACTIVE
-
-    Column(
-        modifier =
-            Modifier.fillMaxWidth()
-                .padding(horizontal = spacing.elementGapSm, vertical = spacing.elementGapSm),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-    ) {
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm)) {
-            items(members, key = { it.userId }) { participant ->
-                MemberChip(participant = participant)
-            }
-            if (canInvite) {
-                item {
-                    Row(
-                        modifier =
-                            Modifier.border(1.dp, RoyColors.border.copy(alpha = 0.7f), CircleShape)
-                                .clickable(onClick = onOpen)
-                                .padding(horizontal = spacing.elementGapSm, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            imageVector = LucideVectors.UserPlus,
-                            contentDescription = null,
-                            tint = RoyColors.primary,
-                            modifier = Modifier.size(13.dp),
-                        )
-                        Text(
-                            text = ChatThreadCopy.ADD,
-                            style = type.xs.copy(fontWeight = FontWeight.Bold),
-                            color = RoyColors.primary,
-                        )
-                    }
-                }
-            }
-        }
-
-        if (inviting) {
-            Column(
-                modifier =
-                    Modifier.border(
-                            1.dp,
-                            RoyColors.border.copy(alpha = 0.6f),
-                            RoundedCornerShape(12.dp),
-                        )
-                        .padding(spacing.elementGapSm),
-                verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-            ) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = onQuery,
-                    singleLine = true,
-                    label = { Text(text = ChatThreadCopy.ADD_MEMBERS, style = type.xs) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                results.forEach { peer ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth().clickable { onToggle(peer.id) },
-                        horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = peer.name ?: peer.username,
-                            style = type.xs,
-                            color =
-                                if (selected.contains(peer.id)) RoyColors.primary
-                                else RoyColors.foreground,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text(
-                            text = "@${peer.username}",
-                            style = type.xs,
-                            color = RoyColors.mutedForeground,
-                        )
-                    }
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = onClose, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            imageVector = LucideVectors.X,
-                            contentDescription = ChatThreadCopy.CANCEL,
-                            tint = RoyColors.mutedForeground,
-                            modifier = Modifier.size(12.dp),
-                        )
-                    }
-                    Text(
-                        text =
-                            ChatThreadCopy.ROSTER_COUNT
-                                .replace("{count}", members.size.toString())
-                                .replace("{max}", MAX_GROUP_MEMBERS.toString()),
-                        style = type.xs,
-                        color = RoyColors.mutedForeground.copy(alpha = 0.7f),
-                        modifier = Modifier.weight(1f),
-                    )
-                    TextButton(onClick = onClose) {
-                        Text(text = ChatThreadCopy.CANCEL, style = type.xs)
-                    }
-                    TextButton(onClick = onSubmit, enabled = selected.isNotEmpty()) {
-                        Text(
-                            text = ChatThreadCopy.INVITE,
-                            style = type.xs.copy(fontWeight = FontWeight.Bold),
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    HorizontalDivider(color = RoyColors.border.copy(alpha = 0.4f))
-}
-
-/** One member of a group's roster: a face, a name, and what their seat is. */
-@Composable
-private fun MemberChip(participant: ChatThreadResponseThreadParticipantsItem) {
-    val type = LocalRoyTypeScale.current
-    val spacing = LocalRoySpacing.current
-    val name = ChatText.nameOf(participant)
-
-    Row(
-        modifier =
-            Modifier.background(RoyColors.muted.copy(alpha = 0.5f), CircleShape)
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = name,
-            style = type.xs.copy(fontWeight = FontWeight.Medium),
-            color = RoyColors.foreground.copy(alpha = 0.8f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.width(88.dp),
-        )
-        if (participant.role.name == "OWNER") {
-            Text(text = ChatThreadCopy.OWNER, style = type.xs, color = RoyColors.mutedForeground)
-        }
-        if (participant.status == ChatThreadResponseThreadParticipantsItemStatus.INVITED) {
-            Text(text = ChatThreadCopy.INVITED, style = type.xs, color = RoyColors.mutedForeground)
-        }
-    }
 }
 
 /** The empty thread: who this is, and what can happen next. */
@@ -926,12 +649,7 @@ private fun Intro(thread: ChatThreadResponseThread, face: ThreadFace) {
 
     val note =
         when (face) {
-            ThreadFace.ANSWER ->
-                if (thread.kind == ChatThreadResponseThreadKind.GROUP) {
-                    ChatThreadCopy.INVITE_GROUP.replace("{title}", thread.title)
-                } else {
-                    ChatThreadCopy.INVITE_DIRECT.replace("{title}", thread.title)
-                }
+            ThreadFace.ANSWER -> ChatThreadCopy.INVITE_DIRECT.replace("{title}", thread.title)
             ThreadFace.WAITING -> ChatThreadCopy.WAITING_THREAD
             ThreadFace.CLOSED ->
                 if (thread.status == ChatThreadResponseThreadStatus.DECLINED) {
@@ -1056,16 +774,6 @@ private fun MessageRow(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(
-                            imageVector = LucideVectors.Download,
-                            contentDescription =
-                                ChatThreadCopy.DOWNLOAD_FILE.replace(
-                                    "{name}",
-                                    attachment.fileName,
-                                ),
-                            tint = if (mine) RoyColors.primaryForeground else RoyColors.foreground,
-                            modifier = Modifier.size(12.dp),
-                        )
                         Text(
                             text = attachment.fileName,
                             style = type.xs,
@@ -1236,12 +944,7 @@ private fun Footer(
             }
             ThreadFace.ANSWER -> {
                 Text(
-                    text =
-                        if (thread.kind == ChatThreadResponseThreadKind.GROUP) {
-                            ChatThreadCopy.INVITE_GROUP.replace("{title}", thread.title)
-                        } else {
-                            ChatThreadCopy.INVITE_DIRECT.replace("{title}", thread.title)
-                        },
+                    text = ChatThreadCopy.INVITE_DIRECT.replace("{title}", thread.title),
                     style = type.xs,
                     color = RoyColors.mutedForeground,
                     textAlign = TextAlign.Center,
@@ -1458,9 +1161,6 @@ private fun withinEditWindow(createdAtIso: String): Boolean {
     return Duration.between(created, Instant.now()) <= EDIT_WINDOW
 }
 
-/** The contract's ceiling on a group's members (`CHAT_GROUP_MEMBERS_MAX`). */
-private const val MAX_GROUP_MEMBERS = 32
-
 /** The confirmation one write asks for, and the write itself. */
 @Composable
 private fun ChatDialogCard(
@@ -1484,7 +1184,6 @@ private fun ChatDialogCard(
             ChatDialog.Withdraw -> ChatThreadCopy.WITHDRAW_TITLE
             ChatDialog.Block ->
                 ChatThreadCopy.BLOCK_TITLE.replace("{title}", thread?.title.orEmpty())
-            ChatDialog.Leave -> ChatThreadCopy.LEAVE_TITLE
             is ChatDialog.Delete -> ChatThreadCopy.DELETE_MESSAGE_TITLE
         }
     val message =
@@ -1496,7 +1195,6 @@ private fun ChatDialogCard(
                 )
             ChatDialog.Withdraw -> ChatThreadCopy.WITHDRAW_MESSAGE
             ChatDialog.Block -> ChatThreadCopy.BLOCK_MESSAGE
-            ChatDialog.Leave -> ChatThreadCopy.LEAVE_MESSAGE
             is ChatDialog.Delete -> ChatThreadCopy.DELETE_MESSAGE_MESSAGE
         }
     val label =
@@ -1504,7 +1202,6 @@ private fun ChatDialogCard(
             is ChatDialog.Respond -> if (dialog.accept) ChatsListCopy.ACCEPT else ChatsListCopy.DECLINE
             ChatDialog.Withdraw -> ChatThreadCopy.WITHDRAW
             ChatDialog.Block -> ChatThreadCopy.BLOCK
-            ChatDialog.Leave -> ChatThreadCopy.LEAVE_LABEL
             is ChatDialog.Delete -> ChatThreadCopy.DELETE
         }
 
@@ -1519,7 +1216,6 @@ private fun ChatDialogCard(
                         val peerId = thread?.counterpart?.id
                         if (peerId == null) ApiResult.Success(Unit) else repository.block(peerId)
                     }
-                    ChatDialog.Leave -> repository.leave(conversationId)
                     is ChatDialog.Delete -> repository.delete(dialog.messageId)
                 }
             onBusy(false)
@@ -1549,14 +1245,12 @@ private fun ChatDialogCard(
     )
 }
 
-/** The accept/decline sentence: a direct request and an invitation differ. */
+/** The accept/decline sentence for the request. */
 private fun answerSentence(thread: ChatThreadResponseThread?, accept: Boolean): String {
-    val group = thread?.kind == ChatThreadResponseThreadKind.GROUP
     val title = thread?.title.orEmpty()
-    return when {
-        accept && group -> ChatsListCopy.ACCEPT_GROUP_MESSAGE.replace("{title}", title)
-        accept -> ChatsListCopy.ACCEPT_DIRECT_MESSAGE.replace("{title}", title)
-        group -> ChatsListCopy.DECLINE_GROUP_MESSAGE
-        else -> ChatsListCopy.DECLINE_DIRECT_MESSAGE
+    return if (accept) {
+        ChatsListCopy.ACCEPT_DIRECT_MESSAGE.replace("{title}", title)
+    } else {
+        ChatsListCopy.DECLINE_DIRECT_MESSAGE
     }
 }

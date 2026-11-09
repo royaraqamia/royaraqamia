@@ -10,29 +10,15 @@
     "object": "ChatNewCopy"
   },
   "notes": {
-    "source": "The new-conversation panel, in both clients (#934): the two modes, the member directory's search with its answers, the group's name, its 1-31 invitees and the button that creates it. The site renders them in `frontend/ui/chats/new-conversation-panel.tsx`, which is the app's reference.",
-    "placeholders": "`removeInvitee` carries `{name}`, and `groupLimit` carries the members ceiling the contract names (`CHAT_GROUP_MEMBERS_MAX - 1`), so neither client spells a number or a name itself.",
+    "source": "The new-conversation panel, in both clients (#934): the member directory's search with its answers. The site renders them in `frontend/ui/chats/new-conversation-panel.tsx`, which is the app's reference.",
+    "placeholders": "None: every string is a label or a status line.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
   },
   "strings": {
-    "conversationType": "نوع المحادثة",
-    "typeDirect": "محادثة",
-    "typeGroup": "مجموعة",
     "searchPlaceholder": "ابحث باسم العضو أو معرِّفه",
     "searchLabel": "البحث عن عضو",
     "closeSearch": "إغلاق البحث",
     "searching": "جاري البحث...",
-    "noResults": "لا نتائج",
-    "inGroup": "في المجموعة",
-    "groupName": "اسم المجموعة",
-    "groupNameRequired": "اسم المجموعة مطلوب",
-    "groupMembersRequired": "أضف عضواً واحداً على الأقل",
-    "tooManyMembers": "عدد الأعضاء يتجاوز الحد",
-    "groupCreateFailed": "تعذّر إنشاء المجموعة",
-    "invitees": "المدعوون",
-    "removeInvitee": "إزالة {name}",
-    "groupCreating": "جاري الإنشاء...",
-    "groupCreate": "إنشاء المجموعة",
-    "groupLimit": "حتى {count} عضواً غيرك"
+    "noResults": "لا نتائج"
   }
 }

@@ -20,7 +20,7 @@ _The three surfaces that already have a Kotlin screen. Recording both sides here
 _Read with no session, so the page can be recorded without the fixture account and a failure is about the screen rather than about data._
 
 - [ ] **marketing** `/pricing` `/privacy` `/security` `/terms` `/app-info` — todo
-- [ ] **downloader** `/downloader` — todo
+- [ ] **downloader** `/downloader` — blocked · blocked by hidden from the UI; the page stays reachable by direct URL but is not a port target
 - [x] **community** `/community` — native
 - [ ] **community-post** `/community/[slug]` — todo
 - [ ] **profile** `/u/[username]` — todo · #927
@@ -150,4 +150,4 @@ A component is finished when the surface that draws it is native: 64 ported comp
 
 ## Where this stands
 
-13 native · 23 to do · 1 blocked of 37 surfaces.
+13 native · 22 to do · 2 blocked of 37 surfaces.

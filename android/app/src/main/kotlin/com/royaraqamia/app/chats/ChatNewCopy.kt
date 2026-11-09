@@ -12,23 +12,9 @@ package com.royaraqamia.app.chats
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object ChatNewCopy {
-    const val CONVERSATION_TYPE = "نوع المحادثة"
-    const val TYPE_DIRECT = "محادثة"
-    const val TYPE_GROUP = "مجموعة"
     const val SEARCH_PLACEHOLDER = "ابحث باسم العضو أو معرِّفه"
     const val SEARCH_LABEL = "البحث عن عضو"
     const val CLOSE_SEARCH = "إغلاق البحث"
     const val SEARCHING = "جاري البحث..."
     const val NO_RESULTS = "لا نتائج"
-    const val IN_GROUP = "في المجموعة"
-    const val GROUP_NAME = "اسم المجموعة"
-    const val GROUP_NAME_REQUIRED = "اسم المجموعة مطلوب"
-    const val GROUP_MEMBERS_REQUIRED = "أضف عضواً واحداً على الأقل"
-    const val TOO_MANY_MEMBERS = "عدد الأعضاء يتجاوز الحد"
-    const val GROUP_CREATE_FAILED = "تعذّر إنشاء المجموعة"
-    const val INVITEES = "المدعوون"
-    const val REMOVE_INVITEE = "إزالة {name}"
-    const val GROUP_CREATING = "جاري الإنشاء..."
-    const val GROUP_CREATE = "إنشاء المجموعة"
-    const val GROUP_LIMIT = "حتى {count} عضواً غيرك"
 }
