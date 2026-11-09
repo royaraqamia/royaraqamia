@@ -150,6 +150,52 @@ test.describe('primary pages', () => {
     expect(Math.round(720 - ((bar?.y ?? 0) + (bar?.height ?? 0)))).toBe(40);
   });
 
+  test('the corner FABs share the pill’s centre line', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/community');
+
+    // The compose FAB mounts after the session settles; the other two are
+    // chrome, but waiting on all three keeps the measurement from racing them.
+    await expect(page.locator(BOTTOM_BAR)).toBeVisible();
+    await expect(page.locator('.compose-fab-btn')).toBeVisible();
+    await expect(page.locator('[data-assistant-launcher]')).toBeVisible();
+
+    const measured = await page.evaluate(() => {
+      const box = (selector: string) => {
+        const element = document.querySelector(selector);
+        if (!element) return null;
+        const rect = element.getBoundingClientRect();
+        return {
+          left: rect.left,
+          width: rect.width,
+          centreY: rect.top + rect.height / 2,
+        };
+      };
+
+      const bar = box('[data-bottom-tabbar]');
+      const fab = box('.compose-fab-btn');
+      const orb = box('.assistant-orb');
+      if (!bar || !fab || !orb) throw new Error('a chrome box is missing');
+
+      return {
+        barCentre: bar.centreY,
+        fabCentre: fab.centreY,
+        orbCentre: orb.centreY,
+        // Both measured inwards from their own edge, so the two corners can be
+        // compared without the scrollbar's width.
+        fabInset: fab.left + fab.width / 2,
+        orbInset: document.documentElement.clientWidth - (orb.left + orb.width / 2),
+      };
+    });
+
+    // The pill is 58px and the corner controls 56px; their centres are one line.
+    expect(Math.abs(measured.fabCentre - measured.barCentre)).toBeLessThanOrEqual(1);
+    expect(Math.abs(measured.orbCentre - measured.barCentre)).toBeLessThanOrEqual(1);
+
+    // The orb mirrors the left FAB: both centres 48px in from the edge.
+    expect(Math.abs(measured.fabInset - measured.orbInset)).toBeLessThanOrEqual(1);
+  });
+
   test('a primary shell keeps its content clear of the fixed bar', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto('/community');

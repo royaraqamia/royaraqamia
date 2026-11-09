@@ -255,3 +255,33 @@ test('the corner FAB clears the mini player, and only while there is one', async
   const settled = await fab.boundingBox();
   expect(Math.abs((settled?.y ?? 0) - (resting?.y ?? 0))).toBeLessThanOrEqual(1);
 });
+
+/**
+ * The reader's float and the assistant share the corner band. They sit in
+ * opposite corners, so the assistant lands on the float's line instead of one
+ * clearance above its top (ADR-0087): the two read as one row, not a stagger.
+ */
+test('the assistant shares the reader float’s line', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/quran/1');
+  await expect(page.getByRole('region', { name: 'تلاوة السُّورة' })).toBeVisible();
+
+  const bottomGap = (selector: string) =>
+    page.evaluate((target) => {
+      const element = document.querySelector(target);
+      if (!element) return Number.NaN;
+      return window.innerHeight - element.getBoundingClientRect().bottom;
+    }, selector);
+
+  // The lift is published after the float mounts, so the line settles a frame
+  // later rather than in the first paint (ADR-0087).
+  await expect
+    .poll(async () => {
+      const [float, assistant] = await Promise.all([
+        bottomGap('section[aria-label="تلاوة السُّورة"]'),
+        bottomGap('[data-assistant-launcher]'),
+      ]);
+      return Math.abs(float - assistant);
+    })
+    .toBeLessThanOrEqual(1);
+});

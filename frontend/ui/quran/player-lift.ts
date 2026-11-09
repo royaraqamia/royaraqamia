@@ -14,7 +14,9 @@ export type PlayerLiftName = 'bar' | 'float';
  *
  * `app/global.css` raises the corner floats and the bottom pills by it
  * (`--roy-float-rise`), and puts them back at rest when nothing is playing
- * (ADR-0087).
+ * (ADR-0087). It also publishes the surface's own bottom edge
+ * (`--roy-player-<name>-bottom`): the assistant shares the reader's line rather
+ * than clearing its top, because the two sit in opposite corners.
  *
  * Measured rather than written into the stylesheet: the mini bar's height is its
  * content's, the reader's float gains and loses a line as the status changes, and
@@ -28,9 +30,11 @@ export function usePlayerLift<T extends HTMLElement>(name: PlayerLiftName): RefO
     const element = ref.current;
     if (!element) return;
 
-    const top = element.getBoundingClientRect().top;
-    const lift = Math.round(Math.max(window.innerHeight - top, 0) + GAP);
+    const rect = element.getBoundingClientRect();
+    const lift = Math.round(Math.max(window.innerHeight - rect.top, 0) + GAP);
+    const bottom = Math.round(Math.max(window.innerHeight - rect.bottom, 0));
     document.documentElement.style.setProperty(`--roy-player-${name}-lift`, `${lift}px`);
+    document.documentElement.style.setProperty(`--roy-player-${name}-bottom`, `${bottom}px`);
   }, [name]);
 
   useEffect(() => {
@@ -57,6 +61,7 @@ export function usePlayerLift<T extends HTMLElement>(name: PlayerLiftName): RefO
       attribute?.disconnect();
       window.removeEventListener('resize', publish);
       document.documentElement.style.removeProperty(`--roy-player-${name}-lift`);
+      document.documentElement.style.removeProperty(`--roy-player-${name}-bottom`);
     };
   }, [name, publish]);
 
