@@ -539,10 +539,10 @@ object LucideVectors {
         }.build()
     }
 
-    /** `circle-alert`, the site's own drawing. */
+    /** `circle-exclamation-point`, the site's own drawing. */
     val CircleAlert: ImageVector by lazy {
         ImageVector.Builder(
-            name = "circle-alert",
+            name = "circle-exclamation-point",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,
@@ -2318,10 +2318,10 @@ object LucideVectors {
         }.build()
     }
 
-    /** `shield-alert`, the site's own drawing. */
+    /** `shield-exclamation-point`, the site's own drawing. */
     val ShieldAlert: ImageVector by lazy {
         ImageVector.Builder(
-            name = "shield-alert",
+            name = "shield-exclamation-point",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,
@@ -2707,10 +2707,10 @@ object LucideVectors {
         }.build()
     }
 
-    /** `triangle-alert`, the site's own drawing. */
+    /** `triangle-exclamation-point`, the site's own drawing. */
     val TriangleAlert: ImageVector by lazy {
         ImageVector.Builder(
-            name = "triangle-alert",
+            name = "triangle-exclamation-point",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,

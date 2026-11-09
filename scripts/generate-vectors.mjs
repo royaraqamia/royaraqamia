@@ -25,6 +25,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const SOURCE = 'shared/icons/icons.json';
 export const OUTPUT = 'android/app/src/main/kotlin/com/royaraqamia/app/ui/vectors/LucideVectors.kt';
 
+/** How many renamed-module hops a glyph's drawing may hide behind. */
+const MAX_REEXPORTS = 4;
+
 /** `RotateCw` -> `rotate-cw`, the lucide module's own file name. */
 export function slug(name) {
   return (
@@ -135,9 +138,9 @@ export function primitiveToPath([tag, attrs]) {
   }
 }
 
-/** Load one lucide icon's own data: the same module the site imports. */
-async function iconData(name) {
-  const file = path.join(
+/** The module lucide keeps for the glyph the manifest names. */
+function iconFile(name) {
+  return path.join(
     ROOT,
     'node_modules',
     'lucide-react',
@@ -146,18 +149,44 @@ async function iconData(name) {
     'icons',
     `${slug(name)}.mjs`
   );
-  let module;
-  try {
-    module = await import(pathToFileURL(file).href);
-  } catch (error) {
-    throw new Error(
-      `generate-vectors: "${name}" is not in lucide-react (expected ${path.relative(ROOT, file)}): ${error.message}`
+}
+
+/**
+ * Load one lucide icon's own data: the same module the site imports.
+ *
+ * lucide renames a glyph by leaving its old module behind as a re-export -
+ * 1.68 turned `circle-alert` into `export { default } from
+ * './circle-exclamation-point.mjs'` - so the site's name still resolves while
+ * the drawing lives one hop away. Follow that hop instead of pinning the
+ * library (#1180).
+ */
+async function iconData(name) {
+  let file = iconFile(name);
+  for (let hop = 0; hop <= MAX_REEXPORTS; hop += 1) {
+    let module;
+    try {
+      module = await import(pathToFileURL(file).href);
+    } catch (error) {
+      throw new Error(
+        `generate-vectors: "${name}" is not in lucide-react (expected ${path.relative(ROOT, file)}): ${error.message}`
+      );
+    }
+    if (module.__iconData) {
+      return module.__iconData;
+    }
+
+    const reexport = /export \{ default \} from '\.\/(.+?)\.mjs'/.exec(
+      await readFile(file, 'utf8')
     );
+    if (!reexport) {
+      throw new Error(`generate-vectors: "${name}" carries no __iconData`);
+    }
+    file = path.join(path.dirname(file), `${reexport[1]}.mjs`);
   }
-  if (!module.__iconData) {
-    throw new Error(`generate-vectors: "${name}" carries no __iconData`);
-  }
-  return module.__iconData;
+
+  throw new Error(
+    `generate-vectors: "${name}" is still a re-export ${MAX_REEXPORTS} hops from its data`
+  );
 }
 
 /** The Kotlin file: one `ImageVector` per glyph, built from path data. */
