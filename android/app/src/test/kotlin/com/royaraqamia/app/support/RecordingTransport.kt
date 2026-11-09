@@ -9,6 +9,8 @@ data class SentRequest(
     val url: String,
     val headers: Map<String, String>,
     val body: String?,
+    /** The same body before it was decoded, for a request that carries a file (#945). */
+    val bodyBytes: ByteArray? = null,
 ) {
     /** The bearer an `Authorization` header carried, if any. */
     val bearer: String?
@@ -23,6 +25,9 @@ data class SentRequest(
  * port. The socket itself is `HttpTransport`, one object with no branching, and
  * what it exists to get right (timeouts, no redirect with a token attached) is
  * written there rather than proven by a fake.
+ *
+ * Both halves of the interface are recorded: a text body is what every JSON
+ * route sends, and [sendBytes] is the file part the avatar upload sends (#945).
  */
 class RecordingTransport(private val answer: (SentRequest) -> HttpResponse) : Transport {
     private val recorded = mutableListOf<SentRequest>()
@@ -39,8 +44,22 @@ class RecordingTransport(private val answer: (SentRequest) -> HttpResponse) : Tr
         url: String,
         headers: Map<String, String>,
         body: String?,
+    ): HttpResponse = sendBytes(method, url, headers, body?.toByteArray(Charsets.UTF_8))
+
+    override fun sendBytes(
+        method: String,
+        url: String,
+        headers: Map<String, String>,
+        body: ByteArray?,
     ): HttpResponse {
-        val request = SentRequest(method, url, headers, body)
+        val request =
+            SentRequest(
+                method = method,
+                url = url,
+                headers = headers,
+                body = body?.toString(Charsets.UTF_8),
+                bodyBytes = body,
+            )
         synchronized(recorded) { recorded.add(request) }
         return answer(request)
     }

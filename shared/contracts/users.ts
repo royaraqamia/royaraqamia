@@ -84,6 +84,34 @@ export const UpdateNameSchema = z.object({
 
 export type UpdateNameInput = z.infer<typeof UpdateNameSchema>;
 
+/**
+ * What `PATCH /api/me/name` answers: the name it kept, or the sentence that
+ * refused it. The app decodes this instead of guessing from the status, so a
+ * route that starts answering a different shape is a compile error in Kotlin
+ * (#945, ADR-0098).
+ */
+export const UpdateNameResponseSchema = z.object({
+  success: z.boolean(),
+  name: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type UpdateNameResponse = z.infer<typeof UpdateNameResponseSchema>;
+
+/**
+ * What `POST /api/me/avatar` answers: the public URL the profile now points at,
+ * or the sentence that refused the image. The same route the page's
+ * `ProfileEditor` posts to, so the app cannot invent a second upload contract
+ * (#945).
+ */
+export const AvatarUploadResponseSchema = z.object({
+  success: z.boolean(),
+  avatarUrl: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type AvatarUploadResponse = z.infer<typeof AvatarUploadResponseSchema>;
+
 /** Validation the avatar upload endpoint and the editor both enforce. */
 export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 export const AVATAR_ALLOWED_MIME_TYPES = [

@@ -1983,6 +1983,10 @@
     {
       "path": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanScreen.kt",
       "reason": "The Scanner screen (#932) draws the site's tokens and glyphs and is switched off until the visual gate pairs it with `/scan` (ADR-0117). Its words are still the page's inline ones, so there is no second copy source to pair yet; the exemption names the slice that removes it, and `docs/mobile/screens.json` records that the route is still the document's."
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountAvatar.kt",
+      "reason": "The account profile card that pairs it with `frontend/ui/account/profile-editor.tsx` is #946; this slice (#945) carries only the transport it reads through, so the avatar has no copy source or state of its own yet. It draws the site's circle and initial, which is why the pair is owed, and the exemption is removed when the card lands."
     }
   ]
 }
