@@ -346,7 +346,7 @@ test('a never-visited dynamic detail route keeps its parent shell', async ({
   // the homepage — the one ancestor every installed device holds.
   await page.goto(`${baseURL}/u/someone`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/u\/someone$/);
-  await expect(page.getByRole('heading', { name: /شريكك الاستراتيجي/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /ابدأ بتطبيقك الأوَّل/ })).toBeVisible();
   await expect(page.getByText(WITHDRAWN_ROUTE_CARD)).toHaveCount(0);
 
   // The limit is one visit deep, not one segment deep: opening the same detail
