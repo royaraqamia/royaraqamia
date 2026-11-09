@@ -19,7 +19,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `quran` | `/quran` | `QuranIndexScreen.kt` |  |
 | `notes` | `/notes` | _web only_ | The app shows the page as the document; the product's native screens land in phase 3 (#646). |
 | `quran-surah` | `/quran/[surah]` | `QuranSurahScreen.kt` |  |
-| `athkar` | `/athkar` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `athkar` | `/athkar`<br>`/athkar/evening` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948) and the profile card with its two dialogs is drawn (#946); the allowance card (#947) is still the page's, so the surface stays off until it is the whole page. |
 | `account-links` | `/account/links` | `LinksnapScreen.kt` |  |
 | `account-posts` | `/account/posts` | _web only_ | The account's post management page is web-only in this phase; it arrives with the native account surface (#658). |
