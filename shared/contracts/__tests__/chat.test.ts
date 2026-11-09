@@ -53,7 +53,7 @@ describe('chatTitle', () => {
     expect(chatTitle({ kind: 'group', title: 'فريق التصميم', counterpart: null })).toBe(
       'فريق التصميم'
     );
-    expect(chatTitle({ kind: 'agent', title: null, counterpart: null })).toBe('المساعد الذكي');
+    expect(chatTitle({ kind: 'agent', title: null, counterpart: null })).toBe('نور');
   });
 });
 

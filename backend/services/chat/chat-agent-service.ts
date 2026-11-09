@@ -92,16 +92,16 @@ export class ChatAgentTurnFailure extends ChatAgentError {
 
 /** The system prompt, kept apart from the history the member wrote. */
 export const SYSTEM_PROMPT = [
-  'أنت «المساعد الذكي» في تطبيق رؤى رقمية، تجيب بالعربية الفصحى المبسطة وبإيجاز.',
-  'لديك أدوات تقرأ بيانات العضو نفسه؛ استخدمها عندما يسأل عن بياناته بدل التخمين.',
+  'أنتِ «نور»، المساعدة الذكية في رؤية رقمية، تجيبين بالعربية الفصحى المبسطة وبإيجاز.',
+  'لديكِ أدوات تقرأ بيانات العضو نفسه؛ استخدميها عندما يسأل عن بياناته بدل التخمين.',
   // The turn reads the member's files before the model is asked (ADR-0127,
   // ADR-0139, ADR-0140), but a prompt that only lists tools reads as "tools are
   // all you have": asked whether it could read a picture, the model answered
   // that it had no way to receive one and told the member to paste the text.
-  'قد يصل مع رسالة العضو مرفق — صورة أو مستند أو ملف نصي أو تسجيل صوتي — وقد قُرئ لك في هذه الرسالة؛ اقرأه وأجب عنه، ولا تقل إنك لا تستقبل المرفقات.',
-  'كل أداة كتابة لا تنفّذ شيئاً الآن: تُعرض على العضو كاقتراح، ولا تُنفَّذ إلا بعد أن يؤكّدها بنفسه. قل ذلك بوضوح ولا تدّعِ أنك نفّذت شيئاً.',
-  'لا تطلب من العضو معرّف حسابه ولا تكتب معرّف عضو في أي أداة؛ الخادم يعرف من أنت.',
-  'إن سُئلت عن شيء خارج معرفتك، قل ذلك بوضوح بدل التخمين.',
+  'قد يصل مع رسالة العضو مرفق — صورة أو مستند أو ملف نصي أو تسجيل صوتي — وقد قُرئ لكِ في هذه الرسالة؛ اقرئيه وأجيبي عنه، ولا تقولي إنك لا تستقبلين المرفقات.',
+  'كل أداة كتابة لا تنفّذ شيئاً الآن: تُعرض على العضو كاقتراح، ولا تُنفَّذ إلا بعد أن يؤكّدها بنفسه. قولي ذلك بوضوح ولا تدّعي أنك نفّذت شيئاً.',
+  'لا تطلبي من العضو معرّف حسابه ولا تكتبي معرّف عضو في أي أداة؛ الخادم يعرف من أنتِ.',
+  'إن سُئلتِ عن شيء خارج معرفتك، قولي ذلك بوضوح بدل التخمين.',
   'الأرقام تُكتب دائماً بالأرقام اللاتينية (0-9).',
   // The length and assumption rules are the same three doors share (ADR-0136).
   // The assistant is the member-facing one, so it may explain in one sentence
@@ -135,9 +135,9 @@ export function allowanceSpentSentence(resetsAt: string): string {
   return `وصلت إلى حد اليوم. يعود الحد بعد ${time}.`;
 }
 
-const PLAN_LOCKED = 'المساعد متاح لمشتركي الخطة المدفوعة.';
-const UNAVAILABLE = 'المساعد غير متاح حالياً.';
-const COULD_NOT_ANSWER = 'تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى.';
+const PLAN_LOCKED = 'نور متاحة لمشتركي الخطة المدفوعة.';
+const UNAVAILABLE = 'نور غير متاحة حالياً.';
+const COULD_NOT_ANSWER = 'تعذّر الحصول على ردّ من نور. حاول مرّة أخرى.';
 /** A recording no model would transcribe. */
 const COULD_NOT_TRANSCRIBE = 'لم أستطع تحويل الصوت إلى نص. أعد إرساله أو اكتبه.';
 /** A file whose bytes could not be read back from the bucket. */
@@ -165,7 +165,7 @@ const ATTACHMENT_TEXT_MAX = 20_000;
 /** An image's ceiling in a turn, because base64 rides inside the request body. */
 const ATTACHMENT_IMAGE_MAX = 5 * 1024 * 1024;
 /** A picture the provider would refuse after the turn already spent its count. */
-const IMAGE_TOO_LARGE = 'الصورة كبيرة جداً على المساعد. أرسل صورة أصغر أو اكتب سؤالك.';
+const IMAGE_TOO_LARGE = 'الصورة كبيرة جداً على نور. أرسل صورة أصغر أو اكتب سؤالك.';
 
 /** A ledger row the project's ceiling refused (`private.enforce_chat_agent_project_cap`). */
 function isProjectAllowanceRefusal(error: unknown): boolean {
@@ -284,7 +284,7 @@ export class ChatAgentService {
 
     const thread = await this.deps.chats.getThread(userId, conversationId);
     if (!thread) throw new ChatAgentError(404, 'المحادثة غير موجودة');
-    if (thread.kind !== 'agent') throw new ChatAgentError(400, 'هذه المحادثة ليست مع المساعد');
+    if (thread.kind !== 'agent') throw new ChatAgentError(400, 'هذه المحادثة ليست مع نور');
 
     const allowance = await this.deps.agent.allowance(userId);
     if (allowance.member.cap === 0) throw new ChatAgentError(402, PLAN_LOCKED);
@@ -706,7 +706,7 @@ function classifiedFailure(error: unknown, partialText: string): ChatAgentTurnFa
   return new ChatAgentTurnFailure(
     502,
     error instanceof AiChatProviderError && (error.status === 402 || error.status === 429)
-      ? 'المساعد مشغول الآن، حاول بعد قليل.'
+      ? 'نور مشغولة الآن، حاول بعد قليل.'
       : COULD_NOT_ANSWER,
     partialText
   );

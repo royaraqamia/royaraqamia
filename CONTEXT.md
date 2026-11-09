@@ -67,6 +67,20 @@ member search, the sitemap and the chat picker skip it, and `/u/<handle>` answer
 the member itself and an Admin (ADR-0127). The row is not deleted and its content is untouched.
 _Avoid_: Banned member, deleted account, private profile
 
+### Assistant
+
+**نور**:
+The product's assistant: one conversation per member, opened from the corner of every screen and
+from the Chats tab. It answers questions, reads the member's own data through its tools, and
+proposes writes that only the member can confirm.
+_Sold as_: نور، مساعدة رؤية رقمية
+_Avoid_: المساعد الذكي, AI assistant, chatbot, bot
+
+**Assistant Turn**:
+One question to نور and the answer it streams back, with the read tools it used and any proposal it
+made. It spends the member's daily allowance and resets at Damascus midnight.
+_Avoid_: Message, query, request, prompt
+
 ### Certificates
 
 **Certificate**:

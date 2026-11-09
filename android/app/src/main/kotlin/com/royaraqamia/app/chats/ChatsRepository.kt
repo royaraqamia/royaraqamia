@@ -579,6 +579,72 @@ class ChatsRepository(
             is ApiResult.Failure -> result
         }
 
+    /**
+     * One assistant turn, streamed into the floating sheet (ADR-0143).
+     *
+     * The files go up first, on the bucket's own policy, and the turn carries
+     * their metadata — the site's order (`use-chat-assistant.ts`) and the same
+     * paths. A refused turn removes what it uploaded, so the bucket never holds
+     * an object no message names. The frames are parsed a layer up
+     * ([com.royaraqamia.app.assistant.parseAssistantEvent]) so this half stays a
+     * transport a JVM test can drive with a fake stream.
+     */
+    suspend fun streamAssistant(
+        conversationId: String,
+        body: String,
+        files: List<ChatComposeFile>,
+        onEvent: (com.royaraqamia.app.assistant.AssistantEvent) -> Unit,
+    ): ApiResult<Unit> =
+        withContext(Dispatchers.IO) {
+            val storage = attachmentStorage
+            val uploaded = mutableListOf<ChatAttachmentInput>()
+
+            if (files.isNotEmpty()) {
+                if (storage == null) return@withContext ApiResult.Failure(ApiError.Server(500, ""))
+                for (file in files) {
+                    when (val put = storage.upload(conversationId, file)) {
+                        is ApiResult.Success -> uploaded += put.value
+                        is ApiResult.Failure -> {
+                            storage.remove(uploaded.map { it.storagePath })
+                            return@withContext put
+                        }
+                    }
+                }
+            }
+
+            val payload =
+                buildJsonObject {
+                        put("body", body)
+                        if (uploaded.isNotEmpty()) {
+                            put(
+                                "attachments",
+                                buildJsonArray {
+                                    uploaded.forEach { attachment ->
+                                        add(
+                                            buildJsonObject {
+                                                put("storagePath", attachment.storagePath)
+                                                put("fileName", attachment.fileName)
+                                                put("mimeType", attachment.mimeType)
+                                                put("byteSize", attachment.byteSize)
+                                            }
+                                        )
+                                    }
+                                },
+                            )
+                        }
+                    }
+                    .toString()
+
+            val result =
+                client.streamPost(assistantTurnPath(conversationId), payload) { data ->
+                    com.royaraqamia.app.assistant.parseAssistantEvent(data)?.let(onEvent)
+                }
+
+            // A turn that never landed leaves no message naming those objects.
+            if (result is ApiResult.Failure) storage?.remove(uploaded.map { it.storagePath })
+            result
+        }
+
     /** One attachment's minute-long signed URL: the app hands it to the browser. */
     suspend fun attachmentUrl(
         conversationId: String,
@@ -832,6 +898,10 @@ class ChatsRepository(
         fun messagesPath(conversationId: String): String = "${threadPath(conversationId)}/messages"
 
         fun messagePath(messageId: String): String = "$THREADS_PATH/messages/$messageId"
+
+        /** The one streamed route: a turn with the assistant (ADR-0143). */
+        fun assistantTurnPath(conversationId: String): String =
+            "${threadPath(conversationId)}/assistant"
 
         fun respondPath(conversationId: String): String = "${threadPath(conversationId)}/respond"
 

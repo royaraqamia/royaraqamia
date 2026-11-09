@@ -17,6 +17,8 @@ import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-fail
 import { AssistantMark } from './assistant-mark';
 import { NewConversationPanel } from './new-conversation-panel';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
+import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
+
 /**
  * What a past instant is, in the chats surface's words (#819).
  *
@@ -43,8 +45,6 @@ export function chatTimeAgo(iso: string): string {
       return formatHijriDate(iso);
   }
 }
-
-import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
 
 /**
  * The notifications page's Chats tab: the caller's threads, the requests that

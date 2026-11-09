@@ -24,6 +24,7 @@ import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
 import { ibmPlexSansArabic } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
 import { AppPerfObserver } from '@/frontend/ui/AppPerfObserver';
+import { AssistantLauncher } from '@/frontend/ui/assistant/assistant-launcher';
 
 const designTokensCss = (() => {
   try {
@@ -185,6 +186,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         {children}
                         <BottomTabBar />
                         <GlobalPlayer />
+                        {/* The assistant's door is chrome, not a page: one
+                            mount here puts it on every screen the member can
+                            reach, including the ones added later (ADR-0143). */}
+                        <AssistantLauncher />
                       </PWAProvider>
                       <RoyaToaster />
                     </NotificationProvider>

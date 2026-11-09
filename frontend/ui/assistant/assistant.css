@@ -1,0 +1,17 @@
+/* The floating assistant's stylesheet (ADR-0143).
+ *
+ * The door itself is shell chrome and its classes are compiled by
+ * `app/global.css`; the conversation is loaded on first open, so its utilities
+ * arrive with that chunk instead of every page paying for the chats surface it
+ * reuses. Same preamble as every surface (`app/surface.css`), same tokens, and
+ * only the sources this panel draws.
+ *
+ * The chats sources are here because the panel is the thread's composer and
+ * bubbles, not a second copy of them: the classes those components name must be
+ * compiled wherever they are rendered.
+ */
+
+@import '../../../app/surface.css';
+
+@source './';
+@source '../chats';

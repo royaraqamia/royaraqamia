@@ -49,7 +49,7 @@ export interface ChatAgentActionResolutionContext {
 
 const ALREADY_RESOLVED = 'تمّت معالجة هذا الإجراء مسبقاً.';
 const NOT_FOUND = 'الإجراء غير موجود.';
-const NOT_ASSISTANT_THREAD = 'هذه المحادثة ليست مع المساعد.';
+const NOT_ASSISTANT_THREAD = 'هذه المحادثة ليست مع نور.';
 
 export class ChatAgentActionService {
   constructor(private readonly deps: ChatAgentActionServiceDeps) {}

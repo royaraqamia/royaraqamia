@@ -4,9 +4,12 @@ import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.ContractCodec
 import com.royaraqamia.app.net.HttpResponse
+import com.royaraqamia.app.net.HttpStreamTransport
 import com.royaraqamia.app.net.HttpTransport
 import com.royaraqamia.app.net.MultipartBody
 import com.royaraqamia.app.net.MultipartFile
+import com.royaraqamia.app.net.StreamAnswer
+import com.royaraqamia.app.net.StreamTransport
 import com.royaraqamia.app.net.Transport
 import com.royaraqamia.app.session.Session
 import com.royaraqamia.app.update.ShellUpdateChannel
@@ -50,6 +53,8 @@ class ApiClient(
     private val baseUrl: String,
     private val session: Session,
     private val transport: Transport = HttpTransport,
+    /** The SSE half (#ADR-0143); a test hands its own parser-facing fake. */
+    private val streamTransport: StreamTransport = HttpStreamTransport,
 ) {
     /**
      * The origin the app speaks for, which the write routes' `isSameOrigin`
@@ -200,6 +205,70 @@ class ApiClient(
 
         return ApiResult.Success(answered)
     }
+
+    /**
+     * One streamed `POST`, answered frame by frame (#ADR-0143).
+     *
+     * The assistant's turn is the only route that writes while it answers, so it
+     * is the only caller. Everything around the frames is the buffered client's
+     * policy: the bearer, the one refresh a 401 is allowed, the `426` floor, and
+     * a failure that is a sentence the screen can draw. A frame the parser cannot
+     * read is dropped by the caller, not here.
+     */
+    suspend fun streamPost(
+        path: String,
+        body: String,
+        onData: (String) -> Unit,
+    ): ApiResult<Unit> =
+        withContext(Dispatchers.IO) {
+            val sent = session.attempt() ?: return@withContext ApiResult.Failure(ApiError.NotSignedIn)
+
+            var answered = streamOnce(path, sent.accessToken, body, onData)
+            if (answered.status == 401) {
+                if (!session.renew(sent.generation)) {
+                    return@withContext ApiResult.Failure(ApiError.NotSignedIn)
+                }
+                val renewed = session.attempt()
+                    ?: return@withContext ApiResult.Failure(ApiError.NotSignedIn)
+                answered = streamOnce(path, renewed.accessToken, body, onData)
+            }
+
+            when {
+                answered.status == 0 ->
+                    ApiResult.Failure(ApiError.Network(answered.errorBody.ifEmpty { "unreachable" }))
+                answered.status == 401 -> ApiResult.Failure(ApiError.NotSignedIn)
+                answered.status !in 200..299 -> {
+                    if (answered.status == ShellUpdateRequired.STATUS) {
+                        ShellUpdateChannel.require(ShellUpdateRequired.floorOf(answered.errorBody))
+                    }
+                    ApiResult.Failure(
+                        ApiError.Server(answered.status, answered.errorBody.take(MAX_DETAIL))
+                    )
+                }
+                else -> ApiResult.Success(Unit)
+            }
+        }
+
+    private fun streamOnce(
+        path: String,
+        accessToken: String,
+        body: String,
+        onData: (String) -> Unit,
+    ): StreamAnswer =
+        try {
+            streamTransport.stream(
+                url = urlFor(path),
+                headers =
+                    mapOf(
+                        "Authorization" to "Bearer $accessToken",
+                        "Content-Type" to "application/json",
+                    ),
+                body = body,
+                onData = onData,
+            )
+        } catch (error: IOException) {
+            StreamAnswer(0, error.message ?: "unreachable")
+        }
 
     /** [get] with the serializer taken from the type the caller asked for. */
     suspend inline fun <reified T> get(path: String): ApiResult<T> = get(path, serializer<T>())
