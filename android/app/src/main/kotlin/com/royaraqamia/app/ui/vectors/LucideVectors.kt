@@ -1600,6 +1600,32 @@ object LucideVectors {
         }.build()
     }
 
+    /** `pause`, the site's own drawing. */
+    val Pause: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "pause",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M15 3h3a1 0 0 0 1 1 0v18a1 0 0 0 1 -1 0h-3a1 0 0 0 1 -1 0v-18a1 0 0 0 1 1 0z"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M6 3h3a1 0 0 0 1 1 0v18a1 0 0 0 1 -1 0h-3a1 0 0 0 1 -1 0v-18a1 0 0 0 1 1 0z"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `pen-line`, the site's own drawing. */
     val PenLine: ImageVector by lazy {
         ImageVector.Builder(
@@ -1644,6 +1670,25 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("m15 5 4 4"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `play`, the site's own drawing. */
+    val Play: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "play",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
@@ -2350,6 +2395,25 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("M2 20a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `square`, the site's own drawing. */
+    val Square: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "square",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M5 3h14a2 0 0 0 1 2 0v18a2 0 0 0 1 -2 0h-14a2 0 0 0 1 -2 0v-18a2 0 0 0 1 2 0z"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,

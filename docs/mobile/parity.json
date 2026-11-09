@@ -1943,6 +1943,50 @@
       ]
     },
     {
+      "id": "quran-player",
+      "surface": "quran-surah",
+      "issue": "#956",
+      "web": {
+        "route": "app/quran/[surah]/page.tsx",
+        "component": "frontend/ui/quran/player-float.tsx",
+        "copyModule": "frontend/ui/quran/quran-player-copy.ts",
+        "copyExport": "QURAN_PLAYER_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranPlayerPanel.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranPlayerState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranPlayerCopy.kt",
+        "copyObject": "QuranPlayerCopy"
+      },
+      "copySource": "shared/copy/quran-player.json",
+      "states": [
+        {
+          "name": "Idle",
+          "copy": "listen"
+        },
+        {
+          "name": "Loading",
+          "copy": "loading"
+        },
+        {
+          "name": "Playing",
+          "copy": "pause"
+        },
+        {
+          "name": "Paused",
+          "copy": "resume"
+        },
+        {
+          "name": "Offline",
+          "copy": "offline"
+        },
+        {
+          "name": "Failed",
+          "copy": "error"
+        }
+      ]
+    },
+    {
       "id": "news-digest",
       "surface": "news",
       "issue": "#926",

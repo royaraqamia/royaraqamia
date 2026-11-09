@@ -74,6 +74,10 @@ fun QuranSurahScreen(
     position: QuranReadingPosition?,
     onSavePosition: (ayah: Int) -> Unit,
     modifier: Modifier = Modifier,
+    face: QuranPlayerFace = QuranPlayerFace.Idle,
+    onPlay: () -> Unit = {},
+    onToggle: () -> Unit = {},
+    onStop: () -> Unit = {},
 ) {
     val scroll = rememberScrollState()
     var cardTops by remember { mutableStateOf<Map<Int, Float>>(emptyMap()) }
@@ -110,7 +114,10 @@ fun QuranSurahScreen(
                 Modifier.fillMaxSize()
                     .verticalScroll(scroll)
                     .padding(horizontal = QuranSurahMetrics.horizontalPadding)
-                    .padding(top = QuranSurahMetrics.topPadding, bottom = QuranSurahMetrics.bottomPadding),
+                    .padding(
+                        top = QuranSurahMetrics.topPadding,
+                        bottom = QuranSurahMetrics.bottomPadding + QuranSurahMetrics.playerClearance,
+                    ),
         ) {
             SurahHeader(summary = summary)
 
@@ -145,6 +152,15 @@ fun QuranSurahScreen(
                 }
             }
         }
+
+        val primary =
+            if (face is QuranPlayerFace.Playing || face is QuranPlayerFace.Paused) onToggle else onPlay
+        QuranPlayerPanel(
+            face = face,
+            onPrimary = primary,
+            onStop = onStop,
+            modifier = Modifier.align(Alignment.BottomEnd),
+        )
     }
 }
 
@@ -370,6 +386,9 @@ internal object QuranSurahMetrics {
     val horizontalPadding = 16.dp
     val topPadding = 32.dp
     val bottomPadding = 32.dp
+
+    /** Room for the recitation panel, so the last Ayah ends above it. */
+    val playerClearance = 80.dp
     val headerGap = 8.dp
     val sessionTop = 56.dp
     val ayahGap = 16.dp

@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AlertTriangle, Check, Loader2, Pause, Play, Square } from 'lucide-react';
+import { Check, LoaderCircle, Pause, Play, Square, TriangleAlert } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useQuranPlayer } from '@/frontend/state/quran/player-context';
+import { QURAN_PLAYER_COPY } from './quran-player-copy';
 import { usePlayerLift } from './player-lift';
 
 interface PlayerFloatProps {
@@ -41,16 +42,16 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
   }, [actions, surah, ayahCount]);
 
   const label = isPlaying
-    ? 'إيقاف مؤقّت'
+    ? QURAN_PLAYER_COPY.pause
     : isPaused
-      ? 'متابعة'
+      ? QURAN_PLAYER_COPY.resume
       : isBusy
-        ? 'جاري التَّحميل…'
+        ? QURAN_PLAYER_COPY.loading
         : isFaulted
-          ? 'إعادة المحاولة'
-          : 'استمع للسُّورة';
+          ? QURAN_PLAYER_COPY.retry
+          : QURAN_PLAYER_COPY.listen;
 
-  const Icon = isPlaying ? Pause : isBusy ? Loader2 : isFaulted ? AlertTriangle : Play;
+  const Icon = isPlaying ? Pause : isBusy ? LoaderCircle : isFaulted ? TriangleAlert : Play;
 
   const onPrimary = () => {
     if (!isActive) {
@@ -65,7 +66,7 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
   return (
     <section
       ref={liftRef}
-      aria-label="تلاوة السُّورة"
+      aria-label={QURAN_PLAYER_COPY.sectionLabel}
       // What this device holds for the sura, once that has been read. A browser
       // test waits on it rather than guessing when hydration finished.
       data-audio-state={savedState ?? 'unknown'}
@@ -81,8 +82,8 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
           <button
             type="button"
             onClick={() => actions.stop()}
-            aria-label="إيقاف التِّلاوة"
-            title="إيقاف التِّلاوة"
+            aria-label={QURAN_PLAYER_COPY.stop}
+            title={QURAN_PLAYER_COPY.stop}
             className="inline-flex size-11 items-center justify-center rounded-full border border-border/70 bg-card text-muted-foreground shadow-md shadow-foreground/10 transition-safe hover:border-border hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <Square aria-hidden="true" className="size-3.5" />
@@ -106,8 +107,8 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
           aria-live="polite"
           className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm"
         >
-          الآية <span className="font-heading">{state.ayah}</span> من{' '}
-          <span className="font-heading">{ayahCount}</span>
+          {QURAN_PLAYER_COPY.ayahLabel} <span className="font-heading">{state.ayah}</span>{' '}
+          {QURAN_PLAYER_COPY.ofLabel} <span className="font-heading">{ayahCount}</span>
         </p>
       ) : null}
 
@@ -116,26 +117,26 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
           aria-live="polite"
           className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm"
         >
-          <Loader2 aria-hidden="true" className="size-3 animate-spin" />
-          جاري الحفظ… <span className="font-heading">{keepState.done}</span> من{' '}
-          <span className="font-heading">{keepState.total}</span>
+          <LoaderCircle aria-hidden="true" className="size-3 animate-spin" />
+          {QURAN_PLAYER_COPY.keepWorking} <span className="font-heading">{keepState.done}</span>{' '}
+          {QURAN_PLAYER_COPY.ofLabel} <span className="font-heading">{keepState.total}</span>
         </p>
       ) : savedState === 'complete' ? (
         <p className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] font-bold text-primary shadow-sm">
           <Check aria-hidden="true" className="size-3" />
-          محفوظة على هذا الجُهاز، تعمل دون اتِّصال
+          {QURAN_PLAYER_COPY.savedComplete}
         </p>
       ) : savedState === 'partial' ? (
         <p className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm">
-          بعض آياتها محفوظة فقط
+          {QURAN_PLAYER_COPY.savedPartial}
         </p>
       ) : isActive && state.status === 'offline' ? (
         <p className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-destructive shadow-sm">
-          هذه السُّورة غير محفوظة على هذا الجُهاز، وتحتاج اتِّصالًا لتشغيلها.
+          {QURAN_PLAYER_COPY.offline}
         </p>
       ) : isActive && state.status === 'error' ? (
         <p className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-destructive shadow-sm">
-          تعذَّر تشغيل التِّلاوة. تحقَّق من الاتِّصال ثمَّ أعد المحاولة.
+          {QURAN_PLAYER_COPY.error}
         </p>
       ) : null}
     </section>
