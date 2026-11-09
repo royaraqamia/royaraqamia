@@ -86,13 +86,10 @@ describe('AccountView', () => {
     expect(screen.getByRole('link', { name: /خطط التَّسعير/ })).toHaveAttribute('href', '/pricing');
     expect(screen.queryByText('الاستهلاك')).not.toBeInTheDocument();
 
-    // The legal rows are public too — plain links for a guest.
-    for (const [label, href] of [
-      ['سياسة الخصوصيَّة', '/privacy'],
-      ['شروط الاستخدام', '/terms'],
-      ['سياسة الأمان', '/security'],
-    ] as const) {
-      expect(screen.getByRole('link', { name: new RegExp(label) })).toHaveAttribute('href', href);
+    // The legal pages stay published and indexed, but they are no longer rows
+    // on this page (account rows are hidden; the sitemap still carries them).
+    for (const label of ['سياسة الخصوصيَّة', 'شروط الاستخدام', 'سياسة الأمان']) {
+      expect(screen.queryByRole('link', { name: new RegExp(label) })).not.toBeInTheDocument();
     }
 
     // The site footer itself belongs to the layout, outside `<main>`, and has
@@ -158,7 +155,7 @@ describe('AccountView', () => {
     expect(screen.queryByText('سجِّل الدُّخول إلى حسابك')).not.toBeInTheDocument();
   });
 
-  it('sits the legal rows between تواصل معنا and تسجيل الخروج', () => {
+  it('ends the public links at تواصل معنا and then signs out', () => {
     mocks.session.user = { id: 'u1', email: 'user@example.com' };
     render(<AccountView />);
 
@@ -167,13 +164,6 @@ describe('AccountView', () => {
       Array.from(element.children)[0]?.textContent?.trim()
     );
 
-    expect(order.slice(-6)).toEqual([
-      'الأسئلة الشَّائعة',
-      'تواصل معنا',
-      'سياسة الخصوصيَّة',
-      'شروط الاستخدام',
-      'سياسة الأمان',
-      'تسجيل الخروج',
-    ]);
+    expect(order.slice(-2)).toEqual(['تواصل معنا', 'تسجيل الخروج']);
   });
 });

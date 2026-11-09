@@ -8,13 +8,10 @@ import {
   FileText,
   CircleQuestionMark,
   Link2,
-  Lock,
   LogOut,
   MessageCircle,
   Newspaper,
   Plug,
-  ScrollText,
-  Shield,
   ShieldCheck,
   ShieldOff,
   Sparkles,
@@ -131,11 +128,6 @@ export function AccountRows({ onRequireAuth, onSignOut, children }: AccountRowsP
           icon={MessageCircle}
           label={ACCOUNT_ROWS_COPY.contact}
         />
-
-        {/* Legal pages — public, so plain links for guests and members alike. */}
-        <PlainRow href="/privacy" icon={Lock} label={ACCOUNT_ROWS_COPY.privacy} />
-        <PlainRow href="/terms" icon={ScrollText} label={ACCOUNT_ROWS_COPY.terms} />
-        <PlainRow href="/security" icon={Shield} label={ACCOUNT_ROWS_COPY.security} />
 
         {user && (
           <button
