@@ -1,7 +1,7 @@
 {
   "surface": "home",
   "route": "/",
-  "notes": "The door's own boxes (ADR-0146), declared before the native sheet ports them (phase 5 of #1194). `strip` measures the horizontally scrolling row of apps and the control that opens the picker; `picker` measures the same add/remove sheet the strip's end control and the empty state open. The pills themselves are left out of `strip`: their order is the member's, so the contract measures the row, not one app's label - the app test that draws it is named by the gate entry when the sheet is ported, and until then this file is a contract with no recording, which `check:visual` reports as declared and not yet captured rather than pretending the page and an app agree. Widths of the sheet's title are left out because its width is the run of text; colours are the raster's job. The empty state is the third state of the same surface and is recorded when the strip is.",
+  "notes": "The door's own boxes (ADR-0146), declared before the native sheet ports them (phase 5 of #1194). `strip` measures the horizontally scrolling row of apps and the control that opens the picker; `picker` measures the same add/remove sheet the strip's end control and the empty state open. The pills themselves are left out of `strip`: their order is the member's, so the contract measures the row, not one app's label - the app test that draws it is named by the gate entry when the sheet is ported, and until then this file is a contract with no recording, which `check:visual` reports as declared and not yet captured rather than pretending the page and an app agree. The sheet carries no visible title (ADR-0153), so there is no title box to measure. The empty state is the third state of the same surface and is recorded when the strip is.",
   "states": [
     {
       "name": "strip",
@@ -32,12 +32,6 @@
           "web": { "selector": "[data-visual='services-sheet']" },
           "app": { "tag": "services-sheet" },
           "properties": ["top", "width", "height", "radius", "paddingTop"]
-        },
-        {
-          "name": "title",
-          "web": { "selector": "[data-visual='services-sheet-title']" },
-          "app": { "tag": "services-sheet-title" },
-          "properties": ["top", "height", "fontSize", "fontWeight"]
         },
         {
           "name": "row",
