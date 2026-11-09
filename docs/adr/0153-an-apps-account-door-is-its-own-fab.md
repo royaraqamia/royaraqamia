@@ -24,10 +24,10 @@ settings page on one app, and none on another.
   the sheet's accessible name on the site (`sr-only`) and is dropped from the
   app's sheet, so a screen reader still announces what opened.
 
-- **The FAB belongs to the route, not the surface.** `LinkSnapSurface` is drawn
-  both by `app/linksnap/(app)/page.tsx` and by the homepage under its strip
-  (ADR-0151), so the account door is mounted by the route: the strip's app
-  carries no floating control over the homepage.
+- **The FAB belongs to the app's surface.** `LinkSnapSurface` is drawn both by
+  `app/linksnap/(app)/page.tsx` and by the homepage under its strip
+  (ADR-0151), so the surface owns the account door and the route renders it
+  wherever it goes — see the amendment below.
 
 ## Why not the alternatives
 
@@ -55,6 +55,29 @@ settings page on one app, and none on another.
   screen; `shared/visual/linksnap.json` names no box for it either. The port
   (native button, a `parity.json` row, the copy in `shared/copy`, the contract
   box) is [#1208](https://github.com/royaraqamia/royaraqamia/issues/1208).
+
+## Amendment: the FAB follows the app to the homepage tab
+
+Mounted by the route, the door appeared on `/linksnap` and nowhere else: a
+reader who chose LinkSnap in the homepage strip could not reach their links
+without leaving for `/linksnap` first — the route the tab exists to save them
+from. `/news` never had that hole, because its gear lives in `NewsSurface`. The
+two apps disagreed about where the control goes even after this ADR made them
+agree about the control itself.
+
+The FAB now lives in `LinkSnapSurface`, the way `NewsSettingsFab` lives in
+`NewsSurface`. Both the route and the tab render the surface, so the two cannot
+drift; the destination (`/account/links`) and the guest's sign-in prompt are
+unchanged.
+
+- The "FAB belongs to the route" clause above is superseded by this amendment.
+- `shared/visual/home.json` keeps measuring the strip, the picker and the empty
+  state; the FAB is one component in two places, and the box
+  [#1208](https://github.com/royaraqamia/royaraqamia/issues/1208) adds to
+  `shared/visual/linksnap.json` measures it.
+- [#1208](https://github.com/royaraqamia/royaraqamia/issues/1208)'s native port
+  is unaffected: `LinksnapShortenerScreen` draws the control as part of its
+  screen either way.
 
 ## Related
 

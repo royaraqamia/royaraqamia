@@ -1,5 +1,4 @@
 import { LinkSnapSurface } from '@/frontend/ui/linksnap/linksnap-surface';
-import { LinksnapLinksFab } from '@/frontend/ui/linksnap/linksnap-links-fab';
 
 /**
  * A cached, data-free shell (#449, ADR-0073).
@@ -9,14 +8,9 @@ import { LinksnapLinksFab } from '@/frontend/ui/linksnap/linksnap-links-fab';
  * Without it the document is static, and an offline reload paints the shortener
  * and the account's links instead of `/offline`.
  *
- * The FAB stays in the route, not in the surface: the homepage draws the same
- * surface under its strip, and the shortener's account door belongs to its page.
+ * The surface owns the links door too, so the homepage tab draws it (ADR-0153,
+ * amended) — the route renders the page, never a second copy of the FAB.
  */
 export default function LinkSnapAppPage() {
-  return (
-    <>
-      <LinkSnapSurface />
-      <LinksnapLinksFab />
-    </>
-  );
+  return <LinkSnapSurface />;
 }
