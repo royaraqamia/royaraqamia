@@ -1,25 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import dynamic from 'next/dynamic';
+import { useState, type ComponentType } from 'react';
 import { usePathname } from 'next/navigation';
 
-import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import { ASSISTANT_LAUNCHER_COPY } from './assistant-launcher-copy';
 import { AssistantOrb } from './assistant-orb';
 
 /**
  * The conversation is its own chunk: a reader who never asks نور anything should
  * not download the composer, the streaming reader or the message list on every
- * page. A chunk that cannot be fetched renders nothing, so a missing panel can
- * never take the page down with it (`docs/specs/offline-first.md`, #332).
+ * page. The import happens in the click, not in a `next/dynamic` declaration,
+ * because the loader runtime would ride along in the shell's chunk for every
+ * page — and a chunk that cannot be fetched simply opens nothing, so a missing
+ * panel can never take the page down with it (`docs/specs/offline-first.md`,
+ * #332).
  */
-const AssistantPanel = dynamic(
-  tolerateChunkFailure('assistant panel', () =>
-    import('./assistant-panel').then((module) => ({ default: module.AssistantPanel }))
-  ),
-  { ssr: false }
-);
+type PanelComponent = ComponentType<{ onDismiss: () => void }>;
 
 /**
  * Where the door is not drawn.
@@ -51,8 +47,23 @@ function isHidden(pathname: string): boolean {
 export function AssistantLauncher() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [Panel, setPanel] = useState<PanelComponent | null>(null);
 
   if (isHidden(pathname ?? '')) return null;
+
+  /** Fetch the conversation on the first open, then keep it for this page load. */
+  function openPanel() {
+    if (Panel) {
+      setOpen(true);
+      return;
+    }
+    void import('./assistant-panel')
+      .then((module) => {
+        setPanel(() => module.AssistantPanel);
+        setOpen(true);
+      })
+      .catch(() => undefined);
+  }
 
   return (
     <>
@@ -63,7 +74,7 @@ export function AssistantLauncher() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={ASSISTANT_LAUNCHER_COPY.navLabel}
-        onClick={() => setOpen(true)}
+        onClick={openPanel}
         className="group fixed bottom-[calc(var(--roy-corner-rest)+var(--roy-float-rise))] z-50 inline-flex items-center justify-center gap-2.5 rounded-full border border-white/10 bg-neutral-950 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.9)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-0.5 hover:border-violet-400/40 hover:shadow-[0_24px_48px_-18px_rgba(139,92,246,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 max-sm:start-4 max-sm:p-0 sm:start-6 sm:ps-1.5 sm:pe-5 print:hidden"
       >
         <AssistantOrb className="shrink-0 max-sm:size-14 sm:size-11" />
@@ -72,7 +83,7 @@ export function AssistantLauncher() {
         </span>
       </button>
 
-      {open ? <AssistantPanel onDismiss={() => setOpen(false)} /> : null}
+      {open && Panel ? <Panel onDismiss={() => setOpen(false)} /> : null}
     </>
   );
 }
