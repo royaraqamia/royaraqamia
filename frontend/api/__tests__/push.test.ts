@@ -1,15 +1,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const { mockRequest } = vi.hoisted(() => ({ mockRequest: vi.fn() }));
+const { mockRequest, ApiError } = vi.hoisted(() => {
+  class ApiError extends Error {
+    readonly code?: string;
+    readonly retryAfterMs?: number;
 
-vi.mock('@/frontend/transport/http', () => ({
-  request: mockRequest,
-  ApiError: class ApiError extends Error {},
-}));
+    constructor(
+      message: string,
+      readonly status?: number,
+      options?: { code?: string; retryAfterMs?: number }
+    ) {
+      super(message);
+      this.name = 'ApiError';
+      this.code = options?.code;
+      this.retryAfterMs = options?.retryAfterMs;
+    }
+  }
+  return { mockRequest: vi.fn(), ApiError };
+});
+
+vi.mock('@/frontend/transport/http', () => ({ request: mockRequest, ApiError }));
 
 import {
   applicationServerKeyMatches,
   isPushDisabledByUser,
+  isPushSubscriptionPendingSync,
+  pushRetryKind,
   releasePushSubscription,
   setPushDisabledByUser,
   subscribeToPush,
@@ -126,6 +142,90 @@ describe('push disabled preference', () => {
     mockRequest.mockRejectedValue(new Error('Failed to fetch'));
 
     expect(await subscribeToPush()).toBe('denied');
+  });
+});
+
+/**
+ * A refused save used to be `unreachable` whatever the server said, and the
+ * subscription it had just created was thrown away — so every visit created a
+ * new endpoint and retried a bucket that counted the refusals (#1023 follow-up).
+ */
+describe('a refused save', () => {
+  it('names the rate limit and keeps the subscription for the retry', async () => {
+    const { subscription } = installPushGlobals();
+    mockRequest.mockRejectedValue(
+      new ApiError('تم تجاوز حد الاشتراك في الإشعارات', 429, {
+        code: 'rate_limited',
+        retryAfterMs: 600_000,
+      })
+    );
+
+    expect(await subscribeToPush()).toBe('rateLimited');
+
+    expect(subscription.unsubscribe).not.toHaveBeenCalled();
+    expect(isPushSubscriptionPendingSync()).toBe(true);
+    expect(pushRetryKind()).toBe('rateLimited');
+  });
+
+  it('retries the save, not the subscription, so the endpoint is not minted twice', async () => {
+    const { registration } = installPushGlobals({ existing: true });
+    mockRequest.mockRejectedValueOnce(new ApiError('حد', 429, { code: 'rate_limited' }));
+    expect(await subscribeToPush()).toBe('rateLimited');
+
+    mockRequest.mockResolvedValue({ success: true });
+    expect(await subscribeToPush()).toBe('subscribed');
+
+    expect(registration.pushManager.subscribe).not.toHaveBeenCalled();
+    expect(isPushSubscriptionPendingSync()).toBe(false);
+    expect(pushRetryKind()).toBeNull();
+  });
+
+  it('names an expired session instead of the connection', async () => {
+    installPushGlobals();
+    mockRequest.mockRejectedValue(new ApiError('غير مصرح', 401, { code: 'session_expired' }));
+
+    expect(await subscribeToPush()).toBe('unauthorized');
+  });
+
+  it('names any other server refusal as a retry, not as the connection', async () => {
+    installPushGlobals();
+    mockRequest.mockRejectedValue(new ApiError('فشل حفظ الاشتراك', 500));
+
+    expect(await subscribeToPush()).toBe('failed');
+    expect(pushRetryKind()).toBe('failed');
+  });
+
+  it('clears the remembered failure and the pending marker on success', async () => {
+    installPushGlobals({ existing: true });
+    mockRequest.mockRejectedValueOnce(new Error('Failed to fetch'));
+    expect(await subscribeToPush()).toBe('unreachable');
+    expect(pushRetryKind()).toBe('unreachable');
+
+    mockRequest.mockResolvedValue({ success: true });
+    expect(await subscribeToPush()).toBe('subscribed');
+
+    expect(pushRetryKind()).toBeNull();
+    expect(isPushSubscriptionPendingSync()).toBe(false);
+  });
+
+  it('forgets the pending save when the user turns the device off', async () => {
+    installPushGlobals({ existing: true });
+    mockRequest.mockRejectedValue(new ApiError('حد', 429, { code: 'rate_limited' }));
+    await subscribeToPush();
+
+    await unsubscribeFromPush();
+
+    expect(isPushSubscriptionPendingSync()).toBe(false);
+    expect(pushRetryKind()).toBeNull();
+  });
+
+  it('falls back to its own cooldown when the server sends no wait', async () => {
+    installPushGlobals();
+    mockRequest.mockRejectedValue(new ApiError('حد', 429, { code: 'rate_limited' }));
+
+    await subscribeToPush();
+
+    expect(pushRetryKind()).toBe('rateLimited');
   });
 });
 

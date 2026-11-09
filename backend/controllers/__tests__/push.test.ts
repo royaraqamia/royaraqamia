@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockGetAuthUser = vi.fn();
 const mockCheckRateLimit = vi.fn();
+const mockGetRateLimitDecision = vi.fn();
 const mockUpsert = vi.fn();
 const mockRemoveByEndpoint = vi.fn();
 const mockCreatePushSubscriptionsRepository = vi.fn();
@@ -26,6 +27,7 @@ vi.mock('@/backend/config/identity', async () => {
 
 vi.mock('@/backend/config/rate-limiter', () => ({
   checkRateLimit: (...args: unknown[]) => mockCheckRateLimit(...args),
+  getRateLimitDecision: (...args: unknown[]) => mockGetRateLimitDecision(...args),
 }));
 
 vi.mock('@/backend/repositories/push/supabase-repository', () => ({
@@ -80,6 +82,7 @@ describe('push controller', () => {
       supabase: {},
     });
     mockCheckRateLimit.mockResolvedValue(true);
+    mockGetRateLimitDecision.mockResolvedValue({ allowed: true, retryAfterMs: 0 });
     mockUpsert.mockResolvedValue(undefined);
     mockRemoveByEndpoint.mockResolvedValue(undefined);
     mockCreatePushSubscriptionsRepository.mockReturnValue({
@@ -99,6 +102,7 @@ describe('push controller', () => {
       const result = await subscribePush(validBody, sameOriginHeaders());
 
       expect(result.status).toBe(401);
+      expect(result).toMatchObject({ body: expect.objectContaining({ code: 'session_expired' }) });
       expect(mockUpsert).not.toHaveBeenCalled();
     });
 
@@ -131,15 +135,28 @@ describe('push controller', () => {
       expect(mockUpsert).not.toHaveBeenCalled();
     });
 
-    it('returns 429 when the rate limit is exceeded', async () => {
-      mockCheckRateLimit.mockResolvedValue(false);
+    it('returns 429 with a code and the wait the limiter still needs', async () => {
+      mockGetRateLimitDecision.mockResolvedValue({ allowed: false, retryAfterMs: 90_000 });
       const { subscribePush } = await importControllers();
 
       const result = await subscribePush(validBody, sameOriginHeaders());
 
-      expect(result.status).toBe(429);
-      expect(mockCheckRateLimit).toHaveBeenCalledWith('push:subscribe:u-1', 20, 3600_000);
+      expect(result).toMatchObject({
+        status: 429,
+        body: expect.objectContaining({ success: false, code: 'rate_limited' }),
+        headers: { 'Retry-After': '90' },
+      });
+      expect(mockGetRateLimitDecision).toHaveBeenCalledWith('push:subscribe:u-1', 20, 3600_000);
       expect(mockUpsert).not.toHaveBeenCalled();
+    });
+
+    it('never sends a Retry-After of zero', async () => {
+      mockGetRateLimitDecision.mockResolvedValue({ allowed: false, retryAfterMs: 0 });
+      const { subscribePush } = await importControllers();
+
+      const result = await subscribePush(validBody, sameOriginHeaders());
+
+      expect(result).toMatchObject({ headers: { 'Retry-After': '1' } });
     });
 
     it('uses the session user id (never a client-supplied id)', async () => {

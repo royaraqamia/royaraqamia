@@ -2,7 +2,7 @@ import { timingSafeEqual } from 'crypto';
 import { getAuthUser } from '@/backend/middleware/auth-guard';
 import { createPushSubscriptionsRepository } from '@/backend/repositories/push/supabase-repository';
 import { createDevicePushTokensRepository } from '@/backend/repositories/push/supabase-device-tokens-repository';
-import { checkRateLimit } from '@/backend/config/rate-limiter';
+import { checkRateLimit, getRateLimitDecision } from '@/backend/config/rate-limiter';
 import { createPushNotifier, createFcmPushService, runAfter } from '@/backend/config/push';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { mapWithConcurrency } from '@/backend/services/push/dispatch';
@@ -27,6 +27,11 @@ const WAKE_RATE_LIMIT = 60;
 const WAKE_RATE_WINDOW_MS = 3600_000;
 const WEBHOOK_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+/** `Retry-After` is whole seconds, and never 0: a client must wait at least a moment. */
+function retryAfterSeconds(retryAfterMs: number): string {
+  return String(Math.max(1, Math.ceil(retryAfterMs / 1000)));
+}
+
 /**
  * Registers (or refreshes) this browser's Web Push subscription.
  *
@@ -40,7 +45,11 @@ export async function subscribePush(body: unknown, headers: Headers): Promise<Ht
   try {
     const { user } = await getAuthUser();
     if (!user) {
-      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
+      return jsonResult(401, {
+        success: false,
+        code: 'session_expired',
+        error: 'غير مصرح. يرجى تسجيل الدخول.',
+      });
     }
     if (!isSameOrigin(headers)) {
       return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
@@ -51,13 +60,19 @@ export async function subscribePush(body: unknown, headers: Headers): Promise<Ht
       return jsonResult(400, { success: false, error: 'بيانات الاشتراك غير صحيحة' });
     }
 
-    const allowed = await checkRateLimit(
+    const decision = await getRateLimitDecision(
       `push:subscribe:${user.id}`,
       SUBSCRIBE_RATE_LIMIT,
       SUBSCRIBE_RATE_WINDOW_MS
     );
-    if (!allowed) {
-      return jsonResult(429, { success: false, error: 'تم تجاوز حد الاشتراك في الإشعارات' });
+    if (!decision.allowed) {
+      // The wait travels with the refusal: a client that retries on its own
+      // schedule keeps a sliding window full and locks itself out for good.
+      return jsonResult(
+        429,
+        { success: false, code: 'rate_limited', error: 'تم تجاوز حد الاشتراك في الإشعارات' },
+        { headers: { 'Retry-After': retryAfterSeconds(decision.retryAfterMs) } }
+      );
     }
 
     // user_id always comes from the session, never from the client body.

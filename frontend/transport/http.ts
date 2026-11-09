@@ -11,14 +11,27 @@ const NETWORK_ERROR_MESSAGE = 'تعذّر الاتصال بالخادم. تحق�
 const REQUEST_ERROR_MESSAGE = 'تعذّر إتمام الطلب. أعد المحاولة.';
 const UPDATE_REQUIRED_MESSAGE = 'يلزم تحديث التَّطبيق للمتابعة.';
 
+export interface ApiErrorOptions {
+  cause?: unknown;
+  /** The server's machine-readable refusal (`RATE_LIMITED`), when it named one. */
+  code?: string;
+  /** How long the server asked the caller to wait, from `Retry-After`. */
+  retryAfterMs?: number;
+}
+
 export class ApiError extends Error {
+  readonly code?: string;
+  readonly retryAfterMs?: number;
+
   constructor(
     message: string,
     public status?: number,
-    options?: { cause?: unknown }
+    options?: ApiErrorOptions
   ) {
-    super(message, options);
+    super(message, { cause: options?.cause });
     this.name = 'ApiError';
+    this.code = options?.code;
+    this.retryAfterMs = options?.retryAfterMs;
   }
 
   /**
@@ -37,6 +50,26 @@ function serverMessage(data: unknown): string | undefined {
   if (typeof error === 'string' && error.trim() !== '') return error;
   if (typeof message === 'string' && message.trim() !== '') return message;
   return undefined;
+}
+
+function serverCode(data: unknown): string | undefined {
+  if (typeof data !== 'object' || data === null) return undefined;
+  const { code } = data as { code?: unknown };
+  return typeof code === 'string' && code.trim() !== '' ? code : undefined;
+}
+
+/**
+ * `Retry-After` is whole seconds or an HTTP date. This app's own routes send
+ * seconds; a proxy's date form is honoured too, so a refusal never loses the
+ * wait it came with.
+ */
+function retryAfterMs(headers: Headers | undefined): number | undefined {
+  const raw = headers?.get?.('retry-after') ?? null;
+  if (!raw) return undefined;
+  const seconds = Number(raw);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+  const at = Date.parse(raw);
+  return Number.isNaN(at) ? undefined : Math.max(0, at - Date.now());
 }
 
 /**
@@ -108,7 +141,10 @@ export async function requestWithMeta<T>(
 
   if (!res.ok || data?.success === false) {
     const message = serverMessage(data) ?? REQUEST_ERROR_MESSAGE;
-    throw new ApiError(message, res.status);
+    throw new ApiError(message, res.status, {
+      code: serverCode(data),
+      retryAfterMs: retryAfterMs(res.headers),
+    });
   }
 
   return { data: data as T, keepable: isResponseKeepable(res) };

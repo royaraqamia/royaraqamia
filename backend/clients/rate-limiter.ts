@@ -16,6 +16,15 @@ export interface RateLimiterOptions {
   failClosed?: boolean;
 }
 
+export interface RateLimitDecision {
+  allowed: boolean;
+  /**
+   * Milliseconds until the caller may try again. `0` when the call was allowed,
+   * and also when a limiter outage fails open: there is no window to wait out.
+   */
+  retryAfterMs: number;
+}
+
 export interface RateLimiter {
   checkRateLimit(
     key: string,
@@ -29,6 +38,16 @@ export interface RateLimiter {
     windowMs: number,
     options?: RateLimiterOptions
   ): Promise<number>;
+  /**
+   * The refusal plus the wait it implies, for a caller that has to tell the
+   * client what to do next (`Retry-After`) instead of only that it said no.
+   */
+  getRateLimitDecision(
+    key: string,
+    limit: number,
+    windowMs: number,
+    options?: RateLimiterOptions
+  ): Promise<RateLimitDecision>;
 }
 
 export class RateLimiterService implements RateLimiter {
@@ -105,6 +124,23 @@ export class RateLimiterService implements RateLimiter {
       return success;
     } catch {
       return options.failClosed ? false : true;
+    }
+  }
+
+  async getRateLimitDecision(
+    key: string,
+    limit: number,
+    windowMs: number,
+    options: RateLimiterOptions = {}
+  ): Promise<RateLimitDecision> {
+    try {
+      const limiter = this.getLimiter(limit, windowMs);
+      const { success, reset } = await limiter.limit(key);
+      return { allowed: success, retryAfterMs: success ? 0 : Math.max(0, reset - Date.now()) };
+    } catch {
+      return options.failClosed
+        ? { allowed: false, retryAfterMs: windowMs }
+        : { allowed: true, retryAfterMs: 0 };
     }
   }
 

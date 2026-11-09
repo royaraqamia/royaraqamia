@@ -5,7 +5,9 @@ import { Bell } from 'lucide-react';
 import {
   applicationServerKeyMatches,
   isPushDisabledByUser,
+  isPushSubscriptionPendingSync,
   isPushSupported,
+  pushRetryKind,
   refreshSubscriptionLiveness,
   subscribeToPush,
   unsubscribeFromPush,
@@ -28,19 +30,39 @@ type PushToggleState =
   | { kind: 'denied' }
   /** The registration could not reach the server; the toggle stays for a retry. */
   | { kind: 'unreachable' }
+  /** The server refused and asked us to wait; retrying now only refills the bucket. */
+  | { kind: 'rateLimited' }
+  /** The session is gone, so the server has no account to attach the device to. */
+  | { kind: 'unauthorized' }
+  /** The server answered, but not with a reason this screen can act on. */
+  | { kind: 'failed' }
   | { kind: 'enabled' }
   | { kind: 'disabled' };
 
 /**
- * What a refused `subscribeToPush()` means for the toggle. A permission denial is
- * the browser's answer and stands until the user changes it in browser settings;
- * an unreachable server is this moment's answer, so the toggle stays live as its
- * own retry and the copy names the connection instead of a setting.
+ * What a refused `subscribeToPush()` means for the toggle. Only a permission
+ * denial is the browser's answer; a refused save is the server's, and each cause
+ * gets its own sentence instead of the connection copy it used to share.
  */
 function toFailureState(result: PushSubscribeResult): PushToggleState {
-  if (result === 'denied') return { kind: 'denied' };
-  if (result === 'unreachable') return { kind: 'unreachable' };
-  return { kind: 'disabled' };
+  switch (result) {
+    case 'denied':
+      return { kind: 'denied' };
+    case 'rateLimited':
+      return { kind: 'rateLimited' };
+    case 'unauthorized':
+      return { kind: 'unauthorized' };
+    case 'unreachable':
+      return { kind: 'unreachable' };
+    case 'failed':
+      return { kind: 'failed' };
+    default:
+      return { kind: 'disabled' };
+  }
+}
+
+function toResultState(result: PushSubscribeResult): PushToggleState {
+  return result === 'subscribed' ? { kind: 'enabled' } : toFailureState(result);
 }
 
 export function PushNotificationToggle() {
@@ -74,9 +96,21 @@ export function PushNotificationToggle() {
       setState({ kind: 'disabled' });
       return;
     }
+    // A failure from an earlier visit stands until its cooldown runs out. Asking
+    // again on every visit is what kept the subscribe bucket full, so the answer
+    // the user already has is the one to show.
+    const remembered = pushRetryKind();
+    if (remembered) {
+      setState({ kind: remembered });
+      return;
+    }
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
-    setState(subscription ? { kind: 'enabled' } : { kind: 'disabled' });
+    // A subscription the server has not acknowledged cannot deliver, so it is
+    // not "enabled": the pending marker is cleared by the next successful save.
+    setState(
+      subscription && !isPushSubscriptionPendingSync() ? { kind: 'enabled' } : { kind: 'disabled' }
+    );
   }, []);
 
   useEffect(() => {
@@ -99,25 +133,29 @@ export function PushNotificationToggle() {
   // this effect runs in the same commit as the one that sets `native`, so state
   // would still say "web" inside the shell and the WebView would be subscribed
   // to a transport that cannot deliver.
+  //
+  // A remembered failure stops this before it asks: the cooldown exists so a
+  // refusal is not repeated on every mount, which is what turned one rate limit
+  // into a permanent one.
   useEffect(() => {
     if (isNativePushSupported()) return;
     if (!isPushSupported()) return;
     if (Notification.permission !== 'granted') return;
     if (isPushDisabledByUser()) return;
+    if (pushRetryKind()) return;
     void (async () => {
       const registration = await navigator.serviceWorker.ready;
       const existing = await registration.pushManager.getSubscription();
       if (existing) {
         if (applicationServerKeyMatches(existing, VAPID_PUBLIC_KEY)) {
-          // Still valid server-side; just refresh its liveness timestamp so
-          // the stale-subscription sweep keeps it.
-          void refreshSubscriptionLiveness(existing);
+          // Still valid server-side; the same POST refreshes its liveness
+          // timestamp and retries a save that never landed.
+          setState(toResultState(await refreshSubscriptionLiveness(existing)));
           return;
         }
         await existing.unsubscribe();
       }
-      const result = await subscribeToPush();
-      setState(result === 'subscribed' ? { kind: 'enabled' } : toFailureState(result));
+      setState(toResultState(await subscribeToPush()));
     })();
   }, []);
 
@@ -143,9 +181,7 @@ export function PushNotificationToggle() {
         setState({ kind: 'disabled' });
         return;
       }
-      const result = await subscribeToPush();
-      if (result === 'subscribed') setState({ kind: 'enabled' });
-      else setState(toFailureState(result));
+      setState(toResultState(await subscribeToPush()));
     } finally {
       setBusy(false);
     }
@@ -162,6 +198,24 @@ export function PushNotificationToggle() {
   const isEnabled = state.kind === 'enabled';
   const blocked = state.kind === 'denied';
 
+  // Every failure names the cause the toggle actually has (ADR-0031): the
+  // connection only for a request that never left, the wait for a rate limit,
+  // the session for a 401, and a plain retry for anything else.
+  const statusMessage =
+    state.kind === 'denied'
+      ? native
+        ? 'الإشعارات مرفوضة من إعدادات التطبيق؛ اسمح بها من هناك ثم أعِد المحاولة.'
+        : 'الإشعارات مرفوضة من إعدادات المتصفِّح؛ اسمح بها من هناك ثم أعِد المحاولة.'
+      : state.kind === 'unreachable'
+        ? 'تعذَّر تفعيل الإشعارات — تحقَّق من اتِّصالك ثم أعِد المحاولة.'
+        : state.kind === 'rateLimited'
+          ? 'تجاوزتَ حدَّ محاولات تفعيل الإشعارات — أعِد المحاولة بعد قليل.'
+          : state.kind === 'unauthorized'
+            ? 'انتهت جلستك — سجِّل الدخول من جديد ثم أعِد المحاولة.'
+            : state.kind === 'failed'
+              ? 'تعذَّر تفعيل الإشعارات — أعِد المحاولة.'
+              : null;
+
   return (
     <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-4 text-start">
       <div className="flex min-w-0 items-center gap-2.5">
@@ -173,20 +227,13 @@ export function PushNotificationToggle() {
 
         <div className="min-w-0">
           <p className="max-sm:text-sm font-bold text-foreground sm:text-base">إشعارات الجهاز</p>
-          {blocked ? (
-            <p className="mt-1 text-[11px] leading-6 text-muted-foreground">
-              {native
-                ? 'الإشعارات مرفوضة من إعدادات التطبيق؛ اسمح بها من هناك ثم أعِد المحاولة.'
-                : 'الإشعارات مرفوضة من إعدادات المتصفِّح؛ اسمح بها من هناك ثم أعِد المحاولة.'}
-            </p>
-          ) : null}
-          {state.kind === 'unreachable' ? (
+          {statusMessage ? (
             <p
               role="status"
               aria-live="polite"
               className="mt-1 text-[11px] leading-6 text-muted-foreground"
             >
-              تعذَّر تفعيل الإشعارات — تحقَّق من اتِّصالك ثم أعِد المحاولة.
+              {statusMessage}
             </p>
           ) : null}
         </div>

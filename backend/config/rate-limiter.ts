@@ -2,6 +2,7 @@ import {
   createRateLimiter,
   type RateLimiter,
   type RateLimiterOptions,
+  type RateLimitDecision,
 } from '@/backend/clients/rate-limiter';
 import { env } from '@/backend/config/env';
 import { logger } from '@/backend/shared/logger';
@@ -54,6 +55,15 @@ export function getRateLimitRemaining(
   options?: RateLimiterOptions
 ): Promise<number> {
   return getDefaultRateLimiter().getRateLimitRemaining(key, limit, windowMs, options);
+}
+
+export function getRateLimitDecision(
+  key: string,
+  limit: number,
+  windowMs: number,
+  options?: RateLimiterOptions
+): Promise<RateLimitDecision> {
+  return getDefaultRateLimiter().getRateLimitDecision(key, limit, windowMs, options);
 }
 
 export interface RateLimitPolicy {

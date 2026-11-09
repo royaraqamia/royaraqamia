@@ -97,6 +97,34 @@ describe('RateLimiterService (in-memory fallback)', () => {
     expect(result).toBe(false);
   });
 
+  it('reports how long a refused caller has to wait, and nothing on an allowed one', async () => {
+    const limiter = makeLimiter();
+
+    const allowed = await limiter.getRateLimitDecision('decision-key', 2, 60_000);
+    expect(allowed).toEqual({ allowed: true, retryAfterMs: 0 });
+
+    await limiter.getRateLimitDecision('decision-key', 2, 60_000);
+    const refused = await limiter.getRateLimitDecision('decision-key', 2, 60_000);
+
+    expect(refused.allowed).toBe(false);
+    expect(refused.retryAfterMs).toBeGreaterThan(0);
+    expect(refused.retryAfterMs).toBeLessThanOrEqual(60_000);
+  });
+
+  it('fails closed with the whole window as the wait when the store errors', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Redis unreachable')));
+    const limiter = createRateLimiter({
+      redisUrl: 'https://test.upstash.io',
+      redisToken: 'test-token',
+    });
+
+    const decision = await limiter.getRateLimitDecision('redis-key', 5, 60_000, {
+      failClosed: true,
+    });
+
+    expect(decision).toEqual({ allowed: false, retryAfterMs: 60_000 });
+  });
+
   it('returns remaining count decreasing as requests are made', async () => {
     const limiter = makeLimiter();
 

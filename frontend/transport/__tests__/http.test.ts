@@ -222,6 +222,45 @@ describe('requestWithMeta', () => {
     expect(error.message).toBe('حدث خطأ');
   });
 
+  it('carries the server refusal code and its Retry-After on the error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: new Headers({ 'Retry-After': '120' }),
+        json: vi.fn().mockResolvedValue({
+          success: false,
+          code: 'rate_limited',
+          error: 'تم تجاوز الحد',
+        }),
+      })
+    );
+
+    const error = await captureError(request('/api/push/subscribe'));
+
+    expect(error.status).toBe(429);
+    expect(error.code).toBe('rate_limited');
+    expect(error.retryAfterMs).toBe(120_000);
+  });
+
+  it('reads a Retry-After date as well as seconds', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        headers: new Headers({ 'Retry-After': new Date(Date.now() + 60_000).toUTCString() }),
+        json: vi.fn().mockResolvedValue({ success: false }),
+      })
+    );
+
+    const error = await captureError(request('/api/push/subscribe'));
+
+    expect(error.retryAfterMs).toBeGreaterThan(50_000);
+    expect(error.retryAfterMs).toBeLessThanOrEqual(60_000);
+  });
+
   it('is the same decision isResponseKeepable makes', () => {
     expect(isResponseKeepable({ headers: new Headers() } as Response)).toBe(true);
     expect(
