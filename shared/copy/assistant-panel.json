@@ -1,0 +1,41 @@
+{
+  "surface": "chats",
+  "component": "assistant-panel",
+  "web": {
+    "file": "frontend/ui/assistant/assistant-panel-copy.ts",
+    "export": "ASSISTANT_PANEL_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantPanelCopy.kt",
+    "object": "AssistantPanelCopy"
+  },
+  "notes": {
+    "source": "The assistant's floating conversation (ADR-0143), in both clients: the name, the first sentence, the four states a member can meet before asking anything, and the door back to the full thread. The site's `frontend/ui/assistant/assistant-panel.tsx` is the reference; the app's `AssistantSheet.kt` draws the same words from this file.",
+    "placeholders": "`downloadFile` carries `{name}`, filled with the attachment's own file name.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component does not render, or a state `AssistantUiState` declares that the row does not list."
+  },
+  "strings": {
+    "title": "نور",
+    "subtitle": "مساعدة رؤية رقمية",
+    "intro": "أهلاً، أنا نور. اسألني عن منتجاتنا وخدماتنا، أو اطلب مني إنجاز مهمة.",
+    "placeholder": "اكتب سؤالك لنور...",
+    "send": "إرسال السؤال",
+    "thinking": "نور تكتب...",
+    "guestTitle": "تحدّث مع نور",
+    "guestBody": "سجّل الدخول لتحفظ محادثتك مع نور وتكملها من أي جهاز.",
+    "signIn": "تسجيل الدخول",
+    "openThread": "فتح المحادثة كاملة",
+    "loading": "جاري فتح المحادثة...",
+    "failed": "تعذّر فتح المحادثة. حاول مرة أخرى.",
+    "retry": "إعادة المحاولة",
+    "locked": "نور متاحة لمشتركي الخطة المدفوعة.",
+    "upgrade": "ترقية الخطة",
+    "unavailable": "نور غير متاحة حالياً.",
+    "suggestionsLabel": "جرّب أن تسأل",
+    "suggestService": "ما الخدمات التي تقدّمونها؟",
+    "suggestCourse": "أي دورة تناسبني؟",
+    "suggestConsultation": "أريد حجز استشارة",
+    "attachmentOnly": "مرفق",
+    "downloadFile": "تنزيل {name}"
+  }
+}

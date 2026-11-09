@@ -524,7 +524,7 @@ describe('ChatThreadView assistant', () => {
     const base = makeThread('agent');
     return {
       ...base,
-      title: 'المساعد الذكي',
+      title: 'نور',
       counterpart: null,
       participants: base.me ? [base.me] : [],
     };
@@ -543,7 +543,7 @@ describe('ChatThreadView assistant', () => {
   it('gives the assistant the same composer as a member thread', async () => {
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
     // ADR-0127: one row, so the paperclip and the microphone beside it are the
     // same controls in both threads.
     expect(screen.getByRole('button', { name: 'إرفاق ملف' })).toBeInTheDocument();
@@ -558,7 +558,7 @@ describe('ChatThreadView assistant', () => {
 
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(await screen.findByText('المساعد متاح لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
+    expect(await screen.findByText('نور متاحة لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'ترقية الخطة' })).toHaveAttribute('href', '/pricing');
     expect(screen.queryByRole('textbox')).toBeNull();
     // A plan that allows no turn has nothing to count down, so no "0 من 0".
@@ -582,7 +582,7 @@ describe('ChatThreadView assistant', () => {
 
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(await screen.findByText('المساعد غير متاح حالياً.')).toBeInTheDocument();
+    expect(await screen.findByText('نور غير متاحة حالياً.')).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).toBeNull();
   });
 
@@ -591,7 +591,7 @@ describe('ChatThreadView assistant', () => {
 
     render(<ChatThreadView conversationId="c-1" />);
 
-    const box = await screen.findByRole('textbox', { name: 'اكتب سؤالك...' });
+    const box = await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
     fireEvent.change(box, { target: { value: 'ما هو الذكاء الاصطناعي؟' } });
     fireEvent.click(screen.getByRole('button', { name: 'إرسال السؤال' }));
 
@@ -631,7 +631,7 @@ describe('ChatThreadView proposals', () => {
 
   beforeEach(() => {
     const base = makeThread('agent');
-    thread.current = { ...base, title: 'المساعد الذكي', counterpart: null };
+    thread.current = { ...base, title: 'نور', counterpart: null };
     hook.messages.current = [
       {
         id: 'm-1',

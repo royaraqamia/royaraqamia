@@ -60,12 +60,17 @@ export function AssistantComposer({
   draft,
   onDraft,
   onAsk,
+  placeholder = ASSISTANT_COPY.placeholder,
+  sendLabel = ASSISTANT_COPY.send,
 }: {
   assistant: ChatAssistantState;
   quota: ChatAttachmentQuota;
   draft: string;
   onDraft: (value: string) => void;
   onAsk: (body: string, files: File[]) => void;
+  /** The thread says "اكتب سؤالك..."; the floating panel names نور (ADR-0143). */
+  placeholder?: string;
+  sendLabel?: string;
 }) {
   const allowance = assistant.allowance;
   const [files, setFiles] = useState<File[]>([]);
@@ -218,9 +223,9 @@ export function AssistantComposer({
           send(staged.files);
         }}
         disabled={assistant.isStreaming || preparing}
-        placeholder={ASSISTANT_COPY.placeholder}
-        ariaLabel={ASSISTANT_COPY.placeholder}
-        sendLabel={ASSISTANT_COPY.send}
+        placeholder={placeholder}
+        ariaLabel={placeholder}
+        sendLabel={sendLabel}
         sendIcon={<Send size={16} />}
       />
     </form>

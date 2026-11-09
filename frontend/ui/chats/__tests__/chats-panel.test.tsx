@@ -157,7 +157,7 @@ describe('ChatsPanel', () => {
         ...THREAD,
         id: 'agent-1',
         kind: 'agent',
-        title: 'المساعد الذكي',
+        title: 'نور',
         counterpart: null,
         lastMessageAt: '2026-10-01T00:00:00.000Z',
         createdAt: '2026-10-01T00:00:00.000Z',
@@ -182,9 +182,9 @@ describe('ChatsPanel', () => {
 
     render(<ChatsPanel />);
 
-    expect(await screen.findByText('المساعد متاح لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
+    expect(await screen.findByText('نور متاحة لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'ترقية الخطة' })).toHaveAttribute('href', '/pricing');
-    expect(screen.queryByRole('button', { name: /المساعد الذكي/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /نور/ })).not.toBeInTheDocument();
     expect(api.startAssistantChat).not.toHaveBeenCalled();
   });
 });

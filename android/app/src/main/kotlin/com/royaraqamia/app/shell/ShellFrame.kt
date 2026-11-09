@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -12,7 +13,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.royaraqamia.app.assistant.AssistantFab
+import com.royaraqamia.app.theme.LocalRoySpacing
 
 /**
  * The visual gate's handles on the frame (#902, `shared/visual/chrome.json`).
@@ -60,9 +64,14 @@ fun ShellFrame(
     servicesOrder: ServicesOrderStore? = null,
     /** The bell's unread count, or null while there is no session to ask (#659). */
     unreadCount: Int? = null,
+    /** Whether the assistant's door is drawn over the content (ADR-0143). */
+    showAssistant: Boolean = true,
+    /** Where the door opens: the sheet, or the sign-in flow for a guest. */
+    onOpenAssistant: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit = {},
 ) {
     var servicesOpen by remember { mutableStateOf(false) }
+    val spacing = LocalRoySpacing.current
 
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize()) {
@@ -72,7 +81,20 @@ fun ShellFrame(
                 unreadCount = unreadCount,
                 onOpenNotifications = { onOpenRoute(Routes.NOTIFICATIONS_ROUTE) },
             )
-            Box(Modifier.weight(1f).fillMaxWidth(), content = content)
+            // The door floats over the destination, not over the tab bar: the
+            // content area ends where the bar begins, so the corner is clear at
+            // every height without a second measurement (ADR-0143).
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                content()
+                if (showAssistant) {
+                    AssistantFab(
+                        onClick = onOpenAssistant,
+                        modifier =
+                            Modifier.align(Alignment.BottomStart)
+                                .padding(spacing.containerPadding),
+                    )
+                }
+            }
             ShellTabBar(currentRoute = currentRoute, onSelect = onSelect)
         }
         ServicesSheet(

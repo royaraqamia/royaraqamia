@@ -672,7 +672,7 @@ export function chatTitle(input: {
   title: string | null;
   counterpart: ChatPeer | null;
 }): string {
-  if (input.kind === 'agent') return 'المساعد الذكي';
+  if (input.kind === 'agent') return 'نور';
   if (input.kind === 'group') return input.title ?? 'مجموعة';
   return input.counterpart?.name ?? input.counterpart?.username ?? 'محادثة';
 }

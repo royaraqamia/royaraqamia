@@ -44,7 +44,7 @@ describe('the assistant prompt', () => {
 
   it('says the turn may already carry an attachment it has read', () => {
     expect(SYSTEM_PROMPT).toContain('مرفق');
-    expect(SYSTEM_PROMPT).toContain('ولا تقل إنك لا تستقبل المرفقات');
+    expect(SYSTEM_PROMPT).toContain('ولا تقولي إنك لا تستقبلين المرفقات');
   });
 });
 
@@ -52,7 +52,7 @@ const AGENT_THREAD = {
   id: 'conversation-1',
   kind: 'agent',
   status: 'active',
-  title: 'المساعد الذكي',
+  title: 'نور',
   counterpart: null,
   myStatus: 'active',
   lastMessage: null,
@@ -282,7 +282,7 @@ describe('the assistant turn', () => {
       collect(free.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT))
     ).rejects.toMatchObject({
       status: 402,
-      message: 'المساعد متاح لمشتركي الخطة المدفوعة.',
+      message: 'نور متاحة لمشتركي الخطة المدفوعة.',
     });
     expect(reserve).not.toHaveBeenCalled();
   });
@@ -381,7 +381,7 @@ describe('the assistant turn', () => {
    * not a busy assistant: "try again" can never work until the operator fixes it,
    * so the turn says the assistant is unavailable instead of inviting a retry.
    * This is the sentence the production outage of 2026-11-05 showed as
-   * "تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى." for every turn.
+   * "تعذّر الحصول على ردّ من نور. حاول مرّة أخرى." for every turn.
    */
   it('names a refused credential as an unavailable assistant, not a retry', async () => {
     const client: AiChatClient = {

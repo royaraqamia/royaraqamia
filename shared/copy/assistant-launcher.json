@@ -1,0 +1,21 @@
+{
+  "surface": "chats",
+  "component": "assistant-launcher",
+  "web": {
+    "file": "frontend/ui/assistant/assistant-launcher-copy.ts",
+    "export": "ASSISTANT_LAUNCHER_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantLauncherCopy.kt",
+    "object": "AssistantLauncherCopy"
+  },
+  "notes": {
+    "source": "The assistant's door in the corner, in both clients (ADR-0143): one name and one invitation, drawn on every screen that is not the conversation itself or a sign-in page. The site's `frontend/ui/assistant/assistant-launcher.tsx` is the reference; the app's `AssistantFab.kt` draws the same words from this file.",
+    "placeholders": "None.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a label the reference component does not render."
+  },
+  "strings": {
+    "label": "اسأل نور",
+    "navLabel": "اسأل نور، مساعدة رؤية رقمية"
+  }
+}

@@ -1427,6 +1427,82 @@
       ]
     },
     {
+      "id": "assistant-launcher",
+      "surface": "chats",
+      "issue": "#1185",
+      "web": {
+        "route": "app/layout.tsx",
+        "component": "frontend/ui/assistant/assistant-launcher.tsx",
+        "copyModule": "frontend/ui/assistant/assistant-launcher-copy.ts",
+        "copyExport": "ASSISTANT_LAUNCHER_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantFab.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantLauncherState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantLauncherCopy.kt",
+        "copyObject": "AssistantLauncherCopy"
+      },
+      "copySource": "shared/copy/assistant-launcher.json",
+      "states": [
+        {
+          "name": "Visible",
+          "copy": "label"
+        },
+        {
+          "name": "Hidden",
+          "copy": "label"
+        }
+      ]
+    },
+    {
+      "id": "assistant-panel",
+      "surface": "chats",
+      "issue": "#1185",
+      "web": {
+        "route": "app/layout.tsx",
+        "component": "frontend/ui/assistant/assistant-panel.tsx",
+        "copyModule": "frontend/ui/assistant/assistant-panel-copy.ts",
+        "copyExport": "ASSISTANT_PANEL_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantSheet.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantPanelCopy.kt",
+        "copyObject": "AssistantPanelCopy"
+      },
+      "copySource": "shared/copy/assistant-panel.json",
+      "states": [
+        {
+          "name": "Guest",
+          "copy": "guestTitle"
+        },
+        {
+          "name": "Locked",
+          "copy": "locked"
+        },
+        {
+          "name": "Unavailable",
+          "copy": "unavailable"
+        },
+        {
+          "name": "Loading",
+          "copy": "loading"
+        },
+        {
+          "name": "Failed",
+          "copy": "failed"
+        },
+        {
+          "name": "Ready",
+          "copy": "intro"
+        },
+        {
+          "name": "Asking",
+          "copy": "thinking"
+        }
+      ]
+    },
+    {
       "id": "chats-list",
       "surface": "chats",
       "issue": "#819",

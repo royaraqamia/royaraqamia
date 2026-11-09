@@ -570,7 +570,7 @@ export async function startChatAssistant(headers: Headers): Promise<HttpResult> 
       const result = await createSupabaseChatService(supabase).startAssistant(userId);
       return jsonResult(201, { success: true, ...result }, { headers: NO_STORE });
     },
-    { mapError: chatFailure('تعذّر فتح المحادثة مع المساعد') }
+    { mapError: chatFailure('تعذّر فتح المحادثة مع نور') }
   );
 }
 
@@ -585,7 +585,7 @@ export async function getChatAssistant(): Promise<HttpResult> {
         { headers: NO_STORE }
       );
     },
-    { mapError: chatFailure('تعذّر تحميل حالة المساعد') }
+    { mapError: chatFailure('تعذّر تحميل حالة نور') }
   );
 }
 
@@ -664,7 +664,7 @@ export async function streamChatAgentTurn(
 /** A turn's failure, in the one sentence its stream carries to the composer. */
 function agentTurnFailure(error: unknown): string {
   if (error instanceof ChatAgentError) return error.message;
-  return 'تعذّر الحصول على ردّ من المساعد. حاول مرّة أخرى.';
+  return 'تعذّر الحصول على ردّ من نور. حاول مرّة أخرى.';
 }
 
 /**

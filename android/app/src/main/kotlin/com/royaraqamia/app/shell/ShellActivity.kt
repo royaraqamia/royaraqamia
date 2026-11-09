@@ -25,6 +25,7 @@ import androidx.core.content.FileProvider
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import com.royaraqamia.app.AppGraph
+import com.royaraqamia.app.assistant.AssistantSheet
 import com.royaraqamia.app.account.AccountScreen
 import com.royaraqamia.app.account.AccountUiState
 import com.royaraqamia.app.accountnews.NewsScreen
@@ -144,6 +145,13 @@ class ShellActivity : ComponentActivity() {
     private var cardShown by mutableStateOf(false)
 
     /**
+     * Whether نور's sheet is open (ADR-0143). It is component state rather than
+     * a route: the sheet floats over the destination, and closing it leaves the
+     * member on the screen they opened it from.
+     */
+    private var assistantOpen by mutableStateOf(false)
+
+    /**
      * The update channel (#652): the check, the download, the install, and the
      * card the frame draws when one of them has something to say. It is the
      * shell's rather than the page's — the document cannot reach native code
@@ -220,6 +228,10 @@ class ShellActivity : ComponentActivity() {
                         hiddenRoutes = hiddenRoutes,
                         servicesOrder = graph.servicesOrder,
                         unreadCount = unreadCount,
+                        showAssistant = assistantVisible(current),
+                        onOpenAssistant = {
+                            if (signedIn) assistantOpen = true else showSignIn()
+                        },
                         onSelect = { tab -> openRoute(tab.route) },
                         onOpenRoute = ::openRoute,
                     ) {
@@ -571,6 +583,27 @@ class ShellActivity : ComponentActivity() {
                     onLater = update::decline,
                     onCancelDownload = update::cancelDownload,
                 )
+
+                if (assistantOpen) {
+                    AssistantSheet(
+                        repository = graph.chats,
+                        signedIn = signedIn,
+                        onDismiss = { assistantOpen = false },
+                        onSignIn = {
+                            assistantOpen = false
+                            showSignIn()
+                        },
+                        onUpgrade = {
+                            assistantOpen = false
+                            openRoute("/pricing")
+                        },
+                        onOpenThread = { id ->
+                            assistantOpen = false
+                            openRoute(ChatRoutes.threadOf(id))
+                        },
+                        onOpenAttachment = ::openExternal,
+                    )
+                }
             }
         }
 
@@ -583,6 +616,12 @@ class ShellActivity : ComponentActivity() {
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
+                    // The assistant's sheet is an overlay, so back closes it before
+                    // the destination under it moves (ADR-0143).
+                    if (assistantOpen) {
+                        assistantOpen = false
+                        return
+                    }
                     // A card the frame was brought forward for is a screen of its
                     // own (#652): back is "later", not a walk down a stack the user
                     // cannot see.
@@ -808,6 +847,19 @@ class ShellActivity : ComponentActivity() {
 
     private fun openExternal(url: String) {
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+    }
+
+    /**
+     * The two routes the site's launcher hides on (ADR-0143): the conversation's
+     * own screen is already the door, and a sign-in flow is a page whose job is
+     * to leave. Mirrors `frontend/ui/assistant/assistant-launcher.tsx`.
+     */
+    private fun assistantVisible(route: String): Boolean {
+        val path = Routes.normalize(route)
+        return path != "/chats" &&
+            !path.startsWith("/chats/") &&
+            path != "/auth" &&
+            !path.startsWith("/auth/")
     }
 
     /**
