@@ -1324,13 +1324,15 @@ select,
 .dialog-scrollbar:hover,
 .dialog-scrollbar:focus,
 .dialog-scrollbar:active,
-.dialog-scrollbar:has(> :focus) {
+.dialog-scrollbar:has(> :focus),
+.dialog-scrollbar[data-scrollbar-scrolling] {
   scrollbar-color: hsl(var(--border)) transparent;
 }
 
 .dialog-scrollbar:hover::-webkit-scrollbar-thumb,
 .dialog-scrollbar:focus::-webkit-scrollbar-thumb,
-.dialog-scrollbar:active::-webkit-scrollbar-thumb {
+.dialog-scrollbar:active::-webkit-scrollbar-thumb,
+.dialog-scrollbar[data-scrollbar-scrolling]::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
 }
 
@@ -1398,12 +1400,17 @@ select,
 }
 
 /* Global custom scrollbar — replaces the OS/browser default on every scroll
-   container (page, code blocks, dropdowns, panels). `.scrollbar-hide`,
-   `.horizontal-scroll`, and `.dialog-scrollbar` keep their class-based
-   overrides thanks to higher specificity. */
+   container (page, code blocks, dropdowns, panels). The bar is painted
+   transparent until the container is hovered or actually scrolling: CSS has no
+   `:scrolling` state, so `ScrollbarReveal` marks the scrolled element with
+   `[data-scrollbar-scrolling]` for the length of the gesture. Below `lg` no bar
+   is drawn at all (the media query at the end of this section), because a touch
+   screen has no pointer to hover and no room for a permanent strip.
+   `.scrollbar-hide`, `.horizontal-scroll`, and `.dialog-scrollbar` keep their
+   class-based overrides thanks to higher specificity. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #7766ee rgba(255, 255, 255, 0.05);
+  scrollbar-color: transparent transparent;
 }
 
 *::-webkit-scrollbar {
@@ -1412,41 +1419,72 @@ select,
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
   border-radius: 10px;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #7766ee 0%, #5b4db8 100%);
+  background: transparent;
   border-radius: 10px;
+}
+
+*:hover,
+[data-scrollbar-scrolling] {
+  scrollbar-color: #7766ee rgba(255, 255, 255, 0.05);
+}
+
+*:hover::-webkit-scrollbar-track,
+[data-scrollbar-scrolling]::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+*:hover::-webkit-scrollbar-thumb,
+[data-scrollbar-scrolling]::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7766ee 0%, #5b4db8 100%);
 }
 
 *::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #8b5cf6 0%, #7766ee 100%);
 }
 
-/* Custom Scrollbar Styling */
+/* Custom Scrollbar Styling — the site purple, on the same hover/scroll reveal
+   as the global bar. */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #7766ee 0%, #5b4db8 100%);
+  background: transparent;
   border-radius: 10px;
+}
+
+.custom-scrollbar:hover,
+.custom-scrollbar[data-scrollbar-scrolling] {
+  scrollbar-color: #7766ee rgba(255, 255, 255, 0.05);
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-track,
+.custom-scrollbar[data-scrollbar-scrolling]::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb,
+.custom-scrollbar[data-scrollbar-scrolling]::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7766ee 0%, #5b4db8 100%);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #8b5cf6 0%, #7766ee 100%);
-}
-
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #7766ee rgba(255, 255, 255, 0.05);
 }
 
 /* Scrollbar that stays invisible until the container is hovered, then matches
@@ -1468,22 +1506,26 @@ select,
 }
 
 .scrollbar-on-hover:hover,
-.scrollbar-on-hover:has(:focus-visible) {
+.scrollbar-on-hover:has(:focus-visible),
+.scrollbar-on-hover[data-scrollbar-scrolling] {
   scrollbar-color: #7766ee rgba(255, 255, 255, 0.05);
 }
 
 .scrollbar-on-hover:hover::-webkit-scrollbar-track,
-.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-track {
+.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-track,
+.scrollbar-on-hover[data-scrollbar-scrolling]::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
 }
 
 .scrollbar-on-hover:hover::-webkit-scrollbar-thumb,
-.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-thumb {
+.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-thumb,
+.scrollbar-on-hover[data-scrollbar-scrolling]::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #7766ee 0%, #5b4db8 100%);
 }
 
 .scrollbar-on-hover:hover::-webkit-scrollbar-thumb:hover,
-.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-thumb:hover {
+.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-thumb:hover,
+.scrollbar-on-hover[data-scrollbar-scrolling]::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #8b5cf6 0%, #7766ee 100%);
 }
 
@@ -1513,13 +1555,48 @@ select,
 }
 
 .scrollbar-toolbar:hover,
-.scrollbar-toolbar:has(:focus-visible) {
+.scrollbar-toolbar:has(:focus-visible),
+.scrollbar-toolbar[data-scrollbar-scrolling] {
   scrollbar-color: hsl(var(--muted-foreground) / 0.45) transparent;
 }
 
 .scrollbar-toolbar:hover::-webkit-scrollbar-thumb,
-.scrollbar-toolbar:has(:focus-visible)::-webkit-scrollbar-thumb {
+.scrollbar-toolbar:has(:focus-visible)::-webkit-scrollbar-thumb,
+.scrollbar-toolbar[data-scrollbar-scrolling]::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.45);
+}
+
+/* Below `lg` every bar is gone — not merely transparent — so the strip does not
+   take its 8px out of a phone's scrollport. The selectors repeat each class's
+   own `:hover` state because a class rule outranks the bare `*`. */
+@media (max-width: 1023.98px) {
+  *,
+  *:hover,
+  [data-scrollbar-scrolling],
+  .dialog-scrollbar,
+  .dialog-scrollbar:hover,
+  .dialog-scrollbar:focus,
+  .dialog-scrollbar:active,
+  .dialog-scrollbar:has(> :focus),
+  .dialog-scrollbar[data-scrollbar-scrolling],
+  .custom-scrollbar,
+  .custom-scrollbar:hover,
+  .custom-scrollbar[data-scrollbar-scrolling],
+  .scrollbar-on-hover,
+  .scrollbar-on-hover:hover,
+  .scrollbar-on-hover:has(:focus-visible),
+  .scrollbar-on-hover[data-scrollbar-scrolling],
+  .scrollbar-toolbar,
+  .scrollbar-toolbar:hover,
+  .scrollbar-toolbar:has(:focus-visible),
+  .scrollbar-toolbar[data-scrollbar-scrolling] {
+    scrollbar-width: none;
+    scrollbar-color: transparent transparent;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* The empty rich-text surface says what it is for.

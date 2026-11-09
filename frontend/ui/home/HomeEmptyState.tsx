@@ -3,6 +3,7 @@
 import { Plus } from 'lucide-react';
 
 import { ServicesMenu } from '@/frontend/ui/navbar/ServicesMenu';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
 import { HOME_COPY } from './home-copy';
 
@@ -29,14 +30,16 @@ export function HomeEmptyState() {
 
       <ServicesMenu
         trigger={
-          <button
+          /* The Hero's main button, so the page's first action is the same
+             control the landing page opens with. */
+          <HeroCtaButton
             type="button"
             data-visual="home-empty-add"
-            className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-full bg-violet-600 px-7 text-sm font-bold text-white transition-safe duration-200 ease-out hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95"
+            className="mt-8 min-w-44 sm:min-w-50"
           >
             <Plus className="size-4" aria-hidden="true" />
             {HOME_COPY.emptyCta}
-          </button>
+          </HeroCtaButton>
         }
       />
 

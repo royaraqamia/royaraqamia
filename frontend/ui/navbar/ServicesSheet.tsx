@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/frontend/ui/primitives/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/frontend/ui/primitives/sheet';
 
 import type { NavLink } from './NavDropdown';
 import { ServicesMenuItems } from './ServicesMenuItems';
@@ -44,6 +38,8 @@ export function ServicesSheet({
         side="bottom"
         hideClose
         data-visual="services-sheet"
+        // The title alone names the sheet; there is no description line to point at.
+        aria-describedby={undefined}
         className="gap-0 max-h-[85dvh] rounded-t-2xl p-0 sm:rounded-t-3xl"
         onCloseAutoFocus={(event) => {
           // There is no primitive Trigger to return focus to, so it is ours to do.
@@ -53,9 +49,6 @@ export function ServicesSheet({
       >
         <SheetHeader className="px-4 pt-4 pb-2 text-start">
           <SheetTitle data-visual="services-sheet-title">{SERVICES_SHEET_COPY.title}</SheetTitle>
-          <SheetDescription data-visual="services-sheet-body">
-            {SERVICES_SHEET_COPY.body}
-          </SheetDescription>
         </SheetHeader>
         <div className="overflow-y-auto p-1.5">
           <ServicesMenuItems subItems={link.subItems} />
