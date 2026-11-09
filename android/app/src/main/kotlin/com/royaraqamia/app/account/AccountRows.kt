@@ -195,30 +195,6 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
                 route = "/chats/new?to=$SUPPORT_USERNAME",
             )
         )
-        add(
-            AccountLink(
-                id = "privacy",
-                icon = LucideVectors.Lock,
-                label = AccountRowsCopy.PRIVACY,
-                route = "/privacy",
-            )
-        )
-        add(
-            AccountLink(
-                id = "terms",
-                icon = LucideVectors.ScrollText,
-                label = AccountRowsCopy.TERMS,
-                route = "/terms",
-            )
-        )
-        add(
-            AccountLink(
-                id = "security",
-                icon = LucideVectors.Shield,
-                label = AccountRowsCopy.SECURITY,
-                route = "/security",
-            )
-        )
     }
 
 /** One row: a glyph, its label, and the site's arrow at the row's end. */

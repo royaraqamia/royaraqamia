@@ -2127,46 +2127,6 @@ object LucideVectors {
         }.build()
     }
 
-    /** `scroll-text`, the site's own drawing. */
-    val ScrollText: ImageVector by lazy {
-        ImageVector.Builder(
-            name = "scroll-text",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f,
-        ).apply {
-            addPath(
-                addPathNodes("M15 12h-5"),
-                stroke = stroke,
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round,
-            )
-            addPath(
-                addPathNodes("M15 8h-5"),
-                stroke = stroke,
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round,
-            )
-            addPath(
-                addPathNodes("M19 17V5a2 2 0 0 0-2-2H4"),
-                stroke = stroke,
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round,
-            )
-            addPath(
-                addPathNodes("M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"),
-                stroke = stroke,
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round,
-            )
-        }.build()
-    }
-
     /** `search`, the site's own drawing. */
     val Search: ImageVector by lazy {
         ImageVector.Builder(
@@ -2258,25 +2218,6 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("M15.41 6.51L8.59 10.49"),
-                stroke = stroke,
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round,
-            )
-        }.build()
-    }
-
-    /** `shield`, the site's own drawing. */
-    val Shield: ImageVector by lazy {
-        ImageVector.Builder(
-            name = "shield",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f,
-        ).apply {
-            addPath(
-                addPathNodes("M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
