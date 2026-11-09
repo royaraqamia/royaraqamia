@@ -1,12 +1,23 @@
 'use client';
 
-import { useEffect } from 'react';
-import { Check, LoaderCircle, Pause, Play, Square, TriangleAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, LoaderCircle, Pause, Play, Square, Trash2, TriangleAlert } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import { byteSizeParts } from '@/frontend/shared/format-bytes';
 import { useQuranPlayer } from '@/frontend/state/quran/player-context';
 import { QURAN_PLAYER_COPY } from './quran-player-copy';
 import { usePlayerLift } from './player-lift';
+
+/** The saved copy's cost in the words the app also draws, from one copy source. */
+function savedSizeSentence(bytes: number): string {
+  const parts = byteSizeParts(bytes);
+  return (
+    parts.unit === 'mb'
+      ? QURAN_PLAYER_COPY.savedSizeMegabytes
+      : QURAN_PLAYER_COPY.savedSizeKilobytes
+  ).replace('{value}', parts.value);
+}
 
 interface PlayerFloatProps {
   surah: number;
@@ -22,8 +33,9 @@ interface PlayerFloatProps {
  * to the mini player beneath it, and this float must not pretend otherwise.
  */
 export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
-  const { state, saved, keep, actions } = useQuranPlayer();
+  const { state, saved, savedBytes, keep, actions } = useQuranPlayer();
   const liftRef = usePlayerLift<HTMLElement>('float');
+  const [removeFailed, setRemoveFailed] = useState(false);
   const isActive = state.surah === surah;
   const isPlaying = isActive && state.status === 'playing';
   const isPaused = isActive && state.status === 'paused';
@@ -33,6 +45,7 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
   const barVisible = state.surah !== null && state.surah !== surah;
 
   const savedState = saved[surah];
+  const keptBytes = savedBytes[surah] ?? 0;
   const keepState = keep[surah];
 
   // The reader opens on a sura this device may already hold; the mini player is
@@ -61,7 +74,13 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
     void actions.toggle();
   };
 
+  const onRemove = () => {
+    setRemoveFailed(false);
+    void actions.remove(surah).then((removed) => setRemoveFailed(!removed));
+  };
+
   const showCounter = isPlaying || isPaused;
+  const hasCopy = savedState === 'complete' || savedState === 'partial';
 
   return (
     <section
@@ -121,15 +140,34 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
           {QURAN_PLAYER_COPY.keepWorking} <span className="font-heading">{keepState.done}</span>{' '}
           {QURAN_PLAYER_COPY.ofLabel} <span className="font-heading">{keepState.total}</span>
         </p>
-      ) : savedState === 'complete' ? (
-        <p className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] font-bold text-primary shadow-sm">
-          <Check aria-hidden="true" className="size-3" />
-          {QURAN_PLAYER_COPY.savedComplete}
-        </p>
-      ) : savedState === 'partial' ? (
-        <p className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm">
-          {QURAN_PLAYER_COPY.savedPartial}
-        </p>
+      ) : hasCopy ? (
+        <div className="flex max-w-64 flex-wrap items-center justify-end gap-1.5">
+          <p
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] shadow-sm',
+              savedState === 'complete' ? 'font-bold text-primary' : 'text-muted-foreground'
+            )}
+          >
+            {savedState === 'complete' ? <Check aria-hidden="true" className="size-3" /> : null}
+            {savedState === 'complete'
+              ? QURAN_PLAYER_COPY.savedComplete
+              : QURAN_PLAYER_COPY.savedPartial}
+          </p>
+          {keptBytes > 0 ? (
+            <p className="rounded-full border border-border/60 bg-card px-3 py-1 text-[11px] text-muted-foreground shadow-sm">
+              {savedSizeSentence(keptBytes)}
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label={QURAN_PLAYER_COPY.remove}
+            title={QURAN_PLAYER_COPY.remove}
+            className="inline-flex size-8 items-center justify-center rounded-full border border-border/70 bg-card text-muted-foreground shadow-sm transition-safe hover:border-destructive/50 hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <Trash2 aria-hidden="true" className="size-3.5" />
+          </button>
+        </div>
       ) : isActive && state.status === 'offline' ? (
         <p className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-destructive shadow-sm">
           {QURAN_PLAYER_COPY.offline}
@@ -137,6 +175,15 @@ export function PlayerFloat({ surah, ayahCount }: PlayerFloatProps) {
       ) : isActive && state.status === 'error' ? (
         <p className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-destructive shadow-sm">
           {QURAN_PLAYER_COPY.error}
+        </p>
+      ) : null}
+
+      {removeFailed ? (
+        <p
+          role="alert"
+          className="max-w-64 rounded-xl border border-border/60 bg-card px-3 py-1.5 text-[11px] text-destructive shadow-sm"
+        >
+          {QURAN_PLAYER_COPY.removeFailed}
         </p>
       ) : null}
     </section>

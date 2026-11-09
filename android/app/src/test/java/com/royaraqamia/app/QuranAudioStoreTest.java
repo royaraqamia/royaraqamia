@@ -112,6 +112,39 @@ public class QuranAudioStoreTest {
     }
 
     @Test
+    public void removesAKepSurahAndTheBytesItTook() throws Exception {
+        FakeHttp http = new FakeHttp();
+        QuranManifest first = manifest(1, "aaaaaaaaaa");
+        QuranManifest second = manifest(2, "bbbbbbbbbb");
+        serve(http, first, "https://audio.test", "aaaaaaaaaa");
+        serve(http, second, "https://audio.test", "bbbbbbbbbb");
+        File root = new File(temporary.getRoot(), "audio");
+
+        QuranAudioStore store = new QuranAudioStore(root, http);
+        store.keep(first, "https://audio.test", (done, total) -> {});
+        store.keep(second, "https://audio.test", (done, total) -> {});
+
+        assertEquals(10, store.bytesFor(1));
+        QuranAudioStore.RemoveResult removed = store.remove(1);
+        assertEquals(1, removed.removed);
+        assertEquals(10, removed.bytes);
+        assertEquals(0, store.bytesFor(1));
+        assertEquals("none", store.savedState(1, 1));
+        assertNull(store.fileFor(1, first.files.get(0)));
+        // The other sura is untouched: removal is per-sura, not a wipe.
+        assertEquals("complete", store.savedState(2, 1));
+        assertEquals(10, store.bytesFor(2));
+
+        // A restarted app reads the index off disk: the removal survives a kill,
+        // and so does the copy it did not touch.
+        QuranAudioStore reopened = new QuranAudioStore(root, http);
+        assertEquals(0, reopened.bytesFor(1));
+        assertEquals("none", reopened.savedState(1, 1));
+        assertEquals("complete", reopened.savedState(2, 1));
+        assertEquals(10, reopened.bytesFor(2));
+    }
+
+    @Test
     public void refusesBytesThatDoNotMatchTheManifest() throws Exception {
         FakeHttp http = new FakeHttp();
         QuranManifest manifest = manifest(1, "one");

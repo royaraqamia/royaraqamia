@@ -42,10 +42,25 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.shared.ByteSizeParts
+import com.royaraqamia.app.shared.byteSizeParts
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.ui.vectors.LucideVectors
+
+/**
+ * What this device holds for the sura the reader is on, as the line beneath the
+ * controls says it. Kept separate from [QuranPlayerFace] because the copy is the
+ * sura's, not the player's: a kept sura lists itself before anything is pressed,
+ * exactly as the page's float does.
+ */
+data class QuranPlayerSaved(
+    val complete: Boolean = false,
+    val partial: Boolean = false,
+    val bytes: Long = 0,
+    val removeFailed: Boolean = false,
+)
 
 /**
  * The recitation's controls on the reader, as the page draws them (#956).
@@ -61,8 +76,10 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
 @Composable
 fun QuranPlayerPanel(
     face: QuranPlayerFace,
+    saved: QuranPlayerSaved = QuranPlayerSaved(),
     onPrimary: () -> Unit,
     onStop: () -> Unit,
+    onRemove: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val type = LocalRoyTypeScale.current
@@ -169,30 +186,83 @@ fun QuranPlayerPanel(
             }
         }
 
-        if (playing?.savedComplete == true || paused?.savedComplete == true) {
+        if (saved.complete || saved.partial) {
             Row(
                 modifier =
-                    Modifier.clip(RoundedCornerShape(50))
+                    Modifier.testTag(QuranPlayerMetrics.SAVED)
+                        .clip(RoundedCornerShape(50))
                         .background(RoyColors.card)
                         .border(1.dp, RoyColors.border.copy(alpha = 0.6f), RoundedCornerShape(50))
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Icon(
-                    imageVector = LucideVectors.Check,
-                    contentDescription = null,
-                    tint = RoyColors.primary,
-                    modifier = Modifier.size(12.dp),
-                )
+                if (saved.complete) {
+                    Icon(
+                        imageVector = LucideVectors.Check,
+                        contentDescription = null,
+                        tint = RoyColors.primary,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
                 Text(
-                    text = QuranPlayerCopy.SAVED_COMPLETE,
-                    color = RoyColors.primary,
+                    text =
+                        if (saved.complete) QuranPlayerCopy.SAVED_COMPLETE
+                        else QuranPlayerCopy.SAVED_PARTIAL,
+                    color = if (saved.complete) RoyColors.primary else RoyColors.mutedForeground,
                     style = type.xs,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = if (saved.complete) FontWeight.Bold else FontWeight.Normal,
+                )
+            }
+
+            if (saved.bytes > 0) {
+                Text(
+                    text = savedSizeSentence(saved.bytes),
+                    modifier = Modifier.testTag(QuranPlayerMetrics.SIZE),
+                    color = RoyColors.mutedForeground,
+                    style = type.xs,
+                )
+            }
+
+            Box(
+                modifier =
+                    Modifier.size(32.dp)
+                        .testTag(QuranPlayerMetrics.REMOVE)
+                        .clip(CircleShape)
+                        .background(RoyColors.card)
+                        .border(1.dp, RoyColors.border.copy(alpha = 0.7f), CircleShape)
+                        .clickable(role = Role.Button, onClick = onRemove)
+                        .semantics { contentDescription = QuranPlayerCopy.REMOVE },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = LucideVectors.Trash2,
+                    contentDescription = null,
+                    tint = RoyColors.mutedForeground,
+                    modifier = Modifier.size(14.dp),
                 )
             }
         }
+
+        if (saved.removeFailed) {
+            Text(
+                text = QuranPlayerCopy.REMOVE_FAILED,
+                modifier = Modifier.widthIn(max = 256.dp).testTag(QuranPlayerMetrics.MESSAGE),
+                color = RoyColors.destructive,
+                style = type.xs,
+            )
+        }
+    }
+}
+
+/** The saved copy's cost in the words the page also draws, from one copy source. */
+private fun savedSizeSentence(bytes: Long): String {
+    val parts = byteSizeParts(bytes)
+    return when (parts.unit) {
+        ByteSizeParts.Unit.MEGABYTES ->
+            QuranPlayerCopy.SAVED_SIZE_MEGABYTES.replace("{value}", parts.value)
+        ByteSizeParts.Unit.KILOBYTES ->
+            QuranPlayerCopy.SAVED_SIZE_KILOBYTES.replace("{value}", parts.value)
     }
 }
 
@@ -297,6 +367,9 @@ internal object QuranPlayerMetrics {
     const val STOP = "quran-player-stop"
     const val COUNTER = "quran-player-counter"
     const val MESSAGE = "quran-player-message"
+    const val SAVED = "quran-player-saved"
+    const val SIZE = "quran-player-size"
+    const val REMOVE = "quran-player-remove"
 
     val trackWidth = 180.dp
 

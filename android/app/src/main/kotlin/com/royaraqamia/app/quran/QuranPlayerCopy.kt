@@ -26,4 +26,8 @@ object QuranPlayerCopy {
     const val SAVED_PARTIAL = "بعض آياتها محفوظة فقط"
     const val OFFLINE = "هذه السُّورة غير محفوظة على هذا الجُهاز، وتحتاج اتِّصالًا لتشغيلها."
     const val ERROR = "تعذَّر تشغيل التِّلاوة. تحقَّق من الاتِّصال ثمَّ أعد المحاولة."
+    const val SAVED_SIZE_MEGABYTES = "حجم النسخة المحفوظة: {value} م.ب"
+    const val SAVED_SIZE_KILOBYTES = "حجم النسخة المحفوظة: {value} ك.ب"
+    const val REMOVE = "إزالة النسخة المحفوظة"
+    const val REMOVE_FAILED = "تعذّرت إزالة النسخة المحفوظة. حاول مرة أخرى."
 }

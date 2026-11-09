@@ -56,6 +56,7 @@ public class QuranPlaybackService extends MediaSessionService {
     static final String ACTION_LOAD = "com.royaraqamia.app.QURAN_LOAD";
     static final String ACTION_KEEP = "com.royaraqamia.app.QURAN_KEEP";
     static final String ACTION_KEEP_STATE = "com.royaraqamia.app.QURAN_KEEP_STATE";
+    static final String ACTION_REMOVE = "com.royaraqamia.app.QURAN_REMOVE";
     static final String ACTION_SAVED = "com.royaraqamia.app.QURAN_SAVED";
     static final String ACTION_STOP = "com.royaraqamia.app.QURAN_STOP";
     static final String SURA_PREFIX = "سورة ";
@@ -66,6 +67,7 @@ public class QuranPlaybackService extends MediaSessionService {
         ACTION_LOAD,
         ACTION_KEEP,
         ACTION_KEEP_STATE,
+        ACTION_REMOVE,
         ACTION_SAVED,
         ACTION_STOP,
     };
@@ -226,6 +228,7 @@ public class QuranPlaybackService extends MediaSessionService {
             if (ACTION_LOAD.equals(action)) return load(args);
             if (ACTION_KEEP.equals(action)) return keep(args);
             if (ACTION_KEEP_STATE.equals(action)) return keepState(args);
+            if (ACTION_REMOVE.equals(action)) return remove(args);
             if (ACTION_SAVED.equals(action)) return saved(args);
             if (ACTION_STOP.equals(action)) {
                 stopAndClear();
@@ -337,11 +340,54 @@ public class QuranPlaybackService extends MediaSessionService {
         return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS, result));
     }
 
+    /**
+     * Drops this Surah's copies and its cached manifest.
+     *
+     * The removal runs on the keep executor so it cannot race a download that is
+     * still writing the same files. If the sura is the one the service holds, the
+     * queue is rebuilt from the network — the item URIs it was built with pointed
+     * at the files that just went — so a reader who removes while listening keeps
+     * hearing the same Ayah rather than a dead one.
+     */
+    private ListenableFuture<SessionResult> remove(Bundle args) {
+        SettableFuture<SessionResult> result = SettableFuture.create();
+        int surah = args.getInt("surah", 0);
+        keepIo.execute(() -> {
+            try {
+                store.remove(surah);
+                manifests.remove(surah);
+                main.post(() -> {
+                    if (keep.surah == surah) keep = KeepState.idle();
+                    rebuildWithoutLocalCopy(surah);
+                    result.set(new SessionResult(SessionResult.RESULT_SUCCESS));
+                });
+            } catch (Exception failure) {
+                result.set(new SessionResult(SessionResult.RESULT_ERROR_IO));
+            }
+        });
+        return result;
+    }
+
+    private void rebuildWithoutLocalCopy(int surah) {
+        if (queue == null || queue.manifest.surah != surah || player == null) return;
+        List<MediaItem> items = buildItems(queue.manifest);
+        if (items.isEmpty()) return;
+        int index = Math.min(
+            Math.max(player.getCurrentMediaItemIndex(), 0),
+            items.size() - 1
+        );
+        long position = Math.max(player.getCurrentPosition(), 0);
+        player.setMediaItems(items, index, position);
+        player.prepare();
+        queue = new SurahQueue(queue.manifest, items);
+    }
+
     private ListenableFuture<SessionResult> saved(Bundle args) {
         int surah = args.getInt("surah", 0);
         int ayahCount = args.getInt("ayahCount", 0);
         Bundle result = new Bundle();
         result.putString("state", store.savedState(surah, ayahCount));
+        result.putLong("bytes", store.bytesFor(surah));
         return Futures.immediateFuture(new SessionResult(SessionResult.RESULT_SUCCESS, result));
     }
 

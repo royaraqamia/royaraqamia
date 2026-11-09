@@ -10,8 +10,8 @@ import org.junit.Test
  *
  * The panel is a view over the service, so the one rule worth pinning is which
  * face a snapshot paints on a given reader: a sura the controller is not on is
- * always "listen to this one", and a shared saved copy only decorates a sura the
- * service is actually holding.
+ * always "listen to this one". The device's kept copy is the sura's, drawn from
+ * the snapshot beside the face, not a member of it.
  */
 class QuranPlayerStateTest {
     @Test
@@ -28,7 +28,7 @@ class QuranPlayerStateTest {
     }
 
     @Test
-    fun `playing on this sura carries the Ayah, the count and the saved copy`() {
+    fun `playing on this sura carries the Ayah and the count`() {
         val snapshot =
             QuranPlayerSnapshot(
                 status = QuranPlayerStatus.PLAYING,
@@ -40,7 +40,7 @@ class QuranPlayerStateTest {
             )
 
         assertEquals(
-            QuranPlayerFace.Playing("الفاتحة", 2, 7, savedComplete = true),
+            QuranPlayerFace.Playing("الفاتحة", 2, 7),
             QuranPlayerFace.of(1, snapshot),
         )
     }
@@ -57,7 +57,7 @@ class QuranPlayerStateTest {
             )
 
         assertEquals(
-            QuranPlayerFace.Paused("الفاتحة", 5, 7, savedComplete = false),
+            QuranPlayerFace.Paused("الفاتحة", 5, 7),
             QuranPlayerFace.of(1, snapshot),
         )
     }

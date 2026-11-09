@@ -75,9 +75,11 @@ fun QuranSurahScreen(
     onSavePosition: (ayah: Int) -> Unit,
     modifier: Modifier = Modifier,
     face: QuranPlayerFace = QuranPlayerFace.Idle,
+    saved: QuranPlayerSaved = QuranPlayerSaved(),
     onPlay: () -> Unit = {},
     onToggle: () -> Unit = {},
     onStop: () -> Unit = {},
+    onRemove: () -> Unit = {},
 ) {
     val scroll = rememberScrollState()
     var cardTops by remember { mutableStateOf<Map<Int, Float>>(emptyMap()) }
@@ -157,8 +159,10 @@ fun QuranSurahScreen(
             if (face is QuranPlayerFace.Playing || face is QuranPlayerFace.Paused) onToggle else onPlay
         QuranPlayerPanel(
             face = face,
+            saved = saved,
             onPrimary = primary,
             onStop = onStop,
+            onRemove = onRemove,
             modifier = Modifier.align(Alignment.BottomEnd),
         )
     }

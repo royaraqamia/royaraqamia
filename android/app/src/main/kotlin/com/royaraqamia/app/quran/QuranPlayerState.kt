@@ -26,7 +26,6 @@ sealed interface QuranPlayerFace {
         val name: String,
         val ayah: Int,
         val ayahCount: Int,
-        val savedComplete: Boolean,
         val positionSeconds: Double = 0.0,
         val durationSeconds: Double = 0.0,
     ) : QuranPlayerFace
@@ -36,7 +35,6 @@ sealed interface QuranPlayerFace {
         val name: String,
         val ayah: Int,
         val ayahCount: Int,
-        val savedComplete: Boolean,
         val positionSeconds: Double = 0.0,
         val durationSeconds: Double = 0.0,
     ) : QuranPlayerFace
@@ -51,7 +49,6 @@ sealed interface QuranPlayerFace {
         /** The face [snapshot] paints on the reader for [surah]. */
         fun of(surah: Int, snapshot: QuranPlayerSnapshot): QuranPlayerFace {
             if (snapshot.surah != null && snapshot.surah != surah) return Idle
-            val saved = snapshot.saved == "complete"
             return when (snapshot.status) {
                 QuranPlayerStatus.LOADING -> Loading
                 QuranPlayerStatus.PLAYING ->
@@ -59,7 +56,6 @@ sealed interface QuranPlayerFace {
                         snapshot.name.orEmpty(),
                         snapshot.ayah,
                         snapshot.ayahCount,
-                        saved,
                         snapshot.positionSeconds,
                         snapshot.durationSeconds,
                     )
@@ -68,7 +64,6 @@ sealed interface QuranPlayerFace {
                         snapshot.name.orEmpty(),
                         snapshot.ayah,
                         snapshot.ayahCount,
-                        saved,
                         snapshot.positionSeconds,
                         snapshot.durationSeconds,
                     )
