@@ -47,7 +47,7 @@ function NotesSkeleton() {
   );
 }
 
-export function NotesPageClient() {
+export function NotesPageClient({ embedded = false }: { embedded?: boolean } = {}) {
   return (
     <>
       <header className="mb-8 text-center">
@@ -57,13 +57,13 @@ export function NotesPageClient() {
       </header>
 
       <Suspense fallback={<NotesSkeleton />}>
-        <NotesContent />
+        <NotesContent embedded={embedded} />
       </Suspense>
     </>
   );
 }
 
-function NotesContent() {
+function NotesContent({ embedded }: { embedded: boolean }) {
   const {
     ready,
     online,
@@ -90,15 +90,21 @@ function NotesContent() {
     setSelectedId(searchParams.get('note'));
   }, [searchParams]);
 
-  const select = useCallback((id: string | null) => {
-    setSelectedId(id);
-    if (typeof window === 'undefined') return;
-    const url = id ? `/notes?note=${encodeURIComponent(id)}` : '/notes';
-    // `replaceState` rather than the router: the document is a static shell, so a
-    // navigation would ask the network for a page it already has — and fail
-    // offline, which is the one state this surface is built for.
-    window.history.replaceState(window.history.state, '', url);
-  }, []);
+  const select = useCallback(
+    (id: string | null) => {
+      setSelectedId(id);
+      // The homepage host keeps the note in state and the address on `/`, so a
+      // tab never turns into a visit to `/notes` (ADR-0151). The route keeps the
+      // shareable `?note=`.
+      if (embedded || typeof window === 'undefined') return;
+      const url = id ? `/notes?note=${encodeURIComponent(id)}` : '/notes';
+      // `replaceState` rather than the router: the document is a static shell, so a
+      // navigation would ask the network for a page it already has — and fail
+      // offline, which is the one state this surface is built for.
+      window.history.replaceState(window.history.state, '', url);
+    },
+    [embedded]
+  );
 
   const handleCreate = useCallback(
     async (input: { body: string }) => {

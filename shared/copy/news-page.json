@@ -2,7 +2,7 @@
   "surface": "news",
   "component": "news-page",
   "web": {
-    "file": "app/news/news-page-copy.ts",
+    "file": "frontend/ui/news/news-page-copy.ts",
     "export": "NEWS_PAGE_COPY"
   },
   "native": {

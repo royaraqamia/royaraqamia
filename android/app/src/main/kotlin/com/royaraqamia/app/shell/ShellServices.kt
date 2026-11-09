@@ -109,11 +109,15 @@ sealed interface ServicesEntry {
     }
 
     companion object {
-        /** The rows the sheet lists, in the site's order. */
+        /**
+         * The rows the sheet lists, in the site's order. `/verify` and
+         * `/mcp/guide` left the picker (ADR-0152): their entries and copy stay
+         * declared for the screens that still draw them, but the sheet does not
+         * offer them.
+         */
         val rows: List<ServicesEntry> =
             listOf(
                 News,
-                Verify,
                 Rates,
                 Scan,
                 Quran,
@@ -122,7 +126,6 @@ sealed interface ServicesEntry {
                 HabitFlow,
                 SpendTrack,
                 Notes,
-                McpGuide,
             )
     }
 }

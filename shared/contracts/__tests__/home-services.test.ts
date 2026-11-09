@@ -12,8 +12,10 @@ import { SERVICES_LINK } from '@/frontend/ui/navbar/services-link';
  * be a tab the sheet has no label for.
  */
 describe('the homepage apps catalog', () => {
-  it('is exactly the sheet’s rows, in the sheet’s order', () => {
-    expect(HOME_SERVICE_ROUTES).toEqual((SERVICES_LINK.subItems ?? []).map((item) => item.href));
+  it('is exactly the sheet’s live rows, in the sheet’s order', () => {
+    expect(HOME_SERVICE_ROUTES).toEqual(
+      (SERVICES_LINK.subItems ?? []).filter((item) => !item.retired).map((item) => item.href)
+    );
   });
 
   it('has no duplicates, so an ordered set can round-trip through the wire', () => {

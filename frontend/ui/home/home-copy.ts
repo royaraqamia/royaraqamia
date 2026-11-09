@@ -12,4 +12,7 @@ export const HOME_COPY = {
   emptyNote: 'يمكنك تغييرها وقت ما تشاء.',
   stripLabel: 'تطبيقاتك',
   newApp: 'تطبيق جديد',
+  surfaceLoading: 'جاري تحميل التطبيق',
+  surfaceFailed: 'تعذّر تحميل التطبيق. تحقّق من اتصالك ثم أعد المحاولة.',
+  retry: 'أعد المحاولة',
 } as const;

@@ -17,6 +17,11 @@ interface AthkarReaderProps {
   collections: Record<AthkarPeriod, AthkarCollection>;
   /** The sitting the URL asks for: morning at `/athkar`, evening at `/athkar/evening`. */
   period: AthkarPeriod;
+  /**
+   * The homepage host keeps the sitting in state instead of the URL (ADR-0151),
+   * so the tab never navigates. Omitted, the reader writes the route as before.
+   */
+  onSelectPeriod?: (period: AthkarPeriod) => void;
 }
 
 /**
@@ -31,7 +36,7 @@ interface AthkarReaderProps {
  * note about the midnight reset are gone: what the sitting has done is read from
  * the cards themselves.
  */
-export function AthkarReader({ collections, period }: AthkarReaderProps) {
+export function AthkarReader({ collections, period, onSelectPeriod }: AthkarReaderProps) {
   const router = useRouter();
   const { counts, ready, increment, reset } = useAthkarCounts();
   const baseId = useId();
@@ -44,6 +49,10 @@ export function AthkarReader({ collections, period }: AthkarReaderProps) {
     // a pointer leaves it where the pointer put it.
     tabRefs.current[next]?.focus();
     if (next === period) return;
+    if (onSelectPeriod) {
+      onSelectPeriod(next);
+      return;
+    }
     router.push(next === 'morning' ? '/athkar' : '/athkar/evening');
   };
 

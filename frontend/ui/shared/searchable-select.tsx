@@ -197,7 +197,7 @@ export function SearchableSelect({
         side="bottom"
         sideOffset={6}
         collisionPadding={8}
-        className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-0 sm:w-[var(--radix-popover-trigger-width)] sm:p-0"
+        className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] max-sm:p-0 sm:w-[var(--radix-popover-trigger-width)] sm:p-0"
       >
         <OptionList
           value={value}

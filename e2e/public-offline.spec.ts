@@ -565,7 +565,7 @@ test('the door paints the apps a guest kept with the radio off', async ({ browse
   await page.reload({ waitUntil: 'domcontentloaded' });
   await waitForAppHydrated(page);
 
-  const athkar = page.getByRole('link', { name: 'أذكار الصَّباح والمساء' });
+  const athkar = page.getByRole('tab', { name: 'أذكار الصَّباح والمساء' });
   await expect(athkar).toBeVisible();
 
   await context.setOffline(true);

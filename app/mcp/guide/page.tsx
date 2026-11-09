@@ -1,10 +1,8 @@
 import '../app.css';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
 import { env } from '@/backend/config/env';
-import { CodeSnippet } from '@/frontend/ui/mcp/code-snippet';
-import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
+import { McpGuideSurface } from '@/frontend/ui/mcp/guide-surface';
 
 const SERVER_URL = `${env.baseUrl.replace(/\/+$/, '')}/mcp`;
 
@@ -26,129 +24,11 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image' },
 };
 
-function StepCard({
-  id,
-  step,
-  title,
-  children,
-}: {
-  /** The section's address (ADR-0147): `/mcp/guide#install`, `#connect`, … */
-  id: string;
-  step: number;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      id={id}
-      aria-label={title}
-      className="scroll-mt-28 relative overflow-hidden rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs"
-    >
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-sm font-bold text-primary">
-          {step}
-        </span>
-        <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-foreground">
-          {title}
-        </h2>
-      </div>
-      <div className="mt-3 space-y-2 text-sm sm:text-base leading-relaxed text-muted-foreground">
-        {children}
-      </div>
-    </section>
-  );
-}
-
 export default function McpGuidePage() {
   return (
     <div className="relative min-h-[var(--roy-page-height)] bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 selection:text-primary antialiased">
       <main id="main-content" className="flex-1 pt-6 pb-28 md:pb-32" dir="rtl">
-        <div className="cv-auto mx-auto max-w-3xl px-4">
-          <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
-            <SectionTitle as="h1">
-              <SectionTitleHighlight>ربط الـ MCP</SectionTitleHighlight>
-            </SectionTitle>
-          </div>
-
-          <div className="space-y-4 sm:space-y-5">
-            <StepCard id="install" step={1} title="عنوان الخادم">
-              <p>
-                جميع وكلاء البرمجة تحتاج إلى عنوان URL واحد. أضِفه إلى العميل مرة واحدة، وسيهتم
-                العميل بكل الباقي — بما فيه فتح المتصفح لتسجيل الدخول أول مرة.
-              </p>
-              <CodeSnippet code={SERVER_URL} label="عنوان الخادم" copyLabel="نسخ عنوان الخادم" />
-            </StepCard>
-
-            <StepCard id="connect" step={2} title="Claude Code">
-              <p>من داخل طرفية Claude Code شغّل أمر الربط التالي:</p>
-              <CodeSnippet
-                code={`claude mcp add --transport http royaraqamia ${SERVER_URL}`}
-                copyLabel="نسخ أمر Claude Code"
-              />
-            </StepCard>
-
-            <StepCard id="opencode" step={3} title="OpenCode">
-              <p>
-                أضِف الخادم إلى ملف <code className="font-mono">opencode.json</code> في مجلد المشروع
-                (أو الإعدادات العامة):
-              </p>
-              <CodeSnippet
-                copyLabel="نسخ تكوين OpenCode"
-                code={`
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "royaraqamia": {
-      "type": "remote",
-      "url": "${SERVER_URL}",
-      "enabled": true
-    }
-  }
-}
-`}
-              />
-            </StepCard>
-
-            <StepCard id="codex" step={4} title="Codex">
-              <p>من طرفية Codex شغّل أمر الربط التالي:</p>
-              <CodeSnippet
-                code={`codex mcp add royaraqamia --url ${SERVER_URL}`}
-                copyLabel="نسخ أمر Codex"
-              />
-              <p>
-                أو أضِف الخادم يدويًا إلى ملف{' '}
-                <code className="font-mono">~/.codex/config.toml</code>:
-              </p>
-              <CodeSnippet
-                label="التَّكوين النَّاتِج"
-                copyLabel="نسخ تكوين Codex"
-                code={`
-[mcp_servers.royaraqamia]
-url = "${SERVER_URL}"
-`}
-              />
-            </StepCard>
-
-            <StepCard id="other-client" step={5} title="أي عميل آخر">
-              <p>
-                إن كان عميلك يدعم MCP عبر «Streamable HTTP» — وهذا يشمل Cursor وGemini CLI ومعظم
-                الوكلاء الحديثين — فكل ما تحتاجه هو عنوان الخادم في الخطوة 1. النظام يعتمد OAuth 2.1
-                مع PKCE، لذا لن تحتاج لنسخ أي مفاتيح أو رموز يدويًا.
-              </p>
-            </StepCard>
-          </div>
-
-          <p className="mt-6 text-center text-sm sm:text-base leading-relaxed text-muted-foreground">
-            لمتابعة ما وصل إليه كل تطبيق — أو لفصل أحدها دون تسجيل الخروج — افتح{' '}
-            <Link
-              href="/account/connected-apps"
-              className="font-bold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded"
-            >
-              التَّطبيقات المتَّصلة بالـ MCP
-            </Link>{' '}
-            في حسابك.
-          </p>
-        </div>
+        <McpGuideSurface serverUrl={SERVER_URL} />
       </main>
     </div>
   );

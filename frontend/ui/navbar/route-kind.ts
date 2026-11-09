@@ -21,6 +21,13 @@ export const PRIMARY_ROUTES: readonly string[] = ['/', '/community', '/account']
 export const APP_ROUTES: readonly string[] = HOME_SERVICE_ROUTES;
 
 /**
+ * Pages that left the picker but still wear the app chrome (ADR-0152): the
+ * certificate check and the MCP guide answer their own routes and are reached
+ * from a certificate or the account, so the top nav and the tab bar stay.
+ */
+export const STANDALONE_ROUTES: readonly string[] = ['/verify', '/mcp/guide'];
+
+/**
  * Views inside a root that are a mode of it, not a drill-down: a sitting of the
  * same reader, reached from a tab that never leaves the app.
  */
@@ -93,7 +100,10 @@ export function isPrimaryRoute(pathname: string | null | undefined): boolean {
   const path = normalize(pathname);
 
   return (
-    PRIMARY_ROUTES.includes(path) || APP_ROUTES.includes(path) || APP_MODE_ROUTES.includes(path)
+    PRIMARY_ROUTES.includes(path) ||
+    APP_ROUTES.includes(path) ||
+    APP_MODE_ROUTES.includes(path) ||
+    STANDALONE_ROUTES.includes(path)
   );
 }
 

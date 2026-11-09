@@ -16,6 +16,12 @@ export interface NavLink {
   dropdownKey?: string;
   icon?: LucideIcon;
   comingSoon?: boolean;
+  /**
+   * A row the picker no longer offers (ADR-0152): the copy and the icon stay in
+   * the shared source for the screens that still draw them, and the sheet, the
+   * strip and the homepage catalog filter it out.
+   */
+  retired?: boolean;
   subItems?: NavLink[];
 }
 
