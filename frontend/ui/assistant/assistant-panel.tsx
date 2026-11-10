@@ -348,7 +348,7 @@ export function AssistantPanel({
       <DialogContent
         data-assistant-panel
         className={cn(
-          'flex flex-col gap-0 overflow-hidden p-0',
+          'flex flex-col gap-0 overflow-hidden p-0 font-sans',
           'max-sm:flex max-sm:flex-col max-sm:bottom-0 max-sm:max-w-none max-sm:w-full max-sm:rounded-none max-sm:rounded-t-3xl',
           'sm:inset-x-auto sm:inset-y-auto sm:mx-0 sm:my-0 sm:bottom-6 sm:start-6 sm:w-[26rem]',
           compact
@@ -359,7 +359,7 @@ export function AssistantPanel({
         <header className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card/40 px-4 py-3 pe-12">
           <AssistantOrb className="size-10" />
           <div className="min-w-0">
-            <DialogTitle className="font-heading text-xl leading-none text-foreground">
+            <DialogTitle className="text-xl leading-none text-foreground">
               {ASSISTANT_PANEL_COPY.title}
             </DialogTitle>
             <DialogDescription className="mt-1 truncate text-[11px] font-medium text-muted-foreground">
@@ -367,16 +367,6 @@ export function AssistantPanel({
             </DialogDescription>
           </div>
         </header>
-
-        {threadId ? (
-          <DismissThenNavigateLink
-            href={`/chats/${threadId}`}
-            dismiss={onDismiss}
-            className="flex min-h-11 shrink-0 items-center border-b border-border/40 px-4 text-xs font-bold text-primary transition-safe hover:bg-primary/5 hover:underline"
-          >
-            {ASSISTANT_PANEL_COPY.openThread}
-          </DismissThenNavigateLink>
-        ) : null}
 
         <div
           ref={scrollerRef}
@@ -594,9 +584,7 @@ function PanelGuest({ onDismiss }: { onDismiss: () => void }) {
   return (
     <div className="flex h-full flex-col items-center justify-center px-2 py-8 text-center">
       <AssistantOrb className="size-20" glyphClassName="size-[54%]" />
-      <p className="mt-5 font-heading text-2xl text-foreground">
-        {ASSISTANT_PANEL_COPY.guestTitle}
-      </p>
+      <p className="mt-5 text-2xl font-bold text-foreground">{ASSISTANT_PANEL_COPY.guestTitle}</p>
       <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
         {ASSISTANT_PANEL_COPY.guestBody}
       </p>

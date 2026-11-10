@@ -491,7 +491,7 @@ describe('GET /[code] redirect route', () => {
     });
 
     expect(res.status).toBe(302);
-    expect(res.url).toBe('http://localhost:3000/linksnap?error=blocked&code=abc123');
+    expect(res.url).toBe('http://localhost:3000/?tab=/linksnap&error=blocked&code=abc123');
   });
 
   it('redirects to the not-found page for unknown codes', async () => {
@@ -504,7 +504,7 @@ describe('GET /[code] redirect route', () => {
     });
 
     expect(res.status).toBe(302);
-    expect(res.url).toBe('http://localhost:3000/linksnap?error=not-found&code=abc123');
+    expect(res.url).toBe('http://localhost:3000/?tab=/linksnap&error=not-found&code=abc123');
   });
 
   it('returns 404 for reserved codes', async () => {

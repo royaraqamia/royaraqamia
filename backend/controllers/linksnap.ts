@@ -461,7 +461,7 @@ export async function redirectShortCode(
       redirect:
         err instanceof ShortLinkRedirectError && err.kind === 'password-protected'
           ? `${baseUrl}/unlock/${code}`
-          : `${baseUrl}/linksnap?error=${errorCode}&code=${code}`,
+          : `${baseUrl}/?tab=/linksnap&error=${errorCode}&code=${code}`,
     };
   }
 }

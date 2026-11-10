@@ -57,11 +57,11 @@
     },
     {
       "id": "linksnap",
-      "routes": ["/linksnap"],
+      "routes": ["/?tab=/linksnap"],
       "owner": "local-store",
       "read": "store",
       "write": "outbox",
-      "shell": "precached",
+      "shell": "none",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/linksnap-offline.spec.ts"],
       "issue": "#493",
       "paint": "linksnap"

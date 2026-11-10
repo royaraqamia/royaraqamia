@@ -5,7 +5,7 @@ import NextLink from 'next/link';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Copy, Check, Share2, QrCode, RotateCcw, LockOpen, CloudOff } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
-import { getBaseUrl } from '@/frontend/shared/get-base-url';
+import { getBaseUrl, getBaseHost } from '@/frontend/shared/get-base-url';
 import { hslToHex } from '@/frontend/shared/hsl-to-hex';
 import { toast } from 'sonner';
 import { useShortenLink } from '@/frontend/state/linksnap/use-shorten';
@@ -190,7 +190,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 dir="ltr"
               >
                 <span className="shrink-0 px-3 text-sm text-muted-foreground font-bold select-none whitespace-nowrap py-3.5 leading-snug">
-                  {getBaseUrl()}/
+                  {getBaseHost()}/
                 </span>
                 <input
                   id="custom-code"

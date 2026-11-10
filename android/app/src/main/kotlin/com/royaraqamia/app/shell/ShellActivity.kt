@@ -590,10 +590,6 @@ class ShellActivity : ComponentActivity() {
                             assistantOpen = false
                             openRoute("/pricing")
                         },
-                        onOpenThread = { id ->
-                            assistantOpen = false
-                            openRoute(ChatRoutes.threadOf(id))
-                        },
                         onOpenAttachment = ::openExternal,
                     )
                 }

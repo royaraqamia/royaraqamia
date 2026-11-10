@@ -1,4 +1,8 @@
-import { HOME_SERVICE_ROUTES, type HomeServiceKey } from '@/shared/contracts/home-services-catalog';
+import {
+  HOME_SERVICE_ROUTES,
+  isHomeServiceKey,
+  type HomeServiceKey,
+} from '@/shared/contracts/home-services-catalog';
 
 /**
  * A guest's homepage apps, on this device (ADR-0146).
@@ -64,17 +68,41 @@ export function clearGuestHomeServices(): void {
  * It is a device preference like the strip: the selection is a view, not
  * account data, and it is only read to keep a reload on the tab the member was
  * last in. A value the catalog no longer has falls back to the first app.
+ *
+ * A `?tab=` on the address wins over the remembered one (ADR-0156): it is how a
+ * bookmark, a shared link and a retired app route name the tab they want. The
+ * value is the tab's own key — `/linksnap` — so the address, the strip and the
+ * catalog spell the app the same way.
  */
 const TAB_KEY = 'royaraqamia:home-tab:v1';
+
+/**
+ * The `?tab=` on the address, when it is a tab the catalog knows.
+ *
+ * Separate from the remembered tab because the two mean different things: the
+ * address asks for this app now, while the preference is only what a plain `/`
+ * should paint (ADR-0156).
+ */
+export function readRequestedHomeTab(): HomeServiceKey | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const requested = new URLSearchParams(window.location.search).get('tab');
+    return isHomeServiceKey(requested) ? requested : null;
+  } catch {
+    return null;
+  }
+}
 
 export function readHomeTab(): HomeServiceKey | null {
   if (typeof window === 'undefined') return null;
 
+  const requested = readRequestedHomeTab();
+  if (requested) return requested;
+
   try {
     const raw = window.localStorage.getItem(TAB_KEY);
-    return typeof raw === 'string' && (HOME_SERVICE_ROUTES as readonly string[]).includes(raw)
-      ? (raw as HomeServiceKey)
-      : null;
+    return isHomeServiceKey(raw) ? raw : null;
   } catch {
     return null;
   }

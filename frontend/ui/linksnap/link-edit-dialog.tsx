@@ -26,7 +26,7 @@ import {
 import { cn } from '@/frontend/shared/cn';
 import { useUpdateLink } from '@/frontend/state/linksnap/use-links';
 import { useSlugAvailability } from '@/frontend/state/linksnap/use-slug-availability';
-import { getBaseUrl } from '@/frontend/shared/get-base-url';
+import { getBaseUrl, getBaseHost } from '@/frontend/shared/get-base-url';
 import { DatePicker } from '@/frontend/ui/primitives/date-picker';
 import { TimePicker } from '@/frontend/ui/primitives/time-picker';
 import {
@@ -137,10 +137,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
   const { updateLink, updateLoading, updateError } = useUpdateLink(token);
   const { status: slugStatus, error: slugError } = useSlugAvailability(form.code, token, code);
 
-  const baseUrl = useMemo(() => {
-    const b = getBaseUrl();
-    return b.replace(/^https?:\/\//, '');
-  }, []);
+  const baseUrl = useMemo(() => getBaseHost(), []);
 
   const fullShortUrl = useMemo(() => {
     return `${getBaseUrl()}/${form.code || code}`;

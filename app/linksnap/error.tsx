@@ -40,7 +40,7 @@ export default function Error({
             <span>إعادة المحاولة</span>
           </button>
           <Link
-            href="/linksnap"
+            href="/?tab=/linksnap"
             className="px-5 py-2.5 bg-muted hover:bg-muted/80 text-muted-foreground text-sm font-bold rounded-full transition-safe flex items-center gap-2 focus-ring touch-target btn-press"
           >
             <ArrowLeft className="w-4 h-4" />

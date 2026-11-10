@@ -140,6 +140,15 @@ const nextConfig = {
     ]);
 
     return [
+      // The apps are tabs of the door now (ADR-0156): LinkSnap's own page is
+      // gone, and an old bookmark, a push or a failed short link lands on the
+      // tab instead. The query is passed through, so `?error=` and `?code=`
+      // still reach the banner that explains them.
+      {
+        source: '/linksnap',
+        destination: '/?tab=/linksnap',
+        permanent: false,
+      },
       {
         source: '/blog',
         destination: '/community',

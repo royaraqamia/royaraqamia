@@ -63,7 +63,9 @@ async function deleteLinkViaUi(page: Page, code: string) {
 
 /** Creates a short link through the public shortener while online. */
 async function createOnline(page: Page, baseURL: string, url: string, code: string) {
-  await gotoUnderWorkerControl(page, `${baseURL}/linksnap`);
+  // The shortener is a tab of the door now (ADR-0156), so the door's address is
+  // what a bookmark, a reload and this spec navigate to.
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/linksnap`);
   await waitReady(page);
   await expect(page.locator('#custom-code')).toBeVisible();
   await page.locator('#original-url').fill(url);
@@ -90,7 +92,7 @@ test('a link created offline reaches the server after reconnect', async ({ brows
   const url = `https://example.com/${code}`;
 
   const page = await context.newPage();
-  await gotoUnderWorkerControl(page, `${baseURL}/linksnap`);
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/linksnap`);
   await waitReady(page);
   await expect(page.locator('#custom-code')).toBeVisible();
 

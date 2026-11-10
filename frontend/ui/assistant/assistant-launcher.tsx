@@ -119,7 +119,7 @@ export function AssistantLauncher() {
         onPointerEnter={() => void loadPanel()}
         onPointerDown={() => void loadPanel()}
         onFocus={() => void loadPanel()}
-        className="group fixed bottom-[var(--roy-assistant-bottom)] z-50 inline-flex items-center justify-center gap-2.5 rounded-full border border-white/10 bg-neutral-950 text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.9)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-0.5 hover:border-violet-400/40 hover:shadow-[0_24px_48px_-18px_rgba(139,92,246,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 max-sm:start-4 max-sm:p-0 sm:start-5 sm:h-14 sm:ps-1.5 sm:pe-5 print:hidden"
+        className="group fixed bottom-[var(--roy-assistant-bottom)] z-50 inline-flex items-center justify-center gap-2.5 rounded-full border border-white/10 bg-neutral-950 font-sans text-white shadow-[0_18px_40px_-18px_rgba(0,0,0,0.9)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-0.5 hover:border-violet-400/40 hover:shadow-[0_24px_48px_-18px_rgba(139,92,246,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 max-sm:start-4 max-sm:p-0 sm:start-5 sm:h-14 sm:ps-1.5 sm:pe-5 print:hidden"
       >
         <AssistantOrb className="shrink-0 max-sm:size-14 sm:size-11" />
         <span className="max-sm:hidden pe-1 text-[13px] font-bold leading-none sm:inline">

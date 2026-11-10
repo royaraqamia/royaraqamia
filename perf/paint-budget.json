@@ -20,7 +20,7 @@
     },
     {
       "id": "linksnap",
-      "path": "/linksnap",
+      "path": "/?tab=/linksnap",
       "auth": true,
       "ceiling": { "cold": 2200, "warm": 450 },
       "tap": {

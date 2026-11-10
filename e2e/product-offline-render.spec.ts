@@ -167,7 +167,7 @@ test('LinkSnap reloads offline and reports the link it queued', async ({ browser
   const code = `e2e${Date.now().toString(36)}`;
   const url = `https://example.com/${code}`;
   const page = await context.newPage();
-  await gotoUnderWorkerControl(page, `${baseURL}/linksnap`);
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/linksnap`);
   await expect(page.locator('[data-linksnap-ready="true"]')).toBeAttached();
   await expect(page.locator('#original-url')).toBeVisible();
 
@@ -245,25 +245,25 @@ test('Quran reloads offline in the remembered identity', async ({ browser, baseU
 });
 
 /**
- * The product subroute that has no document of its own (#490).
+ * A product subroute that has no document of its own (#490).
  *
- * Every product root is a cached shell (ADR-0073), and each one can have a
- * dynamic child the build cannot precache: `/linksnap/unlock/<code>` here, a
- * password-protected share link opened from a message. Before #490 that deep link
- * was answered with a different screen; now the worker serves the root the device
- * holds at the URL the user asked for, silently, and the unlock form itself is
- * simply not there.
+ * The product roots used to be cached shells (ADR-0073); LinkSnap's is a tab of
+ * the door now (ADR-0156), so a dynamic child the build cannot precache —
+ * `/linksnap/unlock/<code>` here, a password-protected share link opened from a
+ * message — falls back to the nearest cached shell the device holds, which is
+ * `/`. The worker serves it at the URL the user asked for, silently, and the
+ * unlock form itself is simply not there.
  */
-test('a never-visited product subroute keeps the product chrome', async ({ page, baseURL }) => {
+test('a never-visited product subroute falls back to the door', async ({ page, baseURL }) => {
   test.setTimeout(120_000);
 
-  await gotoUnderWorkerControl(page, `${baseURL}/linksnap`);
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/linksnap`);
   await expect(page.getByRole('heading', { name: 'اختصار الرَّوابط' })).toBeVisible();
 
-  // The root shell arrives from the background refresh (#489); the deep link
-  // below is opened for the first time with the radio off.
+  // The door is in the worker's fixed precache list (`PRECACHE_URLS`), so the
+  // offline deep link below has an ancestor to be answered with.
   await expect
-    .poll(() => page.evaluate(() => caches.match('/linksnap').then((hit) => Boolean(hit))), {
+    .poll(() => page.evaluate(() => caches.match('/').then((hit) => Boolean(hit))), {
       timeout: 90_000,
       intervals: [250, 500, 1000],
     })

@@ -79,7 +79,6 @@ describe('route kinds', () => {
     '/athkar/evening',
     '/rates',
     '/rates?from=USD&to=EUR',
-    '/mcp/guide#install',
   ])('treats %s as app chrome', (pathname) => {
     expect(isPrimaryRoute(pathname)).toBe(true);
     expect(chromeFor(pathname)).toBe('app');
@@ -93,6 +92,7 @@ describe('route kinds', () => {
     '/blogpress',
     '/quran/2',
     '/spendtrack/categories',
+    '/mcp/guide#install',
   ])('treats %s as a drill-down', (pathname) => {
     expect(isPrimaryRoute(pathname)).toBe(false);
     expect(chromeFor(pathname)).toBe('back');
@@ -122,12 +122,11 @@ describe('route kinds', () => {
     }
   });
 
-  it('keeps the two pages that left the picker on the app chrome', () => {
-    for (const pathname of ['/verify', '/mcp/guide#install']) {
-      expect(isPrimaryRoute(pathname)).toBe(true);
-      expect(chromeFor(pathname)).toBe('app');
-      expect(isAppRoot(pathname)).toBe(false);
-    }
+  it('keeps the certificate check that left the picker on the app chrome', () => {
+    const pathname = '/verify';
+    expect(isPrimaryRoute(pathname)).toBe(true);
+    expect(chromeFor(pathname)).toBe('app');
+    expect(isAppRoot(pathname)).toBe(false);
   });
 
   it('keeps LAYOUT_ONLY_PATHS in step with the folders under app/', () => {
@@ -161,7 +160,7 @@ describe('parentRouteOf', () => {
     ['/consultation/book', '/'],
     ['/training/apply', '/'],
     ['/u/someone', '/'],
-    ['/linksnap/unlock/abc123', '/linksnap'],
+    ['/linksnap/unlock/abc123', '/'],
     ['/admin/clients/retainers', '/admin'],
     ['/admin/consultations/bookings', '/admin'],
     ['/admin/training/cohorts', '/admin'],

@@ -8,12 +8,12 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 import { LINKSNAP_PAGE_COPY } from './linksnap-page-copy';
 
 /**
- * The app's content without the route frame: the route draws it inside its
- * layout, and the homepage under the strip (ADR-0151).
+ * The app's content without a route frame: the homepage draws it under the
+ * strip (ADR-0151, ADR-0156). The app root that used to wrap it is a redirect to
+ * the tab now, so this is the only page that draws the surface.
  *
- * The links door lives here, not in the route (ADR-0153, amended): the page and
- * its tab draw the same surface, so the FAB follows the app to the homepage the
- * way `/news` carries its settings gear.
+ * The links door lives here, not in the route: the tab draws the shortener and
+ * its FAB the way `/news` carries its settings gear.
  */
 export function LinkSnapSurface() {
   return (

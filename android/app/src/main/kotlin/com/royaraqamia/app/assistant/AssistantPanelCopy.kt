@@ -21,7 +21,6 @@ object AssistantPanelCopy {
     const val GUEST_TITLE = "تحدّث مع نور"
     const val GUEST_BODY = "سجّل الدخول لتحفظ محادثتك مع نور وتكملها من أي جهاز."
     const val SIGN_IN = "تسجيل الدخول"
-    const val OPEN_THREAD = "فتح المحادثة كاملة"
     const val LOADING = "جاري فتح المحادثة..."
     const val FAILED = "تعذّر فتح المحادثة. حاول مرة أخرى."
     const val RETRY = "إعادة المحاولة"

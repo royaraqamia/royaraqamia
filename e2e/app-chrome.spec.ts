@@ -112,7 +112,6 @@ test.describe('primary pages', () => {
     '/notes',
     '/spendtrack',
     '/habitflow',
-    '/linksnap',
     '/mcp/guide',
   ]) {
     test(`${path} keeps the top nav and the bottom tab bar`, async ({ page }) => {
@@ -227,7 +226,7 @@ test.describe('a secondary child of a primary shell', () => {
 });
 
 test.describe('secondary pages', () => {
-  for (const path of ['/privacy', '/terms', '/security', '/app-info', '/quran/2']) {
+  for (const path of ['/privacy', '/terms', '/security', '/app-info', '/quran/2', '/mcp/guide']) {
     test(`${path} drops the app chrome for a back header`, async ({ page }) => {
       await page.goto(path);
 

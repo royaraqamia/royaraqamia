@@ -15,7 +15,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `habitflow` | `/habitflow` | `HabitflowScreen.kt` |  |
 | `spendtrack` | `/spendtrack` | `SpendtrackScreen.kt` |  |
 | `spendtrack-categories` | `/spendtrack/categories` | `SpendtrackCategoriesScreen.kt` |  |
-| `linksnap` | `/linksnap` | `LinksnapShortenerScreen.kt` |  |
+| `linksnap` | `/?tab=/linksnap` | `LinksnapShortenerScreen.kt` |  |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` |  |
 | `quran` | `/quran` | `QuranIndexScreen.kt` |  |
 | `notes` | `/notes` | _web only_ | The app shows the page as the document; the product's native screens land in phase 3 (#646). |

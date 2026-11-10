@@ -27,7 +27,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -98,7 +97,6 @@ fun AssistantSheet(
     onDismiss: () -> Unit,
     onSignIn: () -> Unit,
     onUpgrade: () -> Unit,
-    onOpenThread: (String) -> Unit,
     onOpenAttachment: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -143,7 +141,7 @@ fun AssistantSheet(
                     if (state == AssistantUiState.Asking) streaming += event.text
                 is AssistantEvent.Tool -> tools = tools + event.label
                 is AssistantEvent.Error -> notice = event.message
-                is AssistantEvent.Proposal -> notice = AssistantPanelCopy.OPEN_THREAD
+                is AssistantEvent.Proposal -> notice = event.label.ifBlank { null }
                 AssistantEvent.Done -> Unit
             }
         }
@@ -366,15 +364,6 @@ fun AssistantSheet(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                }
-                threadId?.let { id ->
-                    TextButton(onClick = { onOpenThread(id) }) {
-                        Text(
-                            text = AssistantPanelCopy.OPEN_THREAD,
-                            style = type.xs.copy(fontWeight = FontWeight.Bold),
-                            color = RoyColors.primary,
-                        )
-                    }
                 }
             }
 
