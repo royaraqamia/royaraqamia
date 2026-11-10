@@ -23,6 +23,7 @@ export const MCP_MARKETPLACE_COPY = {
   searchPlaceholder: 'ابحث باسم التطبيق أو وصفه...',
   searchAction: 'بحث',
   searchLoading: 'جاري البحث...',
+  searchRefreshing: 'جاري تحديث القائمة...',
   searchFailed: 'تعذّر تحميل المتجر.',
   searchOffline: 'تعذّر تحميل المتجر: لم يصل الطلب إلى الخادم. تحقّق من اتصالك ثم أعد المحاولة.',
   searchEmptyTitle: 'لا يوجد تطبيق بهذا الاسم',
