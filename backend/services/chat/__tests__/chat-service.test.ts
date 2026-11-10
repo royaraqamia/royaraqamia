@@ -1028,6 +1028,44 @@ describe('ChatService.sendMessage attachments', () => {
     });
   });
 
+  it('refuses a send whose object Storage cannot measure (#1077)', async () => {
+    const { service, repository } = makeRepository({
+      insertMessage: vi.fn(async () => ({
+        record: {
+          id: 'm-9',
+          conversationId: 'c-1',
+          senderId: me,
+          senderKind: 'user' as const,
+          body: null,
+          replyToId: null,
+          editedAt: null,
+          deletedAt: null,
+          createdAt: '2026-11-01T10:05:00.000Z',
+          clientId: null,
+        },
+        // The trigger measured the object instead of believing the declared
+        // 2048, and Storage could not name it: a permanent refusal, never a row
+        // the caps cannot account for.
+        attachmentFailure: { code: '53400', message: 'chat attachment size is unknown' },
+      })),
+    });
+
+    await expect(
+      service.sendMessage(me, 'c-1', {
+        attachments: [
+          {
+            storagePath: 'c-1/u-1/report.pdf',
+            fileName: 'report.pdf',
+            mimeType: 'application/pdf',
+            byteSize: 2048,
+          },
+        ],
+      })
+    ).rejects.toMatchObject({ status: 409, message: 'تعذّر إرسال الرسالة' });
+
+    expect(repository.tombstoneMessage).toHaveBeenCalledWith('m-9', me);
+  });
+
   it('names a path the guard refused as a policy answer', async () => {
     const { service } = makeRepository({
       insertMessage: vi.fn(async () => ({

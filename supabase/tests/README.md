@@ -168,6 +168,9 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
   against today, which is what separates the two refusals.
 - The bucket's own limit is the configured file cap, so Storage refuses an oversized object
   before the trigger is reached.
+- The number the caps sum is Storage's, not the request's (#1077): a 10 MB object declared as
+  one byte is refused by the file cap, and a low or high declaration is recorded as the stored
+  bytes. Every fixture here therefore seeds `storage.objects.metadata->>'size'`.
 - `chat_attachment_allowance()` answers the caller's day and total plus the project's, which is
   what the composer draws.
 
@@ -258,6 +261,9 @@ columns filled in.
 
 `chat_attachment_allowances_test.sql` (#852) is unrun too. Its arithmetic is checked by hand in the
 comments beside each assertion; the risk is the settings update between role switches, not the caps.
+Its fixtures now carry `metadata->>'size'` for every object (#1077), which is the one thing the
+trigger reads instead of the row's declared number — if a first run refuses with
+`chat attachment size is unknown`, that is the fixture to look at.
 
 `chat_participants_test.sql` (#840) is unrun for the same reason. The parts most likely to need a
 first-run adjustment are the `current_user` owner check inside the guard (it compares against
