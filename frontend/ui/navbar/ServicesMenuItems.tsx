@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
@@ -32,6 +33,7 @@ interface ServicesMenuItemsProps {
  */
 export function ServicesMenuItems({ subItems, onNavigate }: ServicesMenuItemsProps) {
   const { order, add, remove } = useHomeServices();
+  const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
 
@@ -114,7 +116,26 @@ export function ServicesMenuItems({ subItems, onNavigate }: ServicesMenuItemsPro
                 <Link
                   href={item.href}
                   data-visual="services-external-row"
-                  onClick={() => onNavigate?.()}
+                  onClick={(event) => {
+                    // The sheet closes on the same tap, and unmounting an anchor
+                    // inside its own handler is what cancels Next's navigation —
+                    // so the push is imperative and the close comes after it.
+                    // Modified clicks keep the browser's own behaviour: a new tab
+                    // is still a new tab.
+                    if (
+                      event.defaultPrevented ||
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    ) {
+                      return;
+                    }
+                    event.preventDefault();
+                    router.push(item.href);
+                    onNavigate?.();
+                  }}
                   className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-start transition-safe duration-150 ease-out hover:bg-neutral-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80"
                 >
                   {Icon && <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />}

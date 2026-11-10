@@ -218,6 +218,33 @@ describe('the member’s connections', () => {
     ]);
   });
 
+  it('does not call a fresh list stale because the connection was stamped a moment later', async () => {
+    // The flow saves the tools, then writes the count and `last_synced_at`, so
+    // the connection's stamp is always the later of the two. The comparison is
+    // against the tools' own newest row, not against that stamp.
+    const { repository } = fakeRepository({
+      connections: [connection({ last_synced_at: '2026-11-10T10:00:01.000Z' })],
+      tools: [tool({ last_seen_at: '2026-11-10T10:00:00.000Z' })],
+    });
+    const service = createMcpConnectionService({ repository, remote: fakeRemote() });
+
+    const detail = await service.detail(USER, CONNECTION_ID);
+
+    expect(detail?.tools[0]?.stale).toBe(false);
+  });
+
+  it('marks every old tool stale when the last read advertised none', async () => {
+    const { repository } = fakeRepository({
+      connections: [connection({ tool_count: 0 })],
+      tools: [tool({ last_seen_at: '2026-11-10T10:00:00.000Z' })],
+    });
+    const service = createMcpConnectionService({ repository, remote: fakeRemote() });
+
+    const detail = await service.detail(USER, CONNECTION_ID);
+
+    expect(detail?.tools[0]?.stale).toBe(true);
+  });
+
   it('answers nothing for a connection another member holds', async () => {
     const { repository } = fakeRepository({
       connections: [connection({ user_id: 'user-2' })],
