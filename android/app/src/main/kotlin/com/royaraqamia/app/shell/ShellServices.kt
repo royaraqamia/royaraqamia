@@ -92,6 +92,15 @@ sealed interface ServicesEntry {
         override val route: String = "/mcp/guide"
     }
 
+    /**
+     * The marketplace (ADR-0155, phase 3 / #1224): not one of our apps, so it
+     * is not in [rows] and can never be added to the homepage. It is drawn under
+     * the nine, behind a divider and a section label, and it navigates.
+     */
+    data object Marketplace : ServicesEntry {
+        override val route: String = "/mcp/apps"
+    }
+
     companion object {
         /**
          * The rows the sheet lists, in the site's order. `/verify` and
@@ -179,6 +188,7 @@ internal fun labelOf(entry: ServicesEntry): String =
         ServicesEntry.SpendTrack -> ServicesCopy.SPEND_TRACK
         ServicesEntry.Notes -> ServicesCopy.NOTES
         ServicesEntry.McpGuide -> ServicesCopy.MCP_GUIDE
+        ServicesEntry.Marketplace -> ServicesCopy.MARKETPLACE
     }
 
 /** The site's own glyph for a row, from its `lucide-react` imports. */
@@ -196,4 +206,5 @@ internal fun iconOf(entry: ServicesEntry): ImageVector =
         ServicesEntry.SpendTrack -> LucideVectors.Wallet
         ServicesEntry.Notes -> LucideVectors.StickyNote
         ServicesEntry.McpGuide -> LucideVectors.Plug
+        ServicesEntry.Marketplace -> LucideVectors.Plug
     }

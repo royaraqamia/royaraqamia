@@ -22,6 +22,11 @@ import { SERVICES_COPY } from './services-copy';
  * the glyph stay one shared source, and the sheet, the strip and the catalog
  * filter `retired` out. Their routes and screens stay live.
  *
+ * The one `pickerOnly` row at the end is the marketplace (ADR-0155): it opens
+ * `/mcp/apps` under its own divider and section label, it is not one of our
+ * apps, and it is excluded from `HOME_SERVICE_ROUTES` so a stranger's app never
+ * becomes a homepage tab with no app behind it.
+ *
  * The four lead forms left this list earlier (ADR-0148).
  *
  * The words are [SERVICES_COPY] — one generated source, both clients, the app
@@ -103,6 +108,15 @@ export const SERVICES_LINK: NavLink = {
       label: SERVICES_COPY.mcpGuide,
       isRoute: true,
       retired: true,
+    },
+    {
+      href: '/mcp/apps',
+      label: SERVICES_COPY.marketplace,
+      hint: SERVICES_COPY.marketplaceHint,
+      isRoute: true,
+      icon: Plug,
+      pickerOnly: true,
+      sectionLabel: SERVICES_COPY.marketplaceSection,
     },
   ],
 };

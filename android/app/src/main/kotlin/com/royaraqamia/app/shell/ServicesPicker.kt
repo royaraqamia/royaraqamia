@@ -3,6 +3,7 @@ package com.royaraqamia.app.shell
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -92,6 +94,16 @@ internal object PickerMetrics {
     val errorTextSize = 12.sp
     val borderWidth = 1.dp
     val sheetRadius = 16.dp
+
+    /** The marketplace block under the nine (ADR-0155). */
+    val marketplaceDividerTop = 8.dp
+    val marketplaceSectionTop = 10.dp
+    val marketplaceSectionBottom = 2.dp
+    val marketplaceSectionTextSize = 11.sp
+    val marketplaceRowRadius = 12.dp
+    val marketplaceRowVerticalPadding = 12.dp
+    val marketplaceHintTextSize = 12.sp
+    val marketplaceHintTop = 2.dp
 }
 
 /**
@@ -116,6 +128,8 @@ fun ServicesSheet(
     error: String?,
     onToggle: (String) -> Unit,
     onDismiss: () -> Unit,
+    /** The marketplace row: it navigates, so the caller closes and routes (#1224). */
+    onOpenMarketplace: () -> Unit = onDismiss,
 ) {
     if (!open) return
 
@@ -181,6 +195,40 @@ fun ServicesSheet(
                         onToggle = { onToggle(entry.route) },
                     )
                 }
+
+                // The marketplace is not one of the nine (ADR-0155): a divider,
+                // its section label, then a row that navigates rather than
+                // toggling. A stranger's app never sits beside `/quran`.
+                Box(
+                    Modifier.fillMaxWidth()
+                        .padding(
+                            top = PickerMetrics.marketplaceDividerTop,
+                            start = PickerMetrics.rowHorizontalPadding,
+                            end = PickerMetrics.rowHorizontalPadding,
+                        )
+                        .height(PickerMetrics.borderWidth)
+                        .background(PickerColors.Divider.copy(alpha = 0.6f))
+                )
+                Text(
+                    text = ServicesCopy.MARKETPLACE_SECTION,
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontSize = PickerMetrics.marketplaceSectionTextSize,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(
+                                top = PickerMetrics.marketplaceSectionTop,
+                                bottom = PickerMetrics.marketplaceSectionBottom,
+                                start = PickerMetrics.rowHorizontalPadding,
+                                end = PickerMetrics.rowHorizontalPadding,
+                            ),
+                    textAlign = TextAlign.Start,
+                    maxLines = 1,
+                )
+                MarketplaceRow(onOpenMarketplace)
 
                 // The page's line is a block that only has its top padding when
                 // there is nothing to say (whitespace collapses), so the empty
@@ -266,8 +314,59 @@ private fun PickerRow(
     }
 }
 
-/** The site's action pill, in its two colours. */
+/**
+ * The marketplace row (ADR-0155): the glyph, the name, and the sentence that
+ * says what it is for. It is a destination, not a toggle, so it is a clickable
+ * row rather than a `PickerAction` pill.
+ */
 @Composable
+private fun MarketplaceRow(onOpen: () -> Unit) {
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                .clip(RoundedCornerShape(PickerMetrics.marketplaceRowRadius))
+                .clickable(onClick = onOpen)
+                .semantics { role = Role.Button }
+                .testTag("services-external-row")
+                .padding(
+                    horizontal = PickerMetrics.rowHorizontalPadding,
+                    vertical = PickerMetrics.marketplaceRowVerticalPadding,
+                ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(PickerMetrics.iconGap),
+    ) {
+        Icon(
+            imageVector = iconOf(ServicesEntry.Marketplace),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(PickerMetrics.iconSize),
+        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = labelOf(ServicesEntry.Marketplace),
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = PickerMetrics.labelTextSize,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+            Text(
+                text = ServicesCopy.MARKETPLACE_HINT,
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontSize = PickerMetrics.marketplaceHintTextSize,
+                    ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = PickerMetrics.marketplaceHintTop),
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+/** The site's action pill, in its two colours. */@Composable
 private fun PickerAction(
     state: PickerRowState,
     pending: Boolean,

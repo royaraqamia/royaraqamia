@@ -275,6 +275,10 @@
         {
           "name": "McpGuide",
           "copy": "mcpGuide"
+        },
+        {
+          "name": "Marketplace",
+          "copy": "marketplace"
         }
       ]
     },

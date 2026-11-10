@@ -1,19 +1,14 @@
-import type { Metadata } from 'next';
-
-import { McpConnectedAppsView } from '@/frontend/ui/account/mcp-connected-apps-view';
-
-export const metadata: Metadata = {
-  title: 'التَّطبيقات المتَّصلة بالـ MCP',
-  description:
-    'التَّطبيقات الخارجيَّة المتَّصلة بحسابك عبر بروتوكول سياق النَّماذج (MCP)، مع إمكانيَّة فصل أيٍّ منها في أيِّ وقت.',
-};
+import { redirect } from 'next/navigation';
 
 /**
- * A data-free shell: the guard and the read live in `McpConnectedAppsView` on
- * the client (#448), so the document carries nothing account-bearing and the
- * worker may cache it. The read runs on the never-cache `/api/me` prefix, so
- * offline it answers with the view's own needs-connection state.
+ * The old home of the inbound list (ADR-0155, decision 10).
+ *
+ * The list was never wrong — its address was. It is now the first tab of
+ * `/mcp/apps`, so this page keeps its URL and keeps resolving for the account
+ * row, a bookmark and the app's screen table, and sends the reader to the tab
+ * that renders the same list. A tab that teleported elsewhere would be the
+ * worse answer; a redirect nobody sees is the better one.
  */
 export default function AccountConnectedAppsPage() {
-  return <McpConnectedAppsView />;
+  redirect('/mcp/apps?tab=inbound');
 }

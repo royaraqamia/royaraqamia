@@ -24,4 +24,7 @@ object ServicesCopy {
     const val SPEND_TRACK = "تتبُّع المصاريف"
     const val NOTES = "الملاحظات"
     const val MCP_GUIDE = "ربط الـ MCP"
+    const val MARKETPLACE_SECTION = "تطبيقات خارجية"
+    const val MARKETPLACE = "متجر التطبيقات"
+    const val MARKETPLACE_HINT = "اربط تطبيقًا ليعمل مع نور"
 }

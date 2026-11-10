@@ -53,7 +53,7 @@ export function ServicesSheet({
           <SheetTitle className="sr-only">{SERVICES_SHEET_COPY.title}</SheetTitle>
         </SheetHeader>
         <div className="overflow-y-auto p-1.5">
-          <ServicesMenuItems subItems={link.subItems} />
+          <ServicesMenuItems subItems={link.subItems} onNavigate={() => onOpenChange(false)} />
         </div>
       </SheetContent>
     </Sheet>

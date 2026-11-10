@@ -45,4 +45,6 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `mcp-guide` | `/mcp/guide` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `mcp-connect` | `/mcp/connect` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `mcp-apps` | `/mcp/apps` | _web only_ | The marketplace is the page until phase 6 ports it (#1228, ADR-0155); the app opens `/mcp/apps` in the document until the visual gate passes. |
+| `mcp-app-detail` | `/mcp/apps/[id]` | _web only_ | The post-connect screen is the page until phase 6 ports it (#1228, ADR-0155); the app opens `/mcp/apps/<id>` in the document until the visual gate passes. |
 | `admin` | `/admin/**` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

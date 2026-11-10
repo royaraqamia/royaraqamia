@@ -133,6 +133,16 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'the list is a per-identity client read, so a precached shell would paint an empty page; the slot belongs to `/verify`',
   },
+  // The marketplace reads `?tab=` and the connect callback's outcome from the
+  // request, so it cannot be a frozen document: a precached copy would open the
+  // wrong tab after a consent. The list, the search and the states are client
+  // reads, and offline they draw their own needs-connection sentences under the
+  // ancestor shell (#1224).
+  {
+    route: '/mcp/apps',
+    reason:
+      'reads the tab and the connect outcome from the request; the connections and the catalogue are per-identity client reads',
+  },
 ];
 
 /**

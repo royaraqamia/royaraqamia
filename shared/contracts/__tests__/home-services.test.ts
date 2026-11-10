@@ -14,8 +14,17 @@ import { SERVICES_LINK } from '@/frontend/ui/navbar/services-link';
 describe('the homepage apps catalog', () => {
   it('is exactly the sheet’s live rows, in the sheet’s order', () => {
     expect(HOME_SERVICE_ROUTES).toEqual(
-      (SERVICES_LINK.subItems ?? []).filter((item) => !item.retired).map((item) => item.href)
+      (SERVICES_LINK.subItems ?? [])
+        .filter((item) => !item.retired && !item.pickerOnly)
+        .map((item) => item.href)
     );
+  });
+
+  it('leaves the marketplace out: it is a door, not one of our apps', () => {
+    const marketplace = (SERVICES_LINK.subItems ?? []).find((item) => item.href === '/mcp/apps');
+
+    expect(marketplace?.pickerOnly).toBe(true);
+    expect(HOME_SERVICE_ROUTES).not.toContain('/mcp/apps');
   });
 
   it('has no duplicates, so an ordered set can round-trip through the wire', () => {

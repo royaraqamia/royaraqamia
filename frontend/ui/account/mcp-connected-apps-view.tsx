@@ -65,14 +65,16 @@ export function connectedAppName(connectedApp: McpConnectedApp): string {
  * The page's heading lives here rather than in `page.tsx` so the app's screen can
  * draw the same sentence from the same generated copy (ADR-0098).
  */
-export function McpConnectedAppsView() {
+export function McpConnectedAppsView({ heading = true }: { heading?: boolean } = {}) {
   return (
     <div className="space-y-6">
-      <header data-visual="connected-title" className="mb-10 text-center">
-        <SectionTitle as="h1">
-          <SectionTitleHighlight>{MCP_CONNECTED_APPS_COPY.pageTitle}</SectionTitleHighlight>
-        </SectionTitle>
-      </header>
+      {heading && (
+        <header data-visual="connected-title" className="mb-10 text-center">
+          <SectionTitle as="h1">
+            <SectionTitleHighlight>{MCP_CONNECTED_APPS_COPY.pageTitle}</SectionTitleHighlight>
+          </SectionTitle>
+        </header>
+      )}
 
       <ConnectedAppsBody />
     </div>

@@ -97,7 +97,9 @@ function toServiceCard(item: NavLink): ServiceCardModel {
  * the homepage is the app door (ADR-0146); the component stays in the tree for
  * the marketing page the sections may return to.
  */
-const services = (SERVICES_LINK.subItems ?? []).map(toServiceCard);
+const services = (SERVICES_LINK.subItems ?? [])
+  .filter((item) => !item.pickerOnly)
+  .map(toServiceCard);
 
 export function Services() {
   const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(360);

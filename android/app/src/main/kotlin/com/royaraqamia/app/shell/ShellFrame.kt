@@ -109,6 +109,11 @@ fun ShellFrame(
             error = homeError,
             onToggle = onToggleHomeService,
             onDismiss = { servicesOpen = false },
+            // The marketplace is a destination, not a homepage app (#1224).
+            onOpenMarketplace = {
+                servicesOpen = false
+                onOpenRoute("/mcp/apps")
+            },
         )
     }
 }

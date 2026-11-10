@@ -83,7 +83,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
             autoFocus
             disabled={isConfirming}
             variant={variant === 'danger' ? 'hero-destructive' : 'hero'}
-            className="w-full sm:w-auto"
+            className="max-sm:w-full sm:w-auto"
           >
             {isConfirming ? (
               <>

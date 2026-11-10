@@ -1,12 +1,33 @@
-import type { McpCatalogAdminPage, McpCatalogAdminUpdate } from '@/shared/contracts/mcp-catalog';
+import type {
+  McpCatalogAdminPage,
+  McpCatalogAdminUpdate,
+  McpCatalogPage,
+} from '@/shared/contracts/mcp-catalog';
 import { request } from '@/frontend/transport/http';
 
 /**
- * The Admin Console's catalogue API (ADR-0155, phase 2 / #1223).
+ * The marketplace's catalogue reads (ADR-0155).
  *
- * A failed read throws to the caller, like every admin list: "no rows" and "we
- * could not ask" must not look the same on a takedown screen.
+ * A failed read throws to the caller, like every list built on a stranger's
+ * data: "no rows" and "we could not ask" must not look the same on a screen.
  */
+
+/** One page of the catalogue the marketplace draws, signed in. */
+export async function searchMcpCatalog(params: {
+  q?: string;
+  cursor?: string | null;
+}): Promise<McpCatalogPage> {
+  const search = new URLSearchParams();
+  if (params.q) search.set('q', params.q);
+  if (params.cursor) search.set('cursor', params.cursor);
+  const suffix = search.toString();
+
+  const result = await request<{ success: boolean; data: McpCatalogPage }>(
+    `/api/mcp/marketplace/servers${suffix ? `?${suffix}` : ''}`,
+    { cache: 'no-store' }
+  );
+  return result.data;
+}
 
 export async function getAdminMcpCatalog(params: {
   q?: string;

@@ -7,6 +7,10 @@ import {
   type McpCatalogService,
 } from '@/backend/services/mcp/marketplace/catalog-service';
 import {
+  createMcpConnectionService,
+  type McpConnectionService,
+} from '@/backend/services/mcp/marketplace/connections-service';
+import {
   createMcpConnectService,
   type McpConnectService,
 } from '@/backend/services/mcp/marketplace/connect-service';
@@ -57,6 +61,21 @@ export function createDefaultMcpCatalogService(): McpCatalogService {
   return createMcpCatalogService({
     repository: createMcpMarketplaceRepository(),
     registry: createMcpRegistryClient(),
+    remote: createMcpRemoteClient(),
+  });
+}
+
+/**
+ * The member's own connections (phase 3 / #1224): the outbound list, the
+ * post-connect detail, the switches, and the disconnect.
+ *
+ * It shares the marketplace repository and the remote client with the connect
+ * flow, so the row a member sees is the row the flow wrote, and the provider
+ * revocation on a disconnect is the same egress-guarded client.
+ */
+export function createDefaultMcpConnectionService(): McpConnectionService {
+  return createMcpConnectionService({
+    repository: createMcpMarketplaceRepository(),
     remote: createMcpRemoteClient(),
   });
 }

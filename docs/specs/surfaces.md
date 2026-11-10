@@ -45,6 +45,8 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | static | needs-connection | none | precached | _ungated_ |  | #501 |
 | `mcp-guide` | `/mcp/guide` | static | swr | none | precached | _ungated_ |  |  |
 | `mcp-connect` | `/mcp/connect` | server | needs-connection | none | none | `public-offline.spec.ts` |  |  |
+| `mcp-apps` | `/mcp/apps` | server | needs-connection | none | none | _ungated_ |  | #1224 |
+| `mcp-app-detail` | `/mcp/apps/[id]` | server | needs-connection | none | none | _ungated_ |  | #1224 |
 | `admin` | `/admin/**` | server | needs-connection | none | none | `public-offline.spec.ts` |  |  |
 
 _ungated_ — No paint budget or behaviour spec asserts this row yet — #558 tracks the paint budgets and the owners' issues add the specs.
