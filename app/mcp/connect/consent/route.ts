@@ -12,7 +12,8 @@ import { checkRateLimitApi } from '@/backend/middleware/http';
 import { toNextResponse } from '@/backend/transport/http-result';
 import { mcpConsentRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { parseScopes, effectiveScopes } from '@/backend/services/mcp/scope';
-import { createUsageService } from '@/backend/config/plans';
+import { createPlanGate } from '@/backend/config/plans';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
 
 export const runtime = 'nodejs';
@@ -118,18 +119,20 @@ export async function POST(req: NextRequest) {
   }
 
   // A grant is one connected app, so the plan's connected-app cap applies here —
-  // re-consenting for a client that is already connected reuses its slot.
+  // re-consenting for a client that is already connected reuses its slot. The
+  // cap is one pool shared with the outbound connections نور makes (ADR-0155),
+  // and `assertOwnedItemCap` is the one place that counts it.
   const connected = await createDefaultMcpConnectedAppService().list(user.id);
-  if (!connected.some((app) => app.clientId === clientId)) {
-    const plan = await createUsageService().caps(user.id);
-    if (!plan.unlimited && connected.length >= plan.caps.mcp_connected_apps) {
-      return oauthErrorRedirect(
-        redirectUri,
-        'access_denied',
-        state,
-        'Reached the plan limit for connected apps'
-      );
-    }
+  const alreadyConnected = connected.some((app) => app.clientId === clientId);
+  try {
+    await createPlanGate().cap(user.id, OWNED_ITEMS.mcpConnectedApps, alreadyConnected ? 0 : 1);
+  } catch {
+    return oauthErrorRedirect(
+      redirectUri,
+      'access_denied',
+      state,
+      'Reached the plan limit for connected apps'
+    );
   }
 
   const bridge = await createMcpBridgeSessionMinter().mint(user.email ?? '');

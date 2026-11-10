@@ -18,7 +18,11 @@ interface QueryRecord {
   headOnly: boolean;
 }
 
-function makeClient(count: number, rows: { client_id: string }[] = []) {
+function makeClient(
+  count: number,
+  rows: { client_id: string }[] = [],
+  countByTable: Record<string, number> = {}
+) {
   const queries: QueryRecord[] = [];
 
   function builder(record: QueryRecord) {
@@ -30,6 +34,10 @@ function makeClient(count: number, rows: { client_id: string }[] = []) {
       },
       eq: (column: string, value: string) => {
         record.filters.push(`eq:${column}=${value}`);
+        return query;
+      },
+      neq: (column: string, value: string) => {
+        record.filters.push(`neq:${column}=${value}`);
         return query;
       },
       is: (column: string, value: null) => {
@@ -44,7 +52,8 @@ function makeClient(count: number, rows: { client_id: string }[] = []) {
         record.filters.push(`gt:${column}`);
         return query;
       },
-      then: (resolve: (value: unknown) => unknown) => resolve({ count, error: null, data: rows }),
+      then: (resolve: (value: unknown) => unknown) =>
+        resolve({ count: countByTable[record.table] ?? count, error: null, data: rows }),
     };
     return query;
   }
@@ -145,23 +154,27 @@ describe('SupabaseUsageRepository.countOwned', () => {
     });
   }
 
-  it('counts connected apps by distinct client, not by token row', async () => {
-    const { client, queries } = makeClient(3, [
-      { client_id: 'a' },
-      { client_id: 'a' },
-      { client_id: 'b' },
-    ]);
+  it('counts connected apps as one pool: inbound clients plus outbound connections', async () => {
+    const { client, queries } = makeClient(
+      3,
+      [{ client_id: 'a' }, { client_id: 'a' }, { client_id: 'b' }],
+      { mcp_connections: 2 }
+    );
 
     await expect(
       new SupabaseUsageRepository(client).countOwned('mcp_connected_apps', 'user-1')
-    ).resolves.toBe(2);
+    ).resolves.toBe(4);
 
-    expect(queries[0]?.table).toBe('mcp_oauth_tokens');
+    // The inbound half counts the app, not the token row.
+    expect(queries.map((query) => query.table)).toEqual(['mcp_oauth_tokens', 'mcp_connections']);
     expect(queries[0]?.filters).toEqual([
       'eq:user_id=user-1',
       'is:revoked_at=null',
       'gt:expires_at',
     ]);
+    // The outbound half is one row per connection, and a revoked one frees its slot.
+    expect(queries[1]?.filters).toEqual(['eq:user_id=user-1', 'neq:status=revoked']);
+    expect(queries[1]?.headOnly).toBe(true);
   });
 });
 

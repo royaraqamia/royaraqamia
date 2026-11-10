@@ -27,6 +27,12 @@ vi.mock('@/backend/services/mcp/bridge-session', () => ({
 }));
 
 vi.mock('@/backend/config/plans', () => ({
+  // The cap is one pool shared by both directions (ADR-0155), so the consent
+  // route asks the gate rather than the plan's numbers: `incoming` is 0 for a
+  // client that is already connected, 1 for a new one.
+  createPlanGate: () => ({
+    cap: vi.fn(async () => undefined),
+  }),
   createUsageService: () => ({
     caps: async () => ({ plan: 'free', unlimited: false, caps: { mcp_connected_apps: 1 } }),
   }),

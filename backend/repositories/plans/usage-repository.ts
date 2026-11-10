@@ -392,17 +392,30 @@ export class SupabaseUsageRepository implements UsageRepository {
         return ids.length - new Set((left ?? []).map((row) => row.conversation_id)).size;
       }
       case 'mcp_connected_apps': {
-        // One grant may hold an access and a refresh row for the same app, so the
-        // cap counts the app, not the token.
-        const { data, error } = await this.supabase
-          .from('mcp_oauth_tokens')
-          .select('client_id')
-          .eq('user_id', userId)
-          .is('revoked_at', null)
-          .gt('expires_at', new Date().toISOString());
+        // One pool for both directions (ADR-0155): the inbound half counts the
+        // app rather than the token (one grant may hold an access and a refresh
+        // row), the outbound half counts one row per connection, and a revoked
+        // connection frees its slot the moment it is revoked.
+        const [inbound, outbound] = await Promise.all([
+          this.supabase
+            .from('mcp_oauth_tokens')
+            .select('client_id')
+            .eq('user_id', userId)
+            .is('revoked_at', null)
+            .gt('expires_at', new Date().toISOString()),
+          this.supabase
+            .from('mcp_connections')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .neq('status', 'revoked'),
+        ]);
 
-        if (error) throw error;
-        return new Set((data ?? []).map((row) => row.client_id)).size;
+        if (inbound.error) throw inbound.error;
+        if (outbound.error) throw outbound.error;
+
+        return (
+          new Set((inbound.data ?? []).map((row) => row.client_id)).size + (outbound.count ?? 0)
+        );
       }
     }
   }
