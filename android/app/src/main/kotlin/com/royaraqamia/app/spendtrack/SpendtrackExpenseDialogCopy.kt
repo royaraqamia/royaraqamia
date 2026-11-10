@@ -30,4 +30,6 @@ object SpendtrackExpenseDialogCopy {
     const val SAVE = "حفظ التَّعديلات"
     const val SAVING = "جاري الحفظ..."
     const val ERROR_LABEL = "فشل حفظ المصروف"
+    const val AMOUNT_REQUIRED = "يجب أن يكون المبلغ موجباً"
+    const val CATEGORY_REQUIRED = "التَّصنيف مطلوب"
 }

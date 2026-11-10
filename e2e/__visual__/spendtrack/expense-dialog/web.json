@@ -1,0 +1,49 @@
+{
+  "surface": "spendtrack",
+  "state": "expense-dialog",
+  "route": "/spendtrack",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "dialog": {
+      "width": 361,
+      "radius": 24,
+      "paddingTop": 24,
+      "paddingLeft": 24
+    },
+    "amount": {
+      "height": 44,
+      "radius": 12
+    },
+    "category": {
+      "height": 44,
+      "radius": 12
+    },
+    "date": {
+      "height": 44,
+      "radius": 12
+    },
+    "description": {
+      "height": 44,
+      "radius": 12
+    },
+    "currency": {
+      "height": 44,
+      "radius": 12
+    },
+    "actions": {
+      "height": 120,
+      "columnGap": 12
+    },
+    "submit": {
+      "height": 48
+    },
+    "error": {
+      "height": 16,
+      "fontSize": 12
+    }
+  }
+}

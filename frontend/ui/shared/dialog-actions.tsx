@@ -16,6 +16,8 @@ interface DialogActionsProps {
   /** Optional secondary action rendered between the primary and the cancel (e.g. a destructive button). */
   secondary?: ReactNode;
   className?: string;
+  /** An optional `data-visual` anchor for the visual gate's contract. */
+  dataVisual?: string;
 }
 
 /**
@@ -37,10 +39,12 @@ export function DialogActions({
   leading,
   secondary,
   className,
+  dataVisual,
 }: DialogActionsProps) {
   return (
     <div
       data-slot="dialog-actions"
+      data-visual={dataVisual}
       className={cn(
         'pt-2 flex flex-col-reverse sm:flex-row items-center gap-3',
         leading ? 'sm:justify-between' : 'justify-end',

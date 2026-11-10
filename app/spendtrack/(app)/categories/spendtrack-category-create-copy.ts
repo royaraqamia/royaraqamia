@@ -15,6 +15,7 @@ export const SPENDTRACK_CATEGORY_CREATE_COPY = {
   createAction: 'إنشاء',
   creating: 'جاري الإنشاء...',
   namePlaceholder: 'مثال: بقالة',
+  nameRequired: 'الاسم مطلوب',
 } as const;
 
 export type SpendtrackCategoryCreateCopyStrings = typeof SPENDTRACK_CATEGORY_CREATE_COPY;

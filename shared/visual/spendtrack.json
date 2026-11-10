@@ -1,7 +1,7 @@
 {
   "surface": "spendtrack",
   "route": "/spendtrack",
-  "notes": "The dashboard's structure: the total card, the budget card, the filter bar, a list row and the two charts. `capture` is the row, because it is the region both clients draw from the same row state and the one whose pixels say the type, the colours and the dot all landed; the cards above and below it are measured by their boxes. `top` is deliberately left out: the page's frame and the app's frame are different heights and the dashboard is a scroll, so what both clients agree on here is each box's width, its corner and - for the row - its height. The heights of the two chart cards are left out because the app draws the same data as a ring and a bar strip rather than the site's interactive charts, which is the port's decision rather than a measurement. `at-rest` is the dashboard with two rows and `filtered` is the same page narrowed to one category, so the total and the list change while the boxes stay the same.",
+  "notes": "The dashboard's structure: the total card, the budget card, the filter bar, a list row and the two charts. `capture` is the row, because it is the region both clients draw from the same row state and the one whose pixels say the type, the colours and the dot all landed; the cards above and below it are measured by their boxes. `top` is deliberately left out: the page's frame and the app's frame are different heights and the dashboard is a scroll, so what both clients agree on here is each box's width, its corner and - for the row - its height. The heights of the two chart cards are left out because the app draws the same data as a ring and a bar strip rather than the site's interactive charts, which is the port's decision rather than a measurement. `at-rest` is the dashboard with two rows and `filtered` is the same page narrowed to one category, so the total and the list change while the boxes stay the same. `expense-dialog` and `category-dialog` are the dashboard's two forms, each recorded with a required field refused so the page's own sentence is drawn: the contract measures the dialog's width, radius and padding, every field's height, the footer's height and gap, and the refused sentence's line box. `capture` is the refused field's control rather than the whole dialog: the page's expense title is screen-reader-only while the app draws no visible heading either, and the field is the region both clients draw identically.",
   "states": [
     {
       "name": "at-rest",
@@ -132,6 +132,170 @@
             "tag": "spendtrack-daily-chart"
           },
           "properties": ["width", "radius"]
+        }
+      ]
+    },
+    {
+      "name": "expense-dialog",
+      "origin": "dialog",
+      "capture": "amount",
+      "elements": [
+        {
+          "name": "dialog",
+          "web": {
+            "selector": "[data-visual='spendtrack-expense-dialog']"
+          },
+          "app": {
+            "tag": "spendtrack-expense-dialog"
+          },
+          "properties": ["width", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "amount",
+          "web": {
+            "selector": "[data-visual='spendtrack-expense-amount']"
+          },
+          "app": {
+            "tag": "spendtrack-expense-amount"
+          },
+          "properties": ["height", "radius"]
+        },
+        {
+          "name": "category",
+          "web": {
+            "selector": "[data-visual='spendtrack-expense-category']"
+          },
+          "app": {
+            "tag": "spendtrack-expense-category"
+          },
+          "properties": ["height", "radius"]
+        },
+        {
+          "name": "date",
+          "web": {
+            "selector": "[data-visual='spendtrack-expense-date']"
+          },
+          "app": {
+            "tag": "spendtrack-expense-date"
+          },
+          "properties": ["height", "radius"]
+        },
+        {
+          "name": "description",
+          "web": {
+            "selector": "[data-visual='spendtrack-expense-description']"
+          },
+          "app": {
+            "tag": "spendtrack-expense-description"
+          },
+          "properties": ["height", "radius"]
+        },
+        {
+          "name": "currency",
+          "web": {
+            "selector": "[data-visual='spendtrack-expense-currency']"
+          },
+          "app": {
+            "tag": "spendtrack-expense-currency"
+          },
+          "properties": ["height", "radius"]
+        },
+        {
+          "name": "actions",
+          "web": {
+            "selector": "[data-visual='spendtrack-expense-actions']"
+          },
+          "app": {
+            "tag": "spendtrack-expense-actions"
+          },
+          "properties": ["height", "columnGap"]
+        },
+        {
+          "name": "submit",
+          "web": {
+            "selector": "[data-visual='spendtrack-expense-submit']"
+          },
+          "app": {
+            "tag": "spendtrack-expense-submit"
+          },
+          "properties": ["height"]
+        },
+        {
+          "name": "error",
+          "web": {
+            "selector": "[data-visual='spendtrack-expense-error']"
+          },
+          "app": {
+            "tag": "spendtrack-expense-error"
+          },
+          "properties": ["height", "fontSize"]
+        }
+      ]
+    },
+    {
+      "name": "category-dialog",
+      "origin": "dialog",
+      "capture": "name",
+      "elements": [
+        {
+          "name": "dialog",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-dialog']"
+          },
+          "app": {
+            "tag": "spendtrack-category-dialog"
+          },
+          "properties": ["width", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "name",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-name']"
+          },
+          "app": {
+            "tag": "spendtrack-category-name"
+          },
+          "properties": ["height", "radius"]
+        },
+        {
+          "name": "color",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-color']"
+          },
+          "app": {
+            "tag": "spendtrack-category-color"
+          },
+          "properties": ["height"]
+        },
+        {
+          "name": "actions",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-actions']"
+          },
+          "app": {
+            "tag": "spendtrack-category-actions"
+          },
+          "properties": ["height", "columnGap"]
+        },
+        {
+          "name": "submit",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-submit']"
+          },
+          "app": {
+            "tag": "spendtrack-category-submit"
+          },
+          "properties": ["height"]
+        },
+        {
+          "name": "error",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-error']"
+          },
+          "app": {
+            "tag": "spendtrack-category-error"
+          },
+          "properties": ["height", "fontSize"]
         }
       ]
     }

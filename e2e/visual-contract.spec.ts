@@ -441,6 +441,41 @@ const PREPARE: Record<
       timeout: 30_000,
     });
   },
+  // The create-expense dialog with a refused field (#960). `?create=1` is the
+  // page's own way to open it, and submitting the empty amount draws the page's
+  // own sentence under the field; the recording is the field, because the page's
+  // and the app's frames are not the same height and the dialog is its own region
+  // (ADR-0119).
+  'spendtrack/expense-dialog': async (page) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedSpendtrack(page.context(), baseURL);
+    await page.goto(new URL('/spendtrack?create=1', baseURL).toString(), {
+      waitUntil: 'domcontentloaded',
+    });
+    await page.locator('[data-visual="spendtrack-expense-dialog"]').waitFor({ timeout: 30_000 });
+    await page.locator('[data-visual="spendtrack-expense-submit"]').click();
+    await page.locator('[data-visual="spendtrack-expense-error"]').waitFor({ timeout: 10_000 });
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.fonts.ready);
+  },
+  // The create-category dialog with a refused name (#960), reached through the
+  // categories page's own control. The dialog is the same surface's second
+  // state; the page's sentence is what the refused field draws.
+  'spendtrack/category-dialog': async (page) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedSpendtrack(page.context(), baseURL);
+    await page.goto(new URL('/spendtrack/categories', baseURL).toString(), {
+      waitUntil: 'domcontentloaded',
+    });
+    await page.locator('[data-visual="spendtrack-category-create"]').click();
+    await page.locator('[data-visual="spendtrack-category-dialog"]').waitFor({ timeout: 30_000 });
+    await page.locator('[data-visual="spendtrack-category-submit"]').click();
+    await page.locator('[data-visual="spendtrack-category-error"]').waitFor({ timeout: 10_000 });
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.fonts.ready);
+  },
 };
 
 /** What a state removes after its recording, so a seed is never left behind. */
