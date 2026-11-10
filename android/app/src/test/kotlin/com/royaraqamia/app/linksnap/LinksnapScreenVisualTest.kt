@@ -73,15 +73,17 @@ class LinksnapScreenVisualTest {
             }
         }
 
-        fun top(tag: String) = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot().top.value
+        fun top(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot().top.value
+
+        fun left(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot().left.value
 
         fun width(tag: String): Float {
-            val box = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            val box = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot()
             return (box.right - box.left).value
         }
 
         fun height(tag: String): Float {
-            val box = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            val box = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot()
             return (box.bottom - box.top).value
         }
 
@@ -124,10 +126,20 @@ class LinksnapScreenVisualTest {
                   "fontSize": ${LinksnapMetrics.hintSize.value}
                 },
                 "submit": {
+                  "top": ${top(LinksnapMetrics.SUBMIT)},
                   "width": ${width(LinksnapMetrics.SUBMIT)},
                   "height": ${height(LinksnapMetrics.SUBMIT)},
                   "fontSize": ${LinksnapMetrics.buttonTextSize.value},
                   "fontWeight": ${LinksnapMetrics.buttonWeight.weight}
+                },
+                "fab": {
+                  "left": ${left(LinksnapMetrics.FAB)},
+                  "width": ${width(LinksnapMetrics.FAB)},
+                  "height": ${height(LinksnapMetrics.FAB)}
+                },
+                "fab-glyph": {
+                  "width": ${width(LinksnapMetrics.FAB_GLYPH)},
+                  "height": ${height(LinksnapMetrics.FAB_GLYPH)}
                 }
               }
             }
@@ -158,15 +170,17 @@ class LinksnapScreenVisualTest {
             }
         }
 
-        fun top(tag: String) = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot().top.value
+        fun top(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot().top.value
+
+        fun left(tag: String) = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot().left.value
 
         fun width(tag: String): Float {
-            val box = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            val box = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot()
             return (box.right - box.left).value
         }
 
         fun height(tag: String): Float {
-            val box = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+            val box = compose.onNodeWithTag(tag, useUnmergedTree = true).getUnclippedBoundsInRoot()
             return (box.bottom - box.top).value
         }
 
@@ -233,10 +247,20 @@ class LinksnapScreenVisualTest {
                   "paddingRight": ${LinksnapMetrics.fieldPadding.value}
                 },
                 "submit": {
+                  "top": ${top(LinksnapMetrics.SUBMIT)},
                   "width": ${width(LinksnapMetrics.SUBMIT)},
                   "height": ${height(LinksnapMetrics.SUBMIT)},
                   "fontSize": ${LinksnapMetrics.buttonTextSize.value},
                   "fontWeight": ${LinksnapMetrics.buttonWeight.weight}
+                },
+                "fab": {
+                  "left": ${left(LinksnapMetrics.FAB)},
+                  "width": ${width(LinksnapMetrics.FAB)},
+                  "height": ${height(LinksnapMetrics.FAB)}
+                },
+                "fab-glyph": {
+                  "width": ${width(LinksnapMetrics.FAB_GLYPH)},
+                  "height": ${height(LinksnapMetrics.FAB_GLYPH)}
                 }
               }
             }

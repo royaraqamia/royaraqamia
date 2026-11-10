@@ -131,6 +131,18 @@ class ShellActivity : ComponentActivity() {
     private var unreadCount by mutableStateOf<Int?>(null)
 
     /**
+     * Where a guest asked to go before signing in (#1208).
+     *
+     * The page's account door sends a guest through the login with
+     * `redirect=/account/links`, so the sign-in itself is the document's. The
+     * shell is what holds the destination: the session lands when the document
+     * finishes, and that is the moment the frame can open the screen the page
+     * would have redirected to. Cleared on a return that is still signed out, so
+     * a cancelled sign-in does not move a later one.
+     */
+    private var pendingAfterSignIn: String? = null
+
+    /**
      * Whether the frame was brought forward for an update card (#872).
      *
      * The document is on top by default, so a card that appears after launch has
@@ -356,7 +368,10 @@ class ShellActivity : ComponentActivity() {
                                 )
                             // LinkSnap (#654): the page is the shortener and
                             // nothing else. The owned list is the account
-                            // area's links page, which is its own route.
+                            // area's links page, which is its own route, and
+                            // the page's own account door is the way there
+                            // (#1208) - a guest is sent through the sign-in and
+                            // lands on it once the session arrives.
                             "/linksnap" ->
                                 LinksnapShortenerScreen(
                                     repository = graph.linksnap,
@@ -365,6 +380,11 @@ class ShellActivity : ComponentActivity() {
                                     onCopy = ::copyToClipboard,
                                     onShare = ::shareText,
                                     onSignIn = ::showSignIn,
+                                    onOpenLinks = { openRoute("/account/links") },
+                                    onSignInForLinks = {
+                                        pendingAfterSignIn = "/account/links"
+                                        showSignIn()
+                                    },
                                 )
                             "/account/links" ->
                                 LinksnapScreen(
@@ -712,11 +732,28 @@ class ShellActivity : ComponentActivity() {
      * homepage's account set. A signed-out page clears all three.
      */
     private suspend fun refreshSession() {
+        val wasSignedIn = signedIn
         signedIn = graph.syncDocumentSession()
         if (signedIn) {
             refreshUnreadCount()
+            // The sign-in that just completed is what opens a door a guest had
+            // already pressed (#1208): the page would have redirected them to
+            // `/account/links` from the login, and the frame draws the same
+            // destination natively.
+            if (!wasSignedIn) {
+                pendingAfterSignIn?.let { target ->
+                    pendingAfterSignIn = null
+                    // The login was a step, not a destination: the entry it left
+                    // on the stack is replaced so back from the links page is the
+                    // page the guest came from.
+                    stack.replace(target)
+                    current = stack.route
+                    handOver()
+                }
+            }
         } else {
             unreadCount = null
+            pendingAfterSignIn = null
         }
     }
 

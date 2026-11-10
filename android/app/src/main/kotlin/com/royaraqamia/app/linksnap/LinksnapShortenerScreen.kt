@@ -113,6 +113,14 @@ fun LinksnapShortenerScreen(
     onCopy: (String) -> Unit = {},
     onShare: (String) -> Unit = {},
     onSignIn: () -> Unit = {},
+    /** The account door's destination: the reader's owned links (#1208). */
+    onOpenLinks: () -> Unit = {},
+    /**
+     * The door's guest prompt (#1208). The page sends a guest through the login
+     * with `redirect=/account/links`, so the callback a screen hands here may
+     * differ from [onSignIn], which is the card's own hint.
+     */
+    onSignInForLinks: () -> Unit = onSignIn,
 ) {
     LinksnapShortenerScreen(
         shorten = { url, customCode, password ->
@@ -149,6 +157,8 @@ fun LinksnapShortenerScreen(
         onCopy = onCopy,
         onShare = onShare,
         onSignIn = onSignIn,
+        onOpenLinks = onOpenLinks,
+        onSignInForLinks = onSignInForLinks,
     )
 }
 
@@ -192,6 +202,8 @@ internal fun LinksnapShortenerScreen(
     onCopy: (String) -> Unit = {},
     onShare: (String) -> Unit = {},
     onSignIn: () -> Unit = {},
+    onOpenLinks: () -> Unit = {},
+    onSignInForLinks: () -> Unit = onSignIn,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -300,152 +312,174 @@ internal fun LinksnapShortenerScreen(
 
     val state = LinksnapShortenerUiState.of(signedIn, created != null)
 
-    Column(
+    Box(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(RoyColors.background)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = LinksnapMetrics.horizontalPadding),
+                .background(RoyColors.background),
     ) {
-        Text(
-            text = LinksnapPageCopy.PAGE_TITLE,
+        Column(
             modifier =
-                Modifier.testTag(LinksnapMetrics.TITLE)
-                    .fillMaxWidth()
-                    .height(LinksnapMetrics.titleHeight),
-            style =
-                TextStyle(
-                    fontSize = LinksnapMetrics.titleSize,
-                    fontWeight = LinksnapMetrics.titleWeight,
-                    lineHeight = LinksnapMetrics.titleLineHeight,
-                    letterSpacing = LinksnapMetrics.titleTracking,
-                    textAlign = TextAlign.Center,
-                    brush =
-                        Brush.horizontalGradient(
-                            listOf(
-                                LinksnapMetrics.titleStart,
-                                LinksnapMetrics.titleMiddle,
-                                LinksnapMetrics.titleEnd,
-                            )
-                        ),
-                ),
-        )
-
-        Spacer(Modifier.height(LinksnapMetrics.titleToCard))
-
-        Box(
-            modifier =
-                Modifier.testTag(LinksnapMetrics.CARD)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(LinksnapMetrics.cardRadius))
-                    .background(RoyColors.card)
-                    .border(
-                        LinksnapMetrics.cardBorderWidth,
-                        RoyColors.border,
-                        RoundedCornerShape(LinksnapMetrics.cardRadius),
-                    )
-                    .padding(LinksnapMetrics.cardInset),
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = LinksnapMetrics.horizontalPadding),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(LinksnapMetrics.formGap)) {
-                when (state) {
-                    LinksnapShortenerUiState.Ready ->
-                        created?.let { link ->
-                            val shortUrl = "${siteUrl.trimEnd('/')}/${link.code}"
-                            ReadyBlock(
-                                shortUrl = shortUrl,
-                                originalUrl = link.originalUrl,
-                                protected = link.passwordProtected,
-                                copied = copied,
-                                onCopy = {
-                                    onCopy(shortUrl)
-                                    copied = true
-                                },
-                                onShare = { onShare(shortUrl) },
-                                onQr = { qrOpen = !qrOpen },
-                                onAgain = ::reset,
-                            )
-                        }
-                    LinksnapShortenerUiState.Guest,
-                    LinksnapShortenerUiState.SignedIn -> {
-                        UrlBlock(
-                            url = url,
-                            onUrlChange = { url = it },
-                            busy = busy,
-                            focused = fieldFocused,
-                            interaction = fieldInteraction,
-                            focusRequester = focusRequester,
-                            onSubmit = ::submit,
+            Text(
+                text = LinksnapPageCopy.PAGE_TITLE,
+                modifier =
+                    Modifier.testTag(LinksnapMetrics.TITLE)
+                        .fillMaxWidth()
+                        .height(LinksnapMetrics.titleHeight),
+                style =
+                    TextStyle(
+                        fontSize = LinksnapMetrics.titleSize,
+                        fontWeight = LinksnapMetrics.titleWeight,
+                        lineHeight = LinksnapMetrics.titleLineHeight,
+                        letterSpacing = LinksnapMetrics.titleTracking,
+                        textAlign = TextAlign.Center,
+                        brush =
+                            Brush.horizontalGradient(
+                                listOf(
+                                    LinksnapMetrics.titleStart,
+                                    LinksnapMetrics.titleMiddle,
+                                    LinksnapMetrics.titleEnd,
+                                )
+                            ),
+                    ),
+            )
+
+            Spacer(Modifier.height(LinksnapMetrics.titleToCard))
+
+            Box(
+                modifier =
+                    Modifier.testTag(LinksnapMetrics.CARD)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(LinksnapMetrics.cardRadius))
+                        .background(RoyColors.card)
+                        .border(
+                            LinksnapMetrics.cardBorderWidth,
+                            RoyColors.border,
+                            RoundedCornerShape(LinksnapMetrics.cardRadius),
                         )
-
-                        if (state == LinksnapShortenerUiState.Guest) {
-                            GuestHint(onSignIn = onSignIn)
-                        } else {
-                            SignedInFields(
-                                siteUrl = siteUrl,
-                                customCode = customCode,
-                                onCustomCodeChange = { input ->
-                                    customCode = sanitizeCode(input)
-                                },
-                                password = password,
-                                onPasswordChange = { password = it },
-                                status = slugStatus,
-                            )
-                        }
-
-                        notice?.let { message ->
-                            Text(
-                                text = message,
-                                style =
-                                    TextStyle(
-                                        fontSize = LinksnapMetrics.hintSize,
-                                        lineHeight = LinksnapMetrics.hintLineHeight,
-                                    ),
-                                color = RoyColors.destructive,
-                            )
-                        }
-
-                        Box(
-                            modifier =
-                                Modifier.testTag(LinksnapMetrics.SUBMIT)
-                                    // The page's disabled button is `opacity-50`, and the
-                                    // alpha comes before the background so the gradient
-                                    // fades with the label.
-                                    .alpha(if (canSubmit) 1f else 0.5f)
-                                    .fillMaxWidth()
-                                    .height(LinksnapMetrics.buttonHeight)
-                                    .clip(RoyShape.pill)
-                                    .background(
-                                        Brush.horizontalGradient(colorStops = LinksnapMetrics.buttonStops)
-                                    )
-                                    .border(
-                                        LinksnapMetrics.cardBorderWidth,
-                                        Color.White.copy(alpha = 0.2f),
-                                        RoyShape.pill,
-                                    )
-                                    .clickable(enabled = canSubmit) { submit() },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                text =
-                                    if (busy) {
-                                        LinksnapShortenerCopy.BUSY_SUBMIT
-                                    } else {
-                                        LinksnapShortenerCopy.SUBMIT
+                        .padding(LinksnapMetrics.cardInset),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(LinksnapMetrics.formGap)) {
+                    when (state) {
+                        LinksnapShortenerUiState.Ready ->
+                            created?.let { link ->
+                                val shortUrl = "${siteUrl.trimEnd('/')}/${link.code}"
+                                ReadyBlock(
+                                    shortUrl = shortUrl,
+                                    originalUrl = link.originalUrl,
+                                    protected = link.passwordProtected,
+                                    copied = copied,
+                                    onCopy = {
+                                        onCopy(shortUrl)
+                                        copied = true
                                     },
-                                style =
-                                    TextStyle(
-                                        fontSize = LinksnapMetrics.buttonTextSize,
-                                        fontWeight = LinksnapMetrics.buttonWeight,
-                                        lineHeight = LinksnapMetrics.buttonLineHeight,
-                                    ),
-                                color = Color.White,
+                                    onShare = { onShare(shortUrl) },
+                                    onQr = { qrOpen = !qrOpen },
+                                    onAgain = ::reset,
+                                )
+                            }
+                        LinksnapShortenerUiState.Guest,
+                        LinksnapShortenerUiState.SignedIn -> {
+                            UrlBlock(
+                                url = url,
+                                onUrlChange = { url = it },
+                                busy = busy,
+                                focused = fieldFocused,
+                                interaction = fieldInteraction,
+                                focusRequester = focusRequester,
+                                onSubmit = ::submit,
                             )
+
+                            if (state == LinksnapShortenerUiState.Guest) {
+                                GuestHint(onSignIn = onSignIn)
+                            } else {
+                                SignedInFields(
+                                    siteUrl = siteUrl,
+                                    customCode = customCode,
+                                    onCustomCodeChange = { input ->
+                                        customCode = sanitizeCode(input)
+                                    },
+                                    password = password,
+                                    onPasswordChange = { password = it },
+                                    status = slugStatus,
+                                )
+                            }
+
+                            notice?.let { message ->
+                                Text(
+                                    text = message,
+                                    style =
+                                        TextStyle(
+                                            fontSize = LinksnapMetrics.hintSize,
+                                            lineHeight = LinksnapMetrics.hintLineHeight,
+                                        ),
+                                    color = RoyColors.destructive,
+                                )
+                            }
+
+                            Box(
+                                modifier =
+                                    Modifier.testTag(LinksnapMetrics.SUBMIT)
+                                        // The page's disabled button is `opacity-50`, and the
+                                        // alpha comes before the background so the gradient
+                                        // fades with the label.
+                                        .alpha(if (canSubmit) 1f else 0.5f)
+                                        .fillMaxWidth()
+                                        .height(LinksnapMetrics.buttonHeight)
+                                        .clip(RoyShape.pill)
+                                        .background(
+                                            Brush.horizontalGradient(colorStops = LinksnapMetrics.buttonStops)
+                                        )
+                                        .border(
+                                            LinksnapMetrics.cardBorderWidth,
+                                            Color.White.copy(alpha = 0.2f),
+                                            RoyShape.pill,
+                                        )
+                                        .clickable(enabled = canSubmit) { submit() },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text =
+                                        if (busy) {
+                                            LinksnapShortenerCopy.BUSY_SUBMIT
+                                        } else {
+                                            LinksnapShortenerCopy.SUBMIT
+                                        },
+                                    style =
+                                        TextStyle(
+                                            fontSize = LinksnapMetrics.buttonTextSize,
+                                            fontWeight = LinksnapMetrics.buttonWeight,
+                                            lineHeight = LinksnapMetrics.buttonLineHeight,
+                                        ),
+                                    color = Color.White,
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+
+        // The page's account door (#1208): one round button in the corner, the
+        // destination a member opens and the prompt a guest gets instead. It
+        // floats over the column the visual contract measures, so the card the
+        // page and the app share is untouched.
+        LinksnapLinksFab(
+            signedIn = signedIn,
+            onOpenLinks = onOpenLinks,
+            onSignIn = onSignInForLinks,
+            modifier =
+                Modifier.align(Alignment.BottomEnd)
+                    .padding(
+                        end = LinksnapMetrics.fabCorner,
+                        bottom = LinksnapMetrics.fabBottom,
+                    ),
+        )
     }
 
     if (qrOpen) {
@@ -1176,8 +1210,22 @@ internal object LinksnapMetrics {
     const val PASSWORD_FIELD = "linksnap-password-field"
     const val STATUS = "linksnap-status"
     const val SUBMIT = "linksnap-submit"
+    const val FAB = "linksnap-links-fab"
+    const val FAB_GLYPH = "linksnap-links-fab-glyph"
 
     val horizontalPadding = 16.dp
+
+    /**
+     * The account door (#1208): the page's 52 circle, its 22 `Link2` at the phone
+     * width, its 16 from the physical left and its 12 above the tab bar (the
+     * `--roy-corner-rest` of 68 minus the bar's 56). The content area ends where
+     * the bar begins, so the 12 is measured from the screen's own bottom and the
+     * button lands on the line the page draws it on.
+     */
+    val fabSize = 52.dp
+    val fabIconSize = 22.dp
+    val fabCorner = 16.dp
+    val fabBottom = 12.dp
 
     val titleSize = 30.sp
     val titleLineHeight = 46.5.sp
@@ -1221,7 +1269,7 @@ internal object LinksnapMetrics {
     val hintSize = 12.sp
     val hintLineHeight = 16.sp
 
-    val buttonHeight = 52.dp
+    val buttonHeight = 48.dp
     val buttonTextSize = 16.sp
     val buttonLineHeight = 24.sp
     val buttonWeight = FontWeight.Bold

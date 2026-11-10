@@ -11,6 +11,8 @@ import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 
+import { LINKSNAP_LINKS_FAB_COPY } from './linksnap-links-fab-copy';
+
 /** Where the FAB lands, and where a visitor returns once they have signed in. */
 const LINKS_PATH = '/account/links';
 
@@ -42,7 +44,11 @@ export function LinksnapLinksFab() {
 
   return (
     <>
-      <FabButton id="btn-linksnap-links" label="روابطي" onClick={handleFabClick}>
+      <FabButton
+        id="btn-linksnap-links"
+        label={LINKSNAP_LINKS_FAB_COPY.label}
+        onClick={handleFabClick}
+      >
         <Link2 className="size-6 transition-transform duration-200 ease-out group-hover:rotate-90" />
       </FabButton>
 
@@ -52,7 +58,9 @@ export function LinksnapLinksFab() {
             <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
               <Link2 size={24} />
             </div>
-            <DialogTitle className="leading-snug!">سجِّل الدُّخول لعرض روابطك</DialogTitle>
+            <DialogTitle className="leading-snug!">
+              {LINKSNAP_LINKS_FAB_COPY.guestTitle}
+            </DialogTitle>
           </div>
 
           <DialogActions onCancel={() => setAuthPromptOpen(false)}>

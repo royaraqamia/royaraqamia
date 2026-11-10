@@ -1,7 +1,7 @@
 {
   "surface": "linksnap",
   "route": "/linksnap",
-  "notes": "The page at rest, signed out: the title, and the shortener card with its field label, the empty field, the guest sentence and the one button. `origin` is the title because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the card because it is the region both clients draw identically; the shadow the card casts is outside its own box and is covered by the raster. The radii of the field and the button are left out deliberately: the site draws both with Tailwind's `rounded-full`, which computes to `calc(infinity * 1px)`, and a number that is not a length cannot be compared - the raster is what proves the pill. `signed-in` is the same route with a session behind it: the custom-code field and its hint, and the password field, which the guest form does not draw. The success block after a short is a state of its own and is not part of this contract yet. The signed-in state's 1.2px length tolerance is Compose's per-box pixel snapping at DPR 2.75: the 50- and 46-high fields and their half-pixel gaps each round to a whole device pixel, which accumulates 1.09px on the 380-high card.",
+  "notes": "The page at rest, signed out: the title, and the shortener card with its field label, the empty field, the guest sentence and the one button. `origin` is the title because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the card because it is the region both clients draw identically; the shadow the card casts is outside its own box and is covered by the raster. The radii of the field and the button are left out deliberately: the site draws both with Tailwind's `rounded-full`, which computes to `calc(infinity * 1px)`, and a number that is not a length cannot be compared - the raster is what proves the pill. `signed-in` is the same route with a session behind it: the custom-code field and its hint, and the password field, which the guest form does not draw. The success block after a short is a state of its own and is not part of this contract yet. The signed-in state's 1.2px length tolerance is Compose's per-box pixel snapping at DPR 2.75: the 50- and 46-high fields and their half-pixel gaps each round to a whole device pixel, which accumulates 1.09px on the 380-high card. The account door (#1208) is the page's `compose-fab-btn` in the corner, and it is measured by its physical `left` and its 52 box, plus the 22 box of the `Link2` it draws. Two of its properties are left out for reasons this contract has already met: the radius is `50%`, a percentage rather than a length, so it reads as `50` and cannot be compared with a Compose shape - the square box is what both clients clip to a circle; and `top` is the frame's number, not the design's, because the page anchors the control to the viewport's bottom while the app anchors it to the content area's, which ends where the tab bar begins, so the two frames start at different heights. The door is in both states because the page draws it signed in or out.",
   "states": [
     {
       "name": "at-rest",
@@ -66,7 +66,27 @@
           "app": {
             "tag": "linksnap-submit"
           },
-          "properties": ["width", "height", "fontSize", "fontWeight"]
+          "properties": ["top", "width", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "fab",
+          "web": {
+            "selector": "#btn-linksnap-links"
+          },
+          "app": {
+            "tag": "linksnap-links-fab"
+          },
+          "properties": ["left", "width", "height"]
+        },
+        {
+          "name": "fab-glyph",
+          "web": {
+            "selector": "#btn-linksnap-links svg"
+          },
+          "app": {
+            "tag": "linksnap-links-fab-glyph"
+          },
+          "properties": ["width", "height"]
         }
       ]
     },
@@ -173,7 +193,27 @@
           "app": {
             "tag": "linksnap-submit"
           },
-          "properties": ["width", "height", "fontSize", "fontWeight"]
+          "properties": ["top", "width", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "fab",
+          "web": {
+            "selector": "#btn-linksnap-links"
+          },
+          "app": {
+            "tag": "linksnap-links-fab"
+          },
+          "properties": ["left", "width", "height"]
+        },
+        {
+          "name": "fab-glyph",
+          "web": {
+            "selector": "#btn-linksnap-links svg"
+          },
+          "app": {
+            "tag": "linksnap-links-fab-glyph"
+          },
+          "properties": ["width", "height"]
         }
       ]
     }

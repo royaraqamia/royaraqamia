@@ -9,21 +9,21 @@
   },
   "elements": {
     "title": {
-      "top": 80,
+      "top": 172,
       "height": 46.5,
       "fontSize": 30,
       "fontWeight": 800
     },
     "card": {
-      "top": 174.5,
+      "top": 266.5,
       "width": 361,
-      "height": 380,
+      "height": 376,
       "radius": 24,
       "paddingTop": 20,
       "paddingLeft": 20
     },
     "label": {
-      "top": 195.5,
+      "top": 287.5,
       "height": 16,
       "fontSize": 12,
       "fontWeight": 700
@@ -36,24 +36,24 @@
       "paddingRight": 16
     },
     "customLabel": {
-      "top": 289.5,
+      "top": 381.5,
       "height": 16,
       "fontSize": 12,
       "fontWeight": 700
     },
     "customField": {
-      "top": 309.5,
+      "top": 401.5,
       "width": 319,
       "height": 50
     },
     "customHint": {
-      "top": 365.5,
+      "top": 457.5,
       "width": 319,
       "height": 16,
       "fontSize": 12
     },
     "passwordLabel": {
-      "top": 395.5,
+      "top": 487.5,
       "height": 16,
       "fontSize": 12,
       "fontWeight": 700
@@ -66,10 +66,20 @@
       "paddingRight": 16
     },
     "submit": {
+      "top": 573.5,
       "width": 319,
-      "height": 52,
+      "height": 48,
       "fontSize": 16,
       "fontWeight": 700
+    },
+    "fab": {
+      "left": 16,
+      "width": 52,
+      "height": 52
+    },
+    "fab-glyph": {
+      "width": 22,
+      "height": 22
     }
   }
 }
