@@ -332,7 +332,6 @@ class ShellActivity : ComponentActivity() {
                                     signedIn = signedIn,
                                     onCopy = ::copyToClipboard,
                                     onShare = ::shareText,
-                                    onOpenDocument = ::handOver,
                                     onSignIn = ::showSignIn,
                                 )
                             // The certificate check (#658): public by design, so it

@@ -61,8 +61,10 @@ import com.royaraqamia.app.sync.SyncPillState
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.ui.vectors.LucideVectors
 import com.royaraqamia.app.verify.VerifyQrCode
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -99,7 +101,6 @@ fun LinksnapScreen(
     modifier: Modifier = Modifier,
     onCopy: (String) -> Unit = {},
     onShare: (String) -> Unit = {},
-    onOpenDocument: () -> Unit = {},
     onSignIn: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -112,6 +113,11 @@ fun LinksnapScreen(
     var editing by remember { mutableStateOf<LinksnapLinkRow?>(null) }
     var qrState by remember { mutableStateOf<LinksnapQrUiState>(LinksnapQrUiState.Loading) }
     var qrAttempt by remember { mutableStateOf(0) }
+    var analyticsCode by remember { mutableStateOf<String?>(null) }
+    var analyticsRange by remember { mutableStateOf(LinksnapAnalyticsRange.Last7Days) }
+    var analyticsState by remember {
+        mutableStateOf<LinksnapAnalyticsUiState>(LinksnapAnalyticsUiState.Loading)
+    }
     val snackbar = remember { SnackbarHostState() }
 
     // The bar's selection outlives a scroll because it lives here rather than in
@@ -123,9 +129,52 @@ fun LinksnapScreen(
     /** Repaint from the store alone: no network, no session, no wait. */
     suspend fun paint() {
         rows = if (signedIn) repository.links() else emptyList()
-        // A pull or a drain can remove a selected row; the count must never say
-        // more than the list shows.
+        // A pull, a drain or a delete can remove a row; the count must never say
+        // more than the list shows, and an open drawer has nothing to belong to.
         selection.retain(rows.map { it.code })
+        if (analyticsCode != null && rows.none { it.code == analyticsCode }) {
+            analyticsCode = null
+        }
+    }
+
+    /**
+     * The drawer's read (#962). It is live, never queued: the numbers are
+     * server-owned. The radio is checked first so a device with it off names its
+     * state instead of asking the network for zeroes.
+     */
+    fun loadAnalytics(code: String, range: LinksnapAnalyticsRange) {
+        scope.launch {
+            if (!Connectivity.isOnline(context)) {
+                analyticsState = LinksnapAnalyticsUiState.Offline
+                return@launch
+            }
+            analyticsState = LinksnapAnalyticsUiState.Loading
+            val from = Instant.now().minus(range.days, ChronoUnit.DAYS).toString()
+            analyticsState =
+                when (val answer = repository.analytics(code, from = from)) {
+                    is ApiResult.Success -> LinksnapAnalyticsUiState.Ready(answer.value)
+                    is ApiResult.Failure ->
+                        when (val error = answer.error) {
+                            is ApiError.Network -> LinksnapAnalyticsUiState.Offline
+                            else -> LinksnapAnalyticsUiState.Failed(messageFor(error))
+                        }
+                }
+        }
+    }
+
+    /** The row's analytics toggle: the same row closes, another row opens. */
+    fun toggleAnalytics(row: LinksnapLinkRow) {
+        if (analyticsCode == row.code) {
+            analyticsCode = null
+            return
+        }
+        analyticsCode = row.code
+        loadAnalytics(row.code, analyticsRange)
+    }
+
+    fun changeAnalyticsRange(range: LinksnapAnalyticsRange) {
+        analyticsRange = range
+        analyticsCode?.let { loadAnalytics(it, range) }
     }
 
     /**
@@ -292,7 +341,11 @@ fun LinksnapScreen(
             copiedCode = copiedCode,
             onCopyLink = ::copyLink,
             onShareLink = ::shareLink,
-            onAnalyticsLink = { onOpenDocument() },
+            analyticsCode = analyticsCode,
+            analyticsState = analyticsState,
+            analyticsRange = analyticsRange,
+            onAnalyticsRange = ::changeAnalyticsRange,
+            onAnalyticsLink = ::toggleAnalytics,
             onEditLink = { editing = it },
             onQrLink = ::openQr,
             onDeleteLink = ::deleteLink,
@@ -355,6 +408,10 @@ internal fun LinksnapAccountList(
     copiedCode: String? = null,
     onCopyLink: (LinksnapLinkRow) -> Unit = {},
     onShareLink: (LinksnapLinkRow) -> Unit = {},
+    analyticsCode: String? = null,
+    analyticsState: LinksnapAnalyticsUiState = LinksnapAnalyticsUiState.Loading,
+    analyticsRange: LinksnapAnalyticsRange = LinksnapAnalyticsRange.Last7Days,
+    onAnalyticsRange: (LinksnapAnalyticsRange) -> Unit = {},
     onAnalyticsLink: (LinksnapLinkRow) -> Unit = {},
     onEditLink: (LinksnapLinkRow) -> Unit = {},
     onQrLink: (LinksnapLinkRow) -> Unit = {},
@@ -399,6 +456,10 @@ internal fun LinksnapAccountList(
                         onToggleSelect = { onToggleSelect(row.code) },
                         onCopy = { onCopyLink(row) },
                         onShare = { onShareLink(row) },
+                        analyticsExpanded = analyticsCode == row.code,
+                        analyticsState = analyticsState,
+                        analyticsRange = analyticsRange,
+                        onAnalyticsRange = onAnalyticsRange,
                         onAnalytics = { onAnalyticsLink(row) },
                         onEdit = { onEditLink(row) },
                         onQr = { onQrLink(row) },
@@ -425,6 +486,10 @@ private fun LinksnapRowCard(
     row: LinksnapLinkRow,
     selected: Boolean,
     copied: Boolean,
+    analyticsExpanded: Boolean,
+    analyticsState: LinksnapAnalyticsUiState,
+    analyticsRange: LinksnapAnalyticsRange,
+    onAnalyticsRange: (LinksnapAnalyticsRange) -> Unit,
     onToggleSelect: () -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit,
@@ -442,34 +507,52 @@ private fun LinksnapRowCard(
                     LinksnapRowMetrics.cardBorderWidth,
                     LinksnapRowMetrics.cardBorder,
                     RoundedCornerShape(LinksnapRowMetrics.cardRadius),
-                )
-                .padding(LinksnapRowMetrics.cardPadding),
+                ),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.checkboxGap)) {
-            LinksnapRowCheckbox(selected = selected, onClick = onToggleSelect)
-            LinksnapRowSummary(
-                state = LinksnapRowUiState.Painted(row),
-                modifier = Modifier.weight(1f),
+        Column(Modifier.padding(LinksnapRowMetrics.cardPadding)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(LinksnapRowMetrics.checkboxGap)) {
+                LinksnapRowCheckbox(selected = selected, onClick = onToggleSelect)
+                LinksnapRowSummary(
+                    state = LinksnapRowUiState.Painted(row),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Box(
+                Modifier.fillMaxWidth()
+                    .padding(top = LinksnapRowMetrics.actionSeparatorGap)
+                    .height(LinksnapRowMetrics.actionSeparatorHeight)
+                    .background(LinksnapRowMetrics.actionSeparator),
+            )
+            LinksnapRowActions(
+                code = row.code,
+                copied = copied,
+                analyticsExpanded = analyticsExpanded,
+                onCopy = onCopy,
+                onShare = onShare,
+                onAnalytics = onAnalytics,
+                onEdit = onEdit,
+                onQr = onQr,
+                onDelete = onDelete,
             )
         }
 
-        Box(
-            Modifier.fillMaxWidth()
-                .padding(top = LinksnapRowMetrics.actionSeparatorGap)
-                .height(LinksnapRowMetrics.actionSeparatorHeight)
-                .background(LinksnapRowMetrics.actionSeparator),
-        )
-        LinksnapRowActions(
-            code = row.code,
-            copied = copied,
-            analyticsExpanded = false,
-            onCopy = onCopy,
-            onShare = onShare,
-            onAnalytics = onAnalytics,
-            onEdit = onEdit,
-            onQr = onQr,
-            onDelete = onDelete,
-        )
+        // The drawer sits outside the row's padding, exactly as the page's
+        // `article` draws it below the padded toolbar: the content's own 24px
+        // padding then lands at the same width on both clients (#962).
+        if (analyticsExpanded) {
+            Box(
+                Modifier.fillMaxWidth()
+                    .height(LinksnapRowMetrics.actionSeparatorHeight)
+                    .background(LinksnapAnalyticsMetrics.topBorder),
+            )
+            LinksnapAnalyticsDrawer(
+                state = analyticsState,
+                status = LinksnapStatus.of(row, System.currentTimeMillis()),
+                range = analyticsRange,
+                onRange = onAnalyticsRange,
+            )
+        }
     }
 }
 

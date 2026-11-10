@@ -3,6 +3,8 @@ package com.royaraqamia.app.store.linksnap
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponse
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalytics
 import com.royaraqamia.app.contracts.generated.LinksnapAvailabilityResponse
 import com.royaraqamia.app.contracts.generated.LinksnapAvailabilityResponseAvailability
 import com.royaraqamia.app.contracts.generated.LinksnapShortenResponse
@@ -430,6 +432,35 @@ class LinksnapRepository(
             }
         }
 
+    /**
+     * The owned link's analytics (#962), read live from the page's own route.
+     *
+     * This is a read, not an Outbox write: the numbers are server-owned and a
+     * queued copy would be history. `from`/`to` are the preset's ISO instants;
+     * the route applies its own default when neither is sent. Offline, the
+     * failure is returned so the drawer can name its state rather than drawing
+     * zeroes.
+     */
+    suspend fun analytics(
+        code: String,
+        from: String? = null,
+        to: String? = null,
+    ): ApiResult<LinksnapAnalyticsResponseAnalytics> = withContext(Dispatchers.IO) {
+        val query =
+            buildList {
+                    if (from != null) add("from=${URLEncoder.encode(from, "UTF-8")}")
+                    if (to != null) add("to=${URLEncoder.encode(to, "UTF-8")}")
+                }
+                .joinToString("&")
+        val path =
+            "$ANALYTICS_PATH/${URLEncoder.encode(code, "UTF-8")}" +
+                if (query.isEmpty()) "" else "?$query"
+        when (val answer = client.get<LinksnapAnalyticsResponse>(path)) {
+            is ApiResult.Success -> ApiResult.Success(answer.value.analytics)
+            is ApiResult.Failure -> answer
+        }
+    }
+
     /** One intent, replayed, classified the way the web classifies it. */
     private suspend fun send(entry: OutboxIntentRow): SendOutcome {
         // A key this device no longer holds cannot open the queued password. That
@@ -566,6 +597,9 @@ class LinksnapRepository(
 
         /** The custom-code check the signed-in form debounces (#916). */
         const val AVAILABILITY_PATH = "/linksnap/api/availability"
+
+        /** The owned link's analytics summary the drawer reads (#962). */
+        const val ANALYTICS_PATH = "/linksnap/api/analytics"
 
         const val MIN_CODE_LENGTH = 3
         const val MAX_CODE_LENGTH = 16

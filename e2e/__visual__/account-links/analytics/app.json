@@ -1,0 +1,38 @@
+{
+  "surface": "account-links",
+  "elements": {
+    "presets": {
+      "width": 181.45454,
+      "height": 36.727264,
+      "radius": 8.0,
+      "paddingTop": 4.0,
+      "paddingLeft": 4.0,
+      "rowGap": 4.0,
+      "columnGap": 4.0
+    },
+    "preset-7": {
+      "height": 28.727264,
+      "fontSize": 12.0,
+      "fontWeight": 700,
+      "radius": 6.0,
+      "paddingTop": 6.0,
+      "paddingLeft": 12.0
+    },
+    "preset-30": {
+      "height": 28.727264,
+      "fontSize": 12.0,
+      "fontWeight": 700,
+      "radius": 6.0,
+      "paddingTop": 6.0,
+      "paddingLeft": 12.0
+    },
+    "preset-90": {
+      "height": 28.727264,
+      "fontSize": 12.0,
+      "fontWeight": 700,
+      "radius": 6.0,
+      "paddingTop": 6.0,
+      "paddingLeft": 12.0
+    }
+  }
+}

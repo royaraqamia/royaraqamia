@@ -126,6 +126,10 @@ export const CONTRACTS = [
       'LinksnapUnlockRequestSchema',
       'LinksnapUnlockResponseSchema',
       'LinksnapAvailabilityResponseSchema',
+      // The analytics drawer (#962): the page's own body for
+      // `GET /linksnap/api/analytics/[code]`, decoded from one schema so the app
+      // cannot read a narrower shape than the drawer draws.
+      'LinksnapAnalyticsResponseSchema',
     ],
   },
   // The app's own failure report (#667): the body an installed APK sends when it

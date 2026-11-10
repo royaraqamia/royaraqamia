@@ -1,0 +1,45 @@
+{
+  "surface": "account-links",
+  "state": "analytics",
+  "route": "/account/links",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "presets": {
+      "width": 180,
+      "height": 36,
+      "radius": 8,
+      "paddingTop": 4,
+      "paddingLeft": 4,
+      "rowGap": 4,
+      "columnGap": 4
+    },
+    "preset-7": {
+      "height": 28,
+      "fontSize": 12,
+      "fontWeight": 700,
+      "radius": 6,
+      "paddingTop": 6,
+      "paddingLeft": 12
+    },
+    "preset-30": {
+      "height": 28,
+      "fontSize": 12,
+      "fontWeight": 700,
+      "radius": 6,
+      "paddingTop": 6,
+      "paddingLeft": 12
+    },
+    "preset-90": {
+      "height": 28,
+      "fontSize": 12,
+      "fontWeight": 700,
+      "radius": 6,
+      "paddingTop": 6,
+      "paddingLeft": 12
+    }
+  }
+}

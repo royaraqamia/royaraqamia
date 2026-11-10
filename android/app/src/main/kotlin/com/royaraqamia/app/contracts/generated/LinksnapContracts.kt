@@ -131,3 +131,67 @@ data class LinksnapAvailabilityResponseAvailability(
     val available: Boolean,
     val error: String? = null,
 )
+
+@Serializable
+data class LinksnapAnalyticsResponse(
+    val analytics: LinksnapAnalyticsResponseAnalytics,
+)
+
+@Serializable
+data class LinksnapAnalyticsResponseAnalytics(
+    val totalClicks: Long,
+    val recentClicks: List<LinksnapAnalyticsResponseAnalyticsRecentClicksItem>,
+    val clicksByDate: List<LinksnapAnalyticsResponseAnalyticsClicksByDateItem>,
+    val topReferrers: List<LinksnapAnalyticsResponseAnalyticsTopReferrersItem>,
+    val device: LinksnapAnalyticsResponseAnalyticsDevice,
+)
+
+@Serializable
+data class LinksnapAnalyticsResponseAnalyticsRecentClicksItem(
+    val id: String,
+    val linkCode: String,
+    val clickedAt: String,
+    val referrer: String?,
+    val userAgent: String?,
+    val ipCountry: String?,
+)
+
+@Serializable
+data class LinksnapAnalyticsResponseAnalyticsClicksByDateItem(
+    val date: String,
+    val clicks: Long,
+)
+
+@Serializable
+data class LinksnapAnalyticsResponseAnalyticsTopReferrersItem(
+    val name: String,
+    val count: Long,
+)
+
+@Serializable
+data class LinksnapAnalyticsResponseAnalyticsDevice(
+    val devices: List<LinksnapAnalyticsResponseAnalyticsDeviceDevicesItem>,
+    val os: List<LinksnapAnalyticsResponseAnalyticsDeviceOsItem>,
+    val browsers: List<LinksnapAnalyticsResponseAnalyticsDeviceBrowsersItem>,
+)
+
+@Serializable
+data class LinksnapAnalyticsResponseAnalyticsDeviceDevicesItem(
+    val name: String,
+    val count: Long,
+    val percent: Long,
+)
+
+@Serializable
+data class LinksnapAnalyticsResponseAnalyticsDeviceOsItem(
+    val name: String,
+    val count: Long,
+    val percent: Long,
+)
+
+@Serializable
+data class LinksnapAnalyticsResponseAnalyticsDeviceBrowsersItem(
+    val name: String,
+    val count: Long,
+    val percent: Long,
+)

@@ -165,3 +165,44 @@ export const LinksnapAvailabilitySchema = z.object({
 export const LinksnapAvailabilityResponseSchema = z.object({
   availability: LinksnapAvailabilitySchema,
 });
+
+/** One device, OS or browser group as the analytics drawer draws it (#962). */
+export const LinksnapDeviceStatSchema = z.object({
+  name: z.string(),
+  count: z.number().int(),
+  percent: z.number().int(),
+});
+
+/** One click in the drawer's recent-activity list. */
+export const LinksnapAnalyticsEventSchema = z.object({
+  id: z.string(),
+  linkCode: z.string(),
+  clickedAt: z.string(),
+  referrer: z.string().nullable(),
+  userAgent: z.string().nullable(),
+  ipCountry: z.string().nullable(),
+});
+
+/**
+ * `GET /linksnap/api/analytics/[code]` (#962): the body the page's analytics
+ * drawer reads, decoded by the app from the same schema.
+ *
+ * The route serialises the repository's `Date` fields as ISO strings and wraps
+ * the summary in `analytics`, so this is the wire shape rather than the domain
+ * interface. `clicksByDate` is the next slice's chart (#963) but travels in the
+ * same body, which is why the app decodes it even though this drawer does not
+ * draw it.
+ */
+export const LinksnapAnalyticsResponseSchema = z.object({
+  analytics: z.object({
+    totalClicks: z.number().int(),
+    recentClicks: z.array(LinksnapAnalyticsEventSchema),
+    clicksByDate: z.array(z.object({ date: z.string(), clicks: z.number().int() })),
+    topReferrers: z.array(z.object({ name: z.string(), count: z.number().int() })),
+    device: z.object({
+      devices: z.array(LinksnapDeviceStatSchema),
+      os: z.array(LinksnapDeviceStatSchema),
+      browsers: z.array(LinksnapDeviceStatSchema),
+    }),
+  }),
+});

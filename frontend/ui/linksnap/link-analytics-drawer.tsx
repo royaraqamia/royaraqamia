@@ -2,56 +2,16 @@
 
 import { useEffect, useState, memo } from 'react';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
-import { AlertTriangle, Download, Globe, Smartphone, Monitor, Cpu, Loader2 } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { AnalyticsChart } from './analytics-chart';
-import { AnalyticsSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
+import {
+  analyticsRangeToFilter,
+  LinkAnalyticsContent,
+  type AnalyticsData,
+  type AnalyticsRangePreset,
+} from './link-analytics-content';
 import type { LinkStatus } from '@/shared/contracts/linksnap';
 import type { AnalyticsRangeFilter } from '@/frontend/api/linksnap';
-
-type RangePreset = '7d' | '30d' | '90d';
-
-const RANGE_PRESETS: { value: RangePreset; label: string; days: number }[] = [
-  { value: '7d', label: '7 أيام', days: 7 },
-  { value: '30d', label: '30 يوم', days: 30 },
-  { value: '90d', label: '90 يوم', days: 90 },
-];
-
-function rangeToFilter(preset: RangePreset): AnalyticsRangeFilter {
-  const now = new Date();
-  const presetConfig = RANGE_PRESETS.find((p) => p.value === preset);
-  const from = new Date(now.getTime() - (presetConfig?.days ?? 7) * 24 * 60 * 60 * 1000);
-  return { from: from.toISOString() };
-}
-
-const STATUS_META: Record<LinkStatus, { label: string; className: string }> = {
-  active: { label: 'نشط وسليم', className: 'text-success bg-success/10 border-success/30' },
-  expired: {
-    label: 'منتهية الصلاحية',
-    className: 'text-muted-foreground bg-muted/50 border-border/40',
-  },
-  blocked: {
-    label: 'محظور',
-    className: 'text-destructive bg-destructive/10 border-destructive/30',
-  },
-};
-
-export interface AnalyticsData {
-  totalClicks: number;
-  clicksByDate: { date: string; clicks: number }[];
-  topReferrers: { name: string; count: number }[];
-  recentClicks: {
-    id: string;
-    clickedAt: string;
-    referrer: string | null;
-    userAgent: string | null;
-    ipCountry: string | null;
-  }[];
-  device: {
-    devices: { name: string; count: number; percent: number }[];
-    os: { name: string; count: number; percent: number }[];
-    browsers: { name: string; count: number; percent: number }[];
-  };
-}
 
 interface LinkAnalyticsDrawerProps {
   isExpanded: boolean;
@@ -64,40 +24,6 @@ interface LinkAnalyticsDrawerProps {
   exportingCsv: boolean;
   exportCsvError: string | null;
   code: string;
-}
-
-function BreakdownRows({
-  rows,
-  total,
-  emptyLabel,
-}: {
-  rows: { name: string; count: number; percent: number }[];
-  total: number;
-  emptyLabel: string;
-}) {
-  if (rows.length === 0) {
-    return <p className="text-xs text-muted-foreground/70 text-center py-3">{emptyLabel}</p>;
-  }
-  return (
-    <div className="space-y-2.5">
-      {rows.map((row) => (
-        <div key={row.name} className="space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-foreground/85 truncate">{row.name}</span>
-            <span className="font-mono text-muted-foreground shrink-0 ms-2">
-              {row.count} · {row.percent}%
-            </span>
-          </div>
-          <div className="h-1.5 w-full rounded-full bg-muted/70 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary/70 transition-safe duration-500 ease-out"
-              style={{ width: `${total > 0 ? (row.count / total) * 100 : 0}%` }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
@@ -113,16 +39,16 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
   code,
 }: LinkAnalyticsDrawerProps) {
   const reducedMotion = useReducedMotion();
-  const [range, setRange] = useState<RangePreset>('7d');
+  const [range, setRange] = useState<AnalyticsRangePreset>('7d');
 
   useEffect(() => {
     if (isExpanded) {
-      void loadAnalytics(rangeToFilter(range));
+      void loadAnalytics(analyticsRangeToFilter(range));
     }
   }, [isExpanded, range, loadAnalytics]);
 
   const handleExport = () => {
-    void exportCsv(rangeToFilter(range), `linksnap-${code}-${range}.csv`);
+    void exportCsv(analyticsRangeToFilter(range), `linksnap-${code}-${range}.csv`);
   };
 
   return (
@@ -135,197 +61,38 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
           className="border-t border-border/50 bg-muted/30"
         >
           <div className="p-6 space-y-6" aria-live="polite">
-            {analyticsLoading ? (
-              <AnalyticsSkeleton />
-            ) : analyticsError ? (
+            <LinkAnalyticsContent
+              loading={analyticsLoading}
+              error={analyticsError}
+              analytics={analytics}
+              status={status}
+              range={range}
+              onRange={setRange}
+              actions={
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={exportingCsv || (analytics?.totalClicks ?? 0) === 0}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {exportingCsv ? (
+                    <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download aria-hidden="true" className="w-4 h-4" />
+                  )}
+                  تصدير CSV
+                </button>
+              }
+            />
+
+            {exportCsvError ? (
               <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center gap-1.5">
-                <AlertTriangle aria-hidden="true" className="w-4 h-4 shrink-0" />
-                <span>{analyticsError}</span>
+                <span>{exportCsvError}</span>
               </div>
-            ) : analytics ? (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div
-                    className="flex items-center gap-1 bg-muted/70 rounded-lg p-1"
-                    role="group"
-                    aria-label="الفترة الزمنية"
-                  >
-                    {RANGE_PRESETS.map((preset) => (
-                      <button
-                        key={preset.value}
-                        type="button"
-                        onClick={() => setRange(preset.value)}
-                        aria-pressed={range === preset.value}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
-                          range === preset.value
-                            ? 'bg-selected text-selected-foreground shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleExport}
-                    disabled={exportingCsv || analytics.totalClicks === 0}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {exportingCsv ? (
-                      <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Download aria-hidden="true" className="w-4 h-4" />
-                    )}
-                    تصدير CSV
-                  </button>
-                </div>
+            ) : null}
 
-                {exportCsvError ? (
-                  <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center gap-1.5">
-                    <AlertTriangle aria-hidden="true" className="w-4 h-4 shrink-0" />
-                    <span>{exportCsvError}</span>
-                  </div>
-                ) : null}
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col justify-between card-lift">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      إجمالي النقرات
-                    </span>
-                    <span className="text-2xl font-bold text-foreground font-display mt-1">
-                      {analytics.totalClicks}
-                    </span>
-                  </div>
-                  <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col justify-between card-lift">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      أعلى مصدر إحالة
-                    </span>
-                    <span className="text-sm font-bold text-foreground truncate mt-2">
-                      {analytics.topReferrers[0]?.name || 'مباشر / غير معروف'}
-                    </span>
-                  </div>
-                  <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col justify-between col-span-2 md:col-span-1 card-lift">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      حالة الرَّابط
-                    </span>
-                    <span
-                      className={`text-xs font-bold border px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1 ${
-                        STATUS_META[status]?.className ?? STATUS_META.active.className
-                      }`}
-                    >
-                      <span className="w-1.5 h-1.5 bg-current rounded-full" />
-                      {STATUS_META[status]?.label ?? 'نشط وسليم'}
-                    </span>
-                  </div>
-                </div>
-
-                <AnalyticsChart stats={analytics.clicksByDate} />
-
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <Cpu className="w-4 h-4 text-primary" />
-                      الأجهزة
-                    </p>
-                    <BreakdownRows
-                      rows={analytics.device.devices}
-                      total={analytics.totalClicks}
-                      emptyLabel="لا توجد بيانات أجهزة بعد."
-                    />
-                  </div>
-                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <Globe className="w-4 h-4 text-primary" />
-                      أنظمة التشغيل
-                    </p>
-                    <BreakdownRows
-                      rows={analytics.device.os}
-                      total={analytics.totalClicks}
-                      emptyLabel="لا توجد بيانات أنظمة تشغيل بعد."
-                    />
-                  </div>
-                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <Monitor className="w-4 h-4 text-primary" />
-                      المتصفحات
-                    </p>
-                    <BreakdownRows
-                      rows={analytics.device.browsers}
-                      total={analytics.totalClicks}
-                      emptyLabel="لا توجد بيانات متصفحات بعد."
-                    />
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <Globe aria-hidden="true" className="w-4 h-4 text-primary" />
-                      أهم مصادر الزيارات
-                    </p>
-                    {analytics.topReferrers.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">
-                        لم يتم جمع بيانات الإحالة بعد.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {analytics.topReferrers.map((ref, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-xs">
-                            <span
-                              className="text-muted-foreground font-mono truncate max-w-45"
-                              title={ref.name}
-                            >
-                              {ref.name}
-                            </span>
-                            <span className="font-mono font-bold text-foreground bg-muted/50 px-2 py-0.5 rounded-md">
-                              {ref.count} نقرة
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                      <Smartphone aria-hidden="true" className="w-4 h-4 text-primary" />
-                      نشاط النقرات الأخيرة
-                    </p>
-                    {analytics.recentClicks.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-4">
-                        لا يوجد نشاط إعادة توجيه بعد.
-                      </p>
-                    ) : (
-                      <div className="space-y-2 max-h-35 overflow-y-auto pr-1">
-                        {analytics.recentClicks.map((click) => (
-                          <div
-                            key={click.id}
-                            className="flex items-center justify-between text-xs border-b border-border/50 pb-1.5 last:border-none"
-                          >
-                            <span
-                              className="text-muted-foreground truncate max-w-37.5"
-                              title={click.userAgent || 'جهاز غير معروف'}
-                            >
-                              {click.userAgent
-                                ? click.userAgent.length > 30
-                                  ? click.userAgent.substring(0, 30) + '...'
-                                  : click.userAgent
-                                : 'متصفح غير معروف'}
-                            </span>
-                            <span className="font-mono text-muted-foreground">
-                              {new Date(click.clickedAt).toLocaleTimeString('ar-EG-u-nu-latn', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+            {!analyticsLoading && !analyticsError && analytics ? (
+              <AnalyticsChart stats={analytics.clicksByDate} />
             ) : null}
           </div>
         </m.div>
