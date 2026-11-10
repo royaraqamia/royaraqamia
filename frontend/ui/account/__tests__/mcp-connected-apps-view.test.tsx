@@ -18,6 +18,7 @@ const session = vi.hoisted(() => ({
 vi.mock('@/frontend/state/session-provider', () => session);
 
 import { McpConnectedAppsView } from '../mcp-connected-apps-view';
+import { resetAppsCache } from '@/frontend/ui/apps/apps-cache';
 
 const CLAUDE = {
   clientId: 'client-1',
@@ -46,6 +47,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetAppsCache();
   mocks.getMcpConnectedApps.mockResolvedValue([CLAUDE, OPENCODE]);
   mocks.disconnectMcpConnectedApp.mockResolvedValue({ success: true });
   mocks.disconnectAllMcpConnectedApps.mockResolvedValue({ success: true });
@@ -61,7 +63,7 @@ describe('McpConnectedAppsView', () => {
 
     expect(await screen.findByRole('link', { name: 'تسجيل الدُّخول' })).toHaveAttribute(
       'href',
-      '/auth/login?redirect=/account/connected-apps'
+      '/auth/login?redirect=%2Fmcp%2Fapps%3Ftab%3Dinbound'
     );
     expect(mocks.getMcpConnectedApps).not.toHaveBeenCalled();
   });

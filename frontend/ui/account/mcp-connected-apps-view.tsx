@@ -19,6 +19,8 @@ import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ApiError } from '@/frontend/transport/http';
 import { useSession } from '@/frontend/state/session-provider';
+import { APPS_SURFACE_COPY } from '@/frontend/ui/apps/apps-copy';
+import { appsCacheKey, readAppsCache, writeAppsCache } from '@/frontend/ui/apps/apps-cache';
 
 /**
  * "Last used" in this surface's own words (ADR-0104): the formatter answers a
@@ -65,7 +67,10 @@ export function connectedAppName(connectedApp: McpConnectedApp): string {
  * The page's heading lives here rather than in `page.tsx` so the app's screen can
  * draw the same sentence from the same generated copy (ADR-0098).
  */
-export function McpConnectedAppsView({ heading = true }: { heading?: boolean } = {}) {
+export function McpConnectedAppsView({
+  heading = true,
+  query = '',
+}: { heading?: boolean; query?: string } = {}) {
   return (
     <div className="space-y-6">
       {heading && (
@@ -76,14 +81,16 @@ export function McpConnectedAppsView({ heading = true }: { heading?: boolean } =
         </header>
       )}
 
-      <ConnectedAppsBody />
+      <ConnectedAppsBody query={query} />
     </div>
   );
 }
 
-function ConnectedAppsBody() {
+function ConnectedAppsBody({ query }: { query: string }) {
   const { user, isLoading } = useSession();
-  const [connectedApps, setConnectedApps] = useState<McpConnectedApp[] | null>(null);
+  const cacheKey = user ? appsCacheKey(user.id, 'inbound') : null;
+  const cached = cacheKey ? readAppsCache<McpConnectedApp[]>(cacheKey) : null;
+  const [connectedApps, setConnectedApps] = useState<McpConnectedApp[] | null>(cached ?? null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadOffline, setLoadOffline] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -94,13 +101,15 @@ function ConnectedAppsBody() {
     setLoadFailed(false);
     setLoadOffline(false);
     try {
-      setConnectedApps(await getMcpConnectedApps());
+      const list = await getMcpConnectedApps();
+      setConnectedApps(list);
+      if (cacheKey) writeAppsCache(cacheKey, list);
     } catch (error) {
       setConnectedApps(null);
       setLoadOffline(error instanceof ApiError && error.isNetworkError);
       setLoadFailed(true);
     }
-  }, []);
+  }, [cacheKey]);
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -144,7 +153,10 @@ function ConnectedAppsBody() {
 
   if (!user)
     return (
-      <SignInCta href="/auth/login?redirect=/account/connected-apps" visual="connected-cta">
+      <SignInCta
+        href={`/auth/login?redirect=${encodeURIComponent('/mcp/apps?tab=inbound')}`}
+        visual="connected-cta"
+      >
         {MCP_CONNECTED_APPS_COPY.signIn}
       </SignInCta>
     );
@@ -158,7 +170,7 @@ function ConnectedAppsBody() {
 
     return (
       <div className="space-y-4 rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-center">
-        <p className="text-sm font-bold text-destructive sm:text-base">
+        <p className="max-sm:text-sm font-bold text-destructive sm:text-base">
           {MCP_CONNECTED_APPS_COPY.failed}
         </p>
         <button
@@ -187,6 +199,11 @@ function ConnectedAppsBody() {
   }
 
   const hasConnectedApps = connectedApps.length > 0;
+  const term = query.trim();
+  const visible = term
+    ? connectedApps.filter((connectedApp) => connectedAppName(connectedApp).includes(term))
+    : connectedApps;
+  const hasMatches = visible.length > 0;
 
   return (
     <div className="space-y-4">
@@ -200,72 +217,78 @@ function ConnectedAppsBody() {
       )}
 
       {hasConnectedApps ? (
-        <>
-          <ul className="space-y-2.5">
-            {connectedApps.map((connectedApp) => (
-              <li
-                key={connectedApp.clientId}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <Plug aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-                  <div className="min-w-0 space-y-1">
-                    <p className="truncate text-sm font-bold text-foreground sm:text-base">
-                      {connectedAppName(connectedApp)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      <span>
-                        {MCP_CONNECTED_APPS_COPY.lastUsed}{' '}
-                        {connectedApp.lastUsedAt
-                          ? timeAgoLabel(connectedApp.lastUsedAt)
-                          : MCP_CONNECTED_APPS_COPY.neverUsed}
-                      </span>
-                      <span aria-hidden="true"> · </span>
-                      <span>
-                        {MCP_CONNECTED_APPS_COPY.connectedSince.replace(
-                          '{date}',
-                          formatHijriDate(connectedApp.connectedAt)
-                        )}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setTarget(connectedApp)}
-                  aria-label={MCP_CONNECTED_APPS_COPY.disconnectAria.replace(
-                    '{name}',
-                    connectedAppName(connectedApp)
-                  )}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 sm:text-sm"
+        hasMatches ? (
+          <>
+            <ul className="space-y-2.5">
+              {visible.map((connectedApp) => (
+                <li
+                  key={connectedApp.clientId}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5"
                 >
-                  <Unplug aria-hidden="true" className="h-4 w-4 shrink-0" />
-                  <span>{MCP_CONNECTED_APPS_COPY.disconnect}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Plug aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate max-sm:text-sm font-bold text-foreground sm:text-base">
+                        {connectedAppName(connectedApp)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        <span>
+                          {MCP_CONNECTED_APPS_COPY.lastUsed}{' '}
+                          {connectedApp.lastUsedAt
+                            ? timeAgoLabel(connectedApp.lastUsedAt)
+                            : MCP_CONNECTED_APPS_COPY.neverUsed}
+                        </span>
+                        <span aria-hidden="true"> · </span>
+                        <span>
+                          {MCP_CONNECTED_APPS_COPY.connectedSince.replace(
+                            '{date}',
+                            formatHijriDate(connectedApp.connectedAt)
+                          )}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
 
-          <button
-            type="button"
-            onClick={() => setTarget('all')}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
-          >
-            <Unplug aria-hidden="true" className="h-4 w-4 shrink-0" />
-            <span>{MCP_CONNECTED_APPS_COPY.disconnectAll}</span>
-          </button>
-        </>
+                  <button
+                    type="button"
+                    onClick={() => setTarget(connectedApp)}
+                    aria-label={MCP_CONNECTED_APPS_COPY.disconnectAria.replace(
+                      '{name}',
+                      connectedAppName(connectedApp)
+                    )}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2 max-sm:text-xs font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 sm:text-sm"
+                  >
+                    <Unplug aria-hidden="true" className="h-4 w-4 shrink-0" />
+                    <span>{MCP_CONNECTED_APPS_COPY.disconnect}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              type="button"
+              onClick={() => setTarget('all')}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
+            >
+              <Unplug aria-hidden="true" className="h-4 w-4 shrink-0" />
+              <span>{MCP_CONNECTED_APPS_COPY.disconnectAll}</span>
+            </button>
+          </>
+        ) : (
+          <p className="rounded-2xl border border-border/50 bg-card/60 px-4 py-8 text-center text-sm text-muted-foreground">
+            {APPS_SURFACE_COPY.searchEmptyInbound}
+          </p>
+        )
       ) : (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
             <Plug aria-hidden="true" size={24} />
           </div>
           <div className="space-y-1">
-            <p className="text-base font-bold text-foreground sm:text-lg">
+            <p className="max-sm:text-base font-bold text-foreground sm:text-lg">
               {MCP_CONNECTED_APPS_COPY.emptyTitle}
             </p>
-            <p className="text-xs text-muted-foreground sm:text-sm">
+            <p className="max-sm:text-xs text-muted-foreground sm:text-sm">
               {MCP_CONNECTED_APPS_COPY.emptyBody}
             </p>
           </div>

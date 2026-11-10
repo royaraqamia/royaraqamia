@@ -1,5 +1,9 @@
 # The app picker hosts apps we do not own
 
+> **Amended by [ADR 0159](0159-the-apps-sheet-is-the-one-apps-surface.md)**, which
+> turns the marketplace row into a tab, makes the picker the sheet's first tab,
+> and retires the account row for the inbound list.
+
 `تطبيقاتنا` lists nine apps we ship. A member who works in Notion, Linear or a calendar had no
 way to let نور reach it, while every other assistant of this generation offers exactly that.
 This records where those apps live, where their catalog comes from, and what stands between a

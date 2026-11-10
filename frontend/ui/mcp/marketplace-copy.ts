@@ -13,12 +13,6 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const MCP_MARKETPLACE_COPY = {
-  pageTitle: 'متجر التطبيقات',
-  pageIntro: 'اربط تطبيقًا خارجيًّا ليعمل مع نور، أو راجع ما يستطيع الوصول إلى حسابك.',
-  tabsLabel: 'أقسام المتجر',
-  tabApps: 'تطبيقات نور',
-  tabInbound: 'تطبيقاتنا المتصلة بنا',
-
   searchLabel: 'البحث في المتجر',
   searchPlaceholder: 'ابحث باسم التطبيق أو وصفه...',
   searchAction: 'بحث',

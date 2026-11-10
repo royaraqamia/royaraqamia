@@ -121,14 +121,6 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
         )
         add(
             AccountLink(
-                id = "connected-apps",
-                icon = LucideVectors.Plug,
-                label = AccountRowsCopy.CONNECTED_APPS,
-                route = "/account/connected-apps",
-            )
-        )
-        add(
-            AccountLink(
                 id = "blocked",
                 icon = LucideVectors.ShieldOff,
                 label = AccountRowsCopy.BLOCKED,

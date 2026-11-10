@@ -1,21 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useHomeServices } from '@/frontend/state/home-services-provider';
 import type { HomeServiceKey } from '@/shared/contracts/home-services';
+import { APPS_SURFACE_COPY } from '@/frontend/ui/apps/apps-copy';
 
 import type { NavLink } from './NavDropdown';
 import { SERVICES_SHEET_COPY } from './services-sheet-copy';
 
 interface ServicesMenuItemsProps {
   subItems?: NavLink[];
-  /** The sheet's own close, called after a row that navigates rather than toggles. */
-  onNavigate?: () => void;
+  /** The surface's search box, applied to the row label. */
+  query?: string;
 }
 
 /**
@@ -26,134 +25,84 @@ interface ServicesMenuItemsProps {
  * button is the only control — a row that both navigated and toggled would
  * make "open" and "add" the same tap, which is the ambiguity the old sheet had.
  *
- * The one exception is the `pickerOnly` row (ADR-0155): the marketplace is not
- * one of our apps, so it cannot be added to the homepage and does not toggle.
- * It sits under its own divider and section label, is a link, and closes the
- * sheet after it navigates.
+ * The marketplace row that used to sit under this list is the sheet's second
+ * tab now, so this component draws our apps and nothing else (ADR-0155).
  */
-export function ServicesMenuItems({ subItems, onNavigate }: ServicesMenuItemsProps) {
+export function ServicesMenuItems({ subItems, query = '' }: ServicesMenuItemsProps) {
   const { order, add, remove } = useHomeServices();
-  const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   // A retired row keeps its copy and glyph in the shared source but is not an
-  // app a member can add (ADR-0152); a pickerOnly row is not ours to add
-  // (ADR-0155).
+  // app a member can add (ADR-0152).
   const items = subItems ?? [];
   const rows = items.filter((item) => !item.retired && !item.pickerOnly);
-  const external = items.filter((item) => !item.retired && item.pickerOnly);
+  const term = query.trim();
+  const visible = term ? rows.filter((item) => item.label.includes(term)) : rows;
 
   return (
     <div className="flex flex-col">
-      <ul role="list" aria-label={SERVICES_SHEET_COPY.title} className="flex flex-col">
-        {rows.map((item, index) => {
-          const added = order.includes(item.href as HomeServiceKey);
-          const Icon = item.icon;
-          const pending = busy === item.href;
-
-          return (
-            <li
-              key={item.href}
-              data-visual="services-row"
-              className={cn(
-                'flex items-center gap-3 px-4 py-1',
-                index < rows.length - 1 && 'border-b border-neutral-800/60'
-              )}
-            >
-              <span className="flex min-w-0 flex-1 items-center gap-2.5 py-3 text-start text-sm font-medium text-neutral-200">
-                {Icon && <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />}
-                <span className="truncate">{item.label}</span>
-              </span>
-
-              <button
-                type="button"
-                aria-pressed={added}
-                data-visual="services-row-action"
-                disabled={pending}
-                onClick={() => {
-                  setError('');
-                  setBusy(item.href);
-                  void (
-                    added ? remove(item.href as HomeServiceKey) : add(item.href as HomeServiceKey)
-                  )
-                    .then((message) => {
-                      // `null` is the write landing; an empty string is a refusal
-                      // the server did not put into words, and the sheet's own
-                      // sentence is what the member reads then.
-                      setError(message === null ? '' : message || SERVICES_SHEET_COPY.failed);
-                    })
-                    .finally(() => setBusy(null));
-                }}
-                className={cn(
-                  'inline-flex min-h-9 min-w-20 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 disabled:opacity-60',
-                  added
-                    ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15'
-                    : 'border border-violet-500/40 bg-violet-500/15 text-violet-200 hover:bg-violet-500/25'
-                )}
-              >
-                {added && <Check className="size-3.5" aria-hidden="true" />}
-                {added ? SERVICES_SHEET_COPY.remove : SERVICES_SHEET_COPY.add}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-
-      {external.length > 0 && (
-        <div data-visual="services-external" className="mt-1 border-t border-neutral-800/60 pt-1">
-          {external.map((item, index) => {
+      {visible.length === 0 ? (
+        <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+          {APPS_SURFACE_COPY.searchEmptyInternal}
+        </p>
+      ) : (
+        <ul role="list" aria-label={SERVICES_SHEET_COPY.title} className="flex flex-col">
+          {visible.map((item, index) => {
+            const added = order.includes(item.href as HomeServiceKey);
             const Icon = item.icon;
+            const pending = busy === item.href;
 
             return (
-              <div key={item.href}>
-                {index === 0 && item.sectionLabel && (
-                  <p className="px-4 pt-2 pb-1 text-[11px] font-bold tracking-wide text-neutral-500">
-                    {item.sectionLabel}
-                  </p>
+              <li
+                key={item.href}
+                data-visual="services-row"
+                className={cn(
+                  'flex items-center gap-3 px-4 py-1',
+                  index < visible.length - 1 && 'border-b border-neutral-800/60'
                 )}
-
-                <Link
-                  href={item.href}
-                  data-visual="services-external-row"
-                  onClick={(event) => {
-                    // The sheet closes on the same tap, and unmounting an anchor
-                    // inside its own handler is what cancels Next's navigation —
-                    // so the push is imperative and the close comes after it.
-                    // Modified clicks keep the browser's own behaviour: a new tab
-                    // is still a new tab.
-                    if (
-                      event.defaultPrevented ||
-                      event.button !== 0 ||
-                      event.metaKey ||
-                      event.ctrlKey ||
-                      event.shiftKey ||
-                      event.altKey
-                    ) {
-                      return;
-                    }
-                    event.preventDefault();
-                    router.push(item.href);
-                    onNavigate?.();
-                  }}
-                  className="flex items-center gap-2.5 rounded-xl px-4 py-3 text-start transition-safe duration-150 ease-out hover:bg-neutral-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80"
-                >
+              >
+                <span className="flex min-w-0 flex-1 items-center gap-2.5 py-3 text-start text-sm font-medium text-neutral-200">
                   {Icon && <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />}
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium text-neutral-200">
-                      {item.label}
-                    </span>
-                    {item.hint && (
-                      <span className="mt-0.5 block truncate text-xs text-neutral-400">
-                        {item.hint}
-                      </span>
-                    )}
-                  </span>
-                </Link>
-              </div>
+                  <span className="truncate">{item.label}</span>
+                </span>
+
+                <button
+                  type="button"
+                  aria-pressed={added}
+                  data-visual="services-row-action"
+                  // One write at a time: the provider sends the whole order, so a
+                  // second tap racing the first would overwrite it.
+                  disabled={busy !== null}
+                  onClick={() => {
+                    setError('');
+                    setBusy(item.href);
+                    void (
+                      added ? remove(item.href as HomeServiceKey) : add(item.href as HomeServiceKey)
+                    )
+                      .then((message) => {
+                        // `null` is the write landing; an empty string is a refusal
+                        // the server did not put into words, and the sheet's own
+                        // sentence is what the member reads then.
+                        setError(message === null ? '' : message || SERVICES_SHEET_COPY.failed);
+                      })
+                      .finally(() => setBusy(null));
+                  }}
+                  className={cn(
+                    'inline-flex min-h-9 min-w-20 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-bold transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80',
+                    pending && 'opacity-60',
+                    added
+                      ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/15'
+                      : 'border border-violet-500/40 bg-violet-500/15 text-violet-200 hover:bg-violet-500/25'
+                  )}
+                >
+                  {added && <Check className="size-3.5" aria-hidden="true" />}
+                  {added ? SERVICES_SHEET_COPY.remove : SERVICES_SHEET_COPY.add}
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
 
       <p role="status" aria-live="polite" className="px-4 pt-2 text-center text-xs text-red-300">

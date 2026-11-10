@@ -8,7 +8,6 @@ import {
   CircleQuestionMark,
   LogOut,
   MessageCircle,
-  Plug,
   ShieldCheck,
   ShieldOff,
   Sparkles,
@@ -70,13 +69,6 @@ export function AccountRows({ onRequireAuth, onSignOut, children }: AccountRowsP
           href="/account/posts"
           icon={FileText}
           label={ACCOUNT_ROWS_COPY.posts}
-          onRequireAuth={onRequireAuth}
-        />
-
-        <AccountRow
-          href="/account/connected-apps"
-          icon={Plug}
-          label={ACCOUNT_ROWS_COPY.connectedApps}
           onRequireAuth={onRequireAuth}
         />
 
