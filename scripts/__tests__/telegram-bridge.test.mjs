@@ -22,6 +22,9 @@ import { decide } from '../telegram/guard-decision.mjs';
 import { buildSystemPrompt, failureLine } from '../telegram/prompt.mjs';
 import { escapeHtml } from '../telegram/text.mjs';
 
+/** Either half of a surrogate pair on its own, which is not a character. */
+const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
 describe('renderAnswer', () => {
   it('escapes before it formats, so a stray angle bracket is text', () => {
     const html = renderAnswer('اقرأ <script>alert(1)</script> ثم `npm test`');
@@ -74,6 +77,21 @@ describe('chunkMarkdown', () => {
   it('cuts a single enormous line instead of returning it whole', () => {
     const chunks = chunkMarkdown('كلمة '.repeat(5000), 1000);
     expect(chunks.every((chunk) => chunk.length <= 1000)).toBe(true);
+  });
+
+  it('keeps a long single line whole, and never cuts a surrogate pair', () => {
+    const line = 'س'.repeat(5000);
+    const pieces = chunkMarkdown(line, 4000);
+    expect(pieces.length).toBeGreaterThan(1);
+    expect(pieces.every((piece) => piece.length <= 4000)).toBe(true);
+    expect(pieces.join('')).toBe(line);
+
+    // The 4000th unit would be the first half of an emoji: the cut steps back one
+    // unit so each message carries whole characters.
+    const emoji = 'a'.repeat(3999) + '\u{1F600}'.repeat(3);
+    const split = chunkMarkdown(emoji, 4000);
+    expect(split.join('')).toBe(emoji);
+    for (const piece of split) expect(loneSurrogate.test(piece)).toBe(false);
   });
 
   it('numbers the pieces only when there is more than one', () => {
