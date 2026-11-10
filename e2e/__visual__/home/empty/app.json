@@ -1,0 +1,28 @@
+{
+  "surface": "home",
+  "state": "empty",
+  "elements": {
+    "title": {
+      "top": 269.0909,
+      "height": 36.0,
+      "fontSize": 30.0,
+      "fontWeight": 700
+    },
+    "body": {
+      "top": 321.0909,
+      "height": 26.181824,
+      "fontSize": 16.0
+    },
+    "add": {
+      "width": 176.0,
+      "height": 48.0,
+      "radius": 33554400,
+      "fontSize": 16.0
+    },
+    "card": {
+      "top": 0.0,
+      "width": 392.72726,
+      "height": 724.0
+    }
+  }
+}

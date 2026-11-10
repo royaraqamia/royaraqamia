@@ -11,7 +11,7 @@ import { ServicesMenu } from '@/frontend/ui/navbar/ServicesMenu';
 import { SERVICES_LINK } from '@/frontend/ui/navbar/services-link';
 import type { HomeServiceKey } from '@/shared/contracts/home-services-catalog';
 
-import { HOME_COPY } from './home-copy';
+import { HOME_STRIP_COPY } from './home-strip-copy';
 
 const BY_ROUTE = new Map(
   (SERVICES_LINK.subItems ?? []).filter((item) => !item.retired).map((item) => [item.href, item])
@@ -26,7 +26,7 @@ interface HomeTabStripProps {
 /**
  * The apps a member keeps, as a horizontally scrolling strip (ADR-0146).
  *
- * The strip is the order the account or device stored — add order, no cap — and
+ * The strip is the order the account or device stored â€” add order, no cap â€” and
  * each pill is a tab, not a link: the homepage hosts every app under the strip,
  * so choosing one swaps the surface in place and the address bar stays `/`
  * (ADR-0151). An app still has its own route for a shared link and a direct
@@ -53,7 +53,7 @@ export function HomeTabStrip({ selected, onSelect }: HomeTabStripProps) {
 
   return (
     <section
-      aria-label={HOME_COPY.stripLabel}
+      aria-label={HOME_STRIP_COPY.stripLabel}
       className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8"
     >
       <div className="relative">
@@ -65,7 +65,7 @@ export function HomeTabStrip({ selected, onSelect }: HomeTabStripProps) {
           <div className="flex w-max items-center gap-2.5">
             <ul
               role="tablist"
-              aria-label={HOME_COPY.stripLabel}
+              aria-label={HOME_STRIP_COPY.stripLabel}
               className="flex items-center gap-2.5"
             >
               {tabs.map((item) => {
@@ -102,12 +102,12 @@ export function HomeTabStrip({ selected, onSelect }: HomeTabStripProps) {
                 trigger={
                   <button
                     type="button"
-                    aria-label={HOME_COPY.newApp}
+                    aria-label={HOME_STRIP_COPY.newApp}
                     data-visual="home-new-app"
                     className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-neutral-700 px-4 text-sm font-bold text-neutral-400 transition-safe duration-200 ease-out hover:border-violet-500/60 hover:text-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95"
                   >
                     <Plus className="size-4" aria-hidden="true" />
-                    <span className="whitespace-nowrap">{HOME_COPY.newApp}</span>
+                    <span className="whitespace-nowrap">{HOME_STRIP_COPY.newApp}</span>
                   </button>
                 }
               />
@@ -119,8 +119,8 @@ export function HomeTabStrip({ selected, onSelect }: HomeTabStripProps) {
           onScroll={scroll}
           canScrollLeft={canScrollLeft}
           canScrollRight={canScrollRight}
-          ariaLabelLeft="التَّطبيق التَّالي"
-          ariaLabelRight="التَّطبيق السَّابق"
+          ariaLabelLeft="Ø§Ù„ØªÙŽÙ‘Ø·Ø¨ÙŠÙ‚ Ø§Ù„ØªÙŽÙ‘Ø§Ù„ÙŠ"
+          ariaLabelRight="Ø§Ù„ØªÙŽÙ‘Ø·Ø¨ÙŠÙ‚ Ø§Ù„Ø³ÙŽÙ‘Ø§Ø¨Ù‚"
         />
       </div>
     </section>

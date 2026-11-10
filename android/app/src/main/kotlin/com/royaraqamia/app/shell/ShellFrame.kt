@@ -49,8 +49,9 @@ object ChromeTags {
  * Each ported surface fills the content area and its row in
  * `docs/mobile/screens.json` changes in the same pull request.
  *
- * The services sheet is opened from the frame and closes itself before it
- * navigates, so the sheet never outlives the route it chose.
+ * The services sheet is opened from the frame and is the app picker (#1194,
+ * ADR-0146): its rows add and remove homepage apps, so it never outlives a
+ * navigation and the list it edits is the caller's.
  */
 @Composable
 fun ShellFrame(
@@ -64,6 +65,14 @@ fun ShellFrame(
     showAssistant: Boolean = true,
     /** Where the door opens: the sheet, or the sign-in flow for a guest. */
     onOpenAssistant: () -> Unit = {},
+    /** The apps on the homepage, in tab order (#1194). */
+    homeOrder: List<String> = emptyList(),
+    /** The picker row whose write is in flight, or null. */
+    homeBusy: String? = null,
+    /** The picker's refused-write line, or null. */
+    homeError: String? = null,
+    /** Adds or removes a homepage app; the picker never navigates. */
+    onToggleHomeService: (String) -> Unit = {},
     content: @Composable BoxScope.() -> Unit = {},
 ) {
     var servicesOpen by remember { mutableStateOf(false) }
@@ -95,11 +104,11 @@ fun ShellFrame(
         }
         ServicesSheet(
             open = servicesOpen,
+            order = homeOrder,
+            busy = homeBusy,
+            error = homeError,
+            onToggle = onToggleHomeService,
             onDismiss = { servicesOpen = false },
-            onSelect = { route ->
-                servicesOpen = false
-                onOpenRoute(route)
-            },
         )
     }
 }

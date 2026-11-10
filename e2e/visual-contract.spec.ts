@@ -9,7 +9,9 @@ import {
   COMMUNITY_SEED_PREFIX,
   protectVisualLink,
   seedVisualLink,
+  seedHomeServices,
   signInAsVisualAccount,
+  VISUAL_HOME_SERVICES,
   VISUAL_ACCOUNT_MISSING,
   visualCredentials,
 } from './visual-fixture';
@@ -55,6 +57,18 @@ const DEVICE_SCALE = 2.75;
 /** The origin the spec signs in on: the page's cookie host must match it. */
 function projectBaseURL(): string {
   return test.info().project.use.baseURL ?? 'http://localhost:3000';
+}
+
+/**
+ * Hides the Next.js development indicator.
+ *
+ * It is development-only chrome, not the product: CI records a production build
+ * where it does not exist. A sheet at the bottom of the viewport would otherwise
+ * carry a floating "N" the app has no reason to draw, and the empty card reaches
+ * far enough down to include it too.
+ */
+async function hideDevIndicator(page: Page): Promise<void> {
+  await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
 }
 
 interface Measured {
@@ -506,6 +520,49 @@ const PREPARE: Record<
     await seedSpendtrack(page.context(), baseURL);
     await visit(baseURL);
     await page.locator('[data-visual="spendtrack-csv"]').waitFor({ timeout: 30_000 });
+  },
+  // The homepage strip with the fixture's two apps (#1194). The account's order
+  // is written first, so the pills and their selected state are the same every
+  // run rather than whatever the last capture left on the account.
+  'home/strip': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedHomeServices(page.context(), baseURL, VISUAL_HOME_SERVICES);
+    await visit(baseURL);
+    await page.locator('[data-visual="home-app-strip"]').waitFor({ timeout: 30_000 });
+    // The page paints its Arabic faces with `display: swap`, so a strip measured
+    // before they land is a strip in the fallback face.
+    await page.evaluate(() => document.fonts.ready);
+    await hideDevIndicator(page);
+    await page.waitForTimeout(400);
+  },
+  // The picker over the strip: the sheet is opened by the strip's own end
+  // control, and the body is the capture region, so the shared `visit` cannot
+  // wait for it first.
+  'home/picker': async (page) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedHomeServices(page.context(), baseURL, VISUAL_HOME_SERVICES);
+    await page.goto(new URL('/', baseURL).toString(), { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-visual="home-new-app"]').waitFor({ timeout: 30_000 });
+    await page.locator('[data-visual="home-new-app"]').click();
+    await page.locator('[data-visual="services-sheet"]').waitFor({ timeout: 30_000 });
+    await hideDevIndicator(page);
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.fonts.ready);
+  },
+  // The first-run door: the same account with no apps, which is the state the
+  // empty card is drawn in. The card is the capture region, not the page: its
+  // frame is the document's, and the app's is the shell's.
+  'home/empty': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedHomeServices(page.context(), baseURL, []);
+    await visit(baseURL);
+    await page.locator('[data-visual="home-empty"]').waitFor({ timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
+    await hideDevIndicator(page);
+    await page.waitForTimeout(400);
   },
 };
 

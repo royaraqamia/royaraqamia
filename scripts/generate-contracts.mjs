@@ -74,6 +74,15 @@ export const CONTRACTS = [
     file: 'NotificationsContracts.kt',
     schemas: ['UnreadNotificationCountSchema'],
   },
+  // The homepage's app set (#1194): the picker writes the whole ordered list and
+  // reads it back, so the body and the answer are generated types rather than a
+  // JSON shape retyped in Kotlin (ADR-0098). The enum is the catalogue's routes,
+  // which is the same list `ServicesEntry` draws.
+  {
+    module: 'shared/contracts/home-services',
+    file: 'HomeServicesContracts.kt',
+    schemas: ['HomeServicesResultSchema', 'UpdateHomeServicesSchema'],
+  },
   {
     module: 'shared/contracts/habitflow',
     file: 'HabitflowContracts.kt',

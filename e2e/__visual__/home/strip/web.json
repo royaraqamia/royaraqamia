@@ -1,0 +1,26 @@
+{
+  "surface": "home",
+  "state": "strip",
+  "route": "/",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "strip": {
+      "top": 88,
+      "width": 361,
+      "height": 60,
+      "columnGap": "normal"
+    },
+    "new-app": {
+      "top": 96,
+      "width": 123.86,
+      "height": 44,
+      "radius": 33554400,
+      "fontSize": 14,
+      "paddingLeft": 16
+    }
+  }
+}

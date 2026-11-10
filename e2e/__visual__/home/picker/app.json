@@ -1,0 +1,23 @@
+{
+  "surface": "home",
+  "state": "picker",
+  "elements": {
+    "sheet": {
+      "top": 353.0909,
+      "width": 392.72726,
+      "height": 498.9091,
+      "radius": 16.0,
+      "paddingTop": 0
+    },
+    "row": {
+      "top": 361.0909,
+      "height": 53.09091
+    },
+    "row-action": {
+      "width": 80.0,
+      "height": 36.0,
+      "radius": 33554400,
+      "fontSize": 12.0
+    }
+  }
+}

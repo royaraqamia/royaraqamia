@@ -50,7 +50,14 @@
     {
       "name": "empty",
       "origin": "title",
+      "capture": "card",
       "elements": [
+        {
+          "name": "card",
+          "web": { "selector": "[data-visual='home-empty']" },
+          "app": { "tag": "home-empty" },
+          "properties": ["top", "width", "height"]
+        },
         {
           "name": "title",
           "web": { "selector": "[data-visual='home-empty'] h1" },

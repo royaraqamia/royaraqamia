@@ -81,7 +81,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 68 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 71 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -90,6 +90,9 @@ A component is finished when the surface that draws it is native: 68 ported comp
 - [x] `account-connected-apps` on **account-connected-apps** · #657
 - [ ] `shell-tab-bar` on **home** · #647
 - [ ] `shell-services` on **home** · #647
+- [ ] `home-strip` on **home** · #1194
+- [ ] `home-empty` on **home** · #1194
+- [ ] `home-picker` on **home** · #1194
 - [ ] `notification-bell` on **home** · #659
 - [x] `spendtrack-total` on **spendtrack** · #653
 - [x] `spendtrack-expenses` on **spendtrack** · #653

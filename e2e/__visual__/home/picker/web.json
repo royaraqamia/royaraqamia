@@ -1,0 +1,29 @@
+{
+  "surface": "home",
+  "state": "picker",
+  "route": "/",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "sheet": {
+      "top": 354,
+      "width": 393,
+      "height": 498,
+      "radius": 16,
+      "paddingTop": 0
+    },
+    "row": {
+      "top": 362,
+      "height": 53
+    },
+    "row-action": {
+      "width": 80,
+      "height": 36,
+      "radius": 33554400,
+      "fontSize": 12
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "surface": "home",
+  "component": "services-sheet",
+  "web": {
+    "file": "frontend/ui/navbar/services-sheet-copy.ts",
+    "export": "SERVICES_SHEET_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesSheetCopy.kt",
+    "object": "ServicesSheetCopy"
+  },
+  "notes": {
+    "source": "The app picker's add/remove sheet (ADR-0146, ADR-0153): its accessible title, the two actions a row offers and the sentence a refused write draws. The row names are `SERVICES_COPY`; these are the picker's own words. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
+    "gate": "`npm run copy:check` fails a stale generated output, and `npm run check:parity` fails a key the reference components (`frontend/ui/navbar/ServicesMenuItems.tsx` and `ServicesSheet.tsx`) do not render."
+  },
+  "strings": {
+    "title": "التطبيقات",
+    "add": "إضافة",
+    "remove": "إزالة",
+    "failed": "تعذَّر تحديث تطبيقاتك."
+  }
+}
