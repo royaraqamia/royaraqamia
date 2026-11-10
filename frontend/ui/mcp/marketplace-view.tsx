@@ -135,6 +135,13 @@ function McpAppsTab({ connect }: { connect: string | null }) {
   const [connectingTo, setConnectingTo] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  /** One connection per server: this is what keeps a linked row from offering to link again. */
+  const connectionByRegistry = useMemo(() => {
+    const byRegistry = new Map<string, McpConnection>();
+    for (const connection of connections ?? []) byRegistry.set(connection.registryName, connection);
+    return byRegistry;
+  }, [connections]);
+
   const loadConnections = useCallback(async () => {
     setConnectionsFailed(false);
     setConnectionsOffline(false);
@@ -297,12 +304,22 @@ function McpAppsTab({ connect }: { connect: string | null }) {
         ) : servers.length === 0 ? (
           <EmptyCard title={COPY.searchEmptyTitle} body={COPY.searchEmptyBody} />
         ) : (
-          <>
-            <ul className="space-y-2.5">
+          /*
+            A search over a list that is already drawn is a refresh, so the rows
+            are dimmed while it runs: the reader sees the old answer and the
+            sentence agree, instead of a result that looks untouched.
+          */
+          <div aria-busy={searching} className="space-y-2.5">
+            <ul
+              className={`space-y-2.5 transition-opacity duration-150 ease-out ${
+                searching ? 'opacity-60' : 'opacity-100'
+              }`}
+            >
               {servers.map((server) => (
                 <li key={server.registryName}>
                   <CatalogueRow
                     server={server}
+                    connection={connectionByRegistry.get(server.registryName) ?? null}
                     connecting={connectingTo === server.registryName}
                     disabled={connectingTo !== null}
                     onConnect={() => void onConnect(server.registryName)}
@@ -326,12 +343,12 @@ function McpAppsTab({ connect }: { connect: string | null }) {
                 <span>{COPY.more}</span>
               </button>
             )}
-          </>
+          </div>
         )}
 
         {searching && servers !== null && (
           <p role="status" aria-live="polite" className="text-center text-xs text-muted-foreground">
-            {COPY.searchLoading}
+            {query.trim() ? COPY.searchLoading : COPY.searchRefreshing}
           </p>
         )}
       </section>
@@ -388,17 +405,7 @@ function ConnectionCard({ connection }: { connection: McpConnection }) {
               {connection.lastUsedAt ? formatHijriDate(connection.lastUsedAt) : COPY.neverUsed}
             </span>
           </p>
-          <p className="flex flex-wrap items-center gap-2 text-xs">
-            <ConnectionStatusBadge status={connection.status} />
-            <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 font-bold text-muted-foreground">
-              {permissionLabel(connection.permissionLevel)}
-            </span>
-            {!connection.enabled && (
-              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-bold text-amber-600 dark:text-amber-300">
-                {COPY.connectionDisabled}
-              </span>
-            )}
-          </p>
+          <ConnectionBadges connection={connection} />
         </div>
       </div>
 
@@ -406,6 +413,23 @@ function ConnectionCard({ connection }: { connection: McpConnection }) {
         {COPY.manage}
       </span>
     </Link>
+  );
+}
+
+/** The state of a connection, in one line: the list and the catalogue row draw it alike. */
+function ConnectionBadges({ connection }: { connection: McpConnection }) {
+  return (
+    <p className="flex flex-wrap items-center gap-2 text-xs">
+      <ConnectionStatusBadge status={connection.status} />
+      <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 font-bold text-muted-foreground">
+        {permissionLabel(connection.permissionLevel)}
+      </span>
+      {!connection.enabled && (
+        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-bold text-amber-600 dark:text-amber-300">
+          {COPY.connectionDisabled}
+        </span>
+      )}
+    </p>
   );
 }
 
@@ -431,25 +455,35 @@ function ConnectionStatusBadge({ status }: { status: McpConnection['status'] }) 
   );
 }
 
-/** One catalogue row: the server's own name, its description, and connect. */
+/**
+ * One catalogue row: the server's own name, its description, and the way in.
+ *
+ * A server the member already connected is not offered a second crossing: the
+ * row shows the connection's own state and links to its screen. The connect
+ * flow would only re-consent and reuse the slot, but a «ربط» on a linked app
+ * reads as if nothing had happened yet.
+ */
 function CatalogueRow({
   server,
+  connection,
   connecting,
   disabled,
   onConnect,
 }: {
   server: McpCatalogRow;
+  connection: McpConnection | null;
   connecting: boolean;
   disabled: boolean;
   onConnect: () => void;
 }) {
   const blocked = server.connectable === false;
+  const name = server.title ?? server.registryName;
 
   return (
     <div className="flex items-start justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5">
       <div className="min-w-0 flex-1 space-y-1">
         <p className="truncate text-sm font-bold text-foreground sm:text-base">
-          {server.title ?? server.registryName}
+          {name}
           {server.nameAr && (
             <span className="ms-2 text-xs font-medium text-muted-foreground">{server.nameAr}</span>
           )}
@@ -459,32 +493,46 @@ function CatalogueRow({
             {server.description}
           </p>
         )}
-        <p className="text-xs">
-          <span
-            className={
-              blocked
-                ? 'font-bold text-amber-600 dark:text-amber-300'
-                : 'font-bold text-muted-foreground'
-            }
-          >
-            {connectableLabel(server)}
-          </span>
-        </p>
+        {connection ? (
+          <ConnectionBadges connection={connection} />
+        ) : (
+          <p className="text-xs">
+            <span
+              className={
+                blocked
+                  ? 'font-bold text-amber-600 dark:text-amber-300'
+                  : 'font-bold text-muted-foreground'
+              }
+            >
+              {connectableLabel(server)}
+            </span>
+          </p>
+        )}
       </div>
 
-      <button
-        type="button"
-        onClick={onConnect}
-        disabled={disabled || blocked}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-bold text-primary transition-safe duration-150 ease-out hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm"
-      >
-        {connecting ? (
-          <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-        ) : (
-          <Plus aria-hidden="true" className="h-4 w-4" />
-        )}
-        <span>{connecting ? COPY.connecting : COPY.connect}</span>
-      </button>
+      {connection ? (
+        <Link
+          href={`/mcp/apps/${encodeURIComponent(connection.id)}`}
+          aria-label={`${COPY.manage} ${name}`}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-2 text-xs font-bold text-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm"
+        >
+          {COPY.manage}
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={onConnect}
+          disabled={disabled || blocked}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-xs font-bold text-primary transition-safe duration-150 ease-out hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm"
+        >
+          {connecting ? (
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus aria-hidden="true" className="h-4 w-4" />
+          )}
+          <span>{connecting ? COPY.connecting : COPY.connect}</span>
+        </button>
+      )}
     </div>
   );
 }
