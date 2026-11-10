@@ -28,6 +28,8 @@ export const SPENDTRACK_EXPENSE_DIALOG_COPY = {
   save: 'حفظ التَّعديلات',
   saving: 'جاري الحفظ...',
   errorLabel: 'فشل حفظ المصروف',
+  amountRequired: 'يجب أن يكون المبلغ موجباً',
+  categoryRequired: 'التَّصنيف مطلوب',
 } as const;
 
 export type SpendtrackExpenseDialogCopyStrings = typeof SPENDTRACK_EXPENSE_DIALOG_COPY;

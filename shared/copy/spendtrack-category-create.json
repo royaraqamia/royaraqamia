@@ -18,6 +18,7 @@
     "createTitle": "إنشاء تصنيف",
     "createAction": "إنشاء",
     "creating": "جاري الإنشاء...",
-    "namePlaceholder": "مثال: بقالة"
+    "namePlaceholder": "مثال: بقالة",
+    "nameRequired": "الاسم مطلوب"
   }
 }

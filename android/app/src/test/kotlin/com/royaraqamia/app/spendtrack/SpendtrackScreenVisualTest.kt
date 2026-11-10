@@ -13,6 +13,8 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -237,5 +239,151 @@ class SpendtrackScreenVisualTest {
             listOf(lunch),
         )
         record("filtered")
+    }
+
+    /**
+     * The create-expense dialog with its amount refused (#960).
+     *
+     * The page's dialog opens with an empty amount and category; submitting it
+     * draws the page's own sentence under each field. The composition is the
+     * dialog's own, and the click is what makes the sentence the state rather
+     * than a form nobody filled.
+     */
+    @Test
+    fun `the expense dialog records the page's boxes with a refused amount`() {
+        compose.setContent {
+            RoyaraqamiaTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.width(393.dp).fillMaxHeight()) {
+                        SpendtrackExpenseDialog(
+                            editing = null,
+                            categories = emptyList(),
+                            currency = "USD",
+                            onDismiss = {},
+                            onSave = { _, _, _, _, _ -> false },
+                        )
+                    }
+                }
+            }
+        }
+        compose.onNodeWithTag(SpendtrackMetrics.EXPENSE_SUBMIT).performClick()
+        compose.waitForIdle()
+
+        val json =
+            """
+            {
+              "surface": "spendtrack",
+              "elements": {
+                "dialog": {
+                  "width": ${width(SpendtrackMetrics.EXPENSE_DIALOG)},
+                  "radius": ${SpendtrackMetrics.DIALOG_RADIUS.value},
+                  "paddingTop": ${SpendtrackMetrics.DIALOG_PADDING.value},
+                  "paddingLeft": ${SpendtrackMetrics.DIALOG_PADDING.value}
+                },
+                "amount": {
+                  "height": ${height(SpendtrackMetrics.EXPENSE_AMOUNT)},
+                  "radius": ${SpendtrackMetrics.FIELD_RADIUS.value}
+                },
+                "category": {
+                  "height": ${height(SpendtrackMetrics.EXPENSE_CATEGORY)},
+                  "radius": ${SpendtrackMetrics.FIELD_RADIUS.value}
+                },
+                "date": {
+                  "height": ${height(SpendtrackMetrics.EXPENSE_DATE)},
+                  "radius": ${SpendtrackMetrics.FIELD_RADIUS.value}
+                },
+                "description": {
+                  "height": ${height(SpendtrackMetrics.EXPENSE_DESCRIPTION)},
+                  "radius": ${SpendtrackMetrics.FIELD_RADIUS.value}
+                },
+                "currency": {
+                  "height": ${height(SpendtrackMetrics.EXPENSE_CURRENCY)},
+                  "radius": ${SpendtrackMetrics.FIELD_RADIUS.value}
+                },
+                "actions": {
+                  "height": ${height(SpendtrackMetrics.EXPENSE_ACTIONS)},
+                  "columnGap": ${SpendtrackMetrics.ACTION_GAP.value}
+                },
+                "submit": {
+                  "height": ${height(SpendtrackMetrics.EXPENSE_SUBMIT)}
+                },
+                "error": {
+                  "height": ${height(SpendtrackMetrics.EXPENSE_ERROR)},
+                  "fontSize": ${12}
+                }
+              }
+            }
+            """.trimIndent()
+
+        val dir = File("../../e2e/__visual__/spendtrack/expense-dialog").apply { mkdirs() }
+        File(dir, "app.json").writeText(json + "\n")
+        compose
+            .onNodeWithTag(SpendtrackMetrics.EXPENSE_AMOUNT, useUnmergedTree = true)
+            .captureRoboImage(File(dir, "app.png").path)
+    }
+
+    /**
+     * The create-category dialog with its name refused (#960).
+     *
+     * The page's dialog opens with an empty name; submitting it draws the page's
+     * own sentence under the field. The colour is the page's own default, so the
+     * only refused field is the name.
+     */
+    @Test
+    fun `the category dialog records the page's boxes with a refused name`() {
+        compose.setContent {
+            RoyaraqamiaTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.width(393.dp).fillMaxHeight()) {
+                        SpendtrackCategoryDialog(
+                            editing = null,
+                            onDismiss = {},
+                            onSave = { _, _ -> false },
+                        )
+                    }
+                }
+            }
+        }
+        compose.onNodeWithTag(SpendtrackMetrics.CATEGORY_SUBMIT).performClick()
+        compose.waitForIdle()
+
+        val json =
+            """
+            {
+              "surface": "spendtrack",
+              "elements": {
+                "dialog": {
+                  "width": ${width(SpendtrackMetrics.CATEGORY_DIALOG)},
+                  "radius": ${SpendtrackMetrics.DIALOG_RADIUS.value},
+                  "paddingTop": ${SpendtrackMetrics.DIALOG_PADDING.value},
+                  "paddingLeft": ${SpendtrackMetrics.DIALOG_PADDING.value}
+                },
+                "name": {
+                  "height": ${height(SpendtrackMetrics.CATEGORY_NAME)},
+                  "radius": ${SpendtrackMetrics.FIELD_RADIUS.value}
+                },
+                "color": {
+                  "height": ${height(SpendtrackMetrics.CATEGORY_COLOR)}
+                },
+                "actions": {
+                  "height": ${height(SpendtrackMetrics.CATEGORY_ACTIONS)},
+                  "columnGap": ${SpendtrackMetrics.ACTION_GAP.value}
+                },
+                "submit": {
+                  "height": ${height(SpendtrackMetrics.CATEGORY_SUBMIT)}
+                },
+                "error": {
+                  "height": ${height(SpendtrackMetrics.CATEGORY_ERROR)},
+                  "fontSize": ${14}
+                }
+              }
+            }
+            """.trimIndent()
+
+        val dir = File("../../e2e/__visual__/spendtrack/category-dialog").apply { mkdirs() }
+        File(dir, "app.json").writeText(json + "\n")
+        compose
+            .onNodeWithTag(SpendtrackMetrics.CATEGORY_NAME, useUnmergedTree = true)
+            .captureRoboImage(File(dir, "app.png").path)
     }
 }

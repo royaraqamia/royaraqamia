@@ -7,10 +7,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -33,15 +36,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.connectedapps.ConnectedAppsCopy
 import com.royaraqamia.app.shared.CurrencySymbols
 import com.royaraqamia.app.store.spendtrack.SpendtrackCategoryRow
 import com.royaraqamia.app.store.spendtrack.SpendtrackExpenseRow
-import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
@@ -74,7 +80,6 @@ fun SpendtrackExpenseDialog(
     /** Returns false when the row was not written, which the form reports inline. */
     onSave: (amount: Double, categoryId: String, date: String, description: String?, currency: String?) -> Boolean,
 ) {
-    val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val context = LocalContext.current
 
@@ -87,125 +92,181 @@ fun SpendtrackExpenseDialog(
     var currencyChoice by remember { mutableStateOf(editing?.currency ?: "") }
     var busy by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
+    var showValidation by remember { mutableStateOf(false) }
 
     val formState: SpendtrackExpenseFormUiState =
         if (busy) SpendtrackExpenseFormUiState.Busy else SpendtrackExpenseFormUiState.Idle
     val parsed = parseAmount(amount)
-    val canSave = parsed != null && categoryId.isNotBlank() && date.isNotBlank() && !busy
+    val amountRefused = showValidation && parsed == null
+    val categoryRefused = showValidation && categoryId.isBlank()
 
     val effectiveCurrency = currencyChoice.takeIf { it.isNotBlank() } ?: currency
     val symbol = effectiveCurrency?.let { CurrencySymbols.byCode[it]?.symbol } ?: ""
+    val amountLabel =
+        SpendtrackExpenseDialogCopy.AMOUNT_LABEL + (if (symbol.isEmpty()) "" else " ($symbol)")
 
     Surface(
-        shape = Recipes.Card.radius,
+        shape = RoundedCornerShape(SpendtrackMetrics.DIALOG_RADIUS),
         color = RoyColors.background,
         border = Recipes.Card.border,
-        modifier = Modifier.fillMaxWidth(0.94f),
+        modifier =
+            Modifier.width(SpendtrackMetrics.DIALOG_WIDTH)
+                .testTag(SpendtrackMetrics.EXPENSE_DIALOG),
     ) {
         Column(
             modifier =
-                Modifier.padding(Recipes.Card.padding(spacing))
-                    .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                Modifier.padding(SpendtrackMetrics.DIALOG_PADDING)
+                    .verticalScroll(rememberScrollState())
+                    .testTag(SpendtrackMetrics.EXPENSE_FORM),
+            verticalArrangement = Arrangement.spacedBy(SpendtrackMetrics.EXPENSE_FORM_GAP),
         ) {
-            Text(
-                text =
-                    if (editing == null) SpendtrackExpenseDialogCopy.ADD_ACTION
-                    else SpendtrackExpenseDialogCopy.EDIT_TITLE,
-                style = type.body.copy(fontWeight = FontWeight.Bold),
-                color = RoyColors.foreground,
-            )
+            FieldGroup(
+                label = amountLabel,
+                icon = LucideVectors.DollarSign,
+                trailing = effectiveCurrency?.let { CurrencySymbols.byCode[it]?.name },
+                error = if (amountRefused) SpendtrackExpenseDialogCopy.AMOUNT_REQUIRED else null,
+                errorTag = SpendtrackMetrics.EXPENSE_ERROR,
+                errorLineHeight = SpendtrackMetrics.EXPENSE_ERROR_LINE,
+                errorHeight = SpendtrackMetrics.EXPENSE_ERROR_HEIGHT,
+            ) {
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = {
+                        amount = it
+                        failed = false
+                    },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    placeholder = { Text("0.00") },
+                    shape = RoundedCornerShape(SpendtrackMetrics.FIELD_RADIUS),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.FIELD_HEIGHT)
+                            .testTag(SpendtrackMetrics.EXPENSE_AMOUNT),
+                )
+            }
 
-            OutlinedTextField(
-                value = amount,
-                onValueChange = {
-                    amount = it
-                    failed = false
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                label = {
-                    Text(
-                        SpendtrackExpenseDialogCopy.AMOUNT_LABEL +
-                            (if (symbol.isEmpty()) "" else " ($symbol)")
-                    )
-                },
-                placeholder = { Text("0.00") },
-                leadingIcon = {
-                    Icon(LucideVectors.DollarSign, contentDescription = null)
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            FieldGroup(
+                label = SpendtrackExpenseDialogCopy.CATEGORY_LABEL,
+                icon = LucideVectors.Tag,
+                error = if (categoryRefused) SpendtrackExpenseDialogCopy.CATEGORY_REQUIRED else null,
+                errorTag = null,
+                errorLineHeight = SpendtrackMetrics.EXPENSE_ERROR_LINE,
+                errorHeight = SpendtrackMetrics.EXPENSE_ERROR_HEIGHT,
+            ) {
+                CategoryField(
+                    categories = categories,
+                    selected = categoryId,
+                    onSelect = { categoryId = it },
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.FIELD_HEIGHT)
+                            .testTag(SpendtrackMetrics.EXPENSE_CATEGORY),
+                )
+            }
 
-            CategoryField(
-                categories = categories,
-                selected = categoryId,
-                onSelect = { categoryId = it },
-            )
-
-            OutlinedTextField(
-                value = date,
-                onValueChange = { date = it },
-                readOnly = true,
-                singleLine = true,
-                label = { Text(SpendtrackExpenseDialogCopy.DATE_LABEL) },
-                placeholder = { Text(SpendtrackExpenseDialogCopy.DATE_PLACEHOLDER) },
-                leadingIcon = { Icon(LucideVectors.Calendar, contentDescription = null) },
-                trailingIcon = {
-                    IconButton(
-                        onClick = {
-                            val parts = date.split("-").mapNotNull { it.toIntOrNull() }
-                            val dialog =
-                                DatePickerDialog(
-                                    context,
-                                    { _, year, month, day ->
-                                        date = isoDay(year, month + 1, day)
-                                    },
-                                    parts.getOrElse(0) { 2026 },
-                                    (parts.getOrElse(1) { 1 }) - 1,
-                                    parts.getOrElse(2) { 1 },
-                                )
-                            dialog.show()
+            FieldGroup(
+                label = SpendtrackExpenseDialogCopy.DATE_LABEL,
+                icon = LucideVectors.Calendar,
+                error = null,
+                errorTag = null,
+                errorLineHeight = SpendtrackMetrics.EXPENSE_ERROR_LINE,
+                errorHeight = SpendtrackMetrics.EXPENSE_ERROR_HEIGHT,
+            ) {
+                OutlinedTextField(
+                    value = date,
+                    onValueChange = { date = it },
+                    readOnly = true,
+                    singleLine = true,
+                    placeholder = { Text(SpendtrackExpenseDialogCopy.DATE_PLACEHOLDER) },
+                    shape = RoundedCornerShape(SpendtrackMetrics.FIELD_RADIUS),
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                val parts = date.split("-").mapNotNull { it.toIntOrNull() }
+                                val dialog =
+                                    DatePickerDialog(
+                                        context,
+                                        { _, year, month, day ->
+                                            date = isoDay(year, month + 1, day)
+                                        },
+                                        parts.getOrElse(0) { 2026 },
+                                        (parts.getOrElse(1) { 1 }) - 1,
+                                        parts.getOrElse(2) { 1 },
+                                    )
+                                dialog.show()
+                            }
+                        ) {
+                            Icon(
+                                LucideVectors.Calendar,
+                                contentDescription = SpendtrackExpenseDialogCopy.DATE_PLACEHOLDER,
+                            )
                         }
-                    ) {
-                        Icon(LucideVectors.Calendar, contentDescription = SpendtrackExpenseDialogCopy.DATE_PLACEHOLDER)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
+                    },
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.FIELD_HEIGHT)
+                            .testTag(SpendtrackMetrics.EXPENSE_DATE),
+                )
+            }
 
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                singleLine = true,
-                label = {
-                    Text(
-                        SpendtrackExpenseDialogCopy.DESCRIPTION_LABEL +
-                            " " + SpendtrackExpenseDialogCopy.OPTIONAL
-                    )
-                },
-                placeholder = { Text(SpendtrackExpenseDialogCopy.DESCRIPTION_PLACEHOLDER) },
-                leadingIcon = { Icon(LucideVectors.FileText, contentDescription = null) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            FieldGroup(
+                label =
+                    SpendtrackExpenseDialogCopy.DESCRIPTION_LABEL +
+                        " " + SpendtrackExpenseDialogCopy.OPTIONAL,
+                icon = LucideVectors.FileText,
+                error = null,
+                errorTag = null,
+                errorLineHeight = SpendtrackMetrics.EXPENSE_ERROR_LINE,
+                errorHeight = SpendtrackMetrics.EXPENSE_ERROR_HEIGHT,
+                required = false,
+            ) {
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    singleLine = true,
+                    placeholder = { Text(SpendtrackExpenseDialogCopy.DESCRIPTION_PLACEHOLDER) },
+                    shape = RoundedCornerShape(SpendtrackMetrics.FIELD_RADIUS),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.FIELD_HEIGHT)
+                            .testTag(SpendtrackMetrics.EXPENSE_DESCRIPTION),
+                )
+            }
 
-            CurrencyField(
-                choice = currencyChoice,
-                accountCurrency = currency,
-                onSelect = { currencyChoice = it },
-                onInherit = { currencyChoice = "" },
-            )
+            FieldGroup(
+                label =
+                    SpendtrackExpenseDialogCopy.CURRENCY_LABEL +
+                        " " + SpendtrackExpenseDialogCopy.OPTIONAL,
+                icon = LucideVectors.Coins,
+                error = null,
+                errorTag = null,
+                errorLineHeight = SpendtrackMetrics.EXPENSE_ERROR_LINE,
+                errorHeight = SpendtrackMetrics.EXPENSE_ERROR_HEIGHT,
+                required = false,
+            ) {
+                CurrencyField(
+                    choice = currencyChoice,
+                    accountCurrency = currency,
+                    onSelect = { currencyChoice = it },
+                    onInherit = { currencyChoice = "" },
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.FIELD_HEIGHT)
+                            .testTag(SpendtrackMetrics.EXPENSE_CURRENCY),
+                )
+            }
 
             if (failed) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         LucideVectors.CircleAlert,
                         contentDescription = null,
                         tint = RoyColors.destructive,
-                        modifier = Modifier.size(Recipes.Glyph.sm),
+                        modifier = Modifier.size(14.dp),
                     )
                     Text(
                         text = SpendtrackExpenseDialogCopy.ERROR_LABEL,
@@ -215,22 +276,24 @@ fun SpendtrackExpenseDialog(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .testTag(SpendtrackMetrics.EXPENSE_ACTIONS)
+                        .padding(top = SpendtrackMetrics.ACTION_TOP_PADDING),
+                verticalArrangement = Arrangement.spacedBy(SpendtrackMetrics.ACTION_GAP),
             ) {
-                TextButton(onClick = onDismiss) {
-                    Text(ConnectedAppsCopy.CANCEL, color = Recipes.Row.labelColor)
-                }
                 Button(
-                    enabled = canSave,
+                    enabled = !busy,
                     onClick = {
-                        val value = parsed ?: return@Button
+                        if (parsed == null || categoryId.isBlank() || date.isBlank()) {
+                            showValidation = true
+                            return@Button
+                        }
                         busy = true
                         val saved =
                             onSave(
-                                value,
+                                parsed,
                                 categoryId,
                                 date,
                                 description.trim().takeIf { it.isNotEmpty() },
@@ -243,6 +306,11 @@ fun SpendtrackExpenseDialog(
                             failed = true
                         }
                     },
+                    shape = RoundedCornerShape(999.dp),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.ACTION_SUBMIT_HEIGHT)
+                            .testTag(SpendtrackMetrics.EXPENSE_SUBMIT),
                 ) {
                     if (formState is SpendtrackExpenseFormUiState.Busy) {
                         Icon(
@@ -258,6 +326,89 @@ fun SpendtrackExpenseDialog(
                         )
                     }
                 }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.ACTION_CANCEL_HEIGHT),
+                ) {
+                    Text(ConnectedAppsCopy.CANCEL, color = Recipes.Row.labelColor)
+                }
+            }
+        }
+    }
+}
+
+/** One label, its field and the sentence the page draws when the field is refused. */
+@Composable
+private fun FieldGroup(
+    label: String,
+    icon: ImageVector,
+    error: String?,
+    errorTag: String?,
+    errorLineHeight: TextUnit,
+    errorHeight: Dp,
+    trailing: String? = null,
+    required: Boolean = true,
+    field: @Composable () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = RoyColors.mutedForeground,
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = label,
+                    style = LocalRoyTypeScale.current.xs.copy(fontWeight = FontWeight.Bold),
+                    color = RoyColors.foreground,
+                )
+                if (required) {
+                    Text(
+                        text = "*",
+                        style = LocalRoyTypeScale.current.xs.copy(fontWeight = FontWeight.Bold),
+                        color = RoyColors.destructive,
+                    )
+                }
+            }
+            if (trailing != null) {
+                Text(
+                    text = trailing,
+                    style = LocalRoyTypeScale.current.xs,
+                    color = RoyColors.mutedForeground,
+                )
+            }
+        }
+        field()
+        if (error != null) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    (if (errorTag != null) Modifier.testTag(errorTag) else Modifier)
+                        .height(errorHeight),
+            ) {
+                Icon(
+                    LucideVectors.CircleAlert,
+                    contentDescription = null,
+                    tint = RoyColors.destructive,
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = error,
+                    style = LocalRoyTypeScale.current.xs.copy(lineHeight = errorLineHeight),
+                    color = RoyColors.destructive,
+                )
             }
         }
     }
@@ -306,6 +457,7 @@ private fun CategoryField(
     categories: List<SpendtrackCategoryRow>,
     selected: String,
     onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var open by remember { mutableStateOf(false) }
     val chosen = categories.firstOrNull { it.id == selected }
@@ -316,11 +468,10 @@ private fun CategoryField(
             onValueChange = {},
             readOnly = true,
             singleLine = true,
-            label = { Text(SpendtrackExpenseDialogCopy.CATEGORY_LABEL) },
             placeholder = { Text(SpendtrackExpenseDialogCopy.CATEGORY_PLACEHOLDER) },
-            leadingIcon = { Icon(LucideVectors.Tag, contentDescription = null) },
+            shape = RoundedCornerShape(SpendtrackMetrics.FIELD_RADIUS),
             modifier =
-                Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
         )
         ExposedDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             for (category in categories) {
@@ -361,6 +512,7 @@ private fun CurrencyField(
     accountCurrency: String?,
     onSelect: (String) -> Unit,
     onInherit: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var open by remember { mutableStateOf(false) }
     val selected = choice.takeIf { it.isNotBlank() }
@@ -370,6 +522,7 @@ private fun CurrencyField(
             accountCurrency?.let { CurrencySymbols.byCode[it]?.symbol }.orEmpty(),
         )
 
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
     ExposedDropdownMenuBox(expanded = open, onExpandedChange = { open = it }) {
         OutlinedTextField(
             value =
@@ -380,17 +533,10 @@ private fun CurrencyField(
             onValueChange = {},
             readOnly = true,
             singleLine = true,
-            label = {
-                Text(
-                    SpendtrackExpenseDialogCopy.CURRENCY_LABEL +
-                        " " + SpendtrackExpenseDialogCopy.OPTIONAL
-                )
-            },
             placeholder = { Text(inheritLabel) },
-            leadingIcon = { Icon(LucideVectors.Coins, contentDescription = null) },
-            supportingText = { Text(SpendtrackExpenseDialogCopy.CURRENCY_HINT) },
+            shape = RoundedCornerShape(SpendtrackMetrics.FIELD_RADIUS),
             modifier =
-                Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
+                modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true),
         )
         ExposedDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             DropdownMenuItem(
@@ -411,6 +557,12 @@ private fun CurrencyField(
                 )
             }
         }
+    }
+        Text(
+            text = SpendtrackExpenseDialogCopy.CURRENCY_HINT,
+            style = LocalRoyTypeScale.current.xs,
+            color = RoyColors.mutedForeground,
+        )
     }
 }
 
@@ -433,8 +585,7 @@ private fun todayIso(): String {
  *
  * Arabic-Indic and Persian digits are folded to ASCII before parsing — the site
  * does the same in `toLatinDigits` — and a value that is not a positive number is
- * null, which is what disables the save button rather than showing a message the
- * site words differently.
+ * null, which is what draws the page's own refused sentence under the field.
  */
 internal fun parseAmount(text: String): Double? {
     val ascii = buildString {

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -270,24 +271,27 @@ fun SpendtrackCategoryDialog(
     /** Returns false when the row was not written. */
     onSave: (name: String, colorHex: String) -> Boolean,
 ) {
-    val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
 
     var name by remember { mutableStateOf(editing?.name ?: "") }
     var colorHex by remember { mutableStateOf(editing?.colorHex ?: DEFAULT_CATEGORY_COLOR) }
     var busy by remember { mutableStateOf(false) }
-
-    val canSave = name.isNotBlank() && isHexColor(colorHex) && !busy
+    var showValidation by remember { mutableStateOf(false) }
+    val nameRefused = showValidation && name.isBlank()
 
     Surface(
-        shape = Recipes.Card.radius,
+        shape = RoundedCornerShape(SpendtrackMetrics.DIALOG_RADIUS),
         color = RoyColors.background,
         border = Recipes.Card.border,
-        modifier = Modifier.fillMaxWidth(0.94f),
+        modifier =
+            Modifier.width(SpendtrackMetrics.DIALOG_WIDTH)
+                .testTag(SpendtrackMetrics.CATEGORY_DIALOG),
     ) {
         Column(
-            modifier = Modifier.padding(Recipes.Card.padding(spacing)),
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            modifier =
+                Modifier.padding(SpendtrackMetrics.DIALOG_PADDING)
+                    .testTag(SpendtrackMetrics.CATEGORY_FORM),
+            verticalArrangement = Arrangement.spacedBy(SpendtrackMetrics.CATEGORY_FORM_GAP),
         ) {
             Text(
                 text =
@@ -297,23 +301,69 @@ fun SpendtrackCategoryDialog(
                 color = RoyColors.foreground,
             )
 
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                singleLine = true,
-                label = { Text(SpendtrackCategoriesCopy.NAME_LABEL) },
-                placeholder = { Text(SpendtrackCategoryCreateCopy.NAME_PLACEHOLDER) },
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = SpendtrackCategoriesCopy.NAME_LABEL,
+                        style = type.small.copy(fontWeight = FontWeight.Medium),
+                        color = RoyColors.foreground,
+                    )
+                    Text(
+                        text = "*",
+                        style = type.small.copy(fontWeight = FontWeight.Bold),
+                        color = RoyColors.destructive,
+                    )
+                }
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    singleLine = true,
+                    placeholder = { Text(SpendtrackCategoryCreateCopy.NAME_PLACEHOLDER) },
+                    shape = RoundedCornerShape(SpendtrackMetrics.FIELD_RADIUS),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.FIELD_HEIGHT)
+                            .testTag(SpendtrackMetrics.CATEGORY_NAME),
+                )
+                if (nameRefused) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier.testTag(SpendtrackMetrics.CATEGORY_ERROR)
+                                .height(SpendtrackMetrics.CATEGORY_ERROR_HEIGHT),
+                    ) {
+                        Icon(
+                            LucideVectors.CircleAlert,
+                            contentDescription = null,
+                            tint = RoyColors.destructive,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Text(
+                            text = SpendtrackCategoryCreateCopy.NAME_REQUIRED,
+                            style = type.small.copy(lineHeight = SpendtrackMetrics.CATEGORY_ERROR_LINE),
+                            color = RoyColors.destructive,
+                        )
+                    }
+                }
+            }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .height(SpendtrackMetrics.FIELD_HEIGHT)
+                        .testTag(SpendtrackMetrics.CATEGORY_COLOR),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
                     modifier =
-                        Modifier.size(24.dp)
-                            .clip(CircleShape)
+                        Modifier.width(48.dp)
+                            .height(SpendtrackMetrics.FIELD_HEIGHT)
+                            .clip(RoundedCornerShape(SpendtrackMetrics.FIELD_RADIUS))
                             .background(
                                 if (isHexColor(colorHex)) colorOf(colorHex) else RoyColors.muted
                             ),
@@ -322,27 +372,36 @@ fun SpendtrackCategoryDialog(
                     value = colorHex,
                     onValueChange = { colorHex = it },
                     singleLine = true,
-                    label = { Text(SpendtrackCategoriesCopy.COLOR_LABEL) },
-                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(SpendtrackMetrics.FIELD_RADIUS),
+                    modifier =
+                        Modifier.weight(1f).height(SpendtrackMetrics.FIELD_HEIGHT),
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .testTag(SpendtrackMetrics.CATEGORY_ACTIONS)
+                        .padding(top = SpendtrackMetrics.ACTION_TOP_PADDING),
+                verticalArrangement = Arrangement.spacedBy(SpendtrackMetrics.ACTION_GAP),
             ) {
-                TextButton(onClick = onDismiss) {
-                    Text(ConnectedAppsCopy.CANCEL, color = Recipes.Row.labelColor)
-                }
                 Button(
-                    enabled = canSave,
+                    enabled = !busy,
                     onClick = {
+                        if (name.isBlank() || !isHexColor(colorHex)) {
+                            showValidation = true
+                            return@Button
+                        }
                         busy = true
                         val saved = onSave(name.trim(), colorHex)
                         busy = false
                         if (saved) onDismiss()
                     },
+                    shape = RoundedCornerShape(999.dp),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.ACTION_SUBMIT_HEIGHT)
+                            .testTag(SpendtrackMetrics.CATEGORY_SUBMIT),
                 ) {
                     if (busy) {
                         Icon(
@@ -362,6 +421,14 @@ fun SpendtrackCategoryDialog(
                             else SpendtrackCategoriesCopy.SAVE
                         )
                     }
+                }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(SpendtrackMetrics.ACTION_CANCEL_HEIGHT),
+                ) {
+                    Text(ConnectedAppsCopy.CANCEL, color = Recipes.Row.labelColor)
                 }
             }
         }

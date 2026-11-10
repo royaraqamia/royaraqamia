@@ -467,6 +467,36 @@
               "dy": 2
             }
           }
+        },
+        {
+          "name": "expense-dialog",
+          "tolerance": {
+            "pixels": 0.06,
+            "length": 1.0
+          },
+          "baseline": {
+            "recorded": "2026-11-10",
+            "measured": 0.0415,
+            "alignment": {
+              "dx": -1,
+              "dy": 3
+            }
+          }
+        },
+        {
+          "name": "category-dialog",
+          "tolerance": {
+            "pixels": 0.04,
+            "length": 1.0
+          },
+          "baseline": {
+            "recorded": "2026-11-10",
+            "measured": 0.0218,
+            "alignment": {
+              "dx": -1,
+              "dy": 0
+            }
+          }
         }
       ]
     },

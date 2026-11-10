@@ -17,4 +17,5 @@ object SpendtrackCategoryCreateCopy {
     const val CREATE_ACTION = "إنشاء"
     const val CREATING = "جاري الإنشاء..."
     const val NAME_PLACEHOLDER = "مثال: بقالة"
+    const val NAME_REQUIRED = "الاسم مطلوب"
 }

@@ -1,0 +1,36 @@
+{
+  "surface": "spendtrack",
+  "state": "category-dialog",
+  "route": "/spendtrack",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "dialog": {
+      "width": 361,
+      "radius": 24,
+      "paddingTop": 24,
+      "paddingLeft": 24
+    },
+    "name": {
+      "height": 44,
+      "radius": 12
+    },
+    "color": {
+      "height": 44
+    },
+    "actions": {
+      "height": 120,
+      "columnGap": 12
+    },
+    "submit": {
+      "height": 48
+    },
+    "error": {
+      "height": 20,
+      "fontSize": 14
+    }
+  }
+}

@@ -24,7 +24,7 @@ import { SPENDTRACK_CATEGORIES_COPY } from './spendtrack-categories-copy';
 import { SPENDTRACK_CATEGORY_CREATE_COPY } from './spendtrack-category-create-copy';
 
 const categorySchema = z.object({
-  name: z.string().min(1, 'الاسم مطلوب'),
+  name: z.string().min(1, SPENDTRACK_CATEGORY_CREATE_COPY.nameRequired),
   colorHex: z.string().min(1, 'اللون مطلوب'),
 });
 
@@ -108,11 +108,18 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
           {SPENDTRACK_CATEGORY_CREATE_COPY.addAction}
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-card border-border shadow-elevated">
+      <DialogContent
+        data-visual="spendtrack-category-dialog"
+        className="bg-card border-border shadow-elevated"
+      >
         <DialogHeader>
           <DialogTitle>{SPENDTRACK_CATEGORY_CREATE_COPY.createTitle}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+          data-visual="spendtrack-category-form"
+        >
           <div className="space-y-2">
             <Label htmlFor="name" className="text-sm font-medium">
               {SPENDTRACK_CATEGORIES_COPY.nameLabel}{' '}
@@ -122,6 +129,7 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
             </Label>
             <Input
               id="name"
+              data-visual="spendtrack-category-name"
               placeholder={SPENDTRACK_CATEGORY_CREATE_COPY.namePlaceholder}
               className="bg-muted border-border focus-ring"
               {...register('name')}
@@ -129,7 +137,12 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
               aria-describedby={errors.name ? 'create-name-error' : undefined}
             />
             {errors.name && (
-              <p id="create-name-error" className="text-sm text-destructive" role="alert">
+              <p
+                id="create-name-error"
+                data-visual="spendtrack-category-error"
+                className="text-sm text-destructive"
+                role="alert"
+              >
                 {errors.name.message}
               </p>
             )}
@@ -141,7 +154,7 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
                 *
               </span>
             </Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" data-visual="spendtrack-category-color">
               <Input
                 id="colorHex"
                 type="color"
@@ -167,12 +180,18 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
             </p>
           )}
           <DialogActions
+            dataVisual="spendtrack-category-actions"
             onCancel={() => {
               setOpen(false);
               reset();
             }}
           >
-            <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
+            <HeroCtaButton
+              type="submit"
+              data-visual="spendtrack-category-submit"
+              className="w-full sm:w-auto"
+              disabled={pending}
+            >
               {pending ? (
                 <>
                   <LoaderCircle className="size-4 animate-spin shrink-0" />

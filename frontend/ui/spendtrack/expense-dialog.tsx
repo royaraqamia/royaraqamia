@@ -39,8 +39,11 @@ import { SPENDTRACK_EXPENSE_DIALOG_COPY } from './spendtrack-expense-dialog-copy
 const expenseSchema = z.object({
   amount: z
     .string()
-    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, 'يجب أن يكون المبلغ موجباً'),
-  category_id: z.string().min(1, 'التَّصنيف مطلوب'),
+    .refine(
+      (val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0,
+      SPENDTRACK_EXPENSE_DIALOG_COPY.amountRequired
+    ),
+  category_id: z.string().min(1, SPENDTRACK_EXPENSE_DIALOG_COPY.categoryRequired),
   date: z.string().min(1, 'التَّاريخ مطلوب'),
   description: z.string().optional(),
   currency: z.string().optional(),
@@ -145,6 +148,7 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
       {isOpen && (
         <DialogContent
           hideClose
+          data-visual="spendtrack-expense-dialog"
           className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6"
         >
           <DialogTitle className="sr-only">{SPENDTRACK_EXPENSE_DIALOG_COPY.addAction}</DialogTitle>
@@ -292,7 +296,12 @@ function ExpenseForm({
   const effectiveCurrency = watchedCurrency || currency;
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5" noValidate>
+    <form
+      onSubmit={onSubmit}
+      className="space-y-5"
+      data-visual="spendtrack-expense-form"
+      noValidate
+    >
       {/* AMOUNT FIELD */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -315,6 +324,7 @@ function ExpenseForm({
         <div className="relative">
           <Input
             id="amount"
+            data-visual="spendtrack-expense-amount"
             type="number"
             step="0.01"
             min="0.01"
@@ -330,6 +340,7 @@ function ExpenseForm({
         {errors.amount && (
           <p
             id="amount-error"
+            data-visual="spendtrack-expense-error"
             className="text-xs font-medium text-rose-500 dark:text-rose-400 flex items-center gap-1.5 mt-1.5 animate-in fade-in duration-200"
             role="alert"
           >
@@ -357,6 +368,7 @@ function ExpenseForm({
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger
+                data-visual="spendtrack-expense-category"
                 className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none aria-invalid:border-rose-500"
                 aria-describedby={errors.category_id ? 'category-error' : undefined}
               >
@@ -408,6 +420,7 @@ function ExpenseForm({
           control={control}
           render={({ field }) => (
             <DatePicker
+              data-visual="spendtrack-expense-date"
               value={field.value}
               onChange={field.onChange}
               placeholder={SPENDTRACK_EXPENSE_DIALOG_COPY.datePlaceholder}
@@ -445,6 +458,7 @@ function ExpenseForm({
         </div>
         <Input
           id="description"
+          data-visual="spendtrack-expense-description"
           placeholder={SPENDTRACK_EXPENSE_DIALOG_COPY.descriptionPlaceholder}
           className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-900 dark:focus:border-neutral-100 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus-visible:outline-none"
           {...register('description')}
@@ -475,7 +489,10 @@ function ExpenseForm({
               }
               value={field.value || INHERIT_CURRENCY_VALUE}
             >
-              <SelectTrigger className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
+              <SelectTrigger
+                data-visual="spendtrack-expense-currency"
+                className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none"
+              >
                 <SelectValue placeholder={SPENDTRACK_EXPENSE_DIALOG_COPY.currencyPlaceholder} />
               </SelectTrigger>
               <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xl p-1 max-h-60">
@@ -524,8 +541,13 @@ function ExpenseForm({
       )}
 
       {/* SUBMIT BUTTON */}
-      <DialogActions onCancel={onCancel}>
-        <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
+      <DialogActions onCancel={onCancel} dataVisual="spendtrack-expense-actions">
+        <HeroCtaButton
+          type="submit"
+          data-visual="spendtrack-expense-submit"
+          className="w-full sm:w-auto"
+          disabled={pending}
+        >
           {pending ? (
             <>
               <LoaderCircle className="size-4 animate-spin shrink-0" />

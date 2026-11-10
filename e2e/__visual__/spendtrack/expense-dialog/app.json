@@ -1,0 +1,42 @@
+{
+  "surface": "spendtrack",
+  "elements": {
+    "dialog": {
+      "width": 361.0909,
+      "radius": 24.0,
+      "paddingTop": 24.0,
+      "paddingLeft": 24.0
+    },
+    "amount": {
+      "height": 43.999996,
+      "radius": 12.0
+    },
+    "category": {
+      "height": 44.0,
+      "radius": 12.0
+    },
+    "date": {
+      "height": 44.0,
+      "radius": 12.0
+    },
+    "description": {
+      "height": 44.0,
+      "radius": 12.0
+    },
+    "currency": {
+      "height": 44.0,
+      "radius": 12.0
+    },
+    "actions": {
+      "height": 120.0,
+      "columnGap": 12.0
+    },
+    "submit": {
+      "height": 48.0
+    },
+    "error": {
+      "height": 16.0,
+      "fontSize": 12
+    }
+  }
+}
