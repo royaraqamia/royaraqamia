@@ -19,6 +19,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginLoadException;
 import com.getcapacitor.PluginManager;
 import com.getcapacitor.WebViewListener;
+import com.royaraqamia.app.shell.DocumentExit;
 import com.royaraqamia.app.shell.ShellActivity;
 import com.royaraqamia.app.session.DocumentForeground;
 import com.royaraqamia.app.sync.SyncScheduler;
@@ -261,7 +262,9 @@ public class MainActivity extends BridgeActivity {
      *
      * Walking the WebView's history is kept as it was; only the dead end
      * changes, from "nothing happens" to the task ending — what Android's own
-     * root back press does. The history in question is the WebView's: on a
+     * root back press does, and the one exit that carries
+     * `DocumentExit.LEAVES_THE_APP` so the shell can tell it from a document it
+     * destroyed itself (#1246). The history in question is the WebView's: on a
      * System WebView that carries the site's client-side navigations — the
      * behaviour reported on the device that raised this, where Back walked the
      * site page by page and then stopped on the home page — that is the whole
@@ -298,6 +301,12 @@ public class MainActivity extends BridgeActivity {
                         webView.loadUrl(bundledRoot);
                         return;
                     }
+                    // The one path that genuinely leaves the app, and the only one
+                    // the shell closes on (#1246): every other way this document
+                    // goes away — a rebase for a deep link, `CLEAR_TOP` for the
+                    // update card, a restored task — delivers `RESULT_CANCELED`,
+                    // and the frame has to stay in front for it.
+                    setResult(DocumentExit.LEAVES_THE_APP);
                     finish();
                 }
             }

@@ -753,6 +753,36 @@ The shell's counter moves for this (ADR-0043): a shell installed before it keeps
 the APK's own update card installs the newer one. The web half needs no prompt for this: a document
 load takes whatever build is waiting (ADR-0134).
 
+#### The result says who closed the document
+
+`ShellActivity` launches the document for result, and until #1246 it finished on _any_ result. That is
+right for exactly one press — the root back above — and wrong for every other way the document can go
+away, all of which the system reports as `RESULT_CANCELED`:
+
+| How the document goes away                                                 | What it is                                        | Result                        |
+| -------------------------------------------------------------------------- | ------------------------------------------------- | ----------------------------- |
+| Back at the site's root (`installBackExit`)                                | the user left the app (ADR-0082)                  | `DocumentExit.LEAVES_THE_APP` |
+| A deep link while a page is open                                           | the shell is `singleTask`, so the task is rebased | `RESULT_CANCELED`             |
+| The update card (`bringFrameForward`, or the page's `426`)                 | `CLEAR_TOP\|SINGLE_TOP` finishes the document     | `RESULT_CANCELED`             |
+| A process death inside the request, then a relaunch that restores the task | the system rebuilds the task                      | `RESULT_CANCELED`             |
+
+The shell now finishes only on `DocumentExit.LEAVES_THE_APP` and leaves the frame in front for every
+other result, so a link or a card no longer closes the app from a screen the user did not leave. The
+value is defined once (`shell/DocumentExit.kt`), sent by the one back path that genuinely leaves
+(`MainActivity.installBackExit`) and read by the shell's result callback; `DocumentExitTest` covers the
+four results above. The frame surviving a document it did not close is also what a page's return needs:
+the frame's own screens — the apps picker first (#1194) — are drawn there rather than destroyed with
+the document. `home` is still switched on by its own visual gate, not by this.
+
+Check it on a debug build with the document open on any page:
+
+```powershell
+adb shell am start -a android.intent.action.VIEW -d https://royaraqamia.com/rates   # the app stays open; the route opens
+adb shell am force-stop com.royaraqamia.app
+adb shell am start -a android.intent.action.VIEW -d https://royaraqamia.com/rates   # a restored task stays too
+adb shell input keyevent 4                                                          # at the root: still leaves the app
+```
+
 ### The system bar band
 
 The site's fixed chrome — the top bar, the back control, the bottom tab bar, the corner

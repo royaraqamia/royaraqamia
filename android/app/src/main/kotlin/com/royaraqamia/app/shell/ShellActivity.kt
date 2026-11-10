@@ -184,10 +184,19 @@ class ShellActivity : ComponentActivity() {
      * Since every destination is the document, the frame underneath has nothing to
      * show, so the document finishing is the one back that leaves the app
      * (ADR-0082). A plain `startActivity` cannot hear that; this can.
+     *
+     * The result now says *who* closed the document (#1246), and only the
+     * document's own root back closes the app. The document is destroyed without
+     * being asked in three other cases — a deep link rebasing this `singleTask`
+     * activity's task, [bringFrameForward] drawing the update card over it, and a
+     * process death whose task is restored — and the system reports each of them as
+     * `RESULT_CANCELED`. Treating that as the root back closed the app from a screen
+     * the user never left, so the frame now stays in front for every result but
+     * [DocumentExit.LEAVES_THE_APP].
      */
     private val document: ActivityResultLauncher<Intent> =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            finish()
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (DocumentExit.leavesTheApp(result.resultCode)) finish()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {

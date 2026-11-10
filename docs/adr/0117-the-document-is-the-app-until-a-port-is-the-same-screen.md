@@ -34,6 +34,12 @@ reach at all. A member holding the APK was looking at a product that was not thi
   finishes it at the site's root finishes the launcher too (ADR-0082) instead of revealing a frame
   with nothing in it.
 
+> **Since [#1246](https://github.com/royaraqamia/royaraqamia/issues/1246):** "the document finishing"
+> above is now "the document's own back out of the site's root". A deep link rebasing the shell's
+> task, the update card's `CLEAR_TOP` and a restored task after a process death all arrive as
+> `RESULT_CANCELED`, and the frame now stays in front for them instead of closing the app —
+> [ADR-0158](0158-a-document-result-says-who-closed-it.md).
+
 ## What this costs
 
 - **The WebView stays, for now.** [#662](https://github.com/royaraqamia/royaraqamia/issues/662) said
