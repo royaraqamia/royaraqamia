@@ -1,0 +1,29 @@
+{
+  "surface": "account-usage",
+  "component": "account-usage",
+  "web": {
+    "file": "frontend/ui/account/account-usage-copy.ts",
+    "export": "ACCOUNT_USAGE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountUsageCopy.kt",
+    "object": "AccountUsageCopy"
+  },
+  "notes": {
+    "source": "The account page's allowance card, in both clients (#947). The site's `UsageCard` is the reference: which plan is in force, the two ways to act on it, and the one sentence it says when the read fails. The app reads the same source rather than retyping them (ADR-0098).",
+    "placeholders": "No string here carries a placeholder; the plan label is chosen from the plan id, not interpolated.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "ariaLabel": "اشتراكك واستهلاكك",
+    "title": "الاشتراك والاستهلاك",
+    "planFree": "الخطَّة المجانيَّة",
+    "planPro": "الخطَّة المدفوعة",
+    "unlimited": "غير محدود",
+    "loading": "جاري تحميل الاشتراك والاستهلاك",
+    "failed": "تعذّر تحميل اشتراكك واستهلاكك.",
+    "retry": "إعادة المحاولة",
+    "details": "التَّفاصيل والسِّجل",
+    "upgrade": "ترقية الخطَّة"
+  }
+}

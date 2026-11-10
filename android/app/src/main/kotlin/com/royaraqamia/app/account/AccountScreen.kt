@@ -11,25 +11,27 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.theme.LocalRoySpacing
+import kotlinx.coroutines.launch
 
 /**
  * The site's `/account` as a screen (#948).
  *
- * This slice is the page's profile card (#946), its action rows and its
- * sign-out; the allowance card ([#947]) is the remaining slice, so the surface
- * stays off in `docs/mobile/screens.json` until the page is whole and the
- * visual gate passes. The shell still routes here, which is what lets the
- * pieces land one at a time rather than as a second, half-drawn page.
+ * This slice is the page's profile card (#946), its allowance card (#947), its
+ * action rows and its sign-out; the public handle editor is still the page's,
+ * so the surface stays off in `docs/mobile/screens.json` until the page is
+ * whole and the visual gate passes. The shell still routes here, which is what
+ * lets the pieces land one at a time rather than as a second, half-drawn page.
  *
- * The rows themselves are [AccountRows] and the card is [AccountProfileCard];
- * this screen owns only the page's scroll, its padding and the profile read, so
- * it can grow the remaining card without touching the components the gate
- * measures.
+ * The rows themselves are [AccountRows], the profile is [AccountProfileCard] and
+ * the allowance is [AccountUsageCard]; this screen owns only the page's scroll,
+ * its padding and the two reads, so it can grow without touching the components
+ * the gate measures.
  *
  * [#946]: https://github.com/royaraqamia/royaraqamia/issues/946
  * [#947]: https://github.com/royaraqamia/royaraqamia/issues/947
@@ -39,6 +41,7 @@ fun AccountScreen(
     state: AccountUiState,
     isAdmin: Boolean,
     profileRepository: AccountProfileRepository,
+    usageRepository: AccountUsageRepository,
     onOpenRoute: (String) -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
@@ -56,6 +59,13 @@ fun AccountScreen(
     ) {
         if (state is AccountUiState.Member) {
             AccountProfileRoute(repository = profileRepository)
+            // The page stacks the allowance under the profile and above the
+            // rows; a visitor gets no card at all, so it is drawn only for a
+            // member — the same decision `UsageCard` makes from its session.
+            AccountUsageRoute(
+                repository = usageRepository,
+                onOpenRoute = onOpenRoute,
+            )
         }
 
         AccountRows(
@@ -108,4 +118,36 @@ private fun AccountProfileRoute(
             onChanged = { profile = it },
         )
     }
+}
+
+/**
+ * The allowance card's read (#947): `/api/me/usage`, the route the page's
+ * `UsageCard` reads. It is drawn only for a member, so the read is never spent
+ * on a request the server would answer 401.
+ *
+ * A retry re-reads the same route; the card itself is a function of the state,
+ * which is what lets its own test hold every face without a socket.
+ */
+@Composable
+private fun AccountUsageRoute(
+    repository: AccountUsageRepository,
+    onOpenRoute: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    var state by remember { mutableStateOf<AccountUsageUiState>(AccountUsageUiState.Loading) }
+
+    suspend fun read() {
+        state = AccountUsageUiState.Loading
+        state = AccountUsageUiState.from(repository.load())
+    }
+
+    LaunchedEffect(repository) { read() }
+
+    AccountUsageCard(
+        state = state,
+        onOpenRoute = onOpenRoute,
+        onRetry = { scope.launch { read() } },
+        modifier = modifier,
+    )
 }

@@ -246,6 +246,7 @@ class ShellActivity : ComponentActivity() {
                                     // slice can verify it against the server.
                                     isAdmin = false,
                                     profileRepository = graph.accountProfile,
+                                    usageRepository = graph.accountUsage,
                                     onOpenRoute = ::openRoute,
                                     onSignOut = ::signOut,
                                 )
