@@ -141,10 +141,9 @@ export function createMcpConnectService({
 
         try {
           const registered = await remote.register({
-            registrationEndpoint: discovery.registrationEndpoint,
+            discovery,
             redirectUri,
             clientName,
-            scopes: discovery.scopes,
           });
           registration = {
             authorization_server: discovery.authorizationServer,
