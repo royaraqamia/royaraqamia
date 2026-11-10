@@ -71,16 +71,26 @@ function toConnection(row: McpConnectionRecord): McpConnection {
 /**
  * A tool the last `tools/list` did not see is stale, not gone.
  *
- * The compare is against `last_synced_at`, which moves only when a tool list was
- * read: a connection whose read failed keeps every tool on its last known state.
+ * The stamp is the newest `last_seen_at` among the connection's own tools, not
+ * `last_synced_at`: the connection row is written a moment *after* the tool rows
+ * (the flow saves tools, then the count and the stamp), so comparing against it
+ * would mark every tool of a fresh list stale. The newest tool row and the sync
+ * are the same write, which is the comparison that holds.
+ *
+ * `listEmpty` closes the one hole: a server that advertised nothing on its last
+ * read leaves every older row untouched, so all of them are stale.
  */
-function toTool(row: McpConnectionToolRecord, syncedAt: string | null): McpConnectionTool {
+function toTool(
+  row: McpConnectionToolRecord,
+  syncedAt: string,
+  listEmpty: boolean
+): McpConnectionTool {
   return {
     name: row.tool_name,
     description: row.description,
     readOnly: row.read_only,
     enabled: row.enabled,
-    stale: syncedAt !== null && row.last_seen_at < syncedAt,
+    stale: listEmpty || row.last_seen_at < syncedAt,
   };
 }
 
@@ -148,9 +158,13 @@ export function createMcpConnectionService({
       if (!connection) return null;
 
       const tools = await repository.listTools(connection.id);
+      const syncedAt = tools.reduce(
+        (latest, tool) => (tool.last_seen_at > latest ? tool.last_seen_at : latest),
+        ''
+      );
       return {
         ...toConnection(connection),
-        tools: tools.map((tool) => toTool(tool, connection.last_synced_at)),
+        tools: tools.map((tool) => toTool(tool, syncedAt, connection.tool_count === 0)),
       };
     },
 

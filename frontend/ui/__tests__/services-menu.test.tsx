@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
+const { mockPush } = vi.hoisted(() => ({ mockPush: vi.fn() }));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 import { NavDropdown } from '../navbar/NavDropdown';
 import { ServicesMenu } from '../navbar/ServicesMenu';
 import { SERVICES_LINK } from '../navbar/services-link';
 
 afterEach(() => {
   cleanup();
+  mockPush.mockReset();
   vi.restoreAllMocks();
 });
 
@@ -49,5 +56,11 @@ describe('NavDropdown (navbar app picker)', () => {
     expect(marketplace).toHaveAttribute('href', '/mcp/apps');
     // A door to someone else's apps is never a homepage app (ADR-0155).
     expect(screen.getByText('تطبيقات خارجية')).toBeInTheDocument();
+
+    // The sheet closes on the tap, and the navigation still happens: closing
+    // first is what used to cancel it.
+    fireEvent.click(marketplace);
+    expect(mockPush).toHaveBeenCalledWith('/mcp/apps');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
