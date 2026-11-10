@@ -1133,6 +1133,246 @@ export type Database = {
         };
         Relationships: [];
       };
+      mcp_catalog_servers: {
+        Row: {
+          blocked_at: string | null;
+          blocked_reason: string | null;
+          description: string | null;
+          description_ar: string | null;
+          fetched_at: string;
+          name_ar: string | null;
+          published_at: string | null;
+          raw: Json | null;
+          registry_name: string;
+          registry_updated_at: string | null;
+          remote_url: string;
+          status: string;
+          title: string | null;
+          transport: string;
+          version: string | null;
+        };
+        Insert: {
+          blocked_at?: string | null;
+          blocked_reason?: string | null;
+          description?: string | null;
+          description_ar?: string | null;
+          fetched_at?: string;
+          name_ar?: string | null;
+          published_at?: string | null;
+          raw?: Json | null;
+          registry_name: string;
+          registry_updated_at?: string | null;
+          remote_url: string;
+          status?: string;
+          title?: string | null;
+          transport?: string;
+          version?: string | null;
+        };
+        Update: {
+          blocked_at?: string | null;
+          blocked_reason?: string | null;
+          description?: string | null;
+          description_ar?: string | null;
+          fetched_at?: string;
+          name_ar?: string | null;
+          published_at?: string | null;
+          raw?: Json | null;
+          registry_name?: string;
+          registry_updated_at?: string | null;
+          remote_url?: string;
+          status?: string;
+          title?: string | null;
+          transport?: string;
+          version?: string | null;
+        };
+        Relationships: [];
+      };
+      mcp_connect_attempts: {
+        Row: {
+          code_verifier_enc: string;
+          created_at: string;
+          expires_at: string;
+          redirect_uri: string;
+          registry_name: string;
+          server_url: string;
+          state_hash: string;
+          user_id: string;
+        };
+        Insert: {
+          code_verifier_enc: string;
+          created_at?: string;
+          expires_at: string;
+          redirect_uri: string;
+          registry_name: string;
+          server_url: string;
+          state_hash: string;
+          user_id: string;
+        };
+        Update: {
+          code_verifier_enc?: string;
+          created_at?: string;
+          expires_at?: string;
+          redirect_uri?: string;
+          registry_name?: string;
+          server_url?: string;
+          state_hash?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      mcp_connection_credentials: {
+        Row: {
+          access_token_enc: string;
+          authorization_server: string;
+          client_id: string;
+          client_secret_enc: string | null;
+          connection_id: string;
+          expires_at: string | null;
+          issued_at: string;
+          metadata: Json | null;
+          refresh_token_enc: string | null;
+          registration_kind: string;
+          scope: string | null;
+          token_endpoint: string;
+        };
+        Insert: {
+          access_token_enc: string;
+          authorization_server: string;
+          client_id: string;
+          client_secret_enc?: string | null;
+          connection_id: string;
+          expires_at?: string | null;
+          issued_at?: string;
+          metadata?: Json | null;
+          refresh_token_enc?: string | null;
+          registration_kind: string;
+          scope?: string | null;
+          token_endpoint: string;
+        };
+        Update: {
+          access_token_enc?: string;
+          authorization_server?: string;
+          client_id?: string;
+          client_secret_enc?: string | null;
+          connection_id?: string;
+          expires_at?: string | null;
+          issued_at?: string;
+          metadata?: Json | null;
+          refresh_token_enc?: string | null;
+          registration_kind?: string;
+          scope?: string | null;
+          token_endpoint?: string;
+        };
+        Relationships: [];
+      };
+      mcp_connection_tools: {
+        Row: {
+          connection_id: string;
+          description: string | null;
+          enabled: boolean;
+          input_schema: Json | null;
+          last_seen_at: string;
+          read_only: boolean;
+          tool_name: string;
+        };
+        Insert: {
+          connection_id: string;
+          description?: string | null;
+          enabled?: boolean;
+          input_schema?: Json | null;
+          last_seen_at?: string;
+          read_only?: boolean;
+          tool_name: string;
+        };
+        Update: {
+          connection_id?: string;
+          description?: string | null;
+          enabled?: boolean;
+          input_schema?: Json | null;
+          last_seen_at?: string;
+          read_only?: boolean;
+          tool_name?: string;
+        };
+        Relationships: [];
+      };
+      mcp_connections: {
+        Row: {
+          connected_at: string;
+          display_name: string | null;
+          enabled: boolean;
+          id: string;
+          last_error: string | null;
+          last_synced_at: string | null;
+          last_used_at: string | null;
+          permission_level: string;
+          registry_name: string;
+          server_url: string;
+          status: string;
+          tool_count: number;
+          user_id: string;
+        };
+        Insert: {
+          connected_at?: string;
+          display_name?: string | null;
+          enabled?: boolean;
+          id?: string;
+          last_error?: string | null;
+          last_synced_at?: string | null;
+          last_used_at?: string | null;
+          permission_level?: string;
+          registry_name: string;
+          server_url: string;
+          status?: string;
+          tool_count?: number;
+          user_id: string;
+        };
+        Update: {
+          connected_at?: string;
+          display_name?: string | null;
+          enabled?: boolean;
+          id?: string;
+          last_error?: string | null;
+          last_synced_at?: string | null;
+          last_used_at?: string | null;
+          permission_level?: string;
+          registry_name?: string;
+          server_url?: string;
+          status?: string;
+          tool_count?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      mcp_oauth_client_registrations: {
+        Row: {
+          authorization_server: string;
+          client_id: string;
+          client_secret_enc: string | null;
+          id: string;
+          redirect_uri: string;
+          registered_at: string;
+          registration_kind: string;
+        };
+        Insert: {
+          authorization_server: string;
+          client_id: string;
+          client_secret_enc?: string | null;
+          id?: string;
+          redirect_uri: string;
+          registered_at?: string;
+          registration_kind?: string;
+        };
+        Update: {
+          authorization_server?: string;
+          client_id?: string;
+          client_secret_enc?: string | null;
+          id?: string;
+          redirect_uri?: string;
+          registered_at?: string;
+          registration_kind?: string;
+        };
+        Relationships: [];
+      };
       mcp_oauth_clients: {
         Row: {
           client_id: string;
@@ -3038,6 +3278,7 @@ export type Database = {
         Returns: boolean;
       };
       sweep_download_jobs: { Args: never; Returns: undefined };
+      sweep_expired_mcp_connect_attempts: { Args: never; Returns: undefined };
       sweep_expired_mcp_oauth_auth_codes: { Args: never; Returns: undefined };
       sweep_expired_mcp_oauth_tokens: { Args: never; Returns: undefined };
       sweep_stale_push_subscriptions: { Args: never; Returns: undefined };

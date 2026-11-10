@@ -1,4 +1,10 @@
 import { createMcpOAuthRepository } from '@/backend/repositories/mcp/mcp-oauth-repository';
+import { createMcpMarketplaceRepository } from '@/backend/repositories/mcp/marketplace-repository';
+import { createMcpRemoteClient } from '@/backend/clients/mcp-remote';
+import {
+  createMcpConnectService,
+  type McpConnectService,
+} from '@/backend/services/mcp/marketplace/connect-service';
 import {
   createMcpConnectedAppService,
   type McpConnectedAppService,
@@ -9,7 +15,8 @@ import {
 } from '@/backend/services/mcp/oauth-provider';
 
 /**
- * Composition root for the public MCP server's OAuth surface.
+ * Composition root for the public MCP server's OAuth surface and the outbound
+ * marketplace (ADR-0155).
  *
  * The provider owns one token store and does not build it: a service may not
  * import a repository by value (`layers/no-cross-layer-import`), so the wiring
@@ -21,4 +28,16 @@ export function createDefaultMcpOAuthProvider(): McpOAuthProvider {
 
 export function createDefaultMcpConnectedAppService(): McpConnectedAppService {
   return createMcpConnectedAppService({ provider: createDefaultMcpOAuthProvider() });
+}
+
+/**
+ * The outbound direction: نور reaching a third party's MCP server. The remote
+ * client is the only thing here that opens a socket, and it is the one that
+ * carries `backend/shared/egress` into every call.
+ */
+export function createDefaultMcpConnectService(): McpConnectService {
+  return createMcpConnectService({
+    repository: createMcpMarketplaceRepository(),
+    remote: createMcpRemoteClient(),
+  });
 }

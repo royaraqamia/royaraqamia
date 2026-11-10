@@ -290,6 +290,21 @@ export function mcpConsentRateLimitPolicy(ip: string): RateLimitPolicy {
 }
 
 /**
+ * Starting an outbound connection is the one marketplace call that leaves this
+ * deployment: it reads a stranger's discovery document, may register a client
+ * and then writes a handshake row. A member taps it a handful of times; a script
+ * looping it is what the bucket is for.
+ */
+export function mcpMarketplaceStartRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `mcp-marketplace-start:${ip}`,
+    limit: 15,
+    windowMs: 10 * 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: يمكنك بدء ربط تطبيق 15 مرة كل 10 دقائق.',
+  };
+}
+
+/**
  * The offline-serve beacon (ADR-0074) is sent by the service worker, so a
  * browser that is repeatedly cut off can ring it several times a minute while a
  * visitor navigates. The bucket is per IP and the endpoint is fail-closed: losing
