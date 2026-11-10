@@ -40,6 +40,7 @@ import { ReportChatDialog } from './report-chat-dialog';
 import { AssistantMark } from './assistant-mark';
 import { ASSISTANT_COPY } from './assistant-copy';
 import { readReceiptOf, typingLabel, type ChatReadReceipt } from './read-receipt';
+import { formatDaySeparator, isNewDay } from './thread-days';
 import { ActionCard } from './chat-agent-action-card';
 import { AssistantComposer } from './chat-assistant-composer';
 import { ChatComposer } from './chat-composer';
@@ -878,23 +879,10 @@ function ThreadFooter({
   );
 }
 
-const DAY_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-});
-function dayKey(iso: string): string {
-  return iso.slice(0, 10);
-}
-
-function isNewDay(previous: ChatMessage | undefined, message: ChatMessage): boolean {
-  return !previous || dayKey(previous.createdAt) !== dayKey(message.createdAt);
-}
-
 function DaySeparator({ at }: { at: string }) {
   return (
     <p className="mx-auto my-1 rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground/80">
-      {DAY_FORMAT.format(new Date(at))}
+      {formatDaySeparator(at)}
     </p>
   );
 }
