@@ -34,8 +34,6 @@ export const SUBSCRIPTION_PLAN = 'pro' as const;
 export type SubscriptionPlan = typeof SUBSCRIPTION_PLAN;
 
 export const SUBSCRIPTION_NAME_MAX = 120;
-export const SUBSCRIPTION_EMAIL_MAX = 200;
-export const SUBSCRIPTION_NOTE_MAX = 1000;
 
 // ------------------------------------------------------------
 // Entity
@@ -48,9 +46,6 @@ export interface SubscriptionRequest {
   plan: SubscriptionPlan;
   full_name: string;
   phone_whatsapp: string;
-  email: string | null;
-  /** What the reader runs, so the Admin can answer with a relevant pitch. */
-  note: string | null;
   reference_code: string;
   status: SubscriptionRequestStatus;
   /** Admin-only bookkeeping; never submitted by the reader. */
@@ -78,13 +73,6 @@ export const SubscriptionRequestSchema = z.object({
     .min(2, 'الاسم يجب أن يكون حرفين على الأقل')
     .max(SUBSCRIPTION_NAME_MAX, 'الاسم طويل جدًّا'),
   phone_whatsapp: z.string().trim().regex(whatsappPhoneRegex, 'رقم واتساب غير صحيح'),
-  email: z
-    .string()
-    .trim()
-    .max(SUBSCRIPTION_EMAIL_MAX, 'البريد الإلكتروني طويل جدًّا')
-    .optional()
-    .refine((value) => !value || z.email().safeParse(value).success, 'البريد الإلكتروني غير صحيح'),
-  note: z.string().trim().max(SUBSCRIPTION_NOTE_MAX, 'الملاحظة طويلة جدًّا').optional(),
   client_id: z.string().uuid('مُعرَّف الطَّلب غير صحيح').optional(),
 });
 

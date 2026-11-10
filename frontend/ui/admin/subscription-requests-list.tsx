@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BadgeCheck, Clock, Mail, MessageCircle, Phone, Save } from 'lucide-react';
+import { BadgeCheck, Clock, MessageCircle, Phone, Save } from 'lucide-react';
 
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
@@ -161,30 +161,7 @@ export function SubscriptionRequestsList({
                 <dt className="sr-only">تاريخ الطَّلب</dt>
                 <dd className="text-muted-foreground">{formatHijriDate(request.created_at)}</dd>
               </div>
-
-              {request.email ? (
-                <div className="flex items-center gap-2">
-                  <Mail className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                  <dt className="sr-only">البريد الإلكتروني</dt>
-                  <dd className="min-w-0">
-                    <a
-                      href={`mailto:${request.email}`}
-                      dir="ltr"
-                      className="block truncate text-muted-foreground hover:text-foreground hover:underline underline-offset-4"
-                    >
-                      {request.email}
-                    </a>
-                  </dd>
-                </div>
-              ) : null}
             </dl>
-
-            {request.note ? (
-              <div className="mt-4 rounded-xl border border-border/50 bg-muted/30 p-3">
-                <span className="text-xs font-medium text-muted-foreground">ما سيعمل عليه</span>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/90">{request.note}</p>
-              </div>
-            ) : null}
 
             <div className="mt-4 space-y-2">
               <label

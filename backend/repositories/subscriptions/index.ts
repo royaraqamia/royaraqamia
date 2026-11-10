@@ -83,8 +83,6 @@ export function createSubscriptionRequestsRepository(
           plan: input.plan,
           full_name: input.full_name,
           phone_whatsapp: input.phone_whatsapp,
-          email: input.email,
-          note: input.note,
           reference_code: input.reference_code,
           client_id: input.client_id ?? null,
         })

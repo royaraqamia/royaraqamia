@@ -13,7 +13,6 @@ package com.royaraqamia.app.assistant
  */
 object AssistantPanelCopy {
     const val TITLE = "نور"
-    const val SUBTITLE = "مساعدة رؤية رقمية"
     const val INTRO = "أهلاً، أنا نور. اسألني عن منتجاتنا وخدماتنا، أو اطلب مني إنجاز مهمة."
     const val PLACEHOLDER = "اكتب سؤالك لنور..."
     const val SEND = "إرسال السؤال"

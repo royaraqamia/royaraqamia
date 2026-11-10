@@ -12,7 +12,6 @@ import {
   type SubscriptionRequestInput,
   type SubscriptionRequestUpdateInput,
 } from '@/shared/contracts/subscriptions';
-import { toNullableText } from '@/shared/contracts/text';
 import type { Paginated } from '@/shared/pagination';
 import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 
@@ -110,8 +109,6 @@ export class SubscriptionRequestService {
           plan: SUBSCRIPTION_PLAN,
           full_name: input.full_name,
           phone_whatsapp: input.phone_whatsapp,
-          email: toNullableText(input.email),
-          note: toNullableText(input.note),
           reference_code: referenceCode,
           client_id: clientId,
         } satisfies SubscriptionRequestCreateInput),

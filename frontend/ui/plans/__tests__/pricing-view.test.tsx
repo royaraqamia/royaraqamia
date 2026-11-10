@@ -25,7 +25,8 @@ import { PricingView } from '../pricing-view';
  * A catalog that matches nothing in the seeded migration, so a number showing
  * up here proves the page reads the catalog instead of its own copy. The item
  * caps are uniform (6 free / 66 pro) because the card states one number for
- * every service; the connected-apps line keeps its own cap at 1 / 12.
+ * every service; the connected-apps row stays in the fixture below that cap so
+ * the card cannot quietly adopt it.
  */
 const catalog: PlanCatalog = {
   settings: {
@@ -114,21 +115,16 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PricingView', () => {
-  it('states the free plan in two lines, both from the catalog', () => {
+  it('states the free plan in one line, from the catalog', () => {
     render(<PricingView catalog={catalog} />);
 
     expect(screen.getByText('6 عناصر كحد أقصى من كل خدمة.')).toBeInTheDocument();
-    expect(screen.getByText('تطبيق متَّصل واحد كحد أقصى.')).toBeInTheDocument();
   });
 
-  it('states the paid plan in three lines, both caps from the catalog', () => {
+  it('states the paid plan in one line, its cap from the catalog', () => {
     render(<PricingView catalog={catalog} />);
 
     expect(screen.getByText('حتَّى 66 عنصر من كل خدمة.')).toBeInTheDocument();
-    expect(screen.getByText('حتَّى 12 تطبيقات متَّصلة.')).toBeInTheDocument();
-    expect(
-      screen.getByText('خصم 20% على التَّدريب والاستشارات وبناء المشاريع والتَّعاقُد الشَّهري.')
-    ).toBeInTheDocument();
   });
 
   it('prints the smallest item cap when the catalog stops being uniform', () => {
@@ -144,19 +140,6 @@ describe('PricingView', () => {
     render(<PricingView catalog={drifted} />);
 
     expect(screen.getByText('3 عناصر كحد أقصى من كل خدمة.')).toBeInTheDocument();
-  });
-
-  it('writes a plural connected-apps line when the free cap is above one', () => {
-    const twoApps: PlanCatalog = {
-      ...catalog,
-      limits: catalog.limits.map((limit) =>
-        limit.key === 'mcp_connected_apps' ? { ...limit, freeCap: 2 } : limit
-      ),
-    };
-
-    render(<PricingView catalog={twoApps} />);
-
-    expect(screen.getByText('حتَّى 2 تطبيقات متَّصلة.')).toBeInTheDocument();
   });
 
   it('stops listing the counted actions it no longer promises in numbers', () => {

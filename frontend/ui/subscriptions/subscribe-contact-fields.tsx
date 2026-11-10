@@ -6,21 +6,20 @@ import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { CountryPhoneInput } from '@/frontend/ui/shared/country-phone-input';
 import { FieldError } from '@/frontend/ui/shared/field-error';
-import { Textarea } from '@/frontend/ui/primitives/textarea';
-import { SUBSCRIPTION_NOTE_MAX } from '@/shared/contracts/subscriptions';
-import type { SubscribeFormValues } from '../subscribe-wizard';
+import type { SubscribeFormValues } from './subscribe-form';
 
-interface SubscribeContactStepProps {
+interface SubscribeContactFieldsProps {
   control: Control<SubscribeFormValues>;
   register: UseFormRegister<SubscribeFormValues>;
   errors: FieldErrors<SubscribeFormValues>;
 }
 
 /**
- * Step two: how to reach the reader. The phone is what the Admin uses to arrange
- * activation, so it is required; the email and the note are not.
+ * The two answers the request needs. The phone is what the Admin uses to
+ * arrange activation, so it is required; the page's own copy says that, rather
+ * than a field for everything a reader might be willing to share.
  */
-export function SubscribeContactStep({ control, register, errors }: SubscribeContactStepProps) {
+export function SubscribeContactFields({ control, register, errors }: SubscribeContactFieldsProps) {
   return (
     <div className="space-y-5">
       <div className="form-field">
@@ -60,38 +59,6 @@ export function SubscribeContactStep({ control, register, errors }: SubscribeCon
           اختر رمز الدَّولة ثمَّ اكتب رقمك — سنتواصل معك على هذا الرَّقم لتفعيل الخطَّة.
         </p>
         <FieldError id="phone_whatsapp-error" message={errors.phone_whatsapp?.message} />
-      </div>
-
-      <div className="form-field">
-        <Label htmlFor="email" optional>
-          البريد الإلكتروني
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          dir="ltr"
-          autoComplete="email"
-          placeholder="name@example.com"
-          {...register('email')}
-          error={Boolean(errors.email)}
-          aria-describedby={errors.email ? 'email-error' : undefined}
-        />
-        <FieldError id="email-error" message={errors.email?.message} />
-      </div>
-
-      <div className="form-field">
-        <Label htmlFor="note" optional>
-          ما الذي ستعمل عليه؟
-        </Label>
-        <Textarea
-          id="note"
-          rows={3}
-          maxLength={SUBSCRIPTION_NOTE_MAX}
-          placeholder="سطر أو سطران يساعداننا على فهم استخدامك."
-          {...register('note')}
-          aria-describedby={errors.note ? 'note-error' : undefined}
-        />
-        <FieldError id="note-error" message={errors.note?.message} />
       </div>
     </div>
   );

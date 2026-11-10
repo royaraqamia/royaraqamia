@@ -48,7 +48,7 @@ export function TopNav({
       {/* Brand Identity / Logo */}
       <div className="relative flex items-center shrink-0 select-none">
         <Link
-          href={isHomePage ? '#home' : '/'}
+          href="/"
           className="group relative flex items-center rounded-2xl py-1 px-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 transition-safe duration-300 shrink-0 select-none"
           aria-label="رؤيَة رقَميَّة - الصفحة الرئيسية"
           onClick={scrollToHomeNode}

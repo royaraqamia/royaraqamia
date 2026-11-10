@@ -43,7 +43,7 @@ describe('Navbar', () => {
 
   it('renders the logo and the notification control, without inline nav links', () => {
     renderWithProviders(<Navbar />);
-    expect(screen.getByRole('link', { name: /رؤيَة رقَميَّة/ })).toHaveAttribute('href', '#home');
+    expect(screen.getByRole('link', { name: /رؤيَة رقَميَّة/ })).toHaveAttribute('href', '/');
     // The shell keeps one top bar at every width: account and section links live
     // in the floating `BottomTabBar`, not here.
     expect(screen.queryByRole('link', { name: 'الرَّئيسيَّة' })).not.toBeInTheDocument();

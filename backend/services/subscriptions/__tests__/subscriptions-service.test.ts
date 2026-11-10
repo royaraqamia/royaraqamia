@@ -19,8 +19,6 @@ const REFERENCE = 'SUB-2026-A7K2M9QX';
 const VALID_INPUT: SubscriptionRequestInput = {
   full_name: 'أحمد الحسن',
   phone_whatsapp: '+963 968 478 904',
-  email: 'ahmad@example.com',
-  note: 'مشروعان صغيران وأحتاج مساعدًا يوميًّا.',
 };
 
 function makeRow(overrides: Partial<SubscriptionRequest> = {}): SubscriptionRequest {
@@ -30,8 +28,6 @@ function makeRow(overrides: Partial<SubscriptionRequest> = {}): SubscriptionRequ
     plan: 'pro',
     full_name: VALID_INPUT.full_name,
     phone_whatsapp: VALID_INPUT.phone_whatsapp,
-    email: VALID_INPUT.email ?? null,
-    note: VALID_INPUT.note ?? null,
     reference_code: REFERENCE,
     status: 'new',
     notes: null,
@@ -47,8 +43,6 @@ function toRow(input: SubscriptionRequestCreateInput): SubscriptionRequest {
     plan: input.plan,
     full_name: input.full_name,
     phone_whatsapp: input.phone_whatsapp,
-    email: input.email,
-    note: input.note,
     reference_code: input.reference_code,
   });
 }
@@ -122,16 +116,6 @@ describe('SubscriptionRequestService.submit', () => {
     expect(request.id).toBe('sub-existing');
     expect(repository.create).not.toHaveBeenCalled();
     expect(notifyAdmins).not.toHaveBeenCalled();
-  });
-
-  it('stores a blank optional field as NULL, never as an empty string', async () => {
-    const { service, repository } = makeService();
-
-    await service.submit({ ...VALID_INPUT, email: '', note: '' }, { userId: 'user-1' });
-
-    expect(repository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ email: null, note: null })
-    );
   });
 
   it('refuses past the per-account backstop', async () => {

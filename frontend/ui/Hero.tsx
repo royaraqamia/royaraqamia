@@ -6,10 +6,7 @@ import { HijriToday } from './shared/hijri-today';
 export function Hero() {
   return (
     <>
-      <section
-        id="home"
-        className="relative min-h-[92vh] flex items-center justify-center overflow-hidden pt-32 md:pt-40 pb-16 lg:pt-20 lg:pb-16 bg-slate-950"
-      >
+      <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden pt-32 md:pt-40 pb-16 lg:pt-20 lg:pb-16 bg-slate-950">
         {/* Background Layer - High-End SaaS Mesh Grid */}
         <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-purple-950/40 to-slate-950 z-0 overflow-hidden pointer-events-none">
           {/* Subtle grid pattern overlay */}

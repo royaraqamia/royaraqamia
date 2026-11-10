@@ -1,5 +1,4 @@
 import '@/app/mcp/app.css';
-import Link from 'next/link';
 
 import { CodeSnippet } from '@/frontend/ui/mcp/code-snippet';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
@@ -118,17 +117,6 @@ url = "${serverUrl}"
           </p>
         </StepCard>
       </div>
-
-      <p className="mt-6 text-center text-sm sm:text-base leading-relaxed text-muted-foreground">
-        لمتابعة ما وصل إليه كل تطبيق — أو لفصل أحدها دون تسجيل الخروج — افتح{' '}
-        <Link
-          href="/account/connected-apps"
-          className="font-bold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded"
-        >
-          التَّطبيقات المتَّصلة بالـ MCP
-        </Link>{' '}
-        في حسابك.
-      </p>
     </div>
   );
 }

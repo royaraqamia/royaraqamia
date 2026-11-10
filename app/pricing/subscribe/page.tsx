@@ -1,7 +1,7 @@
 import '../../marketing.css';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Check, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { loadPlanCatalog } from '@/backend/loaders/plans';
@@ -9,9 +9,8 @@ import { createDefaultSubscriptionRequestService } from '@/backend/config/subscr
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { SubscribeFlow } from '@/frontend/ui/subscriptions/subscribe-flow';
+import { SubscribePlanSummary } from '@/frontend/ui/subscriptions/subscribe-plan-summary';
 import { itemCapOf, planPriceLabel } from '@/frontend/ui/plans/pricing-view';
-import { formatCount } from '@/frontend/shared/format';
-import { PRO_SERVICE_DISCOUNT_PERCENT } from '@/shared/service-pricing';
 import { SUBSCRIPTION_PLAN } from '@/shared/contracts/subscriptions';
 
 export const metadata: Metadata = {
@@ -43,12 +42,12 @@ export default async function SubscribePage() {
         </SectionTitle>
       </header>
 
-      {user ? <MemberSubscribeForm userId={user.id} email={user.email ?? ''} /> : <GuestPanel />}
+      {user ? <MemberSubscribeForm userId={user.id} /> : <GuestPanel />}
     </main>
   );
 }
 
-async function MemberSubscribeForm({ userId, email }: { userId: string; email: string }) {
+async function MemberSubscribeForm({ userId }: { userId: string }) {
   const [catalog, requests] = await Promise.all([
     loadPlanCatalog(),
     createDefaultSubscriptionRequestService().listMine(userId),
@@ -77,37 +76,17 @@ async function MemberSubscribeForm({ userId, email }: { userId: string; email: s
     );
   }
 
-  const price = `${planPriceLabel(catalog.settings.priceCents, catalog.settings.currency)} كل ${catalog.settings.durationDays} يومًا`;
+  const price = planPriceLabel(catalog.settings.priceCents, catalog.settings.currency);
 
   return (
     <SubscribeFlow
       defaultName=""
-      defaultEmail={email}
       summary={
-        <section
-          aria-label="تفاصيل الخطَّة المدفوعة"
-          className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
-        >
-          <p className="flex items-baseline gap-1.5 text-3xl font-black tracking-tight">
-            <SectionTitleHighlight>{price}</SectionTitleHighlight>
-          </p>
-
-          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-start gap-2">
-              <Check className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
-              <span>
-                حتَّى {formatCount(itemCapOf(catalog, SUBSCRIPTION_PLAN))} عنصر من كل خدمة.
-              </span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Check className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
-              <span>
-                خصم {PRO_SERVICE_DISCOUNT_PERCENT}% على التَّدريب والاستشارات وبناء المشاريع
-                والتَّعاقُد الشَّهري.
-              </span>
-            </li>
-          </ul>
-        </section>
+        <SubscribePlanSummary
+          price={price}
+          durationDays={catalog.settings.durationDays}
+          itemCap={itemCapOf(catalog, SUBSCRIPTION_PLAN)}
+        />
       }
     />
   );

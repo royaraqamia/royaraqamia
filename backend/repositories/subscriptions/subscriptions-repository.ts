@@ -10,8 +10,6 @@ export interface SubscriptionRequestCreateInput {
   plan: SubscriptionPlan;
   full_name: string;
   phone_whatsapp: string;
-  email: string | null;
-  note: string | null;
   reference_code: string;
   /** Client-minted idempotency key for an Outbox replay (ADR-0029, ticket #169). */
   client_id?: string | null;
