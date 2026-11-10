@@ -8,6 +8,7 @@ import {
   currentConnection,
   isMeteredConnection,
   openAudioBytesStore,
+  listSurahAudioCopies,
   readAudioCopy,
   readSurahAudioState,
   readSurahManifest,
@@ -146,6 +147,12 @@ export async function readDownloadedSurah(
   ayahCount: number
 ): Promise<SurahAudioState> {
   return readSurahAudioState(AUDIO_EDITION, surah, ayahCount);
+}
+
+/** What this device holds for one Surah, in bytes: the size the saved line states. */
+export async function readDownloadedSurahBytes(surah: number): Promise<number> {
+  const copies = await listSurahAudioCopies(AUDIO_EDITION, surah);
+  return copies.reduce((sum, copy) => sum + copy.bytes, 0);
 }
 
 /** Whether this connection is one a download should not start on unasked. */

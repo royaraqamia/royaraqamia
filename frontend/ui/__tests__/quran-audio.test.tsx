@@ -10,6 +10,8 @@ import type { Surah, SurahSummary } from '@/shared/contracts/quran';
 
 const recording = vi.hoisted(() => ({
   saved: 'none' as 'none' | 'partial' | 'complete',
+  bytes: 80,
+  remove: vi.fn(),
   download: vi.fn(),
   playlist: {
     edition: 'ar.alafasy',
@@ -51,6 +53,8 @@ vi.mock('@/frontend/api/quran/audio', async (importOriginal) => {
       baseUrl: recording.edition.baseUrl,
     })),
     readDownloadedSurah: vi.fn(async () => recording.saved),
+    readDownloadedSurahBytes: vi.fn(async () => (recording.saved === 'none' ? 0 : recording.bytes)),
+    removeDownloadedSurah: recording.remove,
     downloadSurahAudio: recording.download,
   };
 });
@@ -88,7 +92,13 @@ function renderPlaying() {
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
   recording.saved = 'none';
-  recording.download.mockResolvedValue({ stored: 2, reused: 0, bytes: 80, evicted: 0 });
+  recording.bytes = 80;
+  recording.remove.mockReset();
+  recording.remove.mockResolvedValue(2);
+  recording.download.mockImplementation(async () => {
+    recording.saved = 'complete';
+    return { stored: 2, reused: 0, bytes: 80, evicted: 0 };
+  });
   // Prefetching would reach for the audio host, which a unit test must not do.
   engine = new RecitationEngine({ prefetch: false, storage: null });
   vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
@@ -172,6 +182,24 @@ describe('the offline copy', () => {
 
     expect(await screen.findByText(/محفوظة على هذا الجُهاز/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /حفظ التِّلاوة/ })).not.toBeInTheDocument();
+  });
+
+  it('states what a kept surah costs on the device, and lets it go', async () => {
+    recording.saved = 'complete';
+    recording.bytes = 52 * 1024 * 1024;
+
+    renderReader();
+
+    expect(await screen.findByText(/محفوظة على هذا الجُهاز/)).toBeInTheDocument();
+    expect(await screen.findByText('حجم النسخة المحفوظة: 52 م.ب')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'إزالة النسخة المحفوظة' }));
+
+    await waitFor(() => expect(recording.remove).toHaveBeenCalledWith(1));
+    await waitFor(() =>
+      expect(screen.queryByText(/محفوظة على هذا الجُهاز/)).not.toBeInTheDocument()
+    );
+    expect(screen.queryByRole('button', { name: 'إزالة النسخة المحفوظة' })).not.toBeInTheDocument();
   });
 
   it('names the state when an unkept surah cannot reach the host', async () => {

@@ -93,6 +93,18 @@ final class QuranAudioStore {
         }
     }
 
+    /** What dropping a Surah's copies took off the device. */
+    static final class RemoveResult {
+
+        final int removed;
+        final long bytes;
+
+        RemoveResult(int removed, long bytes) {
+            this.removed = removed;
+            this.bytes = bytes;
+        }
+    }
+
     interface Progress {
         void onProgress(int done, int total);
     }
@@ -106,6 +118,42 @@ final class QuranAudioStore {
             }
             if (held == 0 || ayahCount <= 0) return "none";
             return held >= ayahCount ? "complete" : "partial";
+        }
+    }
+
+    /** What this device holds for a Surah, in bytes: the size the saved line states. */
+    long bytesFor(int surah) {
+        synchronized (lock) {
+            long bytes = 0;
+            for (Entry entry : entries) {
+                if (entry.surah == surah && fileFor(entry).isFile()) bytes += entry.bytes;
+            }
+            return bytes;
+        }
+    }
+
+    /**
+     * Drops every copy of a Surah, and says what went. The removal is a real
+     * delete rather than a hidden index row, because the point is the space it
+     * frees; an index that still promised the bytes would make the reader think
+     * the sura was kept when it can no longer play it.
+     */
+    RemoveResult remove(int surah) {
+        synchronized (lock) {
+            List<Entry> gone = new ArrayList<>();
+            long bytes = 0;
+            for (Entry entry : entries) {
+                if (entry.surah != surah) continue;
+                File file = fileFor(entry);
+                if (file.exists() && !file.delete()) continue;
+                gone.add(entry);
+                bytes += entry.bytes;
+            }
+            if (!gone.isEmpty()) {
+                entries.removeAll(gone);
+                save();
+            }
+            return new RemoveResult(gone.size(), bytes);
         }
     }
 

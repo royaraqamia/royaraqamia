@@ -24,6 +24,10 @@ export const QURAN_PLAYER_COPY = {
   savedPartial: 'بعض آياتها محفوظة فقط',
   offline: 'هذه السُّورة غير محفوظة على هذا الجُهاز، وتحتاج اتِّصالًا لتشغيلها.',
   error: 'تعذَّر تشغيل التِّلاوة. تحقَّق من الاتِّصال ثمَّ أعد المحاولة.',
+  savedSizeMegabytes: 'حجم النسخة المحفوظة: {value} م.ب',
+  savedSizeKilobytes: 'حجم النسخة المحفوظة: {value} ك.ب',
+  remove: 'إزالة النسخة المحفوظة',
+  removeFailed: 'تعذّرت إزالة النسخة المحفوظة. حاول مرة أخرى.',
 } as const;
 
 export type QuranPlayerCopyStrings = typeof QURAN_PLAYER_COPY;

@@ -8,9 +8,11 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
+import kotlin.coroutines.resume
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,7 +23,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** The recitation's face at one instant, as the panel paints it. */
 enum class QuranPlayerStatus {
@@ -50,6 +54,10 @@ data class QuranPlayerSnapshot(
     val durationSeconds: Double = 0.0,
     /** What this device holds for the surah: `none`, `partial` or `complete`. */
     val saved: String? = null,
+    /** What that copy costs the device, in bytes; zero when nothing is held. */
+    val savedBytes: Long = 0,
+    /** A removal the service refused; the next read or removal clears it. */
+    val removeFailed: Boolean = false,
 )
 
 /**
@@ -77,6 +85,7 @@ class QuranPlayerController(
     private var controller: MediaController? = null
     private var future: ListenableFuture<MediaController>? = null
     private var progress: Job? = null
+    private var keepWatch: Job? = null
 
     private val listener =
         object : Player.Listener {
@@ -135,8 +144,15 @@ class QuranPlayerController(
         )
     }
 
-    /** Starts this sura, or resumes it if the service already holds it. */
-    fun play(surah: Int, ayah: Int = 1) {
+    /**
+     * Starts this sura, or resumes it if the service already holds it.
+     *
+     * [ayahCount] turns on the keep watch: play is also the keep (ADR-0083), so
+     * once the service starts downloading, this client waits for it to finish and
+     * then re-reads the copy so the saved line and its size appear without the
+     * reader leaving and coming back.
+     */
+    fun play(surah: Int, ayah: Int = 1, ayahCount: Int = 0) {
         _state.value =
             _state.value.copy(
                 status = QuranPlayerStatus.LOADING,
@@ -163,6 +179,7 @@ class QuranPlayerController(
                         _state.value = _state.value.copy(status = QuranPlayerStatus.OFFLINE)
                     } else {
                         publish()
+                        if (ayahCount > 0) watchKeep(surah, ayahCount)
                     }
                 },
                 ContextCompat.getMainExecutor(appContext),
@@ -183,7 +200,11 @@ class QuranPlayerController(
 
     fun stop() {
         val player = controller
-        _state.value = QuranPlayerSnapshot()
+        // Stopping the sound does not unkeep the sura: the line beneath the
+        // controls still lists the copy, as the page's float does.
+        val held = _state.value
+        _state.value =
+            QuranPlayerSnapshot(saved = held.saved, savedBytes = held.savedBytes)
         if (player == null || !player.isConnected) return
         player.sendCustomCommand(
             SessionCommand(QuranPlaybackService.ACTION_STOP, Bundle.EMPTY),
@@ -200,25 +221,98 @@ class QuranPlayerController(
      */
     fun refreshSaved(surah: Int, ayahCount: Int) {
         scope.launch {
-            val saved =
+            val held =
                 withContext(Dispatchers.IO) {
                     runCatching {
-                            QuranAudioStore(File(appContext.filesDir, "quran-audio"), UrlQuranHttp())
-                                .savedState(surah, ayahCount)
+                            val store =
+                                QuranAudioStore(File(appContext.filesDir, "quran-audio"), UrlQuranHttp())
+                            SavedCopy(store.savedState(surah, ayahCount), store.bytesFor(surah))
                         }
                         .getOrNull()
                 } ?: return@launch
             val current = _state.value
             if (current.surah == null || current.surah == surah) {
-                _state.value = current.copy(saved = saved)
+                _state.value =
+                    current.copy(
+                        saved = held.state,
+                        savedBytes = held.bytes,
+                        removeFailed = false,
+                    )
             }
         }
     }
+
+    /**
+     * Drops this sura's copies through the service, which serializes the delete
+     * with a keep and rebuilds the player's queue from the network if it was
+     * holding this sura.
+     */
+    fun remove(surah: Int) {
+        withController { player ->
+            val result =
+                player.sendCustomCommand(
+                    SessionCommand(QuranPlaybackService.ACTION_REMOVE, Bundle.EMPTY),
+                    Bundle().apply { putInt("surah", surah) },
+                )
+            result.addListener(
+                {
+                    val answer = runCatching { result.get() }.getOrNull()
+                    val removed = answer?.resultCode == SessionResult.RESULT_SUCCESS
+                    if (removed) {
+                        keepWatch?.cancel()
+                        keepWatch = null
+                        _state.value =
+                            _state.value.copy(saved = "none", savedBytes = 0, removeFailed = false)
+                    } else {
+                        _state.value = _state.value.copy(removeFailed = true)
+                    }
+                },
+                ContextCompat.getMainExecutor(appContext),
+            )
+        }
+    }
+
+    private fun watchKeep(surah: Int, ayahCount: Int) {
+        keepWatch?.cancel()
+        keepWatch =
+            scope.launch {
+                while (true) {
+                    delay(KEEP_POLL_MS)
+                    val phase = withTimeoutOrNull(KEEP_POLL_TIMEOUT_MS) { keepPhase(surah) } ?: return@launch
+                    if (phase != "working") {
+                        refreshSaved(surah, ayahCount)
+                        return@launch
+                    }
+                }
+            }
+    }
+
+    private suspend fun keepPhase(surah: Int): String? =
+        suspendCancellableCoroutine { continuation ->
+            withController { player ->
+                val result =
+                    player.sendCustomCommand(
+                        SessionCommand(QuranPlaybackService.ACTION_KEEP_STATE, Bundle.EMPTY),
+                        Bundle().apply { putInt("surah", surah) },
+                    )
+                result.addListener(
+                    {
+                        val answer = runCatching { result.get() }.getOrNull()
+                        if (continuation.isActive) {
+                            continuation.resume(answer?.extras?.getString("phase", "idle"))
+                        }
+                    },
+                    ContextCompat.getMainExecutor(appContext),
+                )
+            }
+        }
 
     /** Releases this client; the service keeps playing if it was playing. */
     fun release() {
         progress?.cancel()
         progress = null
+        keepWatch?.cancel()
+        keepWatch = null
         future?.let { pending ->
             if (!pending.isDone) pending.cancel(true)
         }
@@ -331,7 +425,11 @@ class QuranPlayerController(
         }
     }
 
+    private data class SavedCopy(val state: String, val bytes: Long)
+
     private companion object {
         const val PROGRESS_TICK_MS = 1000L
+        const val KEEP_POLL_MS = 1000L
+        const val KEEP_POLL_TIMEOUT_MS = 5000L
     }
 }

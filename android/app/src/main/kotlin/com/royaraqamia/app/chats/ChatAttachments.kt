@@ -1,8 +1,9 @@
 package com.royaraqamia.app.chats
 
 import com.royaraqamia.app.contracts.generated.ChatThreadResponseThreadAttachmentQuota
+import com.royaraqamia.app.shared.ByteSizeParts
+import com.royaraqamia.app.shared.byteSizeParts
 import java.io.InputStream
-import java.util.Locale
 
 /**
  * A file the picker chose, before a byte of it is sent (#933).
@@ -123,14 +124,10 @@ object ChatAttachments {
      * digits, per the repository's rule.
      */
     fun formatSize(bytes: Long): String {
-        if (bytes <= 0) return "0 ك.ب"
-        val mb = bytes.toDouble() / (1024 * 1024)
-        if (mb >= 1) {
-            val value =
-                if (mb >= 10) Math.round(mb).toString()
-                else String.format(Locale.US, "%.1f", mb)
-            return "$value م.ب"
+        val parts = byteSizeParts(bytes)
+        return when (parts.unit) {
+            ByteSizeParts.Unit.MEGABYTES -> "${parts.value} م.ب"
+            ByteSizeParts.Unit.KILOBYTES -> "${parts.value} ك.ب"
         }
-        return "${maxOf(1L, Math.round(bytes / 1024.0))} ك.ب"
     }
 }

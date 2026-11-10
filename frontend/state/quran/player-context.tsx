@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { readDownloadedSurahBytes, removeDownloadedSurah } from '@/frontend/api/quran/audio';
 import type { SurahAudioState } from '@/frontend/shared/local-store/audio';
 import { logRecitationFailure } from '@/frontend/shared/recitation/log';
 import {
@@ -57,11 +58,15 @@ export interface QuranPlayerActions {
   seekBy(seconds: number): void;
   /** Re-reads what this device holds for a sura. */
   refreshSaved(surah: number, ayahCount: number): void;
+  /** Drops this sura's copies, so it streams from the host again; true when they went. */
+  remove(surah: number): Promise<boolean>;
 }
 
 export interface QuranPlayerValue {
   readonly state: RecitationState;
   readonly saved: Readonly<Record<number, SurahAudioState | null>>;
+  /** What those copies cost the device, per sura, in bytes. */
+  readonly savedBytes: Readonly<Record<number, number>>;
   readonly keep: Readonly<Record<number, KeepState>>;
   readonly actions: QuranPlayerActions;
 }
@@ -76,6 +81,7 @@ const QuranPlayerContext = createContext<QuranPlayerValue | null>(null);
 const DETACHED_PLAYER: QuranPlayerValue = {
   state: INITIAL_RECITATION_STATE,
   saved: {},
+  savedBytes: {},
   keep: {},
   actions: {
     play: async () => false,
@@ -86,6 +92,7 @@ const DETACHED_PLAYER: QuranPlayerValue = {
     seek: () => {},
     seekBy: () => {},
     refreshSaved: () => {},
+    remove: async () => false,
   },
 };
 
@@ -135,7 +142,15 @@ export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderPro
   /** The player once its chunk is here; actions wait on this instead of a null. */
   const ready = useCallback(async (): Promise<RecitationPlayer | null> => {
     if (playerRef.current) return playerRef.current;
-    const loading = loadingRef.current;
+    let loading = loadingRef.current;
+    if (!loading) {
+      // A child effect (the reader's float) can run before this provider's own
+      // effect has started the import. One microtask is enough for that effect
+      // to have set the promise; without it the float reads an empty store on
+      // mount and never paints the copy the device already holds.
+      await Promise.resolve();
+      loading = loadingRef.current;
+    }
     if (!loading) return null;
     const loaded = await loading;
     if (loaded) playerRef.current = loaded;
@@ -150,16 +165,35 @@ export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderPro
   const state = useSyncExternalStore(subscribe, getSnapshot, () => INITIAL_RECITATION_STATE);
 
   const [saved, setSaved] = useState<Record<number, SurahAudioState | null>>({});
+  const [savedBytes, setSavedBytes] = useState<Record<number, number>>({});
   const [keep, setKeep] = useState<Record<number, KeepState>>({});
 
   const refreshSaved = useCallback(
     (surah: number, ayahCount: number) => {
       void ready().then((current) => {
         if (!current) return;
+        // The state first, then the size: both open the same IndexedDB database,
+        // and opening it twice at once races the second connection's upgrade.
         void current.readSaved(surah, ayahCount).then(
           (value) => {
             setSaved((previous) =>
               previous[surah] === value ? previous : { ...previous, [surah]: value }
+            );
+            if (value === 'none' || value === null) {
+              setSavedBytes((previous) =>
+                previous[surah] === 0 ? previous : { ...previous, [surah]: 0 }
+              );
+              return;
+            }
+            void readDownloadedSurahBytes(surah).then(
+              (bytes) =>
+                setSavedBytes((previous) =>
+                  previous[surah] === bytes ? previous : { ...previous, [surah]: bytes }
+                ),
+              () =>
+                setSavedBytes((previous) =>
+                  previous[surah] === 0 ? previous : { ...previous, [surah]: 0 }
+                )
             );
           },
           () => {
@@ -167,6 +201,9 @@ export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderPro
             // error to show, and not a reason to hide the player.
             setSaved((previous) =>
               previous[surah] === null ? previous : { ...previous, [surah]: null }
+            );
+            setSavedBytes((previous) =>
+              previous[surah] === 0 ? previous : { ...previous, [surah]: 0 }
             );
           }
         );
@@ -195,12 +232,15 @@ export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderPro
           ...previous,
           [surah]: { phase: outcome.phase, done: 0, total: 0 },
         }));
+        // The copy's size is a second read of the store, so the saved line
+        // states what the download actually cost.
+        refreshSaved(surah, ayahCount);
       } catch (error) {
         logRecitationFailure('surah audio download failed', error);
         setKeep((previous) => ({ ...previous, [surah]: { phase: 'failed', done: 0, total: 0 } }));
       }
     },
-    [ready]
+    [ready, refreshSaved]
   );
 
   const activeSurah = state.surah;
@@ -271,13 +311,29 @@ export function QuranPlayerProvider({ children, engine }: QuranPlayerProviderPro
         playerRef.current?.seekBy(seconds);
       },
       refreshSaved,
+      remove: async (surah) => {
+        try {
+          await removeDownloadedSurah(surah);
+          setSaved((previous) => ({ ...previous, [surah]: 'none' }));
+          setSavedBytes((previous) => ({ ...previous, [surah]: 0 }));
+          setKeep((previous) => {
+            const next = { ...previous };
+            delete next[surah];
+            return next;
+          });
+          return true;
+        } catch (error) {
+          logRecitationFailure('surah audio removal failed', error);
+          return false;
+        }
+      },
     }),
     [ready, refreshSaved]
   );
 
   const value = useMemo<QuranPlayerValue>(
-    () => ({ state, saved, keep, actions }),
-    [state, saved, keep, actions]
+    () => ({ state, saved, savedBytes, keep, actions }),
+    [state, saved, savedBytes, keep, actions]
   );
 
   return <QuranPlayerContext.Provider value={value}>{children}</QuranPlayerContext.Provider>;

@@ -54,6 +54,16 @@ final class QuranManifestRepository {
         }
     }
 
+    /**
+     * Forgets a Surah's cached manifest when its copies are removed. A kept
+     * manifest with no Ayat is a promise to play files this device no longer
+     * has; the network re-fetches it the next time the sura is opened.
+     */
+    void remove(int surah) {
+        File cached = new File(cacheDir, String.format(Locale.ROOT, "%03d.json", surah));
+        if (cached.isFile()) cached.delete();
+    }
+
     String baseUrl() {
         return baseUrl == null || baseUrl.isEmpty() ? QuranManifest.DEFAULT_BASE_URL : baseUrl;
     }

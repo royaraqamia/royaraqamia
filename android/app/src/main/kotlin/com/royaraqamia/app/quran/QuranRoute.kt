@@ -129,9 +129,17 @@ fun QuranSurahRoute(
                 onSavePosition = onSavePosition,
                 modifier = modifier,
                 face = QuranPlayerFace.of(number, snapshot),
-                onPlay = { player.play(number) },
+                saved =
+                    QuranPlayerSaved(
+                        complete = snapshot.saved == "complete",
+                        partial = snapshot.saved == "partial",
+                        bytes = snapshot.savedBytes,
+                        removeFailed = snapshot.removeFailed,
+                    ),
+                onPlay = { player.play(number, ayahCount = value.summary.ayahCount) },
                 onToggle = { player.toggle() },
                 onStop = { player.stop() },
+                onRemove = { player.remove(number) },
             )
         failed -> LoadFailure(modifier)
         else -> Loading(modifier)
