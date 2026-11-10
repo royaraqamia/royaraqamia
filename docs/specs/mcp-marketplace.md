@@ -316,9 +316,9 @@ release note rides the same pull request (`npm run android:note`), in Arabic, fo
    tab, the copy files.
 4. **Assistant** — remote tools in the registry, the router, `find_app_tools`, proposal
    mapping, permission levels, the turn budget.
-5. **Metering and the pricing page** — the `mcp.call` row and its enforcement, rate limits, the
-   5 / 50 caps, the takedown screen, and every surface that quotes the old 1 / 10: the pricing
-   view, the account plan card, the loader label and the SQL test.
+5. **Metering** — the `mcp.call` row and its enforcement, rate limits, and the takedown screen.
+   (The 5 / 50 numbers and the pricing page left this phase: they landed with the count, in
+   `20261114150000`, because a pool of two directions at 1 / 10 is a cap nobody can use.)
 6. **Native** — the two screens, the sheet row, the parity rows, the visual gate.
 
 ## Risks

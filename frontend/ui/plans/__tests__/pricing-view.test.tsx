@@ -25,7 +25,7 @@ import { PricingView } from '../pricing-view';
  * A catalog that matches nothing in the seeded migration, so a number showing
  * up here proves the page reads the catalog instead of its own copy. The item
  * caps are uniform (6 free / 66 pro) because the card states one number for
- * every service; MCP keeps its own line at 1 / 12.
+ * every service; the connected-apps line keeps its own cap at 1 / 12.
  */
 const catalog: PlanCatalog = {
   settings: {
@@ -64,7 +64,7 @@ const catalog: PlanCatalog = {
     { key: 'notes', label: 'الملاحظات', visitorCap: 1, freeCap: 6, proCap: 66, sortOrder: 80 },
     {
       key: 'mcp_connected_apps',
-      label: 'تطبيقات MCP المتصلة',
+      label: 'التَّطبيقات المتَّصلة',
       visitorCap: 0,
       freeCap: 1,
       proCap: 12,
@@ -118,14 +118,14 @@ describe('PricingView', () => {
     render(<PricingView catalog={catalog} />);
 
     expect(screen.getByText('6 عناصر كحد أقصى من كل خدمة.')).toBeInTheDocument();
-    expect(screen.getByText('تطبيق MCP واحد كحد أقصى.')).toBeInTheDocument();
+    expect(screen.getByText('تطبيق متَّصل واحد كحد أقصى.')).toBeInTheDocument();
   });
 
   it('states the paid plan in three lines, both caps from the catalog', () => {
     render(<PricingView catalog={catalog} />);
 
     expect(screen.getByText('حتَّى 66 عنصر من كل خدمة.')).toBeInTheDocument();
-    expect(screen.getByText('حتَّى 12 تطبيقات MCP.')).toBeInTheDocument();
+    expect(screen.getByText('حتَّى 12 تطبيقات متَّصلة.')).toBeInTheDocument();
     expect(
       screen.getByText('خصم 20% على التَّدريب والاستشارات وبناء المشاريع والتَّعاقُد الشَّهري.')
     ).toBeInTheDocument();
@@ -146,7 +146,7 @@ describe('PricingView', () => {
     expect(screen.getByText('3 عناصر كحد أقصى من كل خدمة.')).toBeInTheDocument();
   });
 
-  it('writes a plural MCP line when the free cap is above one', () => {
+  it('writes a plural connected-apps line when the free cap is above one', () => {
     const twoApps: PlanCatalog = {
       ...catalog,
       limits: catalog.limits.map((limit) =>
@@ -156,7 +156,7 @@ describe('PricingView', () => {
 
     render(<PricingView catalog={twoApps} />);
 
-    expect(screen.getByText('حتَّى 2 تطبيقات MCP.')).toBeInTheDocument();
+    expect(screen.getByText('حتَّى 2 تطبيقات متَّصلة.')).toBeInTheDocument();
   });
 
   it('stops listing the counted actions it no longer promises in numbers', () => {

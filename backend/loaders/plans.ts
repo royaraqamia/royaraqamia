@@ -74,10 +74,12 @@ const FALLBACK_LIMITS: PlanLimit[] = [
   },
   {
     key: 'mcp_connected_apps',
-    label: 'تطبيقات MCP المتصلة',
+    // One pool for both directions (ADR-0155): the grants others hold on us and
+    // the apps نور reaches. The numbers match `20261114150000`.
+    label: 'التَّطبيقات المتَّصلة',
     visitorCap: 0,
-    freeCap: 1,
-    proCap: 10,
+    freeCap: 5,
+    proCap: 50,
     sortOrder: 110,
   },
   { key: 'notes', label: 'الملاحظات', visitorCap: 1, freeCap: 5, proCap: 50, sortOrder: 115 },
