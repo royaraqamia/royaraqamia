@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,7 +51,7 @@ fun SpendtrackCategoryChart(
     val type = LocalRoyTypeScale.current
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().testTag(SpendtrackMetrics.CATEGORY_CHART),
         shape = Recipes.Card.radius,
         colors = CardDefaults.cardColors(containerColor = Recipes.Card.container),
         border = Recipes.Card.border,

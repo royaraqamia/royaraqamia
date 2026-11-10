@@ -59,7 +59,7 @@ _Home, the account area, notifications and chats: the screens a member opens dai
 _The local-store products, where the app has a real reason to be native: offline writes and a device store behind the same screen._
 
 - [x] **habitflow** `/habitflow` — native · #898
-- [ ] **spendtrack** `/spendtrack` `/spendtrack/categories` — todo
+- [x] **spendtrack** `/spendtrack` `/spendtrack/categories` — native
 - [x] **linksnap** `/linksnap` — native
 - [x] **quran** `/quran` — native · #955
 - [x] **quran-surah** `/quran/[surah]` — native · #955
@@ -90,19 +90,19 @@ A component is finished when the surface that draws it is native: 66 ported comp
 - [ ] `shell-tab-bar` on **home** · #647
 - [ ] `shell-services` on **home** · #647
 - [ ] `notification-bell` on **home** · #659
-- [ ] `spendtrack-total` on **spendtrack** · #653
-- [ ] `spendtrack-expenses` on **spendtrack** · #653
-- [ ] `spendtrack-expense-dialog` on **spendtrack** · #653
-- [ ] `spendtrack-categories` on **spendtrack** · #653
-- [ ] `spendtrack-category-create` on **spendtrack** · #653
-- [ ] `spendtrack-budget` on **spendtrack** · #653
-- [ ] `spendtrack-recurring` on **spendtrack** · #653
-- [ ] `spendtrack-currency` on **spendtrack** · #653
-- [ ] `spendtrack-insights` on **spendtrack** · #653
-- [ ] `spendtrack-category-chart` on **spendtrack** · #653
-- [ ] `spendtrack-daily-chart` on **spendtrack** · #653
-- [ ] `spendtrack-filters` on **spendtrack** · #653
-- [ ] `spendtrack-csv` on **spendtrack** · #653
+- [x] `spendtrack-total` on **spendtrack** · #653
+- [x] `spendtrack-expenses` on **spendtrack** · #653
+- [x] `spendtrack-expense-dialog` on **spendtrack** · #653
+- [x] `spendtrack-categories` on **spendtrack** · #653
+- [x] `spendtrack-category-create` on **spendtrack** · #653
+- [x] `spendtrack-budget` on **spendtrack** · #653
+- [x] `spendtrack-recurring` on **spendtrack** · #653
+- [x] `spendtrack-currency` on **spendtrack** · #653
+- [x] `spendtrack-insights` on **spendtrack** · #653
+- [x] `spendtrack-category-chart` on **spendtrack** · #653
+- [x] `spendtrack-daily-chart` on **spendtrack** · #653
+- [x] `spendtrack-filters` on **spendtrack** · #653
+- [x] `spendtrack-csv` on **spendtrack** · #653
 - [x] `verify-page` on **verify** · #658
 - [x] `certificate-result` on **verify** · #658
 - [x] `rates-page` on **rates** · #658
@@ -151,4 +151,4 @@ A component is finished when the surface that draws it is native: 66 ported comp
 
 ## Where this stands
 
-13 native · 21 to do · 2 blocked of 36 surfaces.
+14 native · 20 to do · 2 blocked of 36 surfaces.

@@ -1,0 +1,139 @@
+{
+  "surface": "spendtrack",
+  "route": "/spendtrack",
+  "notes": "The dashboard's structure: the total card, the budget card, the filter bar, a list row and the two charts. `capture` is the row, because it is the region both clients draw from the same row state and the one whose pixels say the type, the colours and the dot all landed; the cards above and below it are measured by their boxes. `top` is deliberately left out: the page's frame and the app's frame are different heights and the dashboard is a scroll, so what both clients agree on here is each box's width, its corner and - for the row - its height. The heights of the two chart cards are left out because the app draws the same data as a ring and a bar strip rather than the site's interactive charts, which is the port's decision rather than a measurement. `at-rest` is the dashboard with two rows and `filtered` is the same page narrowed to one category, so the total and the list change while the boxes stay the same.",
+  "states": [
+    {
+      "name": "at-rest",
+      "capture": "row",
+      "elements": [
+        {
+          "name": "total",
+          "web": {
+            "selector": "[data-visual='spendtrack-total']"
+          },
+          "app": {
+            "tag": "spendtrack-total"
+          },
+          "properties": ["width", "radius"]
+        },
+        {
+          "name": "budget",
+          "web": {
+            "selector": "[data-visual='spendtrack-budget']"
+          },
+          "app": {
+            "tag": "spendtrack-budget"
+          },
+          "properties": ["width", "radius"]
+        },
+        {
+          "name": "filter",
+          "web": {
+            "selector": "[data-visual='spendtrack-filter']"
+          },
+          "app": {
+            "tag": "spendtrack-filter"
+          },
+          "properties": ["width"]
+        },
+        {
+          "name": "row",
+          "web": {
+            "selector": "[data-visual='spendtrack-row']"
+          },
+          "app": {
+            "tag": "spendtrack-row"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "category-chart",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-chart']"
+          },
+          "app": {
+            "tag": "spendtrack-category-chart"
+          },
+          "properties": ["width", "radius"]
+        },
+        {
+          "name": "daily-chart",
+          "web": {
+            "selector": "[data-visual='spendtrack-daily-chart']"
+          },
+          "app": {
+            "tag": "spendtrack-daily-chart"
+          },
+          "properties": ["width", "radius"]
+        }
+      ]
+    },
+    {
+      "name": "filtered",
+      "capture": "row",
+      "elements": [
+        {
+          "name": "total",
+          "web": {
+            "selector": "[data-visual='spendtrack-total']"
+          },
+          "app": {
+            "tag": "spendtrack-total"
+          },
+          "properties": ["width", "radius"]
+        },
+        {
+          "name": "budget",
+          "web": {
+            "selector": "[data-visual='spendtrack-budget']"
+          },
+          "app": {
+            "tag": "spendtrack-budget"
+          },
+          "properties": ["width", "radius"]
+        },
+        {
+          "name": "filter",
+          "web": {
+            "selector": "[data-visual='spendtrack-filter']"
+          },
+          "app": {
+            "tag": "spendtrack-filter"
+          },
+          "properties": ["width"]
+        },
+        {
+          "name": "row",
+          "web": {
+            "selector": "[data-visual='spendtrack-row']"
+          },
+          "app": {
+            "tag": "spendtrack-row"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "category-chart",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-chart']"
+          },
+          "app": {
+            "tag": "spendtrack-category-chart"
+          },
+          "properties": ["width", "radius"]
+        },
+        {
+          "name": "daily-chart",
+          "web": {
+            "selector": "[data-visual='spendtrack-daily-chart']"
+          },
+          "app": {
+            "tag": "spendtrack-daily-chart"
+          },
+          "properties": ["width", "radius"]
+        }
+      ]
+    }
+  ]
+}

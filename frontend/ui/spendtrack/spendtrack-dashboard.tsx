@@ -131,6 +131,7 @@ export function SpendtrackDashboard({
           <div className="grid gap-4 lg:grid-cols-2">
             <Card
               className="group/card card-lift"
+              data-visual="spendtrack-category-chart"
               aria-label="رسم بياني يوضح توزيع الإنفاق حسب التصنيف"
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -145,6 +146,7 @@ export function SpendtrackDashboard({
             </Card>
             <Card
               className="group/card card-lift"
+              data-visual="spendtrack-daily-chart"
               aria-label="رسم بياني يوضح الاتجاهات اليومية للإنفاق"
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">

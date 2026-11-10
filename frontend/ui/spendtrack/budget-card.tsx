@@ -94,6 +94,7 @@ export function BudgetCard({
   return (
     <Card
       className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/95 shadow-xs transition-safe duration-300 hover:shadow-xl hover:border-border/80 hover:-translate-y-0.5"
+      data-visual="spendtrack-budget"
       aria-label={SPENDTRACK_BUDGET_COPY.title}
     >
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">

@@ -77,7 +77,11 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
   const hasFilters = searchParams.toString().length > 0;
 
   return (
-    <section className="w-full" aria-label={SPENDTRACK_FILTERS_COPY.sectionLabel}>
+    <section
+      className="w-full"
+      data-visual="spendtrack-filter"
+      aria-label={SPENDTRACK_FILTERS_COPY.sectionLabel}
+    >
       <div className="w-full bg-card/70 border border-border/60 rounded-2xl p-2.5 sm:p-3.5 shadow-xs transition-safe duration-300 hover:border-border/80">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 sm:gap-3">
           {/* Search bar input */}

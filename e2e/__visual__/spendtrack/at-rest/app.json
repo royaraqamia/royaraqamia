@@ -1,0 +1,29 @@
+{
+  "surface": "spendtrack",
+  "elements": {
+    "total": {
+      "width": 360.72726,
+      "radius": 16
+    },
+    "budget": {
+      "width": 360.72726,
+      "radius": 16
+    },
+    "filter": {
+      "width": 318.54544
+    },
+    "row": {
+      "width": 318.54544,
+      "height": 64.0,
+      "radius": 12
+    },
+    "category-chart": {
+      "width": 360.72726,
+      "radius": 16
+    },
+    "daily-chart": {
+      "width": 360.72726,
+      "radius": 16
+    }
+  }
+}
