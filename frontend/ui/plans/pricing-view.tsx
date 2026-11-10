@@ -51,10 +51,10 @@ export function itemCapOf(catalog: PlanCatalog, plan: typeof FREE | typeof PRO):
   return caps.length === 0 ? 0 : Math.min(...caps);
 }
 
-/** MCP's own line: one app is a singular, and its cap comes from the catalogue. */
+/** The connected-apps line: one app is a singular, and its cap comes from the catalogue. */
 function mcpLine(catalog: PlanCatalog, plan: typeof FREE | typeof PRO): string {
   const cap = capOf(catalog, MCP_KEY, plan);
-  return cap === 1 ? 'تطبيق MCP واحد كحد أقصى.' : `حتَّى ${formatCount(cap)} تطبيقات MCP.`;
+  return cap === 1 ? 'تطبيق متَّصل واحد كحد أقصى.' : `حتَّى ${formatCount(cap)} تطبيقات متَّصلة.`;
 }
 
 /**
@@ -123,7 +123,9 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
 
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted-foreground">
               <PlanPoint>حتَّى {formatCount(itemCapOf(catalog, PRO))} عنصر من كل خدمة.</PlanPoint>
-              <PlanPoint>حتَّى {formatCount(capOf(catalog, MCP_KEY, PRO))} تطبيقات MCP.</PlanPoint>
+              <PlanPoint>
+                حتَّى {formatCount(capOf(catalog, MCP_KEY, PRO))} تطبيقات متَّصلة.
+              </PlanPoint>
               <PlanPoint>
                 خصم {PRO_SERVICE_DISCOUNT_PERCENT}% على التَّدريب والاستشارات وبناء المشاريع
                 والتَّعاقُد الشَّهري.

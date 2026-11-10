@@ -310,16 +310,23 @@ release note rides the same pull request (`npm run android:note`), in Arabic, fo
 
 1. **Foundation** — the six tables, the shared `mcp_connected_apps` count in Postgres and its
    TypeScript twin, the egress-policy client with its tests, discovery and DCR, the
-   connect/callback flow proven against one real server. No UI.
-2. **Catalog** — the mirror cron, search, takedown, Arabic overrides.
+   connect/callback flow proven against one real server. No UI. **Landed:** #1215, #1220, #1222.
+2. **Catalog** — the mirror cron, search, the takedown screen (hide or block a row, with its
+   reason — it is the one control a catalogue without an approval queue keeps), Arabic overrides.
+   **#1223**
 3. **Surfaces** — the sheet row, the marketplace screen, the post-connect screen, the inbound
-   tab, the copy files.
+   tab, the copy files. **#1224**
 4. **Assistant** — remote tools in the registry, the router, `find_app_tools`, proposal
-   mapping, permission levels, the turn budget.
-5. **Metering and the pricing page** — the `mcp.call` row and its enforcement, rate limits, the
-   5 / 50 caps, the takedown screen, and every surface that quotes the old 1 / 10: the pricing
-   view, the account plan card, the loader label and the SQL test.
-6. **Native** — the two screens, the sheet row, the parity rows, the visual gate.
+   mapping, permission levels, the turn budget. **#1225**, with the token refresh it depends on:
+   **#1227**
+5. **Metering** — the `mcp.call` row and its enforcement, and the per-connection rate limits.
+   **#1226**
+   (The 5 / 50 numbers and the pricing page left this phase: they landed with the count, in
+   `20261114150000`, because a pool of two directions at 1 / 10 is a cap nobody can use. #1222)
+6. **Native** — the two screens, the sheet row, the parity rows, the visual gate. **#1228**
+
+The two questions the plan could not settle in code are filed with their measurements: the
+providers that refuse DCR (**#1229**) and the scopes a connection asks for (**#1230**).
 
 ## Risks
 
