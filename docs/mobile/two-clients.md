@@ -80,6 +80,14 @@ namespace a device's rows live in — `guest` or `user:<id>` — and both suites
 does not is not a drift anyone would see as an error: it is a device whose rows the other client
 cannot find.
 
+The session cookie is a fixture too (#1194): `shared/fixtures/session-cookie/manifest.json` is
+written by `@supabase/ssr` itself — the `base64-` prefix, the 3180-character chunks and the JSON
+inside are the package's format, not ours — and both suites read it. The web test re-derives every
+case through the package, and `DocumentSessionFixtureTest` decodes the same cookies with
+`DocumentSessionCookie` and writes back the bytes the package wrote. It exists because the app now
+shares that cookie with the page ([ADR-0157](../adr/0157-one-session-two-clients.md)), and a package
+upgrade that moves the encoding is otherwise a member signed out on one client with nothing red.
+
 ## 4. A screen in one client is a listed gap
 
 `docs/mobile/screens.json` has one row per surface in `perf/surfaces.json`: either the Kotlin screen

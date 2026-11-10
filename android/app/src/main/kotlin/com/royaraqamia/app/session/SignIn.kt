@@ -68,7 +68,7 @@ class SupabasePasswordGrant(
 
             try {
                 val session = ContractCodec.json.decodeFromString<GoTrueSession>(response.body)
-                SignInOutcome.SignedIn(session.asPair())
+                SignInOutcome.SignedIn(session.asPair(raw = response.body))
             } catch (_: Exception) {
                 SignInOutcome.Unreachable("auth answered a body this client cannot read")
             }

@@ -72,7 +72,7 @@ class SupabaseTokenRefresher(
 
         try {
             val parsed = ContractCodec.json.decodeFromString<GoTrueSession>(response.body)
-            RefreshOutcome.Renewed(parsed.asPair())
+            RefreshOutcome.Renewed(parsed.asPair(raw = response.body))
         } catch (_: Exception) {
             RefreshOutcome.Unreachable("auth answered a body this client cannot read")
         }

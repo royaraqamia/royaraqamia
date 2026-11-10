@@ -669,6 +669,9 @@ class ShellActivity : ComponentActivity() {
         // a configuration change recreates the activity from this intent.
         setIntent(intent)
         val target = DeepLink.targetOf(intent.data?.toString()) ?: return
+        // A link can arrive while the document is in front; the session it holds
+        // is what the route it names needs (#1194).
+        lifecycleScope.launch { refreshSession() }
         stack.reset(target)
         current = stack.route
         handOver()
@@ -685,13 +688,27 @@ class ShellActivity : ComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
-        if (signedIn) {
-            lifecycleScope.launch {
-                refreshUnreadCount()
-            }
-        }
+        // The document is the site, so the site is where a member signs in (#1194):
+        // the jar it left behind is the session this frame paints. Reading it is
+        // cheap and needs no radio, so it runs on every return rather than only
+        // when the app was signed out.
+        lifecycleScope.launch { refreshSession() }
         update.maybeCheck(false)
         update.resume()
+    }
+
+    /**
+     * Adopts the document's session and paints what it says (#1194): the session
+     * itself, the bell's count and, through `LaunchedEffect(signedIn)`, the
+     * homepage's account set. A signed-out page clears all three.
+     */
+    private suspend fun refreshSession() {
+        signedIn = graph.syncDocumentSession()
+        if (signedIn) {
+            refreshUnreadCount()
+        } else {
+            unreadCount = null
+        }
     }
 
     /**

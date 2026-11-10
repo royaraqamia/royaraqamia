@@ -270,6 +270,16 @@ together. Still owed: the provider return on `royar://auth`, the identity partit
 performs (ADR-0070), and the Keystore path itself — it cannot run in a unit test, so it is verified
 on a device.
 
+**Wired today (#1194).** The native session is no longer minted only by a sign-in card the app no
+longer shows: `Session.syncFromDocument` reads the `@supabase/ssr` cookie the page signs in with, and
+a rotation the app performs is written back into the same jar
+([ADR-0157](../adr/0157-one-session-two-clients.md)). So a member who signs in on the phone reaches
+`/account/plan`, the homepage's account set and the bell as a member, and the Outbox has an identity
+to drain under. The chain has one writer at a time: the app reads the jar before it refreshes and
+does not rotate while a page is in front (`DocumentForeground`), because the server rotates a
+refresh token single-use. The format is pinned by `shared/fixtures/session-cookie/`, written by the
+package and read by both suites.
+
 **Retires:** nothing. This phase is additive.
 
 **Wired today (#768).** HabitFlow's Local Store is the app's own: one database per identity
