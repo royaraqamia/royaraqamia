@@ -10,6 +10,7 @@ import {
   Megaphone,
   Newspaper,
   ShieldCheck,
+  Store,
   Wallet,
 } from 'lucide-react';
 import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
@@ -68,6 +69,12 @@ const SECTIONS = [
     label: 'مصادر الأخبار',
     description: 'مراجعة المصادر التي يقترحها القرَّاء وقبولها أو رفضها',
     icon: Newspaper,
+  },
+  {
+    href: '/admin/mcp/marketplace',
+    label: 'متجر التطبيقات',
+    description: 'إيقاف تطبيق خارجي بسبب، وتعريب ما يقرأه الأعضاء من وصفه',
+    icon: Store,
   },
   {
     href: '/admin/reports',

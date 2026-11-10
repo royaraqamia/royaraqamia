@@ -60,6 +60,7 @@ export const LAYOUT_ONLY_PATHS: readonly (readonly string[])[] = [
   ['admin', 'certificates', '*'],
   ['admin', 'clients'],
   ['admin', 'consultations'],
+  ['admin', 'mcp'],
   ['admin', 'training'],
   ['auth'],
   ['chats'],

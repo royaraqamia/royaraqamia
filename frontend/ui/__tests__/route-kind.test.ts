@@ -163,6 +163,7 @@ describe('parentRouteOf', () => {
     ['/linksnap/unlock/abc123', '/'],
     ['/admin/clients/retainers', '/admin'],
     ['/admin/consultations/bookings', '/admin'],
+    ['/admin/mcp/marketplace', '/admin'],
     ['/admin/training/cohorts', '/admin'],
     ['/admin/certificates/ABC/edit', '/admin/certificates'],
     ['/spendtrack/categories', '/spendtrack'],

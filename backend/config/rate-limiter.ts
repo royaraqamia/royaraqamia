@@ -305,6 +305,21 @@ export function mcpMarketplaceStartRateLimitPolicy(ip: string): RateLimitPolicy 
 }
 
 /**
+ * Searching the marketplace is a trigram read over a mirrored catalogue of tens
+ * of thousands of rows, so it is cheaper than a connection start and more
+ * expensive than a page. Typing a word is several requests: the bucket is sized
+ * for a person, not a crawler.
+ */
+export function mcpMarketplaceSearchRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `mcp-marketplace-search:${ip}`,
+    limit: 60,
+    windowMs: 10 * 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: البحث في المتجر محدود بـ 60 طلبًا كل 10 دقائق.',
+  };
+}
+
+/**
  * The offline-serve beacon (ADR-0074) is sent by the service worker, so a
  * browser that is repeatedly cut off can ring it several times a minute while a
  * visitor navigates. The bucket is per IP and the endpoint is fail-closed: losing

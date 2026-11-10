@@ -1,5 +1,6 @@
 import { getAdminSupabase } from '@/backend/config/supabase';
-import type { Json } from '@/backend/models/database.types';
+import type { Database, Json } from '@/backend/models/database.types';
+import { catalogSearchPattern, decodeCatalogCursor, encodeCatalogCursor } from './catalog-cursor';
 
 /**
  * Persistence for the outbound MCP marketplace (ADR-0155).
@@ -17,12 +18,14 @@ import type { Json } from '@/backend/models/database.types';
  */
 
 const CATALOG_TABLE = 'mcp_catalog_servers';
+const CATALOG_SYNC_TABLE = 'mcp_catalog_sync_state';
 const CONNECTIONS_TABLE = 'mcp_connections';
 const CREDENTIALS_TABLE = 'mcp_connection_credentials';
 const TOOLS_TABLE = 'mcp_connection_tools';
 const ATTEMPTS_TABLE = 'mcp_connect_attempts';
 const REGISTRATIONS_TABLE = 'mcp_oauth_client_registrations';
 
+/** What the connect flow needs to know about a catalogue row before it starts. */
 export interface McpCatalogServerRecord {
   registry_name: string;
   title: string | null;
@@ -33,6 +36,85 @@ export interface McpCatalogServerRecord {
   status: string;
   blocked_at: string | null;
   blocked_reason: string | null;
+  /** The measured verdict; `null` is "nobody has asked yet". */
+  connectable: boolean | null;
+  connectable_reason: string | null;
+  probed_at: string | null;
+}
+
+/** One registry row, reduced to the columns the mirror keeps. */
+export interface McpCatalogUpsertRow {
+  registryName: string;
+  title: string | null;
+  description: string | null;
+  version: string | null;
+  remoteUrl: string;
+  status: 'active' | 'deprecated' | 'deleted';
+  publishedAt: string | null;
+  registryUpdatedAt: string | null;
+  raw: Json | null;
+}
+
+/** A catalogue row as a list draws it, member or admin. */
+export interface McpCatalogListRow {
+  registry_name: string;
+  title: string | null;
+  description: string | null;
+  name_ar: string | null;
+  description_ar: string | null;
+  remote_url: string;
+  status: string;
+  version: string | null;
+  published_at: string | null;
+  fetched_at: string;
+  blocked_at: string | null;
+  blocked_reason: string | null;
+  connectable: boolean | null;
+  connectable_reason: string | null;
+  probed_at: string | null;
+}
+
+/** What a probe needs: the address, and whether the verdict is due. */
+export interface McpCatalogAddressRecord {
+  registry_name: string;
+  remote_url: string;
+  probed_at: string | null;
+  blocked_at: string | null;
+  status: string;
+}
+
+/** How far a pass through the registry got, and what the last run did. */
+export interface McpCatalogSyncStateRecord {
+  cursor: string | null;
+  pass_started_at: string | null;
+  pass_completed_at: string | null;
+  pass_rows: number;
+  last_run_at: string | null;
+  last_run_rows: number;
+  last_error: string | null;
+}
+
+/** The columns a list selects; one list, two audiences. */
+const CATALOG_LIST_COLUMNS =
+  'registry_name, title, description, name_ar, description_ar, remote_url, status, version, published_at, fetched_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
+
+/**
+ * PostgREST takes the rows in the body and the names in the URL, so both are
+ * chunked: a full pass is tens of thousands of rows and neither a 30k-element
+ * `in()` nor one 30k-row upsert fits in one request.
+ */
+const CATALOG_UPSERT_BATCH = 200;
+const CATALOG_LOOKUP_BATCH = 150;
+
+/** The mirror's insert shape, so a payload typo is a type error rather than a 400. */
+type CatalogInsert = Database['public']['Tables']['mcp_catalog_servers']['Insert'];
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const batches: T[][] = [];
+  for (let start = 0; start < items.length; start += size) {
+    batches.push(items.slice(start, start + size));
+  }
+  return batches;
 }
 
 export type McpConnectionStatus = 'active' | 'needs_reauth' | 'error' | 'revoked';
@@ -108,6 +190,63 @@ export interface McpClientRegistrationRecord {
 
 export interface McpMarketplaceRepository {
   getCatalogServer(registryName: string): Promise<McpCatalogServerRecord | null>;
+
+  // ---- the catalogue mirror (phase 2, #1223) ----
+
+  /**
+   * Upserts one batch of registry rows by `registry_name`.
+   *
+   * The registry's own columns move; ours do not. `name_ar`, `description_ar`,
+   * `blocked_at` and `blocked_reason` are an admin's work and are never in the
+   * payload, so a sync cannot undo a takedown or a translation. A row whose
+   * `remote_url` changed loses its verdict in the same write — the address is
+   * what the probe measured, so a moved address is an unmeasured one.
+   */
+  upsertCatalogServers(rows: McpCatalogUpsertRow[]): Promise<void>;
+
+  /**
+   * Marks the rows a completed pass did not return as `deleted`.
+   *
+   * Never a delete: a live connection references the row, and a registry reset
+   * must not take a member's grant with it. `seenBefore` is the pass's start.
+   */
+  markCatalogServersDeleted(seenBefore: string): Promise<number>;
+
+  /** Retires named rows: the registry served them as `deleted` without an address. */
+  retireCatalogServers(registryNames: string[]): Promise<void>;
+
+  /** Rows the store still lists; a pass that saw far fewer is an outage. */
+  countCatalogServers(): Promise<number>;
+
+  /** One keyset page; `includeHidden` is the Admin Console's takedown list. */
+  listCatalogServers(input: {
+    q: string;
+    cursor: string | null;
+    limit: number;
+    includeHidden: boolean;
+  }): Promise<{ rows: McpCatalogListRow[]; nextCursor: string | null }>;
+
+  /** The addresses behind a page's rows, for the on-demand probe. */
+  getCatalogAddresses(registryNames: string[]): Promise<McpCatalogAddressRecord[]>;
+
+  saveCatalogProbe(
+    registryName: string,
+    probe: { connectable: boolean; reason: string | null; probedAt: string }
+  ): Promise<void>;
+
+  /** The takedown switch and the two Arabic overrides. */
+  updateCatalogServer(
+    registryName: string,
+    patch: Partial<{
+      blocked_at: string | null;
+      blocked_reason: string | null;
+      name_ar: string | null;
+      description_ar: string | null;
+    }>
+  ): Promise<void>;
+
+  getCatalogSyncState(): Promise<McpCatalogSyncStateRecord>;
+  saveCatalogSyncState(patch: Partial<McpCatalogSyncStateRecord>): Promise<void>;
 
   /** The live connection for a member and a catalogue row, if there is one. */
   findLiveConnection(userId: string, registryName: string): Promise<McpConnectionRecord | null>;
@@ -189,12 +328,197 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
         .select(
-          'registry_name, title, description, name_ar, description_ar, remote_url, status, blocked_at, blocked_reason'
+          'registry_name, title, description, name_ar, description_ar, remote_url, status, blocked_at, blocked_reason, connectable, connectable_reason, probed_at'
         )
         .eq('registry_name', registryName)
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+
+    async upsertCatalogServers(rows) {
+      if (rows.length === 0) return;
+
+      const fetchedAt = new Date().toISOString();
+      const names = rows.map((row) => row.registryName);
+
+      // Which rows are new or moved? Those lose their verdict; every other row
+      // keeps it, so a sync never erases a measurement it did not make.
+      const knownUrls = new Map<string, string>();
+      for (const batch of chunk(names, CATALOG_LOOKUP_BATCH)) {
+        const { data, error } = await supabase
+          .from(CATALOG_TABLE)
+          .select('registry_name, remote_url')
+          .in('registry_name', batch);
+        if (error) throw error;
+        for (const row of data ?? []) {
+          knownUrls.set(row.registry_name as string, row.remote_url as string);
+        }
+      }
+
+      const base = (row: McpCatalogUpsertRow): CatalogInsert => ({
+        registry_name: row.registryName,
+        title: row.title,
+        description: row.description,
+        version: row.version,
+        remote_url: row.remoteUrl,
+        transport: 'streamable-http',
+        status: row.status,
+        published_at: row.publishedAt,
+        registry_updated_at: row.registryUpdatedAt,
+        fetched_at: fetchedAt,
+        raw: row.raw,
+      });
+
+      const unmoved = rows.filter((row) => knownUrls.get(row.registryName) === row.remoteUrl);
+      const moved = rows.filter((row) => knownUrls.get(row.registryName) !== row.remoteUrl);
+
+      const writes: CatalogInsert[] = unmoved.map(base);
+      writes.push(
+        ...moved.map((row): CatalogInsert => ({
+          ...base(row),
+          connectable: null,
+          connectable_reason: null,
+          probed_at: null,
+        }))
+      );
+
+      for (const batch of chunk(writes, CATALOG_UPSERT_BATCH)) {
+        const { error } = await supabase
+          .from(CATALOG_TABLE)
+          .upsert(batch, { onConflict: 'registry_name' });
+        if (error) throw error;
+      }
+    },
+
+    async markCatalogServersDeleted(seenBefore) {
+      const { data, error } = await supabase
+        .from(CATALOG_TABLE)
+        .update({ status: 'deleted' })
+        .lt('fetched_at', seenBefore)
+        .neq('status', 'deleted')
+        .select('registry_name');
+      if (error) throw error;
+      return (data ?? []).length;
+    },
+
+    async retireCatalogServers(registryNames) {
+      if (registryNames.length === 0) return;
+      for (const batch of chunk(registryNames, CATALOG_LOOKUP_BATCH)) {
+        const { error } = await supabase
+          .from(CATALOG_TABLE)
+          .update({ status: 'deleted' })
+          .in('registry_name', batch);
+        if (error) throw error;
+      }
+    },
+
+    async countCatalogServers() {
+      const { count, error } = await supabase
+        .from(CATALOG_TABLE)
+        .select('registry_name', { count: 'exact', head: true })
+        .neq('status', 'deleted');
+      if (error) throw error;
+      return count ?? 0;
+    },
+
+    async listCatalogServers({ q, cursor, limit, includeHidden }) {
+      let builder = supabase
+        .from(CATALOG_TABLE)
+        .select(CATALOG_LIST_COLUMNS)
+        .order('registry_name', { ascending: true })
+        // One extra row tells us whether another page exists, without a COUNT.
+        .limit(limit + 1);
+
+      if (includeHidden) {
+        // The takedown list shows the rows a member could meet — blocked and
+        // deprecated included — but not the ones the registry retired, which no
+        // screen can draw and no decision can restore.
+        builder = builder.neq('status', 'deleted');
+      } else {
+        builder = builder.eq('status', 'active').is('blocked_at', null);
+      }
+
+      const term = q.trim();
+      if (term) builder = builder.ilike('search_text', `%${catalogSearchPattern(term)}%`);
+
+      const after = cursor ? decodeCatalogCursor(cursor) : null;
+      if (after) builder = builder.gt('registry_name', after);
+
+      const { data, error } = await builder;
+      if (error) throw error;
+
+      const rows = (data ?? []) as McpCatalogListRow[];
+      const hasMore = rows.length > limit;
+      const page = hasMore ? rows.slice(0, limit) : rows;
+      const last = page[page.length - 1];
+
+      return {
+        rows: page,
+        nextCursor: hasMore && last ? encodeCatalogCursor(last.registry_name) : null,
+      };
+    },
+
+    async getCatalogAddresses(registryNames) {
+      if (registryNames.length === 0) return [];
+
+      const found: McpCatalogAddressRecord[] = [];
+      for (const batch of chunk(registryNames, CATALOG_LOOKUP_BATCH)) {
+        const { data, error } = await supabase
+          .from(CATALOG_TABLE)
+          .select('registry_name, remote_url, probed_at, blocked_at, status')
+          .in('registry_name', batch);
+        if (error) throw error;
+        found.push(...((data ?? []) as McpCatalogAddressRecord[]));
+      }
+      return found;
+    },
+
+    async saveCatalogProbe(registryName, probe) {
+      const { error } = await supabase
+        .from(CATALOG_TABLE)
+        .update({
+          connectable: probe.connectable,
+          connectable_reason: probe.reason,
+          probed_at: probe.probedAt,
+        })
+        .eq('registry_name', registryName);
+      if (error) throw error;
+    },
+
+    async updateCatalogServer(registryName, patch) {
+      const { error } = await supabase
+        .from(CATALOG_TABLE)
+        .update(patch)
+        .eq('registry_name', registryName);
+      if (error) throw error;
+    },
+
+    async getCatalogSyncState() {
+      const { data, error } = await supabase
+        .from(CATALOG_SYNC_TABLE)
+        .select('*')
+        .eq('id', 'registry')
+        .maybeSingle();
+      if (error) throw error;
+
+      const row = data as (McpCatalogSyncStateRecord & { id: string }) | null;
+      return {
+        cursor: row?.cursor ?? null,
+        pass_started_at: row?.pass_started_at ?? null,
+        pass_completed_at: row?.pass_completed_at ?? null,
+        pass_rows: row?.pass_rows ?? 0,
+        last_run_at: row?.last_run_at ?? null,
+        last_run_rows: row?.last_run_rows ?? 0,
+        last_error: row?.last_error ?? null,
+      };
+    },
+
+    async saveCatalogSyncState(patch) {
+      const { error } = await supabase
+        .from(CATALOG_SYNC_TABLE)
+        .upsert({ id: 'registry', ...patch }, { onConflict: 'id' });
+      if (error) throw error;
     },
 
     async findLiveConnection(userId, registryName) {
