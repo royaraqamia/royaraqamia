@@ -25,12 +25,7 @@ import { useChatAssistant } from '@/frontend/state/chats/use-chat-assistant';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/frontend/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { DismissThenNavigateLink } from '@/frontend/ui/shared/dismiss-then-navigate';
 import { ActionCard } from '@/frontend/ui/chats/chat-agent-action-card';
@@ -362,9 +357,6 @@ export function AssistantPanel({
             <DialogTitle className="text-xl leading-none text-foreground">
               {ASSISTANT_PANEL_COPY.title}
             </DialogTitle>
-            <DialogDescription className="mt-1 truncate text-[11px] font-medium text-muted-foreground">
-              {ASSISTANT_PANEL_COPY.subtitle}
-            </DialogDescription>
           </div>
         </header>
 

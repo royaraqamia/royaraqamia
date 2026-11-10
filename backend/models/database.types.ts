@@ -2651,10 +2651,8 @@ export type Database = {
         Row: {
           client_id: string | null;
           created_at: string;
-          email: string | null;
           full_name: string;
           id: string;
-          note: string | null;
           notes: string | null;
           phone_whatsapp: string;
           plan: string;
@@ -2666,10 +2664,8 @@ export type Database = {
         Insert: {
           client_id?: string | null;
           created_at?: string;
-          email?: string | null;
           full_name: string;
           id?: string;
-          note?: string | null;
           notes?: string | null;
           phone_whatsapp: string;
           plan?: string;
@@ -2681,10 +2677,8 @@ export type Database = {
         Update: {
           client_id?: string | null;
           created_at?: string;
-          email?: string | null;
           full_name?: string;
           id?: string;
-          note?: string | null;
           notes?: string | null;
           phone_whatsapp?: string;
           plan?: string;

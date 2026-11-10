@@ -11,7 +11,6 @@
  */
 export const ASSISTANT_PANEL_COPY = {
   title: 'نور',
-  subtitle: 'مساعدة رؤية رقمية',
   intro: 'أهلاً، أنا نور. اسألني عن منتجاتنا وخدماتنا، أو اطلب مني إنجاز مهمة.',
   placeholder: 'اكتب سؤالك لنور...',
   send: 'إرسال السؤال',

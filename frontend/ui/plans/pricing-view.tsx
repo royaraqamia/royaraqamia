@@ -3,7 +3,6 @@ import { Check } from 'lucide-react';
 import { FreePlanCta, PaidPlanCta, PlanViewerProvider } from '@/frontend/ui/plans/plan-ctas';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { formatCount } from '@/frontend/shared/format';
-import { PRO_SERVICE_DISCOUNT_PERCENT } from '@/shared/service-pricing';
 import type { PlanCatalog } from '@/shared/contracts/plans';
 
 const FREE = 'free' as const;
@@ -23,12 +22,6 @@ export function planPriceLabel(cents: number, currency: string): string {
     maximumFractionDigits: 2,
   });
   return currency === 'USD' ? `$${formatted}` : `${formatted} ${currency}`;
-}
-
-function capOf(catalog: PlanCatalog, key: string, plan: typeof FREE | typeof PRO): number {
-  const limit = catalog.limits.find((entry) => entry.key === key);
-  if (!limit) return 0;
-  return plan === PRO ? limit.proCap : limit.freeCap;
 }
 
 /**
@@ -51,22 +44,16 @@ export function itemCapOf(catalog: PlanCatalog, plan: typeof FREE | typeof PRO):
   return caps.length === 0 ? 0 : Math.min(...caps);
 }
 
-/** The connected-apps line: one app is a singular, and its cap comes from the catalogue. */
-function mcpLine(catalog: PlanCatalog, plan: typeof FREE | typeof PRO): string {
-  const cap = capOf(catalog, MCP_KEY, plan);
-  return cap === 1 ? 'تطبيق متَّصل واحد كحد أقصى.' : `حتَّى ${formatCount(cap)} تطبيقات متَّصلة.`;
-}
-
 /**
  * The public pricing page. Every number comes from the plan catalog
  * (`plan_settings`, `plan_limits`, `usage_limits`), so the page cannot promise an
  * allowance the database does not enforce (ADR-0093).
  *
- * The card is deliberately two lines for the free plan and three for the paid
- * one: what the account can hold, MCP's own cap, and the service discount. The
- * counted actions (downloads, scans, surahs, the assistant) and the news quotas
- * are enforced by the same catalogue and stated where a member meets them — the
- * refusal that names what is left — rather than as nine bullets above the price.
+ * The card is one line — what the account can hold — because that is the whole
+ * difference the plan sells here. The counted actions (downloads, scans, surahs,
+ * the assistant) and the news quotas are enforced by the same catalogue and
+ * stated where a member meets them — the refusal that names what is left —
+ * rather than as nine bullets above the price.
  *
  * It is deliberately reachable without an account: the account row links here
  * for guests too, and the visitor allowance is stated where a visitor meets it —
@@ -99,7 +86,6 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
               <PlanPoint>
                 {formatCount(itemCapOf(catalog, FREE))} عناصر كحد أقصى من كل خدمة.
               </PlanPoint>
-              <PlanPoint>{mcpLine(catalog, FREE)}</PlanPoint>
             </ul>
 
             <FreePlanCta />
@@ -123,13 +109,6 @@ export function PricingView({ catalog }: { catalog: PlanCatalog }) {
 
             <ul className="mt-4 flex-1 space-y-2 text-sm text-muted-foreground">
               <PlanPoint>حتَّى {formatCount(itemCapOf(catalog, PRO))} عنصر من كل خدمة.</PlanPoint>
-              <PlanPoint>
-                حتَّى {formatCount(capOf(catalog, MCP_KEY, PRO))} تطبيقات متَّصلة.
-              </PlanPoint>
-              <PlanPoint>
-                خصم {PRO_SERVICE_DISCOUNT_PERCENT}% على التَّدريب والاستشارات وبناء المشاريع
-                والتَّعاقُد الشَّهري.
-              </PlanPoint>
             </ul>
 
             <PaidPlanCta />

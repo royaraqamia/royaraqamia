@@ -43,7 +43,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.chats.AssistantMark
 import com.royaraqamia.app.chats.ChatAttachmentStage
@@ -356,13 +355,6 @@ fun AssistantSheet(
                         text = AssistantPanelCopy.TITLE,
                         style = type.h6.copy(fontWeight = FontWeight.Bold),
                         color = RoyColors.foreground,
-                    )
-                    Text(
-                        text = AssistantPanelCopy.SUBTITLE,
-                        style = type.xs,
-                        color = RoyColors.mutedForeground,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
