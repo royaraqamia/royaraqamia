@@ -15,8 +15,8 @@ import {
 } from '@/shared/contracts/mcp-catalog';
 
 /**
- * The catalogue's four doors (ADR-0155, phase 2 / #1223): the hourly mirror, the
- * search a member reads, and the two acts an admin performs on a row.
+ * The catalogue's four doors (ADR-0155, phase 2 / #1223): the scheduled mirror,
+ * the search a member reads, and the two acts an admin performs on a row.
  *
  * The controllers are thin on purpose. The sync's deadline, the probe's cache
  * and the takedown's semantics live in
