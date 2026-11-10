@@ -14,7 +14,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(11);
+select plan(14);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -66,6 +66,54 @@ values (
   5000,
   now() - interval '2 days'
 );
+
+-- Every object the assertions below insert, with the size Storage records on
+-- upload: the trigger takes `byte_size` from here, so the declared numbers in
+-- the inserts below are decoration (#1077).
+insert into storage.objects (id, bucket_id, name, owner, metadata)
+values
+  (
+    '00000000-0000-0000-0000-0000000e0402',
+    'chat-attachments',
+    '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0502/big.pdf',
+    '00000000-0000-0000-0000-0000000e0101',
+    '{"size": 1001}'::jsonb
+  ),
+  (
+    '00000000-0000-0000-0000-0000000e0403',
+    'chat-attachments',
+    '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0503/a.pdf',
+    '00000000-0000-0000-0000-0000000e0101',
+    '{"size": 1000}'::jsonb
+  ),
+  (
+    '00000000-0000-0000-0000-0000000e0404',
+    'chat-attachments',
+    '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0504/c.pdf',
+    '00000000-0000-0000-0000-0000000e0101',
+    '{"size": 1000}'::jsonb
+  ),
+  (
+    '00000000-0000-0000-0000-0000000e0405',
+    'chat-attachments',
+    '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0505/d.pdf',
+    '00000000-0000-0000-0000-0000000e0101',
+    '{"size": 1000}'::jsonb
+  ),
+  (
+    '00000000-0000-0000-0000-0000000e0406',
+    'chat-attachments',
+    '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0506/e.pdf',
+    '00000000-0000-0000-0000-0000000e0101',
+    '{"size": 1000}'::jsonb
+  ),
+  (
+    '00000000-0000-0000-0000-0000000e0407',
+    'chat-attachments',
+    '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0507/f.pdf',
+    '00000000-0000-0000-0000-0000000e0101',
+    '{"size": 1000}'::jsonb
+  );
 
 set local session_replication_role = origin;
 
@@ -265,6 +313,118 @@ select is(
   10485760::bigint,
   'the bucket refuses a file above the default 10 MB before the trigger sees it'
 );
+
+-- ---------------------------------------------------------------------------
+-- The declared number is not the number (#1077)
+-- ---------------------------------------------------------------------------
+
+-- A file cap of 1 MB, room everywhere else: the object's size is the only thing
+-- that can cross it now.
+reset role;
+update public.app_settings
+   set chat_attachment_file_bytes = 1048576,
+       chat_attachment_daily_bytes = 104857600,
+       chat_attachment_member_bytes = 104857600,
+       chat_attachment_project_bytes = 524288000
+ where id;
+
+set local session_replication_role = replica;
+
+insert into storage.objects (id, bucket_id, name, owner, metadata)
+values
+  (
+    '00000000-0000-0000-0000-0000000e0601',
+    'chat-attachments',
+    '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0508/ten.pdf',
+    '00000000-0000-0000-0000-0000000e0101',
+    '{"size": 10485760}'::jsonb
+  ),
+  (
+    '00000000-0000-0000-0000-0000000e0602',
+    'chat-attachments',
+    '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0509/one-kb.pdf',
+    '00000000-0000-0000-0000-0000000e0101',
+    '{"size": 1000}'::jsonb
+  ),
+  (
+    '00000000-0000-0000-0000-0000000e0603',
+    'chat-attachments',
+    '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0510/tiny.pdf',
+    '00000000-0000-0000-0000-0000000e0101',
+    '{"size": 100}'::jsonb
+  );
+
+set local session_replication_role = origin;
+
+select set_config(
+  'request.jwt.claims',
+  json_build_object('sub', '00000000-0000-0000-0000-0000000e0101')::text,
+  true
+);
+
+set local role authenticated;
+
+select throws_ok(
+  $$
+    insert into public.chat_attachments
+      (message_id, uploader_id, storage_path, file_name, mime_type, byte_size)
+    values (
+      '00000000-0000-0000-0000-0000000e0301',
+      '00000000-0000-0000-0000-0000000e0101',
+      '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0508/ten.pdf',
+      'ten.pdf',
+      'application/pdf',
+      1
+    )
+  $$,
+  '53400',
+  'chat attachment file is too large',
+  'a one-byte declaration for a 10 MB object is refused, not believed'
+);
+
+select is(
+  (
+    with stored as (
+      insert into public.chat_attachments
+        (message_id, uploader_id, storage_path, file_name, mime_type, byte_size)
+      values (
+        '00000000-0000-0000-0000-0000000e0301',
+        '00000000-0000-0000-0000-0000000e0101',
+        '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0509/one-kb.pdf',
+        'one-kb.pdf',
+        'application/pdf',
+        1
+      )
+      returning byte_size
+    )
+    select byte_size from stored
+  ),
+  1000::bigint,
+  'a one-byte declaration for a 1 KB object is recorded as the stored 1000 bytes'
+);
+
+select is(
+  (
+    with stored as (
+      insert into public.chat_attachments
+        (message_id, uploader_id, storage_path, file_name, mime_type, byte_size)
+      values (
+        '00000000-0000-0000-0000-0000000e0301',
+        '00000000-0000-0000-0000-0000000e0101',
+        '00000000-0000-0000-0000-0000000e0201/00000000-0000-0000-0000-0000000e0510/tiny.pdf',
+        'tiny.pdf',
+        'application/pdf',
+        1000
+      )
+      returning byte_size
+    )
+    select byte_size from stored
+  ),
+  100::bigint,
+  'a 1000-byte declaration for a 100-byte object is recorded as the stored 100 bytes'
+);
+
+reset role;
 
 select * from finish();
 

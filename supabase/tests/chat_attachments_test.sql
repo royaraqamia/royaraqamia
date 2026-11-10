@@ -63,12 +63,15 @@ values (
   now()
 );
 
-insert into storage.objects (id, bucket_id, name, owner)
+insert into storage.objects (id, bucket_id, name, owner, metadata)
 values (
   '00000000-0000-0000-0000-0000000d0401',
   'chat-attachments',
   '00000000-0000-0000-0000-0000000d0201/00000000-0000-0000-0000-0000000d0501/a.pdf',
-  '00000000-0000-0000-0000-0000000d0101'
+  '00000000-0000-0000-0000-0000000d0101',
+  -- The size Storage records on upload: the attachment row's `byte_size` is
+  -- taken from here, not from the request (#1077).
+  '{"size": 2048}'::jsonb
 );
 
 set local session_replication_role = origin;

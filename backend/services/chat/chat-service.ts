@@ -86,7 +86,9 @@ const POLICY_REFUSAL_CODE = '42501';
 /**
  * The four attachment caps answer four different sentences, keyed by the text
  * the trigger raised. A member needs to know whether to pick a smaller file, wait
- * for tomorrow, delete an old message, or try again later.
+ * for tomorrow, delete an old message, or try again later. An object Storage
+ * cannot measure (#1077) is a failed send, not a cap, so it keeps the sentence
+ * the rest of the composer uses for one.
  */
 const ATTACHMENT_REFUSALS: Record<string, { status: number; sentence: string }> = {
   'chat attachment file is too large': {
@@ -104,6 +106,13 @@ const ATTACHMENT_REFUSALS: Record<string, { status: number; sentence: string }> 
   'chat attachment project storage is full': {
     status: 409,
     sentence: 'مساحة مرفقات الموقع ممتلئة، حاول لاحقاً',
+  },
+  'chat attachment size is unknown': {
+    // A permanent refusal, not a retry: the object is gone or Storage never
+    // recorded its size, so a replay would fail the same way (the outbox treats
+    // 409 as "give up and say so").
+    status: 409,
+    sentence: 'تعذّر إرسال الرسالة',
   },
 };
 
