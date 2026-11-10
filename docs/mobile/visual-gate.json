@@ -497,6 +497,21 @@
               "dy": 0
             }
           }
+        },
+        {
+          "name": "csv",
+          "tolerance": {
+            "pixels": 0.09,
+            "length": 1.0
+          },
+          "baseline": {
+            "recorded": "2026-11-10",
+            "measured": 0.0776,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
         }
       ]
     },

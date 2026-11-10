@@ -13,14 +13,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
-import { LoaderCircle, Upload, CloudUpload, FileText } from 'lucide-react';
+import { LoaderCircle, Upload, CloudUpload, FileText, Share2 } from 'lucide-react';
 import { SPENDTRACK_CSV_COPY } from './spendtrack-csv-copy';
-import { importExpensesCsv } from '@/frontend/api/spendtrack';
+import { exportExpensesCsv, importExpensesCsv } from '@/frontend/api/spendtrack';
 
-export function CsvActions() {
+export function CsvActions({
+  start,
+  end,
+  categories,
+}: {
+  start: string;
+  end: string;
+  categories: string[];
+}) {
   const router = useRouter();
   const [importOpen, setImportOpen] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
 
@@ -34,6 +43,40 @@ export function CsvActions() {
     const reader = new FileReader();
     reader.onload = () => setFileContent(String(reader.result ?? ''));
     reader.readAsText(file);
+  }
+
+  function saveFile(file: File) {
+    const url = URL.createObjectURL(file);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = file.name;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const content = await exportExpensesCsv({ start, end, categories });
+      const file = new File([content], 'spendtrack.csv', { type: 'text/csv;charset=utf-8;' });
+      // The page downloads where the platform cannot share a file; the app always
+      // hands it to the share sheet, and both hand over this same content.
+      if (navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: SPENDTRACK_CSV_COPY.exportTitle });
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+        }
+      }
+      saveFile(file);
+    } catch {
+      toast.error(SPENDTRACK_CSV_COPY.exportFailed);
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function handleImport() {
@@ -62,16 +105,35 @@ export function CsvActions() {
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        type="button"
-        onClick={() => setImportOpen(true)}
-        className="h-10 px-3.5 gap-2 text-xs sm:text-sm font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
-      >
-        <Upload className="size-4" />
-        {SPENDTRACK_CSV_COPY.action}
-      </Button>
+      <div data-visual="spendtrack-csv" className="flex w-full sm:w-auto items-center gap-2">
+        <Button
+          data-visual="spendtrack-csv-import"
+          variant="outline"
+          size="sm"
+          type="button"
+          onClick={() => setImportOpen(true)}
+          className="h-10 flex-1 sm:flex-none px-3.5 gap-2 text-xs sm:text-sm font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
+        >
+          <Upload className="size-4" />
+          {SPENDTRACK_CSV_COPY.action}
+        </Button>
+        <Button
+          data-visual="spendtrack-csv-export"
+          variant="outline"
+          size="sm"
+          type="button"
+          onClick={handleExport}
+          disabled={exporting}
+          className="h-10 flex-1 sm:flex-none px-3.5 gap-2 text-xs sm:text-sm font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
+        >
+          {exporting ? (
+            <LoaderCircle className="size-4 animate-spin shrink-0" />
+          ) : (
+            <Share2 className="size-4" />
+          )}
+          {exporting ? SPENDTRACK_CSV_COPY.exporting : SPENDTRACK_CSV_COPY.exportAction}
+        </Button>
+      </div>
 
       <Dialog open={importOpen} onOpenChange={setImportOpen}>
         <DialogContent className="sm:max-w-lg rounded-2xl border-border/80 bg-background p-6 shadow-2xl">

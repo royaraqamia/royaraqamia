@@ -1,7 +1,7 @@
 {
   "surface": "spendtrack",
   "route": "/spendtrack",
-  "notes": "The dashboard's structure: the total card, the budget card, the filter bar, a list row and the two charts. `capture` is the row, because it is the region both clients draw from the same row state and the one whose pixels say the type, the colours and the dot all landed; the cards above and below it are measured by their boxes. `top` is deliberately left out: the page's frame and the app's frame are different heights and the dashboard is a scroll, so what both clients agree on here is each box's width, its corner and - for the row - its height. The heights of the two chart cards are left out because the app draws the same data as a ring and a bar strip rather than the site's interactive charts, which is the port's decision rather than a measurement. `at-rest` is the dashboard with two rows and `filtered` is the same page narrowed to one category, so the total and the list change while the boxes stay the same. `expense-dialog` and `category-dialog` are the dashboard's two forms, each recorded with a required field refused so the page's own sentence is drawn: the contract measures the dialog's width, radius and padding, every field's height, the footer's height and gap, and the refused sentence's line box. `capture` is the refused field's control rather than the whole dialog: the page's expense title is screen-reader-only while the app draws no visible heading either, and the field is the region both clients draw identically.",
+  "notes": "The dashboard's structure: the total card, the budget card, the filter bar, a list row and the two charts. `capture` is the row, because it is the region both clients draw from the same row state and the one whose pixels say the type, the colours and the dot all landed; the cards above and below it are measured by their boxes. `top` is deliberately left out: the page's frame and the app's frame are different heights and the dashboard is a scroll, so what both clients agree on here is each box's width, its corner and - for the row - its height. The heights of the two chart cards are left out because the app draws the same data as a ring and a bar strip rather than the site's interactive charts, which is the port's decision rather than a measurement. `at-rest` is the dashboard with two rows and `filtered` is the same page narrowed to one category, so the total and the list change while the boxes stay the same. `expense-dialog` and `category-dialog` are the dashboard's two forms, each recorded with a required field refused so the page's own sentence is drawn: the contract measures the dialog's width, radius and padding, every field's height, the footer's height and gap, and the refused sentence's line box. `capture` is the refused field's control rather than the whole dialog: the page's expense title is screen-reader-only while the app draws no visible heading either, and the field is the region both clients draw identically. `csv` is the export flow (#961): the two controls the page's dashboard and the app's header draw, and the region both clients hand over as the same file. `capture` is the controls row, because it is the region both clients draw identically - the buttons' words are the run of the script, so widths are left out and the row's own width, height and gap are what the design decides. The CSV itself is the page's export route's, not a second format: the app asks the same route, so the contract does not need to draw a file.",
   "states": [
     {
       "name": "at-rest",
@@ -296,6 +296,42 @@
             "tag": "spendtrack-category-error"
           },
           "properties": ["height", "fontSize"]
+        }
+      ]
+    },
+    {
+      "name": "csv",
+      "capture": "controls",
+      "elements": [
+        {
+          "name": "controls",
+          "web": {
+            "selector": "[data-visual='spendtrack-csv']"
+          },
+          "app": {
+            "tag": "spendtrack-csv"
+          },
+          "properties": ["width", "height", "columnGap"]
+        },
+        {
+          "name": "import",
+          "web": {
+            "selector": "[data-visual='spendtrack-csv-import']"
+          },
+          "app": {
+            "tag": "spendtrack-csv-import"
+          },
+          "properties": ["height", "radius"]
+        },
+        {
+          "name": "export",
+          "web": {
+            "selector": "[data-visual='spendtrack-csv-export']"
+          },
+          "app": {
+            "tag": "spendtrack-csv-export"
+          },
+          "properties": ["height", "radius"]
         }
       ]
     }

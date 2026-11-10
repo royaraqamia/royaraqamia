@@ -197,6 +197,15 @@ export const SpendtrackRecurringWriteSchema = z.object({
   updatedAt: z.string(),
 });
 
+/**
+ * `GET /spendtrack/api/export` (#961): the CSV the page downloads and the app
+ * shares. One route, one format, so the two clients cannot write different
+ * columns from the same rows.
+ */
+export const SpendtrackExportSchema = z.object({
+  content: z.string(),
+});
+
 /** One row a CSV import could not take, with the reason. */
 export const SpendtrackImportErrorSchema = z.object({
   row: z.number().int(),

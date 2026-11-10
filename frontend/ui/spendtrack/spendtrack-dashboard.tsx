@@ -93,7 +93,7 @@ export function SpendtrackDashboard({
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {isSignedIn && <CsvActions />}
+          {isSignedIn && <CsvActions start={start} end={end} categories={filterCategories} />}
           {isSignedIn && <CurrencySelector currency={currency} onChange={onCurrencyChange} />}
           <CreateExpenseDialog
             categories={categories}

@@ -1,5 +1,6 @@
 package com.royaraqamia.app.spendtrack
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.royaraqamia.app.store.spendtrack.SpendtrackCategoryRow
 import com.royaraqamia.app.store.spendtrack.SpendtrackExpenseRow
+import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 import java.io.File
 import org.junit.Rule
@@ -319,6 +321,62 @@ class SpendtrackScreenVisualTest {
         File(dir, "app.json").writeText(json + "\n")
         compose
             .onNodeWithTag(SpendtrackMetrics.EXPENSE_AMOUNT, useUnmergedTree = true)
+            .captureRoboImage(File(dir, "app.png").path)
+    }
+
+    /**
+     * The CSV flow's controls (#961).
+     *
+     * The page draws the import and export buttons inside the dashboard's 16dp
+     * gutters; at the app's 393 CSS px viewport that row is 361 wide, with each
+     * control half of it and the page's `gap-2` between them. The export asks the
+     * page's own route for the file, so the recording is the controls rather than
+     * a second CSV drawn here.
+     */
+    @Test
+    fun `the csv controls record the page's boxes`() {
+        compose.setContent {
+            RoyaraqamiaTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.width(393.dp).fillMaxHeight().background(RoyColors.background)) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            SpendtrackCsvButtons(
+                                onImport = {},
+                                onExport = {},
+                                exporting = false,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val json =
+            """
+            {
+              "surface": "spendtrack",
+              "elements": {
+                "controls": {
+                  "width": ${width(SpendtrackMetrics.CSV_CONTROLS)},
+                  "height": ${height(SpendtrackMetrics.CSV_CONTROLS)},
+                  "columnGap": ${SpendtrackMetrics.CSV_GAP.value}
+                },
+                "import": {
+                  "height": ${height(SpendtrackMetrics.CSV_IMPORT)},
+                  "radius": ${12}
+                },
+                "export": {
+                  "height": ${height(SpendtrackMetrics.CSV_EXPORT)},
+                  "radius": ${12}
+                }
+              }
+            }
+            """.trimIndent()
+
+        val dir = File("../../e2e/__visual__/spendtrack/csv").apply { mkdirs() }
+        File(dir, "app.json").writeText(json + "\n")
+        compose
+            .onNodeWithTag(SpendtrackMetrics.CSV_CONTROLS)
             .captureRoboImage(File(dir, "app.png").path)
     }
 

@@ -192,6 +192,11 @@ data class SpendtrackRecurringUpdate(
 )
 
 @Serializable
+data class SpendtrackExport(
+    val content: String,
+)
+
+@Serializable
 data class SpendtrackImportResult(
     val imported: Long,
     val skipped: Long,

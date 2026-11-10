@@ -10,9 +10,9 @@
     "object": "SpendtrackCsvCopy"
   },
   "notes": {
-    "source": "The CSV import's words, in both clients (#653). The site's dialog is the reference: the columns it names, the rows it promises to skip, the picker and the two answers an import can give.",
+    "source": "The CSV import and export words, in both clients (#653, #961). The site's dialog is the reference: the columns it names, the rows it promises to skip, the picker, the two answers an import can give, and the file the export hands over. The app shares the file where the page downloads it, and both say so with the same words.",
     "placeholders": "`{count}` is how many rows were imported or skipped.",
-    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the dialog does not render."
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the dialog or the export control does not render."
   },
   "strings": {
     "action": "استيراد",
@@ -24,6 +24,10 @@
     "importing": "جاري الاستيراد...",
     "imported": "تم استيراد {count} مصروف",
     "skipped": "تم تخطّي {count} صفًا غير صالح",
-    "failed": "فشل استيراد المصاريف"
+    "failed": "فشل استيراد المصاريف",
+    "exportAction": "مشاركة ملف CSV",
+    "exportTitle": "مشاركة ملف CSV",
+    "exporting": "جاري تجهيز الملف…",
+    "exportFailed": "فشل تصدير المصاريف"
   }
 }

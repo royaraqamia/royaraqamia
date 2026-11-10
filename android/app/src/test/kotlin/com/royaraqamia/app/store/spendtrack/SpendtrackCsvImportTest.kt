@@ -80,6 +80,38 @@ class SpendtrackCsvImportTest {
         assertTrue(repository.importCsv("nope") is ApiResult.Failure)
     }
 
+    @Test
+    fun `an export asks the page's own route with the filter and shares its answer`() = runBlocking {
+        val csv = "date,amount,category,description\n2026-11-10,100,طعام,غداء"
+        val transport =
+            RecordingTransport {
+                HttpResponse(
+                    200,
+                    """{"content":"date,amount,category,description\n2026-11-10,100,طعام,غداء"}""",
+                )
+            }
+        val repository = repository(transport)
+
+        val result = repository.exportCsv("2026-11-01", "2026-11-30", listOf("cat-1"))
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals(csv, (result as ApiResult.Success).value)
+
+        val sent = transport.requests.single()
+        assertEquals("GET", sent.method)
+        assertEquals(
+            "https://app.test/spendtrack/api/export?start=2026-11-01&end=2026-11-30&categories=cat-1",
+            sent.url,
+        )
+    }
+
+    @Test
+    fun `a refused export is a failure the control can name`() = runBlocking {
+        val repository = repository(RecordingTransport { HttpResponse(401, """{"error":"no"}""") })
+
+        assertTrue(repository.exportCsv("", "", emptyList()) is ApiResult.Failure)
+    }
+
     private suspend fun repository(transport: RecordingTransport): SpendtrackRepository {
         val session =
             Session(
