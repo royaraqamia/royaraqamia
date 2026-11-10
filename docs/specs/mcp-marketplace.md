@@ -311,12 +311,13 @@ release note rides the same pull request (`npm run android:note`), in Arabic, fo
 1. **Foundation** — the six tables, the shared `mcp_connected_apps` count in Postgres and its
    TypeScript twin, the egress-policy client with its tests, discovery and DCR, the
    connect/callback flow proven against one real server. No UI.
-2. **Catalog** — the mirror cron, search, takedown, Arabic overrides.
+2. **Catalog** — the mirror cron, search, the takedown screen (hide or block a row, with its
+   reason — it is the one control a catalogue without an approval queue keeps), Arabic overrides.
 3. **Surfaces** — the sheet row, the marketplace screen, the post-connect screen, the inbound
    tab, the copy files.
 4. **Assistant** — remote tools in the registry, the router, `find_app_tools`, proposal
    mapping, permission levels, the turn budget.
-5. **Metering** — the `mcp.call` row and its enforcement, rate limits, and the takedown screen.
+5. **Metering** — the `mcp.call` row and its enforcement, and the per-connection rate limits.
    (The 5 / 50 numbers and the pricing page left this phase: they landed with the count, in
    `20261114150000`, because a pool of two directions at 1 / 10 is a cap nobody can use.)
 6. **Native** — the two screens, the sheet row, the parity rows, the visual gate.
