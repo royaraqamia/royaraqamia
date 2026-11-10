@@ -12,8 +12,11 @@ import { logger } from '@/frontend/shared/logger';
  * The file goes up on the session's own client, so the bucket's policy — "a
  * member of this thread" — is what admits it, and the message that follows
  * carries the metadata rather than the bytes. The path is
- * `{conversationId}/{uuid}/{fileName}`: the first folder is the thread, which is
- * what the policy reads, and the uuid keeps two files of the same name apart.
+ * `{conversationId}/{uuid}/file.{ext}`: the first folder is the thread, which is
+ * what the policy reads, the uuid keeps two files of the same name apart, and the
+ * object's last segment is never the member's own name — a storage key is ASCII,
+ * so an Arabic name there is `400 InvalidKey` (#1241). The name they chose is the
+ * row's `fileName`, which is what the thread and the download use.
  */
 
 /** The sentence the composer shows for a file the bucket would refuse. */
@@ -38,18 +41,29 @@ export function isChatAttachmentTooLarge(
   return file.size > limitBytes;
 }
 
-/** A flat name: a separator would add a folder the path guard refuses. */
-export function chatAttachmentObjectName(fileName: string): string {
-  const flat = fileName
-    .replace(/[\\/]/g, '-')
-    // Control characters would ride into a path and a header; nothing visible
-    // needs them, so they are dropped rather than escaped.
-    .split('')
-    .filter((char) => char.charCodeAt(0) >= 32)
-    .join('')
-    .trim();
+/**
+ * The name the row keeps: the member's own, trimmed and inside the column's
+ * bound. Unicode is the point — a file called `فاتورة-472.pdf` is a file with a
+ * name, and only the object key has to give it up.
+ */
+export function chatAttachmentFileName(fileName: string): string {
+  return (fileName.trim() || 'file').slice(0, 200);
+}
 
-  return (flat || 'file').slice(0, 200);
+/**
+ * The object's last segment: a flat ASCII name carrying the member's extension
+ * and nothing else. A storage key cannot hold their name (#1241), and it does
+ * not need to — `chatAttachmentFileName` is what the row, the thread and the
+ * download read.
+ */
+export function chatAttachmentObjectPath(conversationId: string, fileName: string): string {
+  return `${conversationId}/${crypto.randomUUID()}/file${chatAttachmentExtension(fileName)}`;
+}
+
+/** The extension the key keeps, and only when a key can carry it. */
+export function chatAttachmentExtension(fileName: string): string {
+  const extension = /\.([a-zA-Z0-9]{1,10})$/.exec(fileName.trim())?.[1];
+  return extension ? `.${extension.toLowerCase()}` : '';
 }
 
 /** What the object is called once it is in the bucket, and what it claims to be. */
@@ -71,8 +85,8 @@ export async function uploadChatAttachmentBlob(
   if (isChatAttachmentTooLarge(blob))
     throw new ChatAttachmentUploadError(CHAT_ATTACHMENT_TOO_LARGE);
 
-  const fileName = chatAttachmentObjectName(meta.fileName);
-  const storagePath = `${conversationId}/${crypto.randomUUID()}/${fileName}`;
+  const fileName = chatAttachmentFileName(meta.fileName);
+  const storagePath = chatAttachmentObjectPath(conversationId, fileName);
   const mimeType = meta.mimeType || 'application/octet-stream';
 
   const supabase = await createClient();

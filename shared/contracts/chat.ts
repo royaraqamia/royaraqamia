@@ -47,8 +47,10 @@ export const CHAT_ATTACHMENT_QUOTA_BYTES = 1024 * 1024 * 1024;
 
 /**
  * The bucket a thread's files live in. Object paths are
- * `{conversationId}/{uuid}/{fileName}`, so the conversation is the first folder
- * and the storage policy can read it (ADR-0113).
+ * `{conversationId}/{uuid}/file.{ext}`, so the conversation is the first folder
+ * and the storage policy can read it (ADR-0113). The member's own name is never
+ * in the key — a storage key is ASCII (#1241) — it is the attachment row's
+ * `fileName`.
  */
 export const CHAT_ATTACHMENTS_BUCKET = 'chat-attachments';
 
