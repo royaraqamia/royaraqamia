@@ -18,6 +18,13 @@ import { MAX_TELEGRAM } from './config.mjs';
 
 const FENCE = '```';
 
+/**
+ * The first half of a surrogate pair. A piece must never end on one: Telegram
+ * renders the lone half as a replacement character, so an emoji sitting exactly
+ * on the limit would reach the owner broken.
+ */
+const isHighSurrogate = (code) => code >= 0xd800 && code <= 0xdbff;
+
 /** `&`, `<`, `>` and both quotes: the same escaping serves text nodes and attributes. */
 export function escapeHtml(text) {
   return String(text ?? '')
@@ -140,7 +147,11 @@ export function chunkMarkdown(text, limit = MAX_TELEGRAM) {
       let rest = line;
       while (rest.length > limit) {
         const cut = rest.lastIndexOf(' ', limit);
-        const at = cut > limit / 2 ? cut : limit;
+        let at = cut > limit / 2 ? cut : limit;
+        // `at` counts UTF-16 units, so an emoji on the boundary would be split
+        // down the middle. Step back one unit and let the pair travel whole with
+        // the next piece. `at > 1` keeps a one-unit limit from standing still.
+        if (at > 1 && isHighSurrogate(rest.charCodeAt(at - 1))) at -= 1;
         chunks.push(rest.slice(0, at));
         rest = rest.slice(at).trimStart();
       }
