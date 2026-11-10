@@ -9,6 +9,7 @@ import {
   localMigrations,
   localVersions,
   main,
+  outOfOrderPending,
   remoteVersions,
 } from '../check-migration-drift.mjs';
 
@@ -138,6 +139,32 @@ describe('diffMigrations', () => {
   });
 });
 
+describe('outOfOrderPending', () => {
+  it('names a pending version that sorts before the project newest', () => {
+    expect(outOfOrderPending(['20260102000000'], ['20260101000000', '20260103000000'])).toEqual({
+      newest: '20260103000000',
+      versions: ['20260102000000'],
+    });
+  });
+
+  it('leaves a pending version that sorts after everything applied', () => {
+    expect(outOfOrderPending(['20260104000000'], ['20260101000000', '20260103000000'])).toEqual({
+      newest: '20260103000000',
+      versions: [],
+    });
+  });
+
+  it('compares whole versions, not prefixes', () => {
+    // `20260101` sorts before `20260101000000` as a string, and that is the
+    // order `db push` reads, so a truncated stamp is out of order too.
+    expect(outOfOrderPending(['20260101'], ['20260101000000']).versions).toEqual(['20260101']);
+  });
+
+  it('has nothing to judge when the project records no version', () => {
+    expect(outOfOrderPending(['20260101000000'], [])).toEqual({ newest: null, versions: [] });
+  });
+});
+
 describe('main', () => {
   const inSync = migrationsDir(['20260101000000_first.sql']);
   const drifted = migrationsDir(['20260101000000_first.sql', '20260102000000_second.sql']);
@@ -249,6 +276,25 @@ describe('main', () => {
 
       expect(await main({ env: relaxed, log, fetchImpl, localDir: inSync })).toBe(1);
       expect(lines.join('\n')).toContain('20260103000000');
+    });
+
+    // Being ahead is fine only in order: a file that sorts behind a version the
+    // project already recorded is refused by `supabase db push` itself, so
+    // "main applies it after the merge" was never true for it (#1222).
+    it('fails on a pending file whose version sorts before the project newest', async () => {
+      const { lines, log } = collect();
+      const fetchImpl = async () =>
+        jsonResponse({
+          migrations: [
+            { version: '20260101000000', name: 'first' },
+            { version: '20260103000000', name: 'third' },
+          ],
+        });
+
+      expect(await main({ env: relaxed, log, fetchImpl, localDir: drifted })).toBe(1);
+      const output = lines.join('\n');
+      expect(output).toContain('20260102000000_second.sql');
+      expect(output).toContain('rename each one to a version after 20260103000000');
     });
   });
 });

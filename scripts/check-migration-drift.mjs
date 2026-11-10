@@ -18,6 +18,12 @@
  *   - a recorded version the repo has no file for: schema or a policy that
  *     production has, that no review saw and no migration file can roll back.
  *
+ * A third is not drift between the two lists but a refusal by the tool that
+ * applies them: a pending file whose version sorts before one the project
+ * already recorded, which `supabase db push` will not insert in the middle. A
+ * pull request that adds one is red here, before the merge, rather than at the
+ * apply it can never complete (`outOfOrderPending`).
+ *
  * Uses the endpoint the Supabase CLI's `migration list --linked` uses
  * (`GET /v1/projects/{ref}/database/migrations`), so it needs only
  * `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_REF`: no database password, no
@@ -95,6 +101,31 @@ export function remoteVersions(payload) {
     .map((row) => (typeof row === 'string' ? row : row?.version))
     .filter((version) => typeof version === 'string' && version.length > 0)
     .sort();
+}
+
+/**
+ * Pending files whose version sorts before one the project already recorded.
+ *
+ * The stamps are a sequence, not a calendar — `20261115120000` was applied while
+ * the project was three days from that date — so an author reaches for a rounded
+ * hour that is already behind the project, and the file merges looking like any
+ * other. It is not: `supabase db push` applies files in version order and will
+ * not insert history in the middle of a list it has written past. It prints
+ * "Found local migration files to be inserted before the last migration on
+ * remote database" and exits 1 unless it is given `--include-all`, which nobody
+ * should pass for a merge. So this is not "ahead, applied after the merge": it is
+ * a file main's apply cannot take. #1222's `20261114150000` sorted behind a
+ * project already at `20261116130000`, so main's apply failed after the merge and
+ * the file only went in when it was pushed out of order by hand. Caught on the
+ * pull request, it is a rename and nothing else.
+ */
+export function outOfOrderPending(missingRemotely, remote) {
+  const newest = [...remote].sort((a, b) => a.localeCompare(b)).at(-1) ?? null;
+  if (newest === null) return { newest: null, versions: [] };
+  return {
+    newest,
+    versions: missingRemotely.filter((version) => version.localeCompare(newest) < 0),
+  };
 }
 
 /** The two directions of drift, with the known-intentional entries removed. */
@@ -195,6 +226,11 @@ export async function main({
   // repo has no file for is always a failure, wherever it is seen.
   const strict = (env.MIGRATION_DRIFT_STRICT ?? '1') !== '0';
 
+  // Except one kind of "ahead": a file whose version already sorts behind the
+  // project is not applied after the merge, it is refused by `db push`. That is
+  // a failure on a pull request too, where it is still cheap to fix.
+  const outOfOrder = outOfOrderPending(missingRemotely, remote);
+
   if (missingRemotely.length === 0 && extraRemotely.length === 0) {
     log('In sync.');
     return 0;
@@ -211,7 +247,19 @@ export async function main({
       const file = local.find((m) => m.version === version)?.file ?? `${version}_*.sql`;
       log(`  - ${file}`);
     }
-    if (strict) {
+    if (outOfOrder.versions.length > 0) {
+      log('');
+      log(
+        `  ${outOfOrder.versions.length} of them sort before ${outOfOrder.newest}, a version the project\n` +
+          '  has already applied. `supabase db push` refuses those rather than insert history in the\n' +
+          '  middle of the list, so main cannot apply them after the merge either:'
+      );
+      for (const version of outOfOrder.versions) {
+        const file = local.find((m) => m.version === version)?.file ?? `${version}_*.sql`;
+        log(`  - ${file}`);
+      }
+      log(`  Fix: rename each one to a version after ${outOfOrder.newest}.`);
+    } else if (strict) {
       log('  Fix: let main apply it (it does, after the merge), or run supabase db push yourself.');
     }
   }
@@ -233,7 +281,7 @@ export async function main({
 
   log('');
   log('See docs/supabase.md ("Drift check").');
-  return extraRemotely.length > 0 || strict ? 1 : 0;
+  return extraRemotely.length > 0 || strict || outOfOrder.versions.length > 0 ? 1 : 0;
 }
 
 const invokedDirectly =

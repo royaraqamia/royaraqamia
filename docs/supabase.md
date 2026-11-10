@@ -35,6 +35,12 @@ A merged migration needs no hand-applying: the merge **is** the apply. The `main
 
 - Incremental timestamped files in `supabase/migrations/`, applied in filename order
 - **Never edit an applied migration**
+- **A new file takes a version after every one already recorded.** The stamps are a sequence, not a
+  calendar — `20261115120000` was applied on 2026-11-10 — so the number to beat is the project's
+  newest, not the hour you are writing in. `supabase db push` refuses a file that sorts behind it
+  ("inserted before the last migration on remote database") and names it with `--include-all`, which
+  is not the answer: renumber the file. `scripts/check-migration-drift.mjs` fails a pull request that
+  adds one (`outOfOrderPending`), so it is caught before the merge.
 - Base schema lives on remote project (first migration `20260718105449` is an intentional stub) — add new changes as NEW files only
 - Prefer additive, reversible migrations; include a rollback note in the PR body
 - A migration that creates a table, view or sequence in `public` grants the roles that need it in the
@@ -94,11 +100,12 @@ SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... npm run check:migrations
 
 It fails in both directions, and says which one it found:
 
-| Finding                                                | What it means                                                                                                                                                     | What to do                                                                                                                                                         |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A file the project has no version for                  | Production is behind the repo, so deployed code may expect schema that is not there. On a pull request this is a notice — main applies what the pull request adds | On `main` the job applies it (the CLI mints its own login role from the access token); by hand, `supabase db push`, then re-run the check                          |
-| A recorded version with no file                        | Production is ahead: schema or a policy was applied out of band, unreviewed, with no migration file to roll it back                                               | Add the file the project is missing, or, once you have decided production is wrong, revert the record with `supabase migration repair --status reverted <version>` |
-| It cannot read the history (non-2xx, or an empty list) | Wrong `SUPABASE_PROJECT_REF`, an expired token, or a changed API shape                                                                                            | Fix the credential. The check deliberately refuses to report "in sync" when it cannot look                                                                         |
+| Finding                                                | What it means                                                                                                                                                           | What to do                                                                                                                                                         |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A file the project has no version for                  | Production is behind the repo, so deployed code may expect schema that is not there. On a pull request this is a notice — main applies what the pull request adds       | On `main` the job applies it (the CLI mints its own login role from the access token); by hand, `supabase db push`, then re-run the check                          |
+| A pending file that sorts before the project's newest  | `supabase db push` will not insert history in the middle of the list it has written past, so the file never applies — on a pull request this is a failure, not a notice | Rename the file to a version after the project's newest and push; nothing else applies it                                                                          |
+| A recorded version with no file                        | Production is ahead: schema or a policy was applied out of band, unreviewed, with no migration file to roll it back                                                     | Add the file the project is missing, or, once you have decided production is wrong, revert the record with `supabase migration repair --status reverted <version>` |
+| It cannot read the history (non-2xx, or an empty list) | Wrong `SUPABASE_PROJECT_REF`, an expired token, or a changed API shape                                                                                                  | Fix the credential. The check deliberately refuses to report "in sync" when it cannot look                                                                         |
 
 ### Applying
 
