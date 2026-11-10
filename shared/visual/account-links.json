@@ -264,6 +264,60 @@
           "properties": ["width", "height"]
         }
       ]
+    },
+    {
+      "name": "analytics",
+      "capture": "presets",
+      "elements": [
+        {
+          "name": "presets",
+          "web": {
+            "selector": "[data-visual='link-analytics-presets']"
+          },
+          "app": {
+            "tag": "linksnap-analytics-presets"
+          },
+          "properties": [
+            "width",
+            "height",
+            "radius",
+            "paddingTop",
+            "paddingLeft",
+            "rowGap",
+            "columnGap"
+          ]
+        },
+        {
+          "name": "preset-7",
+          "web": {
+            "selector": "[data-visual='link-analytics-preset-7']"
+          },
+          "app": {
+            "tag": "linksnap-analytics-preset-7"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "preset-30",
+          "web": {
+            "selector": "[data-visual='link-analytics-preset-30']"
+          },
+          "app": {
+            "tag": "linksnap-analytics-preset-30"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "preset-90",
+          "web": {
+            "selector": "[data-visual='link-analytics-preset-90']"
+          },
+          "app": {
+            "tag": "linksnap-analytics-preset-90"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "radius", "paddingTop", "paddingLeft"]
+        }
+      ]
     }
   ]
 }

@@ -81,7 +81,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 67 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 68 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -127,6 +127,7 @@ A component is finished when the surface that draws it is native: 67 ported comp
 - [x] `account-links-actions` on **account-links** · #943
 - [x] `account-links-qr` on **account-links** · #943
 - [x] `account-links-edit` on **account-links** · #944
+- [x] `account-links-analytics` on **account-links** · #962
 - [x] `linksnap-unlock` on **linksnap-unlock** · #919
 - [ ] `assistant-launcher` on **chats** · #1185
 - [ ] `assistant-panel` on **chats** · #1185

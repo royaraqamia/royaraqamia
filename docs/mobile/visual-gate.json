@@ -425,6 +425,21 @@
               "dy": 0
             }
           }
+        },
+        {
+          "name": "analytics",
+          "tolerance": {
+            "pixels": 0.1,
+            "length": 1.5
+          },
+          "baseline": {
+            "recorded": "2026-11-10",
+            "measured": 0.0954,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
         }
       ]
     },

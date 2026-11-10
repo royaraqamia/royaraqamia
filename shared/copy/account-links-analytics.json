@@ -1,0 +1,45 @@
+{
+  "surface": "account-links",
+  "component": "account-links-analytics",
+  "web": {
+    "file": "frontend/ui/linksnap/link-analytics-content-copy.ts",
+    "export": "LINK_ANALYTICS_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapAnalyticsCopy.kt",
+    "object": "LinksnapAnalyticsCopy"
+  },
+  "notes": {
+    "source": "The owned-link analytics drawer's words, in both clients (#962). The page's `frontend/ui/linksnap/link-analytics-content.tsx` is the reference: the three range presets, the click total, the top referrer, the link status, the device, OS and browser breakdowns with their empty sentences, the top-referrers list, the recent-activity rows, and the three faces the drawer has while it loads, while the radio is off and when the read fails. The chart (#963) and the CSV export (#964) are the next slices and are outside this source.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "rangeLabel": "الفترة الزمنية",
+    "range7": "7 أيام",
+    "range30": "30 يوم",
+    "range90": "90 يوم",
+    "totalClicks": "إجمالي النقرات",
+    "topReferrer": "أعلى مصدر إحالة",
+    "linkStatus": "حالة الرَّابط",
+    "statusActive": "نشط وسليم",
+    "statusExpired": "منتهية الصلاحية",
+    "statusBlocked": "محظور",
+    "directUnknown": "مباشر / غير معروف",
+    "devices": "الأجهزة",
+    "os": "أنظمة التشغيل",
+    "browsers": "المتصفحات",
+    "emptyDevices": "لا توجد بيانات أجهزة بعد.",
+    "emptyOs": "لا توجد بيانات أنظمة تشغيل بعد.",
+    "emptyBrowsers": "لا توجد بيانات متصفحات بعد.",
+    "topReferrers": "أهم مصادر الزيارات",
+    "emptyReferrers": "لم يتم جمع بيانات الإحالة بعد.",
+    "referrerClicks": "{count} نقرة",
+    "recentActivity": "نشاط النقرات الأخيرة",
+    "emptyActivity": "لا يوجد نشاط إعادة توجيه بعد.",
+    "unknownBrowser": "متصفح غير معروف",
+    "unknownDevice": "جهاز غير معروف",
+    "loading": "جاري تحميل التَّحليلات...",
+    "offline": "يتطلَّب عرض التَّحليلات اتِّصالاً بالإنترنت. تحقَّق من اتِّصالك ثم أعد المحاولة.",
+    "failed": "تعذَّر تحميل التَّحليلات. حاول مرَّة أخرى."
+  }
+}

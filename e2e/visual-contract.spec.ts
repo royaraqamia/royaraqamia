@@ -392,6 +392,26 @@ const PREPARE: Record<
     await page.waitForTimeout(600);
     await page.evaluate(() => document.fonts.ready);
   },
+  // The analytics drawer the row's analytics action opens (#962). The fixture
+  // link is the same settled row, and its three clicks are what the drawer
+  // reads: the capture is the presets group, which is server-independent once
+  // the drawer has answered.
+  'account-links/analytics': async (page) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualLink(page.context(), baseURL);
+    await protectVisualLink(page.context(), baseURL);
+    await page.goto(new URL('/account/links', baseURL).toString(), {
+      waitUntil: 'domcontentloaded',
+    });
+    await page.locator('[data-visual="link-row-analytics"]').first().waitFor({
+      timeout: 20_000,
+    });
+    await page.locator('[data-visual="link-row-analytics"]').first().click();
+    await page.locator('[data-visual="link-analytics-presets"]').waitFor({ timeout: 20_000 });
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.fonts.ready);
+  },
   // The community feed's load-more is the region the gate measures, and it only
   // exists past the first page. The fixture account seeds ten rows and the
   // cleanup below removes them, so the feed after the run is the feed before it.
@@ -504,6 +524,9 @@ const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
     await clearVisualLink(page.context(), projectBaseURL());
   },
   'account-links/edit': async (page) => {
+    await clearVisualLink(page.context(), projectBaseURL());
+  },
+  'account-links/analytics': async (page) => {
     await clearVisualLink(page.context(), projectBaseURL());
   },
   'community/at-rest': async (page) => {

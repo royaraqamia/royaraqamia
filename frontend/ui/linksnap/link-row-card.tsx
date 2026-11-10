@@ -240,6 +240,7 @@ export const LinkRowCard = memo(function LinkRowCard({
           <button
             onClick={handleAnalyticsToggle}
             type="button"
+            data-visual="link-row-analytics"
             aria-expanded={isExpanded}
             aria-controls={`analytics-panel-${code}`}
             className={cn(

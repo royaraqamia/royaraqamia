@@ -13,6 +13,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalytics
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalyticsDevice
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalyticsDeviceBrowsersItem
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalyticsDeviceDevicesItem
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalyticsDeviceOsItem
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalyticsTopReferrersItem
 import com.royaraqamia.app.store.linksnap.LinksnapLinkRow
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
 import com.royaraqamia.app.verify.VerifyQrCode
@@ -370,6 +376,125 @@ class LinksnapAccountScreenVisualTest {
         File(dir, "app.json").writeText("$json\n")
         compose
             .onNodeWithTag(LinksnapEditMetrics.HEADER, useUnmergedTree = true)
+            .captureRoboImage(File(dir, "app.png").path)
+    }
+
+    /**
+     * The analytics drawer under the row (#962).
+     *
+     * The drawer's content is drawn in its filled face on the same fixture row;
+     * the contract measures the three range presets and the capture is the group,
+     * because the rest of the drawer is a list of server-owned numbers whose
+     * boxes are not a design decision. The chart (#963) and the CSV export (#964)
+     * are the next slices and are not drawn.
+     */
+    @Test
+    fun `the analytics drawer records the same numbers as the page`() {
+        val summary =
+            LinksnapAnalyticsResponseAnalytics(
+                totalClicks = 3,
+                recentClicks = emptyList(),
+                clicksByDate = emptyList(),
+                topReferrers =
+                    listOf(
+                        LinksnapAnalyticsResponseAnalyticsTopReferrersItem(
+                            name = "example.com",
+                            count = 3,
+                        )
+                    ),
+                device =
+                    LinksnapAnalyticsResponseAnalyticsDevice(
+                        devices =
+                            listOf(
+                                LinksnapAnalyticsResponseAnalyticsDeviceDevicesItem(
+                                    name = "جوال",
+                                    count = 3,
+                                    percent = 100,
+                                )
+                            ),
+                        os =
+                            listOf(
+                                LinksnapAnalyticsResponseAnalyticsDeviceOsItem(
+                                    name = "Android",
+                                    count = 3,
+                                    percent = 100,
+                                )
+                            ),
+                        browsers =
+                            listOf(
+                                LinksnapAnalyticsResponseAnalyticsDeviceBrowsersItem(
+                                    name = "Chrome",
+                                    count = 3,
+                                    percent = 100,
+                                )
+                            ),
+                    ),
+            )
+
+        compose.setContent {
+            RoyaraqamiaTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.width(393.dp).fillMaxHeight()) {
+                        LinksnapAccountList(
+                            rows = listOf(row),
+                            pill = null,
+                            signedIn = true,
+                            onRetry = {},
+                            onSignIn = {},
+                            analyticsCode = row.code,
+                            analyticsState = LinksnapAnalyticsUiState.Ready(summary),
+                        )
+                    }
+                }
+            }
+        }
+
+        val json =
+            """
+            {
+              "surface": "account-links",
+              "elements": {
+                "presets": {
+                  "width": ${width(LinksnapAnalyticsMetrics.PRESETS)},
+                  "height": ${height(LinksnapAnalyticsMetrics.PRESETS)},
+                  "radius": ${LinksnapAnalyticsMetrics.presetsRadius.value},
+                  "paddingTop": ${LinksnapAnalyticsMetrics.presetsPadding.value},
+                  "paddingLeft": ${LinksnapAnalyticsMetrics.presetsPadding.value},
+                  "rowGap": ${LinksnapAnalyticsMetrics.presetGap.value},
+                  "columnGap": ${LinksnapAnalyticsMetrics.presetGap.value}
+                },
+                "preset-7": {
+                  "height": ${height(LinksnapAnalyticsMetrics.presetTag(LinksnapAnalyticsRange.Last7Days))},
+                  "fontSize": ${LinksnapAnalyticsMetrics.presetSize.value},
+                  "fontWeight": ${FontWeight.Bold.weight},
+                  "radius": ${LinksnapAnalyticsMetrics.presetRadius.value},
+                  "paddingTop": ${LinksnapAnalyticsMetrics.presetPaddingY.value},
+                  "paddingLeft": ${LinksnapAnalyticsMetrics.presetPaddingX.value}
+                },
+                "preset-30": {
+                  "height": ${height(LinksnapAnalyticsMetrics.presetTag(LinksnapAnalyticsRange.Last30Days))},
+                  "fontSize": ${LinksnapAnalyticsMetrics.presetSize.value},
+                  "fontWeight": ${FontWeight.Bold.weight},
+                  "radius": ${LinksnapAnalyticsMetrics.presetRadius.value},
+                  "paddingTop": ${LinksnapAnalyticsMetrics.presetPaddingY.value},
+                  "paddingLeft": ${LinksnapAnalyticsMetrics.presetPaddingX.value}
+                },
+                "preset-90": {
+                  "height": ${height(LinksnapAnalyticsMetrics.presetTag(LinksnapAnalyticsRange.Last90Days))},
+                  "fontSize": ${LinksnapAnalyticsMetrics.presetSize.value},
+                  "fontWeight": ${FontWeight.Bold.weight},
+                  "radius": ${LinksnapAnalyticsMetrics.presetRadius.value},
+                  "paddingTop": ${LinksnapAnalyticsMetrics.presetPaddingY.value},
+                  "paddingLeft": ${LinksnapAnalyticsMetrics.presetPaddingX.value}
+                }
+              }
+            }
+            """.trimIndent()
+
+        val dir = File("../../e2e/__visual__/account-links/analytics").apply { mkdirs() }
+        File(dir, "app.json").writeText("$json\n")
+        compose
+            .onNodeWithTag(LinksnapAnalyticsMetrics.PRESETS, useUnmergedTree = true)
             .captureRoboImage(File(dir, "app.png").path)
     }
 
