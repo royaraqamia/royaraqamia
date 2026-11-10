@@ -1131,7 +1131,7 @@
       "surface": "linksnap",
       "issue": "#654",
       "web": {
-        "route": "app/linksnap/(app)/page.tsx",
+        "route": "app/page.tsx",
         "component": "frontend/ui/linksnap/linksnap-surface.tsx",
         "copyModule": "frontend/ui/linksnap/linksnap-page-copy.ts",
         "copyExport": "LINKSNAP_PAGE_COPY"
@@ -1155,7 +1155,7 @@
       "surface": "linksnap",
       "issue": "#916",
       "web": {
-        "route": "app/linksnap/(app)/page.tsx",
+        "route": "app/page.tsx",
         "component": "frontend/ui/linksnap/single-url-shortener.tsx",
         "copyModule": "frontend/ui/linksnap/single-url-shortener-copy.ts",
         "copyExport": "SINGLE_URL_SHORTENER_COPY"
@@ -1187,7 +1187,7 @@
       "surface": "linksnap",
       "issue": "#654",
       "web": {
-        "route": "app/linksnap/(app)/page.tsx",
+        "route": "app/page.tsx",
         "component": "frontend/ui/linksnap/dashboard-empty-state.tsx",
         "copyModule": "frontend/ui/linksnap/linksnap-copy.ts",
         "copyExport": "LINKSNAP_COPY"

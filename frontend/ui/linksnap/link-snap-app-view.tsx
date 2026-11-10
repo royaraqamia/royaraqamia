@@ -45,17 +45,32 @@ export function LinkSnapAppView() {
       const errorParam = params.get('error');
       const codeParam = params.get('code');
 
+      // The banner consumes its own parameters; the tab the door was opened on
+      // is not the banner's (`/?tab=/linksnap&error=…`), so it stays after the
+      // error is taken out of the address.
+      const consumed = () => {
+        params.delete('error');
+        params.delete('code');
+        params.delete('details');
+        const search = params.toString();
+        window.history.replaceState(
+          {},
+          document.title,
+          `${window.location.pathname}${search ? `?${search}` : ''}`
+        );
+      };
+
       if (errorParam === 'oauth_failed') {
         const details = params.get('details') || '';
         queueMicrotask(() => {
           setRedirectError({ type: 'oauth_failed', code: details });
         });
-        window.history.replaceState({}, document.title, window.location.pathname);
+        consumed();
       } else if (errorParam && codeParam) {
         queueMicrotask(() => {
           setRedirectError({ type: errorParam, code: codeParam });
         });
-        window.history.replaceState({}, document.title, window.location.pathname);
+        consumed();
       }
     }
   }, []);

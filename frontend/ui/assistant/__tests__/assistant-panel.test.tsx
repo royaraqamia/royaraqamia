@@ -164,10 +164,7 @@ describe('AssistantPanel', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('ما الخدمات التي تقدّمونها؟')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'فتح المحادثة كاملة' })).toHaveAttribute(
-      'href',
-      '/chats/a-1'
-    );
+    expect(screen.queryByRole('link', { name: 'فتح المحادثة كاملة' })).not.toBeInTheDocument();
   });
 
   it('dismisses before it upgrades, so the navigation is not lost', async () => {
@@ -184,16 +181,6 @@ describe('AssistantPanel', () => {
 
     expect(onDismiss).toHaveBeenCalled();
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/pricing'));
-  });
-
-  it('dismisses before it opens the full thread', async () => {
-    const onDismiss = vi.fn();
-    render(<AssistantPanel open onDismiss={onDismiss} />);
-
-    fireEvent.click(await screen.findByRole('link', { name: 'فتح المحادثة كاملة' }));
-
-    expect(onDismiss).toHaveBeenCalled();
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/chats/a-1'));
   });
 
   it('revalidates on reopen without creating a second thread', async () => {

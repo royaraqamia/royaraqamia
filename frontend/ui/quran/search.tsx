@@ -199,8 +199,10 @@ export function QuranSearch({ surahs, search, copy = DEFAULT_COPY }: QuranSearch
           aria-label={copy.label}
           autoComplete="off"
           // Arabic is the input, so the keyboard should be Arabic; the text is not
-          // a name, so no browser autofill.
-          dir="auto"
+          // a name, so no browser autofill. An empty field is RTL, which is what
+          // puts the placeholder on the right; once there is a value, `auto` lets
+          // a Latin query keep its own direction instead of forcing Arabic's.
+          dir={query ? 'auto' : 'rtl'}
           className="h-11 w-full rounded-xl border border-border/50 bg-background/60 ps-10 pe-10 text-sm outline-none transition-safe placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
         />
 

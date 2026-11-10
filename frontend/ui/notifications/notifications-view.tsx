@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -52,25 +52,16 @@ function isTabId(value: string | null): value is TabId {
 }
 
 /**
- * Which tab a row belongs to. Chats has no rows yet — no producer writes one and
- * no table holds them — so every notification type the product writes lands in
- * Alerts. The split is one function so the day Chats gets a source, only this
- * answers differently.
+ * The tab the page opens on when the URL does not name one: Alerts while
+ * anything there is unread, Chats otherwise. The bell is the main door, and the
+ * owner's rule is that an alert waiting to be read outranks the conversation
+ * list; a member with neither still lands on Chats.
+ *
+ * Every notification type the product writes lands in Alerts — no producer
+ * writes a chat row yet — so "anything unread" is the feed's own read state.
  */
-function tabOf(_notification: NotificationWithMeta): TabId {
-  return 'alerts';
-}
-
-/**
- * The tab the page opens on when the URL does not name one: an unread message
- * makes it Chats, then a tab holding the newest unread alert, and Chats when
- * nothing in the feed is unread. "Newest" is the row order the feed already
- * arrives in, so no separate sort.
- */
-function defaultTab(notifications: NotificationWithMeta[], unreadChats: number): TabId {
-  if (unreadChats > 0) return 'chats';
-  const newestUnread = notifications.find((notification) => !notification.is_read);
-  return newestUnread ? tabOf(newestUnread) : 'chats';
+function defaultTab(notifications: NotificationWithMeta[]): TabId {
+  return notifications.some((notification) => !notification.is_read) ? 'alerts' : 'chats';
 }
 
 export function NotificationsView() {
@@ -94,7 +85,18 @@ export function NotificationsView() {
   // Until the feed answers, the page cannot tell Alerts from Chats, so it paints
   // the frame and a loading panel instead of a tab that is about to change.
   const activeTab: TabId | null =
-    requestedTab ?? chosen ?? (settled ? defaultTab(notifications, chats.unreadCount) : null);
+    requestedTab ?? chosen ?? (settled ? defaultTab(notifications) : null);
+
+  // The bare `/notifications` is not an address of its own (ADR-0156): once the
+  // feed has answered, the address names the tab on screen, so a reload, a
+  // bookmark or Back lands on the same list. The bell still links to the bare
+  // path, and `defaultTab` decides what is waiting there.
+  useEffect(() => {
+    if (!settled || requestedTab || !activeTab) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', activeTab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [settled, requestedTab, activeTab, pathname, router, searchParams]);
 
   /**
    * The badge on each tab. Alerts carries the server's unread count rather than a

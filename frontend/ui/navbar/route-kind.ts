@@ -21,11 +21,15 @@ export const PRIMARY_ROUTES: readonly string[] = ['/', '/community', '/account']
 export const APP_ROUTES: readonly string[] = HOME_SERVICE_ROUTES;
 
 /**
- * Pages that left the picker but still wear the app chrome (ADR-0152): the
- * certificate check and the MCP guide answer their own routes and are reached
- * from a certificate or the account, so the top nav and the tab bar stay.
+ * The page that left the picker but still wears the app chrome (ADR-0152): the
+ * certificate check answers its own route and is reached from a printed code,
+ * so the top nav and the tab bar stay.
+ *
+ * The MCP guide used to sit here too; it is a reading page reached from the
+ * account, not an app, so it wears the secondary chrome like every other
+ * drill-down (ADR-0156).
  */
-export const STANDALONE_ROUTES: readonly string[] = ['/verify', '/mcp/guide'];
+export const STANDALONE_ROUTES: readonly string[] = ['/verify'];
 
 /**
  * Views inside a root that are a mode of it, not a drill-down: a sitting of the
@@ -60,6 +64,7 @@ export const LAYOUT_ONLY_PATHS: readonly (readonly string[])[] = [
   ['auth'],
   ['chats'],
   ['consultation'],
+  ['linksnap'],
   ['linksnap', 'unlock'],
   ['mcp'],
   ['training'],

@@ -129,6 +129,32 @@ describe('NotificationsView tabs', () => {
     expect(tab(/المحادثات/)).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('names the resolved tab in the address, so a bare /notifications is never left', () => {
+    state.notifications = [notification('n1', 'system_announcement')];
+    state.unreadCount = 1;
+
+    render(<NotificationsView />);
+
+    expect(mocks.replace).toHaveBeenCalledWith('/notifications?tab=alerts', { scroll: false });
+  });
+
+  it('opens on Alerts when a waiting alert outranks an unread conversation', () => {
+    state.notifications = [notification('n1', 'system_announcement')];
+
+    render(<NotificationsView />);
+
+    expect(tab(/التَّنبيهات/)).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('leaves an address that already names a tab alone', () => {
+    state.search = 'tab=chats';
+    state.notifications = [notification('n1', 'system_announcement')];
+
+    render(<NotificationsView />);
+
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
   it('replaces the URL rather than adding a history entry when a tab is picked', () => {
     state.notifications = [notification('n1', 'system_announcement')];
 

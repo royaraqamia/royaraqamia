@@ -357,7 +357,7 @@ describe('redirectShortCode', () => {
 
     expect(result).toEqual({
       status: 302,
-      redirect: 'https://royaraqamia.com/linksnap?error=not-found&code=missing',
+      redirect: 'https://royaraqamia.com/?tab=/linksnap&error=not-found&code=missing',
     });
   });
 

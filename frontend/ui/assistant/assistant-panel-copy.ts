@@ -19,7 +19,6 @@ export const ASSISTANT_PANEL_COPY = {
   guestTitle: 'تحدّث مع نور',
   guestBody: 'سجّل الدخول لتحفظ محادثتك مع نور وتكملها من أي جهاز.',
   signIn: 'تسجيل الدخول',
-  openThread: 'فتح المحادثة كاملة',
   loading: 'جاري فتح المحادثة...',
   failed: 'تعذّر فتح المحادثة. حاول مرة أخرى.',
   retry: 'إعادة المحاولة',
