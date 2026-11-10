@@ -20,6 +20,7 @@ import com.getcapacitor.PluginLoadException;
 import com.getcapacitor.PluginManager;
 import com.getcapacitor.WebViewListener;
 import com.royaraqamia.app.shell.ShellActivity;
+import com.royaraqamia.app.session.DocumentForeground;
 import com.royaraqamia.app.sync.SyncScheduler;
 import com.royaraqamia.app.update.ShellUpdateChannel;
 
@@ -425,7 +426,27 @@ public class MainActivity extends BridgeActivity {
             skeleton.removeCallbacks(skeletonCeiling);
             skeleton.animate().cancel();
         }
+        // A page that is gone is not in front, whatever order `onPause` arrived
+        // in (#1194): the shell must be free to rotate the session again.
+        DocumentForeground.set(false);
         super.onDestroy();
+    }
+
+    /**
+     * The session's other half (#1194): while this document is in front it owns
+     * the refresh-token chain, and the app must not rotate it behind the page's
+     * back. `ShellActivity` reads the jar on the resume this pause hands it.
+     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        DocumentForeground.set(true);
+    }
+
+    @Override
+    public void onPause() {
+        DocumentForeground.set(false);
+        super.onPause();
     }
 
     /**

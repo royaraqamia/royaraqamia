@@ -11,21 +11,40 @@ import kotlinx.serialization.Serializable
  * through the same field names. A copy in each caller would be two places for
  * `access_token` to drift.
  *
- * The response carries more than this — `token_type`, `expires_in`, the rest of
- * `user` — and only one further field is modelled: the user id, because it names
- * which Local Store the rows belong to (#768). It is a name, not an
- * authorization: the app sends the access token as it is, and the refresh token
- * back to the endpoint that rotates it. Nothing here decodes a claim, because the
- * server is the only authority on who the token belongs to (RLS still authorizes;
- * the token's user is the client's user).
+ * The response carries more than this — `token_type`, the rest of `user` — and
+ * three fields are modelled beside the pair: the user id, because it names which
+ * Local Store the rows belong to (#768), and `expires_at` with `expires_in`,
+ * because the document's cookie has to carry the same expiry the server minted
+ * (#1194). The user id is a name, not an authorization: the app sends the access
+ * token as it is, and the refresh token back to the endpoint that rotates it.
+ * Nothing here decodes a claim, because the server is the only authority on who
+ * the token belongs to (RLS still authorizes; the token's user is the client's
+ * user).
  */
 @Serializable
 internal data class GoTrueSession(
     @SerialName("access_token") val accessToken: String,
     @SerialName("refresh_token") val refreshToken: String,
     val user: GoTrueUser,
+    /** Unix seconds, when the answer says; the jar needs the same number. */
+    @SerialName("expires_at") val expiresAt: Long? = null,
+    @SerialName("expires_in") val expiresIn: Long? = null,
 ) {
-    fun asPair(): TokenPair = TokenPair(accessToken, refreshToken, user.id)
+    /**
+     * [raw] is the answer's own body: since #1194 the document's cookie jar
+     * receives the session the server minted, and rebuilding it field by field
+     * here would be a second copy of a contract GoTrue owns.
+     */
+    fun asPair(raw: String? = null): TokenPair =
+        TokenPair(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+            userId = user.id,
+            expiresAt = expiresAt ?: expiresIn?.let { nowSeconds() + it } ?: 0,
+            raw = raw,
+        )
+
+    private fun nowSeconds(): Long = System.currentTimeMillis() / 1000
 }
 
 /**

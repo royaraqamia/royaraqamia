@@ -25,17 +25,21 @@ class SupabasePasswordGrantTest {
 
     @Test
     fun `a 200 mints the pair and asks GoTrue for a password grant`() = runBlocking {
+        val body =
+            """{"access_token":"access-1","refresh_token":"refresh-1","expires_in":3600,"user":{"id":"user-1"}}"""
         val transport =
             RecordingTransport {
-                HttpResponse(
-                    200,
-                    """{"access_token":"access-1","refresh_token":"refresh-1","expires_in":3600,"user":{"id":"user-1"}}""",
-                )
+                HttpResponse(200, body)
             }
 
         val outcome = SupabasePasswordGrant(authUrl, "anon-key", transport).signIn("a@b.test", "s3cret")
 
-        assertEquals(SignInOutcome.SignedIn(TokenPair("access-1", "refresh-1", "user-1")), outcome)
+        val signed = outcome as SignInOutcome.SignedIn
+        assertEquals("access-1", signed.pair.accessToken)
+        assertEquals("refresh-1", signed.pair.refreshToken)
+        assertEquals("user-1", signed.pair.userId)
+        assertTrue("the pair carries the expiry the jar needs (#1194)", signed.pair.expiresAt > 0)
+        assertEquals("the answer's own body is what the jar receives", body, signed.pair.raw)
 
         val request = transport.requests.single()
         assertEquals("POST", request.method)

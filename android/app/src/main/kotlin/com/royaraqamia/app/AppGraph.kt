@@ -30,6 +30,9 @@ import com.royaraqamia.app.rates.RatesRepository
 import com.royaraqamia.app.realtime.RealtimeClient
 import com.royaraqamia.app.realtime.RealtimeSession
 import com.royaraqamia.app.realtime.RealtimeToken
+import com.royaraqamia.app.session.AndroidDocumentCookies
+import com.royaraqamia.app.session.DocumentForeground
+import com.royaraqamia.app.session.DocumentSessionCookie
 import com.royaraqamia.app.session.EncryptedTokenStore
 import com.royaraqamia.app.session.KeystoreTokenCipher
 import com.royaraqamia.app.session.Session
@@ -153,6 +156,15 @@ class AppGraph private constructor(
     suspend fun start(): Boolean = session.start()
 
     /**
+     * Adopts the document's session, or notices that the page signed out (#1194).
+     *
+     * The site is what signs in, so this is what makes a member who signed in on
+     * the phone a member in the app: the shell calls it whenever it comes back to
+     * the front, and the API client's refresh calls it before it spends a token.
+     */
+    suspend fun syncDocumentSession(): Boolean = session.syncFromDocument()
+
+    /**
      * One drain of every product's queue, for a launch or a radio that came back
      * (#650, #653).
      *
@@ -251,11 +263,22 @@ class AppGraph private constructor(
          */
         fun create(context: Context, siteUrl: String, authUrl: String, anonKey: String): AppGraph {
             val store = EncryptedTokenStore(SharedPreferencesStorage(context), KeystoreTokenCipher())
+            // The one session both clients hold (#1194): the site's
+            // `@supabase/ssr` cookie, read on every return and written back after
+            // every rotation the app performs. `DocumentForeground` is what keeps
+            // the app from rotating the chain while the page is the one using it.
+            val documentCookies =
+                AndroidDocumentCookies(
+                    origin = siteUrl,
+                    storageKey = DocumentSessionCookie.storageKey(authUrl),
+                )
             val session =
                 Session(
                     store = store,
                     refresher = SupabaseTokenRefresher(authUrl, anonKey),
                     identities = PreferencesIdentityStorage(context),
+                    document = documentCookies,
+                    documentVisible = { DocumentForeground.visible() },
                 )
             val client = ApiClient(siteUrl, session)
 
