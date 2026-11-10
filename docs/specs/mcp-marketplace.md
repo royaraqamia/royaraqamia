@@ -161,7 +161,9 @@ Existing tables touched: none structurally. `chat_agent_actions.tool` gains name
 | `PATCH /api/me/mcp/connections/[id]`          | `enabled`, `permission_level`, `display_name`                                                |
 | `DELETE /api/me/mcp/connections/[id]`         | Revoke at the provider where it supports it, delete locally                                  |
 | `PATCH /api/me/mcp/connections/[id]/tools`    | One tool's switch                                                                            |
-| `GET /api/cron/mcp-catalog`                   | Hourly registry sync; `CRON_SECRET` guarded like the others                                  |
+| `GET /api/cron/mcp-catalog`                   | Daily registry sync, resumable; `CRON_SECRET` guarded like the others                        |
+| `GET /api/admin/mcp/catalog?q=&cursor=`       | The takedown list, blocked rows included                                                     |
+| `PATCH /api/admin/mcp/catalog`                | Block with a reason, undo a block, or write the Arabic overrides                             |
 | `GET /admin/mcp/marketplace`                  | Takedown list: hide or block a row with a reason                                             |
 | `GET /account/connected-apps`                 | Redirects to `/mcp/apps?tab=inbound`; the page keeps its URL, not its body                   |
 
@@ -206,8 +208,77 @@ dynamic registration:
 Three of the most requested apps in the market are therefore not connectable by this flow, and
 that is not a bug to paper over: a pre-registered client per provider is a separate piece of work
 (one client id and secret each, in env), and a server with no resource metadata would have to be
-guessed at. Phase 2's catalogue should say which rows can be connected before a member taps one,
-rather than explaining it after a refusal.
+guessed at. Phase 2's catalogue says which rows can be connected before a member taps one
+(«The connectable verdict», below), rather than explaining it after a refusal.
+
+## The catalogue mirror (phase 2, #1223)
+
+### The registry is bigger than one invocation
+
+Measured 2026-11-10: `GET /v0/servers?version=latest&limit=100` answers **more than thirty
+thousand rows**, and a sweep that pages through all of them does not finish inside the 60s a
+serverless function gets. The mirror is therefore a **resumable pass**, not one request:
+
+- `mcp_catalog_sync_state` holds one row: where the pass stopped (`cursor`), when it began
+  (`pass_started_at`), how many rows it has seen (`pass_rows`), and when the last run finished.
+- A run pages until its own 35s deadline, saves the cursor, and the next run continues.
+- `version=latest` is the registry's own dedupe. Without it the API returns every published
+  version of every server, and the mirror would keep whichever one was written last.
+- After the first completed pass, a run is **incremental**: `updated_since` = the last run minus
+  one hour. That is also the only query that reports a server the registry removed, because the
+  API includes deleted rows whenever `updated_since` is set.
+- A row the registry stopped serving is marked `deleted`, never removed: a live connection
+  references it. That marking happens **only when a pass reaches the end and clears two floors**:
+  at least 100 rows, and at least half of what the store already holds. A pass that ends after a
+  handful of rows is an outage, and a pass that saw a fraction of the catalogue is a truncated
+  registry; neither may empty the screen. A genuine reset below that bar is deliberate: clear
+  `mcp_catalog_sync_state.pass_completed_at` and the next run is a full pass again.
+- A failed run does not move the incremental baseline, so the next run re-reads what it missed.
+
+The schedule is **daily**, not hourly: this deployment is on a plan whose crons are daily, and the
+two that already exist are. The pass is time-budgeted and resumable, so moving to hourly is a line
+in `vercel.json` and nothing else.
+
+### The connectable verdict
+
+`connectable`, `connectable_reason` and `probed_at` are columns, because the answer has to reach
+the screen **before** the tap. The probe is the connect flow's own discovery under a 4s ceiling:
+resource metadata, authorization metadata, and a `registration_endpoint`. `connectable` is `true`
+only when all three are there; otherwise the row carries one of three codes —
+`no_metadata`, `no_registration`, `blocked` — and the screen says so in words.
+
+It is filled **on demand**, for the rows a screen actually draws:
+
+- A search returns a page of at most 20 rows; the unprobed ones among them are probed **after**
+  the response is flushed (`after()`), at most five per request. A member's search never waits on
+  five strangers' servers.
+- A verdict stands for seven days; a row whose `remote_url` moved loses it in the same write,
+  because the address is what was measured.
+- `null` is a third state, not a silent "no": the row is listed, the tap is allowed, and the tap
+  is the definitive check. Probing a catalogue of thousands to answer a question about twenty
+  visible rows is the wrong bill, and a cron that tried would need years.
+
+### Search
+
+`GET /api/mcp/marketplace/servers?q=&cursor=` reads the mirror, never the registry. The searched
+text is one generated column (`search_text`: title, description, both Arabic overrides, and the
+registry name) with a trigram index, so a member who types «نوشن» finds a row an admin translated
+and one who types `notion` finds it before anyone did. A blank `q` is the whole catalogue.
+
+Rows are ordered `registry_name ASC` and the cursor is that key: a title ordering would read nicer
+and cost a two-key cursor interpolated into a PostgREST `or()`, which is the filter-syntax hazard
+`backend/shared/postgrest-or-filter.ts` exists for. The catalogue is searched, not ranked.
+
+### Takedown and the Arabic overrides
+
+There is no approval queue: every `active` row appears. `/admin/mcp/marketplace` can block one
+**with a reason**, which `start` already refuses on with its own sentence, and undo it. The same
+screen writes `name_ar` and `description_ar`; a brand keeps its Latin name, and the description
+shows the registry's English until an Arabic one is written.
+
+The admin screen's words live in `shared/contracts/mcp-catalog.ts`, not in `shared/copy/`: that
+directory is the site↔app seam, and `scripts/check-parity.mjs` refuses a copy source no ported
+component claims. There is no admin console in the app, so a copy file for it would have one side.
 
 ## Egress policy (one module, non-negotiable)
 

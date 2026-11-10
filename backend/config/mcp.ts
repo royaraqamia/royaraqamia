@@ -1,6 +1,11 @@
 import { createMcpOAuthRepository } from '@/backend/repositories/mcp/mcp-oauth-repository';
 import { createMcpMarketplaceRepository } from '@/backend/repositories/mcp/marketplace-repository';
 import { createMcpRemoteClient } from '@/backend/clients/mcp-remote';
+import { createMcpRegistryClient } from '@/backend/clients/mcp-registry';
+import {
+  createMcpCatalogService,
+  type McpCatalogService,
+} from '@/backend/services/mcp/marketplace/catalog-service';
 import {
   createMcpConnectService,
   type McpConnectService,
@@ -38,6 +43,20 @@ export function createDefaultMcpConnectedAppService(): McpConnectedAppService {
 export function createDefaultMcpConnectService(): McpConnectService {
   return createMcpConnectService({
     repository: createMcpMarketplaceRepository(),
+    remote: createMcpRemoteClient(),
+  });
+}
+
+/**
+ * The catalogue: the registry mirror, the search over it, and the takedown
+ * switch (phase 2 / #1223). Two outbound clients meet here — the registry the
+ * mirror reads, and the third-party servers a probe measures — and both carry
+ * `backend/shared/egress` into every call.
+ */
+export function createDefaultMcpCatalogService(): McpCatalogService {
+  return createMcpCatalogService({
+    repository: createMcpMarketplaceRepository(),
+    registry: createMcpRegistryClient(),
     remote: createMcpRemoteClient(),
   });
 }

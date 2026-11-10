@@ -1137,15 +1137,19 @@ export type Database = {
         Row: {
           blocked_at: string | null;
           blocked_reason: string | null;
+          connectable: boolean | null;
+          connectable_reason: string | null;
           description: string | null;
           description_ar: string | null;
           fetched_at: string;
           name_ar: string | null;
+          probed_at: string | null;
           published_at: string | null;
           raw: Json | null;
           registry_name: string;
           registry_updated_at: string | null;
           remote_url: string;
+          search_text: string | null;
           status: string;
           title: string | null;
           transport: string;
@@ -1154,10 +1158,13 @@ export type Database = {
         Insert: {
           blocked_at?: string | null;
           blocked_reason?: string | null;
+          connectable?: boolean | null;
+          connectable_reason?: string | null;
           description?: string | null;
           description_ar?: string | null;
           fetched_at?: string;
           name_ar?: string | null;
+          probed_at?: string | null;
           published_at?: string | null;
           raw?: Json | null;
           registry_name: string;
@@ -1171,10 +1178,13 @@ export type Database = {
         Update: {
           blocked_at?: string | null;
           blocked_reason?: string | null;
+          connectable?: boolean | null;
+          connectable_reason?: string | null;
           description?: string | null;
           description_ar?: string | null;
           fetched_at?: string;
           name_ar?: string | null;
+          probed_at?: string | null;
           published_at?: string | null;
           raw?: Json | null;
           registry_name?: string;
@@ -1184,6 +1194,39 @@ export type Database = {
           title?: string | null;
           transport?: string;
           version?: string | null;
+        };
+        Relationships: [];
+      };
+      mcp_catalog_sync_state: {
+        Row: {
+          cursor: string | null;
+          id: string;
+          last_error: string | null;
+          last_run_at: string | null;
+          last_run_rows: number;
+          pass_completed_at: string | null;
+          pass_rows: number;
+          pass_started_at: string | null;
+        };
+        Insert: {
+          cursor?: string | null;
+          id: string;
+          last_error?: string | null;
+          last_run_at?: string | null;
+          last_run_rows?: number;
+          pass_completed_at?: string | null;
+          pass_rows?: number;
+          pass_started_at?: string | null;
+        };
+        Update: {
+          cursor?: string | null;
+          id?: string;
+          last_error?: string | null;
+          last_run_at?: string | null;
+          last_run_rows?: number;
+          pass_completed_at?: string | null;
+          pass_rows?: number;
+          pass_started_at?: string | null;
         };
         Relationships: [];
       };

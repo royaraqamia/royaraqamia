@@ -37,6 +37,9 @@ const CATALOG: McpCatalogServerRecord = {
   status: 'active',
   blocked_at: null,
   blocked_reason: null,
+  connectable: true,
+  connectable_reason: null,
+  probed_at: '2026-11-14T00:00:00.000Z',
 };
 
 const DISCOVERY: McpDiscovery = {
@@ -160,6 +163,26 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
         client_secret_enc: input.client_secret_enc,
       });
     },
+    // The catalogue's own methods: this flow does not touch them, but the
+    // repository interface carries both halves of the marketplace.
+    upsertCatalogServers: async () => undefined,
+    markCatalogServersDeleted: async () => 0,
+    retireCatalogServers: async () => undefined,
+    countCatalogServers: async () => 0,
+    listCatalogServers: async () => ({ rows: [], nextCursor: null }),
+    getCatalogAddresses: async () => [],
+    saveCatalogProbe: async () => undefined,
+    updateCatalogServer: async () => undefined,
+    getCatalogSyncState: async () => ({
+      cursor: null,
+      pass_started_at: null,
+      pass_completed_at: null,
+      pass_rows: 0,
+      last_run_at: null,
+      last_run_rows: 0,
+      last_error: null,
+    }),
+    saveCatalogSyncState: async () => undefined,
     ...overrides,
   };
 
@@ -198,6 +221,7 @@ function fakeRemote(overrides: Partial<McpRemoteClient> = {}): McpRemoteClient {
     })),
     refresh: vi.fn(),
     listTools: vi.fn(async () => TOOLS),
+    probeConnectable: vi.fn(async () => ({ connectable: true, reason: null })),
     ...overrides,
   } as McpRemoteClient;
 }

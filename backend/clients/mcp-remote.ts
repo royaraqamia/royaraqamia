@@ -15,7 +15,11 @@ import type {
 
 import { MCP_SERVER_VERSION } from '@/backend/services/mcp/constants';
 import { EgressBlockedError, createGuardedFetch, readCappedText } from '@/backend/shared/egress';
-import { McpRemoteError, type McpRemoteFailure } from '@/backend/shared/domain/mcp-remote';
+import {
+  McpRemoteError,
+  type McpConnectProbe,
+  type McpRemoteFailure,
+} from '@/backend/shared/domain/mcp-remote';
 import { logger } from '@/backend/shared/logger';
 
 /**
@@ -71,8 +75,18 @@ export interface McpRemoteTool {
 // itself lives in the domain so a service may match on it.
 export { McpRemoteError, type McpRemoteFailure };
 
+/** The ceiling a catalogue probe gets, against the 20s a real call may take. */
+const PROBE_TIMEOUT_MS = 4_000;
+
 export interface McpRemoteClient {
   discover(serverUrl: string | URL): Promise<McpDiscovery>;
+  /**
+   * Whether this server can be connected at all — the catalogue's verdict
+   * (phase 2, #1223). A measurement, not a call: it answers `false` with a
+   * reason instead of throwing, because the caller is filling a column, not
+   * serving a member's tap.
+   */
+  probeConnectable(serverUrl: string | URL): Promise<McpConnectProbe>;
   register(input: {
     discovery: McpDiscovery;
     redirectUri: string;
@@ -130,6 +144,17 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
     ...(dependencies.resolveHost ? { resolveHost: dependencies.resolveHost } : {}),
   });
 
+  /**
+   * The probe's own ceiling. A member is looking at a list of twenty rows, so a
+   * stranger's slow server must not hold the page: four seconds is enough to
+   * read two well-known documents and short enough to fail into «لم نتحقق بعد».
+   */
+  const probeFetch = createGuardedFetch({
+    timeoutMs: PROBE_TIMEOUT_MS,
+    ...(dependencies.fetchImpl ? { fetchImpl: dependencies.fetchImpl } : {}),
+    ...(dependencies.resolveHost ? { resolveHost: dependencies.resolveHost } : {}),
+  });
+
   function mapFailure(error: unknown, failure: McpRemoteFailure, message: string): never {
     if (error instanceof McpRemoteError) throw error;
     if (error instanceof EgressBlockedError) {
@@ -168,6 +193,35 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
 
   return {
     discover,
+
+    async probeConnectable(serverUrl) {
+      try {
+        const info = await discoverOAuthServerInfo(serverUrl, { fetchFn: probeFetch });
+        const metadata = info.authorizationServerMetadata;
+        if (!metadata?.authorization_endpoint || !metadata.token_endpoint) {
+          return { connectable: false, reason: 'no_metadata' };
+        }
+        // The connect flow needs dynamic registration: a server that publishes
+        // metadata and expects a pre-registered client is one we cannot reach in
+        // v1 (measured: GitHub, in the spec's table).
+        if (!metadata.registration_endpoint) {
+          return { connectable: false, reason: 'no_registration' };
+        }
+        return { connectable: true, reason: null };
+      } catch (error) {
+        if (error instanceof EgressBlockedError) {
+          return { connectable: false, reason: 'blocked' };
+        }
+        // One code covers "no document" and "unreachable": the SDK's discovery
+        // does not separate them, and inventing a distinction here would be a
+        // guess wearing a diagnosis.
+        logger.warn('MCP marketplace: connectability probe failed', {
+          url: String(serverUrl),
+          error: String(error),
+        });
+        return { connectable: false, reason: 'no_metadata' };
+      }
+    },
 
     /**
      * Dynamic registration. The first argument is the **authorization server**,
