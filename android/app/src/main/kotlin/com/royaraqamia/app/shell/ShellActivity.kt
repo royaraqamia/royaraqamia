@@ -63,6 +63,7 @@ import com.royaraqamia.app.news.NewsDigestScreen
 import com.royaraqamia.app.rates.RatesScreen
 import com.royaraqamia.app.scan.ScanScreen
 import com.royaraqamia.app.spendtrack.SpendtrackCategoriesScreen
+import com.royaraqamia.app.spendtrack.SpendtrackCsvCopy
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.sync.SyncScheduler
@@ -261,6 +262,7 @@ class ShellActivity : ComponentActivity() {
                                     route = Routes.normalize(current),
                                     repository = graph.spendtrack,
                                     onOpenCategories = { openRoute("/spendtrack/categories") },
+                                    onShareCsv = ::shareCsv,
                                 )
                             "/spendtrack/categories" ->
                                 SpendtrackCategoriesScreen(repository = graph.spendtrack)
@@ -774,6 +776,29 @@ class ShellActivity : ComponentActivity() {
     private fun copyToClipboard(text: String) {
         val clipboard = getSystemService(ClipboardManager::class.java) ?: return
         clipboard.setPrimaryClip(ClipData.newPlainText(CLIPBOARD_LABEL, text))
+    }
+
+    /**
+     * The CSV the page downloads, as the app's share sheet (#961).
+     *
+     * The app has no Downloads folder it owns, so it writes the same file to its
+     * own cache and hands the platform a read grant on exactly that file. The
+     * bytes are the page's export route's, not a second CSV built here, so a
+     * member shares the same rows and columns on both clients.
+     */
+    private fun shareCsv(fileName: String, content: String) {
+        runCatching {
+            val file = File(cacheDir, fileName)
+            file.writeText(content)
+            val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
+            val send =
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/csv"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            startActivity(Intent.createChooser(send, SpendtrackCsvCopy.EXPORT_TITLE))
+        }
     }
 
     /**

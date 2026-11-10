@@ -67,6 +67,7 @@ fun SpendtrackScreen(
     repository: SpendtrackRepository,
     modifier: Modifier = Modifier,
     onOpenCategories: () -> Unit = {},
+    onShareCsv: (String, String) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -141,18 +142,24 @@ fun SpendtrackScreen(
     val filteredRows = SpendtrackFilters.apply(storedRows, filter)
     val visibleExpenses = SpendtrackExpensesUiState.of(filteredRows)
 
+    val filterWindow = SpendtrackFilters.window(filter)
+
     val header: @Composable () -> Unit = {
         SpendtrackHeader(
             route = route,
             pill = pill,
             currency = currency,
             onCsvImport =
-                CsvImportSlot(
+                CsvSlot(
                     repository = repository,
+                    start = filterWindow.first,
+                    end = filterWindow.second,
+                    categories = filter.categories.toList(),
                     // The rows a successful import creates are the server's; the
                     // pull that follows is how this device learns about them,
                     // exactly as it learns about another device's writes.
                     onImported = { scope.launch { sync() } },
+                    onShare = onShareCsv,
                 ),
             onSelectCurrency = { code ->
                 // A request, not a queued write: a currency that arrived a day
@@ -204,21 +211,29 @@ fun SpendtrackScreen(
                 )
                 val rows = filteredRows
                 val spent = SpendtrackStats.total(rows, "1900-01-01", "2099-12-31")
-                val window = SpendtrackFilters.window(filter)
                 val insights =
-                    SpendtrackStats.insights(rows, categoryRows, window.first, window.second)
+                    SpendtrackStats.insights(
+                        rows,
+                        categoryRows,
+                        filterWindow.first,
+                        filterWindow.second,
+                    )
                 val categoryChart =
                     SpendtrackCategoryChartUiState.of(
                         SpendtrackStats.categoryBreakdown(
                             rows,
                             categoryRows,
-                            window.first,
-                            window.second,
+                            filterWindow.first,
+                            filterWindow.second,
                         )
                     )
                 val dailyChart =
                     SpendtrackDailyChartUiState.of(
-                        SpendtrackStats.dailyTotals(rows, window.first, window.second)
+                        SpendtrackStats.dailyTotals(
+                            rows,
+                            filterWindow.first,
+                            filterWindow.second,
+                        )
                     )
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -363,10 +378,14 @@ fun SpendtrackScreen(
     }
 }
 
-/** The import control the header offers: the store it writes through and what to do after. */
-private data class CsvImportSlot(
+/** The CSV controls the header offers: the store, the filter and what to do after. */
+private data class CsvSlot(
     val repository: SpendtrackRepository,
+    val start: String,
+    val end: String,
+    val categories: List<String>,
     val onImported: () -> Unit,
+    val onShare: (String, String) -> Unit,
 )
 
 /** Which recurring form is open: a new schedule, or an existing one. */
@@ -393,7 +412,7 @@ private fun SpendtrackHeader(
     onAdd: () -> Unit,
     onOpenCategories: () -> Unit,
     onSelectCurrency: (String) -> Unit,
-    onCsvImport: CsvImportSlot?,
+    onCsvImport: CsvSlot?,
 ) {
     val categoriesRoute = route == CATEGORIES_ROUTE
 
@@ -434,9 +453,16 @@ private fun SpendtrackHeader(
                     onSelect = onSelectCurrency,
                     modifier = Modifier.weight(1f),
                 )
-                onCsvImport?.let {
-                    SpendtrackCsvImport(repository = it.repository, onImported = it.onImported)
-                }
+            }
+            onCsvImport?.let {
+                SpendtrackCsvActions(
+                    repository = it.repository,
+                    start = it.start,
+                    end = it.end,
+                    categories = it.categories,
+                    onImported = it.onImported,
+                    onShare = it.onShare,
+                )
             }
         }
 

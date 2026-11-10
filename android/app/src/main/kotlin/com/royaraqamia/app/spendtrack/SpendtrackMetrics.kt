@@ -21,6 +21,14 @@ object SpendtrackMetrics {
     const val CATEGORY_CHART = "spendtrack-category-chart"
     const val DAILY_CHART = "spendtrack-daily-chart"
 
+    // The CSV flow (#961): the page's `h-10`, `rounded-xl` and `gap-2` on the
+    // two controls, from `csv-actions.tsx` at 393 CSS px.
+    const val CSV_CONTROLS = "spendtrack-csv"
+    const val CSV_IMPORT = "spendtrack-csv-import"
+    const val CSV_EXPORT = "spendtrack-csv-export"
+    val CSV_HEIGHT = 40.dp
+    val CSV_GAP = 8.dp
+
     // The two dialogs (#960): the page's own boxes, from `expense-dialog.tsx`
     // and `create-category-dialog.tsx` at the app's 393 CSS px viewport.
     const val EXPENSE_DIALOG = "spendtrack-expense-dialog"

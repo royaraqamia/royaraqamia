@@ -1,0 +1,25 @@
+{
+  "surface": "spendtrack",
+  "state": "csv",
+  "route": "/spendtrack",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "controls": {
+      "width": 361,
+      "height": 40,
+      "columnGap": 8
+    },
+    "import": {
+      "height": 40,
+      "radius": 12
+    },
+    "export": {
+      "height": 40,
+      "radius": 12
+    }
+  }
+}

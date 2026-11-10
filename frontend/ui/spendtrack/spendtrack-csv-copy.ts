@@ -20,6 +20,10 @@ export const SPENDTRACK_CSV_COPY = {
   imported: 'تم استيراد {count} مصروف',
   skipped: 'تم تخطّي {count} صفًا غير صالح',
   failed: 'فشل استيراد المصاريف',
+  exportAction: 'مشاركة ملف CSV',
+  exportTitle: 'مشاركة ملف CSV',
+  exporting: 'جاري تجهيز الملف…',
+  exportFailed: 'فشل تصدير المصاريف',
 } as const;
 
 export type SpendtrackCsvCopyStrings = typeof SPENDTRACK_CSV_COPY;

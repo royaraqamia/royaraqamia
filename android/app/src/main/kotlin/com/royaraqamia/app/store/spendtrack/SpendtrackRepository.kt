@@ -5,6 +5,7 @@ import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.SpendtrackBudgetWrite
 import com.royaraqamia.app.contracts.generated.SpendtrackCurrency
+import com.royaraqamia.app.contracts.generated.SpendtrackExport
 import com.royaraqamia.app.contracts.generated.SpendtrackImportResult
 import com.royaraqamia.app.contracts.generated.SpendtrackRecurringUpdate
 import com.royaraqamia.app.contracts.generated.SpendtrackRecurringWrite
@@ -35,6 +36,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import java.net.URLEncoder
 
 /**
  * SpendTrack's store, as the screen uses it (#653), and its Outbox.
@@ -155,6 +157,34 @@ class SpendtrackRepository(
                 is ApiResult.Failure -> answer
             }
         }
+
+    /**
+     * Exports the filtered window as CSV (#961).
+     *
+     * The app shares what the page downloads, and it asks the page's own route
+     * rather than rebuilding the file from the store: one implementation writes
+     * the columns, so the two clients cannot hand over two different CSVs from
+     * the same rows. The route is a read, so it is not an Outbox intent; offline
+     * the control says so with the site's failure sentence.
+     */
+    suspend fun exportCsv(
+        start: String,
+        end: String,
+        categories: List<String>,
+    ): ApiResult<String> = withContext(Dispatchers.IO) {
+        val params = buildList {
+            if (start.isNotEmpty()) add("start=" + URLEncoder.encode(start, "UTF-8"))
+            if (end.isNotEmpty()) add("end=" + URLEncoder.encode(end, "UTF-8"))
+            if (categories.isNotEmpty()) {
+                add("categories=" + URLEncoder.encode(categories.joinToString(","), "UTF-8"))
+            }
+        }
+        val path = if (params.isEmpty()) EXPORT_PATH else "$EXPORT_PATH?" + params.joinToString("&")
+        when (val answer = client.get(path, SpendtrackExport.serializer())) {
+            is ApiResult.Success -> ApiResult.Success(answer.value.content)
+            is ApiResult.Failure -> answer
+        }
+    }
 
     /** The day a new expense is dated, in the device's own zone. */
     fun today(): String = clock.today()
@@ -759,6 +789,9 @@ class SpendtrackRepository(
 
         /** The CSV import. */
         const val IMPORT_PATH = "/spendtrack/api/import"
+
+        /** The CSV export: the page's own download route (#961). */
+        const val EXPORT_PATH = "/spendtrack/api/export"
 
         /** Where the incremental cursor lives beside the rows. */
         const val KEY_CURSOR = "syncCursor"

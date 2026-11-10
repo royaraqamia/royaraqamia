@@ -22,4 +22,8 @@ object SpendtrackCsvCopy {
     const val IMPORTED = "تم استيراد {count} مصروف"
     const val SKIPPED = "تم تخطّي {count} صفًا غير صالح"
     const val FAILED = "فشل استيراد المصاريف"
+    const val EXPORT_ACTION = "مشاركة ملف CSV"
+    const val EXPORT_TITLE = "مشاركة ملف CSV"
+    const val EXPORTING = "جاري تجهيز الملف…"
+    const val EXPORT_FAILED = "فشل تصدير المصاريف"
 }

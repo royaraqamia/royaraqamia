@@ -476,6 +476,17 @@ const PREPARE: Record<
     await page.waitForTimeout(600);
     await page.evaluate(() => document.fonts.ready);
   },
+  // The CSV flow's two controls (#961). The page draws them for a signed-in
+  // account beside the same filter the dashboard is reading; the export asks the
+  // page's own route, so the recording is the control and the file it hands out
+  // is that route's answer rather than a second format.
+  'spendtrack/csv': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedSpendtrack(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="spendtrack-csv"]').waitFor({ timeout: 30_000 });
+  },
 };
 
 /** What a state removes after its recording, so a seed is never left behind. */

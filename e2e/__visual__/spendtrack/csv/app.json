@@ -1,0 +1,18 @@
+{
+  "surface": "spendtrack",
+  "elements": {
+    "controls": {
+      "width": 360.72726,
+      "height": 40.0,
+      "columnGap": 8.0
+    },
+    "import": {
+      "height": 40.0,
+      "radius": 12
+    },
+    "export": {
+      "height": 40.0,
+      "radius": 12
+    }
+  }
+}

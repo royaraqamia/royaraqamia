@@ -4,14 +4,17 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.connectedapps.ConnectedAppsCopy
@@ -39,33 +43,155 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/** The name the page downloads and the app shares (#961). */
+const val SPENDTRACK_CSV_FILE_NAME = "spendtrack.csv"
+
 /**
- * SpendTrack's CSV import (#653), the app's half of
+ * SpendTrack's CSV flow (#653, #961), the app's half of
  * `frontend/ui/spendtrack/csv-actions.tsx`.
  *
- * The site's control in the site's words: a button, a dialog that names the four
- * columns, the system picker in place of the file input, and the two answers an
- * import can give — how many rows were taken and how many were skipped.
+ * Two controls, the site's words: the import dialog that names the four columns
+ * and reports how many rows it took, and the export that hands the same file the
+ * page downloads to the platform's share sheet. The export asks the page's own
+ * route rather than rebuilding the CSV from the store, so one implementation
+ * writes the columns and the two clients cannot disagree about a row.
  *
- * This is the one action on the surface that needs the network. It is not an
- * Outbox intent — the site makes the request and reports its answer, and a
- * queued import would answer a user who is no longer there — so an offline
- * attempt says so with the site's own failure sentence rather than pretending
- * the rows landed. The rows a successful import creates arrive on the next pull,
- * because the server writes them.
+ * Neither action is an Outbox intent: the page makes the request and reports its
+ * answer, and a queued export would answer a user who is no longer there. An
+ * offline import or export says so with the site's own failure sentence rather
+ * than pretending the file or the rows landed.
  */
 @Composable
-fun SpendtrackCsvImport(
+fun SpendtrackCsvActions(
+    repository: SpendtrackRepository,
+    start: String,
+    end: String,
+    categories: List<String>,
+    onImported: () -> Unit,
+    onShare: (String, String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val type = LocalRoyTypeScale.current
+    val scope = rememberCoroutineScope()
+
+    var importOpen by remember { mutableStateOf(false) }
+    var exporting by remember { mutableStateOf(false) }
+    var exportFailure by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        SpendtrackCsvButtons(
+            onImport = { importOpen = true },
+            onExport = {
+                exportFailure = null
+                exporting = true
+                scope.launch {
+                    when (val result = repository.exportCsv(start, end, categories)) {
+                        is ApiResult.Success -> onShare(SPENDTRACK_CSV_FILE_NAME, result.value)
+                        is ApiResult.Failure -> exportFailure = SpendtrackCsvCopy.EXPORT_FAILED
+                    }
+                    exporting = false
+                }
+            },
+            exporting = exporting,
+        )
+
+        exportFailure?.let {
+            Text(text = it, style = type.xs, color = RoyColors.destructive)
+        }
+    }
+
+    if (importOpen) {
+        SpendtrackCsvImportDialog(
+            repository = repository,
+            onImported = onImported,
+            onDismiss = { importOpen = false },
+        )
+    }
+}
+
+/**
+ * The two buttons the gate measures (#961).
+ *
+ * A stateless pair so the visual test draws the controls the screen draws rather
+ * than a copy composed for the recording: the import opens the dialog, the export
+ * asks the platform to share, and both take the same box the page gives them.
+ */
+@Composable
+fun SpendtrackCsvButtons(
+    onImport: () -> Unit,
+    onExport: () -> Unit,
+    exporting: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val type = LocalRoyTypeScale.current
+
+    Row(
+        modifier = modifier.fillMaxWidth().testTag(SpendtrackMetrics.CSV_CONTROLS),
+        horizontalArrangement = Arrangement.spacedBy(SpendtrackMetrics.CSV_GAP),
+    ) {
+        OutlinedButton(
+            onClick = onImport,
+            shape = MaterialTheme.shapes.large,
+            contentPadding = PaddingValues(horizontal = 14.dp),
+            modifier =
+                Modifier.weight(1f)
+                    .height(SpendtrackMetrics.CSV_HEIGHT)
+                    .testTag(SpendtrackMetrics.CSV_IMPORT),
+        ) {
+            Icon(
+                imageVector = LucideVectors.Upload,
+                contentDescription = null,
+                modifier = Modifier.size(Recipes.Glyph.sm),
+            )
+            Text(
+                text = SpendtrackCsvCopy.ACTION,
+                style = type.xs.copy(fontWeight = FontWeight.Medium),
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+
+        OutlinedButton(
+            onClick = onExport,
+            enabled = !exporting,
+            shape = MaterialTheme.shapes.large,
+            contentPadding = PaddingValues(horizontal = 14.dp),
+            modifier =
+                Modifier.weight(1f)
+                    .height(SpendtrackMetrics.CSV_HEIGHT)
+                    .testTag(SpendtrackMetrics.CSV_EXPORT),
+        ) {
+            Icon(
+                imageVector =
+                    if (exporting) LucideVectors.LoaderCircle else LucideVectors.Share2,
+                contentDescription = null,
+                modifier = Modifier.size(Recipes.Glyph.sm),
+            )
+            Text(
+                text =
+                    if (exporting) SpendtrackCsvCopy.EXPORTING
+                    else SpendtrackCsvCopy.EXPORT_ACTION,
+                style = type.xs.copy(fontWeight = FontWeight.Medium),
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+    }
+}
+
+/** The import dialog: the four columns, the picker and the two answers an import can give. */
+@Composable
+private fun SpendtrackCsvImportDialog(
     repository: SpendtrackRepository,
     onImported: () -> Unit,
-    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit,
 ) {
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var open by remember { mutableStateOf(false) }
     var fileName by remember { mutableStateOf<String?>(null) }
     var content by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
@@ -98,24 +224,7 @@ fun SpendtrackCsvImport(
             read(uri)
         }
 
-    OutlinedButton(
-        onClick = { open = true },
-        modifier = modifier,
-    ) {
-        Icon(
-            imageVector = LucideVectors.Upload,
-            contentDescription = null,
-            modifier = Modifier.size(Recipes.Glyph.sm),
-        )
-        Text(
-            text = SpendtrackCsvCopy.ACTION,
-            modifier = Modifier.padding(start = 6.dp),
-        )
-    }
-
-    if (!open) return
-
-    androidx.compose.ui.window.Dialog(onDismissRequest = { open = false }) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = Recipes.Card.radius,
             color = RoyColors.background,
@@ -159,7 +268,17 @@ fun SpendtrackCsvImport(
                             tint = RoyColors.primary,
                             modifier = Modifier.size(Recipes.Glyph.md),
                         )
-                        TextButton(onClick = { picker.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain")) }) {
+                        TextButton(
+                            onClick = {
+                                picker.launch(
+                                    arrayOf(
+                                        "text/csv",
+                                        "text/comma-separated-values",
+                                        "text/plain",
+                                    )
+                                )
+                            }
+                        ) {
                             Text(fileName ?: SpendtrackCsvCopy.PICK_FILE, style = type.small)
                         }
                     }
@@ -200,7 +319,7 @@ fun SpendtrackCsvImport(
                     horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(onClick = { open = false }) {
+                    TextButton(onClick = onDismiss) {
                         Text(ConnectedAppsCopy.CANCEL, color = Recipes.Row.labelColor)
                     }
                     Button(
