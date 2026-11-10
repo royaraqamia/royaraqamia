@@ -185,6 +185,30 @@ redirect becomes credentials.
    `invalid_grant` marks the connection `needs_reauth` and the row says «أعد الربط» rather than
    failing a turn with a provider error.
 
+**No scope is requested**, at registration or at authorization. Declaring every scope a server
+publishes would ask the member for the widest consent the provider offers, on the strength of a
+guess about which tools need what; the provider's own default is the starting grant, and widening
+it is a choice someone makes on purpose. What that default actually is gets recorded here once a
+real connection is measured.
+
+### Measured against real servers (2026-11-10)
+
+Eleven popular remote servers, probed for RFC 9728 resource metadata, an authorization server and
+dynamic registration:
+
+| Server                                              | Connectable | Why not                                              |
+| --------------------------------------------------- | ----------- | ---------------------------------------------------- |
+| Linear, Sentry, Vercel, Supabase, Canva, Cloudflare | yes         | DCR + PKCE S256 published                            |
+| Notion, Figma, Atlassian                            | no          | no `/.well-known/oauth-protected-resource`           |
+| Stripe                                              | no          | issuer publishes no metadata                         |
+| GitHub                                              | no          | no dynamic registration (pre-registered client only) |
+
+Three of the most requested apps in the market are therefore not connectable by this flow, and
+that is not a bug to paper over: a pre-registered client per provider is a separate piece of work
+(one client id and secret each, in env), and a server with no resource metadata would have to be
+guessed at. Phase 2's catalogue should say which rows can be connected before a member taps one,
+rather than explaining it after a refusal.
+
 ## Egress policy (one module, non-negotiable)
 
 Third-party URLs entered by nobody we trust, called from our infrastructure:

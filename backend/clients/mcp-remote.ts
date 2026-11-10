@@ -74,10 +74,9 @@ export { McpRemoteError, type McpRemoteFailure };
 export interface McpRemoteClient {
   discover(serverUrl: string | URL): Promise<McpDiscovery>;
   register(input: {
-    registrationEndpoint: string;
+    discovery: McpDiscovery;
     redirectUri: string;
     clientName: string;
-    scopes: string[];
   }): Promise<McpRegistration>;
   /**
    * The URL the member is sent to, and the PKCE verifier that must survive until
@@ -170,9 +169,23 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
   return {
     discover,
 
-    async register({ registrationEndpoint, redirectUri, clientName, scopes }) {
+    /**
+     * Dynamic registration. The first argument is the **authorization server**,
+     * not the registration URL: the SDK reads `metadata.registration_endpoint`
+     * from the document, and handing it an endpoint with no metadata makes it
+     * fall back to the specification's default path (`/register`), which a
+     * provider that hosts registration elsewhere answers with a 404 (#1215).
+     *
+     * No `scope` is declared. A registration that names every scope the server
+     * publishes asks the member to grant the widest possible consent, and we
+     * have no evidence yet about which of them the tools need: the provider's
+     * own default is the starting grant, and widening it is a choice someone
+     * makes on purpose.
+     */
+    async register({ discovery, redirectUri, clientName }) {
       try {
-        const registered = await registerClient(registrationEndpoint, {
+        const registered = await registerClient(discovery.authorizationServer, {
+          metadata: discovery.metadata,
           fetchFn: guardedFetch,
           clientMetadata: {
             client_name: clientName,
@@ -180,7 +193,6 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
             grant_types: ['authorization_code', 'refresh_token'],
             response_types: ['code'],
             token_endpoint_auth_method: 'none',
-            ...(scopes.length > 0 ? { scope: scopes.join(' ') } : {}),
           },
         });
         return {

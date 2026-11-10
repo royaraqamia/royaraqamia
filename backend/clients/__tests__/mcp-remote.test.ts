@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { McpRemoteError, createMcpRemoteClient } from '../mcp-remote';
+import { McpRemoteError, createMcpRemoteClient, type McpDiscovery } from '../mcp-remote';
 
 /**
  * The third-party client, tested against a fake network: what matters is that
@@ -128,11 +128,32 @@ describe('authorizeUrl', () => {
   });
 });
 
+/**
+ * A discovery document whose registration lives away from the issuer's
+ * `/register`. That is the shape Supabase has, and the shape that exposed the
+ * production bug (#1215): handed an endpoint with no metadata, the SDK falls
+ * back to the specification's default path and the provider answers 404.
+ */
+function discoveryAt(registrationEndpoint: string): McpDiscovery {
+  return {
+    resource: 'https://mcp.example.com/mcp',
+    authorizationServer: 'https://auth.example.com',
+    authorizationEndpoint: 'https://auth.example.com/authorize',
+    tokenEndpoint: 'https://auth.example.com/token',
+    registrationEndpoint,
+    scopes: ['read'],
+    metadata: {
+      ...SERVER_METADATA,
+      registration_endpoint: registrationEndpoint,
+    } as McpDiscovery['metadata'],
+  };
+}
+
 describe('register', () => {
-  it('registers a public client at the registration endpoint', async () => {
+  it('registers a public client at the endpoint the metadata names', async () => {
     const fetchImpl = fakeNetwork([
       {
-        match: (url: string) => url.includes('/register'),
+        match: (url: string) => url.includes('/platform/oauth/apps/register'),
         body: {
           client_id: 'registered-1',
           client_secret: 'secret-1',
@@ -147,10 +168,9 @@ describe('register', () => {
     });
 
     const registration = await remote.register({
-      registrationEndpoint: 'https://auth.example.com/register',
+      discovery: discoveryAt('https://auth.example.com/platform/oauth/apps/register'),
       redirectUri: 'https://royaraqamia.com/mcp/callback',
       clientName: 'royaraqamia',
-      scopes: ['read'],
     });
 
     expect(registration).toEqual({
@@ -159,9 +179,16 @@ describe('register', () => {
       kind: 'dcr',
     });
 
+    // The exact URL the provider published — never `/register`.
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(
+      'https://auth.example.com/platform/oauth/apps/register'
+    );
+
     const body = JSON.parse(String((fetchImpl.mock.calls[0]?.[1] as RequestInit).body));
     expect(body.redirect_uris).toEqual(['https://royaraqamia.com/mcp/callback']);
     expect(body.token_endpoint_auth_method).toBe('none');
+    // No scopes are declared: the provider's own default is the starting grant.
+    expect(body.scope).toBeUndefined();
   });
 
   it('refuses when the server rejects the registration', async () => {
@@ -178,10 +205,9 @@ describe('register', () => {
 
     await expect(
       remote.register({
-        registrationEndpoint: 'https://auth.example.com/register',
+        discovery: discoveryAt('https://auth.example.com/register'),
         redirectUri: 'https://royaraqamia.com/mcp/callback',
         clientName: 'royaraqamia',
-        scopes: [],
       })
     ).rejects.toMatchObject({ failure: 'registration' });
   });
