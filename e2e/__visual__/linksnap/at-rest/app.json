@@ -10,7 +10,7 @@
     "card": {
       "top": 94.545456,
       "width": 360.72726,
-      "height": 240.36363,
+      "height": 236.36363,
       "radius": 24.0,
       "paddingTop": 20.0,
       "paddingLeft": 20.0
@@ -35,10 +35,20 @@
       "fontSize": 12.0
     },
     "submit": {
+      "top": 261.81818,
       "width": 318.54544,
-      "height": 52.0,
+      "height": 48.0,
       "fontSize": 16.0,
       "fontWeight": 700
+    },
+    "fab": {
+      "left": 16.0,
+      "width": 52.0,
+      "height": 52.0
+    },
+    "fab-glyph": {
+      "width": 22.181818,
+      "height": 22.181763
     }
   }
 }

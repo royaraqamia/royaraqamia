@@ -83,7 +83,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 71 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 72 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -125,6 +125,7 @@ A component is finished when the surface that draws it is native: 71 ported comp
 - [x] `needs-connection` on **community** · #658
 - [x] `read-failure` on **community** · #658
 - [x] `linksnap-page` on **linksnap** · #654
+- [x] `linksnap-account-fab` on **linksnap** · #1208
 - [x] `linksnap-shortener` on **linksnap** · #916
 - [x] `linksnap-empty` on **linksnap** · #654
 - [x] `account-links-row` on **account-links** · #941

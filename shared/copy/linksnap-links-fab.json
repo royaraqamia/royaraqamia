@@ -1,0 +1,21 @@
+{
+  "surface": "linksnap",
+  "component": "linksnap-links-fab",
+  "web": {
+    "file": "frontend/ui/linksnap/linksnap-links-fab-copy.ts",
+    "export": "LINKSNAP_LINKS_FAB_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapLinksFabCopy.kt",
+    "object": "LinksnapLinksFabCopy"
+  },
+  "notes": {
+    "source": "The shortener's own account door, in both clients (#1208). The site's `LinksnapLinksFab` is the reference: the button's accessible name and the sentence a guest gets instead of a redirect to a page they cannot read. They live here rather than in the shortener's source because the shortener's card never draws them.",
+    "placeholders": "None.",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key `linksnap-links-fab.tsx` does not render."
+  },
+  "strings": {
+    "label": "روابطي",
+    "guestTitle": "سجِّل الدُّخول لعرض روابطك"
+  }
+}
