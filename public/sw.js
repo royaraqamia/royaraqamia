@@ -804,6 +804,24 @@ function isPinned(key, entry) {
   return PRECACHE_PATHS.has(url.pathname);
 }
 
+// A navigation revalidates with `redirect: 'manual'`, so a 3xx comes back as an
+// opaque redirect: no status and no `Location` this worker could read, and
+// nothing Cache Storage would take.
+function isOpaqueRedirect(response) {
+  return Boolean(response) && (response.type === 'opaqueredirect' || response.status === 0);
+}
+
+// Drops one entry and the size it was charged against the budget with it. A
+// document the server now redirects is a document the route no longer has
+// (#1232): keeping it would shadow the redirect on every later visit.
+async function forgetCachedDocument(key) {
+  await withIndex(async (index) => {
+    const cache = await caches.open(CACHE);
+    await cache.delete(key);
+    delete index.entries[cacheKeyOf(key)];
+  });
+}
+
 async function removeEntry(key) {
   await Promise.all(
     [CACHE, STATIC_CACHE].map(async (name) => {
@@ -1089,6 +1107,21 @@ async function staleWhileRevalidate(request, onMiss, event, options = {}) {
     staleBuild ? { cache: 'no-cache' } : undefined
   )
     .then(async (response) => {
+      // A retired app root answers its old address with a 307 (ADR-0156), which
+      // this navigation's manual redirect mode hands back opaque — so `ok` is
+      // false, the redirect is never stored, and the cached document would
+      // answer every visit after it. Delete the entry instead: the next
+      // navigation reaches the network and follows the 307, which is what moves
+      // the address bar. Taking a followed response here would keep the old
+      // address and only swap the page under it.
+      if (isNavigationRequest(request) && isOpaqueRedirect(response)) {
+        if (cached) {
+          await forgetCachedDocument(key).catch((error) => {
+            console.log('[sw] cache delete failed', String(error));
+          });
+        }
+        return response;
+      }
       // A data-free shell that Next rendered per request (#1128) is stored
       // despite its `no-store`: the page carries no account data, and the
       // sign-out purge deletes the entry with every other runtime entry.

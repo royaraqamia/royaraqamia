@@ -287,6 +287,12 @@ Honest list of what stands between us and the bar, each with the file that shows
 | Public read APIs that declare `public`                                                      | SWR; an absent header is not permission                                                                            |
 | Auth APIs and the OAuth callback, mutations, admin, MCP consent, push, `no-store`/`private` | never cache                                                                                                        |
 
+A cached document whose revalidation answers with a redirect — an app root retired under
+[ADR-0156](../adr/0156-an-app-root-is-a-tab.md) — is dropped instead of kept: a navigation revalidates
+with `redirect: 'manual'`, so the answer arrives opaque and unstorable, and keeping the entry would
+shadow the redirect on every later visit. Dropping it sends the next navigation to the network, which
+follows the 307 and moves the address bar (#1232).
+
 Account-scoped reads are `no-store` by construction at the authenticated seam, and the Quran sync
 read is also on the never-cache list — a signed-in reader's bookmarks and position never enter Cache
 Storage (#392). `scripts/__tests__/api-cache-contract.test.ts` fails an API GET route that is neither

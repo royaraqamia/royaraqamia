@@ -1139,6 +1139,81 @@ describe('service worker navigation deadline (#447)', () => {
   });
 });
 
+describe('service worker retired routes (#1232)', () => {
+  function request(path) {
+    return {
+      method: 'GET',
+      mode: 'navigate',
+      url: `https://site.example${path}`,
+      headers: { get: () => null },
+    };
+  }
+
+  function fetchEvent(req) {
+    const event = new FakeEvent('fetch');
+    event.request = req;
+    event.respondWith = (response) => {
+      event.response = response;
+    };
+    return event;
+  }
+
+  // What a navigation's `redirect: 'manual'` fetch resolves with: the browser
+  // has the `Location`, the worker only knows something redirected.
+  const opaqueRedirect = () => ({ type: 'opaqueredirect', status: 0, ok: false });
+
+  it('deletes a cached document whose revalidation is a redirect', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/linksnap', new Response('retired-shell'));
+    await cache.put('https://site.example/community', new Response('kept-shell'));
+
+    const redirect = opaqueRedirect();
+    ctx.sandbox.fetch = vi.fn(async () => redirect);
+
+    const event = fetchEvent(request('/linksnap'));
+    ctx.dispatch('fetch', event);
+
+    // The visit that finds out still paints what it has: the redirect is only
+    // known after the copy has already answered (stale-while-revalidate).
+    expect(await event.response.then((response) => response.text())).toBe('retired-shell');
+    await Promise.all(event.waitUntilCalls);
+
+    // The stale entry is gone, so the next navigation goes to the network and
+    // the browser follows the 307 itself — which is what moves the address bar.
+    expect(await cache.match('https://site.example/linksnap')).toBeUndefined();
+    const next = fetchEvent(request('/linksnap'));
+    ctx.dispatch('fetch', next);
+    await expect(next.response).resolves.toBe(redirect);
+
+    // Only the redirected key was dropped.
+    expect(await cache.match('https://site.example/community')).toBeTruthy();
+  });
+
+  it('still replaces the document when the revalidation is a real answer', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/linksnap', new Response('retired-shell'));
+
+    ctx.sandbox.fetch = vi.fn(
+      async () =>
+        new Response('current-shell', {
+          status: 200,
+          headers: { 'cache-control': 'public, max-age=60' },
+        })
+    );
+
+    const event = fetchEvent(request('/linksnap'));
+    ctx.dispatch('fetch', event);
+    await event.response;
+    await Promise.all(event.waitUntilCalls);
+
+    const stored = await cache.match('https://site.example/linksnap');
+    expect(stored).toBeTruthy();
+    expect(await stored.text()).toBe('current-shell');
+  });
+});
+
 describe('service worker RSC cache key and navigation preload (#492)', () => {
   /**
    * A request the App Router sends for an RSC payload. `headers` carries the
