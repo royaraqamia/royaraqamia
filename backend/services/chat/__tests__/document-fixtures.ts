@@ -91,12 +91,32 @@ export async function docxDocument(
   });
 }
 
+/** A formula cell: the `<f>` the sheet stores, and the `<v>` it cached beside it. */
+export interface FormulaCell {
+  formula: string;
+  value?: string | number;
+}
+
+/** A cell written as a literal rather than a reference: `t="b"` or `t="inlineStr"`. */
+export type LiteralCell = { boolean: boolean } | { inline: string };
+
+export type SheetCell = string | number | FormulaCell | LiteralCell;
+
 export interface SheetFixture {
+  name: string;
+  rows: SheetCell[][];
+}
+
+export interface TextSheetFixture {
   name: string;
   rows: (string | number)[][];
 }
 
-/** A workbook, its header row a shared string and its numbers inline. */
+/**
+ * A workbook, its header row a shared string and its numbers inline. A formula
+ * cell is written the way Excel writes one: the formula and its cached value in
+ * the same `<c>`, so a reader that takes the whole subtree sees both.
+ */
 export async function xlsxDocument(sheets: SheetFixture[]): Promise<Uint8Array> {
   const shared: string[] = [];
   const sharedIndex = (value: string) => {
@@ -137,11 +157,9 @@ export async function xlsxDocument(sheets: SheetFixture[]): Promise<Uint8Array> 
     const rows = sheet.rows
       .map((row, rowIndex) => {
         const cells = row
-          .map((cell, columnIndex) => {
-            const ref = `${column(columnIndex)}${rowIndex + 1}`;
-            if (typeof cell === 'number') return `<c r="${ref}"><v>${cell}</v></c>`;
-            return `<c r="${ref}" t="s"><v>${sharedIndex(cell)}</v></c>`;
-          })
+          .map((cell, columnIndex) =>
+            sheetCell(cell, `${column(columnIndex)}${rowIndex + 1}`, sharedIndex)
+          )
           .join('');
         return `<row r="${rowIndex + 1}">${cells}</row>`;
       })
@@ -163,7 +181,7 @@ export async function xlsxDocument(sheets: SheetFixture[]): Promise<Uint8Array> 
 }
 
 /** An ODS workbook: the same cells in the other format's clothes. */
-export async function odsDocument(sheets: SheetFixture[]): Promise<Uint8Array> {
+export async function odsDocument(sheets: TextSheetFixture[]): Promise<Uint8Array> {
   const tables = sheets
     .map(
       (sheet) =>
@@ -220,6 +238,18 @@ async function zip(files: Record<string, string>): Promise<Uint8Array> {
   const archive = new JSZip();
   for (const [path, content] of Object.entries(files)) archive.file(path, content);
   return archive.generateAsync({ type: 'uint8array' });
+}
+
+/** One `<c>` in a worksheet, written the way the format stores its kind. */
+function sheetCell(cell: SheetCell, ref: string, sharedIndex: (value: string) => number): string {
+  if (typeof cell === 'number') return `<c r="${ref}"><v>${cell}</v></c>`;
+  if (typeof cell === 'string') return `<c r="${ref}" t="s"><v>${sharedIndex(cell)}</v></c>`;
+  if ('formula' in cell) {
+    const cached = cell.value === undefined ? '' : `<v>${escapeXml(String(cell.value))}</v>`;
+    return `<c r="${ref}"><f>${escapeXml(cell.formula)}</f>${cached}</c>`;
+  }
+  if ('boolean' in cell) return `<c r="${ref}" t="b"><v>${cell.boolean ? '1' : '0'}</v></c>`;
+  return `<c r="${ref}" t="inlineStr"><is><t>${escapeXml(cell.inline)}</t></is></c>`;
 }
 
 /** A column's letters, so a fixture writes `A1` the way a spreadsheet does. */

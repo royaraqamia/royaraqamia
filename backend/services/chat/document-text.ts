@@ -324,9 +324,22 @@ function xlsxRows(tree: XmlNode[], shared: string[]): Row[] {
   });
 }
 
+/**
+ * A cell's words: the `<v>` value it cached, never the `<f>` formula beside it.
+ * A formula cell carries both — `<f>SUM(B1:B3)</f><v>42</v>` — and the whole
+ * subtree read as text is `SUM(B1:B3)42`, which is not what the sheet shows.
+ */
 function cellValue(cell: Element, shared: string[]): string {
-  const value = elementText(cell.children);
   const type = cell.attrs['@_t'];
+  if (type === 'inlineStr') {
+    return collect(cell.children, 'is')
+      .map((inline) => elementText(inline.children))
+      .join('');
+  }
+
+  const value = collect(cell.children, 'v')
+    .map((cached) => elementText(cached.children))
+    .join('');
   if (type === 's') return shared[Number(value)] ?? '';
   if (type === 'b') return value === '1' ? 'TRUE' : 'FALSE';
   return value;

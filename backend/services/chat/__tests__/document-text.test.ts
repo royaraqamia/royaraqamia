@@ -113,6 +113,42 @@ describe('a workbook', () => {
     expect(reading?.text).toContain('المصاريف · 2 · كانون الثاني | 120');
   });
 
+  it('reads a formula cell as its cached value, never the formula', async () => {
+    const reading = await readDocumentText(
+      await xlsxDocument([
+        {
+          name: 'المصاريف',
+          rows: [
+            ['الشهر', 'المجموع'],
+            [{ formula: 'SUM(B1:B3)', value: 42 }],
+            [{ formula: 'B1*2' }],
+          ],
+        },
+      ]),
+      XLSX
+    );
+
+    expect(reading?.text).toContain('المصاريف · 2 · 42');
+    expect(reading?.text).not.toContain('SUM(');
+    expect(reading?.text).not.toContain('B1:B3');
+    // A formula with no cached value contributes no words: the row is empty.
+    expect(reading?.text).not.toContain('المصاريف · 3 ·');
+  });
+
+  it('keeps a shared string, a boolean and an inline string as they were', async () => {
+    const reading = await readDocumentText(
+      await xlsxDocument([
+        {
+          name: 'ورقة',
+          rows: [['نص', { boolean: true }, { boolean: false }, { inline: 'مباشر' }]],
+        },
+      ]),
+      XLSX
+    );
+
+    expect(reading?.text).toContain('ورقة · 1 · نص | TRUE | FALSE | مباشر');
+  });
+
   it('stops at the sheet cap, and says how many there are', async () => {
     const many = Array.from({ length: DOCUMENT_SHEETS_MAX + 2 }, (_, index) => ({
       name: `ورقة ${index + 1}`,
