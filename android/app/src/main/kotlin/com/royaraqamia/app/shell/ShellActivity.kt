@@ -62,6 +62,7 @@ import com.royaraqamia.app.quran.QuranSurahRoute
 import com.royaraqamia.app.news.NewsDigestScreen
 import com.royaraqamia.app.rates.RatesScreen
 import com.royaraqamia.app.scan.ScanScreen
+import com.royaraqamia.app.spendtrack.SpendtrackCategoriesScreen
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.store.Identity
 import com.royaraqamia.app.sync.SyncScheduler
@@ -251,16 +252,18 @@ class ShellActivity : ComponentActivity() {
                                     onSignOut = ::signOut,
                                 )
                             "/habitflow" -> HabitflowScreen(repository = graph.habitflow)
-                            // SpendTrack's two routes are one screen (#653): the
-                            // total and list, and the categories that list files
-                            // against — the pair the site's surface matrix gives
-                            // one row.
-                            "/spendtrack", "/spendtrack/categories" ->
+                            // SpendTrack's two routes share one implementation
+                            // (#653): the dashboard, and the categories that
+                            // list files against. Each route has its own gate
+                            // row and its own screen name (#958, #959).
+                            "/spendtrack" ->
                                 SpendtrackScreen(
                                     route = Routes.normalize(current),
                                     repository = graph.spendtrack,
                                     onOpenCategories = { openRoute("/spendtrack/categories") },
                                 )
+                            "/spendtrack/categories" ->
+                                SpendtrackCategoriesScreen(repository = graph.spendtrack)
                             "/account/faq" -> AccountFaqScreen()
                             // The Quran reader (#955): the sura index, the
                             // reader's last place, and the vendored text. The

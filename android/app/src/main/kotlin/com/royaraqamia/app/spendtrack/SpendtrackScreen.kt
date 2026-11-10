@@ -35,11 +35,12 @@ import kotlinx.coroutines.launch
 /**
  * SpendTrack, drawn from the device (#653).
  *
- * Two routes, one screen: `/spendtrack` is the total and the expense list,
- * `/spendtrack/categories` is the categories, which is the same pair the site
- * splits its surface into. Both are one file because the surface matrix gives
- * them one row (`perf/surfaces.json`), and a screen the shell cannot name twice
- * is a screen `npm run check:screens` refuses.
+ * Two routes, one implementation: `/spendtrack` is the total and the expense
+ * list, `/spendtrack/categories` is the categories, which is the same pair the
+ * site splits its surface into. They share the store, the sync pill and the
+ * dialogs, so the categories route is [SpendtrackCategoriesScreen]'s name over
+ * this same composable; the surface matrix gives each route its own gate row
+ * (#958, #959).
  *
  * The order of the reads is HabitFlow's (#649, #650), not a second opinion:
  * [SpendtrackRepository.expenses] and [SpendtrackRepository.categories] answer

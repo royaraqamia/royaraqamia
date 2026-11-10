@@ -1,0 +1,43 @@
+{
+  "surface": "spendtrack-categories",
+  "route": "/spendtrack/categories",
+  "notes": "The categories page's structure: the create control beside the title, the list, and one row inside the page's card. `capture` is the row, because it is the region both clients draw from the same row state - the colour dot, the name and the two actions - and the list and the create control are measured by their boxes. The empty state is a state of the same list (`data-visual='spendtrack-categories-empty'`); this state records the list with rows, which is the page's default for an account that has categories. The widths are the card's inner width at the app's 393 CSS px viewport: the page's 16px gutters and the card's 20px padding take the row to 319, which the composition reproduces rather than duplicates.",
+  "states": [
+    {
+      "name": "at-rest",
+      "capture": "row",
+      "elements": [
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='spendtrack-categories-list']"
+          },
+          "app": {
+            "tag": "spendtrack-categories-list"
+          },
+          "properties": ["width"]
+        },
+        {
+          "name": "row",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-row']"
+          },
+          "app": {
+            "tag": "spendtrack-category-row"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "create",
+          "web": {
+            "selector": "[data-visual='spendtrack-category-create']"
+          },
+          "app": {
+            "tag": "spendtrack-category-create"
+          },
+          "properties": ["height"]
+        }
+      ]
+    }
+  ]
+}

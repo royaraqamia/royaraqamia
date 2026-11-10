@@ -1,5 +1,6 @@
 package com.royaraqamia.app.spendtrack
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -7,11 +8,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -30,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -71,7 +75,7 @@ fun SpendtrackCategoryList(
         // The site's list is one accessible node with its own name; the app's
         // scroll container says the same thing rather than reading every row as
         // an unnamed list (ADR-0098).
-        modifier = modifier.fillMaxSize().semantics { contentDescription = SpendtrackCategoriesCopy.LIST_LABEL },
+        modifier = modifier.fillMaxSize().testTag("spendtrack-categories-list").semantics { contentDescription = SpendtrackCategoriesCopy.LIST_LABEL },
         verticalArrangement = Arrangement.spacedBy(LocalRoySpacing.current.elementGapSm),
     ) {
         if (header != null) item { header() }
@@ -96,7 +100,7 @@ private fun EmptyCategories() {
     val type = LocalRoyTypeScale.current
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = LocalRoySpacing.current.sectionSm),
+        modifier = Modifier.fillMaxWidth().testTag("spendtrack-categories-empty").padding(vertical = LocalRoySpacing.current.sectionSm),
         verticalArrangement = Arrangement.spacedBy(LocalRoySpacing.current.elementGapSm),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -131,52 +135,85 @@ private fun CategoryRowView(
     var confirmingDelete by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = Recipes.Card.radius,
-        colors = CardDefaults.cardColors(containerColor = Recipes.Card.container),
-        border = Recipes.Card.border,
+        modifier = Modifier.fillMaxWidth().testTag("spendtrack-category-row"),
+        // The page's row is `rounded-xl ... p-3`, one step inside the card it
+        // sits in (`rounded-2xl`), so the row reads its own corner and padding
+        // rather than the card recipe's (#959).
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = RoyColors.card.copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, RoyColors.border.copy(alpha = 0.6f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(Recipes.Card.padding(spacing)),
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier =
-                    Modifier.size(14.dp)
-                        .clip(CircleShape)
-                        .background(colorOf(row.colorHex)),
-            )
-            Text(
+            // The page groups the dot, the name and the badge in one `flex-1`
+            // row, so the badge sits beside the name rather than at the far end
+            // of the row (#959).
+            Row(
                 modifier = Modifier.weight(1f),
-                text = row.name,
-                style = type.small.copy(fontWeight = FontWeight.Bold),
-                color = RoyColors.foreground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (row.userId == null) {
-                Text(
-                    text = SpendtrackCategoriesCopy.DEFAULT_BADGE,
-                    style = type.xs,
-                    color = Recipes.Row.labelColor,
+                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // The site's dot is `size-3.5` with a `ring-2 ring-border`: a
+                // 14dp fill inside an 18dp ring, not a 14dp box with a border
+                // inside it.
+                Box(
+                    modifier =
+                        Modifier.size(18.dp)
+                            .clip(CircleShape)
+                            .background(RoyColors.border)
+                            .padding(2.dp)
+                            .clip(CircleShape)
+                            .background(colorOf(row.colorHex)),
                 )
-            } else {
-                IconButton(onClick = onEdit) {
-                    Icon(
-                        imageVector = LucideVectors.Pencil,
-                        contentDescription = SpendtrackCategoriesCopy.EDIT_TITLE,
-                        tint = Recipes.Row.labelColor,
-                        modifier = Modifier.size(Recipes.Glyph.sm),
-                    )
+                Text(
+                    modifier = Modifier.weight(1f, fill = false),
+                    text = row.name,
+                    style = type.small.copy(fontWeight = FontWeight.Medium),
+                    color = RoyColors.foreground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (row.userId == null) {
+                    Box(
+                        modifier =
+                            Modifier.clip(RoundedCornerShape(6.dp))
+                                .background(RoyColors.muted.copy(alpha = 0.8f))
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = SpendtrackCategoriesCopy.DEFAULT_BADGE,
+                            style = type.xs.copy(fontWeight = FontWeight.Medium),
+                            color = Recipes.Row.labelColor,
+                        )
+                    }
                 }
-                IconButton(onClick = { confirmingDelete = true }) {
-                    Icon(
-                        imageVector = LucideVectors.Trash,
-                        contentDescription = SpendtrackCategoriesCopy.DELETE_TITLE,
-                        tint = RoyColors.destructive,
-                        modifier = Modifier.size(Recipes.Glyph.sm),
-                    )
+            }
+            if (row.userId != null) {
+                // The page's two controls are `gap-1`: a 4dp step, not the row's
+                // own 12dp gap between the name and the actions.
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            imageVector = LucideVectors.Pencil,
+                            contentDescription = SpendtrackCategoriesCopy.EDIT_TITLE,
+                            tint = Recipes.Row.labelColor,
+                            modifier = Modifier.size(Recipes.Glyph.sm),
+                        )
+                    }
+                    IconButton(onClick = { confirmingDelete = true }) {
+                        Icon(
+                            imageVector = LucideVectors.Trash,
+                            contentDescription = SpendtrackCategoriesCopy.DELETE_TITLE,
+                            tint = RoyColors.destructive,
+                            modifier = Modifier.size(Recipes.Glyph.sm),
+                        )
+                    }
                 }
             }
         }
@@ -334,7 +371,12 @@ fun SpendtrackCategoryDialog(
 /** The site's "add a category" control: the plus glyph and the site's words. */
 @Composable
 fun SpendtrackAddCategoryButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Button(onClick = onClick, modifier = modifier) {
+    // The page's control is the default button (`h-12`, 48px); the app draws a
+    // Material button, so the height is stated rather than left to its minimum.
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(48.dp).testTag("spendtrack-category-create"),
+    ) {
         Icon(
             imageVector = LucideVectors.Plus,
             contentDescription = SpendtrackCategoryCreateCopy.ADD_ACTION,
