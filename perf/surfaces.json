@@ -373,6 +373,26 @@
       "specs": ["e2e/public-offline.spec.ts"]
     },
     {
+      "id": "mcp-apps",
+      "routes": ["/mcp/apps"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "none",
+      "specs": [],
+      "issue": "#1224"
+    },
+    {
+      "id": "mcp-app-detail",
+      "routes": ["/mcp/apps/[id]"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "none",
+      "specs": [],
+      "issue": "#1224"
+    },
+    {
       "id": "admin",
       "prefix": "/admin",
       "owner": "server",

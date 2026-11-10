@@ -108,6 +108,18 @@
       "state": "todo"
     },
     {
+      "surface": "mcp-apps",
+      "phase": "public-content",
+      "state": "todo",
+      "issue": "#1228"
+    },
+    {
+      "surface": "mcp-app-detail",
+      "phase": "public-content",
+      "state": "todo",
+      "issue": "#1228"
+    },
+    {
       "surface": "athkar",
       "phase": "public-content",
       "state": "todo"

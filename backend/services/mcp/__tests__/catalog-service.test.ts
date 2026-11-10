@@ -55,6 +55,9 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     getCatalogServer: async () => null,
     findLiveConnection: async () => null,
     getConnection: async () => null,
+    listConnections: async () => [],
+    deleteConnection: async () => false,
+    setToolEnabled: async () => false,
     createConnection: async () => {
       throw new Error('not used');
     },

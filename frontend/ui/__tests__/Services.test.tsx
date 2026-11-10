@@ -9,7 +9,9 @@ function renderWithProviders(ui: React.ReactElement) {
 }
 
 /** The app rows the `تطبيقاتنا` sheet ships, in its own order. */
-const MENU_ENTRIES = (SERVICES_LINK.subItems ?? []).map((item) => [item.label, item.href] as const);
+const MENU_ENTRIES = (SERVICES_LINK.subItems ?? [])
+  .filter((item) => !item.pickerOnly)
+  .map((item) => [item.label, item.href] as const);
 
 describe('Services', () => {
   it('renders the section heading', () => {

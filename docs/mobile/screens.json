@@ -193,6 +193,16 @@
       "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
     },
     {
+      "surface": "mcp-apps",
+      "native": null,
+      "reason": "The marketplace is the page until phase 6 ports it (#1228, ADR-0155); the app opens `/mcp/apps` in the document until the visual gate passes."
+    },
+    {
+      "surface": "mcp-app-detail",
+      "native": null,
+      "reason": "The post-connect screen is the page until phase 6 ports it (#1228, ADR-0155); the app opens `/mcp/apps/<id>` in the document until the visual gate passes."
+    },
+    {
       "surface": "admin",
       "native": null,
       "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."

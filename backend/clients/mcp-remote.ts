@@ -114,6 +114,18 @@ export interface McpRemoteClient {
     client: { clientId: string; clientSecret: string | null };
     refreshToken: string;
   }): Promise<OAuthTokens>;
+  /**
+   * RFC 7009 revocation at the provider, when its metadata publishes an
+   * endpoint. Answers `false` when it does not support it — the caller still
+   * forgets the connection locally, because a member's disconnect must not be
+   * held hostage by a server that never implemented revocation.
+   */
+  revoke(input: {
+    metadata: AuthorizationServerMetadata;
+    client: { clientId: string; clientSecret: string | null };
+    token: string;
+    tokenTypeHint: 'access_token' | 'refresh_token';
+  }): Promise<boolean>;
   /** `initialize` + `tools/list`, in one connection that is closed again. */
   listTools(input: { serverUrl: string | URL; accessToken: string }): Promise<McpRemoteTool[]>;
 }
@@ -306,6 +318,43 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
         return { ...tokens, refresh_token: tokens.refresh_token ?? refreshToken };
       } catch (error) {
         mapFailure(error, 'authorization', 'انتهت صلاحية الوصول إلى التطبيق، ويلزم إعادة الربط');
+      }
+    },
+
+    /**
+     * RFC 7009. The endpoint comes from the authorization server's metadata,
+     * which is why it can be missing: a provider that publishes none keeps its
+     * token live until it expires, and the caller's local delete is still the
+     * member's decision that this app forgets them.
+     */
+    async revoke({ metadata, client, token, tokenTypeHint }) {
+      // The SDK's type is a union whose OpenID member has no revocation
+      // endpoint; the key's presence is what the specification says to check.
+      const endpoint = 'revocation_endpoint' in metadata ? metadata.revocation_endpoint : undefined;
+      if (!endpoint) return false;
+
+      const body = new URLSearchParams({
+        token,
+        token_type_hint: tokenTypeHint,
+        client_id: client.clientId,
+      });
+      if (client.clientSecret) body.set('client_secret', client.clientSecret);
+
+      try {
+        const response = await guardedFetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: body.toString(),
+        });
+        // RFC 7009 answers 200 for "revoked" and for "this token was already
+        // gone", which are the same outcome here. Anything else is a failure
+        // the caller logs; it still deletes.
+        if (!response.ok) {
+          throw new Error(`revocation answered ${response.status}`);
+        }
+        return true;
+      } catch (error) {
+        mapFailure(error, 'authorization', 'تعذّر إلغاء صلاحية التطبيق لدى مزوّده');
       }
     },
 

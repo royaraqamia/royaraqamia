@@ -251,6 +251,24 @@ export interface McpMarketplaceRepository {
   /** The live connection for a member and a catalogue row, if there is one. */
   findLiveConnection(userId: string, registryName: string): Promise<McpConnectionRecord | null>;
   getConnection(userId: string, connectionId: string): Promise<McpConnectionRecord | null>;
+
+  /**
+   * Every connection the member holds that has not been revoked, newest first.
+   *
+   * It filters on `user_id` for the same reason every read here does: the
+   * table is service-role only, so the database is not going to refuse on our
+   * behalf.
+   */
+  listConnections(userId: string): Promise<McpConnectionRecord[]>;
+
+  /**
+   * Removes a connection the member owns. The credentials and the tools go with
+   * it (`on delete cascade`); a row the member does not own is not touched.
+   */
+  deleteConnection(userId: string, connectionId: string): Promise<boolean>;
+
+  /** One tool's switch. A name the connection does not advertise changes nothing. */
+  setToolEnabled(connectionId: string, toolName: string, enabled: boolean): Promise<boolean>;
   createConnection(input: {
     userId: string;
     registryName: string;
@@ -544,6 +562,39 @@ export function createMcpMarketplaceRepository(
         .maybeSingle();
       if (error) throw error;
       return (data as McpConnectionRecord | null) ?? null;
+    },
+
+    async listConnections(userId) {
+      const { data, error } = await supabase
+        .from(CONNECTIONS_TABLE)
+        .select('*')
+        .eq('user_id', userId)
+        .neq('status', 'revoked')
+        .order('connected_at', { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as McpConnectionRecord[];
+    },
+
+    async deleteConnection(userId, connectionId) {
+      const { data, error } = await supabase
+        .from(CONNECTIONS_TABLE)
+        .delete()
+        .eq('user_id', userId)
+        .eq('id', connectionId)
+        .select('id');
+      if (error) throw error;
+      return (data ?? []).length > 0;
+    },
+
+    async setToolEnabled(connectionId, toolName, enabled) {
+      const { data, error } = await supabase
+        .from(TOOLS_TABLE)
+        .update({ enabled })
+        .eq('connection_id', connectionId)
+        .eq('tool_name', toolName)
+        .select('tool_name');
+      if (error) throw error;
+      return (data ?? []).length > 0;
     },
 
     async createConnection({ userId, registryName, serverUrl, displayName }) {

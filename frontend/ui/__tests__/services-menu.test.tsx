@@ -34,4 +34,20 @@ describe('NavDropdown (navbar app picker)', () => {
     expect(await screen.findByRole('dialog', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('أخبار اليوم')).toBeInTheDocument();
   });
+
+  it('draws the marketplace under the nine, as a link rather than a toggle', async () => {
+    render(<NavDropdown link={SERVICES_LINK} isActive={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: SERVICES_LINK.label }));
+
+    const marketplace = await screen.findByRole(
+      'link',
+      { name: /متجر التطبيقات/ },
+      { timeout: 3000 }
+    );
+
+    expect(marketplace).toHaveAttribute('href', '/mcp/apps');
+    // A door to someone else's apps is never a homepage app (ADR-0155).
+    expect(screen.getByText('تطبيقات خارجية')).toBeInTheDocument();
+  });
 });

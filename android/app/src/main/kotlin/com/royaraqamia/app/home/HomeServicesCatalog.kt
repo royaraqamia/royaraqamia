@@ -52,11 +52,13 @@ object HomeServicesCatalog {
             ServicesEntry.HabitFlow -> UpdateHomeServicesServicesItem.HABITFLOW
             ServicesEntry.SpendTrack -> UpdateHomeServicesServicesItem.SPENDTRACK
             ServicesEntry.Notes -> UpdateHomeServicesServicesItem.NOTES
-            // The trigger is the menu itself, and `/verify` and `/mcp/guide` left
-            // the picker (ADR-0152): they keep their copy and glyph, never a slot.
+            // The trigger is the menu itself, `/verify` and `/mcp/guide` left
+            // the picker (ADR-0152), and the marketplace is not one of our apps
+            // (ADR-0155): they keep their copy and glyph, never a slot.
             ServicesEntry.Trigger,
             ServicesEntry.Verify,
-            ServicesEntry.McpGuide -> null
+            ServicesEntry.McpGuide,
+            ServicesEntry.Marketplace -> null
         }
 
     /** The contract key for a stored route, or null when no row draws it. */

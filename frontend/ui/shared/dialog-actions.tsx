@@ -52,13 +52,13 @@ export function DialogActions({
       )}
     >
       {leading}
-      <div className="flex flex-col-reverse sm:flex-row items-center gap-3 w-full sm:w-auto">
+      <div className="flex flex-col-reverse sm:flex-row items-center gap-3 max-sm:w-full sm:w-auto">
         {!hideCancel && (
           <Button
             type="button"
             variant="outline"
             onClick={onCancel}
-            className="w-full sm:w-auto rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-safe duration-300"
+            className="max-sm:w-full sm:w-auto rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-safe duration-300"
           >
             {cancelLabel}
           </Button>

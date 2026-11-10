@@ -15,8 +15,8 @@ import { z } from 'zod';
  * - **An admin's row** is the takedown list: it adds the registry's own status,
  *   the address, when the verdict was measured, and the block.
  *
- * The app reads neither yet — phase 3 (#1224) ports the screen, and its contract
- * joins `scripts/generate-contracts.mjs` in that change.
+ * The app reads neither yet — phase 6 (#1228) ports the two screens, and their
+ * generated contracts join `scripts/generate-contracts.mjs` in that change.
  */
 
 /** One page of the catalogue. Small enough to draw, large enough to browse. */

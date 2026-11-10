@@ -22,6 +22,17 @@ export interface NavLink {
    * strip and the homepage catalog filter it out.
    */
   retired?: boolean;
+  /**
+   * A row the sheet offers that is not one of our apps (ADR-0155): it navigates
+   * instead of toggling, it sits under its own divider and section label, and it
+   * is excluded from `HOME_SERVICE_ROUTES` so it never becomes a homepage tab
+   * with no app behind it.
+   */
+  pickerOnly?: boolean;
+  /** The second line under a sheet row, when the row needs one. */
+  hint?: string;
+  /** The label above the first `pickerOnly` row, drawn once per group. */
+  sectionLabel?: string;
   subItems?: NavLink[];
 }
 

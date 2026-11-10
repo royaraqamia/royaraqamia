@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-import { createDefaultMcpConnectService } from '@/backend/config/mcp';
+import {
+  createDefaultMcpConnectService,
+  createDefaultMcpConnectionService,
+} from '@/backend/config/mcp';
 import { env } from '@/backend/config/env';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { isSameOrigin } from '@/backend/transport/http';
@@ -8,6 +11,13 @@ import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { McpConnectError } from '@/backend/services/mcp/marketplace/connect-service';
 import { McpRemoteError } from '@/backend/clients/mcp-remote';
 import { logger } from '@/backend/shared/logger';
+import {
+  McpConnectionToolUpdateSchema,
+  McpConnectionUpdateSchema,
+  type McpConnectionActionResult,
+  type McpConnectionDetailResult,
+  type McpConnectionListResult,
+} from '@/shared/contracts/mcp-marketplace';
 
 /**
  * The marketplace's write surface: start a connection, and finish one.
@@ -25,8 +35,8 @@ const StartBodySchema = z.strictObject({
 /** `/mcp/apps` is the marketplace; the tab is state, and the screen maps a code. */
 const MARKETPLACE_PATH = '/mcp/apps';
 
-function appUrl(search: Record<string, string>): string {
-  const url = new URL(MARKETPLACE_PATH, env.siteUrl);
+function appUrl(path: string, search: Record<string, string> = {}): string {
+  const url = new URL(path, env.siteUrl);
   for (const [key, value] of Object.entries(search)) url.searchParams.set(key, value);
   return url.toString();
 }
@@ -90,10 +100,16 @@ export async function completeMcpConnection(params: URLSearchParams): Promise<Ht
       const denied = params.get('error');
 
       if (denied) {
-        return { status: 303, redirect: appUrl({ tab: 'apps', connect: 'denied' }) };
+        return {
+          status: 303,
+          redirect: appUrl(MARKETPLACE_PATH, { tab: 'apps', connect: 'denied' }),
+        };
       }
       if (!state || !code) {
-        return { status: 303, redirect: appUrl({ tab: 'apps', connect: 'invalid' }) };
+        return {
+          status: 303,
+          redirect: appUrl(MARKETPLACE_PATH, { tab: 'apps', connect: 'invalid' }),
+        };
       }
 
       try {
@@ -102,9 +118,12 @@ export async function completeMcpConnection(params: URLSearchParams): Promise<Ht
           state,
           code,
         });
+        // A consent that worked lands on the connection's own screen, not on the
+        // list: the post-connect screen is where "on" is explained while the
+        // member can still switch it down (ADR-0155, decision 9).
         return {
           status: 303,
-          redirect: appUrl({ tab: 'apps', connect: 'done', id: connectionId }),
+          redirect: appUrl(`${MARKETPLACE_PATH}/${connectionId}`, { connect: 'done' }),
         };
       } catch (error) {
         const reason =
@@ -116,7 +135,10 @@ export async function completeMcpConnection(params: URLSearchParams): Promise<Ht
         if (!(error instanceof McpConnectError)) {
           logger.warn('MCP marketplace: callback failed', { reason, error: String(error) });
         }
-        return { status: 303, redirect: appUrl({ tab: 'apps', connect: 'error', reason }) };
+        return {
+          status: 303,
+          redirect: appUrl(MARKETPLACE_PATH, { tab: 'apps', connect: 'error', reason }),
+        };
       }
     },
     {
@@ -124,9 +146,161 @@ export async function completeMcpConnection(params: URLSearchParams): Promise<Ht
       // than a 401 in a browser tab the member did not open by hand.
       whenUnauthenticated: (): HttpResult => ({
         status: 303,
-        redirect: appUrl({ tab: 'apps', connect: 'signin' }),
+        redirect: appUrl(MARKETPLACE_PATH, { tab: 'apps', connect: 'signin' }),
       }),
       whenFailed: { success: false, error: 'تعذّر إتمام الربط.' },
     }
+  );
+}
+
+/**
+ * The member's own connections (phase 3 / #1224): the list behind the outbound
+ * tab, one connection with its tools, and the four writes a screen offers.
+ *
+ * Reads answer with `data` or an `error`, never an empty list on failure: on a
+ * permissions screen "nothing is connected" and "we could not tell you" must not
+ * look the same. Writes refuse a cross-origin caller, as every account write
+ * does, and an id the member does not own is a 404 rather than a permission
+ * error — the two are the same answer to someone probing.
+ */
+
+/** A JSON body, parsed or `400`. Shared by the three writes below. */
+function parseBody<T>(schema: z.ZodType<T>, body: string): T | null {
+  try {
+    const parsed = schema.safeParse(JSON.parse(body === '' ? '{}' : body));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function listMcpConnections(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      const data = await createDefaultMcpConnectionService().list(userId);
+      return jsonResult(200, { success: true, data } satisfies McpConnectionListResult, {
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    },
+    { whenFailed: { success: false, error: 'تعذّر تحميل التطبيقات المرتبطة.' } }
+  );
+}
+
+export async function getMcpConnection(connectionId: string): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      const connection = await createDefaultMcpConnectionService().detail(userId, connectionId);
+      if (!connection) {
+        return jsonResult(404, { success: false, error: 'هذا التطبيق غير مرتبط بحسابك.' });
+      }
+      return jsonResult(
+        200,
+        { success: true, data: connection } satisfies McpConnectionDetailResult,
+        { headers: { 'Cache-Control': 'no-store' } }
+      );
+    },
+    { whenFailed: { success: false, error: 'تعذّر تحميل التطبيق.' } }
+  );
+}
+
+export async function updateMcpConnection(
+  connectionId: string,
+  headers: Headers,
+  body: string
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
+      const parsed = parseBody(McpConnectionUpdateSchema, body);
+      if (!parsed) {
+        return jsonResult(400, { success: false, error: 'طلب غير صالح' });
+      }
+
+      const updated = await createDefaultMcpConnectionService().update(
+        userId,
+        connectionId,
+        parsed
+      );
+      if (!updated) {
+        return jsonResult(404, {
+          success: false,
+          error: 'هذا التطبيق غير مرتبط بحسابك.',
+        } satisfies McpConnectionActionResult);
+      }
+
+      return jsonResult(200, { success: true } satisfies McpConnectionActionResult, {
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    },
+    { whenFailed: { success: false, error: 'تعذّر حفظ التغيير.' } }
+  );
+}
+
+export async function disconnectMcpConnection(
+  connectionId: string,
+  headers: Headers
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
+      const removed = await createDefaultMcpConnectionService().disconnect(userId, connectionId);
+      if (!removed) {
+        return jsonResult(404, {
+          success: false,
+          error: 'هذا التطبيق غير مرتبط بحسابك.',
+        } satisfies McpConnectionActionResult);
+      }
+
+      return jsonResult(200, { success: true } satisfies McpConnectionActionResult);
+    },
+    { whenFailed: { success: false, error: 'تعذّر فصل التطبيق.' } }
+  );
+}
+
+export async function updateMcpConnectionTool(
+  connectionId: string,
+  headers: Headers,
+  body: string
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
+      const parsed = parseBody(McpConnectionToolUpdateSchema, body);
+      if (!parsed) {
+        return jsonResult(400, { success: false, error: 'طلب غير صالح' });
+      }
+
+      const result = await createDefaultMcpConnectionService().setTool(
+        userId,
+        connectionId,
+        parsed.toolName,
+        parsed.enabled
+      );
+
+      if (result === 'missing') {
+        return jsonResult(404, {
+          success: false,
+          error: 'هذا التطبيق غير مرتبط بحسابك.',
+        } satisfies McpConnectionActionResult);
+      }
+      if (result === 'unknown_tool') {
+        return jsonResult(404, {
+          success: false,
+          error: 'هذه الأداة لم تعد في التطبيق.',
+        } satisfies McpConnectionActionResult);
+      }
+
+      return jsonResult(200, { success: true } satisfies McpConnectionActionResult);
+    },
+    { whenFailed: { success: false, error: 'تعذّر حفظ حالة الأداة.' } }
   );
 }

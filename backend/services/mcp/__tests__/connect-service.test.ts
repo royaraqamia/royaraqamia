@@ -74,6 +74,26 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
       const row = connections.get(id);
       return row && row.user_id === userId ? row : null;
     },
+    listConnections: async (userId) =>
+      [...connections.values()].filter((row) => row.user_id === userId && row.status !== 'revoked'),
+    deleteConnection: async (userId, id) => {
+      const row = connections.get(id);
+      if (!row || row.user_id !== userId) return false;
+      connections.delete(id);
+      return true;
+    },
+    setToolEnabled: async (id, toolName, enabled) => {
+      const found = tools.get(id) ?? [];
+      const tool = found.find((candidate) => candidate.tool_name === toolName);
+      if (!tool) return false;
+      tools.set(
+        id,
+        found.map((candidate) =>
+          candidate.tool_name === toolName ? { ...candidate, enabled } : candidate
+        )
+      );
+      return true;
+    },
     createConnection: async ({ userId, registryName, serverUrl, displayName }) => {
       const row: McpConnectionRecord = {
         id: `conn-${connections.size + 1}`,
@@ -220,6 +240,7 @@ function fakeRemote(overrides: Partial<McpRemoteClient> = {}): McpRemoteClient {
       expires_in: 3600,
     })),
     refresh: vi.fn(),
+    revoke: vi.fn(async () => false),
     listTools: vi.fn(async () => TOOLS),
     probeConnectable: vi.fn(async () => ({ connectable: true, reason: null })),
     ...overrides,
