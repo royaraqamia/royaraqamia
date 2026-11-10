@@ -101,10 +101,19 @@ class ChatAttachmentsTest {
     }
 
     @Test
-    fun `an object name is flat and the type defaults like the site`() {
-        assertEquals("a-b-c.pdf", ChatAttachments.objectName("a/b\\c.pdf"))
+    fun `an object name never carries the member's own characters`() {
+        assertEquals("file.pdf", ChatAttachments.objectName("فاتورة-472.pdf"))
+        assertEquals("file.pdf", ChatAttachments.objectName("a/b\\c.PDF"))
         assertEquals("file", ChatAttachments.objectName("   "))
+        assertEquals("file", ChatAttachments.objectName("report.صورة"))
         assertEquals("application/octet-stream", ChatAttachments.mimeOf(""))
+    }
+
+    @Test
+    fun `the row keeps the member's name, Arabic and all`() {
+        assertEquals("فاتورة-472.pdf", ChatAttachments.displayName("  فاتورة-472.pdf "))
+        assertEquals("file", ChatAttachments.displayName("   "))
+        assertEquals(200, ChatAttachments.displayName("a".repeat(300)).length)
     }
 
     @Test

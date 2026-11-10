@@ -31,8 +31,9 @@ data class ChatAttachmentInput(
  * so the bucket's policy — "a member of this thread" — admits the bytes. The app
  * does the same with the same bearer: `POST {storage}/object/{bucket}/{path}` and
  * a bulk `DELETE` of the prefixes. The path is the site's,
- * `{conversationId}/{uuid}/{fileName}`, so both clients write one object rather
- * than two conventions.
+ * `{conversationId}/{uuid}/file.{ext}`, so both clients write one object rather
+ * than two conventions — and neither puts the member's name in a key storage
+ * would refuse (#1241).
  */
 interface ChatAttachmentStorage {
     suspend fun upload(conversationId: String, file: ChatComposeFile): ApiResult<ChatAttachmentInput>
@@ -59,9 +60,9 @@ class SupabaseChatAttachmentStorage(
         conversationId: String,
         file: ChatComposeFile,
     ): ApiResult<ChatAttachmentInput> = withContext(Dispatchers.IO) {
-        val fileName = ChatAttachments.objectName(file.fileName)
+        val fileName = ChatAttachments.displayName(file.fileName)
         val mimeType = ChatAttachments.mimeOf(file.mimeType)
-        val storagePath = "$conversationId/${uuid()}/$fileName"
+        val storagePath = "$conversationId/${uuid()}/${ChatAttachments.objectName(fileName)}"
 
         var sent = session.attempt() ?: return@withContext ApiResult.Failure(ApiError.NotSignedIn)
         var answer =

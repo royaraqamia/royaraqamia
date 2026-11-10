@@ -49,15 +49,17 @@ object ChatAttachments {
     /** Whether one file is above the ceiling the server reports. */
     fun isTooLarge(byteSize: Long, limitBytes: Long = MAX_BYTES): Boolean = byteSize > limitBytes
 
-    /** A flat object name: a separator would add a folder the bucket's path guard refuses. */
-    fun objectName(fileName: String): String {
-        val flat =
-            fileName
-                .replace(Regex("[\\\\/]"), "-")
-                .filter { it.code >= 32 }
-                .trim()
-        return (flat.ifEmpty { "file" }).take(200)
+    /** The object's last segment: ASCII only, because storage refuses any other key (#1241). */
+    fun objectName(fileName: String): String = "file" + extensionOf(fileName)
+
+    /** The extension the key keeps, and only when a key can carry it. */
+    fun extensionOf(fileName: String): String {
+        val match = Regex("\\.([A-Za-z0-9]{1,10})$").find(fileName.trim()) ?: return ""
+        return "." + match.groupValues[1].lowercase()
     }
+
+    /** The name the row keeps: the member's own, trimmed and inside the column's bound. */
+    fun displayName(fileName: String): String = fileName.trim().ifEmpty { "file" }.take(200)
 
     /** What a storage object claims to be when the provider named no type. */
     fun mimeOf(mimeType: String): String =
