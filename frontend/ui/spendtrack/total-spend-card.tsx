@@ -29,6 +29,7 @@ export function TotalSpendCard({
   return (
     <Card
       className="group/card card-lift"
+      data-visual="spendtrack-total"
       aria-label={SPENDTRACK_TOTAL_COPY.totalLabel.replace(
         '{amount}',
         formatMoney(total, currency)

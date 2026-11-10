@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.shared.CurrencySymbols
@@ -44,7 +45,7 @@ fun SpendtrackDailyChart(
     val symbol = currency?.let { CurrencySymbols.byCode[it]?.symbol }.orEmpty()
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().testTag(SpendtrackMetrics.DAILY_CHART),
         shape = Recipes.Card.radius,
         colors = CardDefaults.cardColors(containerColor = Recipes.Card.container),
         border = Recipes.Card.border,

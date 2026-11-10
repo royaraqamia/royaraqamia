@@ -210,6 +210,76 @@ async function seedCommunityPosts(context: BrowserContext, baseURL: string): Pro
 }
 
 /**
+ * The SpendTrack rows every recording of the surface starts from (#958).
+ *
+ * A fixed category and expense on the gate's own account (#920), written
+ * through the page's own routes so the recording is the page's real pull and
+ * not a store poked from the outside. The ids are the fixture's, and the writes
+ * are upserts (ADR-0029), so a second run updates these rows instead of adding
+ * a second copy of them. Both states seed the same set; the filtered state only
+ * narrows the page's view to one category.
+ */
+const SPENDTRACK_FOOD = 'e2e00000-0000-4000-8000-000000000001';
+const SPENDTRACK_TRANSPORT = 'e2e00000-0000-4000-8000-000000000002';
+const SPENDTRACK_LUNCH = 'e2e00000-0000-4000-8000-000000000003';
+const SPENDTRACK_BUS = 'e2e00000-0000-4000-8000-000000000004';
+
+async function seedSpendtrack(context: BrowserContext, baseURL: string): Promise<void> {
+  const headers = { 'Content-Type': 'application/json' };
+  const now = new Date().toISOString();
+  const today = now.slice(0, 10);
+  const categories = [
+    { clientId: SPENDTRACK_FOOD, name: 'طعام', color_hex: '#f97316', updatedAt: now },
+    { clientId: SPENDTRACK_TRANSPORT, name: 'مواصلات', color_hex: '#3b82f6', updatedAt: now },
+  ];
+  for (const category of categories) {
+    const response = await context.request.post(`${baseURL}/spendtrack/api/categories`, {
+      data: category,
+      headers,
+    });
+    if (!response.ok()) {
+      throw new Error(
+        `spendtrack category seed failed: ${response.status()} ${await response.text()}`
+      );
+    }
+  }
+
+  const expenses = [
+    {
+      clientId: SPENDTRACK_LUNCH,
+      amount: 100,
+      category_id: SPENDTRACK_FOOD,
+      date: today,
+      description: 'غداء',
+      currency: null,
+      splits: [],
+      updatedAt: now,
+    },
+    {
+      clientId: SPENDTRACK_BUS,
+      amount: 50,
+      category_id: SPENDTRACK_TRANSPORT,
+      date: today,
+      description: 'باص',
+      currency: null,
+      splits: [],
+      updatedAt: now,
+    },
+  ];
+  for (const expense of expenses) {
+    const response = await context.request.post(`${baseURL}/spendtrack/api/expenses`, {
+      data: expense,
+      headers,
+    });
+    if (!response.ok()) {
+      throw new Error(
+        `spendtrack expense seed failed: ${response.status()} ${await response.text()}`
+      );
+    }
+  }
+}
+
+/**
  * What a state does to the page before it is measured.
  *
  * A state is not a second page: it is the same route with something open, a
@@ -332,6 +402,30 @@ const PREPARE: Record<
     await seedCommunityPosts(page.context(), baseURL);
     await visit(baseURL);
     await page.locator('[data-visual="community-load-more"]').waitFor({ timeout: 20_000 });
+  },
+  // The dashboard with the fixture's two rows (#958). The page paints from its
+  // Local Store and pulls on open, so the rows are written through the page's own
+  // routes first and the row is what makes the recording that state.
+  'spendtrack/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedSpendtrack(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="spendtrack-row"]').first().waitFor({ timeout: 30_000 });
+  },
+  // The same dashboard narrowed to one category: the filter is the page's own
+  // view state, carried in the URL, so the state is a real query rather than a
+  // second seed. The row still exists and the boxes are unchanged.
+  'spendtrack/filtered': async (page) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedSpendtrack(page.context(), baseURL);
+    await page.goto(new URL(`/spendtrack?categories=${SPENDTRACK_FOOD}`, baseURL).toString(), {
+      waitUntil: 'domcontentloaded',
+    });
+    await page.locator('[data-visual="spendtrack-row"]').first().waitFor({ timeout: 30_000 });
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.fonts.ready);
   },
 };
 

@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -68,7 +69,7 @@ fun SpendtrackBudgetCard(
     val symbol = currency?.let { CurrencySymbols.byCode[it]?.symbol }.orEmpty()
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().testTag(SpendtrackMetrics.BUDGET_CARD),
         shape = Recipes.Card.radius,
         colors = CardDefaults.cardColors(containerColor = Recipes.Card.container),
         border = Recipes.Card.border,

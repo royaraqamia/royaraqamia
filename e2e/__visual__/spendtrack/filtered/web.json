@@ -1,0 +1,36 @@
+{
+  "surface": "spendtrack",
+  "state": "filtered",
+  "route": "/spendtrack",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "total": {
+      "width": 361,
+      "radius": 16
+    },
+    "budget": {
+      "width": 361,
+      "radius": 16
+    },
+    "filter": {
+      "width": 319
+    },
+    "row": {
+      "width": 319,
+      "height": 64,
+      "radius": 12
+    },
+    "category-chart": {
+      "width": 361,
+      "radius": 16
+    },
+    "daily-chart": {
+      "width": 361,
+      "radius": 16
+    }
+  }
+}

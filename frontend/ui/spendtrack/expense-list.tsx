@@ -130,6 +130,7 @@ function ExpenseRow({
   return (
     <div
       role="listitem"
+      data-visual="spendtrack-row"
       aria-label={rowLabel}
       className="group/row relative flex items-center justify-between gap-3 sm:gap-4 rounded-xl border border-border/50 bg-card/60 p-3 sm:p-3.5 transition-safe duration-200 ease-out hover:border-foreground/15 dark:hover:border-white/15 hover:bg-card hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 hover:scale-[1.003] active:scale-[0.997]"
     >
