@@ -1,0 +1,34 @@
+{
+  "surface": "home",
+  "state": "empty",
+  "route": "/",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "card": {
+      "top": 64,
+      "width": 393,
+      "height": 724
+    },
+    "title": {
+      "top": 333,
+      "height": 36,
+      "fontSize": 30,
+      "fontWeight": 700
+    },
+    "body": {
+      "top": 385,
+      "height": 26,
+      "fontSize": 16
+    },
+    "add": {
+      "width": 176,
+      "height": 48,
+      "radius": 33554400,
+      "fontSize": 16
+    }
+  }
+}

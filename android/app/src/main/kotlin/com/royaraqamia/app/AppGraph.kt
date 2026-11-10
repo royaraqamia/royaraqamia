@@ -17,6 +17,7 @@ import com.royaraqamia.app.community.CommunityFeedRepository
 import com.royaraqamia.app.community.CommunityPostRepository
 import com.royaraqamia.app.consultation.ConsultationRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
+import com.royaraqamia.app.home.HomeServicesRepository
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.news.NewsDigestRepository
 import com.royaraqamia.app.notifications.NotificationsRepository
@@ -127,6 +128,8 @@ class AppGraph private constructor(
     val consultation: ConsultationRepository,
     /** The Quran reader's vendored text and the reader's last place (#955). */
     val quran: QuranRepository,
+    /** The homepage's app set (#1194): the picker's read and replace. */
+    val homeServices: HomeServicesRepository,
     private val databases: IdentityScopedStore<HabitStores>,
     private val spendtrackDatabases: IdentityScopedStore<SpendtrackStores>,
     private val linksnapDatabases: IdentityScopedStore<LinksnapStores>,
@@ -338,6 +341,7 @@ class AppGraph private constructor(
                 news = NewsRepository(client),
                 newsDigest = NewsDigestRepository(client, publicSnapshots),
                 notifications = NotificationsRepository(client),
+                homeServices = HomeServicesRepository(client),
                 verify = VerifyRepository(client),
                 rates = RatesRepository(client, publicSnapshots),
                 community = CommunityFeedRepository(client, publicSnapshots),

@@ -1,0 +1,22 @@
+{
+  "surface": "home",
+  "component": "home-empty",
+  "web": {
+    "file": "frontend/ui/home/home-empty-copy.ts",
+    "export": "HOME_EMPTY_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/home/HomeEmptyCopy.kt",
+    "object": "HomeEmptyCopy"
+  },
+  "notes": {
+    "source": "The first-run homepage (ADR-0146): the sentence, the one action and the note under it. The action opens the same picker the strip's end control does. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
+    "gate": "`npm run copy:check` fails a stale generated output, and `npm run check:parity` fails a key the reference component (`frontend/ui/home/HomeEmptyState.tsx`) does not render."
+  },
+  "strings": {
+    "emptyTitle": "ابدأ بتطبيقك الأوَّل",
+    "emptyBody": "اختر ما تريد أن تجده هنا كلَّ يوم.",
+    "emptyCta": "أضِف تطبيقًا",
+    "emptyNote": "يمكنك تغييرها وقت ما تشاء."
+  }
+}

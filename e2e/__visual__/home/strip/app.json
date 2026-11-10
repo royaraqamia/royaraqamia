@@ -1,0 +1,20 @@
+{
+  "surface": "home",
+  "state": "strip",
+  "elements": {
+    "strip": {
+      "top": 24.0,
+      "width": 360.72726,
+      "height": 60.0,
+      "columnGap": "normal"
+    },
+    "new-app": {
+      "top": 32.0,
+      "width": 123.63637,
+      "height": 44.0,
+      "radius": 33554400,
+      "fontSize": 14.0,
+      "paddingLeft": 16.0
+    }
+  }
+}

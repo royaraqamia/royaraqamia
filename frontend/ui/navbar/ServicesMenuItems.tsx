@@ -33,7 +33,7 @@ export function ServicesMenuItems({ subItems }: ServicesMenuItemsProps) {
 
   return (
     <div className="flex flex-col">
-      <ul role="list" className="flex flex-col">
+      <ul role="list" aria-label={SERVICES_SHEET_COPY.title} className="flex flex-col">
         {rows.map((item, index) => {
           const added = order.includes(item.href as HomeServiceKey);
           const Icon = item.icon;
@@ -64,7 +64,12 @@ export function ServicesMenuItems({ subItems }: ServicesMenuItemsProps) {
                   void (
                     added ? remove(item.href as HomeServiceKey) : add(item.href as HomeServiceKey)
                   )
-                    .then((message) => setError(message ?? ''))
+                    .then((message) => {
+                      // `null` is the write landing; an empty string is a refusal
+                      // the server did not put into words, and the sheet's own
+                      // sentence is what the member reads then.
+                      setError(message === null ? '' : message || SERVICES_SHEET_COPY.failed);
+                    })
                     .finally(() => setBusy(null));
                 }}
                 className={cn(

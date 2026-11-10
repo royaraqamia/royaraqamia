@@ -1,17 +1,13 @@
 /**
- * The homepage door's words (ADR-0146).
+ * The homepage surface's words that only the site draws yet (ADR-0146).
  *
- * The sheet's own title and body live beside the sheet; these are the empty
- * state and the strip's accessible names. The app labels themselves come from
- * the generated `SERVICES_COPY`, never from here.
+ * The strip, the empty state and the picker are ported, so their words live in
+ * `shared/copy` and both clients draw them. What is left here is the selected
+ * app's loading and failure faces: the app opens a tab's route in the document,
+ * so there is no native surface drawing them yet, and a key with no pair would
+ * be copy that only goes stale (ADR-0098).
  */
 export const HOME_COPY = {
-  emptyTitle: 'ابدأ بتطبيقك الأوَّل',
-  emptyBody: 'اختر ما تريد أن تجده هنا كلَّ يوم.',
-  emptyCta: 'أضِف تطبيقًا',
-  emptyNote: 'يمكنك تغييرها وقت ما تشاء.',
-  stripLabel: 'تطبيقاتك',
-  newApp: 'تطبيق جديد',
   surfaceLoading: 'جاري تحميل التطبيق',
   surfaceFailed: 'تعذّر تحميل التطبيق. تحقّق من اتصالك ثم أعد المحاولة.',
   retry: 'أعد المحاولة',

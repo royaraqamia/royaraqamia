@@ -279,6 +279,82 @@
       ]
     },
     {
+      "id": "home-strip",
+      "surface": "home",
+      "issue": "#1194",
+      "web": {
+        "route": "app/page.tsx",
+        "component": "frontend/ui/home/HomeTabStrip.tsx",
+        "copyModule": "frontend/ui/home/home-strip-copy.ts",
+        "copyExport": "HOME_STRIP_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/home/HomeTabStrip.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/home/HomeTabStrip.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/home/HomeStripCopy.kt",
+        "copyObject": "HomeStripCopy"
+      },
+      "copySource": "shared/copy/home-strip.json",
+      "states": [
+        {
+          "name": "Strip",
+          "copy": "stripLabel"
+        }
+      ]
+    },
+    {
+      "id": "home-empty",
+      "surface": "home",
+      "issue": "#1194",
+      "web": {
+        "route": "app/page.tsx",
+        "component": "frontend/ui/home/HomeEmptyState.tsx",
+        "copyModule": "frontend/ui/home/home-empty-copy.ts",
+        "copyExport": "HOME_EMPTY_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/home/HomeEmptyState.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/home/HomeEmptyState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/home/HomeEmptyCopy.kt",
+        "copyObject": "HomeEmptyCopy"
+      },
+      "copySource": "shared/copy/home-empty.json",
+      "states": [
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        }
+      ]
+    },
+    {
+      "id": "home-picker",
+      "surface": "home",
+      "issue": "#1194",
+      "web": {
+        "route": "app/page.tsx",
+        "component": "frontend/ui/navbar/ServicesMenuItems.tsx",
+        "copyModule": "frontend/ui/navbar/services-sheet-copy.ts",
+        "copyExport": "SERVICES_SHEET_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesPicker.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesPicker.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ServicesSheetCopy.kt",
+        "copyObject": "ServicesSheetCopy"
+      },
+      "copySource": "shared/copy/services-sheet.json",
+      "states": [
+        {
+          "name": "Add",
+          "copy": "add"
+        },
+        {
+          "name": "Remove",
+          "copy": "remove"
+        }
+      ]
+    },
+    {
       "id": "notification-bell",
       "surface": "home",
       "issue": "#659",

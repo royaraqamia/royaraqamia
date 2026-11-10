@@ -47,6 +47,8 @@ import com.royaraqamia.app.consultation.ConsultationScreen
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
+import com.royaraqamia.app.home.HomeServicesController
+import com.royaraqamia.app.home.PreferencesHomeServicesStore
 import com.royaraqamia.app.linksnap.LinksnapScreen
 import com.royaraqamia.app.linksnap.LinksnapRoutes
 import com.royaraqamia.app.linksnap.LinksnapShortenerScreen
@@ -165,6 +167,14 @@ class ShellActivity : ComponentActivity() {
      */
     private lateinit var update: ShellUpdateController
 
+    /**
+     * The homepage's apps (#1194): the picker's list, the row in flight and the
+     * refused write's line. It lives here rather than in the sheet's composition
+     * because the sheet is thrown away when it closes (ADR-0150's rule for نور),
+     * and the next open has to paint the same list without re-reading.
+     */
+    private lateinit var homeServices: HomeServicesController
+
     /** The radio-returns trigger for the Outbox (#650); closed with the activity. */
     private var networkWatch: java.io.Closeable? = null
 
@@ -205,6 +215,17 @@ class ShellActivity : ComponentActivity() {
         graph = AppGraph.create(this, BuildConfig.SITE_URL, BuildConfig.SUPABASE_AUTH_URL, BuildConfig.SUPABASE_ANON_KEY)
         update = ShellUpdateController(this, BuildConfig.SITE_URL, lifecycleScope)
 
+        // The homepage's apps (#1194): the sheet's picker reads and writes them.
+        // The controller is the shell's, so the record survives the sheet closing
+        // and a refused write's line is still there when it opens again.
+        homeServices =
+            HomeServicesController(
+                repository = graph.homeServices,
+                guest = PreferencesHomeServicesStore(this),
+                signedIn = { graph.signedIn },
+                identityKey = { graph.session.storeIdentity.key },
+            )
+
         // A queued write is delivered because the radio came back, not because
         // the user opened the screen that made it (#650). The launch path drains
         // in `graph.start()`; this is the reconnect while the app is open, and
@@ -237,7 +258,18 @@ class ShellActivity : ComponentActivity() {
                         },
                         onSelect = { tab -> openRoute(tab.route) },
                         onOpenRoute = ::openRoute,
+                        homeOrder = homeServices.order,
+                        homeBusy = homeServices.busy,
+                        homeError = homeServices.error,
+                        onToggleHomeService = { route ->
+                            lifecycleScope.launch { homeServices.toggle(route) }
+                        },
                     ) {
+                        // The launch and every sign-in/sign-out run the same load:
+                        // the device's list for a guest, the account's (merged once)
+                        // for a member. The controller drops a repeat for one
+                        // identity, so a recomposition cannot re-PUT the set.
+                        LaunchedEffect(signedIn) { homeServices.identityChanged() }
                         when (Routes.normalize(current)) {
                             "/account" ->
                                 AccountScreen(

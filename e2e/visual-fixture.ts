@@ -48,6 +48,39 @@ export async function signInAsVisualAccount(
   await signIn(context, baseURL, credentials);
 }
 
+/**
+ * The apps the gate's homepage fixture keeps (#1194).
+ *
+ * The recording has to be the same every run, and the homepage's strip is the
+ * member's own order: an account that kept something from a previous capture
+ * would change the pills and the strip's pixels. `/quran` first so the selected
+ * pill is the same one every time.
+ */
+export const VISUAL_HOME_SERVICES = ['/quran', '/rates'] as const;
+
+/** Replaces the account's homepage apps through the page's own route. */
+export async function seedHomeServices(
+  context: BrowserContext,
+  baseURL: string,
+  services: readonly string[]
+): Promise<void> {
+  const response = await context.request.put(`${baseURL}/api/me/home-services`, {
+    data: { services },
+    // The member write is origin-guarded (`isSameOrigin`); the request has to
+    // look like the page's own fetch rather than an anonymous client.
+    headers: {
+      'Content-Type': 'application/json',
+      Origin: baseURL,
+      'Sec-Fetch-Site': 'same-origin',
+    },
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `the homepage fixture was refused (${response.status()}): ${await response.text()}`
+    );
+  }
+}
+
 export interface VisualLinkFixture {
   code: string;
   destination: string;
