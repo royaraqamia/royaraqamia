@@ -13,7 +13,6 @@ export const ACCOUNT_ROWS_COPY = {
   navLabel: 'إجراءات الحساب',
   submissions: 'الطَّلبات',
   posts: 'المنشورات',
-  connectedApps: 'التَّطبيقات المتَّصلة بالـ MCP',
   blocked: 'الأعضاء المحظورون',
   pricing: 'خطط التَّسعير',
   admin: 'الإدارة',

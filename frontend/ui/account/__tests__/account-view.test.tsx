@@ -97,12 +97,7 @@ describe('AccountView', () => {
     expect(screen.queryByText('جميع الحقوق محفوظة')).not.toBeInTheDocument();
 
     // Gated rows are visible, but as buttons rather than links.
-    for (const label of [
-      'الطَّلبات',
-      'المنشورات',
-      'التَّطبيقات المتَّصلة بالـ MCP',
-      'الأعضاء المحظورون',
-    ]) {
+    for (const label of ['الطَّلبات', 'المنشورات', 'الأعضاء المحظورون']) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: new RegExp(label) })).not.toBeInTheDocument();
     }
@@ -121,17 +116,17 @@ describe('AccountView', () => {
   it('prompts guests to sign in and returns them to the row they picked', async () => {
     render(<AccountView />);
 
-    fireEvent.click(screen.getByRole('button', { name: /التَّطبيقات المتَّصلة بالـ MCP/ }));
+    fireEvent.click(screen.getByRole('button', { name: /الأعضاء المحظورون/ }));
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     const cta = screen.getByRole('link', { name: /تسجيل الدُّخول/ });
-    expect(cta).toHaveAttribute('href', '/auth/login?redirect=%2Faccount%2Fconnected-apps');
+    expect(cta).toHaveAttribute('href', '/auth/login?redirect=%2Faccount%2Fblocked');
 
     // The prompt dismisses and the sign-in page is pushed. Done the other way
     // round the push lost to the history entry the dismissal released.
     fireEvent.click(cta);
     await waitFor(() =>
-      expect(router.push).toHaveBeenCalledWith('/auth/login?redirect=%2Faccount%2Fconnected-apps')
+      expect(router.push).toHaveBeenCalledWith('/auth/login?redirect=%2Faccount%2Fblocked')
     );
   });
 
@@ -143,10 +138,6 @@ describe('AccountView', () => {
     expect(screen.getByRole('link', { name: /الطَّلبات/ })).toHaveAttribute(
       'href',
       '/account/submissions'
-    );
-    expect(screen.getByRole('link', { name: /التَّطبيقات المتَّصلة بالـ MCP/ })).toHaveAttribute(
-      'href',
-      '/account/connected-apps'
     );
     expect(screen.getByRole('link', { name: /الأسئلة الشَّائعة/ })).toHaveAttribute(
       'href',

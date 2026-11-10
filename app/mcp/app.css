@@ -8,3 +8,6 @@
 
 @source '.';
 @source '../../frontend/ui/mcp';
+@source '../../frontend/ui/apps';
+@source '../../frontend/ui/navbar';
+@source '../../frontend/ui/account/mcp-connected-apps-view.tsx';

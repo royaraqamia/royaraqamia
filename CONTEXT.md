@@ -468,8 +468,8 @@ _Avoid_: soft delete, deleted flag, marker
 
 **Connected App**:
 An external MCP client (Claude Code, OpenCode, Codex, Cursor, …) that a User has authorized to
-reach their data. Each one appears in the account area, where the User can disconnect it without
-signing out of the site.
+reach their data. Each one appears in the apps sheet's «الـ MCP الخاص بنا» tab, where the User can
+disconnect it without signing out of the site.
 _Sold as_: التَّطبيقات المتَّصلة بالـ MCP
 _Avoid_: Integration, plugin, add-on, connector
 

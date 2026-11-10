@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { McpMarketplaceView } from '@/frontend/ui/mcp/marketplace-view';
-import { mcpMarketplaceTab } from '@/shared/contracts/mcp-marketplace';
+import { appsTab } from '@/shared/contracts/mcp-marketplace';
 
 export const metadata: Metadata = {
   title: 'متجر التطبيقات',
@@ -44,7 +44,7 @@ export default async function McpAppsPage({
   return (
     <div className="relative flex min-h-[var(--roy-page-height)] flex-col bg-background font-sans text-foreground antialiased selection:bg-primary/20 selection:text-primary">
       <main id="main-content" dir="rtl" className="flex-1 pt-6 pb-28 md:pb-32">
-        <McpMarketplaceView tab={mcpMarketplaceTab(params.tab)} connect={params.connect ?? null} />
+        <McpMarketplaceView tab={appsTab(params.tab)} connect={params.connect ?? null} />
       </main>
     </div>
   );

@@ -15,6 +15,7 @@ const session = vi.hoisted(() => ({ useSession: vi.fn() }));
 vi.mock('@/frontend/state/session-provider', () => session);
 
 import { McpMarketplaceView } from '../mcp/marketplace-view';
+import { resetAppsCache } from '@/frontend/ui/apps/apps-cache';
 
 const SUPABASE = {
   id: 'connection-1',
@@ -64,6 +65,7 @@ function pending(): { promise: Promise<typeof CATALOGUE>; release: () => void } 
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetAppsCache();
   mocks.getMcpConnections.mockResolvedValue([SUPABASE]);
   mocks.searchMcpCatalog.mockResolvedValue(CATALOGUE);
   session.useSession.mockReturnValue({ user: { id: 'user-1' }, isLoading: false });
@@ -73,7 +75,7 @@ afterEach(cleanup);
 
 describe('McpMarketplaceView — the catalogue row', () => {
   it('manages a server the member already connected instead of offering it again', async () => {
-    render(<McpMarketplaceView tab="apps" connect={null} />);
+    render(<McpMarketplaceView tab="external" connect={null} />);
 
     const manage = await screen.findByRole('link', { name: 'إدارة Supabase' });
     expect(manage).toHaveAttribute('href', '/mcp/apps/connection-1');
@@ -90,7 +92,7 @@ describe('McpMarketplaceView — the search state', () => {
     const first = pending();
     mocks.searchMcpCatalog.mockImplementationOnce(() => first.promise);
 
-    render(<McpMarketplaceView tab="apps" connect={null} />);
+    render(<McpMarketplaceView tab="external" connect={null} />);
 
     expect((await screen.findAllByLabelText('جاري التحميل...')).length).toBeGreaterThan(0);
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -107,7 +109,7 @@ describe('McpMarketplaceView — the search state', () => {
       .mockImplementationOnce(() => second.promise)
       .mockImplementationOnce(() => third.promise);
 
-    render(<McpMarketplaceView tab="apps" connect={null} />);
+    render(<McpMarketplaceView tab="external" connect={null} />);
     await screen.findByText('Snag');
 
     const input = screen.getByRole('searchbox');

@@ -27,7 +27,8 @@ describe('ServicesMenu (homepage add control)', () => {
     expect(await screen.findByRole('dialog', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText('أخبار اليوم')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'إضافة' }).length).toBeGreaterThan(0);
-    expect(screen.queryByText('إغلاق')).not.toBeInTheDocument();
+    // The full-height sheet needs a visible way out as well as the overlay.
+    expect(screen.getByRole('button', { name: 'إغلاق' })).toBeInTheDocument();
   });
 });
 
@@ -42,25 +43,29 @@ describe('NavDropdown (navbar app picker)', () => {
     expect(screen.getByText('أخبار اليوم')).toBeInTheDocument();
   });
 
-  it('draws the marketplace under the nine, as a link rather than a toggle', async () => {
+  it('carries the marketplace and the connected clients as tabs', async () => {
     render(<NavDropdown link={SERVICES_LINK} isActive={false} />);
 
     fireEvent.click(screen.getByRole('button', { name: SERVICES_LINK.label }));
+    await screen.findByRole('dialog', {}, { timeout: 3000 });
 
-    const marketplace = await screen.findByRole(
-      'link',
-      { name: /متجر التطبيقات/ },
-      { timeout: 3000 }
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      'تطبيقاتنا',
+      'تطبيقات خارجيَّة',
+      'الـ MCP الخاص بنا',
+    ]);
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+
+    // The marketplace is a tab now, not a row that leaves the sheet.
+    const externalTab = tabs[1];
+    if (!externalTab) throw new Error('the external tab is missing');
+    fireEvent.click(externalTab);
+    expect(await screen.findByPlaceholderText('ابحث باسم التطبيق أو وصفه...')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'تطبيقات خارجيَّة' })).toHaveAttribute(
+      'aria-selected',
+      'true'
     );
-
-    expect(marketplace).toHaveAttribute('href', '/mcp/apps');
-    // A door to someone else's apps is never a homepage app (ADR-0155).
-    expect(screen.getByText('تطبيقات خارجية')).toBeInTheDocument();
-
-    // The sheet closes on the tap, and the navigation still happens: closing
-    // first is what used to cancel it.
-    fireEvent.click(marketplace);
-    expect(mockPush).toHaveBeenCalledWith('/mcp/apps');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeInTheDocument();
   });
 });

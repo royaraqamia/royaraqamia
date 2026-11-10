@@ -133,14 +133,19 @@ export const McpConnectionToolUpdateSchema = z.object({
 export type McpConnectionToolUpdate = z.infer<typeof McpConnectionToolUpdateSchema>;
 
 /**
- * The two tabs, carried in `?tab=` so a tab is a shareable state and the back
- * button still works. `apps` is the default and the one the connect callback
- * lands on; `inbound` is the list that used to live at `/account/connected-apps`.
+ * The three tabs of the apps surface, carried in `?tab=` on the page so a tab
+ * is a shareable state and the back button still works.
+ *
+ * `internal` is the apps we ship (the picker's own rows), `external` is what
+ * نور reaches through the marketplace, and `inbound` is what reaches the
+ * member through our MCP server. `external` is the page's default, which is
+ * what `/mcp/apps` has always meant; `apps` stays accepted as its old spelling.
  */
-export const MCP_MARKETPLACE_TABS = ['apps', 'inbound'] as const;
+export const APPS_TABS = ['internal', 'external', 'inbound'] as const;
 
-export type McpMarketplaceTab = (typeof MCP_MARKETPLACE_TABS)[number];
+export type AppsTab = (typeof APPS_TABS)[number];
 
-export function mcpMarketplaceTab(value: string | null | undefined): McpMarketplaceTab {
-  return value === 'inbound' ? 'inbound' : 'apps';
+export function appsTab(value: string | null | undefined): AppsTab {
+  if (value === 'internal' || value === 'inbound') return value;
+  return 'external';
 }
