@@ -1,0 +1,16 @@
+{
+  "surface": "spendtrack-categories",
+  "elements": {
+    "list": {
+      "width": 318.54544
+    },
+    "row": {
+      "width": 318.54544,
+      "height": 46.545456,
+      "radius": 12
+    },
+    "create": {
+      "height": 48.0
+    }
+  }
+}

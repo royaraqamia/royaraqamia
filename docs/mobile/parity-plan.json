@@ -197,6 +197,12 @@
       "state": "native"
     },
     {
+      "surface": "spendtrack-categories",
+      "phase": "products",
+      "state": "native",
+      "issue": "#959"
+    },
+    {
       "surface": "linksnap",
       "phase": "products",
       "state": "native"

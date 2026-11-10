@@ -35,13 +35,24 @@
     },
     {
       "id": "spendtrack",
-      "routes": ["/spendtrack", "/spendtrack/categories"],
+      "routes": ["/spendtrack"],
       "owner": "local-store",
       "read": "store",
       "write": "outbox",
       "shell": "precached",
       "specs": ["e2e/product-offline-render.spec.ts", "e2e/spendtrack-offline.spec.ts"],
       "issue": "#493",
+      "paint": "spendtrack"
+    },
+    {
+      "id": "spendtrack-categories",
+      "routes": ["/spendtrack/categories"],
+      "owner": "local-store",
+      "read": "store",
+      "write": "outbox",
+      "shell": "precached",
+      "specs": ["e2e/product-offline-render.spec.ts", "e2e/spendtrack-offline.spec.ts"],
+      "issue": "#959",
       "paint": "spendtrack"
     },
     {

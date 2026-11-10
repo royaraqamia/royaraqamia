@@ -43,6 +43,8 @@ object NativeSurfaces {
             "/account/links",
             "/rates",
             "/habitflow",
+            "/spendtrack",
+            "/spendtrack/categories",
             "/community",
         )
 

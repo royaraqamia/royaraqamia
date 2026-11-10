@@ -1,0 +1,23 @@
+{
+  "surface": "spendtrack-categories",
+  "state": "at-rest",
+  "route": "/spendtrack/categories",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "list": {
+      "width": 319
+    },
+    "row": {
+      "width": 319,
+      "height": 46,
+      "radius": 12
+    },
+    "create": {
+      "height": 48
+    }
+  }
+}

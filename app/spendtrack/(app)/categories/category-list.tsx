@@ -48,6 +48,7 @@ export const CategoryList = memo(function CategoryList({
         className="flex flex-col items-center gap-4 py-12 text-center"
         role="status"
         aria-label={SPENDTRACK_CATEGORIES_COPY.emptyTitle}
+        data-visual="spendtrack-categories-empty"
       >
         <div className="flex size-12 items-center justify-center rounded-2xl bg-muted/80">
           <Tags className="size-6 text-muted-foreground" aria-hidden="true" />
@@ -63,11 +64,17 @@ export const CategoryList = memo(function CategoryList({
   }
 
   return (
-    <div className="space-y-2" role="list" aria-label={SPENDTRACK_CATEGORIES_COPY.listLabel}>
+    <div
+      className="space-y-2"
+      role="list"
+      aria-label={SPENDTRACK_CATEGORIES_COPY.listLabel}
+      data-visual="spendtrack-categories-list"
+    >
       {list.map((category) => (
         <div
           key={category.id}
           role="listitem"
+          data-visual="spendtrack-category-row"
           aria-label={`${category.name}${
             category.user_id === null ? `، ${SPENDTRACK_CATEGORIES_COPY.defaultBadge}` : ''
           }`}

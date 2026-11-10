@@ -427,6 +427,20 @@ const PREPARE: Record<
     await page.waitForTimeout(600);
     await page.evaluate(() => document.fonts.ready);
   },
+  // The categories page with the same fixture's categories (#959). The page
+  // paints them from the Local Store and pulls on open, so the rows are written
+  // through the page's own route first and the row is what makes the recording
+  // that state. The empty state is the same list with no rows; this state is the
+  // populated one the page opens on for an account that has categories.
+  'spendtrack-categories/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedSpendtrack(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="spendtrack-category-row"]').first().waitFor({
+      timeout: 30_000,
+    });
+  },
 };
 
 /** What a state removes after its recording, so a seed is never left behind. */

@@ -388,7 +388,7 @@
     },
     {
       "id": "spendtrack-categories",
-      "surface": "spendtrack",
+      "surface": "spendtrack-categories",
       "issue": "#653",
       "web": {
         "route": "app/spendtrack/(app)/categories/page.tsx",
@@ -416,7 +416,7 @@
     },
     {
       "id": "spendtrack-category-create",
-      "surface": "spendtrack",
+      "surface": "spendtrack-categories",
       "issue": "#653",
       "web": {
         "route": "app/spendtrack/(app)/categories/page.tsx",

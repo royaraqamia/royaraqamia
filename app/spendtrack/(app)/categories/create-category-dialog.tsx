@@ -100,7 +100,10 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button className="transition-safe duration-200 btn-press touch-target focus-ring">
+        <Button
+          className="transition-safe duration-200 btn-press touch-target focus-ring"
+          data-visual="spendtrack-category-create"
+        >
           <Plus className="ms-1 size-4" />
           {SPENDTRACK_CATEGORY_CREATE_COPY.addAction}
         </Button>
