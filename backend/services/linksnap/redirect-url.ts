@@ -67,9 +67,9 @@ const SHORT_CODE_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
 export type DeferredWork = (promise: Promise<unknown>) => void;
 
 /** Default: fire and forget. Fluid compute may cut an instance as soon as the
- * response is sent, so the route passes `after()` here to keep it alive until
+ * response is sent, so the routes pass `after()` here to keep it alive until
  * the write settles instead of silently losing clicks. */
-const fireAndForget: DeferredWork = (promise) => void promise;
+export const fireAndForget: DeferredWork = (promise) => void promise;
 
 export class ShortLinkRedirectError extends Error {
   constructor(

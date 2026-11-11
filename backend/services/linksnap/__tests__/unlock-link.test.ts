@@ -254,6 +254,37 @@ describe('UnlockLinkService.execute', () => {
 
     expect(notifyLinkClicked).not.toHaveBeenCalled();
   });
+
+  it('defers both the click write and the owner notification through the injected defer hook', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(protectedLink);
+    (analyticsRepository.recordClick as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'x' });
+    const notifyLinkClicked = vi.fn(async () => {});
+    const deferred: Promise<unknown>[] = [];
+
+    const service = new UnlockLinkService(
+      shortLinkRepository,
+      analyticsRepository,
+      notifyLinkClicked,
+      (promise) => deferred.push(promise)
+    );
+
+    const url = await service.execute('abc123', 's3cret', {
+      referrer: null,
+      userAgent: null,
+      ipCountry: null,
+    });
+
+    expect(url).toBe('https://example.com');
+    expect(deferred).toHaveLength(2);
+    await expect(deferred[0]).resolves.toEqual({ id: 'x' });
+    await expect(deferred[1]).resolves.toBeUndefined();
+    expect(notifyLinkClicked).toHaveBeenCalledWith({
+      userId: 'u-1',
+      code: 'abc123',
+      originalUrl: 'https://example.com',
+    });
+  });
 });
 
 describe('password-hash', () => {

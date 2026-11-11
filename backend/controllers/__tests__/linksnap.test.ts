@@ -9,6 +9,8 @@ const mockBulkAction = { execute: vi.fn() };
 const mockModerate = { execute: vi.fn() };
 const mockRedirect = { execute: vi.fn() };
 const mockRedirectFactory = vi.fn((_defer?: unknown) => mockRedirect);
+const mockUnlock = { execute: vi.fn() };
+const mockUnlockFactory = vi.fn((_defer?: unknown) => mockUnlock);
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
@@ -38,7 +40,7 @@ vi.mock('@/backend/config/linksnap', () => ({
   createGetSystemStatsService: () => ({ execute: vi.fn() }),
   createGetUrlAnalyticsService: () => ({ execute: vi.fn(), exportCsv: vi.fn() }),
   createShortenUrlService: () => mockShorten,
-  createUnlockLinkService: () => ({ execute: vi.fn() }),
+  createUnlockLinkService: (defer: unknown) => mockUnlockFactory(defer),
   createUpdateLinkService: () => ({ execute: vi.fn() }),
   createRedirectUrlService: (defer: unknown) => mockRedirectFactory(defer),
 }));
@@ -62,6 +64,7 @@ import {
   moderateLink,
   redirectShortCode,
   shortenUrl,
+  unlockLinkPassword,
 } from '@/backend/controllers/linksnap';
 import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
 import { OwnedItemCapReachedError } from '@/backend/services/plans/usage-service';
@@ -369,5 +372,28 @@ describe('redirectShortCode', () => {
 
     expect(result).toEqual({ status: 302, redirect: 'https://example.com' });
     expect(mockRedirectFactory).toHaveBeenCalledWith(defer);
+  });
+});
+
+describe('unlockLinkPassword', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('forwards the defer hook to the service so clicks survive the response', async () => {
+    mockUnlock.execute.mockResolvedValue('https://example.com');
+    const defer = vi.fn();
+
+    const result = await unlockLinkPassword(
+      '1.2.3.4',
+      { code: 'abc123', password: 's3cret' },
+      defer
+    );
+
+    expect(result).toEqual({
+      status: 200,
+      body: { success: true, originalUrl: 'https://example.com' },
+    });
+    expect(mockUnlockFactory).toHaveBeenCalledWith(defer);
   });
 });
