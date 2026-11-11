@@ -139,7 +139,7 @@ export async function probeMcpCatalogRow(body: unknown): Promise<HttpResult> {
 /** Block a row with a reason, undo a block, or correct the Arabic it shows. */
 export async function updateMcpCatalogRow(body: unknown): Promise<HttpResult> {
   return withAdminUser(
-    async () => {
+    async (identity) => {
       const parsed = McpCatalogAdminUpdateSchema.safeParse(body);
       if (!parsed.success) {
         return jsonResult(
@@ -154,7 +154,11 @@ export async function updateMcpCatalogRow(body: unknown): Promise<HttpResult> {
       }
 
       try {
-        await createDefaultMcpCatalogService().adminUpdate(parsed.data);
+        await createDefaultMcpCatalogService().adminUpdate(parsed.data, {
+          // The log names who acted: the admin's email, and the identity's id
+          // only if a provider ever returns a session without one.
+          actor: identity.userEmail || identity.userId,
+        });
       } catch (error) {
         // A refusal with its own sentence is the admin's answer, not a 500: the
         // screen has to say why a row cannot be verified.

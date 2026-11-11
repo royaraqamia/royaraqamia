@@ -1,9 +1,14 @@
 import type {
   McpCatalogAddressRecord,
+  McpCatalogEventInput,
+  McpCatalogEventRecord,
+  McpCatalogEventSource,
   McpCatalogListRow,
+  McpCatalogServerRecord,
   McpCatalogUpsertRow,
   McpMarketplaceRepository,
 } from '@/backend/repositories/mcp/marketplace-repository';
+import type { Json } from '@/backend/models/database.types';
 import type { McpRegistryClient, McpRegistryEntry } from '@/backend/clients/mcp-registry';
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
 import type { McpStaticClientMap } from '@/backend/shared/domain/mcp-static-clients';
@@ -176,7 +181,7 @@ export interface McpCatalogSyncResult {
 export interface McpCatalogService {
   search(input: { q: string; cursor: string | null }): Promise<McpCatalogPage>;
   adminList(input: { q: string; cursor: string | null }): Promise<McpCatalogAdminPage>;
-  adminUpdate(input: McpCatalogAdminUpdate): Promise<void>;
+  adminUpdate(input: McpCatalogAdminUpdate, actor: McpCatalogActor): Promise<void>;
   sync(input?: { budgetMs?: number }): Promise<McpCatalogSyncResult>;
   /**
    * Measures the verdict for rows a screen just drew, and returns how many were
@@ -190,6 +195,20 @@ export interface McpCatalogService {
 /** A refusal from the Admin Console that has a sentence for the person who asked. */
 export type McpCatalogAdminFailure =
   'unknown_app' | 'not_connectable' | 'invalid_remote' | 'invalid_icon' | 'no_mark';
+
+/**
+ * Who is acting, and on what.
+ *
+ * `actor` is an admin's email or `agent:mcp-catalog`; it is written into the
+ * append-only event every act leaves behind (#1293). `source` and `evidence`
+ * are how the agent declares where a mark or a translation came from and which
+ * checks justified a publish; an admin's own edit derives the source instead.
+ */
+export interface McpCatalogActor {
+  actor: string;
+  source?: McpCatalogEventSource;
+  evidence?: Json;
+}
 
 export class McpCatalogError extends Error {
   constructor(
@@ -234,7 +253,11 @@ function toMemberRow(row: McpCatalogListRow): McpCatalogRow {
   };
 }
 
-function toAdminRow(row: McpCatalogListRow, preRegistered: boolean): McpCatalogAdminRow {
+function toAdminRow(
+  row: McpCatalogListRow,
+  preRegistered: boolean,
+  lastVerification: McpCatalogEventRecord | null
+): McpCatalogAdminRow {
   return {
     ...toMemberRow(row),
     registrationKind: preRegistered ? 'static' : 'dcr',
@@ -252,6 +275,13 @@ function toAdminRow(row: McpCatalogListRow, preRegistered: boolean): McpCatalogA
     probedAt: row.probed_at,
     verifiedAt: row.verified_at,
     fetchedAt: row.fetched_at,
+    lastVerification: lastVerification
+      ? {
+          action: lastVerification.action === 'withdraw' ? 'withdraw' : 'verify',
+          actor: lastVerification.actor,
+          at: lastVerification.created_at,
+        }
+      : null,
   };
 }
 
@@ -359,14 +389,29 @@ export function createMcpCatalogService({
       includeHidden: true,
       storeOnly: false,
     });
+    // The log's newest verify/withdraw per row: the console draws the date and
+    // the actor beside the state, and one view query answers the whole page.
+    const verifications = await repository.latestCatalogVerifications(
+      rows.map((row) => row.registry_name)
+    );
+    const byName = new Map(verifications.map((event) => [event.registry_name, event] as const));
     return {
-      servers: rows.map((row) => toAdminRow(row, staticClients.has(row.registry_name))),
+      servers: rows.map((row) =>
+        toAdminRow(row, staticClients.has(row.registry_name), byName.get(row.registry_name) ?? null)
+      ),
       nextCursor,
     };
   }
 
-  async function adminUpdate(input: McpCatalogAdminUpdate): Promise<void> {
+  async function adminUpdate(input: McpCatalogAdminUpdate, actor: McpCatalogActor): Promise<void> {
     const patch: Parameters<McpMarketplaceRepository['updateCatalogServer']>[1] = {};
+    /*
+      One event per act, not one per request: a dialog that verifies a row also
+      saves its rank, and the log should say "verified", not "edited". A write
+      that changes nothing (the same mark saved again) records nothing, so a
+      daily agent run cannot bury the history under no-ops.
+    */
+    const events: Array<Pick<McpCatalogEventInput, 'action' | 'source' | 'evidence'>> = [];
     // The row is read once, and only when an edit needs to know what it is
     // replacing: two reads in one request could disagree.
     let server: Awaited<ReturnType<McpMarketplaceRepository['getCatalogServer']>> | undefined;
@@ -430,6 +475,39 @@ export function createMcpCatalogService({
     if (input.featuredRank !== undefined) patch.featured_rank = input.featuredRank;
 
     /*
+      The copy is a transform of the registry's own text, so the event records
+      both halves: which fields moved, and the text they were derived from. A
+      later reader can audit a translation without a second query, and the
+      registry's English description is never what this writes.
+    */
+    if (
+      input.nameAr !== undefined ||
+      input.titleOverride !== undefined ||
+      input.descriptionAr !== undefined
+    ) {
+      const existing = await currentRow();
+      const fields = [
+        ...(patch.title_override !== undefined && patch.title_override !== existing.title_override
+          ? ['title_override']
+          : []),
+        ...(patch.name_ar !== undefined && patch.name_ar !== existing.name_ar ? ['name_ar'] : []),
+        ...(patch.description_ar !== undefined && patch.description_ar !== existing.description_ar
+          ? ['description_ar']
+          : []),
+      ];
+      if (fields.length > 0) {
+        events.push({
+          action: 'copy',
+          source: actor.source ?? 'registry',
+          evidence: {
+            fields,
+            registry: { title: existing.title, description: existing.description },
+          },
+        });
+      }
+    }
+
+    /*
       The mark is the third source, and the only one an admin writes: a path we
       ship (`/brand/...`) or an https URL the publisher serves. Anything else is
       refused, because a member's browser will render whatever this holds — the
@@ -457,6 +535,21 @@ export function createMcpCatalogService({
         }
       }
       patch.icon_override = next;
+      const existing = await currentRow();
+      if (next !== existing.icon_override) {
+        events.push({
+          action: 'mark',
+          source: actor.source ?? markSource(next, existing),
+          evidence: {
+            field: 'icon_override',
+            value: next,
+            measured: {
+              registry: existing.registry_icon_url,
+              probe: existing.probe_icon_url,
+            },
+          },
+        });
+      }
     }
 
     if (input.verified === true) {
@@ -493,16 +586,51 @@ export function createMcpCatalogService({
         }
       }
       // Saving a verified row's rank must not move the date it was vouched for.
+      const firstVouch = existing.verified_at === null;
       patch.verified_at = existing.verified_at ?? now().toISOString();
       patch.verification_withdrawn_at = null;
+      if (firstVouch) {
+        events.push({
+          action: 'verify',
+          source: actor.source ?? 'machine',
+          evidence: {
+            ...evidenceObject(actor.evidence),
+            connectable: existing.connectable,
+            probedAt: existing.probed_at,
+            mark:
+              patch.icon_override ??
+              existing.icon_override ??
+              existing.probe_icon_url ??
+              existing.registry_icon_url,
+          },
+        });
+      }
     } else if (input.verified === false) {
+      const existing = await currentRow();
       patch.verified_at = null;
       // The seed must not undo this on the next sync.
       patch.verification_withdrawn_at = now().toISOString();
+      if (existing.verified_at !== null) {
+        events.push({
+          action: 'withdraw',
+          source: actor.source ?? 'machine',
+          evidence: {
+            ...evidenceObject(actor.evidence),
+            verifiedAt: existing.verified_at,
+          },
+        });
+      }
     }
 
     if (Object.keys(patch).length === 0) return;
     await repository.updateCatalogServer(input.registryName, patch);
+    for (const event of events) {
+      await repository.recordCatalogEvent({
+        registryName: input.registryName,
+        actor: actor.actor,
+        ...event,
+      });
+    }
   }
 
   /**
@@ -777,4 +905,27 @@ export function createMcpCatalogService({
 function isProbeDue(row: McpCatalogAddressRecord, at: Date): boolean {
   if (!row.probed_at) return true;
   return at.getTime() - new Date(row.probed_at).getTime() > PROBE_TTL_MS;
+}
+
+/**
+ * Where a mark came from, when the writer did not declare it.
+ *
+ * Only three of these are measured: a `/brand/` path is a file we ship, and the
+ * two URLs are the sources already stored on the row. A pasted https URL whose
+ * provenance nobody recorded is `none`, not `brand`: the log says what we know,
+ * and the evidence keeps the URL for the person who can check it.
+ */
+function markSource(value: string | null, existing: McpCatalogServerRecord): McpCatalogEventSource {
+  if (value === null) return 'none';
+  if (value.startsWith('/brand/')) return 'repo';
+  if (value === existing.probe_icon_url) return 'logo_uri';
+  if (value === existing.registry_icon_url) return 'registry';
+  return 'none';
+}
+
+/** The caller's evidence object, merged under the fields the service measured. */
+function evidenceObject(evidence: Json | undefined): Record<string, Json> {
+  return evidence !== null && typeof evidence === 'object' && !Array.isArray(evidence)
+    ? (evidence as Record<string, Json>)
+    : {};
 }

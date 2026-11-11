@@ -30,6 +30,7 @@ vi.mock('@/backend/config/plans', () => ({
 const CATALOG: McpCatalogServerRecord = {
   registry_name: 'io.example/notion',
   title: 'Notion',
+  title_override: null,
   description: 'Pages and databases',
   name_ar: null,
   description_ar: null,
@@ -218,6 +219,8 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     listVerifiedAddresses: async () => [],
     saveCatalogProbe: async () => undefined,
     updateCatalogServer: async () => undefined,
+    recordCatalogEvent: async () => undefined,
+    latestCatalogVerifications: async () => [],
     verifyLaunchSet: async () => 0,
     setTitleOverrideIfEmpty: async () => undefined,
     setIconOverrideIfEmpty: async () => undefined,
