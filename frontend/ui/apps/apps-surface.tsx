@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, type ComponentType } from 'react';
-import Link from 'next/link';
 import { Search } from 'lucide-react';
 
-import { cn } from '@/frontend/shared/cn';
 import { APPS_TABS, type AppsTab } from '@/shared/contracts/mcp-marketplace';
+import { TabChips, TabChipsNav } from '@/frontend/ui/primitives/tab-chips';
 import { ServicesMenuItems } from '@/frontend/ui/navbar/ServicesMenuItems';
 import { useSession } from '@/frontend/state/session-provider';
 
@@ -53,6 +52,9 @@ const TAB_PLACEHOLDERS: Record<AppsTab, string> = {
  * apart; only the tab control differs, because a page tab is a URL and a sheet
  * tab is a state.
  *
+ * The chips, their scroller and the active look come from `TabChips`: one
+ * pattern for every view switcher on the site.
+ *
  * The panels are passed in rather than imported: the page can afford them in
  * its own bundle, while the sheet loads each on first activation so opening it
  * stays as cheap as it is today.
@@ -83,52 +85,26 @@ export function AppsSurface({
     setQuery('');
   }
 
-  const tabs = (
-    <div
-      {...(host === 'sheet'
-        ? { role: 'tablist', 'aria-label': COPY.tabsLabel }
-        : { role: 'navigation', 'aria-label': COPY.tabsLabel })}
-      className="grid grid-cols-3 gap-1 rounded-2xl border border-border/60 bg-muted/40 p-1"
-    >
-      {APPS_TABS.map((id) => {
-        const active = id === tab;
-        const className = cn(
-          'flex items-center justify-center rounded-xl px-1 py-2.5 text-center max-sm:text-xs font-bold transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm',
-          active
-            ? 'bg-card text-foreground shadow-xs'
-            : 'text-muted-foreground hover:text-foreground'
-        );
+  const tabItems = APPS_TABS.map((id) => ({ id, label: TAB_LABELS[id] }));
 
-        if (host === 'page') {
-          return (
-            <Link
-              key={id}
-              href={tabHref?.(id) ?? '/mcp/apps'}
-              aria-current={active ? 'page' : undefined}
-              className={className}
-            >
-              {TAB_LABELS[id]}
-            </Link>
-          );
-        }
-
-        return (
-          <button
-            key={id}
-            id={`apps-tab-${id}`}
-            type="button"
-            role="tab"
-            aria-selected={active}
-            aria-controls="apps-panel"
-            onClick={() => onTabChange?.(id)}
-            className={className}
-          >
-            {TAB_LABELS[id]}
-          </button>
-        );
-      })}
-    </div>
-  );
+  const tabs =
+    host === 'page' ? (
+      <TabChipsNav
+        label={COPY.tabsLabel}
+        items={tabItems}
+        activeId={tab}
+        href={(id) => tabHref?.(id as AppsTab) ?? '/mcp/apps'}
+      />
+    ) : (
+      <TabChips
+        label={COPY.tabsLabel}
+        items={tabItems}
+        activeId={tab}
+        onSelect={(id) => onTabChange?.(id as AppsTab)}
+        idPrefix="apps"
+        panelId="apps-panel"
+      />
+    );
 
   const search = (
     <div className="relative">

@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.ui.vectors.LucideVectors
 
 /**
- * The `تطبيقاتنا` menu: its trigger, and the nine apps the picker offers (#647).
+ * The `التَّطبيقات` menu: its trigger, and the nine apps the picker offers (#647).
  *
  * The rows are the site's (`frontend/ui/navbar/services-link.ts`), in the site's
  * order and with the site's words — `shared/copy/shell-services.json`, generated
@@ -43,7 +43,7 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
 sealed interface ServicesEntry {
     val route: String
 
-    /** The `تطبيقاتنا` pill in the top bar; the menu itself, not a destination. */
+    /** The `التَّطبيقات` pill in the top bar; the menu itself, not a destination. */
     data object Trigger : ServicesEntry {
         override val route: String = "#apps"
     }

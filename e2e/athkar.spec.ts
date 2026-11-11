@@ -10,7 +10,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function openFromMenu(page: Page) {
   await page.goto('/');
-  await page.getByRole('button', { name: 'تطبيقاتنا', exact: true }).click();
+  await page.getByRole('button', { name: 'التَّطبيقات', exact: true }).click();
 
   const dialog = page.getByRole('dialog');
   await dialog

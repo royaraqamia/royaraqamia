@@ -10,7 +10,7 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const SERVICES_COPY = {
-  trigger: 'تطبيقاتنا',
+  trigger: 'التَّطبيقات',
   news: 'أخبار اليوم',
   verify: 'التَّحقُّق من الشَّهادة',
   rates: 'أسعار الصَّرف',

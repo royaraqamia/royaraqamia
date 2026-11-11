@@ -111,7 +111,7 @@ internal object PickerMetrics {
  *
  * A row is not a link any more: the sheet is the picker, so pressing its action
  * adds or removes the app and the sheet stays open for the next choice. It is
- * the same sheet the top bar's `تطبيقاتنا` and the homepage strip's end control
+ * the same sheet the top bar's `التَّطبيقات` and the homepage strip's end control
  * open on the site, drawn from the site's numbers: a 16dp top radius, no grabber
  * and no visible title (ADR-0153), hairline-separated rows, and an action pill
  * that is violet to add and emerald with a tick once the app is on the homepage.

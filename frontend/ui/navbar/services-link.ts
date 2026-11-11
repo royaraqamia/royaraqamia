@@ -16,7 +16,7 @@ import type { NavLink } from './NavDropdown';
 import { SERVICES_COPY } from './services-copy';
 
 /**
- * The `تطبيقاتنا` sheet and the homepage strip: its trigger and its nine live
+ * The `التَّطبيقات` sheet and the homepage strip: its trigger and its nine live
  * apps, in the order the site ships (ADR-0146). `/verify` and `/mcp/guide` are
  * retired from the picker (ADR-0152): they keep their row here so the copy and
  * the glyph stay one shared source, and the sheet, the strip and the catalog

@@ -12,7 +12,6 @@
 export const LINKSNAP_COPY = {
   emptyTitle: 'لم تقم بإنشاء أي روابط مختصَرة بعد.',
   emptyBody: 'قم باختصار رابطك الأوَّل لبدء تتبع النقرات!',
-  emptyAction: 'إنشاء أول رابط',
 } as const;
 
 export type LinksnapCopyStrings = typeof LINKSNAP_COPY;

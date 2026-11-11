@@ -14,5 +14,4 @@ package com.royaraqamia.app.linksnap
 object LinksnapCopy {
     const val EMPTY_TITLE = "لم تقم بإنشاء أي روابط مختصَرة بعد."
     const val EMPTY_BODY = "قم باختصار رابطك الأوَّل لبدء تتبع النقرات!"
-    const val EMPTY_ACTION = "إنشاء أول رابط"
 }

@@ -10,7 +10,7 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const SERVICES_SHEET_COPY = {
-  title: 'التطبيقات',
+  title: 'التَّطبيقات',
   add: 'إضافة',
   remove: 'إزالة',
   failed: 'تعذَّر تحديث تطبيقاتك.',

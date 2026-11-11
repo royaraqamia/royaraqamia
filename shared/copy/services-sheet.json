@@ -14,7 +14,7 @@
     "gate": "`npm run copy:check` fails a stale generated output, and `npm run check:parity` fails a key the reference components (`frontend/ui/navbar/ServicesMenuItems.tsx` and `ServicesSheet.tsx`) do not render."
   },
   "strings": {
-    "title": "التطبيقات",
+    "title": "التَّطبيقات",
     "add": "إضافة",
     "remove": "إزالة",
     "failed": "تعذَّر تحديث تطبيقاتك."

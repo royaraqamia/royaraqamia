@@ -18,7 +18,7 @@ const NotificationBell = dynamic(
 );
 
 interface TopNavProps {
-  /** The `تطبيقاتنا` menu, centred in the bar. */
+  /** The `التَّطبيقات` menu, centred in the bar. */
   servicesLink: NavLink;
   isServicesActive: boolean;
   logo?: string;
@@ -27,7 +27,7 @@ interface TopNavProps {
 
 /**
  * The shell's single top bar, rendered at every width: the logo image at the
- * inline-start, `تطبيقاتنا` centred, and the notification bell at the inline-end.
+ * inline-start, `التَّطبيقات` centred, and the notification bell at the inline-end.
  * Account is not an avatar menu up here — the floating `BottomTabBar` owns that
  * entry point — so phone, tablet and desktop see the same three controls.
  */
@@ -67,7 +67,7 @@ export function TopNav({
         </Link>
       </div>
 
-      {/* تطبيقاتنا — centred in the bar and identical from phone to desktop.
+      {/* التَّطبيقات — centred in the bar and identical from phone to desktop.
           The trigger opens the add/remove sheet (ADR-0146). */}
       {(servicesLink.subItems ?? []).length > 0 && (
         <NavDropdown

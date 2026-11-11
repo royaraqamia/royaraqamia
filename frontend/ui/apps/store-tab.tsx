@@ -160,9 +160,14 @@ export function StoreTab({ query, connect }: StoreTabProps) {
 
   if (!user) {
     return (
-      <SignInCta href="/auth/login?redirect=/mcp/apps" visual="marketplace-cta">
-        {COPY.signInBody}
-      </SignInCta>
+      <div className="flex flex-col items-center gap-4 px-4 py-6 text-center">
+        <p className="max-w-sm text-sm leading-relaxed text-balance text-muted-foreground">
+          {COPY.signInBody}
+        </p>
+        <SignInCta href="/auth/login?redirect=/mcp/apps" visual="marketplace-cta">
+          {COPY.signIn}
+        </SignInCta>
+      </div>
     );
   }
 
