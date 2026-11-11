@@ -150,6 +150,19 @@ describe('ShortenUrlService.execute', () => {
   it('rejects malicious or loopback URLs', async () => {
     const { service } = makeRepo();
     await expect(service.execute('http://localhost:3000', null)).rejects.toThrow('Security Block');
+    await expect(service.execute('https://linksnap.app/abc123', null)).rejects.toThrow(
+      'Security Block'
+    );
+  });
+
+  it('accepts a public URL that mentions a blocked word in its path or query', async () => {
+    const { repository, service } = makeRepo();
+    (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repository.create as ReturnType<typeof vi.fn>).mockImplementation(async (link) => link);
+
+    const result = await service.execute('https://example.com/blog/how-linksnap-works', null);
+
+    expect(result.originalUrl).toBe('https://example.com/blog/how-linksnap-works');
   });
 
   it('propagates repository errors', async () => {
