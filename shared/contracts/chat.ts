@@ -143,22 +143,63 @@ export function chatTurnDocuments(attachments: { mimeType: string }[] | undefine
 }
 
 /**
- * A thread's typing channel is a Realtime **private** topic named after the
- * conversation it belongs to: `chat:<conversation id>`. Realtime authorises the
- * topic with the policies on `realtime.messages`
- * (`20261110090000_chat_typing_channel.sql`), so the name is not the boundary —
- * the membership is (#816).
+ * Presence is a private Realtime topic **per member**, `presence:<user id>`.
+ *
+ * The member being talked *to* is the one who joins their own topic; a peer who
+ * is writing or recording publishes into it (`20261125100000_chat_presence_channel.sql`).
+ * That is the messenger shape rather than the old per-conversation topic: one
+ * subscription serves the open thread and the whole chats list, however many
+ * conversations the list holds, and the policy is the boundary — only the
+ * owner reads their stream, and only a member who shares an active direct
+ * conversation may write into it (#816, ADR-0165).
  */
-export const CHAT_TYPING_TOPIC_PREFIX = 'chat:';
+export const CHAT_PRESENCE_TOPIC_PREFIX = 'presence:';
 
-/** The two events the channel carries. Both are meaningless a minute later. */
-export const CHAT_TYPING_EVENTS = {
-  typing: 'typing',
-  stop: 'stop',
+/** The one event the topic carries. It is meaningless seconds later. */
+export const CHAT_PRESENCE_EVENTS = {
+  presence: 'presence',
 } as const;
 
-export function chatTypingTopic(conversationId: string): string {
-  return `${CHAT_TYPING_TOPIC_PREFIX}${conversationId}`;
+/** What a member is doing, as the other side draws it. */
+export type ChatPresenceState = 'typing' | 'recording';
+
+/** The wire signal also carries the end of a state. */
+export type ChatPresenceSignal = ChatPresenceState | 'stop';
+
+/**
+ * One member's presence in one conversation.
+ *
+ * `conversationId` is what lets a single per-member stream feed every row of
+ * the chats list; the reader drops an event for a thread it does not hold, and
+ * a sender the thread's roster does not name. The identity is cosmetic, as it
+ * always was (ADR-0116): a client could claim another's, which is why the
+ * reader also checks it against the counterpart it already knows.
+ */
+export interface ChatPresenceEvent {
+  conversationId: string;
+  userId: string;
+  state: ChatPresenceSignal;
+}
+
+export function chatPresenceTopic(userId: string): string {
+  return `${CHAT_PRESENCE_TOPIC_PREFIX}${userId}`;
+}
+
+/**
+ * The reader accepts an event only when it is well formed and not the member's
+ * own. Both clients run this, so neither can draw a state the other would not.
+ */
+export function chatPresenceEventOf(
+  payload: Record<string, unknown>,
+  selfId: string
+): ChatPresenceEvent | null {
+  const conversationId = payload.conversationId;
+  const userId = payload.userId;
+  const state = payload.state;
+  if (typeof conversationId !== 'string' || !conversationId) return null;
+  if (typeof userId !== 'string' || !userId || userId === selfId) return null;
+  if (state !== 'typing' && state !== 'recording' && state !== 'stop') return null;
+  return { conversationId, userId, state };
 }
 
 /** The first keystroke goes at once, then at most one event per window. */
@@ -169,6 +210,15 @@ export const CHAT_TYPING_THROTTLE_MS = 4_000;
  * "stop" — a closed tab, a dead socket — cannot pin it on screen.
  */
 export const CHAT_TYPING_TIMEOUT_MS = 5_000;
+
+/**
+ * A recording is a longer state than a keystroke, so it is re-announced while it
+ * runs and expires after a window wider than the heartbeat. A member who locks
+ * the recorder hands-free can hold it for five minutes; the microphone's own
+ * ceiling is the only bound (`CHAT_VOICE_NOTE_MAX_MS`).
+ */
+export const CHAT_RECORDING_HEARTBEAT_MS = 4_000;
+export const CHAT_RECORDING_TIMEOUT_MS = 6_000;
 
 /** Mirrors the RLS window on `chat_messages`: after this, an edit is refused. */
 export const CHAT_EDIT_WINDOW_MS = 15 * 60 * 1000;

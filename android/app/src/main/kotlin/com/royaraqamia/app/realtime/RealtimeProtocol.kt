@@ -141,6 +141,29 @@ object RealtimeProtocol {
             }
             .toString()
 
+    /**
+     * One broadcast on a channel that has joined, e.g. a presence announcement.
+     *
+     * A push names the join it belongs to (`join_ref`) as well as its own ref, so
+     * the server routes it to the topic the client is actually in rather than
+     * trusting a name the caller typed (ADR-0165).
+     */
+    fun push(
+        joinRef: String,
+        topic: String,
+        event: String,
+        payload: JsonObject,
+        ref: String,
+    ): String =
+        buildJsonObject {
+                put("topic", wireTopic(topic))
+                put("event", event)
+                put("payload", payload)
+                put("ref", ref)
+                put("join_ref", joinRef)
+            }
+            .toString()
+
     /** One message the server pushed, or `null` when it carries nothing this client uses. */
     fun parse(text: String): Incoming? {
         val root =

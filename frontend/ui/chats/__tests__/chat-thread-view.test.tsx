@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 
 import type { ChatMessage, ChatPeer, ChatThread } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
@@ -54,9 +54,16 @@ vi.mock('@/frontend/transport/supabase/chat-attachments', () => ({
   removeChatAttachmentObjects: vi.fn(),
 }));
 
-/** The typing channel is a broadcast under test elsewhere; here it is a seam. */
-vi.mock('@/frontend/state/chats/use-chat-typing', () => ({
-  useChatTyping: () => ({ typers: [], noteTyping: vi.fn(), stopTyping: vi.fn() }),
+/** Presence is a broadcast under test elsewhere; here it is a seam. */
+const presence = vi.hoisted(() => ({ peer: null as 'typing' | 'recording' | null }));
+
+vi.mock('@/frontend/state/chats/use-chat-presence', () => ({
+  useChatPresence: () => ({
+    peer: presence.peer,
+    noteTyping: vi.fn(),
+    noteRecording: vi.fn(),
+    stopTyping: vi.fn(),
+  }),
 }));
 
 const thread = vi.hoisted(() => ({ current: null as ChatThread | null }));
@@ -267,6 +274,39 @@ describe('ChatThreadView header profile link', () => {
 
     expect(screen.getByText('المحادثة غير موجودة')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'أعضاء المجموعة' })).toBeNull();
+  });
+});
+
+/**
+ * The live line is drawn under the name, in the handle's slot, and gives the
+ * handle back when the peer stops (ADR-0165).
+ */
+describe('ChatThreadView presence', () => {
+  beforeEach(() => {
+    thread.current = makeThread('direct');
+    presence.peer = null;
+  });
+
+  afterEach(() => {
+    presence.peer = null;
+  });
+
+  it('takes the handle’s place while the peer writes', () => {
+    presence.peer = 'typing';
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByText('يكتب الآن')).toBeInTheDocument();
+    expect(screen.queryByText('@sara')).toBeNull();
+  });
+
+  it('names a recording, and gives the handle back when it ends', () => {
+    presence.peer = 'recording';
+    const view = render(<ChatThreadView conversationId="c-1" />);
+    expect(screen.getByText('يُسجِّل رسالة صوتيَّة')).toBeInTheDocument();
+
+    presence.peer = null;
+    view.rerender(<ChatThreadView conversationId="c-1" />);
+    expect(screen.getByText('@sara')).toBeInTheDocument();
   });
 });
 
@@ -605,6 +645,30 @@ describe('ChatThreadView assistant', () => {
       )
     );
     await waitFor(() => expect(box).toHaveValue(''));
+  });
+
+  it('says نور is writing in the header for the whole turn', async () => {
+    let release: () => void = () => {};
+    api.streamChatAgentTurn.mockReturnValue(
+      new Promise<void>((resolve) => {
+        release = resolve;
+      })
+    );
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    const box = await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
+    fireEvent.change(box, { target: { value: 'مرحباً' } });
+    fireEvent.click(screen.getByRole('button', { name: 'إرسال السؤال' }));
+
+    // The line is the header's, and the thread draws no placeholder bubble for
+    // a turn that has not produced text yet.
+    expect(await screen.findByText('نور تكتب')).toBeInTheDocument();
+
+    await act(async () => {
+      release();
+    });
+    await waitFor(() => expect(screen.queryByText('نور تكتب')).toBeNull());
   });
 });
 

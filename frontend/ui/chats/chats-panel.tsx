@@ -6,8 +6,11 @@ import { useRouter } from 'next/navigation';
 import { Check, MessagesSquare, Plus, X } from 'lucide-react';
 
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
+import { useChatPresenceList } from '@/frontend/state/chats/use-chat-presence-list';
+import { useAssistantTurnActive } from '@/frontend/state/chats/assistant-turn';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
+import { identityUserId } from '@/frontend/shared/local-store/identity';
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
@@ -15,9 +18,11 @@ import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
 import { AssistantMark } from './assistant-mark';
+import { ASSISTANT_COPY } from './assistant-copy';
+import { PresenceIndicator } from './presence-indicator';
 import { NewConversationPanel } from './new-conversation-panel';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
-import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
+import type { ChatConversationSummary, ChatPeer, ChatPresenceState } from '@/shared/contracts/chat';
 
 /**
  * What a past instant is, in the chats surface's words (#819).
@@ -65,6 +70,7 @@ export function ChatsPanel() {
   // (#493), so the tab paints the rows this device already holds (#1033).
   const { identity } = useLocalIdentity();
   const { threads, isLoading, painted, error, refresh, respond } = useChatThreads(true, identity);
+  const presence = useChatPresenceList(threads, identityUserId(identity));
   const [panel, setPanel] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [answering, setAnswering] = useState<{
@@ -229,9 +235,11 @@ export function ChatsPanel() {
 
       {assistant || open.length > 0 ? (
         <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
-          {assistant ? <ThreadRow thread={assistant} pinned /> : null}
+          {assistant ? (
+            <ThreadRow thread={assistant} presence={presence[assistant.id] ?? null} pinned />
+          ) : null}
           {open.map((thread) => (
-            <ThreadRow key={thread.id} thread={thread} />
+            <ThreadRow key={thread.id} thread={thread} presence={presence[thread.id] ?? null} />
           ))}
         </ul>
       ) : pending.length === 0 ? (
@@ -251,7 +259,7 @@ export function ChatsPanel() {
               key={thread.id}
               className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3"
             >
-              <ThreadIdentity thread={thread} />
+              <ThreadIdentity thread={thread} presence={null} />
               <p className="mt-1 text-xs text-muted-foreground">{CHATS_LIST_COPY.requestDirect}</p>
               <div className="mt-3 flex items-center gap-2">
                 <button
@@ -319,9 +327,12 @@ export function ChatsPanel() {
  */
 function ThreadRow({
   thread,
+  presence,
   pinned = false,
 }: {
   thread: ChatConversationSummary;
+  /** What the peer is doing, or null when the row shows its last line. */
+  presence: ChatPresenceState | null;
   pinned?: boolean;
 }) {
   return (
@@ -330,7 +341,7 @@ function ThreadRow({
         href={`/chats/${thread.id}`}
         className="flex items-start gap-3.5 px-4 py-3.5 focus-visible:bg-accent/80 focus-visible:outline-none"
       >
-        <ThreadIdentity thread={thread} />
+        <ThreadIdentity thread={thread} presence={presence} />
         <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
           {thread.lastMessageAt ? (
             <span className="text-[11px] font-medium text-muted-foreground/60">
@@ -348,8 +359,22 @@ function ThreadRow({
   );
 }
 
-function ThreadIdentity({ thread }: { thread: ChatConversationSummary }) {
+function ThreadIdentity({
+  thread,
+  presence,
+}: {
+  thread: ChatConversationSummary;
+  presence: ChatPresenceState | null;
+}) {
   const label = thread.counterpart?.name ?? thread.counterpart?.username ?? thread.title;
+  /**
+   * نور's live line is the member's own turn, which may still be running after
+   * they backed out of the thread; a real member's arrives on the presence
+   * stream. One slot, so a row never grows a second line while it happens.
+   */
+  const assistantTyping = useAssistantTurnActive(thread.kind === 'agent' ? thread.id : null);
+  const indicator =
+    thread.kind === 'agent' && assistantTyping ? ASSISTANT_COPY.thinking : presenceText(presence);
 
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -365,16 +390,26 @@ function ThreadIdentity({ thread }: { thread: ChatConversationSummary }) {
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
-        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
-          {thread.status === 'declined'
-            ? CHATS_LIST_COPY.declinedLabel
-            : thread.lastMessage
-              ? previewOf(thread)
-              : CHATS_LIST_COPY.noMessages}
-        </p>
+        {thread.status === 'declined' ? (
+          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
+            {CHATS_LIST_COPY.declinedLabel}
+          </p>
+        ) : indicator ? (
+          <PresenceIndicator label={indicator} className="mt-0.5 text-xs" />
+        ) : (
+          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
+            {thread.lastMessage ? previewOf(thread) : CHATS_LIST_COPY.noMessages}
+          </p>
+        )}
       </div>
     </div>
   );
+}
+
+/** The live sentence a peer's state draws, in the list's own words (#819). */
+function presenceText(state: ChatPresenceState | null): string | null {
+  if (!state) return null;
+  return state === 'recording' ? CHATS_LIST_COPY.recordingNow : CHATS_LIST_COPY.typingNow;
 }
 
 function previewOf(thread: ChatConversationSummary): string {

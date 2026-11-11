@@ -9,8 +9,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -106,8 +108,32 @@ class RealtimeClientTest {
     }
 
     @Test
-    fun `two subscriptions share one socket`() = runBlocking {
+    fun `a channel send waits for the join and then names it`() = runBlocking {
         val factory = FakeSocketFactory()
+        val client = client(factory, FakeSession(RealtimeToken("token-1", 1)))
+
+        val channel = client.open(ChatRealtime.presenceSpec("peer-1"))
+        val socket = factory.awaitSocket(1)
+        val join = socket.await { it.contains("phx_join") }
+
+        // Before the acknowledgement the event waits rather than being dropped.
+        assertTrue(channel.send("presence", buildJsonObject { put("state", "typing") }))
+
+        socket.emit(reply(refOf(join), "ok"))
+
+        val push = socket.await { it.contains("\"event\":\"presence\"") }
+        assertTrue("the push names the peer's topic: $push", push.contains("realtime:presence:peer-1"))
+        assertTrue(
+            "the push names the join it belongs to: $push",
+            push.contains("\"join_ref\":\"${refOf(join)}\""),
+        )
+
+        channel.close()
+        client.close()
+    }
+
+    @Test
+    fun `two subscriptions share one socket`() = runBlocking {        val factory = FakeSocketFactory()
         val client = client(factory, FakeSession(RealtimeToken("token-1", 1)))
 
         val hints = client.subscribe(ChatRealtime.threadSpec("c-1"))

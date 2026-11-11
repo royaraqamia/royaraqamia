@@ -31,6 +31,20 @@ vi.mock('@/frontend/state/chats/use-chat-threads', () => ({
   }),
 }));
 
+/** Presence and the assistant's live turn are streams under test elsewhere. */
+const live = vi.hoisted(() => ({
+  presence: {} as Record<string, 'typing' | 'recording'>,
+  assistantTyping: false,
+}));
+
+vi.mock('@/frontend/state/chats/use-chat-presence-list', () => ({
+  useChatPresenceList: () => live.presence,
+}));
+
+vi.mock('@/frontend/state/chats/assistant-turn', () => ({
+  useAssistantTurnActive: () => live.assistantTyping,
+}));
+
 const api = vi.hoisted(() => ({
   searchChatMembers: vi.fn(),
   getChatAssistant: vi.fn(),
@@ -79,6 +93,19 @@ const GROUP: ChatConversationSummary = {
   createdAt: '2026-11-01T00:00:00.000Z',
 };
 
+const ASSISTANT: ChatConversationSummary = {
+  id: 'a-1',
+  kind: 'agent',
+  status: 'active',
+  title: 'نور',
+  counterpart: null,
+  myStatus: 'active',
+  lastMessage: null,
+  unreadCount: 0,
+  lastMessageAt: null,
+  createdAt: '2026-11-01T00:00:00.000Z',
+};
+
 const PRO_ALLOWANCE = {
   plan: 'pro' as const,
   member: { used: 2, cap: 40 },
@@ -105,6 +132,8 @@ describe('ChatsPanel', () => {
       .mockReset()
       .mockResolvedValue({ available: true, allowance: PRO_ALLOWANCE });
     navigation.push.mockReset();
+    live.presence = {};
+    live.assistantTyping = false;
   });
 
   it('draws a thread peer’s picture', () => {
@@ -112,6 +141,32 @@ describe('ChatsPanel', () => {
     render(<ChatsPanel />);
 
     expect(screen.getByRole('img', { name: PEER.name! })).toHaveAttribute('src', PEER.avatarUrl);
+  });
+
+  /**
+   * The live line takes the preview's place while it lasts, the way Telegram and
+   * WhatsApp draw it — one row, one sentence, and the last message is back the
+   * moment the peer stops (ADR-0165).
+   */
+  it('replaces the last line while the peer writes, and names a recording', () => {
+    hooks.threads = [THREAD];
+    live.presence = { 'c-1': 'typing' };
+    const view = render(<ChatsPanel />);
+
+    expect(screen.getByText('يكتب الآن')).toBeInTheDocument();
+    expect(screen.queryByText('لا رسائل بعد')).toBeNull();
+
+    live.presence = { 'c-1': 'recording' };
+    view.rerender(<ChatsPanel />);
+    expect(screen.getByText('يُسجِّل رسالة صوتيَّة')).toBeInTheDocument();
+  });
+
+  it('says نور is writing while its turn is still running', () => {
+    hooks.threads = [ASSISTANT];
+    live.assistantTyping = true;
+    render(<ChatsPanel />);
+
+    expect(screen.getByText('نور تكتب')).toBeInTheDocument();
   });
 
   it('draws a searched member’s picture', async () => {

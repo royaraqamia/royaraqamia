@@ -15,10 +15,24 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
 
 /** One live subscription: closing it removes exactly one channel. */
 fun interface RealtimeSubscription {
     fun close()
+}
+
+/**
+ * A subscription that can also **speak**: a private broadcast channel the
+ * member writes into, such as a peer's presence stream (ADR-0165).
+ *
+ * A send before the join is not a dropped event: it waits in a small queue and
+ * is flushed the moment the server acknowledges the join, which is what makes
+ * the first keystroke of a freshly opened thread reach the peer.
+ */
+interface RealtimeChannel : RealtimeSubscription {
+    /** Broadcast one event, or false when it could not be queued. */
+    fun send(event: String, payload: JsonObject): Boolean
 }
 
 /** The session's token as the socket needs it, with the generation a refresh changes. */
@@ -80,10 +94,33 @@ class RealtimeClient(
         val id: Long,
         val spec: RealtimeChannelSpec,
         val onEvent: (RealtimeEvent) -> Unit,
-    )
+    ) {
+        /** The ref the server acknowledged this join with, or null before it did. */
+        @Volatile
+        var joinRef: String? = null
+
+        /** Sends that arrived before the join, capped so a dead topic cannot grow. */
+        private val queued = ArrayDeque<Pair<String, JsonObject>>()
+
+        fun queue(event: String, payload: JsonObject): Boolean = synchronized(this) {
+            if (queued.size >= MAX_QUEUED_SENDS) return false
+            queued.addLast(event to payload)
+            true
+        }
+
+        fun drain(): List<Pair<String, JsonObject>> = synchronized(this) {
+            queued.toList().also { queued.clear() }
+        }
+    }
 
     private sealed interface Command {
         data class Join(val id: Long, val spec: RealtimeChannelSpec) : Command
+
+        data class Send(
+            val id: Long,
+            val event: String,
+            val payload: JsonObject,
+        ) : Command
     }
 
     private val lock = Any()
@@ -101,11 +138,17 @@ class RealtimeClient(
     @Volatile
     private var outbound: Channel<Command>? = null
 
-    /** Join one channel. The returned handle closes it, and the last one closes the socket. */
+    /** Join one channel, read-only. The handle closes it, and the last one closes the socket. */
     fun subscribe(
         spec: RealtimeChannelSpec,
         onEvent: (RealtimeEvent) -> Unit = {},
-    ): RealtimeSubscription {
+    ): RealtimeSubscription = open(spec, onEvent)
+
+    /** Join one channel that may also broadcast; the handle can send and close. */
+    fun open(
+        spec: RealtimeChannelSpec,
+        onEvent: (RealtimeEvent) -> Unit = {},
+    ): RealtimeChannel {
         val subscription =
             synchronized(lock) {
                 val id = ++nextId
@@ -118,13 +161,26 @@ class RealtimeClient(
                 created
             }
         ensureRunning()
-        return RealtimeSubscription {
-            val empty =
-                synchronized(lock) {
-                    subscriptions.remove(subscription.id)
-                    subscriptions.isEmpty()
+
+        return object : RealtimeChannel {
+            override fun send(event: String, payload: JsonObject): Boolean {
+                synchronized(subscription) {
+                    if (subscription.joinRef == null) {
+                        if (subscription.queue(event, payload)) return true
+                        return false
+                    }
                 }
-            if (empty) running?.cancel()
+                return outbound?.trySend(Command.Send(subscription.id, event, payload))?.isSuccess == true
+            }
+
+            override fun close() {
+                val empty =
+                    synchronized(lock) {
+                        subscriptions.remove(subscription.id)
+                        subscriptions.isEmpty()
+                    }
+                if (empty) running?.cancel()
+            }
         }
     }
 
@@ -238,6 +294,23 @@ class RealtimeClient(
                                         RealtimeProtocol.join(subscription.spec, token.accessToken, ref)
                                     )
                                 }
+
+                                is Command.Send -> {
+                                    val subscription =
+                                        synchronized(lock) { subscriptions[command.id] }
+                                            ?: continue
+                                    val joinRef = subscription.joinRef ?: continue
+                                    val ref = refs.incrementAndGet().toString()
+                                    socket.send(
+                                        RealtimeProtocol.push(
+                                            joinRef = joinRef,
+                                            topic = subscription.spec.topic,
+                                            event = command.event,
+                                            payload = command.payload,
+                                            ref = ref,
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
@@ -271,8 +344,12 @@ class RealtimeClient(
                             is SocketEvent.Closed -> break
                             is SocketEvent.Text -> {
                                 val incoming = RealtimeProtocol.parse(event.text) ?: continue
-                                when (val delivered = deliver(incoming, pending)) {
-                                    is Delivered.Joined -> joined = true
+                                val delivered = deliver(incoming, pending)
+                                when (delivered) {
+                                    is Delivered.Joined -> {
+                                        joined = true
+                                        flush(delivered.subscription, socket, refs)
+                                    }
                                     is Delivered.Refused -> {
                                         // A refusal is the one answer a rejoin can
                                         // fix: drop the socket, renew once, and let
@@ -291,6 +368,11 @@ class RealtimeClient(
                 }
             } finally {
                 synchronized(lock) { outbound = null }
+                // A send queued for this socket belongs to the next one: the join
+                // ref it named is gone, so the queue waits for the next acknowledge.
+                for (subscription in synchronized(lock) { subscriptions.values.toList() }) {
+                    subscription.joinRef = null
+                }
                 commands.close()
                 socket.close()
             }
@@ -301,7 +383,7 @@ class RealtimeClient(
     private sealed interface Delivered {
         object Ignored : Delivered
 
-        object Joined : Delivered
+        data class Joined(val subscription: Subscription) : Delivered
 
         object Refused : Delivered
     }
@@ -322,8 +404,9 @@ class RealtimeClient(
             is RealtimeProtocol.Incoming.Reply -> {
                 val subscription = incoming.ref?.let { pending.remove(it) } ?: return Delivered.Ignored
                 if (incoming.ok) {
+                    subscription.joinRef = incoming.ref
                     subscription.onEvent(RealtimeEvent.Ready(subscription.spec.topic))
-                    Delivered.Joined
+                    Delivered.Joined(subscription)
                 } else {
                     refuse(subscription, incoming.reason ?: "the server refused the channel")
                     Delivered.Refused
@@ -355,6 +438,26 @@ class RealtimeClient(
         log("realtime refused ${subscription.spec.topic}: $reason")
     }
 
+    /**
+     * Sends what a channel queued before its join was acknowledged. Called from
+     * the socket's own coroutine, so the frames keep the connection's order.
+     */
+    private fun flush(subscription: Subscription, socket: RealtimeSocket, refs: AtomicLong) {
+        val joinRef = subscription.joinRef ?: return
+        for ((event, payload) in subscription.drain()) {
+            val ref = refs.incrementAndGet().toString()
+            socket.send(
+                RealtimeProtocol.push(
+                    joinRef = joinRef,
+                    topic = subscription.spec.topic,
+                    event = event,
+                    payload = payload,
+                    ref = ref,
+                )
+            )
+        }
+    }
+
     private sealed interface SocketEvent {
         data class Text(val text: String) : SocketEvent
 
@@ -363,6 +466,9 @@ class RealtimeClient(
 }
 
 private const val TAG = "RoyRealtime"
+
+/** A channel that never joins must not grow an unbounded outbox. */
+private const val MAX_QUEUED_SENDS = 8
 
 private const val MAX_ATTEMPT = 5
 

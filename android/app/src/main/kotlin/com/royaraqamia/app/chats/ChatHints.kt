@@ -46,9 +46,8 @@ class RealtimeChatHints(private val client: RealtimeClient) : ChatHintSource {
  * never invents a topic of its own.
  */
 object ChatRealtime {
-    /** The two events the private typing channel carries (ADR-0116). */
-    const val TYPING = "typing"
-    const val STOP = "stop"
+    /** The one event the private presence stream carries (ADR-0165). */
+    const val PRESENCE = "presence"
 
     /** One open thread: new lines, edits and tombstones for this conversation. */
     fun threadSpec(conversationId: String): RealtimeChannelSpec =
@@ -77,14 +76,15 @@ object ChatRealtime {
         )
 
     /**
-     * The private typing topic (ADR-0116). `isPrivate` is what makes the name a
-     * boundary: Realtime authorises it with the policies on `realtime.messages`
-     * in `20261110090000_chat_typing_channel.sql`, not with the name itself.
+     * A member's private presence stream (ADR-0165). The reader joins their own
+     * topic; a peer joins it **write-only**, which the insert policy admits. It
+     * is one subscription for the whole list and the open thread, rather than one
+     * per conversation.
      */
-    fun typingSpec(conversationId: String): RealtimeChannelSpec =
+    fun presenceSpec(userId: String): RealtimeChannelSpec =
         RealtimeChannelSpec(
-            topic = "chat:$conversationId",
-            broadcasts = setOf(TYPING, STOP),
+            topic = "presence:$userId",
+            broadcasts = setOf(PRESENCE),
             isPrivate = true,
         )
 }
