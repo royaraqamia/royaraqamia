@@ -39,6 +39,8 @@ import { cn } from '@/frontend/shared/cn';
 import {
   MCP_CATALOG_ADMIN_COPY as COPY,
   type McpCatalogAdminRow,
+  type McpCatalogCoverage,
+  type McpCatalogWaitingRow,
 } from '@/shared/contracts/mcp-catalog';
 
 /**
@@ -67,6 +69,8 @@ interface RowAction {
 
 export function McpCatalogAdminView() {
   const [rows, setRows] = useState<McpCatalogAdminRow[]>([]);
+  const [coverage, setCoverage] = useState<McpCatalogCoverage | null>(null);
+  const [waiting, setWaiting] = useState<McpCatalogWaitingRow[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [q, setQ] = useState('');
@@ -86,6 +90,8 @@ export function McpCatalogAdminView() {
       .then((page) => {
         if (cancelled) return;
         setRows(page.servers);
+        setCoverage(page.coverage);
+        setWaiting(page.waiting);
         setCursor(page.nextCursor);
       })
       .catch((caught) => {
@@ -137,6 +143,44 @@ export function McpCatalogAdminView() {
       <p className="mx-auto max-w-2xl text-center text-sm text-muted-foreground text-pretty">
         {COPY.description}
       </p>
+
+      {coverage && (
+        <dl className="mx-auto grid max-w-xl grid-cols-3 gap-2 text-center">
+          {[
+            [COPY.coverageEligible, coverage.eligible],
+            [COPY.coveragePublished, coverage.published],
+            [COPY.coverageWaiting, coverage.waiting],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-xl border border-border/60 bg-card p-2">
+              <dt className="text-xs text-muted-foreground">{label}</dt>
+              <dd className="text-lg font-bold text-foreground">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {!loading && !error && waiting.length > 0 && (
+        <section className="space-y-2 rounded-2xl border border-warning/40 bg-warning/5 p-4">
+          <h2 className="text-sm font-bold text-foreground">{COPY.waitingTitle}</h2>
+          <p className="text-xs text-muted-foreground text-pretty">{COPY.waitingDescription}</p>
+          <ul className="space-y-1">
+            {waiting.map((row) => (
+              <li
+                key={`${row.registryName}:${row.at}`}
+                className="flex flex-wrap items-baseline justify-between gap-2 text-xs"
+              >
+                <span className="font-medium text-foreground" dir="ltr">
+                  {row.title ?? row.registryName}
+                </span>
+                <span className="text-muted-foreground">
+                  {COPY.waitingReasonLabels[row.reason]} · {COPY.waitingSinceLabel}{' '}
+                  {CHECKED_AT.format(new Date(row.at))}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <form
         className="flex items-center gap-2"

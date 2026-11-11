@@ -35,6 +35,12 @@ keystore secrets below.
   means changing the secret and `public/.well-known/assetlinks.json` together, and every installed shell
   has to be replaced by hand (ADR-0045, `docs/mobile/android-shell.md`).
 
+- `MCP_CATALOG_AGENT_TOKEN` — the catalogue agent's only credential. A revocable bearer token
+  for `POST /api/internal/mcp/catalog-agent`, compared in constant time; the job that holds it has
+  `contents: read` and no service-role key, and the endpoint's verb allowlist is its capability
+  (`list`, `mark`, `copy`, `verify`, `withdraw`, `skip`). Rotating it is one secret and one
+  redeploy; the run fails loudly when it is missing (#1293).
+
 - `SUPABASE_SERVICE_ROLE_KEY` — a copy of the deployment's, because `code-quality.yml`'s `build` job and
   `bundle-size.yml` both run `npm run build`, and that build prerenders routes which read through the
   admin client (`backend/loaders/spendtrack.ts`, `backend/loaders/rates.ts`). It exists in **two scopes**,

@@ -104,6 +104,10 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     },
     countCatalogServers: async () => 0,
     listCatalogServers: async () => ({ rows: [], nextCursor: null }),
+    listAgentCandidates: async () => [],
+    catalogCoverage: async () => ({ eligible: 0, published: 0, waiting: 0 }),
+    listLatestSkips: async () => [],
+    getCatalogRows: async () => [],
     getCatalogAddresses: async () => [],
     listVerifiedAddresses: async () => [],
     saveCatalogProbe: async (registryName, probe) => {
@@ -1223,5 +1227,65 @@ describe('the verification log (#1293)', () => {
       actor: 'agent:mcp-catalog',
       at: '2026-11-14T09:00:00.000Z',
     });
+  });
+});
+
+describe('the wait list and the coverage numbers (#1293)', () => {
+  it('draws the newest skip per row with its category, and the three counts once', async () => {
+    const repository = fakeRepository({
+      listCatalogServers: async () => ({
+        rows: [serverRow() as unknown as McpCatalogListRow],
+        nextCursor: null,
+      }),
+      catalogCoverage: async () => ({ eligible: 7, published: 5, waiting: 1 }),
+      listLatestSkips: async () => [
+        {
+          registry_name: 'com.vercel/vercel-mcp',
+          actor: 'agent:mcp-catalog',
+          action: 'skip',
+          source: 'none',
+          evidence: { reason: 'no_mark', detail: 'no mark from any allowed source' },
+          created_at: '2026-11-14T09:00:00.000Z',
+        },
+      ],
+      getCatalogRows: async () => [serverRow() as unknown as McpCatalogListRow],
+    });
+    const service = build({ repository, pages: [] });
+
+    const page = await service.adminList({ q: '', cursor: null });
+
+    expect(page.coverage).toEqual({ eligible: 7, published: 5, waiting: 1 });
+    expect(page.waiting).toEqual([
+      {
+        registryName: 'com.vercel/vercel-mcp',
+        title: 'Vercel',
+        iconUrl: 'https://mcp.vercel.com/icons/vercel-light.svg',
+        reason: 'no_mark',
+        detail: 'no mark from any allowed source',
+        at: '2026-11-14T09:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('drops a skip whose row is gone, so the list and the number agree', async () => {
+    const repository = fakeRepository({
+      catalogCoverage: async () => ({ eligible: 1, published: 0, waiting: 1 }),
+      listLatestSkips: async () => [
+        {
+          registry_name: 'com.gone/mcp',
+          actor: 'agent:mcp-catalog',
+          action: 'skip',
+          source: 'none',
+          evidence: { reason: 'no_registration', detail: null },
+          created_at: '2026-11-14T09:00:00.000Z',
+        },
+      ],
+      getCatalogRows: async () => [],
+    });
+    const service = build({ repository, pages: [] });
+
+    const page = await service.adminList({ q: '', cursor: null });
+
+    expect(page.waiting).toEqual([]);
   });
 });

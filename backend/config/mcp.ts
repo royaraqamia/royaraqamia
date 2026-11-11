@@ -36,6 +36,11 @@ import {
   createMcpOAuthProvider,
   type McpOAuthProvider,
 } from '@/backend/services/mcp/oauth-provider';
+import {
+  createMcpCatalogAgentService,
+  type McpCatalogAgentService,
+} from '@/backend/services/mcp/marketplace/catalog-agent';
+import { env } from '@/backend/config/env';
 
 /**
  * Composition root for the public MCP server's OAuth surface and the outbound
@@ -51,6 +56,21 @@ export function createDefaultMcpOAuthProvider(): McpOAuthProvider {
 
 export function createDefaultMcpConnectedAppService(): McpConnectedAppService {
   return createMcpConnectedAppService({ provider: createDefaultMcpOAuthProvider() });
+}
+
+/**
+ * The unattended run's scoped door (#1293). It is the same catalogue service an
+ * admin writes through, plus the four rules that keep a publish measured; the
+ * redirect URI is ours, so a pre-registered client is probed against the one
+ * the provider already has on file.
+ */
+export function createDefaultMcpCatalogAgentService(): McpCatalogAgentService {
+  return createMcpCatalogAgentService({
+    repository: createMcpMarketplaceRepository(),
+    catalog: createDefaultMcpCatalogService(),
+    staticClients: readMcpStaticClients(),
+    redirectUri: new URL('/mcp/callback', env.siteUrl).toString(),
+  });
 }
 
 /**

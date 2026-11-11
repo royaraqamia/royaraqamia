@@ -50,6 +50,56 @@ export const McpCatalogConnectReasonSchema = z.enum([
 
 export type McpCatalogConnectReason = z.infer<typeof McpCatalogConnectReasonSchema>;
 
+/**
+ * Why a catalogue row waits for a person (#1293, half 3). A category rather
+ * than prose, so «بانتظار إنسان» can count it and a run can recognise the same
+ * reason on its next pass.
+ */
+export const McpCatalogWaitReasonSchema = z.enum([
+  /** No mark from any of the allowed sources. */
+  'no_mark',
+  /** No dynamic registration, and no reviewed client for this provider. */
+  'no_registration',
+  /** A measured check failed for a reason the next run may clear. */
+  'check_failed',
+  /** A shipped SVG is waiting for its batched pull request to merge. */
+  'repo_pr_pending',
+  /**
+   * The server needs no OAuth at all. The store's connect flow is OAuth-only
+   * until #1269, so publishing it now would offer a row a member cannot link.
+   */
+  'no_auth_pending',
+]);
+
+export type McpCatalogWaitReason = z.infer<typeof McpCatalogWaitReasonSchema>;
+
+/** One row on the wait list: what it is, why it waits, and since when. */
+export const McpCatalogWaitingRowSchema = z.object({
+  registryName: z.string().min(1),
+  title: z.string().nullable(),
+  iconUrl: z.string().nullable(),
+  reason: McpCatalogWaitReasonSchema,
+  detail: z.string().nullable(),
+  at: z.string(),
+});
+
+export type McpCatalogWaitingRow = z.infer<typeof McpCatalogWaitingRowSchema>;
+
+/**
+ * The three numbers the console header and the run summary draw (#1293): a
+ * target nobody can measure is not a target.
+ */
+export const McpCatalogCoverageSchema = z.object({
+  /** Active, unblocked, connectable, and carrying a mark. */
+  eligible: z.number().int().nonnegative(),
+  /** Eligible and admitted: `verified_at` set, which is the publish switch. */
+  published: z.number().int().nonnegative(),
+  /** The newest event for the row is a skip: it waits for a person. */
+  waiting: z.number().int().nonnegative(),
+});
+
+export type McpCatalogCoverage = z.infer<typeof McpCatalogCoverageSchema>;
+
 /** A catalogue row as the marketplace draws it. */
 export const McpCatalogRowSchema = z.object({
   registryName: z.string().min(1),
@@ -198,6 +248,10 @@ export type McpCatalogAdminRow = z.infer<typeof McpCatalogAdminRowSchema>;
 export const McpCatalogAdminPageSchema = z.object({
   servers: z.array(McpCatalogAdminRowSchema),
   nextCursor: z.string().nullable(),
+  /** The header's eligible / published / waiting counts. */
+  coverage: McpCatalogCoverageSchema,
+  /** The rows the agent could not publish, newest skip first. */
+  waiting: z.array(McpCatalogWaitingRowSchema),
 });
 
 export type McpCatalogAdminPage = z.infer<typeof McpCatalogAdminPageSchema>;
@@ -307,6 +361,21 @@ export const MCP_CATALOG_ADMIN_COPY = {
   lastVerificationByLabel: 'أجراه',
   lastVerificationWithdrawn: 'سحب من المتجر',
   lastVerificationMissing: 'لا سجل لهذا الإجراء بعد',
+  coverageEligible: 'مؤهل',
+  coveragePublished: 'منشور',
+  coverageWaiting: 'بانتظار إنسان',
+  waitingTitle: 'بانتظار إنسان',
+  waitingDescription:
+    'صفوف فحصها الوكيل ولم يستطع نشرها. السبب فئة تُعدّ، لا جملة تُقرأ: عالجه ثم سيُعاد فحصه في التشغيل التالي دون أن يمسح أحد شيئاً.',
+  waitingEmpty: 'لا شيء بانتظار إنسان.',
+  waitingSinceLabel: 'منذ',
+  waitingReasonLabels: {
+    no_mark: 'لا شعار مؤكد',
+    no_registration: 'لا تسجيل عملاء ولا عميل مسجّل',
+    check_failed: 'فشل فحص',
+    repo_pr_pending: 'شعاره في طلب تغيير',
+    no_auth_pending: 'لا يحتاج مصادقة، والربط لا يدعمه بعد',
+  },
   blockTitle: 'إيقاف تطبيق',
   blockDescription: 'لن يظهر التطبيق في المتجر، ولن يبدأ ربطه. اكتب السبب: هو ما يقرأه من يحاول.',
   blockReasonLabel: 'سبب الإيقاف',

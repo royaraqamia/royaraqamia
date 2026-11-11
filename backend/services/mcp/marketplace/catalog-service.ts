@@ -18,12 +18,14 @@ import { logger } from '@/backend/shared/logger';
 import {
   MCP_CATALOG_PAGE_SIZE,
   McpCatalogConnectReasonSchema,
+  McpCatalogWaitReasonSchema,
   type McpCatalogAdminPage,
   type McpCatalogAdminRow,
   type McpCatalogAdminUpdate,
   type McpCatalogConnectReason,
   type McpCatalogPage,
   type McpCatalogRow,
+  type McpCatalogWaitingRow,
 } from '@/shared/contracts/mcp-catalog';
 
 /**
@@ -395,11 +397,39 @@ export function createMcpCatalogService({
       rows.map((row) => row.registry_name)
     );
     const byName = new Map(verifications.map((event) => [event.registry_name, event] as const));
+
+    // The wait list and the header's counts are store-wide, not page-wide: the
+    // console and the run summary must say the same numbers (#1293).
+    const [coverage, skips] = await Promise.all([
+      repository.catalogCoverage(),
+      repository.listLatestSkips(200),
+    ]);
+    const skippedRows = await repository.getCatalogRows(skips.map((event) => event.registry_name));
+    const skippedByName = new Map(skippedRows.map((row) => [row.registry_name, row] as const));
+
+    const waiting: McpCatalogWaitingRow[] = [];
+    for (const event of skips) {
+      const evidence = event.evidence as { reason?: unknown; detail?: unknown } | null;
+      const reason = McpCatalogWaitReasonSchema.safeParse(evidence?.reason);
+      const row = skippedByName.get(event.registry_name);
+      if (!reason.success || !row) continue;
+      waiting.push({
+        registryName: event.registry_name,
+        title: row.title_override ?? row.title,
+        iconUrl: row.icon_override ?? row.probe_icon_url ?? row.registry_icon_url,
+        reason: reason.data,
+        detail: typeof evidence?.detail === 'string' ? evidence.detail : null,
+        at: event.created_at,
+      });
+    }
+
     return {
       servers: rows.map((row) =>
         toAdminRow(row, staticClients.has(row.registry_name), byName.get(row.registry_name) ?? null)
       ),
       nextCursor,
+      coverage,
+      waiting,
     };
   }
 
@@ -501,6 +531,7 @@ export function createMcpCatalogService({
           source: actor.source ?? 'registry',
           evidence: {
             fields,
+            from: ['title', 'description'],
             registry: { title: existing.title, description: existing.description },
           },
         });
