@@ -452,7 +452,7 @@ fun AssistantSheet(
                         OutlinedTextField(
                             value = draft,
                             onValueChange = { draft = it },
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp, max = 128.dp),
                             enabled = state != AssistantUiState.Asking,
                             placeholder = {
                                 Text(
@@ -463,7 +463,7 @@ fun AssistantSheet(
                             },
                             textStyle = type.field(type.small),
                             shape = RoundedCornerShape(12.dp),
-                            maxLines = 4,
+                            maxLines = 5,
                         )
                         IconButton(
                             onClick = ::send,

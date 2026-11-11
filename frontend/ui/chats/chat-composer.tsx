@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { Lock, Mic, Square, X } from 'lucide-react';
 
@@ -14,6 +14,53 @@ import { ChatAttachButton, ChatStagedFiles } from './chat-attach-control';
 const CANCEL_DISTANCE_PX = 64;
 /** The bars the recording meter draws before the first reading arrives. */
 const IDLE_LEVELS = 16;
+/** The tallest the field gets before it scrolls inside; Tailwind's `max-h-32`. */
+const FIELD_MAX_HEIGHT_PX = 128;
+
+/**
+ * Fits the field to its draft, one row per line: every added line makes it
+ * taller, the ceiling above is where it starts scrolling, and deleting a line
+ * gives the height back (WhatsApp's field, ADR-0166).
+ *
+ * Reflow matters as much as the text — the same sentence wraps differently when
+ * the panel widens — so the fit also runs when the field's width changes, and
+ * only then: the height is written by this hook, and answering its own height
+ * change would loop.
+ */
+function useFieldHeight(value: string) {
+  const field = useRef<HTMLTextAreaElement>(null);
+
+  useLayoutEffect(() => {
+    const element = field.current;
+    if (!element) return;
+
+    const fit = () => {
+      // jsdom and the first paint have no layout to measure; the CSS minimum
+      // holds the row until there is one.
+      if (!element.scrollHeight) return;
+      element.style.height = '0px';
+      // `scrollHeight` counts the padding but not the border, which a
+      // border-box height does count.
+      const border = element.offsetHeight - element.clientHeight;
+      const needed = element.scrollHeight + border;
+      element.style.height = `${Math.min(needed, FIELD_MAX_HEIGHT_PX)}px`;
+      element.style.overflowY = needed > FIELD_MAX_HEIGHT_PX ? 'auto' : 'hidden';
+    };
+
+    fit();
+
+    let width = element.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (element.clientWidth === width) return;
+      width = element.clientWidth;
+      fit();
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [value]);
+
+  return field;
+}
 
 /**
  * The composer's input row, shared by the member's thread and the assistant's
@@ -24,6 +71,9 @@ const IDLE_LEVELS = 16;
  * field is empty and a send button the moment there is something to send — the
  * row WhatsApp and Telegram trained everyone to expect, and the row that stops
  * the microphone from sitting beside a button nobody presses yet.
+ *
+ * Return adds a line and nothing on the keyboard sends: the send button is the
+ * only way to send, and the field grows with the draft until it scrolls.
  * The parent supplies the words and the staged files; this file owns the
  * recording gesture, so the two threads cannot behave differently.
  *
@@ -77,6 +127,7 @@ export function ChatComposer({
   cancelLabel?: string;
 }) {
   const recorder = useVoiceRecorder();
+  const field = useFieldHeight(value);
   const [locked, setLocked] = useState(false);
   const [pressing, setPressing] = useState(false);
   const origin = useRef<{ x: number; y: number } | null>(null);
@@ -248,6 +299,7 @@ export function ChatComposer({
           <>
             <div className="relative flex min-h-10 flex-1 items-end">
               <textarea
+                ref={field}
                 value={value}
                 onChange={(event) => {
                   onValueChange(event.target.value);
@@ -255,16 +307,12 @@ export function ChatComposer({
                   // and the reader's own five-second window closes it.
                   if (onTyping && event.target.value.trim()) onTyping();
                 }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    if (canSend) onSend();
-                  }
-                }}
                 rows={1}
                 maxLength={4000}
                 placeholder={placeholder}
                 aria-label={ariaLabel}
+                // Return is a line, not a send: the button is the only send path.
+                enterKeyHint="enter"
                 // The clip lives inside the field, so the text keeps clear of it.
                 className="max-h-32 min-h-10 w-full resize-none rounded-xl border border-border/70 bg-background py-2 pe-10 ps-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
               />

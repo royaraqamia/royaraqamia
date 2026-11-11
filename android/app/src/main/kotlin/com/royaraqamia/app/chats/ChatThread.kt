@@ -1092,7 +1092,7 @@ private fun Footer(
                             },
                             label = { Text(text = ChatThreadCopy.MESSAGE_LABEL, style = type.xs) },
                             singleLine = false,
-                            maxLines = 4,
+                            maxLines = 5,
                         )
                         IconButton(
                             onClick = { if (hasContent) onSend() else recorder.record() },
