@@ -71,13 +71,20 @@ function build(
   overrides: {
     rows?: McpCatalogListRow[];
     server?: McpCatalogListRow | null;
+    recentSkips?: string[];
+    onCandidates?: (limit: number, skip: readonly string[]) => void;
   } = {}
 ) {
   const adminUpdate = vi.fn(async () => undefined);
   const recordCatalogEvent = vi.fn(async () => undefined);
   const saveCatalogProbe = vi.fn(async () => undefined);
+  const recentSkips = vi.fn(async () => overrides.recentSkips ?? []);
   const repository = {
-    listAgentCandidates: async () => overrides.rows ?? [row()],
+    listAgentCandidates: async (limit: number, skip: readonly string[] = []) => {
+      overrides.onCandidates?.(limit, skip);
+      return overrides.rows ?? [row()];
+    },
+    listRecentSkips: recentSkips,
     catalogCoverage: async () => ({ eligible: 1, published: 0, waiting: 0 }),
     getCatalogServer: async () => (overrides.server === undefined ? row() : overrides.server),
     recordCatalogEvent,
@@ -92,10 +99,24 @@ function build(
     now: () => NOW,
   });
 
-  return { service, adminUpdate, recordCatalogEvent, saveCatalogProbe };
+  return { service, adminUpdate, recordCatalogEvent, saveCatalogProbe, recentSkips };
 }
 
 describe('the candidates', () => {
+  it('passes over the rows a recent run recorded as waiting, for a week', async () => {
+    const calls: Array<{ limit: number; skip: readonly string[] }> = [];
+    const { service, recentSkips } = build({
+      recentSkips: ['agency.ottobot/contractor-license-changes'],
+      onCandidates: (limit, skip) => calls.push({ limit, skip }),
+    });
+
+    await service.candidates(5);
+
+    // Seven days before NOW: the cooldown, not the run's own clock.
+    expect(recentSkips).toHaveBeenCalledWith('2026-11-07T12:00:00.000Z');
+    expect(calls).toEqual([{ limit: 5, skip: ['agency.ottobot/contractor-license-changes'] }]);
+  });
+
   it('hands out the reviewed client’s public half and the callback it is registered with', async () => {
     const { service } = build();
 

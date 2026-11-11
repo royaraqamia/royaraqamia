@@ -69,6 +69,17 @@ function connectReason(value: string | null) {
   return parsed.success ? parsed.data : null;
 }
 
+/**
+ * How long a skip keeps its row off the candidate page.
+ *
+ * A row that cannot publish today belongs on the wait list, not at the head of
+ * every run: the first three rows of a page that always fail would otherwise
+ * be measured again and again and the queue would never advance. The window is
+ * the issue's own target (#1293, half 3): a reason that clears - a client
+ * configured, a mark merged - is measured again within seven days.
+ */
+const SKIP_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+
 function toCandidate(
   row: McpCatalogListRow,
   staticClients: McpStaticClientMap,
@@ -115,10 +126,12 @@ export function createMcpCatalogAgentService({
 
   return {
     async candidates(limit) {
-      const [rows, coverage] = await Promise.all([
-        repository.listAgentCandidates(limit),
+      const since = new Date(now().getTime() - SKIP_COOLDOWN_MS).toISOString();
+      const [skippedRows, coverage] = await Promise.all([
+        repository.listRecentSkips(since),
         repository.catalogCoverage(),
       ]);
+      const rows = await repository.listAgentCandidates(limit, skippedRows);
       return {
         candidates: rows.map((row) => toCandidate(row, staticClients, redirectUri)),
         coverage,

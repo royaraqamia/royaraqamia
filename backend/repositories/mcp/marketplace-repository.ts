@@ -183,6 +183,16 @@ const CATALOG_LOOKUP_BATCH = 150;
  */
 const STORE_MAX_ROWS = 200;
 
+/**
+ * A run's page is at most this many rows, and passing over a week of skips
+ * costs one row each: the window is the page plus the rows to skip, never the
+ * whole mirror.
+ */
+const CATALOG_AGENT_PAGE_MAX = 500;
+
+/** How many skip events are read to find the rows a run should pass over. */
+const CATALOG_SKIP_LOOKBACK = 1000;
+
 /** The mirror's insert shape, so a payload typo is a type error rather than a 400. */
 type CatalogInsert = Database['public']['Tables']['mcp_catalog_servers']['Insert'];
 
@@ -324,8 +334,13 @@ export interface McpMarketplaceRepository {
    * The capped page an unattended run works on (#1293): active, unblocked rows,
    * unverified first, then the ones whose measurement is oldest. Blocked and
    * retired rows are never offered; the agent's takedown is a withdraw.
+   *
+   * `skip` names the rows a recent run already recorded as waiting. An
+   * unverified row on that list is passed over, so a page of rows that cannot
+   * publish does not sit at the head of every run. A published row is never
+   * passed over: re-checking it is how a withdrawal is found.
    */
-  listAgentCandidates(limit: number): Promise<McpCatalogListRow[]>;
+  listAgentCandidates(limit: number, skip?: readonly string[]): Promise<McpCatalogListRow[]>;
 
   /**
    * The three counts the console and the run summary share (#1293, half 3):
@@ -336,6 +351,12 @@ export interface McpMarketplaceRepository {
 
   /** The newest skip per row: who is waiting, why, and since when. */
   listLatestSkips(limit: number): Promise<McpCatalogEventRecord[]>;
+
+  /**
+   * The rows whose newest act was a skip since `since`: the page passes over
+   * them so a run advances past a row that cannot publish today.
+   */
+  listRecentSkips(since: string): Promise<string[]>;
 
   /** Catalogue rows by name, for the wait list's titles and marks. */
   getCatalogRows(registryNames: string[]): Promise<McpCatalogListRow[]>;
@@ -551,6 +572,28 @@ export function createMcpMarketplaceRepository(
       if (!newest.has(event.registry_name)) newest.set(event.registry_name, event);
     }
     return [...newest.values()];
+  }
+
+  /**
+   * Rows whose newest act was a skip since `since`. Newest first, so the first
+   * event seen for a name is the one that decides; a row verified after its
+   * last skip keeps its place on the page because its newest act is the verify.
+   */
+  async function recentSkipNames(since: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from(CATALOG_EVENTS_TABLE)
+      .select('registry_name, action, created_at')
+      .in('action', ['skip', 'verify', 'withdraw'])
+      .gt('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(CATALOG_SKIP_LOOKBACK);
+    if (error) throw error;
+
+    const newest = new Map<string, string>();
+    for (const event of (data ?? []) as Array<{ registry_name: string; action: string }>) {
+      if (!newest.has(event.registry_name)) newest.set(event.registry_name, event.action);
+    }
+    return [...newest.entries()].filter(([, action]) => action === 'skip').map(([name]) => name);
   }
 
   return {
@@ -770,7 +813,11 @@ export function createMcpMarketplaceRepository(
       return found;
     },
 
-    async listAgentCandidates(limit) {
+    async listAgentCandidates(limit, skip = []) {
+      const passedOver = new Set(skip);
+      // One window holds the page plus every row the page must pass over, so
+      // filtering cannot come up short.
+      const take = Math.min(limit + passedOver.size, CATALOG_AGENT_PAGE_MAX);
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
         .select(
@@ -782,9 +829,12 @@ export function createMcpMarketplaceRepository(
         .order('verified_at', { ascending: true, nullsFirst: true })
         .order('probed_at', { ascending: true, nullsFirst: true })
         .order('registry_name', { ascending: true })
-        .limit(limit);
+        .limit(take);
       if (error) throw error;
-      return (data ?? []) as unknown as McpCatalogListRow[];
+      const rows = (data ?? []) as unknown as McpCatalogListRow[];
+      return rows
+        .filter((row) => row.verified_at !== null || !passedOver.has(row.registry_name))
+        .slice(0, limit);
     },
 
     async catalogCoverage() {
@@ -814,6 +864,7 @@ export function createMcpMarketplaceRepository(
     },
 
     listLatestSkips: latestSkips,
+    listRecentSkips: recentSkipNames,
 
     async getCatalogRows(registryNames) {
       if (registryNames.length === 0) return [];
