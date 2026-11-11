@@ -66,6 +66,11 @@ export interface McpAppToolsService {
   }): Promise<unknown>;
   /** Display names for connections a card was written against, by id. */
   names(userId: string, connectionIds: string[]): Promise<Map<string, string>>;
+  /**
+   * How many apps the member has connected, for the composer's meter (#1226).
+   * A revoked connection is not one: it holds no slot and cannot be called.
+   */
+  connectedCount(userId: string): Promise<number>;
 }
 
 interface AppToolsDependencies {
@@ -212,6 +217,13 @@ export function createMcpAppToolsService({
           .filter((connection) => wanted.has(connection.id))
           .map((connection) => [connection.id, appNameOf(connection)] as const)
       );
+    },
+
+    async connectedCount(userId) {
+      // The same rule the owned-item pool counts by (ADR-0155): a revoked row
+      // frees its slot, and nothing else is excluded.
+      const connections = await repository.listConnections(userId);
+      return connections.filter((connection) => connection.status !== 'revoked').length;
     },
   };
 }

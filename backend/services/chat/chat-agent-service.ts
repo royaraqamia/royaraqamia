@@ -34,6 +34,7 @@ import {
   type AiChatWireMessage,
 } from '@/backend/clients/ai-chat';
 import { AiChatProviderError } from '@/backend/shared/domain/ai-chat';
+import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
 import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import { logger } from '@/backend/shared/logger';
 import {
@@ -41,6 +42,7 @@ import {
   CHAT_AGENT_MAX_ROUNDS,
   CHAT_AGENT_TOKEN_BUDGET,
   CHAT_AGENT_TURN_TIMEOUT_MS,
+  CHAT_APP_CALLS_SPENT,
   chatAttachmentIsAudio,
   chatAttachmentIsDocument,
   chatAttachmentIsInlineImage,
@@ -48,10 +50,12 @@ import {
   chatAttachmentIsReadableText,
   normalizeChatBody,
   type ChatAgentAllowance,
+  type ChatAgentAppMeter,
   type ChatAgentEvent,
   type ChatAttachmentInput,
   type ChatMessage,
 } from '@/shared/contracts/chat';
+import { USAGE_COUNTERS, type UsageState } from '@/shared/contracts/plans';
 import { CHAT_AGENT_TOOLS } from '@/shared/contracts/chat-agent-actions';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
 
@@ -133,8 +137,22 @@ const ROUNDS_EXHAUSTED = 'لم أستطع إكمال ما طلبته الآن. �
  */
 const APP_CALLS_PER_TURN = 3;
 
+/**
+ * And how many of those one server may take (#1226).
+ *
+ * The day's allowance is five calls on Free, so a turn's total of three would
+ * let one chatty app spend most of it before the member asked anything else.
+ * Two from one connection leaves the third call for another app, which is what
+ * "one server cannot consume the allowance on its own" means in one number.
+ */
+const APP_CALLS_PER_CONNECTION = 2;
+
 /** What the model is told when the turn's remote budget is spent. */
 const APP_BUDGET_SPENT = 'تجاوزنا عدد استدعاءات التطبيقات في هذه الرسالة. أجب بما لديك.';
+
+/** What it is told when one app took its share of that budget. */
+const APP_CONNECTION_BUDGET_SPENT =
+  'تجاوز هذا التطبيق حصّته من الاستدعاءات في هذه الرسالة. أجب بما لديك.';
 
 /** The last thing the member said, which is what the app router scores against. */
 function lastUserWords(messages: AiChatWireMessage[]): string {
@@ -268,6 +286,14 @@ export interface ChatAgentServiceDeps {
   attachments: Pick<ChatAttachmentStorage, 'download'>;
   /** One counted action, held open until the answer is stored. */
   reserve(userId: string): Promise<Reservation>;
+  /**
+   * One remote call to an app we do not own (#1226). It is taken before the
+   * call leaves this deployment, and given back when the call never reached the
+   * server.
+   */
+  reserveAppCall(userId: string): Promise<Reservation>;
+  /** The account's counters, so the composer draws the app meter (ADR-0093). */
+  usageState(userId: string): Promise<UsageState>;
   /** The configured provider, or null when no key is set. */
   client: AiChatClient | null;
   /** The proposals a write tool leaves, and the member's own resolution. */
@@ -279,7 +305,7 @@ export interface ChatAgentServiceDeps {
    * deployment without the marketplace, and the turn then carries the 21 tools
    * we own and nothing else.
    */
-  apps?: Pick<McpAppToolsService, 'catalog' | 'call'>;
+  apps?: Pick<McpAppToolsService, 'catalog' | 'call' | 'connectedCount'>;
 }
 
 /** What a turn's tools need from the request: the caller's session and address. */
@@ -293,10 +319,38 @@ export class ChatAgentService {
 
   /** What the thread draws before a composer: availability and both meters. */
   async state(userId: string): Promise<{ available: boolean; allowance: ChatAgentAllowance }> {
+    const [meters, apps] = await Promise.all([
+      this.deps.agent.allowance(userId),
+      this.appMeter(userId),
+    ]);
+
     return {
       available: this.deps.client !== null,
-      allowance: await this.deps.agent.allowance(userId),
+      allowance: { ...meters, apps },
     };
+  }
+
+  /**
+   * The day's app calls, read from the catalogue like every other allowance
+   * (ADR-0093) — never counted in the composer.
+   *
+   * A counter that cannot be read, an Admin (whose counters read as cap 0) and a
+   * deployment before the migration all answer zero, and a cap of zero is what
+   * tells the composer not to draw the meter at all. `connected` is the same
+   * read's answer: a member with no app has no allowance worth a line.
+   */
+  private async appMeter(userId: string): Promise<ChatAgentAppMeter> {
+    const [state, connected] = await Promise.all([
+      this.deps.usageState(userId).catch((error: unknown) => {
+        logger.warn('Assistant app allowance unavailable', { error: String(error) });
+        return null;
+      }),
+      this.deps.apps ? this.deps.apps.connectedCount(userId).catch(() => 0) : Promise.resolve(0),
+    ]);
+
+    const counter = state?.counters.find((entry) => entry.key === USAGE_COUNTERS.mcpCalls);
+
+    return { used: counter?.used ?? 0, cap: counter?.cap ?? 0, connected };
   }
 
   /** The tool registry, unless a test pinned its own. */
@@ -620,6 +674,8 @@ export class ChatAgentService {
     let rounds = 0;
     let retried = false;
     let appCalls = 0;
+    /** How many of those came from each connection (#1226). */
+    const connectionCalls = new Map<string, number>();
 
     try {
       for (;;) {
@@ -718,7 +774,43 @@ export class ChatAgentService {
               );
               continue;
             }
+
+            if ((connectionCalls.get(declaration.connectionId) ?? 0) >= APP_CALLS_PER_CONNECTION) {
+              messages.push(
+                toolAnswer(call.id, {
+                  status: 'limit_reached',
+                  note: APP_CONNECTION_BUDGET_SPENT,
+                })
+              );
+              continue;
+            }
+
+            /*
+              The call is counted before it leaves, and the ledger is what says
+              no (#1226): a member at zero is refused here, with the sentence the
+              composer shows, rather than by the remote server or not at all.
+            */
+            let appCall: Reservation;
+            try {
+              appCall = await this.deps.reserveAppCall(userId);
+            } catch (error) {
+              if (error instanceof UsageLimitReachedError) {
+                messages.push(
+                  toolAnswer(call.id, {
+                    status: 'limit_reached',
+                    note: CHAT_APP_CALLS_SPENT,
+                  })
+                );
+                continue;
+              }
+              throw error;
+            }
+
             appCalls += 1;
+            connectionCalls.set(
+              declaration.connectionId,
+              (connectionCalls.get(declaration.connectionId) ?? 0) + 1
+            );
 
             try {
               const result = await apps.call({
@@ -740,6 +832,16 @@ export class ChatAgentService {
               // not carry a second round's worth of instructions into the model.
               messages.push(toolAnswer(call.id, result));
             } catch (error) {
+              // The two failures our own side raises before a request can
+              // leave — the app is gone, the tool is switched off, the level is
+              // reads — spend nothing. Everything else may have reached the
+              // server, and a call that left is a call (ADR-0155, #1226).
+              if (
+                error instanceof McpRemoteError &&
+                (error.failure === 'protocol' || error.failure === 'reauth')
+              ) {
+                await appCall.release();
+              }
               logger.warn('Assistant app tool failed', {
                 tool: declaration.name,
                 error: String(error),

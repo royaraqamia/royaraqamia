@@ -22,7 +22,12 @@ import { DOCUMENT_PAGES_MAX } from '@/backend/services/chat/document-text';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
-import type { ChatAgentAllowance, ChatAgentEvent, ChatMessage } from '@/shared/contracts/chat';
+import {
+  CHAT_APP_CALLS_SPENT,
+  type ChatAgentAllowance,
+  type ChatAgentEvent,
+  type ChatMessage,
+} from '@/shared/contracts/chat';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
 import { pdfDocument, scannedPdf } from './document-fixtures';
 
@@ -77,6 +82,7 @@ const PRO_ALLOWANCE: ChatAgentAllowance = {
   member: { used: 3, cap: 40 },
   project: { used: 10, limit: 200 },
   resetsAt: '2026-11-03T00:00:00.000Z',
+  apps: { used: 0, cap: 0, connected: 0 },
 };
 
 /** What a turn's tools need from the request; none of it comes from the model. */
@@ -180,6 +186,7 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
 
   const release = vi.fn(async () => undefined);
   const reserve = vi.fn(async () => ({ eventId: 'event-1', release }));
+  const reserveAppCall = vi.fn(async () => ({ eventId: 'event-app-1', release }));
   const attachments = { download: vi.fn(async () => new Uint8Array([1, 2, 3])) };
 
   const actions = {
@@ -194,12 +201,19 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
     chats,
     attachments,
     reserve,
+    reserveAppCall,
+    usageState: vi.fn(async () => ({
+      plan: 'pro' as const,
+      unlimited: false,
+      expiresAt: null,
+      counters: [],
+    })),
     client: scriptedClient([textStream('مرحبا ', 'بك')]),
     actions,
     ...overrides,
   });
 
-  return { service, agent, chats, reserve, release, actions, attachments };
+  return { service, agent, chats, reserve, reserveAppCall, release, actions, attachments };
 }
 
 async function collect(events: AsyncGenerator<ChatAgentEvent>) {
@@ -280,6 +294,13 @@ describe('the assistant turn', () => {
       chats,
       attachments: { download: vi.fn(async () => new Uint8Array()) },
       reserve,
+      reserveAppCall: vi.fn(async () => ({ eventId: null, release: vi.fn(async () => undefined) })),
+      usageState: vi.fn(async () => ({
+        plan: 'free' as const,
+        unlimited: false,
+        expiresAt: null,
+        counters: [],
+      })),
       client: scriptedClient([textStream('x')]),
       actions: { propose: vi.fn() },
     });
@@ -891,11 +912,12 @@ describe('the assistant turn, with a connected app', () => {
   function fakeApps(catalog: McpAppTool[]) {
     return {
       catalog: vi.fn(async () => catalog),
-      call: vi.fn(async () => ({
+      call: vi.fn(async (_input: { connectionId: string; [key: string]: unknown }) => ({
         isError: false,
         content: [{ type: 'text', text: 'وجدت صفحتين' }],
         structured: null,
       })),
+      connectedCount: vi.fn(async () => new Set(catalog.map((tool) => tool.connectionId)).size),
     };
   }
 
@@ -930,6 +952,52 @@ describe('the assistant turn, with a connected app', () => {
       name: 'app_notion_search',
       label: 'قراءة من Notion',
     });
+  });
+
+  it('counts the call before it leaves, and refuses at zero in the composer’s words', async () => {
+    const client = scriptedClient([
+      [toolCall('app_notion_search', { query: 'خطة' })],
+      textStream('وجدت صفحتين في نوتشن.'),
+    ]);
+    const apps = fakeApps([appTool()]);
+    const { service, reserveAppCall } = makeService({ client, apps });
+
+    await collect(service.turn('user-1', 'conversation-1', READ, TURN_CONTEXT));
+
+    // The counter is taken before the server is asked, not after it answered.
+    expect(reserveAppCall).toHaveBeenCalledWith('user-1');
+    expect(apps.call).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a remote call at zero in the sentence the composer shows, without reaching the server', async () => {
+    const client = scriptedClient([
+      [toolCall('app_notion_search', { query: 'خطة' })],
+      textStream('انتهى حد التطبيقات اليوم.'),
+    ]);
+    const apps = fakeApps([appTool()]);
+    const { service } = makeService({
+      client,
+      apps,
+      reserveAppCall: vi.fn(async () => {
+        throw new UsageLimitReachedError(
+          {
+            key: 'mcp.call',
+            label: 'استدعاء تطبيق خارجي',
+            window: 'daily',
+            cap: 5,
+            used: 5,
+            remaining: 0,
+          },
+          false
+        );
+      }),
+    });
+
+    await collect(service.turn('user-1', 'conversation-1', READ, TURN_CONTEXT));
+
+    expect(apps.call).not.toHaveBeenCalled();
+    const answer = client.calls[1]?.find((entry) => entry.role === 'tool');
+    expect(String(answer?.content)).toContain(CHAT_APP_CALLS_SPENT);
   });
 
   it('proposes a write, naming the app and keeping the connection in the audit row', async () => {
@@ -1014,7 +1082,7 @@ describe('the assistant turn, with a connected app', () => {
     expect(apps.call).toHaveBeenCalledTimes(1);
   });
 
-  it('stops at three remote calls in one turn', async () => {
+  it('stops one app at two calls, so a single server cannot spend the turn’s whole allowance', async () => {
     const client = scriptedClient([
       [
         toolCall('app_notion_search', { query: 'a' }, 'call-1'),
@@ -1022,15 +1090,47 @@ describe('the assistant turn, with a connected app', () => {
       ],
       [
         toolCall('app_notion_search', { query: 'c' }, 'call-3'),
-        toolCall('app_notion_search', { query: 'd' }, 'call-4'),
+        toolCall('app_linear_search', { query: 'd' }, 'call-4'),
       ],
       textStream('هذا ما وجدته.'),
     ]);
-    const apps = fakeApps([appTool()]);
+    const apps = fakeApps([appTool(), appTool({ connectionId: 'conn-2', appName: 'Linear' })]);
     const { service } = makeService({ client, apps });
 
-    await collect(service.turn('user-1', 'conversation-1', READ, TURN_CONTEXT));
+    await collect(
+      service.turn('user-1', 'conversation-1', 'ابحث في Notion و Linear', TURN_CONTEXT)
+    );
 
+    // Two from Notion, then the third is refused by the per-connection wall and
+    // Linear takes the turn's last call (#1226).
+    expect(apps.call.mock.calls.map(([input]) => input.connectionId)).toEqual([
+      'conn-1',
+      'conn-1',
+      'conn-2',
+    ]);
+  });
+
+  it('stops at three remote calls in one turn', async () => {
+    const client = scriptedClient([
+      [
+        toolCall('app_notion_search', { query: 'a' }, 'call-1'),
+        toolCall('app_linear_search', { query: 'b' }, 'call-2'),
+      ],
+      [
+        toolCall('app_notion_search', { query: 'c' }, 'call-3'),
+        toolCall('app_linear_search', { query: 'd' }, 'call-4'),
+      ],
+      textStream('هذا ما وجدته.'),
+    ]);
+    const apps = fakeApps([appTool(), appTool({ connectionId: 'conn-2', appName: 'Linear' })]);
+    const { service } = makeService({ client, apps });
+
+    await collect(
+      service.turn('user-1', 'conversation-1', 'ابحث في Notion و Linear', TURN_CONTEXT)
+    );
+
+    // Each app reaches its own two-call limit, and the fourth call is the
+    // turn's ceiling rather than either wall.
     expect(apps.call).toHaveBeenCalledTimes(3);
   });
 });

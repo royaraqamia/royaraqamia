@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type { ChatMessageRecord } from '@/backend/repositories/chat/chat-repository';
 import { repositoryFailure } from '@/backend/shared/repository-error';
-import type { ChatAgentAllowance } from '@/shared/contracts/chat';
+import type { ChatAgentMeters } from '@/shared/contracts/chat';
 
 type MessageRow = Database['public']['Tables']['chat_messages']['Row'];
 type TurnRow = Database['public']['Tables']['agent_turns']['Row'];
@@ -71,7 +71,7 @@ function toTurn(row: TurnRow): AgentTurnRow {
  * rotate the browser's refresh token out from under them (`docs/security.md`).
  */
 export interface ChatAgentRepository {
-  allowance(userId: string): Promise<ChatAgentAllowance>;
+  allowance(userId: string): Promise<ChatAgentMeters>;
   /** Writes the assistant's reply. The conversation is the caller's own thread. */
   insertAgentMessage(conversationId: string, body: string): Promise<ChatMessageRecord>;
   /** Opens the record of one turn and answers its id. */

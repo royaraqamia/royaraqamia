@@ -25,6 +25,7 @@ const ALLOWANCE = {
   member: { used: 1, cap: 40 },
   project: { used: 2, limit: 200 },
   resetsAt: '2026-11-03T00:00:00.000Z',
+  apps: { used: 0, cap: 0, connected: 0 },
 };
 
 describe('useChatAssistant', () => {

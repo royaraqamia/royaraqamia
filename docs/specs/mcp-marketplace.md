@@ -507,8 +507,8 @@ release note rides the same pull request (`npm run android:note`), in Arabic, fo
 4. **Assistant** — remote tools in the registry, the router, `find_app_tools`, proposal
    mapping, permission levels, the turn budget. **#1225**, with the token refresh it depends on:
    **#1227**
-5. **Metering** — the `mcp.call` row and its enforcement, and the per-connection rate limits.
-   **#1226**
+5. **Metering** — the `mcp.call` row and its enforcement, the per-connection budget and the
+   composer's meter. **#1226.** **Landed:** #1281.
    (The 5 / 50 numbers and the pricing page left this phase: they landed with the count, in
    `20261114150000`, because a pool of two directions at 1 / 10 is a cap nobody can use. #1222)
 6. **Native** — the two screens, the sheet row, the parity rows, the visual gate. **#1228**

@@ -36,6 +36,7 @@ const assistant = vi.hoisted(() => ({
     member: { used: 1, cap: 40 },
     project: { used: 10, limit: 900 },
     resetsAt: '2026-11-10T00:00:00.000Z',
+    apps: { used: 0, cap: 0, connected: 0 },
   },
 }));
 
@@ -116,6 +117,7 @@ describe('AssistantPanel', () => {
       member: { used: 1, cap: 40 },
       project: { used: 10, limit: 900 },
       resetsAt: '2026-11-10T00:00:00.000Z',
+      apps: { used: 0, cap: 0, connected: 0 },
     };
     api.startAssistantChat.mockReset().mockResolvedValue({ success: true, conversationId: 'a-1' });
     api.getChatThread.mockReset().mockResolvedValue(THREAD);
@@ -140,6 +142,7 @@ describe('AssistantPanel', () => {
       member: { used: 0, cap: 0 },
       project: { used: 0, limit: 900 },
       resetsAt: '2026-11-10T00:00:00.000Z',
+      apps: { used: 0, cap: 0, connected: 0 },
     };
     render(<AssistantPanel open onDismiss={vi.fn()} />);
 
@@ -173,6 +176,7 @@ describe('AssistantPanel', () => {
       member: { used: 0, cap: 0 },
       project: { used: 0, limit: 900 },
       resetsAt: '2026-11-10T00:00:00.000Z',
+      apps: { used: 0, cap: 0, connected: 0 },
     };
     const onDismiss = vi.fn();
     render(<AssistantPanel open onDismiss={onDismiss} />);

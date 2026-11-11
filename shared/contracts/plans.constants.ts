@@ -48,6 +48,12 @@ export const USAGE_COUNTERS = {
   scannerScans: 'scanner.scan',
   quranSurahs: 'quran.surah.read',
   chatAgentTurns: 'chat.agent.turn',
+  /**
+   * Every remote call a turn makes to an app we do not own — a read exactly
+   * like a write (ADR-0155, #1226). It bounds our egress, a stranger's rate
+   * limit and a server that loops; what the model costs is `chatAgentTurns`.
+   */
+  mcpCalls: 'mcp.call',
 } as const;
 
 export type UsageCounterKey = (typeof USAGE_COUNTERS)[keyof typeof USAGE_COUNTERS];
@@ -69,6 +75,9 @@ export const VISITOR_COUNTER_CAPS: Record<UsageCounterKey, number> = {
   // The assistant needs an account: its allowance is per member and its thread
   // has no visitor path (ADR-0113).
   'chat.agent.turn': 0,
+  // A remote app call happens inside the assistant's turn, so it inherits the
+  // same rule: no account, no app (ADR-0155).
+  'mcp.call': 0,
 };
 
 /**

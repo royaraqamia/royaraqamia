@@ -378,6 +378,7 @@ data class ChatAssistantStateResponseAllowance(
     val member: ChatAssistantStateResponseAllowanceMember,
     val project: ChatAssistantStateResponseAllowanceProject,
     val resetsAt: String,
+    val apps: ChatAssistantStateResponseAllowanceApps? = null,
 )
 
 @Serializable
@@ -390,6 +391,13 @@ data class ChatAssistantStateResponseAllowanceMember(
 data class ChatAssistantStateResponseAllowanceProject(
     val used: Double,
     val limit: Double,
+)
+
+@Serializable
+data class ChatAssistantStateResponseAllowanceApps(
+    val used: Double,
+    val cap: Double,
+    val connected: Double,
 )
 
 @Serializable

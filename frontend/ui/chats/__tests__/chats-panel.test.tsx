@@ -84,6 +84,7 @@ const PRO_ALLOWANCE = {
   member: { used: 2, cap: 40 },
   project: { used: 60, limit: 900 },
   resetsAt: '2026-11-04T00:00:00.000Z',
+  apps: { used: 0, cap: 0, connected: 0 },
 };
 
 /**

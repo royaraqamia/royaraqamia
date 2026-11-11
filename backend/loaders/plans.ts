@@ -166,6 +166,15 @@ const CATALOG_FALLBACK: PlanCatalog = {
       proCap: 40,
       sortOrder: 50,
     },
+    {
+      key: 'mcp.call',
+      label: 'استدعاء تطبيق خارجي',
+      window: 'daily',
+      visitorCap: 0,
+      freeCap: 5,
+      proCap: 50,
+      sortOrder: 60,
+    },
   ],
   quotas: FALLBACK_QUOTAS,
 };

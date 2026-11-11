@@ -9,7 +9,7 @@ vi.mock('@/frontend/ui/chats/image-downscale', () => shrink);
 
 import { AssistantComposer } from '@/frontend/ui/chats/chat-assistant-composer';
 import { ATTACHMENT_REFUSALS } from '@/frontend/ui/chats/attachment-quota';
-import type { ChatAttachmentQuota } from '@/shared/contracts/chat';
+import { CHAT_APP_CALLS_SPENT, type ChatAttachmentQuota } from '@/shared/contracts/chat';
 
 const QUOTA: ChatAttachmentQuota = {
   fileBytes: 10 * 1024 * 1024,
@@ -25,6 +25,7 @@ const ASSISTANT = {
     member: { used: 1, cap: 40 },
     project: { used: 2, limit: 200 },
     resetsAt: '2026-11-09T00:00:00.000Z',
+    apps: { used: 0, cap: 0, connected: 0 },
   },
   isStreaming: false,
   streamingText: '',
@@ -103,5 +104,45 @@ describe('AssistantComposer pictures', () => {
     // Three decodes, not four: the refusal happens before the work.
     expect(shrink.shrinkChatImage).toHaveBeenCalledTimes(3);
     expect(screen.queryByText('shot-4.png')).toBeNull();
+  });
+});
+
+/**
+ * The app-call meter (#1226): the number is the catalogue's `mcp.call` row, and
+ * the line is only worth drawing for a member who has an app to call.
+ */
+describe('AssistantComposer app meter', () => {
+  function draw(apps: { used: number; cap: number; connected: number }) {
+    return render(
+      <AssistantComposer
+        assistant={{ ...ASSISTANT, allowance: { ...ASSISTANT.allowance, apps } }}
+        quota={QUOTA}
+        draft=""
+        onDraft={() => undefined}
+        onAsk={() => undefined}
+      />
+    );
+  }
+
+  it('draws the day’s app calls beside the turn meter', () => {
+    const { container } = draw({ used: 3, cap: 5, connected: 2 });
+
+    expect(container.querySelector('[data-assistant-app-meter]')?.textContent).toBe(
+      'تطبيقات: 3 من 5 اليوم'
+    );
+  });
+
+  it('says the counter is spent in the server’s own words', () => {
+    const { container } = draw({ used: 5, cap: 5, connected: 1 });
+
+    expect(container.querySelector('[data-assistant-app-meter]')?.textContent).toBe(
+      CHAT_APP_CALLS_SPENT
+    );
+  });
+
+  it('draws nothing when the member has no app to call', () => {
+    const { container } = draw({ used: 0, cap: 5, connected: 0 });
+
+    expect(container.querySelector('[data-assistant-app-meter]')).toBeNull();
   });
 });

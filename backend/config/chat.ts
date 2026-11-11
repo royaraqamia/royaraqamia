@@ -26,7 +26,7 @@ import { appToolParts } from '@/shared/contracts/chat-agent-actions';
 import { createPublicUsersRepositoryServer } from '@/backend/config/users';
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { createDefaultMcpAppToolsService } from '@/backend/config/mcp';
-import { createPlanGate } from '@/backend/config/plans';
+import { createPlanGate, createUsageService } from '@/backend/config/plans';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createAiChatClient } from '@/backend/clients/ai-chat';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
@@ -113,11 +113,18 @@ export function createSupabaseChatAgentService(
   deps: Partial<ChatAgentServiceDeps> = {}
 ): ChatAgentService {
   const gate = createPlanGate();
+  const usage = createUsageService();
 
   return new ChatAgentService({
     agent: createSupabaseChatAgentRepository(getAdminSupabase()),
     chats: createSupabaseChatService(supabase),
     reserve: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.chatAgentTurns),
+    // Every remote call a turn makes is its own counted action (#1226): one
+    // counter for both directions, because a read causes the same egress.
+    reserveAppCall: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.mcpCalls),
+    // The composer's app meter reads the same catalogue the pricing page does
+    // (ADR-0093), so the number on screen and the number enforced are one.
+    usageState: (userId) => usage.state(userId),
     client: createAiChatClient(),
     // The voice note's bytes are read back through the member's own session, so
     // the bucket's policy is what decides whether a turn may hear it.
@@ -163,14 +170,17 @@ export function createSupabaseChatAgentActionService(
   deps: Partial<ChatAgentActionServiceDeps> = {}
 ): ChatAgentActionService {
   const admin = getAdminSupabase();
+  const gate = createPlanGate();
 
   return new ChatAgentActionService({
     actions: createSupabaseChatAgentActionRepository(supabase, admin),
     agent: createSupabaseChatAgentRepository(admin),
     chats: createSupabaseChatService(supabase),
     // A confirmed card for one of the member's apps is a call on that app's
-    // server, made with the member's own grant (#1225).
+    // server, made with the member's own grant (#1225) — and counted like any
+    // other remote call (#1226). A card the member declines never gets here.
     apps: createDefaultMcpAppToolsService(),
+    reserveAppCall: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.mcpCalls),
     ...deps,
   });
 }

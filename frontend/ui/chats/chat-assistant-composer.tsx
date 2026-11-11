@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assistant';
-import type { ChatAttachmentQuota } from '@/shared/contracts/chat';
+import { CHAT_APP_CALLS_SPENT, type ChatAttachmentQuota } from '@/shared/contracts/chat';
 import {
   ATTACHMENT_REFUSALS,
   exceedsDocumentLimit,
@@ -207,6 +207,23 @@ export function AssistantComposer({
       }}
       className="shrink-0 space-y-2 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
     >
+      {/*
+        The app meter sits beside the turn's (#1226). It is drawn only for a
+        member who has an app to call and a plan that gives calls, and the spent
+        sentence at zero is the same one the server hands a refused call.
+      */}
+      {allowance && allowance.apps.connected > 0 && allowance.apps.cap > 0 ? (
+        <p
+          className="px-1 text-[11px] font-medium text-muted-foreground/80"
+          data-assistant-app-meter=""
+        >
+          {allowance.apps.used >= allowance.apps.cap
+            ? CHAT_APP_CALLS_SPENT
+            : ASSISTANT_COPY.appsMeter
+                .replace('{used}', String(allowance.apps.used))
+                .replace('{cap}', String(allowance.apps.cap))}
+        </p>
+      ) : null}
       <ChatComposer
         value={draft}
         onValueChange={onDraft}
