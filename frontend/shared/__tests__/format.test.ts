@@ -7,7 +7,20 @@ import {
   isCertificateExpired,
 } from '@/frontend/shared/format';
 
+const ORIGINAL_TZ = process.env.TZ;
+
+function setTimezone(timezone: string): void {
+  process.env.TZ = timezone;
+}
+
+function restoreTimezone(): void {
+  if (ORIGINAL_TZ === undefined) delete process.env.TZ;
+  else process.env.TZ = ORIGINAL_TZ;
+}
+
 describe('formatDateArabic', () => {
+  afterEach(restoreTimezone);
+
   it('formats a date string without throwing', () => {
     const result = formatDateArabic('2026-08-02');
     expect(typeof result).toBe('string');
@@ -21,6 +34,41 @@ describe('formatDateArabic', () => {
 
   it('returns the input unchanged for an invalid date string', () => {
     expect(formatDateArabic('not-a-date')).toBe('not-a-date');
+  });
+
+  it('renders the stored calendar day east of UTC, in UTC and west of UTC', () => {
+    // 2026-08-02 is 19 Safar 1448. Los Angeles used to print 18 Safar 1448,
+    // because a bare `YYYY-MM-DD` parsed to UTC midnight and was then formatted
+    // on the reader's clock.
+    setTimezone('Asia/Damascus');
+    const inDamascus = formatDateArabic('2026-08-02');
+    setTimezone('UTC');
+    const inUtc = formatDateArabic('2026-08-02');
+    setTimezone('America/Los_Angeles');
+    const inLosAngeles = formatDateArabic('2026-08-02');
+
+    expect(inUtc).toBe('19 صفر 1448 هـ');
+    expect(inDamascus).toBe(inUtc);
+    expect(inLosAngeles).toBe(inUtc);
+  });
+
+  it('still renders an instant in the reader’s own zone', () => {
+    // The date-only branch must not capture a full timestamp: 23:30 UTC on the
+    // 2nd is the 3rd in Damascus and still the 2nd in Los Angeles.
+    setTimezone('Asia/Damascus');
+    expect(formatDateArabic('2026-08-02T23:30:00Z')).toBe('20 صفر 1448 هـ');
+    setTimezone('America/Los_Angeles');
+    expect(formatDateArabic('2026-08-02T23:30:00Z')).toBe('19 صفر 1448 هـ');
+  });
+
+  it('lets a caller choose the zone for a date-only value', () => {
+    // The UTC default is a default: an explicit zone still wins, which is what
+    // keeps `formatHijriDate` a general formatter.
+    setTimezone('UTC');
+    expect(formatHijriDate('2026-08-02', { timeZone: 'America/Los_Angeles' })).toBe(
+      '18 صفر 1448 هـ'
+    );
+    expect(formatDateArabic('2026-08-02')).toBe('19 صفر 1448 هـ');
   });
 });
 
