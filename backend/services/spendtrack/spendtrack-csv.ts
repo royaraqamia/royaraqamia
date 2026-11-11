@@ -94,13 +94,29 @@ function parseCsvRecords(content: string): CsvRecord[] {
   return records;
 }
 
+/**
+ * Strict decimal parse: a canonical dot decimal, or a comma-grouped one whose
+ * groups are exactly three digits. `parseFloat` read `"1,234.56"` as `1` and
+ * `12abc` as `12`, so a wrong number imported silently; anything the shape
+ * below does not match is `NaN` and the row reports `مبلغ غير صالح` instead
+ * (issue #1264).
+ */
+function parseAmount(raw: string): number {
+  const value = raw.trim();
+  if (!/^\d+(?:\.\d+)?$/.test(value) && !/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(value)) {
+    return Number.NaN;
+  }
+  const amount = Number(value.replace(/,/g, ''));
+  return Number.isFinite(amount) ? amount : Number.NaN;
+}
+
 export function parseCsv(content: string): SpendImportRow[] {
   return parseCsvRecords(content)
     .map((record) => record.cells)
     .filter((cells) => cells.some((cell) => cell.length > 0))
     .map((cells) => ({
       date: cells[0] ?? '',
-      amount: Number.parseFloat(cells[1] ?? ''),
+      amount: parseAmount(cells[1] ?? ''),
       category: cells[2] ?? '',
       description: cells[3] ?? '',
     }));
