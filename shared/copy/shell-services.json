@@ -10,12 +10,12 @@
     "object": "ServicesCopy"
   },
   "notes": {
-    "source": "The `تطبيقاتنا` sheet and the homepage strip, in both clients (#647, ADR-0146): its trigger, its app names, and the marketplace row under them (#1224, ADR-0155). The nine apps are the ones the site ships, in its order; `marketplace`, `marketplaceSection` and `marketplaceHint` are the one row that leaves for someone else's apps, behind a divider and a section label.",
+    "source": "The `التَّطبيقات` sheet and the homepage strip, in both clients (#647, ADR-0146): its trigger, its app names, and the marketplace row under them (#1224, ADR-0155). The nine apps are the ones the site ships, in its order; `marketplace`, `marketplaceSection` and `marketplaceHint` are the one row that leaves for someone else's apps, behind a divider and a section label.",
     "placeholders": "None: every row is a name, not a sentence.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key whose row neither client draws."
   },
   "strings": {
-    "trigger": "تطبيقاتنا",
+    "trigger": "التَّطبيقات",
     "news": "أخبار اليوم",
     "verify": "التَّحقُّق من الشَّهادة",
     "rates": "أسعار الصَّرف",

@@ -12,7 +12,7 @@ package com.royaraqamia.app.shell
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object ServicesCopy {
-    const val TRIGGER = "تطبيقاتنا"
+    const val TRIGGER = "التَّطبيقات"
     const val NEWS = "أخبار اليوم"
     const val VERIFY = "التَّحقُّق من الشَّهادة"
     const val RATES = "أسعار الصَّرف"

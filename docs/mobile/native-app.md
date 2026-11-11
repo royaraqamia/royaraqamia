@@ -228,7 +228,7 @@ records that interim and the criterion it leaves to #662. `shell/NativeSurfaces.
 that decides which routes are drawn instead of handed over; a surface's port is what puts a route in
 it.
 
-The top bar and the `تطبيقاتنا` menu landed with it (#647): `shell/ShellTopBar.kt` draws the mark, the
+The top bar and the `التَّطبيقات` menu landed with it (#647): `shell/ShellTopBar.kt` draws the mark, the
 pill and — with the notifications surface's number behind it (#659) — the site's bell with its unread
 count from `/api/notifications/unread-count`, `shell/ShellServices.kt` the sheet and its eleven app
 rows in the site's order (the drag was retired with ADR-0146), the site's words in

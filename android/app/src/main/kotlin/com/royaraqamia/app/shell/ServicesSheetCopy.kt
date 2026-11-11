@@ -12,7 +12,7 @@ package com.royaraqamia.app.shell
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object ServicesSheetCopy {
-    const val TITLE = "التطبيقات"
+    const val TITLE = "التَّطبيقات"
     const val ADD = "إضافة"
     const val REMOVE = "إزالة"
     const val FAILED = "تعذَّر تحديث تطبيقاتك."

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -25,6 +25,7 @@ import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { ChatsPanel } from '@/frontend/ui/chats/chats-panel';
+import { TabChips } from '@/frontend/ui/primitives/tab-chips';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { notificationTarget } from './notification-target';
 
@@ -76,7 +77,6 @@ export function NotificationsView() {
   const chats = useChatThreads(Boolean(user), identity);
 
   const baseId = useId();
-  const tabRefs = useRef<Partial<Record<TabId, HTMLButtonElement | null>>>({});
   const [chosen, setChosen] = useState<TabId | null>(null);
 
   const requested = searchParams.get('tab');
@@ -121,35 +121,6 @@ export function NotificationsView() {
     [pathname, router, searchParams]
   );
 
-  function handleTabKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
-    if (!activeTab) return;
-    const index = TABS.findIndex((tab) => tab.id === activeTab);
-    let nextIndex: number;
-    switch (event.key) {
-      // The page is RTL, so "the next tab" is the one to the left.
-      case 'ArrowLeft':
-        nextIndex = (index + 1) % TABS.length;
-        break;
-      case 'ArrowRight':
-        nextIndex = (index - 1 + TABS.length) % TABS.length;
-        break;
-      case 'Home':
-        nextIndex = 0;
-        break;
-      case 'End':
-        nextIndex = TABS.length - 1;
-        break;
-      default:
-        return;
-    }
-
-    const next = TABS[nextIndex];
-    if (!next) return;
-    event.preventDefault();
-    selectTab(next.id);
-    tabRefs.current[next.id]?.focus();
-  }
-
   // Guests see the page too — the bell is chrome, not a member-only control — and
   // it returns them to the tab they were reading after signing in.
   const returnTo = requestedTab ? `${pathname}?tab=${requestedTab}` : pathname;
@@ -171,53 +142,25 @@ export function NotificationsView() {
       )}
 
       {activeTab === null ? (
-        <div className="h-11 w-full animate-pulse rounded-2xl bg-muted/60 sm:w-72" />
+        <div className="h-10 w-full animate-pulse rounded-full bg-muted/60 sm:w-72" />
       ) : (
-        <div
-          role="tablist"
-          aria-label="أقسام الإشعارات"
-          className="inline-flex w-full items-center gap-1 rounded-2xl border border-border/70 bg-muted/50 p-1 sm:w-auto"
-        >
-          {TABS.map((tab) => {
-            const selected = tab.id === activeTab;
-            const count = unreadByTab[tab.id];
-            return (
-              <button
-                key={tab.id}
-                ref={(element) => {
-                  tabRefs.current[tab.id] = element;
-                }}
-                type="button"
-                role="tab"
-                id={`${baseId}-tab-${tab.id}`}
-                aria-selected={selected}
-                aria-controls={`${baseId}-panel`}
-                tabIndex={selected ? 0 : -1}
-                onClick={() => selectTab(tab.id)}
-                onKeyDown={handleTabKeyDown}
-                className={cn(
-                  'flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-safe duration-200 ease-out sm:flex-none',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                  selected
-                    ? 'bg-popover font-bold text-foreground shadow-2xs'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <span>{tab.label}</span>
-                {count > 0 && (
-                  <span
-                    className={cn(
-                      'inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold leading-none',
-                      selected ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                    )}
-                  >
-                    {count > 99 ? '99+' : count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <TabChips
+          label="أقسام الإشعارات"
+          items={TABS.map((tab) => ({
+            id: tab.id,
+            label: tab.label,
+            badge:
+              unreadByTab[tab.id] > 99
+                ? '99+'
+                : unreadByTab[tab.id] > 0
+                  ? unreadByTab[tab.id]
+                  : undefined,
+          }))}
+          activeId={activeTab}
+          onSelect={(id) => selectTab(id as TabId)}
+          idPrefix={baseId}
+          panelId={`${baseId}-panel`}
+        />
       )}
 
       <section

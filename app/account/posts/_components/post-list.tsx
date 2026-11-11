@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
+import { TabChips } from '@/frontend/ui/primitives/tab-chips';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -152,33 +153,17 @@ export function PostList({
   return (
     <div className="w-full space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div
-          className="inline-flex max-w-full items-center overflow-x-auto rounded-2xl border border-border/60 bg-muted/40 p-1 no-scrollbar"
-          role="tablist"
-          aria-label="تصفية المنشورات"
-        >
-          {filters.map((filter) => (
-            <button
-              key={filter.value}
-              role="tab"
-              aria-selected={activeFilter === filter.value}
-              onClick={() => setActiveFilter(filter.value)}
-              className={cn(
-                'inline-flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-medium transition-safe',
-                activeFilter === filter.value
-                  ? 'bg-background font-bold text-foreground shadow-2xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {filter.label}
-              {filter.value !== 'all' ? (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-[10px] font-bold">
-                  {countByStatus[filter.value]}
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
+        <TabChips
+          label="تصفية المنشورات"
+          items={filters.map((filter) => ({
+            id: filter.value,
+            label: filter.label,
+            badge: filter.value === 'all' ? undefined : countByStatus[filter.value],
+          }))}
+          activeId={activeFilter}
+          onSelect={(id) => setActiveFilter(id as PostStatus | 'all')}
+          idPrefix="account-posts"
+        />
 
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

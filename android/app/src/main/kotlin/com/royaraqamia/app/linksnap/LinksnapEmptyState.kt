@@ -9,7 +9,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,16 +25,19 @@ sealed interface LinksnapEmptyStateUiState {
  * The site's empty state (#654), ported from
  * `frontend/ui/linksnap/dashboard-empty-state.tsx`.
  *
- * A member who owns no links sees the sentence, the description and the one
- * action the dashboard offers, in the same words and with the same glyph the
- * site draws. Everything comes from the generated copy source both clients read
- * (ADR-0098), so the two cannot spell it differently.
+ * A member who owns no links sees the sentence and the description in the same
+ * words and with the same glyph the site draws. Everything comes from the
+ * generated copy source both clients read (ADR-0098), so the two cannot spell it
+ * differently.
+ *
+ * The screen has no action of its own: the shortener card above the list is the
+ * control that fills it, and the button that only scrolled to that card left both
+ * clients together.
  */
 @Composable
 fun LinksnapEmptyState(
     state: LinksnapEmptyStateUiState = LinksnapEmptyStateUiState.Empty,
     modifier: Modifier = Modifier,
-    onCreateFirst: () -> Unit = {},
 ) {
     when (state) {
         LinksnapEmptyStateUiState.Empty ->
@@ -65,9 +67,6 @@ fun LinksnapEmptyState(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    TextButton(onClick = onCreateFirst) {
-                        Text(text = LinksnapCopy.EMPTY_ACTION)
-                    }
                 }
             }
     }

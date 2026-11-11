@@ -1,8 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/frontend/shared/cn';
+
+import { TabChipsNav } from '@/frontend/ui/primitives/tab-chips';
 
 const SECTIONS = [
   { href: '/admin/training/cohorts', label: 'الدُّفعات' },
@@ -11,31 +11,17 @@ const SECTIONS = [
 
 export function TrainingNav() {
   const pathname = usePathname();
+  const active =
+    SECTIONS.find((section) => pathname === section.href || pathname.startsWith(`${section.href}/`))
+      ?.href ?? '';
 
   return (
-    <nav
-      aria-label="أقسام إدارة التَّدريب"
-      className="scrollbar-hide -mx-1 mt-5 flex gap-2 overflow-x-auto px-1 pb-1 sm:mt-6"
-    >
-      {SECTIONS.map((section) => {
-        const active = pathname === section.href || pathname.startsWith(`${section.href}/`);
-        return (
-          <Link
-            key={section.href}
-            href={section.href}
-            aria-current={active ? 'page' : undefined}
-            className={cn(
-              'inline-flex min-h-10 shrink-0 items-center rounded-full border px-4 text-sm font-bold transition-colors',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-              active
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground'
-            )}
-          >
-            {section.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <TabChipsNav
+      label="أقسام إدارة التَّدريب"
+      items={SECTIONS.map((section) => ({ id: section.href, label: section.label }))}
+      activeId={active}
+      href={(id) => id}
+      className="mt-5 sm:mt-6"
+    />
   );
 }

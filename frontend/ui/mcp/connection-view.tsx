@@ -1,9 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AlertTriangle, ArrowRight, Check, Loader2, RefreshCw, Unplug } from 'lucide-react';
+import { AlertTriangle, Check, Loader2, RefreshCw, Unplug } from 'lucide-react';
 
 import { MCP_MARKETPLACE_COPY as COPY } from './marketplace-copy';
 
@@ -140,20 +139,24 @@ export function McpConnectionView({
 
   if (!user) {
     return (
-      <SignInCta
-        href={`/auth/login?redirect=${encodeURIComponent(`/mcp/apps/${connectionId}`)}`}
-        visual="connection-cta"
-      >
-        {COPY.signInBody}
-      </SignInCta>
+      <div className="flex flex-col items-center gap-4 px-4 py-6 text-center">
+        <p className="max-w-sm text-sm leading-relaxed text-balance text-muted-foreground">
+          {COPY.signInBody}
+        </p>
+        <SignInCta
+          href={`/auth/login?redirect=${encodeURIComponent(`/mcp/apps/${connectionId}`)}`}
+          visual="connection-cta"
+        >
+          {COPY.signIn}
+        </SignInCta>
+      </div>
     );
   }
 
   if (notFound) {
     return (
-      <div className="space-y-4 rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
+      <div className="rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
         <p className="text-sm font-bold text-foreground sm:text-base">{COPY.detailNotFound}</p>
-        <BackToMarketplace />
       </div>
     );
   }
@@ -194,12 +197,13 @@ export function McpConnectionView({
         </p>
       )}
 
-      <header className="space-y-3">
-        <BackToMarketplace />
+      <header className="space-y-3 text-center">
         <SectionTitle as="h1">
           <SectionTitleHighlight>{name}</SectionTitleHighlight>
         </SectionTitle>
-        <p className="text-sm leading-relaxed text-muted-foreground">{COPY.detailReach}</p>
+        <p className="mx-auto max-w-xl text-sm leading-relaxed text-balance text-muted-foreground">
+          {COPY.detailReach}
+        </p>
       </header>
 
       {connection.status === 'needs_reauth' && (
@@ -374,18 +378,6 @@ function permissionCopy(level: McpPermissionLevel): string {
     case 'ask':
       return COPY.permissionAsk;
   }
-}
-
-function BackToMarketplace() {
-  return (
-    <Link
-      href="/mcp/apps"
-      className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground transition-safe duration-150 ease-out hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-    >
-      <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
-      <span>{COPY.detailBack}</span>
-    </Link>
-  );
 }
 
 function Notice({ tone, children }: { tone: 'warning' | 'danger'; children: React.ReactNode }) {

@@ -19,7 +19,7 @@ interface MarketplaceSearchParams {
 
 /**
  * The marketplace (ADR-0155, phase 3 / #1224): the screen the connect callback
- * lands on, and the door behind `تطبيقاتنا`.
+ * lands on, and the door behind `التَّطبيقات`.
  *
  * The tab, the callback's outcome and the connection it names are read from the
  * address rather than from client state, so `/mcp/apps?tab=inbound` is

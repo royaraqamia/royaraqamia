@@ -35,9 +35,9 @@ describe('Navbar', () => {
     expect(screen.getByRole('navigation', { name: 'القائمة الرئيسية' })).toBeInTheDocument();
   });
 
-  it('renders the تطبيقاتنا picker trigger and no mobile menu button', () => {
+  it('renders the التَّطبيقات picker trigger and no mobile menu button', () => {
     renderWithProviders(<Navbar />);
-    expect(screen.getAllByRole('button', { name: 'تطبيقاتنا' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'التَّطبيقات' }).length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('فتح القائمة')).not.toBeInTheDocument();
   });
 
