@@ -27,6 +27,7 @@ object ConnectedAppsCopy {
     const val DISCONNECT_ALL = "فصل كل التَّطبيقات"
     const val EMPTY_TITLE = "لا توجد تطبيقات متَّصلة"
     const val EMPTY_BODY = "اربط وكيل برمجة — Claude Code أو OpenCode أو Codex — لتصل أدواته إلى بياناتك."
+    const val SEARCH_EMPTY_INBOUND = "لا يوجد تطبيق متصل بهذا الاسم."
     const val CONNECT_NEW = "ربط تطبيق جديد"
     const val CONFIRM_DISCONNECT_TITLE = "فصل التَّطبيق"
     const val CONFIRM_DISCONNECT_ALL_TITLE = "فصل كل التَّطبيقات"

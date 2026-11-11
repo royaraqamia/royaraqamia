@@ -6,7 +6,6 @@ import { Check } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
 import { useHomeServices } from '@/frontend/state/home-services-provider';
 import type { HomeServiceKey } from '@/shared/contracts/home-services';
-import { APPS_SURFACE_COPY } from '@/frontend/ui/apps/apps-copy';
 
 import type { NavLink } from './NavDropdown';
 import { SERVICES_SHEET_COPY } from './services-sheet-copy';
@@ -44,7 +43,7 @@ export function ServicesMenuItems({ subItems, query = '' }: ServicesMenuItemsPro
     <div className="flex flex-col">
       {visible.length === 0 ? (
         <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-          {APPS_SURFACE_COPY.searchEmptyInternal}
+          {SERVICES_SHEET_COPY.searchEmptyInternal}
         </p>
       ) : (
         <ul role="list" aria-label={SERVICES_SHEET_COPY.title} className="flex flex-col">

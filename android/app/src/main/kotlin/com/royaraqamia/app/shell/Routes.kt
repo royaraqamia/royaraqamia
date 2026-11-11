@@ -88,6 +88,9 @@ object Routes {
 /** The notification centre (#659): still the document, and the bell's destination. */
 const val NOTIFICATIONS_ROUTE = "/notifications"
 
+/** The connected apps (#657): a native screen, and the apps sheet's third tab (#1256). */
+const val CONNECTED_APPS_ROUTE = "/account/connected-apps"
+
     private fun segmentsOf(route: String): List<String> = route.split('/').filter { it.isNotEmpty() }
 
     fun isLayoutOnly(route: String): Boolean {

@@ -26,6 +26,7 @@ export const MCP_CONNECTED_APPS_COPY = {
   disconnectAll: 'فصل كل التَّطبيقات',
   emptyTitle: 'لا توجد تطبيقات متَّصلة',
   emptyBody: 'اربط وكيل برمجة — Claude Code أو OpenCode أو Codex — لتصل أدواته إلى بياناتك.',
+  searchEmptyInbound: 'لا يوجد تطبيق متصل بهذا الاسم.',
   connectNew: 'ربط تطبيق جديد',
   confirmDisconnectTitle: 'فصل التَّطبيق',
   confirmDisconnectAllTitle: 'فصل كل التَّطبيقات',

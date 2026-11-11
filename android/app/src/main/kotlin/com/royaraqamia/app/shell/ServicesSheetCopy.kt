@@ -15,5 +15,6 @@ object ServicesSheetCopy {
     const val TITLE = "التَّطبيقات"
     const val ADD = "إضافة"
     const val REMOVE = "إزالة"
+    const val SEARCH_EMPTY_INTERNAL = "لا يوجد تطبيق بهذا الاسم."
     const val FAILED = "تعذَّر تحديث تطبيقاتك."
 }

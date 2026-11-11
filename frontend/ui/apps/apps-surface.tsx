@@ -5,10 +5,11 @@ import { Search } from 'lucide-react';
 
 import { APPS_TABS, type AppsTab } from '@/shared/contracts/mcp-marketplace';
 import { TabChips, TabChipsNav } from '@/frontend/ui/primitives/tab-chips';
+import { MCP_MARKETPLACE_COPY } from '@/frontend/ui/mcp/marketplace-copy';
 import { ServicesMenuItems } from '@/frontend/ui/navbar/ServicesMenuItems';
 import { useSession } from '@/frontend/state/session-provider';
 
-import { APPS_SURFACE_COPY as COPY } from './apps-copy';
+import { APPS_SURFACE_COPY } from './apps-copy';
 
 import type { NavLink } from '@/frontend/ui/navbar/NavDropdown';
 
@@ -32,15 +33,17 @@ interface AppsSurfaceProps {
 }
 
 const TAB_LABELS: Record<AppsTab, string> = {
-  internal: COPY.tabInternal,
-  external: COPY.tabExternal,
-  inbound: COPY.tabInbound,
+  internal: APPS_SURFACE_COPY.tabInternal,
+  external: APPS_SURFACE_COPY.tabExternal,
+  inbound: APPS_SURFACE_COPY.tabInbound,
 };
 
+// The store's placeholder belongs to the store's own source: the surface asks
+// for the field, and the tab that the field searches names itself.
 const TAB_PLACEHOLDERS: Record<AppsTab, string> = {
-  internal: COPY.searchInternal,
-  external: COPY.searchExternal,
-  inbound: COPY.searchInbound,
+  internal: APPS_SURFACE_COPY.searchInternal,
+  external: MCP_MARKETPLACE_COPY.searchPlaceholder,
+  inbound: APPS_SURFACE_COPY.searchInbound,
 };
 
 /**
@@ -90,14 +93,14 @@ export function AppsSurface({
   const tabs =
     host === 'page' ? (
       <TabChipsNav
-        label={COPY.tabsLabel}
+        label={APPS_SURFACE_COPY.tabsLabel}
         items={tabItems}
         activeId={tab}
         href={(id) => tabHref?.(id as AppsTab) ?? '/mcp/apps'}
       />
     ) : (
       <TabChips
-        label={COPY.tabsLabel}
+        label={APPS_SURFACE_COPY.tabsLabel}
         items={tabItems}
         activeId={tab}
         onSelect={(id) => onTabChange?.(id as AppsTab)}
@@ -117,7 +120,7 @@ export function AppsSurface({
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder={TAB_PLACEHOLDERS[tab]}
-        aria-label={COPY.searchLabel}
+        aria-label={APPS_SURFACE_COPY.searchLabel}
         className="w-full rounded-xl border border-border/60 bg-card/70 py-2.5 pe-3 ps-9 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
       />
     </div>

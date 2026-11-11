@@ -80,6 +80,8 @@ fun ConnectedAppsCard(
     onDisconnect: (ConnectedApp) -> Unit,
     onDisconnectAll: () -> Unit,
     onConnectNew: () -> Unit,
+    /** The surface's search term: the card filters what it lists, like the view. */
+    query: String = "",
     modifier: Modifier = Modifier,
     actionError: String? = null,
 ) {
@@ -87,15 +89,23 @@ fun ConnectedAppsCard(
         ConnectedAppsUiState.Loading -> Skeleton(modifier)
         ConnectedAppsUiState.SignedOut -> SignedOut(modifier, onSignIn)
         ConnectedAppsUiState.Failed -> Failed(onRetry, modifier)
-        is ConnectedAppsUiState.Ready ->
+        is ConnectedAppsUiState.Ready -> {
+            val term = query.trim()
             Ready(
-                apps = state.apps,
+                apps =
+                    if (term.isEmpty()) {
+                        state.apps
+                    } else {
+                        state.apps.filter { (it.name ?: ConnectedAppsCopy.APP_NAME).contains(term) }
+                    },
+                filtered = term.isNotEmpty(),
                 actionError = actionError,
                 onDisconnect = onDisconnect,
                 onDisconnectAll = onDisconnectAll,
                 onConnectNew = onConnectNew,
                 modifier = modifier,
             )
+        }
     }
 }
 
@@ -113,6 +123,7 @@ private sealed interface DisconnectTarget {
 @Composable
 private fun Ready(
     apps: List<ConnectedApp>,
+    filtered: Boolean,
     actionError: String?,
     onDisconnect: (ConnectedApp) -> Unit,
     onDisconnectAll: () -> Unit,
@@ -129,7 +140,18 @@ private fun Ready(
         if (actionError != null) Alert(actionError)
 
         if (apps.isEmpty()) {
-            Empty()
+            // A search that matches nothing is not an account with no clients: the
+            // site's sentence says which of the two the member is looking at.
+            if (filtered) {
+                Text(
+                    text = ConnectedAppsCopy.SEARCH_EMPTY_INBOUND,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = spacing.elementGapSm),
+                )
+            } else {
+                Empty()
+            }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm)) {
                 for (app in apps) {

@@ -9,14 +9,14 @@
   },
   "elements": {
     "sheet": {
-      "top": 354,
+      "top": 0,
       "width": 393,
-      "height": 498,
-      "radius": 16,
+      "height": 852,
+      "radius": 0,
       "paddingTop": 0
     },
     "row": {
-      "top": 362,
+      "top": 175,
       "height": 53
     },
     "row-action": {

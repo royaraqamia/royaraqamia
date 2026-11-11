@@ -44,6 +44,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.ui.vectors.LucideVectors
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 
 /**
  * What a picker row's action is showing (#1194, ADR-0146).
@@ -95,30 +110,22 @@ internal object PickerMetrics {
     val borderWidth = 1.dp
     val sheetRadius = 16.dp
 
-    /** The marketplace block under the nine (ADR-0155). */
-    val marketplaceDividerTop = 8.dp
-    val marketplaceSectionTop = 10.dp
-    val marketplaceSectionBottom = 2.dp
-    val marketplaceSectionTextSize = 11.sp
-    val marketplaceRowRadius = 12.dp
-    val marketplaceRowVerticalPadding = 12.dp
-    val marketplaceHintTextSize = 12.sp
-    val marketplaceHintTop = 2.dp
 }
 
+
 /**
- * The app picker as a bottom sheet (#1194, ADR-0146).
+ * The apps surface as a full-height sheet (#1256, ADR-0159).
  *
- * A row is not a link any more: the sheet is the picker, so pressing its action
- * adds or removes the app and the sheet stays open for the next choice. It is
- * the same sheet the top bar's `التَّطبيقات` and the homepage strip's end control
- * open on the site, drawn from the site's numbers: a 16dp top radius, no grabber
- * and no visible title (ADR-0153), hairline-separated rows, and an action pill
- * that is violet to add and emerald with a tick once the app is on the homepage.
+ * The site's sheet is the one apps surface: a title with a close control, three
+ * tabs, one search field and one scroll body
+ * (frontend/ui/navbar/ServicesSheet.tsx and frontend/ui/apps/apps-surface.tsx).
+ * The app draws the same surface — full height, no grabber, the picker under
+ * the tabs — so the two hosts of one surface cannot drift apart.
  *
- * The sheet owns its dismissal (scrim tap, back); the caller owns the list. A
- * refused write is the sheet's own line under its rows, cleared by the next
- * attempt, so no row claims a state the server did not keep.
+ * The two MCP tabs are doors in this slice: the store is still the page, and
+ * the connected list is the screen that already exists, so choosing either
+ * closes the sheet and routes. The picker keeps its rule: one write at a time,
+ * and a refused write is the sheet's own line, cleared by the next attempt.
  */
 @Composable
 fun ServicesSheet(
@@ -128,8 +135,10 @@ fun ServicesSheet(
     error: String?,
     onToggle: (String) -> Unit,
     onDismiss: () -> Unit,
-    /** The marketplace row: it navigates, so the caller closes and routes (#1224). */
+    /** The store tab's door: a destination until the store is drawn here. */
     onOpenMarketplace: () -> Unit = onDismiss,
+    /** The connected-apps tab's door: the screen the account row used to open. */
+    onOpenConnectedApps: () -> Unit = onDismiss,
 ) {
     if (!open) return
 
@@ -137,11 +146,12 @@ fun ServicesSheet(
     // route underneath (ADR-0082).
     BackHandler(enabled = true, onBack = onDismiss)
 
-    val ruleTop = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
-    val ruleHeader = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+    var tab by remember { mutableStateOf<AppsSheetTab>(AppsSheetTab.Internal) }
+    var query by remember { mutableStateOf("") }
 
     Box(Modifier.fillMaxSize()) {
-        // `bg-black/75`, the scrim the site's sheets draw.
+        // bg-black/75, the scrim the site's sheets draw. A full-height sheet
+        // covers it, so what is left is the tap that dismisses.
         Box(
             Modifier.fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.75f))
@@ -149,116 +159,307 @@ fun ServicesSheet(
         )
         Surface(
             modifier =
-                Modifier.align(Alignment.BottomCenter)
-                    .fillMaxWidth()
+                Modifier.fillMaxSize()
                     .testTag("services-sheet")
                     .semantics { paneTitle = ServicesSheetCopy.TITLE },
-            shape =
-                RoundedCornerShape(
-                    topStart = PickerMetrics.sheetRadius,
-                    topEnd = PickerMetrics.sheetRadius,
-                ),
             color = MaterialTheme.colorScheme.surface,
         ) {
             Column(
-                Modifier.fillMaxWidth()
-                    .navigationBarsPadding()
-                    .drawBehind {
-                        val line = 1.dp.toPx()
-                        // The sheet's own `border-t` and the header's hairline: the
-                        // page's first row starts two pixels into the sheet, and the
-                        // raster carries both lines.
-                        drawRect(
-                            color = ruleTop,
-                            size = Size(size.width, line),
-                        )
-                        drawRect(
-                            color = ruleHeader,
-                            topLeft = Offset(0f, line),
-                            size = Size(size.width, line),
-                        )
-                    }
-                    .padding(
-                        start = PickerMetrics.listPaddingHorizontal,
-                        end = PickerMetrics.listPaddingHorizontal,
-                        top = PickerMetrics.topRules + PickerMetrics.listPaddingHorizontal,
-                        bottom = PickerMetrics.listPaddingBottom,
-                    )
+                Modifier.fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.statusBars.only(WindowInsetsSides.Top))
             ) {
-                ServicesEntry.rows.forEachIndexed { index, entry ->
-                    PickerRow(
-                        entry = entry,
-                        added = entry.route in order,
-                        pending = busy == entry.route,
-                        enabled = busy == null,
-                        last = index == ServicesEntry.rows.lastIndex,
-                        onToggle = { onToggle(entry.route) },
-                    )
-                }
+                SheetHeader(onDismiss)
 
-                // The marketplace is not one of the nine (ADR-0155): a divider,
-                // its section label, then a row that navigates rather than
-                // toggling. A stranger's app never sits beside `/quran`.
-                Box(
+                Column(
                     Modifier.fillMaxWidth()
                         .padding(
-                            top = PickerMetrics.marketplaceDividerTop,
-                            start = PickerMetrics.rowHorizontalPadding,
-                            end = PickerMetrics.rowHorizontalPadding,
-                        )
-                        .height(PickerMetrics.borderWidth)
-                        .background(PickerColors.Divider.copy(alpha = 0.6f))
-                )
-                Text(
-                    text = ServicesCopy.MARKETPLACE_SECTION,
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            fontSize = PickerMetrics.marketplaceSectionTextSize,
-                            fontWeight = FontWeight.Bold,
+                            start = AppsSheetMetrics.bandPadding,
+                            end = AppsSheetMetrics.bandPadding,
+                            top = AppsSheetMetrics.bandPaddingTop,
+                            bottom = AppsSheetMetrics.bandPadding,
                         ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .padding(
-                                top = PickerMetrics.marketplaceSectionTop,
-                                bottom = PickerMetrics.marketplaceSectionBottom,
-                                start = PickerMetrics.rowHorizontalPadding,
-                                end = PickerMetrics.rowHorizontalPadding,
-                            ),
-                    textAlign = TextAlign.Start,
-                    maxLines = 1,
-                )
-                MarketplaceRow(onOpenMarketplace)
-
-                // The page's line is a block that only has its top padding when
-                // there is nothing to say (whitespace collapses), so the empty
-                // sheet is 16px shorter than the one drawing a refusal.
-                if (error == null) {
-                    Spacer(Modifier.height(PickerMetrics.errorTopPadding))
-                } else {
-                    Text(
-                        text = error,
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                fontSize = PickerMetrics.errorTextSize,
-                                lineHeight = 16.sp,
-                            ),
-                        color = PickerColors.Red300,
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .padding(
-                                    top = PickerMetrics.errorTopPadding,
-                                    start = PickerMetrics.rowHorizontalPadding,
-                                    end = PickerMetrics.rowHorizontalPadding,
-                                ),
-                        maxLines = 2,
-                        textAlign = TextAlign.Center,
+                    verticalArrangement = Arrangement.spacedBy(AppsSheetMetrics.bandGap),
+                ) {
+                    AppsTabs(
+                        tab = tab,
+                        onSelect = { chosen ->
+                            when (chosen) {
+                                AppsSheetTab.Internal -> tab = AppsSheetTab.Internal
+                                AppsSheetTab.External -> onOpenMarketplace()
+                                AppsSheetTab.Inbound -> onOpenConnectedApps()
+                            }
+                        },
                     )
+                    // Only the picker searches here: the other two tabs are doors,
+                    // and a field over a tab that leaves is a control that cannot work.
+                    if (tab == AppsSheetTab.Internal) {
+                        SearchField(query = query, onQueryChange = { query = it })
+                    }
+                }
+
+                Box(
+                    Modifier.fillMaxWidth()
+                        .height(PickerMetrics.borderWidth)
+                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                )
+
+                Column(
+                    Modifier.fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .navigationBarsPadding()
+                        .padding(
+                            start = PickerMetrics.listPaddingHorizontal,
+                            end = PickerMetrics.listPaddingHorizontal,
+                            top = PickerMetrics.listPaddingBottom,
+                            bottom = AppsSheetMetrics.bodyPaddingBottom,
+                        )
+                ) {
+                    val term = query.trim()
+                    val rows =
+                        ServicesEntry.rows.filter { entry ->
+                            term.isEmpty() || labelOf(entry).contains(term)
+                        }
+
+                    rows.forEachIndexed { index, entry ->
+                        PickerRow(
+                            entry = entry,
+                            added = entry.route in order,
+                            pending = busy == entry.route,
+                            enabled = busy == null,
+                            last = index == rows.lastIndex,
+                            onToggle = { onToggle(entry.route) },
+                        )
+                    }
+
+                    if (rows.isEmpty()) {
+                        Text(
+                            text = ServicesSheetCopy.SEARCH_EMPTY_INTERNAL,
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = PickerMetrics.errorTextSize,
+                                    lineHeight = 16.sp,
+                                ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .padding(
+                                        top = AppsSheetMetrics.emptyTopPadding,
+                                        start = PickerMetrics.rowHorizontalPadding,
+                                        end = PickerMetrics.rowHorizontalPadding,
+                                    ),
+                            maxLines = 2,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+
+                    // The page's line is a block that only has its top padding when
+                    // there is nothing to say (whitespace collapses), so a quiet
+                    // sheet stays shorter than one drawing a refusal.
+                    if (error != null) {
+                        Text(
+                            text = error,
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontSize = PickerMetrics.errorTextSize,
+                                    lineHeight = 16.sp,
+                                ),
+                            color = PickerColors.Red300,
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .padding(
+                                        top = PickerMetrics.errorTopPadding,
+                                        start = PickerMetrics.rowHorizontalPadding,
+                                        end = PickerMetrics.rowHorizontalPadding,
+                                    ),
+                            maxLines = 2,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+/** The sheet's title and its close control, in the site's order. */
+@Composable
+private fun SheetHeader(onDismiss: () -> Unit) {
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(
+                    start = AppsSheetMetrics.headerPadding,
+                    end = AppsSheetMetrics.headerPaddingEnd,
+                    top = AppsSheetMetrics.headerPaddingTop,
+                    bottom = AppsSheetMetrics.headerPaddingBottom,
+                ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = ServicesSheetCopy.TITLE,
+            style =
+                MaterialTheme.typography.titleLarge.copy(
+                    fontSize = AppsSheetMetrics.titleTextSize,
+                    fontWeight = FontWeight.ExtraBold,
+                ),
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+        )
+        Box(
+            modifier =
+                Modifier.size(AppsSheetMetrics.closeSize)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .clickable(onClick = onDismiss)
+                    .semantics { role = Role.Button }
+                    .testTag("apps-sheet-close"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = LucideVectors.X,
+                // Closing a sheet is the same step back the shell's control names.
+                contentDescription = BackControlCopy.LABEL,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(AppsSheetMetrics.closeIconSize),
+            )
+        }
+    }
+}
+
+/**
+ * The surface's three tabs as the site's chips (TabChips, ADR-0146): one
+ * scroller, the active chip in the site's violet.
+ */
+@Composable
+private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
+    val tabs =
+        listOf(
+            AppsSheetTab.Internal to AppsSheetCopy.TAB_INTERNAL,
+            AppsSheetTab.External to AppsSheetCopy.TAB_EXTERNAL,
+            AppsSheetTab.Inbound to AppsSheetCopy.TAB_INBOUND,
+        )
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .semantics { contentDescription = AppsSheetCopy.TABS_LABEL },
+        horizontalArrangement = Arrangement.spacedBy(AppsSheetMetrics.tabGap),
+    ) {
+        tabs.forEach { (id, label) ->
+            val active = id == tab
+            val shape = RoundedCornerShape(percent = 50)
+            Box(
+                modifier =
+                    Modifier.clip(shape)
+                        .background(
+                            if (active) {
+                                PickerColors.Violet500.copy(alpha = 0.15f)
+                            } else {
+                                Color.Transparent
+                            }
+                        )
+                        .border(
+                            width = PickerMetrics.borderWidth,
+                            color =
+                                if (active) {
+                                    PickerColors.Violet500.copy(alpha = 0.4f)
+                                } else {
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                                },
+                            shape = shape,
+                        )
+                        .clickable { onSelect(id) }
+                        .semantics { selected = active }
+                        .testTag("apps-tab")
+                        .padding(
+                            horizontal = AppsSheetMetrics.tabHorizontalPadding,
+                            vertical = AppsSheetMetrics.tabVerticalPadding,
+                        ),
+            ) {
+                Text(
+                    text = label,
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontSize = AppsSheetMetrics.tabTextSize,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    color =
+                        if (active) {
+                            PickerColors.Violet200
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}
+
+/** The one search field, in the tab's own words. */
+@Composable
+private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier =
+            Modifier.fillMaxWidth()
+                .heightIn(min = AppsSheetMetrics.searchHeight)
+                .testTag("apps-search")
+                .semantics { contentDescription = AppsSheetCopy.SEARCH_LABEL },
+        placeholder = {
+            Text(
+                text = AppsSheetCopy.SEARCH_INTERNAL,
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontSize = AppsSheetMetrics.searchTextSize,
+                    ),
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = LucideVectors.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(PickerMetrics.iconSize),
+            )
+        },
+        singleLine = true,
+        shape = RoundedCornerShape(AppsSheetMetrics.searchRadius),
+        textStyle =
+            MaterialTheme.typography.bodySmall.copy(
+                fontSize = AppsSheetMetrics.searchTextSize,
+            ),
+    )
+}
+
+/** The surface's own geometry, read from the page's classes (ADR-0118). */
+internal object AppsSheetMetrics {
+    val headerPadding = 16.dp
+    val headerPaddingEnd = 8.dp
+    val headerPaddingTop = 12.dp
+    val headerPaddingBottom = 8.dp
+    val titleTextSize = 18.sp
+    val closeSize = 28.dp
+    val closeIconSize = 20.dp
+
+    val bandPadding = 12.dp
+    val bandPaddingTop = 8.dp
+    val bandGap = 8.dp
+    val tabGap = 8.dp
+    val tabHorizontalPadding = 12.dp
+    val tabVerticalPadding = 8.dp
+    val tabTextSize = 13.sp
+
+    val searchHeight = 40.dp
+    val searchRadius = 12.dp
+    val searchTextSize = 14.sp
+
+    val emptyTopPadding = 24.dp
+    val bodyPaddingBottom = 12.dp
+}
+
 
 @Composable
 private fun PickerRow(
@@ -313,59 +514,6 @@ private fun PickerRow(
         )
     }
 }
-
-/**
- * The marketplace row (ADR-0155): the glyph, the name, and the sentence that
- * says what it is for. It is a destination, not a toggle, so it is a clickable
- * row rather than a `PickerAction` pill.
- */
-@Composable
-private fun MarketplaceRow(onOpen: () -> Unit) {
-    Row(
-        modifier =
-            Modifier.fillMaxWidth()
-                .clip(RoundedCornerShape(PickerMetrics.marketplaceRowRadius))
-                .clickable(onClick = onOpen)
-                .semantics { role = Role.Button }
-                .testTag("services-external-row")
-                .padding(
-                    horizontal = PickerMetrics.rowHorizontalPadding,
-                    vertical = PickerMetrics.marketplaceRowVerticalPadding,
-                ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(PickerMetrics.iconGap),
-    ) {
-        Icon(
-            imageVector = iconOf(ServicesEntry.Marketplace),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(PickerMetrics.iconSize),
-        )
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = labelOf(ServicesEntry.Marketplace),
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = PickerMetrics.labelTextSize,
-                        fontWeight = FontWeight.Medium,
-                    ),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-            )
-            Text(
-                text = ServicesCopy.MARKETPLACE_HINT,
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontSize = PickerMetrics.marketplaceHintTextSize,
-                    ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = PickerMetrics.marketplaceHintTop),
-                maxLines = 1,
-            )
-        }
-    }
-}
-
 /** The site's action pill, in its two colours. */@Composable
 private fun PickerAction(
     state: PickerRowState,

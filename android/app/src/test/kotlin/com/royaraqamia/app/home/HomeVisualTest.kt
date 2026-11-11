@@ -200,7 +200,7 @@ class HomeVisualTest {
                   "top": ${sheet.top.value},
                   "width": ${(sheet.right - sheet.left).value},
                   "height": ${(sheet.bottom - sheet.top).value},
-                  "radius": ${PickerMetrics.sheetRadius.value},
+                  "radius": 0,
                   "paddingTop": 0
                 },
                 "row": {

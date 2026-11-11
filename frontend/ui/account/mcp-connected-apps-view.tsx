@@ -19,7 +19,6 @@ import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ApiError } from '@/frontend/transport/http';
 import { useSession } from '@/frontend/state/session-provider';
-import { APPS_SURFACE_COPY } from '@/frontend/ui/apps/apps-copy';
 import { appsCacheKey, readAppsCache, writeAppsCache } from '@/frontend/ui/apps/apps-cache';
 
 /**
@@ -276,7 +275,7 @@ function ConnectedAppsBody({ query }: { query: string }) {
           </>
         ) : (
           <p className="rounded-2xl border border-border/50 bg-card/60 px-4 py-8 text-center text-sm text-muted-foreground">
-            {APPS_SURFACE_COPY.searchEmptyInbound}
+            {MCP_CONNECTED_APPS_COPY.searchEmptyInbound}
           </p>
         )
       ) : (
