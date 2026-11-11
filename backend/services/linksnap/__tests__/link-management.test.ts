@@ -139,6 +139,22 @@ describe('UpdateLinkService', () => {
     expect(repository.update).not.toHaveBeenCalled();
   });
 
+  it('accepts a public URL that mentions a blocked word in its path or query', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    const originalUrl = 'https://example.com/?q=10.0.0.1';
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...linkFixture,
+      originalUrl,
+    });
+
+    const result = await service.execute('abc123', 'u-1', { originalUrl });
+
+    expect(result.originalUrl).toBe(originalUrl);
+    expect(repository.update).toHaveBeenCalledWith('abc123', { originalUrl });
+  });
+
   it('changes the code when a valid new slug is given', async () => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
