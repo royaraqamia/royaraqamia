@@ -15,6 +15,12 @@
 -- query time is not worth a table rewrite: the two icon sources are selected
 -- and resolved in the service, and the store's order is two ordinary columns.
 --
+-- Why this file is idempotent: the Supabase integration recorded the abandoned
+-- `20261119120000` version when its first attempt timed out. The record exists,
+-- so that filename stays in the repo as a no-op; this file is what actually
+-- reconciles the linked project (and a fresh one). It drops any generated
+-- columns a partial first attempt may have left, then adds the plain schema.
+--
 -- The store needs:
 --
 --   * `registry_icon_*` / `probe_icon_*` — the brand mark, from the registry's
@@ -41,9 +47,16 @@
 -- ============================================================
 
 -- The previous attempt was cancelled mid-migration because the whole file is
--- one statement batch. The columns below are metadata-only; the timeout is
--- headroom for the review, not for a rewrite.
+-- one statement batch. It may have left a generated column behind if any
+-- statement committed before the cancel; those are inert now (the service does
+-- not read them), and a later human-approved migration can drop them. This file
+-- adds the plain columns the service does read.
 set statement_timeout = '10min';
+
+-- The constraint the abandoned version added references its `icon_mime`; the
+-- new one is on the two source columns, so this name is redefined below.
+alter table public.mcp_catalog_servers
+  drop constraint if exists mcp_catalog_servers_icon_mime_check;
 
 -- ------------------------------------------------------------
 -- The brand mark
@@ -112,7 +125,9 @@ alter table public.mcp_catalog_servers
 
 -- The store's one query: verified, connectable, active, unblocked, in store
 -- order. Partial, because a row outside that predicate is not on the screen.
-create index if not exists idx_mcp_catalog_servers_store
+-- The name is new on purpose: a partial first attempt may have left an index of
+-- the old `store_key` under the name this index used to take.
+create index if not exists idx_mcp_catalog_servers_store_order
   on public.mcp_catalog_servers (featured_rank asc nulls last, registry_name asc)
   where status = 'active'
     and blocked_at is null
