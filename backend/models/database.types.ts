@@ -1260,6 +1260,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      mcp_catalog_verification_events: {
+        Row: {
+          action: string;
+          actor: string;
+          created_at: string;
+          evidence: Json;
+          id: number;
+          registry_name: string;
+          source: string;
+        };
+        Insert: {
+          action: string;
+          actor: string;
+          created_at?: string;
+          evidence?: Json;
+          id?: never;
+          registry_name: string;
+          source: string;
+        };
+        Update: {
+          action?: string;
+          actor?: string;
+          created_at?: string;
+          evidence?: Json;
+          id?: never;
+          registry_name?: string;
+          source?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mcp_catalog_verification_events_registry_name_fkey';
+            columns: ['registry_name'];
+            isOneToOne: false;
+            referencedRelation: 'mcp_catalog_servers';
+            referencedColumns: ['registry_name'];
+          },
+        ];
+      };
       mcp_connect_attempts: {
         Row: {
           code_verifier_enc: string;
@@ -3035,7 +3073,17 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      mcp_catalog_latest_verifications: {
+        Row: {
+          action: string;
+          actor: string;
+          created_at: string;
+          evidence: Json;
+          registry_name: string;
+          source: string;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       agent_turns_due: {

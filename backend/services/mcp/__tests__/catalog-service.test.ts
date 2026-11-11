@@ -9,13 +9,19 @@ import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
 import type { McpStaticClientMap } from '@/backend/shared/domain/mcp-static-clients';
 import type {
   McpCatalogAddressRecord,
+  McpCatalogEventInput,
   McpCatalogListRow,
   McpCatalogServerRecord,
   McpCatalogSyncStateRecord,
   McpCatalogUpsertRow,
   McpMarketplaceRepository,
 } from '@/backend/repositories/mcp/marketplace-repository';
-import { McpCatalogError, createMcpCatalogService } from '../marketplace/catalog-service';
+import {
+  McpCatalogError,
+  createMcpCatalogService,
+  type McpCatalogService,
+} from '../marketplace/catalog-service';
+import type { McpCatalogAdminUpdate } from '@/shared/contracts/mcp-catalog';
 
 /**
  * The catalogue, driven against an in-memory store and a fake registry.
@@ -29,6 +35,14 @@ import { McpCatalogError, createMcpCatalogService } from '../marketplace/catalog
  */
 
 const NOW = new Date('2026-11-14T12:00:00.000Z');
+
+/** The actor every console write in this file claims to be. */
+const ADMIN = { actor: 'admin@example.com' } as const;
+
+/** A console write, with the actor the controller supplies. */
+function adminUpdate(service: McpCatalogService, input: McpCatalogAdminUpdate) {
+  return service.adminUpdate(input, ADMIN);
+}
 
 function emptyState(): McpCatalogSyncStateRecord {
   return {
@@ -54,6 +68,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
   const marks: Array<{ registryName: string; icon: string }> = [];
   const marked: string[] = [];
   const retired: string[] = [];
+  const events: McpCatalogEventInput[] = [];
 
   const repository: McpMarketplaceRepository = {
     getCatalogServer: async () => null,
@@ -97,6 +112,10 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     updateCatalogServer: async (registryName, patch) => {
       updates.push({ registryName, patch });
     },
+    recordCatalogEvent: async (event) => {
+      events.push(event);
+    },
+    latestCatalogVerifications: async () => [],
     verifyLaunchSet: async (names) => {
       seeded.push([...names]);
       return 0;
@@ -112,7 +131,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     ...overrides,
   };
 
-  return { repository, state, upserts, probes, updates, seeded, marked, retired, marks };
+  return { repository, state, upserts, probes, updates, seeded, marked, retired, marks, events };
 }
 
 function fakeRegistry(pages: McpRegistryPage[]): McpRegistryClient {
@@ -431,7 +450,7 @@ describe('the takedown and the overrides', () => {
     const repository = fakeRepository();
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({
+    await adminUpdate(service, {
       registryName: 'com.notion/mcp',
       blocked: true,
       blockedReason: 'يخالف الشروط',
@@ -441,7 +460,7 @@ describe('the takedown and the overrides', () => {
       blocked_reason: 'يخالف الشروط',
     });
 
-    await service.adminUpdate({ registryName: 'com.notion/mcp', blocked: false });
+    await adminUpdate(service, { registryName: 'com.notion/mcp', blocked: false });
     expect(repository.updates[1]?.patch).toEqual({
       blocked_at: null,
       blocked_reason: null,
@@ -449,10 +468,10 @@ describe('the takedown and the overrides', () => {
   });
 
   it('clears an override with an empty field rather than storing a blank string', async () => {
-    const repository = fakeRepository();
+    const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({
+    await adminUpdate(service, {
       registryName: 'com.notion/mcp',
       nameAr: '  ',
       descriptionAr: 'وصف',
@@ -604,6 +623,7 @@ function serverRow(overrides: Partial<McpCatalogServerRecord> = {}): McpCatalogS
   return {
     registry_name: 'com.vercel/vercel-mcp',
     title: 'Vercel',
+    title_override: 'Vercel',
     description: 'An MCP server for Vercel',
     name_ar: null,
     description_ar: null,
@@ -630,7 +650,7 @@ describe('the store admission', () => {
     const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: true });
+    await adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', verified: true });
 
     expect(repository.updates[0]?.patch).toEqual({
       verified_at: NOW.toISOString(),
@@ -646,7 +666,7 @@ describe('the store admission', () => {
     const service = build({ repository, pages: [] });
 
     await expect(
-      service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: true })
+      adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', verified: true })
     ).rejects.toBeInstanceOf(McpCatalogError);
 
     expect(repository.updates).toEqual([]);
@@ -660,7 +680,7 @@ describe('the store admission', () => {
     const service = build({ repository, pages: [] });
 
     await expect(
-      service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: true })
+      adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', verified: true })
     ).rejects.toMatchObject({ failure: 'not_connectable' });
   });
 
@@ -670,7 +690,7 @@ describe('the store admission', () => {
     });
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: false });
+    await adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', verified: false });
 
     expect(repository.updates[0]?.patch).toEqual({
       verified_at: null,
@@ -690,7 +710,7 @@ describe('the store admission', () => {
     });
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({
+    await adminUpdate(service, {
       registryName: 'com.vercel/vercel-mcp',
       verified: true,
       featuredRank: 2,
@@ -711,7 +731,7 @@ describe('the remote choice', () => {
     const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', remoteOverride: ACCOUNT });
+    await adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', remoteOverride: ACCOUNT });
 
     expect(repository.updates[0]?.patch).toEqual({
       remote_override: ACCOUNT,
@@ -750,7 +770,7 @@ describe('the remote choice', () => {
     });
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', remoteOverride: ACCOUNT });
+    await adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', remoteOverride: ACCOUNT });
 
     expect(repository.updates[0]?.patch).toEqual({ remote_override: ACCOUNT });
   });
@@ -761,7 +781,7 @@ describe('the remote choice', () => {
     });
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', remoteOverride: null });
+    await adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', remoteOverride: null });
 
     expect(repository.updates[0]?.patch).toMatchObject({
       remote_override: null,
@@ -775,7 +795,7 @@ describe('the remote choice', () => {
     const service = build({ repository, pages: [] });
 
     await expect(
-      service.adminUpdate({
+      adminUpdate(service, {
         registryName: 'com.vercel/vercel-mcp',
         remoteOverride: 'http://mcp.vercel.com',
       })
@@ -789,7 +809,7 @@ describe('the remote choice', () => {
     const service = build({ repository, pages: [] });
 
     await expect(
-      service.adminUpdate({
+      adminUpdate(service, {
         registryName: 'com.vercel/vercel-mcp',
         remoteOverride: ACCOUNT,
         verified: true,
@@ -945,7 +965,7 @@ describe('the mark an admin chooses', () => {
     const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({
+    await adminUpdate(service, {
       registryName: 'com.vercel/vercel-mcp',
       iconOverride: '/brand/mcp/vercel.svg',
     });
@@ -958,11 +978,11 @@ describe('the mark an admin chooses', () => {
     const service = build({ repository, pages: [] });
 
     await expect(
-      service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', iconOverride: '/etc/passwd' })
+      adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', iconOverride: '/etc/passwd' })
     ).rejects.toMatchObject({ failure: 'invalid_icon' });
 
     await expect(
-      service.adminUpdate({
+      adminUpdate(service, {
         registryName: 'com.vercel/vercel-mcp',
         iconOverride: 'http://cdn.example/logo.svg',
       })
@@ -982,7 +1002,7 @@ describe('the mark an admin chooses', () => {
     const service = build({ repository, pages: [] });
 
     await expect(
-      service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: true })
+      adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', verified: true })
     ).rejects.toMatchObject({ failure: 'no_mark' });
   });
 
@@ -998,7 +1018,7 @@ describe('the mark an admin chooses', () => {
     });
     const service = build({ repository, pages: [] });
 
-    await service.adminUpdate({
+    await adminUpdate(service, {
       registryName: 'com.vercel/vercel-mcp',
       verified: true,
       iconOverride: 'https://mcp.vercel.com/icon.svg',
@@ -1064,5 +1084,144 @@ describe('brand marks (the eleven letters)', () => {
     const page = await service.search({ q: '', cursor: null });
 
     expect(page.servers[0]?.iconUrl).toBe('/brand/mcp/vercel.svg');
+  });
+});
+
+describe('the verification log (#1293)', () => {
+  it('records exactly one verify event, naming the actor and the check it rested on', async () => {
+    const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate(
+      { registryName: 'com.vercel/vercel-mcp', verified: true, featuredRank: 2 },
+      { actor: 'admin@example.com' }
+    );
+
+    expect(repository.events).toHaveLength(1);
+    expect(repository.events[0]).toMatchObject({
+      registryName: 'com.vercel/vercel-mcp',
+      actor: 'admin@example.com',
+      action: 'verify',
+      source: 'machine',
+    });
+    expect(repository.events[0]?.evidence).toMatchObject({
+      connectable: true,
+      probedAt: NOW.toISOString(),
+    });
+  });
+
+  it('records nothing when a verified row only changes its rank', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () => serverRow({ verified_at: '2026-11-01T00:00:00.000Z' }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate(
+      { registryName: 'com.vercel/vercel-mcp', verified: true, featuredRank: 5 },
+      ADMIN
+    );
+
+    expect(repository.updates[0]?.patch).toMatchObject({ featured_rank: 5 });
+    expect(repository.events).toEqual([]);
+  });
+
+  it('records one withdraw event that names when the row had been published', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () => serverRow({ verified_at: '2026-11-01T00:00:00.000Z' }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: false }, ADMIN);
+
+    expect(repository.events).toHaveLength(1);
+    expect(repository.events[0]).toMatchObject({ action: 'withdraw', actor: ADMIN.actor });
+    expect(repository.events[0]?.evidence).toMatchObject({
+      verifiedAt: '2026-11-01T00:00:00.000Z',
+    });
+  });
+
+  it('records a shipped mark as ours, and a measured one by its measured source', async () => {
+    const shipped = fakeRepository({ getCatalogServer: async () => serverRow() });
+    await adminUpdate(build({ repository: shipped, pages: [] }), {
+      registryName: 'com.vercel/vercel-mcp',
+      iconOverride: '/brand/mcp/vercel.svg',
+    });
+
+    expect(shipped.events[0]).toMatchObject({
+      action: 'mark',
+      source: 'repo',
+      evidence: { field: 'icon_override', value: '/brand/mcp/vercel.svg' },
+    });
+
+    const measured = fakeRepository({
+      getCatalogServer: async () =>
+        serverRow({ probe_icon_url: 'https://mcp.vercel.com/logo.svg' }),
+    });
+    await adminUpdate(build({ repository: measured, pages: [] }), {
+      registryName: 'com.vercel/vercel-mcp',
+      iconOverride: 'https://mcp.vercel.com/logo.svg',
+    });
+
+    expect(measured.events[0]).toMatchObject({ action: 'mark', source: 'logo_uri' });
+  });
+
+  it('records a copy write with the fields and the registry text it came from', async () => {
+    const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate(
+      {
+        registryName: 'com.vercel/vercel-mcp',
+        nameAr: 'فيرسل',
+        descriptionAr: 'خادم للتطبيقات',
+      },
+      ADMIN
+    );
+
+    expect(repository.events).toHaveLength(1);
+    expect(repository.events[0]).toMatchObject({ action: 'copy', source: 'registry' });
+    expect(repository.events[0]?.evidence).toMatchObject({
+      fields: ['name_ar', 'description_ar'],
+      registry: { title: 'Vercel', description: 'An MCP server for Vercel' },
+    });
+  });
+
+  it('records nothing when the copy saves the text that is already there', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () => serverRow({ title_override: 'Vercel' }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', titleOverride: 'Vercel' });
+
+    expect(repository.events).toEqual([]);
+  });
+
+  it('draws the newest verify or withdraw beside the row', async () => {
+    const repository = fakeRepository({
+      listCatalogServers: async () => ({
+        rows: [serverRow() as unknown as McpCatalogListRow],
+        nextCursor: null,
+      }),
+      latestCatalogVerifications: async () => [
+        {
+          registry_name: 'com.vercel/vercel-mcp',
+          actor: 'agent:mcp-catalog',
+          action: 'verify',
+          source: 'machine',
+          evidence: {},
+          created_at: '2026-11-14T09:00:00.000Z',
+        },
+      ],
+    });
+    const service = build({ repository, pages: [] });
+
+    const page = await service.adminList({ q: '', cursor: null });
+
+    expect(page.servers[0]?.lastVerification).toEqual({
+      action: 'verify',
+      actor: 'agent:mcp-catalog',
+      at: '2026-11-14T09:00:00.000Z',
+    });
   });
 });

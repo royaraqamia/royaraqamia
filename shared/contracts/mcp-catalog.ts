@@ -124,6 +124,24 @@ export const McpCatalogRemoteOptionSchema = z.object({
 
 export type McpCatalogRemoteOption = z.infer<typeof McpCatalogRemoteOptionSchema>;
 
+/**
+ * The newest act the log holds for a row: the date and the actor the Admin
+ * Console draws beside the state (#1293).
+ *
+ * `null` is honest: a row the launch seed published before the log existed has
+ * a date but nobody the log can name, and inventing an actor would be worse than
+ * saying so.
+ */
+export const McpCatalogLastVerificationSchema = z.object({
+  /** What happened: published after the checks passed, or taken back out. */
+  action: z.enum(['verify', 'withdraw']),
+  /** An admin's email, or `agent:mcp-catalog`. */
+  actor: z.string().min(1),
+  at: z.string(),
+});
+
+export type McpCatalogLastVerification = z.infer<typeof McpCatalogLastVerificationSchema>;
+
 /** A catalogue row as the Admin Console draws it, takedown included. */
 export const McpCatalogAdminRowSchema = McpCatalogRowSchema.extend({
   /** The address the mirror keeps: the first remote the policy accepted. */
@@ -166,6 +184,12 @@ export const McpCatalogAdminRowSchema = McpCatalogRowSchema.extend({
   probedAt: z.string().nullable(),
   /** When an admin approved it for the store, or `null` if nobody has. */
   verifiedAt: z.string().nullable(),
+  /**
+   * The newest verify or withdraw in the append-only log. The console draws
+   * this date and actor beside the state; the launch seed's rows predate the
+   * log and answer `null` rather than a made-up name.
+   */
+  lastVerification: McpCatalogLastVerificationSchema.nullable(),
   fetchedAt: z.string(),
 });
 
@@ -233,7 +257,7 @@ export type McpCatalogProbe = z.infer<typeof McpCatalogProbeSchema>;
 export const MCP_CATALOG_ADMIN_COPY = {
   title: 'متجر التطبيقات',
   description:
-    'اعتمد التطبيقات التي تظهر للعضو: لا يظهر في المتجر إلا تطبيق معتمد، وثبت أن ربطه ممكن، وغير موقوف. الإيقاف يحتاج سبباً، ويُرفض به عند بدء الربط.',
+    'افحص التطبيقات التي تظهر للعضو: لا يظهر في المتجر إلا تطبيق اجتاز الفحص، وثبت أن ربطه ممكن، وغير موقوف. الفحص آلي ويُسجَّل باسم من أجراه، والإيقاف يحتاج سبباً ويُرفض به عند بدء الربط.',
   searchPlaceholder: 'ابحث بالاسم أو الوصف...',
   searchLabel: 'بحث في المتجر',
   searchAction: 'بحث',
@@ -246,17 +270,17 @@ export const MCP_CATALOG_ADMIN_COPY = {
   connectableNo: 'لا يمكن ربطه',
   connectableUnknown: 'لم نتحقق بعد',
   verifiedBadge: 'في المتجر',
-  unverifiedBadge: 'غير معتمد',
+  unverifiedBadge: 'غير مفحوص',
   staticClientBadge: 'عميل مسجّل مسبقاً',
-  verifyAction: 'اعتماد',
-  manageVerifiedAction: 'إدارة الاعتماد',
-  unverifyAction: 'إلغاء الاعتماد',
-  verifyTitle: 'اعتماد تطبيق في المتجر',
+  verifyAction: 'فحص',
+  manageVerifiedAction: 'إدارة الفحص',
+  unverifyAction: 'سحب من المتجر',
+  verifyTitle: 'فحص تطبيق ونشره في المتجر',
   verifyDescription:
-    'لن يظهر التطبيق للعضو قبل اعتماده. الاعتماد يحتاج أن يكون الربط ممكّناً بعد الفحص، وأن يكون اسمه ووصفه وشعاره واضحين.',
+    'لن يظهر التطبيق للعضو قبل اجتياز الفحص. الفحص يشترط أن يكون الربط ممكّناً وأن يكون للتطبيق شعار، ويُسجَّل في السجل باسم من أجراه.',
   manageVerifiedDescription:
-    'غيّر ترتيب الظهور، أو ألغِ الاعتماد ليختفي التطبيق من المتجر. لا يتأثر ربط قائم به.',
-  verifyNeedsConnectable: 'لا يمكن اعتماد تطبيق لم يثبت أن ربطه ممكن. افحصه الآن ثم أعد المحاولة.',
+    'غيّر ترتيب الظهور، أو اسحب التطبيق من المتجر. لا يتأثر ربط قائم به. السحب يوقف ظهوره فقط، ولا يحذف التطبيق.',
+  verifyNeedsConnectable: 'لا يمكن نشر تطبيق لم يثبت أن ربطه ممكن. افحصه الآن ثم أعد المحاولة.',
   probeAction: 'فحص الآن',
   probeDone: 'تم الفحص.',
   probeFailed: 'تعذّر إكمال الفحص.',
@@ -278,7 +302,11 @@ export const MCP_CATALOG_ADMIN_COPY = {
   markPreviewHint: 'هكذا تظهر العلامة في المتجر.',
   markClear: 'اترك شعار المزوّد',
   noMarkBadge: 'بلا شعار',
-  verifyNeedsMark: 'لا يمكن اعتماد تطبيق بلا شعار: بطاقته سترسم حرفاً. أضف الشعار ثم أعد المحاولة.',
+  verifyNeedsMark: 'لا يمكن نشر تطبيق بلا شعار: بطاقته سترسم حرفاً. أضف الشعار ثم أعد المحاولة.',
+  lastVerificationLabel: 'آخر فحص',
+  lastVerificationByLabel: 'أجراه',
+  lastVerificationWithdrawn: 'سحب من المتجر',
+  lastVerificationMissing: 'لا سجل لهذا الإجراء بعد',
   blockTitle: 'إيقاف تطبيق',
   blockDescription: 'لن يظهر التطبيق في المتجر، ولن يبدأ ربطه. اكتب السبب: هو ما يقرأه من يحاول.',
   blockReasonLabel: 'سبب الإيقاف',

@@ -16,6 +16,7 @@ import { createMcpIconService } from '../marketplace/icon-service';
 const VERIFIED: McpCatalogServerRecord = {
   registry_name: 'com.vercel/vercel-mcp',
   title: 'Vercel',
+  title_override: null,
   description: 'An MCP server for Vercel',
   name_ar: null,
   description_ar: null,

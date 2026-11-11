@@ -119,6 +119,8 @@ function fakeRepository(
     listVerifiedAddresses: async () => [],
     saveCatalogProbe: async () => undefined,
     updateCatalogServer: async () => undefined,
+    recordCatalogEvent: async () => undefined,
+    latestCatalogVerifications: async () => [],
     verifyLaunchSet: async () => 0,
     setTitleOverrideIfEmpty: async () => undefined,
     setIconOverrideIfEmpty: async () => undefined,

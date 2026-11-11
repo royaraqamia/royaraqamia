@@ -53,6 +53,13 @@ import {
 
 type RowActionMode = 'block' | 'unblock' | 'arabic' | 'mark' | 'verify' | 'remote';
 
+/** The log's dates, in Damascus time and Latin digits (ADR-0054). */
+const CHECKED_AT = new Intl.DateTimeFormat('ar-SY-u-nu-latn', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'Asia/Damascus',
+});
+
 interface RowAction {
   row: McpCatalogAdminRow;
   mode: RowActionMode;
@@ -288,6 +295,26 @@ export function McpCatalogAdminView() {
                   {row.blocked && row.blockedReason && (
                     <p className="mt-1 text-xs text-destructive">{row.blockedReason}</p>
                   )}
+
+                  {/* The state without its actor is the thing #1293 exists to
+                      delete: a date nobody can attribute. */}
+                  {row.lastVerification ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {row.lastVerification.action === 'withdraw'
+                        ? COPY.lastVerificationWithdrawn
+                        : COPY.lastVerificationLabel}
+                      {': '}
+                      {CHECKED_AT.format(new Date(row.lastVerification.at))} ·{' '}
+                      {COPY.lastVerificationByLabel}{' '}
+                      <span dir="ltr">{row.lastVerification.actor}</span>
+                    </p>
+                  ) : row.verifiedAt ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {COPY.lastVerificationLabel}
+                      {': '}
+                      {CHECKED_AT.format(new Date(row.verifiedAt))} · {COPY.lastVerificationMissing}
+                    </p>
+                  ) : null}
 
                   <p className="mt-2 truncate text-xs text-muted-foreground" dir="ltr">
                     {row.remoteOverride ?? row.remoteUrl}

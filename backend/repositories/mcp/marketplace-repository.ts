@@ -19,6 +19,8 @@ import { catalogSearchPattern, decodeCatalogCursor, encodeCatalogCursor } from '
 
 const CATALOG_TABLE = 'mcp_catalog_servers';
 const CATALOG_SYNC_TABLE = 'mcp_catalog_sync_state';
+const CATALOG_EVENTS_TABLE = 'mcp_catalog_verification_events';
+const CATALOG_LATEST_VERIFICATIONS_VIEW = 'mcp_catalog_latest_verifications';
 const CONNECTIONS_TABLE = 'mcp_connections';
 const CREDENTIALS_TABLE = 'mcp_connection_credentials';
 const TOOLS_TABLE = 'mcp_connection_tools';
@@ -29,6 +31,8 @@ const REGISTRATIONS_TABLE = 'mcp_oauth_client_registrations';
 export interface McpCatalogServerRecord {
   registry_name: string;
   title: string | null;
+  /** The drawn name an admin wrote; the copy event compares it. */
+  title_override: string | null;
   description: string | null;
   name_ar: string | null;
   description_ar: string | null;
@@ -120,6 +124,36 @@ export interface McpCatalogSyncStateRecord {
   last_run_at: string | null;
   last_run_rows: number;
   last_error: string | null;
+}
+
+/**
+ * One act on a catalogue row, as it is appended to the log (#1293).
+ *
+ * The record is the answer to "who did this, on what evidence": `actor` is an
+ * admin's email or `agent:mcp-catalog`, `source` is where a written value came
+ * from, and `evidence` names the field, the source URL or the checks a decision
+ * rested on. It is append-only in the database, so a correction is a new event.
+ */
+export type McpCatalogEventAction = 'verify' | 'withdraw' | 'mark' | 'copy' | 'skip';
+
+export type McpCatalogEventSource =
+  'logo_uri' | 'brand' | 'simple_icons' | 'repo' | 'registry' | 'machine' | 'none';
+
+export interface McpCatalogEventInput {
+  registryName: string;
+  actor: string;
+  action: McpCatalogEventAction;
+  source: McpCatalogEventSource;
+  evidence: Json;
+}
+
+export interface McpCatalogEventRecord {
+  registry_name: string;
+  actor: string;
+  action: McpCatalogEventAction;
+  source: McpCatalogEventSource;
+  evidence: Json;
+  created_at: string;
 }
 
 /** The columns a list selects; one list, two audiences. */
@@ -330,6 +364,18 @@ export interface McpMarketplaceRepository {
   setTitleOverrideIfEmpty(registryName: string, title: string): Promise<void>;
 
   /**
+   * Appends one act to the catalogue's log. The table refuses an update and a
+   * delete, so this is the only write that exists.
+   */
+  recordCatalogEvent(event: McpCatalogEventInput): Promise<void>;
+
+  /**
+   * The newest verify or withdraw per named row: the date and actor the Admin
+   * Console draws beside a row's state. One view query, not one per row.
+   */
+  latestCatalogVerifications(registryNames: string[]): Promise<McpCatalogEventRecord[]>;
+
+  /**
    * The curated brand mark, written only where nobody has one: the same seam as
    * the title, so a later admin edit or a code change is not overwritten by the
    * sync that runs every day.
@@ -475,7 +521,7 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
         .select(
-          'registry_name, title, description, name_ar, description_ar, remote_url, remote_override, status, blocked_at, blocked_reason, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, verified_at, connectable, connectable_reason, probed_at'
+          'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, blocked_at, blocked_reason, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, verified_at, connectable, connectable_reason, probed_at'
         )
         .eq('registry_name', registryName)
         .maybeSingle();
@@ -718,6 +764,32 @@ export function createMcpMarketplaceRepository(
         .eq('registry_name', registryName)
         .is('title_override', null);
       if (error) throw error;
+    },
+
+    async recordCatalogEvent(event) {
+      const { error } = await supabase.from(CATALOG_EVENTS_TABLE).insert({
+        registry_name: event.registryName,
+        actor: event.actor,
+        action: event.action,
+        source: event.source,
+        evidence: event.evidence,
+      });
+      if (error) throw error;
+    },
+
+    async latestCatalogVerifications(registryNames) {
+      if (registryNames.length === 0) return [];
+
+      const found: McpCatalogEventRecord[] = [];
+      for (const batch of chunk(registryNames, CATALOG_LOOKUP_BATCH)) {
+        const { data, error } = await supabase
+          .from(CATALOG_LATEST_VERIFICATIONS_VIEW)
+          .select('registry_name, actor, action, source, evidence, created_at')
+          .in('registry_name', batch);
+        if (error) throw error;
+        found.push(...((data ?? []) as McpCatalogEventRecord[]));
+      }
+      return found;
     },
 
     async setIconOverrideIfEmpty(registryName, icon) {
