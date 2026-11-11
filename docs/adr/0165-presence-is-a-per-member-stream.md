@@ -61,7 +61,7 @@ draw one word. It also cannot draw a recording, because the old channel has no e
 - A recording is visible to the peer for up to six seconds after a crashed sender, which is the same
   bound a typed word already had.
 - The copy moved into the pair: `shared/copy/chat-thread.json` and `shared/copy/chats-list.json` carry
-  «يكتب الآن...» and «يُسجِّل رسالة صوتيَّة...», so the app and the site cannot word them differently.
+  «يكتب الآن...» and «يُسجِّل رسالة صوتيَّة...», so the app and the site cannot word them differently.
 
 ## Alternatives considered
 
