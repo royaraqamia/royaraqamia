@@ -2,8 +2,10 @@
 
 import { useEffect, useState, memo } from 'react';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
-import { Download, Loader2 } from 'lucide-react';
+import { LoaderCircle, Share2 } from 'lucide-react';
 import { AnalyticsChart } from './analytics-chart';
+import { LINK_ANALYTICS_EXPORT_COPY } from './analytics-export-copy';
+import { shareOrDownloadCsv } from './csv-export';
 import {
   analyticsRangeToFilter,
   LinkAnalyticsContent,
@@ -20,9 +22,9 @@ interface LinkAnalyticsDrawerProps {
   analytics: AnalyticsData | null;
   status: LinkStatus;
   loadAnalytics: (range?: AnalyticsRangeFilter) => Promise<void>;
-  exportCsv: (range: AnalyticsRangeFilter | undefined, filename: string) => Promise<boolean>;
+  exportCsv: (range: AnalyticsRangeFilter | undefined) => Promise<string | null>;
   exportingCsv: boolean;
-  exportCsvError: string | null;
+  exportCsvFailed: boolean;
   code: string;
 }
 
@@ -35,7 +37,7 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
   loadAnalytics,
   exportCsv,
   exportingCsv,
-  exportCsvError,
+  exportCsvFailed,
   code,
 }: LinkAnalyticsDrawerProps) {
   const reducedMotion = useReducedMotion();
@@ -47,8 +49,14 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
     }
   }, [isExpanded, range, loadAnalytics]);
 
-  const handleExport = () => {
-    void exportCsv(analyticsRangeToFilter(range), `linksnap-${code}-${range}.csv`);
+  const handleExport = async () => {
+    const content = await exportCsv(analyticsRangeToFilter(range));
+    if (content === null) return;
+    await shareOrDownloadCsv(
+      `linksnap-${code}-${range}.csv`,
+      content,
+      LINK_ANALYTICS_EXPORT_COPY.exportTitle
+    );
   };
 
   return (
@@ -71,23 +79,29 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
               actions={
                 <button
                   type="button"
-                  onClick={handleExport}
+                  onClick={() => void handleExport()}
                   disabled={exportingCsv || (analytics?.totalClicks ?? 0) === 0}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-busy={exportingCsv}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {exportingCsv ? (
-                    <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+                    <LoaderCircle aria-hidden="true" className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Download aria-hidden="true" className="w-4 h-4" />
+                    <Share2 aria-hidden="true" className="w-4 h-4" />
                   )}
-                  تصدير CSV
+                  {exportingCsv
+                    ? LINK_ANALYTICS_EXPORT_COPY.exporting
+                    : LINK_ANALYTICS_EXPORT_COPY.exportAction}
                 </button>
               }
             />
 
-            {exportCsvError ? (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center gap-1.5">
-                <span>{exportCsvError}</span>
+            {exportCsvFailed ? (
+              <div
+                role="alert"
+                className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center gap-1.5"
+              >
+                <span>{LINK_ANALYTICS_EXPORT_COPY.exportFailed}</span>
               </div>
             ) : null}
 

@@ -195,3 +195,18 @@ data class LinksnapAnalyticsResponseAnalyticsDeviceBrowsersItem(
     val count: Long,
     val percent: Long,
 )
+
+@Serializable
+data class LinksnapAnalyticsExportResponse(
+    val rows: List<LinksnapAnalyticsExportResponseRowsItem>,
+)
+
+@Serializable
+data class LinksnapAnalyticsExportResponseRowsItem(
+    val clickedAt: String,
+    val referrer: String?,
+    val ipCountry: String?,
+    val device: String,
+    val os: String,
+    val browser: String,
+)

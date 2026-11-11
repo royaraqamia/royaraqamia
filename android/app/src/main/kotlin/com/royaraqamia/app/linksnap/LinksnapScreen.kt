@@ -101,6 +101,7 @@ fun LinksnapScreen(
     modifier: Modifier = Modifier,
     onCopy: (String) -> Unit = {},
     onShare: (String) -> Unit = {},
+    onShareCsv: (String, String) -> Unit = { _, _ -> },
     onSignIn: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -117,6 +118,9 @@ fun LinksnapScreen(
     var analyticsRange by remember { mutableStateOf(LinksnapAnalyticsRange.Last7Days) }
     var analyticsState by remember {
         mutableStateOf<LinksnapAnalyticsUiState>(LinksnapAnalyticsUiState.Loading)
+    }
+    var exportState by remember {
+        mutableStateOf<LinksnapAnalyticsExportUiState>(LinksnapAnalyticsExportUiState.Idle)
     }
     val snackbar = remember { SnackbarHostState() }
 
@@ -144,6 +148,7 @@ fun LinksnapScreen(
      */
     fun loadAnalytics(code: String, range: LinksnapAnalyticsRange) {
         scope.launch {
+            exportState = LinksnapAnalyticsExportUiState.Idle
             if (!Connectivity.isOnline(context)) {
                 analyticsState = LinksnapAnalyticsUiState.Offline
                 return@launch
@@ -175,6 +180,29 @@ fun LinksnapScreen(
     fun changeAnalyticsRange(range: LinksnapAnalyticsRange) {
         analyticsRange = range
         analyticsCode?.let { loadAnalytics(it, range) }
+    }
+
+    /**
+     * The CSV action (#964): the page's own export route, then the platform's
+     * share sheet. It is not queued - an export answers the member who asked -
+     * and a failure keeps the drawer open with the page's failure sentence
+     * rather than sharing an empty file.
+     */
+    fun exportAnalytics(code: String, range: LinksnapAnalyticsRange) {
+        scope.launch {
+            exportState = LinksnapAnalyticsExportUiState.Busy
+            val from = Instant.now().minus(range.days, ChronoUnit.DAYS).toString()
+            when (val answer = repository.analyticsExport(code, from = from)) {
+                is ApiResult.Success -> {
+                    onShareCsv(
+                        "linksnap-$code-${range.days}d.csv",
+                        LinksnapAnalyticsCsv.build(answer.value),
+                    )
+                    exportState = LinksnapAnalyticsExportUiState.Idle
+                }
+                is ApiResult.Failure -> exportState = LinksnapAnalyticsExportUiState.Failed
+            }
+        }
     }
 
     /**
@@ -346,6 +374,10 @@ fun LinksnapScreen(
             analyticsRange = analyticsRange,
             onAnalyticsRange = ::changeAnalyticsRange,
             onAnalyticsLink = ::toggleAnalytics,
+            exportState = exportState,
+            onExportAnalytics = {
+                analyticsCode?.let { exportAnalytics(it, analyticsRange) }
+            },
             onEditLink = { editing = it },
             onQrLink = ::openQr,
             onDeleteLink = ::deleteLink,
@@ -413,6 +445,8 @@ internal fun LinksnapAccountList(
     analyticsRange: LinksnapAnalyticsRange = LinksnapAnalyticsRange.Last7Days,
     onAnalyticsRange: (LinksnapAnalyticsRange) -> Unit = {},
     onAnalyticsLink: (LinksnapLinkRow) -> Unit = {},
+    exportState: LinksnapAnalyticsExportUiState = LinksnapAnalyticsExportUiState.Idle,
+    onExportAnalytics: () -> Unit = {},
     onEditLink: (LinksnapLinkRow) -> Unit = {},
     onQrLink: (LinksnapLinkRow) -> Unit = {},
     onDeleteLink: (LinksnapLinkRow) -> Unit = {},
@@ -461,6 +495,8 @@ internal fun LinksnapAccountList(
                         analyticsRange = analyticsRange,
                         onAnalyticsRange = onAnalyticsRange,
                         onAnalytics = { onAnalyticsLink(row) },
+                        exportState = exportState,
+                        onExport = onExportAnalytics,
                         onEdit = { onEditLink(row) },
                         onQr = { onQrLink(row) },
                         onDelete = { onDeleteLink(row) },
@@ -490,6 +526,8 @@ private fun LinksnapRowCard(
     analyticsState: LinksnapAnalyticsUiState,
     analyticsRange: LinksnapAnalyticsRange,
     onAnalyticsRange: (LinksnapAnalyticsRange) -> Unit,
+    exportState: LinksnapAnalyticsExportUiState,
+    onExport: () -> Unit,
     onToggleSelect: () -> Unit,
     onCopy: () -> Unit,
     onShare: () -> Unit,
@@ -551,6 +589,8 @@ private fun LinksnapRowCard(
                 status = LinksnapStatus.of(row, System.currentTimeMillis()),
                 range = analyticsRange,
                 onRange = onAnalyticsRange,
+                exportState = exportState,
+                onExport = onExport,
             )
         }
     }

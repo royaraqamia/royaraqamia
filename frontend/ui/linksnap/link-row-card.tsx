@@ -80,7 +80,7 @@ export const LinkRowCard = memo(function LinkRowCard({
     analyticsLoading,
     analyticsError,
     exportingCsv,
-    exportCsvError,
+    exportCsvFailed,
     loadAnalytics,
     exportCsv,
     resetAnalytics,
@@ -341,7 +341,7 @@ export const LinkRowCard = memo(function LinkRowCard({
           loadAnalytics={loadAnalytics}
           exportCsv={exportCsv}
           exportingCsv={exportingCsv}
-          exportCsvError={exportCsvError}
+          exportCsvFailed={exportCsvFailed}
           code={code}
         />
       </div>

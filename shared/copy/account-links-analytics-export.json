@@ -1,0 +1,22 @@
+{
+  "surface": "account-links",
+  "component": "account-links-analytics-export",
+  "web": {
+    "file": "frontend/ui/linksnap/analytics-export-copy.ts",
+    "export": "LINK_ANALYTICS_EXPORT_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapAnalyticsExportCopy.kt",
+    "object": "LinksnapAnalyticsExportCopy"
+  },
+  "notes": {
+    "source": "The owned link's analytics CSV action, in both clients (#964). The page's `frontend/ui/linksnap/link-analytics-drawer.tsx` is the reference: the action's label, the sentence it shows while the file is prepared, the share sheet's title, and the failure sentence. The app shares the file where the page downloads one, so both say sharing rather than exporting.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "exportAction": "مشاركة ملف CSV",
+    "exportTitle": "مشاركة ملف CSV",
+    "exporting": "جاري تجهيز الملف…",
+    "exportFailed": "فشل تصدير التَّحليلات"
+  }
+}

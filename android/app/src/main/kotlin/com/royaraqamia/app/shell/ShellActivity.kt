@@ -49,6 +49,7 @@ import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.home.HomeServicesController
 import com.royaraqamia.app.home.PreferencesHomeServicesStore
+import com.royaraqamia.app.linksnap.LinksnapAnalyticsExportCopy
 import com.royaraqamia.app.linksnap.LinksnapScreen
 import com.royaraqamia.app.linksnap.LinksnapRoutes
 import com.royaraqamia.app.linksnap.LinksnapShortenerScreen
@@ -394,6 +395,13 @@ class ShellActivity : ComponentActivity() {
                                     signedIn = signedIn,
                                     onCopy = ::copyToClipboard,
                                     onShare = ::shareText,
+                                    onShareCsv = { name, content ->
+                                        shareCsv(
+                                            name,
+                                            content,
+                                            LinksnapAnalyticsExportCopy.EXPORT_TITLE,
+                                        )
+                                    },
                                     onSignIn = ::showSignIn,
                                 )
                             // The certificate check (#658): public by design, so it
@@ -874,14 +882,20 @@ class ShellActivity : ComponentActivity() {
     }
 
     /**
-     * The CSV the page downloads, as the app's share sheet (#961).
+     * The CSV the page downloads, as the app's share sheet (#961, #964).
      *
      * The app has no Downloads folder it owns, so it writes the same file to its
-     * own cache and hands the platform a read grant on exactly that file. The
-     * bytes are the page's export route's, not a second CSV built here, so a
-     * member shares the same rows and columns on both clients.
+     * own cache and hands the platform a read grant on exactly that file.
+     * SpendTrack hands over the route's own bytes; LinkSnap hands over the rows
+     * its route returns, written with the page's header and escaping
+     * (`LinksnapAnalyticsCsv`), so a member shares the same rows and columns on
+     * both clients.
      */
-    private fun shareCsv(fileName: String, content: String) {
+    private fun shareCsv(
+        fileName: String,
+        content: String,
+        title: String = SpendtrackCsvCopy.EXPORT_TITLE,
+    ) {
         runCatching {
             val file = File(cacheDir, fileName)
             file.writeText(content)
@@ -892,7 +906,7 @@ class ShellActivity : ComponentActivity() {
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
-            startActivity(Intent.createChooser(send, SpendtrackCsvCopy.EXPORT_TITLE))
+            startActivity(Intent.createChooser(send, title))
         }
     }
 

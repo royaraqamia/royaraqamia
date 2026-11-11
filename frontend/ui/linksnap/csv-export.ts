@@ -32,3 +32,26 @@ export function downloadCsv(filename: string, content: string): void {
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Hands the file to the platform's share sheet where it can, and downloads it
+ * where it cannot (#964). The app always shares; the page shares when the Web
+ * Share API accepts a file, so the action's label reads as sharing on both
+ * clients and the same bytes leave the browser either way.
+ */
+export async function shareOrDownloadCsv(
+  filename: string,
+  content: string,
+  title: string
+): Promise<void> {
+  const file = new File([`\uFEFF${content}`], filename, { type: 'text/csv;charset=utf-8;' });
+  if (typeof navigator !== 'undefined' && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title });
+      return;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+    }
+  }
+  downloadCsv(filename, content);
+}

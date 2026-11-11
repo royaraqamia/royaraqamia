@@ -7,14 +7,14 @@ import {
   type AnalyticsRangeFilter,
   type LinkAnalyticsSummary,
 } from '@/frontend/api/linksnap';
-import { buildCsv, downloadCsv } from '@/frontend/ui/linksnap/csv-export';
+import { buildCsv } from '@/frontend/ui/linksnap/csv-export';
 
 export function useLinkAnalytics(code: string, token: string) {
   const [analytics, setAnalytics] = useState<LinkAnalyticsSummary | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [exportingCsv, setExportingCsv] = useState(false);
-  const [exportCsvError, setExportCsvError] = useState<string | null>(null);
+  const [exportCsvFailed, setExportCsvFailed] = useState(false);
 
   const loadAnalytics = useCallback(
     async (range?: AnalyticsRangeFilter) => {
@@ -33,16 +33,15 @@ export function useLinkAnalytics(code: string, token: string) {
   );
 
   const exportCsv = useCallback(
-    async (range: AnalyticsRangeFilter | undefined, filename: string): Promise<boolean> => {
+    async (range: AnalyticsRangeFilter | undefined): Promise<string | null> => {
       setExportingCsv(true);
-      setExportCsvError(null);
+      setExportCsvFailed(false);
       try {
         const rows = await exportAnalyticsCsv(code, token, range);
-        downloadCsv(filename, buildCsv(rows));
-        return true;
-      } catch (err: unknown) {
-        setExportCsvError(err instanceof Error ? err.message : 'فشل في تصدير البيانات.');
-        return false;
+        return buildCsv(rows);
+      } catch {
+        setExportCsvFailed(true);
+        return null;
       } finally {
         setExportingCsv(false);
       }
@@ -57,7 +56,7 @@ export function useLinkAnalytics(code: string, token: string) {
     analyticsLoading,
     analyticsError,
     exportingCsv,
-    exportCsvError,
+    exportCsvFailed,
     loadAnalytics,
     exportCsv,
     resetAnalytics,
