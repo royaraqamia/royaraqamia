@@ -77,7 +77,10 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
   const credentials = new Map<string, McpConnectionCredentialsRecord>();
   const tools = new Map<string, McpConnectionToolRecord[]>();
   const attempts = new Map<string, McpConnectAttemptRecord>();
-  const registrations = new Map<string, { client_id: string; client_secret_enc: string | null }>();
+  const registrations = new Map<
+    string,
+    { client_id: string; client_secret_enc: string | null; scope: string }
+  >();
 
   const repository: McpMarketplaceRepository = {
     getCatalogServer: async () => CATALOG,
@@ -192,8 +195,8 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
         ? {
             authorization_server: server,
             redirect_uri: REDIRECT,
-            ...found,
             registration_kind: 'dcr',
+            ...found,
           }
         : null;
     },
@@ -201,6 +204,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
       registrations.set(input.authorization_server, {
         client_id: input.client_id,
         client_secret_enc: input.client_secret_enc,
+        scope: input.scope,
       });
     },
     // The catalogue's own methods: this flow does not touch them, but the
@@ -681,5 +685,111 @@ describe('pre-registered client', () => {
 
     expect(remote.discover).toHaveBeenCalledTimes(1);
     expect(remote.register).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('the scope set a row asks for (#1230)', () => {
+  // Supabase publishes 13 scopes and grants all of them to a client registered
+  // without one; the authorization URL's `scope` is ignored there, so the ask
+  // that lands is the registration's.
+  const SUPABASE: McpCatalogServerRecord = {
+    ...CATALOG,
+    registry_name: 'com.supabase/mcp',
+    title: 'Supabase',
+    remote_url: 'https://mcp.supabase.com/mcp',
+  };
+
+  const SUPABASE_DISCOVERY: McpDiscovery = {
+    ...DISCOVERY,
+    resource: 'https://mcp.supabase.com/mcp',
+    authorizationServer: 'https://api.supabase.com',
+    authorizationEndpoint: 'https://api.supabase.com/v1/oauth/authorize',
+    tokenEndpoint: 'https://api.supabase.com/v1/oauth/token',
+    registrationEndpoint: 'https://api.supabase.com/platform/oauth/apps/register',
+    scopes: ['organizations:read', 'projects:read', 'secrets:read', 'storage:write'],
+  };
+
+  function supabaseRepository() {
+    return fakeRepository({ getCatalogServer: async () => SUPABASE });
+  }
+
+  it('sends it at registration and on the consent the member reads', async () => {
+    const { repository } = supabaseRepository();
+    const remote = fakeRemote({ discover: async () => SUPABASE_DISCOVERY });
+    const service = createMcpConnectService({ repository, remote });
+
+    await service.start({
+      userId: 'user-1',
+      registryName: SUPABASE.registry_name,
+      redirectUri: REDIRECT,
+    });
+
+    // Only what the provider still publishes: `database:write` is in the row's
+    // set and absent from this discovery, so it is dropped rather than asked for.
+    expect(remote.register).toHaveBeenCalledWith(
+      expect.objectContaining({ scopes: ['organizations:read', 'projects:read'] })
+    );
+    expect(remote.authorizeUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ scopes: ['organizations:read', 'projects:read'] })
+    );
+  });
+
+  it('replaces a cached client that was registered for another set', async () => {
+    const { repository } = supabaseRepository();
+    const remote = fakeRemote({ discover: async () => SUPABASE_DISCOVERY });
+    const reading: McpMarketplaceRepository = {
+      ...repository,
+      getRegistration: async (server) =>
+        server === SUPABASE_DISCOVERY.authorizationServer
+          ? {
+              authorization_server: server,
+              redirect_uri: REDIRECT,
+              client_id: 'old-client',
+              client_secret_enc: null,
+              registration_kind: 'dcr',
+              scope: 'database:read',
+            }
+          : null,
+    };
+    const service = createMcpConnectService({ repository: reading, remote });
+
+    await service.start({
+      userId: 'user-1',
+      registryName: SUPABASE.registry_name,
+      redirectUri: REDIRECT,
+    });
+
+    expect(remote.register).toHaveBeenCalledTimes(1);
+    expect(remote.authorizeUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ client: { clientId: 'client-1', clientSecret: null } })
+    );
+  });
+
+  it('refuses a callback whose client was made for another set', async () => {
+    const { repository } = supabaseRepository();
+    let stale = false;
+    const reading: McpMarketplaceRepository = {
+      ...repository,
+      getRegistration: async (server, redirect) => {
+        const row = await repository.getRegistration(server, redirect);
+        return stale && row ? { ...row, scope: 'database:read' } : row;
+      },
+    };
+    const remote = fakeRemote({ discover: async () => SUPABASE_DISCOVERY });
+    const service = createMcpConnectService({ repository: reading, remote });
+
+    const { authorizeUrl } = await service.start({
+      userId: 'user-1',
+      registryName: SUPABASE.registry_name,
+      redirectUri: REDIRECT,
+    });
+    const state = new URL(authorizeUrl).searchParams.get('state') ?? '';
+    stale = true;
+
+    // The callback may not register: a consent coming back through a client made
+    // for a different set would grant the old one, so the member starts again.
+    await expect(
+      service.complete({ userId: 'user-1', state, code: 'code-1' })
+    ).rejects.toMatchObject({ failure: 'registration' });
   });
 });

@@ -76,6 +76,16 @@ export const McpCatalogRowSchema = z.object({
   connectable: z.boolean().nullable(),
   connectableReason: McpCatalogConnectReasonSchema.nullable(),
   publishedAt: z.string().nullable(),
+  /**
+   * The permissions we will ask this server for, in its own names, so the sheet
+   * can say what the consent screen will contain before the member leaves
+   * (#1230). Empty means the row carries no measured set: the provider's own
+   * default is the grant, and the sheet says that instead of a list.
+   *
+   * It is the *ask*, not the grant: the flow drops a scope the provider no
+   * longer advertises, so the granted set can be a subset.
+   */
+  requestedScopes: z.array(z.string()),
 });
 
 export type McpCatalogRow = z.infer<typeof McpCatalogRowSchema>;

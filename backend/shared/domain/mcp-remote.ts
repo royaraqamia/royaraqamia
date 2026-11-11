@@ -47,7 +47,46 @@ export type McpRemoteFailure =
    * — nothing on this side can repair it, and saying "try again" would be
    * advice that can never work.
    */
-  | 'reauth';
+  | 'reauth'
+  /**
+   * The token is good and the scope is not: RFC 6750's `insufficient_scope`.
+   * Refreshing cannot repair it — the refresh returns the same grant — so this
+   * is not `unauthorized`, and the member is not asked to reconnect a
+   * connection that is still alive. What they are told is the permission the
+   * provider named, and the repair is a wider consent (`McpRemoteError.missingScope`).
+   */
+  | 'scope';
+
+/**
+ * The RFC 6750 challenge a refused call carries, read for what this side can act
+ * on: which refusal it is, and which permission was missing.
+ *
+ * Measured against Supabase (2026-11-11): `403` plus
+ * `Bearer error="insufficient_scope", scope="database:write"`. A `401`, or a
+ * `403` carrying `invalid_token`, is an expired or revoked token instead — the
+ * two are different repairs, so they are different answers.
+ */
+export function readAuthChallenge(header: string | null): {
+  error: string | null;
+  scope: string | null;
+} {
+  if (!header) return { error: null, scope: null };
+  return {
+    error: /error="([^"]+)"/.exec(header)?.[1] ?? null,
+    scope: /\bscope="([^"]+)"/.exec(header)?.[1] ?? null,
+  };
+}
+
+/**
+ * What the member reads when a tool refused for a scope. It names the
+ * permission the provider asked for, because "permission" alone gives them
+ * nothing to approve, and it says what to do about it.
+ */
+export function scopeRequirementSentence(scope: string | null): string {
+  return scope
+    ? `هذا التطبيق يحتاج صلاحية «${scope}» لأداء هذه العملية، ولم تُمنح عند الربط. أعد الربط ووافق عليها.`
+    : 'هذا التطبيق يحتاج صلاحية إضافية لأداء هذه العملية، ولم تُمنح عند الربط. أعد الربط ووافق عليها.';
+}
 
 /**
  * Who we are at a provider: the pair the flow stores encrypted, plus the method
@@ -94,7 +133,9 @@ export class McpRemoteError extends Error {
   constructor(
     readonly failure: McpRemoteFailure,
     message: string,
-    readonly cause?: unknown
+    readonly cause?: unknown,
+    /** The permission a `scope` failure named, when the provider named one. */
+    readonly missingScope?: string | null
   ) {
     super(message);
     this.name = 'McpRemoteError';

@@ -209,6 +209,40 @@ describe('the member’s connections', () => {
     expect(listed.map((row) => row.id)).toEqual([CONNECTION_ID]);
   });
 
+  it('carries the grant the provider issued, as it issued it (#1230)', async () => {
+    const { repository } = fakeRepository({
+      credentials: {
+        connection_id: CONNECTION_ID,
+        authorization_server: 'https://api.supabase.com',
+        token_endpoint: 'https://api.supabase.com/v1/oauth/token',
+        registration_kind: 'dcr',
+        client_id: 'client-1',
+        client_secret_enc: null,
+        access_token_enc: 'sealed',
+        refresh_token_enc: null,
+        scope: 'database:read projects:read  organizations:read',
+        expires_at: '2026-11-12T10:00:00.000Z',
+        issued_at: '2026-11-11T10:00:00.000Z',
+        refresh_claimed_at: null,
+        metadata: null,
+      },
+    });
+    const service = createMcpConnectionService({ repository, remote: fakeRemote() });
+
+    const detail = await service.detail(USER, CONNECTION_ID);
+
+    expect(detail?.scopes).toEqual(['database:read', 'projects:read', 'organizations:read']);
+  });
+
+  it('answers an empty grant for a connection that stored none', async () => {
+    const { repository } = fakeRepository({ credentials: null });
+    const service = createMcpConnectionService({ repository, remote: fakeRemote() });
+
+    const detail = await service.detail(USER, CONNECTION_ID);
+
+    expect(detail?.scopes).toEqual([]);
+  });
+
   it('marks a tool the last tool list did not see as stale, not gone', async () => {
     const { repository } = fakeRepository({
       tools: [

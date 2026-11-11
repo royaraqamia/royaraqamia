@@ -167,6 +167,24 @@ export function createMcpAppToolsService({
           ...(signal ? { signal } : {}),
         });
       } catch (error) {
+        // A scope the grant never had is a fact about the consent, not about
+        // the token: the row keeps its state and gains the sentence naming the
+        // permission, so the screen can offer the wider consent the member has
+        // to approve. Refreshing here would only spend a refresh to be refused
+        // again, and marking it `needs_reauth` would say the grant is dead when
+        // it is alive and merely narrow.
+        if (error instanceof McpRemoteError && error.failure === 'scope') {
+          await repository
+            .updateConnection(connection.id, { last_error: error.message })
+            .catch((writeError: unknown) => {
+              logger.warn('MCP marketplace: scope refusal not recorded', {
+                connectionId: connection.id,
+                error: String(writeError),
+              });
+            });
+          throw error;
+        }
+
         // A token the server refused may simply be one we thought was valid:
         // spend a refresh and ask once more, and only then call it a revocation.
         if (!(error instanceof McpRemoteError) || error.failure !== 'unauthorized') throw error;

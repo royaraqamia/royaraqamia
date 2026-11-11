@@ -404,6 +404,26 @@ describe('the search', () => {
       connectableReason: 'no_registration',
     });
   });
+
+  it('carries the permissions the row asks for, and none for an unmeasured row (#1230)', async () => {
+    const first = listRows[0]!;
+    const repository = fakeRepository({
+      listCatalogServers: async () => ({
+        rows: [{ ...first, registry_name: 'com.supabase/mcp' }, first],
+        nextCursor: null,
+      }),
+    });
+    const service = build({ repository, pages: [] });
+
+    const page = await service.search({ q: '', cursor: null });
+
+    // The sheet reads this before the member leaves for the provider's own
+    // consent screen, so it is the ask — the flow still drops what the provider
+    // stops advertising.
+    expect(page.servers[0]?.requestedScopes).toContain('database:read');
+    expect(page.servers[0]?.requestedScopes).not.toContain('secrets:read');
+    expect(page.servers[1]?.requestedScopes).toEqual([]);
+  });
 });
 
 describe('the takedown and the overrides', () => {

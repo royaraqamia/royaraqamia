@@ -36,6 +36,7 @@ const DEAD_GRANT = {
   connectedAt: '2026-11-21T10:00:00.000Z',
   lastUsedAt: null,
   lastError: 'انتهت صلاحية الوصول إلى التطبيق.',
+  scopes: [],
   tools: [],
 };
 
@@ -66,12 +67,62 @@ describe('a connection whose grant expired', () => {
     expect(mocks.startMcpConnection).toHaveBeenCalledWith('io.example/notion');
   });
 
-  it('draws no reconnect button while the connection is well', async () => {
+  it('draws no second reconnect control while the grant is dead', async () => {
     mocks.getMcpConnection.mockResolvedValue({ ...DEAD_GRANT, status: 'active', lastError: null });
 
     render(<McpConnectionView connectionId="connection-1" connected={false} />);
 
     await screen.findByRole('heading', { level: 1 });
+    // One repair per state: a well connection widens, it does not "reconnect".
     expect(screen.queryByRole('button', { name: 'أعد الربط' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'توسيع الصلاحيات' })).toBeInTheDocument();
+  });
+});
+
+describe('the grant a connection was given (#1230)', () => {
+  const NARROW = {
+    ...DEAD_GRANT,
+    status: 'active' as const,
+    lastError: null,
+    scopes: ['database:read', 'projects:read'],
+  };
+
+  it('draws the permissions the provider issued, as it named them', async () => {
+    mocks.getMcpConnection.mockResolvedValue(NARROW);
+
+    render(<McpConnectionView connectionId="connection-1" connected={false} />);
+
+    expect(await screen.findByText('database:read')).toBeInTheDocument();
+    expect(screen.getByText('projects:read')).toBeInTheDocument();
+  });
+
+  it('shows the refusal the app answered, and offers the wider consent beside it', async () => {
+    mocks.getMcpConnection.mockResolvedValue({
+      ...NARROW,
+      lastError:
+        'هذا التطبيق يحتاج صلاحية «database:write» لأداء هذه العملية، ولم تُمنح عند الربط.',
+    });
+
+    render(<McpConnectionView connectionId="connection-1" connected={false} />);
+
+    expect(
+      await screen.findByText(
+        'هذا التطبيق يحتاج صلاحية «database:write» لأداء هذه العملية، ولم تُمنح عند الربط.'
+      )
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'توسيع الصلاحيات' }));
+
+    expect(mocks.startMcpConnection).toHaveBeenCalledWith('io.example/notion');
+  });
+
+  it('says the grant is unread rather than drawing an empty list as a fact', async () => {
+    mocks.getMcpConnection.mockResolvedValue({ ...NARROW, scopes: [] });
+
+    render(<McpConnectionView connectionId="connection-1" connected={false} />);
+
+    expect(
+      await screen.findByText('لم نسجّل صلاحيات هذا الربط. أعد الربط لتُقرأ من التطبيق.')
+    ).toBeInTheDocument();
   });
 });

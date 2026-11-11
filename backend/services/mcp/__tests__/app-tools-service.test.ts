@@ -234,6 +234,36 @@ describe('a token the server refuses', () => {
   });
 });
 
+describe('a tool the grant does not cover (#1230)', () => {
+  it('is refused with the permission named, and the grant is not called dead', async () => {
+    const tokens = fakeTokens();
+    const remote = fakeRemote({
+      callTool: vi.fn(async () => {
+        throw new McpRemoteError(
+          'scope',
+          'هذا التطبيق يحتاج صلاحية «database:write» لأداء هذه العملية.',
+          undefined,
+          'database:write'
+        );
+      }),
+    });
+    const { apps, patches } = service({ remote, tokens });
+
+    await expect(apps.call(CALL)).rejects.toMatchObject({
+      failure: 'scope',
+      missingScope: 'database:write',
+    });
+
+    // No refresh is spent: the same grant would come back, and the row keeps
+    // its state — the connection is alive and merely narrow.
+    expect(tokens.accessToken).toHaveBeenCalledTimes(1);
+    expect(patches.some((patch) => patch.status === 'needs_reauth')).toBe(false);
+    expect(patches).toContainEqual({
+      last_error: 'هذا التطبيق يحتاج صلاحية «database:write» لأداء هذه العملية.',
+    });
+  });
+});
+
 describe('the catalog a turn plans from', () => {
   it('is the member’s usable tools, with the app’s own name', async () => {
     const { apps } = service();

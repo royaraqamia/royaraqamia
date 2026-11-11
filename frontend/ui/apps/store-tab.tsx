@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 
 import { MCP_MARKETPLACE_COPY as COPY } from '@/frontend/ui/mcp/marketplace-copy';
+import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 import { appsCacheKey, readAppsCache, writeAppsCache } from './apps-cache';
 
@@ -78,6 +79,8 @@ export function StoreTab({ query, connect }: StoreTabProps) {
 
   const [connectingTo, setConnectingTo] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  /** The row whose ask is being read before the document leaves for the provider. */
+  const [consentFor, setConsentFor] = useState<McpCatalogRow | null>(null);
 
   /** One connection per server: this is what keeps a linked row from offering to link again. */
   const connectionByRegistry = useMemo(() => {
@@ -156,6 +159,7 @@ export function StoreTab({ query, connect }: StoreTabProps) {
   const onConnect = async (registryName: string) => {
     setConnectingTo(registryName);
     setActionError(null);
+    setConsentFor(null);
     try {
       const { authorizeUrl } = await startMcpConnection(registryName);
       // The consent page is a third party's origin; the whole document leaves.
@@ -268,7 +272,7 @@ export function StoreTab({ query, connect }: StoreTabProps) {
                     connection={connectionByRegistry.get(server.registryName) ?? null}
                     connecting={connectingTo === server.registryName}
                     disabled={connectingTo !== null}
-                    onConnect={() => void onConnect(server.registryName)}
+                    onConnect={() => setConsentFor(server)}
                   />
                 </li>
               ))}
@@ -298,6 +302,44 @@ export function StoreTab({ query, connect }: StoreTabProps) {
           </p>
         )}
       </section>
+
+      {/**
+       * What we are about to ask for, in Arabic, before the document leaves for
+       * the provider's own (English) consent screen. The ask is code, not a
+       * guess: it rides the catalogue row (`requestedScopes`), and an empty set
+       * is drawn as "the app decides" rather than as a promise we cannot keep.
+       */}
+      <ConfirmDialog
+        open={consentFor !== null}
+        title={COPY.consentTitle.replace(
+          '{name}',
+          consentFor?.title ?? consentFor?.registryName ?? ''
+        )}
+        message={
+          consentFor && consentFor.requestedScopes.length > 0 ? (
+            <>
+              <span className="block">{COPY.consentAsk}</span>
+              <span dir="ltr" className="mt-2 block font-mono text-xs leading-relaxed">
+                {consentFor.requestedScopes.join(' · ')}
+              </span>
+              <span className="mt-2 block">{COPY.consentNote}</span>
+            </>
+          ) : (
+            <span className="block">{COPY.consentDefault}</span>
+          )
+        }
+        confirmLabel={COPY.consentContinue}
+        cancelLabel={COPY.cancel}
+        icon={Plug}
+        variant="default"
+        isConfirming={connectingTo !== null}
+        onConfirm={() => {
+          if (consentFor) void onConnect(consentFor.registryName);
+        }}
+        onCancel={() => {
+          if (connectingTo === null) setConsentFor(null);
+        }}
+      />
     </div>
   );
 }

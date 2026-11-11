@@ -19,6 +19,8 @@ import { MCP_SERVER_VERSION } from '@/backend/services/mcp/constants';
 import { EgressBlockedError, createGuardedFetch, readCappedText } from '@/backend/shared/egress';
 import {
   McpRemoteError,
+  readAuthChallenge,
+  scopeRequirementSentence,
   type McpConnectProbe,
   type McpDiscovery,
   type McpOAuthClient,
@@ -160,21 +162,23 @@ export interface McpRemoteClient {
     discovery: McpDiscovery;
     redirectUri: string;
     clientName: string;
+    /** The set the catalogue row asks for; absent means the provider's default. */
+    scopes?: readonly string[];
   }): Promise<McpRegistration>;
   /**
    * The URL the member is sent to, and the PKCE verifier that must survive until
    * the callback. The SDK builds it; the caller stores the verifier encrypted.
    *
-   * `scopes` is only sent when a pre-registered client names them: a DCR
-   * registration declares none on purpose (the provider's default is the
-   * starting grant), and a hand-registered app has no default to fall back on.
+   * `scopes` is sent whenever the row has a set to ask for — a measured entry
+   * (#1230) or a pre-registered client's own list. Some providers ignore it
+   * here and read the registration instead, which is why both are sent.
    */
   authorizeUrl(input: {
     discovery: McpDiscovery;
     client: McpOAuthClient;
     redirectUri: string;
     state: string;
-    scopes?: string[];
+    scopes?: readonly string[];
   }): Promise<{ url: string; codeVerifier: string }>;
   exchange(input: {
     discovery: McpDiscovery;
@@ -508,13 +512,13 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
      * fall back to the specification's default path (`/register`), which a
      * provider that hosts registration elsewhere answers with a 404 (#1215).
      *
-     * No `scope` is declared. A registration that names every scope the server
-     * publishes asks the member to grant the widest possible consent, and we
-     * have no evidence yet about which of them the tools need: the provider's
-     * own default is the starting grant, and widening it is a choice someone
-     * makes on purpose.
+     * `scopes` is sent when the catalogue row carries a measured set (#1230).
+     * It is the only place some providers read it at all: Supabase ignored
+     * `scope` on the authorization URL and honoured it here, so a flow that only
+     * asked at consent would get the provider's default and believe it had
+     * narrowed something.
      */
-    async register({ discovery, redirectUri, clientName }) {
+    async register({ discovery, redirectUri, clientName, scopes }) {
       try {
         const registered = await registerClient(discovery.authorizationServer, {
           metadata: discovery.metadata,
@@ -526,6 +530,7 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
             response_types: ['code'],
             token_endpoint_auth_method: 'none',
           },
+          ...(scopes && scopes.length > 0 ? { scope: scopes.join(' ') } : {}),
         });
         return {
           clientId: registered.client_id,
@@ -670,8 +675,23 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
         { name: 'royaraqamia', version: MCP_SERVER_VERSION },
         { capabilities: {} }
       );
+      // A refusal's reason rides on the response the transport turns into an
+      // error, and the error keeps only the status. So the challenge is read
+      // here, at the one place that still holds it: `insufficient_scope` and
+      // `invalid_token` are two different repairs, and a 403 cannot be told
+      // apart from an expired grant without it (measured, Supabase
+      // 2026-11-11).
+      let challenge = '';
+      const readingFetch: typeof fetch = async (input, init) => {
+        const response = await guardedFetch(input, init);
+        if (response.status === 401 || response.status === 403) {
+          challenge = response.headers.get('www-authenticate') ?? '';
+        }
+        return response;
+      };
+
       const transport = new StreamableHTTPClientTransport(new URL(serverUrl), {
-        fetch: guardedFetch,
+        fetch: readingFetch,
         requestInit: { headers: { Authorization: `Bearer ${accessToken}` } },
       });
 
@@ -686,6 +706,18 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
           structured: result.structuredContent ?? null,
         };
       } catch (error) {
+        // A scope the grant never had is not a dead token: refreshing returns
+        // the same grant, so retrying it would only spend a refresh and then
+        // tell the member to reconnect a connection that still works.
+        const refusal = readAuthChallenge(challenge);
+        if (refusal.error === 'insufficient_scope') {
+          throw new McpRemoteError(
+            'scope',
+            scopeRequirementSentence(refusal.scope),
+            error,
+            refusal.scope
+          );
+        }
         // A refused token is its own answer: the caller refreshes once and asks
         // again, and only a second refusal means the grant is gone.
         if (refusedToken(error)) {

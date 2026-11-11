@@ -7,6 +7,7 @@ import type {
 import type { McpRegistryClient, McpRegistryEntry } from '@/backend/clients/mcp-registry';
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
 import type { McpStaticClientMap } from '@/backend/shared/domain/mcp-static-clients';
+import { requestedScopesFor } from '@/backend/config/mcp-scopes';
 import { assertEgressUrl, EgressBlockedError } from '@/backend/shared/egress';
 import { logger } from '@/backend/shared/logger';
 import {
@@ -227,6 +228,9 @@ function toMemberRow(row: McpCatalogListRow): McpCatalogRow {
     connectable: row.connectable,
     connectableReason: connectReason(row.connectable_reason),
     publishedAt: row.published_at,
+    // The sheet names the ask before the member leaves for the provider's own
+    // consent screen, which is the only place we can put it in Arabic.
+    requestedScopes: [...(requestedScopesFor(row.registry_name) ?? [])],
   };
 }
 

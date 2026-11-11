@@ -36,6 +36,11 @@ client we registered by hand without turning "we know this one" into "guess anyt
    GitHub's entry asks for `repo read:org read:user user:email read:project` and leaves `gist`,
    `notifications` and `write:packages` out: the consent screen asks for what the agent can use.
 
+   The first half is superseded by [ADR-0164](0164-a-scope-set-is-asked-at-registration.md): the
+   measured default is not a starting grant but everything the provider publishes, and a row now
+   carries its own set, sent at registration as well as at authorization. The reviewed-entry half
+   stands unchanged.
+
 4. **The probe cannot veto a reviewed row.** A provider may hide its metadata from a datacenter IP
    (`mcp.notion.com` answers `403` to a probe and `mcp.figma.com` answers `451`), and that is not
    evidence the connection fails — it is evidence the probe cannot see it. A row with a client is
