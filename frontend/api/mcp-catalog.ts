@@ -51,3 +51,11 @@ export async function updateAdminMcpCatalogRow(input: McpCatalogAdminUpdate): Pr
     body: JSON.stringify(input),
   });
 }
+
+/** Measure one row now; the Admin Console re-reads it afterwards. */
+export async function probeAdminMcpCatalogRow(registryName: string): Promise<void> {
+  await request('/api/admin/mcp/catalog/probe', {
+    method: 'POST',
+    body: JSON.stringify({ registryName }),
+  });
+}

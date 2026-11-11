@@ -320,6 +320,22 @@ export function mcpMarketplaceSearchRateLimitPolicy(ip: string): RateLimitPolicy
 }
 
 /**
+ * The store's brand marks, served by us rather than hotlinked (ADR-0162).
+ *
+ * A page of twenty rows asks for twenty images, so this bucket is deliberately
+ * larger than the search's and still bounded: it is a cached proxy, not a way to
+ * make us fetch the same mark a thousand times.
+ */
+export function mcpMarketplaceIconRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `mcp-marketplace-icon:${ip}`,
+    limit: 300,
+    windowMs: 10 * 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: شعارات المتجر محدودة بـ 300 طلب كل 10 دقائق.',
+  };
+}
+
+/**
  * The offline-serve beacon (ADR-0074) is sent by the service worker, so a
  * browser that is repeatedly cut off can ring it several times a minute while a
  * visitor navigates. The bucket is per IP and the endpoint is fail-closed: losing

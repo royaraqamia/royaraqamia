@@ -16,12 +16,24 @@ export type McpRemoteFailure =
  * stored answer must survive a reworded screen, and one sentence per client is
  * one sentence too many.
  */
-export type McpConnectProbeReason = 'no_metadata' | 'no_registration' | 'blocked';
+export type McpConnectProbeReason =
+  | 'no_metadata'
+  | 'no_registration'
+  | 'blocked'
+  /** The server never answered, or answered too slowly to measure. */
+  | 'unreachable';
 
 /** The verdict a probe records. `null` reason means the row is connectable. */
 export interface McpConnectProbe {
   connectable: boolean;
   reason: McpConnectProbeReason | null;
+  /**
+   * The brand mark the server publishes in its RFC 9728 metadata, if any. It is
+   * a fact about the server, not a decision: the store still shows a row only
+   * after an admin verifies it.
+   */
+  logoUrl: string | null;
+  logoMime: string | null;
 }
 
 /** A failure a caller turns into a sentence, never a stack trace. */

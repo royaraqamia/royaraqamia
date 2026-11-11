@@ -113,8 +113,11 @@ function fakeRepository(
     countCatalogServers: async () => 0,
     listCatalogServers: async () => ({ rows: [], nextCursor: null }),
     getCatalogAddresses: async () => [],
+    listVerifiedAddresses: async () => [],
     saveCatalogProbe: async () => undefined,
     updateCatalogServer: async () => undefined,
+    verifyLaunchSet: async () => 0,
+    setTitleOverrideIfEmpty: async () => undefined,
     getCatalogSyncState: async () => ({
       cursor: null,
       pass_started_at: null,

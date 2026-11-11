@@ -39,9 +39,11 @@ tool names are a compile-time union (`CHAT_AGENT_TOOL_NAMES`).
 3. **The catalog is the official registry, mirrored.** An hourly cron pulls
    `https://registry.modelcontextprotocol.io/v0/servers` into our own table. The sheet reads
    our table, never the registry.
-4. **No per-row approval.** Every active registry row that is remotely reachable appears. An
-   admin kill switch exists only for takedown (hidden / blocked with a reason), which the
-   registry itself relies on.
+4. **The mirror is open; the store is curated.** Every active registry row is mirrored so an admin
+   can find it, but a row reaches the store only when an admin **verified** it, the probe measured it
+   **connectable**, it is active and unblocked, and it has a brand mark. The registry is the
+   haystack; the store is the curated list (ADR-0162). An admin kill switch exists for takedown and
+   for withdrawing a vouch.
 5. **Remote-only.** Only `remotes[]` entries of type `streamable-http` are kept. npm, PyPI and
    Docker packages are stdio servers we cannot run, and private-network hosts are dropped at
    ingest and again at connect.
@@ -254,9 +256,44 @@ It is filled **on demand**, for the rows a screen actually draws:
   five strangers' servers.
 - A verdict stands for seven days; a row whose `remote_url` moved loses it in the same write,
   because the address is what was measured.
-- `null` is a third state, not a silent "no": the row is listed, the tap is allowed, and the tap
-  is the definitive check. Probing a catalogue of thousands to answer a question about twenty
-  visible rows is the wrong bill, and a cron that tried would need years.
+- `null` is a third state, not a silent "no": the Admin Console says «لم نتحقق بعد», and the row is
+  not in the store until an admin has a verdict and verifies it. A member's store never lists a row
+  whose verdict is not `true`, and a probe that times out is recorded as `unreachable` rather than
+  `no_metadata`, because a server that never answered is not a server that published nothing.
+
+### The store is curated (ADR-0162)
+
+The mirror and the store are two different lists. The mirror keeps every active `streamable-http`
+row so an admin can find a server by name; the store draws only rows that satisfy all of:
+
+- `verified_at is not null` — an admin vouched for the publisher, the name, the description and the
+  mark. Verification is a decision, not a measurement.
+- `connectable is true` — the probe measured RFC 9728 metadata, an authorization server, and a
+  dynamic registration endpoint. A row whose verdict is `null` or `false` is not offered; the admin
+  screen is where «لم نتحقق بعد» and «لا يمكن ربطه» live.
+- `status = 'active'` and `blocked_at is null`.
+
+Verification is refused when the probe has not measured the row connectable, and the sync re-probes
+verified rows on every run, so a server that goes down stops being offered and one that comes back
+returns without an admin remembering it.
+
+The first day is seeded: the six providers measured connectable below — Vercel, Linear, Supabase,
+Sentry, Canva and Cloudflare — are verified by the sync. `verification_withdrawn_at` records an
+admin's withdrawal, so the seed is a bootstrap and never overrules the person. The probe still
+decides whether each one appears, because the store's query asks for `connectable = true`.
+
+A brand mark is captured from two sources and kept apart: the registry's `icons` are rewritten on
+every sync, the server's RFC 9728 `logo_uri` is written by the probe, and the generated `icon_url`
+prefers the probe. The member's browser never fetches a third party: `/mcp/icon?name=<registry>`
+proxies the stored URL through the same egress policy, and a row with no mark draws a monogram.
+
+The Latin name is the same seam: `title_override` is written by an admin and survives the sync, so
+`com.vercel/vercel-mcp` draws as **Vercel**. The registry's own `title` stays beside it for the
+Admin Console and for a future upstream correction.
+
+The store's order is `store_key`: `featured_rank` (lower first, null last) then `registry_name`, in
+one sortable key so the cursor stays one column. A newly verified row appears after the featured
+ones until an admin gives it a rank.
 
 ### Search
 
@@ -351,7 +388,7 @@ a tab is still a shareable state and the back button still works.
 - _تطبيقاتنا المتصلة بنا_ — the existing inbound grants list, rendered here rather than linked
   away. `/account/connected-apps` becomes a redirect to `?tab=inbound`, which is what keeps the
   account row, a bookmark and the app's screen table resolving.
-- _تطبيقات نور_ — search over the mirror, the connect button, the connection cards with
+- _تطبيقات نور_ — search over the verified store, the connect button, the connection cards with
   status, tool count, last used, and the permission level.
 
 A row's title is the server's own name, in Latin: Notion is called Notion, and transliterating a
@@ -395,6 +432,8 @@ release note rides the same pull request (`npm run android:note`), in Arabic, fo
    (The 5 / 50 numbers and the pricing page left this phase: they landed with the count, in
    `20261114150000`, because a pool of two directions at 1 / 10 is a cap nobody can use. #1222)
 6. **Native** — the two screens, the sheet row, the parity rows, the visual gate. **#1228**
+7. **Curation** — verification, the store query, featured order, brand marks, the icon proxy, and the
+   Admin Console's approval. **ADR-0162.**
 
 The two questions the plan could not settle in code are filed with their measurements: the
 providers that refuse DCR (**#1229**) and the scopes a connection asks for (**#1230**).
@@ -412,9 +451,10 @@ providers that refuse DCR (**#1229**) and the scopes a connection asks for (**#1
   3 remote calls and the existing round cap.
 - **Egress.** One module owns every outbound request, so the policy is one diff to review, and
   `security-review` must run on this change before it lands.
-- **A marketplace with no curation** puts an unvetted server one tap from a member's inbox. That
-  is the owner's call, recorded here; the takedown switch and the permission levels are the
-  compensating controls.
+- **Curation is a human bottleneck, on purpose.** The store shows only what an admin verified; the
+  registry's long tail stays in the Admin Console, searchable and one action from being approved.
+  That is the trade the owner chose: a stranger's server is not one tap from a member's inbox. The
+  compensating controls remain the probe, the takedown switch, and the permission levels.
 
 ## Settled, but provisional
 

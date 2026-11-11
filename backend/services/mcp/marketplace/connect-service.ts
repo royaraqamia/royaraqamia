@@ -101,6 +101,11 @@ export function createMcpConnectService({
     if (server.blocked_at) {
       throw new McpConnectError('blocked', 'هذا التطبيق موقوف ولا يمكن ربطه');
     }
+    // The store's admission rule, enforced where the socket opens: a row nobody
+    // vouched for is not connectable by a hand-built request either.
+    if (!server.verified_at) {
+      throw new McpConnectError('unknown_app', 'هذا التطبيق غير معتمد في المتجر');
+    }
     return server;
   }
 

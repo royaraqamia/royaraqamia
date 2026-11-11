@@ -53,6 +53,8 @@ export interface McpDiscovery {
   tokenEndpoint: string;
   registrationEndpoint: string | null;
   scopes: string[];
+  /** The brand mark the resource metadata publishes, when it is an https URL. */
+  logoUrl: string | null;
   /** Kept verbatim so the connection row can record what it agreed to. */
   metadata: AuthorizationServerMetadata;
 }
@@ -77,6 +79,42 @@ export { McpRemoteError, type McpRemoteFailure };
 
 /** The ceiling a catalogue probe gets, against the 20s a real call may take. */
 const PROBE_TIMEOUT_MS = 4_000;
+
+/**
+ * The brand mark an RFC 9728 document advertises, as an https URL or nothing.
+ *
+ * The SDK's resource metadata is loose, so the field is `unknown` here: an
+ * `http:` logo is dropped rather than mixed into an https page, and a value that
+ * is not a URL is not a reason to fail the probe.
+ */
+function resourceLogoUrl(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const value = (metadata as { logo_uri?: unknown }).logo_uri;
+  if (typeof value !== 'string' || value.length === 0) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The mime an icon URL names, for the proxy's allowlist; `null` when it does not. */
+function iconMimeFromUrl(value: string | null): string | null {
+  if (!value) return null;
+  let pathname: string;
+  try {
+    pathname = new URL(value).pathname.toLowerCase();
+  } catch {
+    return null;
+  }
+  if (pathname.endsWith('.svg')) return 'image/svg+xml';
+  if (pathname.endsWith('.png')) return 'image/png';
+  if (pathname.endsWith('.jpg') || pathname.endsWith('.jpeg')) return 'image/jpeg';
+  if (pathname.endsWith('.webp')) return 'image/webp';
+  if (pathname.endsWith('.ico')) return 'image/x-icon';
+  return null;
+}
 
 export interface McpRemoteClient {
   discover(serverUrl: string | URL): Promise<McpDiscovery>;
@@ -199,6 +237,7 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
       tokenEndpoint: metadata.token_endpoint,
       registrationEndpoint: metadata.registration_endpoint ?? null,
       scopes: metadata.scopes_supported ?? [],
+      logoUrl: resourceLogoUrl(info.resourceMetadata),
       metadata,
     };
   }
@@ -207,31 +246,54 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
     discover,
 
     async probeConnectable(serverUrl) {
+      /*
+        A pre-flight, because the difference matters to the admin reading the
+        verdict: the SDK's discovery throws for both "the server answered 404 on
+        the well-known document" and "the server never answered", and calling a
+        timeout "no metadata" is a diagnosis nobody measured. Any HTTP answer —
+        200, 404, even 500 — means the host is up; only a failed request means we
+        could not measure it.
+      */
+      const wellKnown = new URL('/.well-known/oauth-protected-resource', serverUrl);
+      try {
+        await probeFetch(wellKnown, { headers: { accept: 'application/json' } });
+      } catch (error) {
+        if (error instanceof EgressBlockedError) {
+          return { connectable: false, reason: 'blocked', logoUrl: null, logoMime: null };
+        }
+        logger.warn('MCP marketplace: connectability probe got no answer', {
+          url: String(serverUrl),
+          error: String(error),
+        });
+        return { connectable: false, reason: 'unreachable', logoUrl: null, logoMime: null };
+      }
+
       try {
         const info = await discoverOAuthServerInfo(serverUrl, { fetchFn: probeFetch });
         const metadata = info.authorizationServerMetadata;
+        const logoUrl = resourceLogoUrl(info.resourceMetadata);
+        const logoMime = iconMimeFromUrl(logoUrl);
         if (!metadata?.authorization_endpoint || !metadata.token_endpoint) {
-          return { connectable: false, reason: 'no_metadata' };
+          return { connectable: false, reason: 'no_metadata', logoUrl, logoMime };
         }
         // The connect flow needs dynamic registration: a server that publishes
         // metadata and expects a pre-registered client is one we cannot reach in
         // v1 (measured: GitHub, in the spec's table).
         if (!metadata.registration_endpoint) {
-          return { connectable: false, reason: 'no_registration' };
+          return { connectable: false, reason: 'no_registration', logoUrl, logoMime };
         }
-        return { connectable: true, reason: null };
+        return { connectable: true, reason: null, logoUrl, logoMime };
       } catch (error) {
         if (error instanceof EgressBlockedError) {
-          return { connectable: false, reason: 'blocked' };
+          return { connectable: false, reason: 'blocked', logoUrl: null, logoMime: null };
         }
-        // One code covers "no document" and "unreachable": the SDK's discovery
-        // does not separate them, and inventing a distinction here would be a
-        // guess wearing a diagnosis.
+        // The document exists but cannot be read: that is what "publishes no
+        // usable metadata" means, as opposed to the unreachable case above.
         logger.warn('MCP marketplace: connectability probe failed', {
           url: String(serverUrl),
           error: String(error),
         });
-        return { connectable: false, reason: 'no_metadata' };
+        return { connectable: false, reason: 'no_metadata', logoUrl: null, logoMime: null };
       }
     },
 

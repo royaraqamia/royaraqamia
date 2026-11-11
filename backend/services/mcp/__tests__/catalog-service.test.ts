@@ -9,11 +9,12 @@ import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
 import type {
   McpCatalogAddressRecord,
   McpCatalogListRow,
+  McpCatalogServerRecord,
   McpCatalogSyncStateRecord,
   McpCatalogUpsertRow,
   McpMarketplaceRepository,
 } from '@/backend/repositories/mcp/marketplace-repository';
-import { createMcpCatalogService } from '../marketplace/catalog-service';
+import { McpCatalogError, createMcpCatalogService } from '../marketplace/catalog-service';
 
 /**
  * The catalogue, driven against an in-memory store and a fake registry.
@@ -48,6 +49,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     probe: Parameters<McpMarketplaceRepository['saveCatalogProbe']>[1];
   }> = [];
   const updates: Array<{ registryName: string; patch: unknown }> = [];
+  const seeded: string[][] = [];
   const marked: string[] = [];
   const retired: string[] = [];
 
@@ -83,12 +85,18 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     countCatalogServers: async () => 0,
     listCatalogServers: async () => ({ rows: [], nextCursor: null }),
     getCatalogAddresses: async () => [],
+    listVerifiedAddresses: async () => [],
     saveCatalogProbe: async (registryName, probe) => {
       probes.push({ registryName, probe });
     },
     updateCatalogServer: async (registryName, patch) => {
       updates.push({ registryName, patch });
     },
+    verifyLaunchSet: async (names) => {
+      seeded.push([...names]);
+      return 0;
+    },
+    setTitleOverrideIfEmpty: async () => undefined,
     getCatalogSyncState: async () => ({ ...state }),
     saveCatalogSyncState: async (patch) => {
       Object.assign(state, patch);
@@ -96,7 +104,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     ...overrides,
   };
 
-  return { repository, state, upserts, probes, updates, marked, retired };
+  return { repository, state, upserts, probes, updates, seeded, marked, retired };
 }
 
 function fakeRegistry(pages: McpRegistryPage[]): McpRegistryClient {
@@ -114,7 +122,12 @@ function fakeRemote(overrides: Partial<McpRemoteClient> = {}): McpRemoteClient {
     exchange: vi.fn(),
     refresh: vi.fn(),
     listTools: vi.fn(),
-    probeConnectable: vi.fn(async () => ({ connectable: true, reason: null })),
+    probeConnectable: vi.fn(async () => ({
+      connectable: true,
+      reason: null,
+      logoUrl: null,
+      logoMime: null,
+    })),
     ...overrides,
   } as McpRemoteClient;
 }
@@ -126,6 +139,8 @@ function entry(overrides: Partial<McpRegistryEntry> = {}): McpRegistryEntry {
     description: 'An example server',
     version: '1.0.0',
     remotes: [{ type: 'streamable-http', url: 'https://mcp.example.com/mcp' }],
+    iconUrl: null,
+    iconMime: null,
     status: 'active',
     publishedAt: '2026-11-01T00:00:00.000Z',
     registryUpdatedAt: '2026-11-01T00:00:00.000Z',
@@ -324,6 +339,7 @@ describe('the search', () => {
     {
       registry_name: 'com.notion/mcp',
       title: 'Notion',
+      title_override: null,
       description: 'Pages and databases',
       name_ar: null,
       description_ar: 'صفحات وقواعد بيانات',
@@ -332,6 +348,11 @@ describe('the search', () => {
       version: '1.0.0',
       published_at: '2026-11-01T00:00:00.000Z',
       fetched_at: '2026-11-14T00:00:00.000Z',
+      icon_url: 'https://cdn.example/notion.png',
+      icon_mime: 'image/png',
+      featured_rank: 3,
+      store_key: '000003:com.notion/mcp',
+      verified_at: '2026-11-14T00:00:00.000Z',
       blocked_at: null,
       blocked_reason: null,
       connectable: false,
@@ -352,6 +373,9 @@ describe('the search', () => {
     expect(page.servers[0]).toMatchObject({
       title: 'Notion',
       description: 'صفحات وقواعد بيانات',
+      iconUrl: 'https://cdn.example/notion.png',
+      verified: true,
+      featuredRank: 3,
       connectable: false,
       connectableReason: 'no_registration',
     });
@@ -423,6 +447,8 @@ describe('the connectability probe', () => {
       probeConnectable: vi.fn(async () => ({
         connectable: false,
         reason: 'no_metadata' as const,
+        logoUrl: null,
+        logoMime: null,
       })),
     });
     const service = build({ repository, pages: [], remote });
@@ -435,7 +461,75 @@ describe('the connectability probe', () => {
       connectable: false,
       reason: 'no_metadata',
       probedAt: NOW.toISOString(),
+      iconUrl: null,
+      iconMime: null,
     });
+  });
+
+  it('keeps the mark the server publishes alongside the verdict', async () => {
+    const repository = fakeRepository({
+      getCatalogAddresses: async () => [address({ registry_name: 'com.vercel/vercel-mcp' })],
+    });
+    const remote = fakeRemote({
+      probeConnectable: vi.fn(async () => ({
+        connectable: true,
+        reason: null,
+        logoUrl: 'https://mcp.vercel.com/icons/vercel-light.svg',
+        logoMime: 'image/svg+xml',
+      })),
+    });
+    const service = build({ repository, pages: [], remote });
+
+    await service.probe(['com.vercel/vercel-mcp']);
+
+    expect(repository.probes[0]?.probe).toMatchObject({
+      iconUrl: 'https://mcp.vercel.com/icons/vercel-light.svg',
+      iconMime: 'image/svg+xml',
+    });
+  });
+
+  it('re-measures a verified row on the sync, even when no screen asked', async () => {
+    const verified = [address({ registry_name: 'com.vercel/vercel-mcp' })];
+    const repository = fakeRepository({ listVerifiedAddresses: async () => verified });
+    const remote = fakeRemote();
+    const service = build({ repository, pages: [rows(120, null)], remote });
+
+    await service.sync();
+
+    expect(remote.probeConnectable).toHaveBeenCalledTimes(1);
+    expect(repository.probes.map((row) => row.registryName)).toEqual(['com.vercel/vercel-mcp']);
+  });
+
+  it('seeds the launch set on the sync, so a curated store is not empty', async () => {
+    const repository = fakeRepository();
+    const service = build({ repository, pages: [rows(120, null)] });
+
+    await service.sync();
+
+    expect(repository.seeded).toHaveLength(1);
+    expect(repository.seeded[0]).toEqual(
+      expect.arrayContaining([
+        'com.vercel/vercel-mcp',
+        'app.linear/linear',
+        'com.supabase/mcp',
+        'com.canva.mcp/mcp',
+        'com.cloudflare.mcp/mcp',
+      ])
+    );
+  });
+
+  it('measures the launch set on the run that seeds it', async () => {
+    const repository = fakeRepository({
+      verifyLaunchSet: async () => 6,
+      getCatalogAddresses: async () => [address({ registry_name: 'com.vercel/vercel-mcp' })],
+    });
+    const remote = fakeRemote();
+    const service = build({ repository, pages: [rows(120, null)], remote });
+
+    await service.sync();
+
+    expect(remote.probeConnectable).toHaveBeenCalledTimes(1);
+    expect(repository.probes.map((row) => row.registryName)).toEqual(['com.vercel/vercel-mcp']);
   });
 
   it('probes at most five rows in one request', async () => {
@@ -449,5 +543,113 @@ describe('the connectability probe', () => {
 
     expect(measured).toBe(5);
     expect(repository.probes).toHaveLength(5);
+  });
+
+  it('re-measures a fresh row only when the admin forces it', async () => {
+    const fresh = [address({ registry_name: 'a/fresh', probed_at: '2026-11-13T00:00:00.000Z' })];
+    const repository = fakeRepository({ getCatalogAddresses: async () => fresh });
+    const service = build({ repository, pages: [] });
+
+    expect(await service.probe(['a/fresh'])).toBe(0);
+    expect(await service.probe(['a/fresh'], { force: true })).toBe(1);
+  });
+});
+
+describe('the store admission', () => {
+  function serverRow(overrides: Partial<McpCatalogServerRecord> = {}): McpCatalogServerRecord {
+    return {
+      registry_name: 'com.vercel/vercel-mcp',
+      title: 'Vercel',
+      description: 'An MCP server for Vercel',
+      name_ar: null,
+      description_ar: null,
+      remote_url: 'https://mcp.vercel.com',
+      status: 'active',
+      blocked_at: null,
+      blocked_reason: null,
+      icon_url: 'https://mcp.vercel.com/icons/vercel-light.svg',
+      verified_at: null,
+      connectable: true,
+      connectable_reason: null,
+      probed_at: NOW.toISOString(),
+      ...overrides,
+    };
+  }
+
+  it('verifies a measured row and records the moment', async () => {
+    const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: true });
+
+    expect(repository.updates[0]?.patch).toEqual({
+      verified_at: NOW.toISOString(),
+      verification_withdrawn_at: null,
+    });
+  });
+
+  it('refuses to vouch for a row the probe never measured', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () =>
+        serverRow({ connectable: null, connectable_reason: null, probed_at: null }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await expect(
+      service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: true })
+    ).rejects.toBeInstanceOf(McpCatalogError);
+
+    expect(repository.updates).toEqual([]);
+  });
+
+  it('refuses to vouch for a row the probe found unconnectable', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () =>
+        serverRow({ connectable: false, connectable_reason: 'no_registration' }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await expect(
+      service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: true })
+    ).rejects.toMatchObject({ failure: 'not_connectable' });
+  });
+
+  it('takes the vouch back without touching the rank', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () => serverRow({ verified_at: '2026-11-01T00:00:00.000Z' }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: false });
+
+    expect(repository.updates[0]?.patch).toEqual({
+      verified_at: null,
+      verification_withdrawn_at: NOW.toISOString(),
+    });
+  });
+
+  it('lets a verified row change its rank before the next probe', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () =>
+        serverRow({
+          verified_at: '2026-11-01T00:00:00.000Z',
+          connectable: null,
+          connectable_reason: null,
+          probed_at: null,
+        }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate({
+      registryName: 'com.vercel/vercel-mcp',
+      verified: true,
+      featuredRank: 2,
+    });
+
+    expect(repository.updates[0]?.patch).toEqual({
+      featured_rank: 2,
+      verified_at: '2026-11-01T00:00:00.000Z',
+      verification_withdrawn_at: null,
+    });
   });
 });

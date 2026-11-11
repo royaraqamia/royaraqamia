@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/nextjs';
 
 import { runAfter } from '@/backend/config/after';
 import { createDefaultMcpCatalogService } from '@/backend/config/mcp';
+import { McpCatalogError } from '@/backend/services/mcp/marketplace/catalog-service';
 import { isCronAuthorized } from '@/backend/shared/cron-auth';
 import { logger } from '@/backend/shared/logger';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
@@ -11,6 +12,7 @@ import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import {
   McpCatalogAdminUpdateSchema,
+  McpCatalogProbeSchema,
   McpCatalogSearchQuerySchema,
 } from '@/shared/contracts/mcp-catalog';
 
@@ -112,6 +114,28 @@ export async function listMcpCatalogForAdmin(query: {
   );
 }
 
+/** Measure one row now, so an admin does not have to reload the list and hope. */
+export async function probeMcpCatalogRow(body: unknown): Promise<HttpResult> {
+  return withAdminUser(
+    async () => {
+      const parsed = McpCatalogProbeSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(
+          400,
+          { success: false, error: parsed.error.issues[0]?.message ?? 'طلب غير صالح' },
+          { headers: NO_STORE }
+        );
+      }
+
+      const measured = await createDefaultMcpCatalogService().probe([parsed.data.registryName], {
+        force: true,
+      });
+      return jsonResult(200, { success: true, data: { measured } }, { headers: NO_STORE });
+    },
+    { whenFailed: { success: false, error: 'تعذّر إكمال الفحص.' } }
+  );
+}
+
 /** Block a row with a reason, undo a block, or correct the Arabic it shows. */
 export async function updateMcpCatalogRow(body: unknown): Promise<HttpResult> {
   return withAdminUser(
@@ -129,7 +153,16 @@ export async function updateMcpCatalogRow(body: unknown): Promise<HttpResult> {
         );
       }
 
-      await createDefaultMcpCatalogService().adminUpdate(parsed.data);
+      try {
+        await createDefaultMcpCatalogService().adminUpdate(parsed.data);
+      } catch (error) {
+        // A refusal with its own sentence is the admin's answer, not a 500: the
+        // screen has to say why a row cannot be verified.
+        if (error instanceof McpCatalogError) {
+          return jsonResult(400, { success: false, error: error.message }, { headers: NO_STORE });
+        }
+        throw error;
+      }
       return jsonResult(200, { success: true }, { headers: NO_STORE });
     },
     { whenFailed: { success: false, error: 'تعذّر حفظ التغيير.' } }

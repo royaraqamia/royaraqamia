@@ -37,6 +37,8 @@ const CATALOG: McpCatalogServerRecord = {
   status: 'active',
   blocked_at: null,
   blocked_reason: null,
+  icon_url: null,
+  verified_at: '2026-11-14T00:00:00.000Z',
   connectable: true,
   connectable_reason: null,
   probed_at: '2026-11-14T00:00:00.000Z',
@@ -49,6 +51,7 @@ const DISCOVERY: McpDiscovery = {
   tokenEndpoint: 'https://auth.notion.example/token',
   registrationEndpoint: 'https://auth.notion.example/register',
   scopes: ['read'],
+  logoUrl: null,
   metadata: {
     issuer: 'https://auth.notion.example',
     authorization_endpoint: 'https://auth.notion.example/authorize',
@@ -191,8 +194,11 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     countCatalogServers: async () => 0,
     listCatalogServers: async () => ({ rows: [], nextCursor: null }),
     getCatalogAddresses: async () => [],
+    listVerifiedAddresses: async () => [],
     saveCatalogProbe: async () => undefined,
     updateCatalogServer: async () => undefined,
+    verifyLaunchSet: async () => 0,
+    setTitleOverrideIfEmpty: async () => undefined,
     getCatalogSyncState: async () => ({
       cursor: null,
       pass_started_at: null,
@@ -242,7 +248,12 @@ function fakeRemote(overrides: Partial<McpRemoteClient> = {}): McpRemoteClient {
     refresh: vi.fn(),
     revoke: vi.fn(async () => false),
     listTools: vi.fn(async () => TOOLS),
-    probeConnectable: vi.fn(async () => ({ connectable: true, reason: null })),
+    probeConnectable: vi.fn(async () => ({
+      connectable: true,
+      reason: null,
+      logoUrl: null,
+      logoMime: null,
+    })),
     ...overrides,
   } as McpRemoteClient;
 }

@@ -103,6 +103,64 @@ describe('discover', () => {
   });
 });
 
+describe('probeConnectable', () => {
+  it('records a connectable server and the mark it publishes', async () => {
+    const remote = client([
+      {
+        match: (url: string) => url.includes('/.well-known/oauth-protected-resource'),
+        body: { ...RESOURCE_METADATA, logo_uri: 'https://cdn.example/linear.svg' },
+      },
+      discoveryRoutes[1]!,
+    ]);
+
+    await expect(remote.probeConnectable('https://mcp.example.com/mcp')).resolves.toEqual({
+      connectable: true,
+      reason: null,
+      logoUrl: 'https://cdn.example/linear.svg',
+      logoMime: 'image/svg+xml',
+    });
+  });
+
+  it('drops an http logo rather than mixing it into the store', async () => {
+    const remote = client([
+      {
+        match: (url: string) => url.includes('/.well-known/oauth-protected-resource'),
+        body: { ...RESOURCE_METADATA, logo_uri: 'http://cdn.example/linear.svg' },
+      },
+      discoveryRoutes[1]!,
+    ]);
+
+    await expect(remote.probeConnectable('https://mcp.example.com/mcp')).resolves.toMatchObject({
+      connectable: true,
+      logoUrl: null,
+      logoMime: null,
+    });
+  });
+
+  it('says "no metadata" when the server answers but publishes nothing usable', async () => {
+    const remote = client([]);
+
+    await expect(remote.probeConnectable('https://mcp.example.com/mcp')).resolves.toMatchObject({
+      connectable: false,
+      reason: 'no_metadata',
+    });
+  });
+
+  it('says "unreachable" when the server never answers', async () => {
+    const remote = createMcpRemoteClient({
+      fetchImpl: vi.fn(async () => {
+        throw new Error('ECONNRESET');
+      }) as unknown as typeof fetch,
+      resolveHost: async () => PUBLIC,
+    });
+
+    await expect(remote.probeConnectable('https://mcp.example.com/mcp')).resolves.toMatchObject({
+      connectable: false,
+      reason: 'unreachable',
+    });
+  });
+});
+
 describe('authorizeUrl', () => {
   it('carries the client, the redirect, the state, the resource and a PKCE challenge', async () => {
     const remote = client(discoveryRoutes);
@@ -142,6 +200,7 @@ function discoveryAt(registrationEndpoint: string): McpDiscovery {
     tokenEndpoint: 'https://auth.example.com/token',
     registrationEndpoint,
     scopes: ['read'],
+    logoUrl: null,
     metadata: {
       ...SERVER_METADATA,
       registration_endpoint: registrationEndpoint,

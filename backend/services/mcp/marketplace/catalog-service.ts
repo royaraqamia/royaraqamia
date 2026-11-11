@@ -59,6 +59,40 @@ const PROBE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 /** Probes one search may enqueue; each is up to 4s, run after the response. */
 const MAX_PROBES_PER_REQUEST = 5;
 
+/**
+ * The launch set: a store that opens empty is a store nobody visits.
+ *
+ * These are the providers measured connectable in the plan (`docs/specs/mcp-marketplace.md`)
+ * and demanded by members. The sync verifies them once, so the curated store has
+ * something in it on its first day; the probe still decides whether each appears,
+ * and an admin who withdraws one is not overruled (the withdrawal is a column).
+ * It is a seed, not a policy: nothing outside this list is verified without a
+ * human.
+ */
+const LAUNCH_SET = [
+  'com.vercel/vercel-mcp',
+  'app.linear/linear',
+  'com.supabase/mcp',
+  'io.github.getsentry/sentry-mcp',
+  'com.canva.mcp/mcp',
+  'com.cloudflare.mcp/mcp',
+] as const;
+
+/**
+ * The names the store should show for the launch set. The registry publishes no
+ * title for Vercel or Cloudflare, and "Canva MCP" is the publisher's phrasing;
+ * a directory that says `com.vercel/vercel-mcp` is the screenshot this change
+ * exists to delete.
+ */
+const LAUNCH_TITLES: Record<(typeof LAUNCH_SET)[number], string> = {
+  'com.vercel/vercel-mcp': 'Vercel',
+  'app.linear/linear': 'Linear',
+  'com.supabase/mcp': 'Supabase',
+  'io.github.getsentry/sentry-mcp': 'Sentry',
+  'com.canva.mcp/mcp': 'Canva',
+  'com.cloudflare.mcp/mcp': 'Cloudflare',
+};
+
 const REGISTRY_STATUSES = new Set(['active', 'deprecated', 'deleted']);
 
 export type McpCatalogSyncMode = 'pass' | 'incremental';
@@ -82,9 +116,24 @@ export interface McpCatalogService {
   sync(input?: { budgetMs?: number }): Promise<McpCatalogSyncResult>;
   /**
    * Measures the verdict for rows a screen just drew, and returns how many were
-   * due. Called after the response, never inside it.
+   * due. Called after the response, never inside it. `force` is the Admin
+   * Console's "فحص الآن": a provider that fixed its metadata should not wait a
+   * week for the cache to expire.
    */
-  probe(registryNames: string[]): Promise<number>;
+  probe(registryNames: string[], options?: { force?: boolean }): Promise<number>;
+}
+
+/** A refusal from the Admin Console that has a sentence for the person who asked. */
+export type McpCatalogAdminFailure = 'unknown_app' | 'not_connectable';
+
+export class McpCatalogError extends Error {
+  constructor(
+    readonly failure: McpCatalogAdminFailure,
+    message: string
+  ) {
+    super(message);
+    this.name = 'McpCatalogError';
+  }
 }
 
 interface CatalogServiceDependencies {
@@ -103,9 +152,12 @@ function connectReason(value: string | null): McpCatalogConnectReason | null {
 function toMemberRow(row: McpCatalogListRow): McpCatalogRow {
   return {
     registryName: row.registry_name,
-    title: row.title,
+    title: row.title_override ?? row.title,
     description: row.description_ar ?? row.description,
     nameAr: row.name_ar,
+    iconUrl: row.icon_url,
+    verified: row.verified_at !== null,
+    featuredRank: row.featured_rank,
     connectable: row.connectable,
     connectableReason: connectReason(row.connectable_reason),
     publishedAt: row.published_at,
@@ -115,13 +167,16 @@ function toMemberRow(row: McpCatalogListRow): McpCatalogRow {
 function toAdminRow(row: McpCatalogListRow): McpCatalogAdminRow {
   return {
     ...toMemberRow(row),
+    titleOverride: row.title_override,
     descriptionAr: row.description_ar,
     remoteUrl: row.remote_url,
     status: row.status,
     version: row.version,
+    iconMime: row.icon_mime,
     blocked: row.blocked_at !== null,
     blockedReason: row.blocked_reason,
     probedAt: row.probed_at,
+    verifiedAt: row.verified_at,
     fetchedAt: row.fetched_at,
   };
 }
@@ -160,6 +215,8 @@ function toUpsertRow(entry: McpRegistryEntry): McpCatalogUpsertRow | null {
     description: entry.description,
     version: entry.version,
     remoteUrl: remote.url,
+    iconUrl: entry.iconUrl,
+    iconMime: entry.iconMime,
     status,
     publishedAt: entry.publishedAt,
     registryUpdatedAt: entry.registryUpdatedAt,
@@ -185,6 +242,7 @@ export function createMcpCatalogService({
       cursor,
       limit: MCP_CATALOG_PAGE_SIZE,
       includeHidden: false,
+      storeOnly: true,
     });
     return { servers: rows.map(toMemberRow), nextCursor };
   }
@@ -201,6 +259,7 @@ export function createMcpCatalogService({
       cursor,
       limit: MCP_CATALOG_PAGE_SIZE,
       includeHidden: true,
+      storeOnly: false,
     });
     return { servers: rows.map(toAdminRow), nextCursor };
   }
@@ -218,8 +277,36 @@ export function createMcpCatalogService({
     }
 
     if (input.nameAr !== undefined) patch.name_ar = input.nameAr?.trim() || null;
+    if (input.titleOverride !== undefined)
+      patch.title_override = input.titleOverride?.trim() || null;
     if (input.descriptionAr !== undefined)
       patch.description_ar = input.descriptionAr?.trim() || null;
+    if (input.featuredRank !== undefined) patch.featured_rank = input.featuredRank;
+
+    if (input.verified === true) {
+      /*
+        Verification is a vouch, not a measurement, so a first vouch needs the
+        measurement to exist. A row already verified can still be edited — its
+        rank, for instance — even if a later probe has not run yet.
+      */
+      const server = await repository.getCatalogServer(input.registryName);
+      if (!server || server.status === 'deleted') {
+        throw new McpCatalogError('unknown_app', 'هذا التطبيق غير موجود في المتجر');
+      }
+      if (server.verified_at === null && server.connectable !== true) {
+        throw new McpCatalogError(
+          'not_connectable',
+          'لا يمكن اعتماد تطبيق لم يثبت أن ربطه ممكن. افحصه الآن ثم أعد المحاولة.'
+        );
+      }
+      // Saving a verified row's rank must not move the date it was vouched for.
+      patch.verified_at = server.verified_at ?? now().toISOString();
+      patch.verification_withdrawn_at = null;
+    } else if (input.verified === false) {
+      patch.verified_at = null;
+      // The seed must not undo this on the next sync.
+      patch.verification_withdrawn_at = now().toISOString();
+    }
 
     if (Object.keys(patch).length === 0) return;
     await repository.updateCatalogServer(input.registryName, patch);
@@ -321,6 +408,46 @@ export function createMcpCatalogService({
       logger.warn('MCP catalogue: sync run failed', { mode, pages, error });
     }
 
+    /*
+      The store's rows are the promise, so they are measured on the sync rather
+      than only when a screen draws them: a verified server that went down must
+      stop being offered, and one that came back must return. It is a small
+      batch because the pass already spent its budget on the registry.
+    */
+    try {
+      await probeAddresses(await repository.listVerifiedAddresses(MAX_PROBES_PER_REQUEST));
+    } catch (caught) {
+      logger.warn('MCP catalogue: verified probe failed', {
+        error: caught instanceof Error ? caught.message : String(caught),
+      });
+    }
+
+    /*
+      The launch set, seeded after the pass so a row the registry just added is
+      already in the mirror. It verifies only rows an admin has never withdrawn
+      and that are active and unblocked; the probe still decides whether each one
+      appears, because the store's query also asks for `connectable = true`.
+    */
+    try {
+      const seeded = await repository.verifyLaunchSet([...LAUNCH_SET], now().toISOString());
+      // The first run that seeds them measures them too: waiting for the daily
+      // verified probe would leave the store empty for days. They run in
+      // parallel, so this is one probe's wall time rather than six.
+      if (seeded > 0) {
+        for (const [registryName, title] of Object.entries(LAUNCH_TITLES)) {
+          await repository.setTitleOverrideIfEmpty(registryName, title);
+        }
+        await probeAddresses(
+          await repository.getCatalogAddresses([...LAUNCH_SET]),
+          LAUNCH_SET.length
+        );
+      }
+    } catch (caught) {
+      logger.warn('MCP catalogue: launch set seed failed', {
+        error: caught instanceof Error ? caught.message : String(caught),
+      });
+    }
+
     const lastRunAt = now().toISOString();
     // A failed run must not move the baseline past rows it never read, or the
     // next incremental run would skip them for good.
@@ -375,15 +502,17 @@ export function createMcpCatalogService({
     return { mode, pages, rows, skipped, deleted, completed, error };
   }
 
-  async function probe(registryNames: string[]) {
-    const names = [...new Set(registryNames)].filter((name) => name.length > 0);
-    if (names.length === 0) return 0;
-
-    const addresses = await repository.getCatalogAddresses(names);
+  /** Measures a batch of due rows. The callers differ only in where the rows came from. */
+  async function probeAddresses(
+    addresses: McpCatalogAddressRecord[],
+    limit = MAX_PROBES_PER_REQUEST,
+    force = false
+  ): Promise<number> {
     const due = addresses.filter(
-      (row) => row.status === 'active' && row.blocked_at === null && isProbeDue(row, now())
+      (row) =>
+        row.status === 'active' && row.blocked_at === null && (force || isProbeDue(row, now()))
     );
-    const batch = due.slice(0, MAX_PROBES_PER_REQUEST);
+    const batch = due.slice(0, limit);
 
     await Promise.all(
       batch.map(async (row) => {
@@ -393,6 +522,8 @@ export function createMcpCatalogService({
             connectable: verdict.connectable,
             reason: verdict.reason,
             probedAt: now().toISOString(),
+            iconUrl: verdict.logoUrl,
+            iconMime: verdict.logoMime,
           });
         } catch (caught) {
           // One unreachable server must not cost the page its other verdicts.
@@ -405,6 +536,17 @@ export function createMcpCatalogService({
     );
 
     return batch.length;
+  }
+
+  async function probe(registryNames: string[], { force = false }: { force?: boolean } = {}) {
+    const names = [...new Set(registryNames)].filter((name) => name.length > 0);
+    if (names.length === 0) return 0;
+
+    return probeAddresses(
+      await repository.getCatalogAddresses(names),
+      MAX_PROBES_PER_REQUEST,
+      force
+    );
   }
 
   return { search, adminList, adminUpdate, sync, probe };
