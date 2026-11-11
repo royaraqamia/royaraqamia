@@ -82,6 +82,16 @@ test here.
 - A Free member's five calls of the day are allowed and the sixth is refused before the remote call;
   a live Pro activation spends against 50; a visitor is refused; an Admin is let through.
 
+`mcp_catalog_search_test.sql` (#1268):
+
+- A new catalogue row carries its registry title in `search_text`, and a row with no override does
+  not carry the name it will later be drawn under.
+- Writing `title_override` puts the drawn name in the text and keeps the registry's title beside it.
+- A changed description, a filled `name_ar` and a direct write of `search_text` all leave the column
+  as the trigger computed it.
+- The column is a base column rather than a stored generated column, and the store's partial trigram
+  index survived the conversion.
+
 In `rls_authorization_test.sql` every write attempt is expected to be _refused_, so a failed
 rollback cannot leave data behind. `plan_cap_enforcement_test.sql` also writes rows to reach a
 cap; it seeds them with `session_replication_role = replica` and rolls the whole file back.
@@ -302,6 +312,12 @@ the refusal depends on the trigger seeing the row the same transaction wrote jus
 machine, so the catalog counts and the read matrix are unrun. The expressions it asserts are the two
 the merge in `20261116130000` writes, and the Admin assertion reads `app_settings.admin_emails` the
 same way `rls_authorization_test.sql` does.
+
+`mcp_catalog_search_test.sql` (#1268) is the first file here whose subject was rehearsed on the
+linked project inside a rolled-back transaction: `drop expression` left the table's relfilenode
+unchanged (25990) across 40,809 rows, the trigger wrote `vercel acme labs ...` for an overridden
+row, the eleven existing overrides were backfilled, and the partial trigram index survived. The
+pgTAP harness itself is unrun.
 
 ## Worth adding next
 
