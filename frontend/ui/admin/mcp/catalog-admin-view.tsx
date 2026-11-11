@@ -188,6 +188,9 @@ export function McpCatalogAdminView() {
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <Badge variant={connectableVariant(row)}>{connectableLabel(row)}</Badge>
                   {row.verifiedAt && <Badge variant="success">{COPY.verifiedBadge}</Badge>}
+                  {row.registrationKind === 'static' && (
+                    <Badge variant="secondary">{COPY.staticClientBadge}</Badge>
+                  )}
                   {row.featuredRank !== null && (
                     <Badge variant="secondary">
                       {COPY.featuredRankBadge} {row.featuredRank}

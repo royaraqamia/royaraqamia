@@ -6,6 +6,7 @@ import type {
 } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpRegistryClient, McpRegistryEntry } from '@/backend/clients/mcp-registry';
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
+import type { McpStaticClientMap } from '@/backend/shared/domain/mcp-static-clients';
 import { assertEgressUrl, EgressBlockedError } from '@/backend/shared/egress';
 import { logger } from '@/backend/shared/logger';
 import {
@@ -93,6 +94,41 @@ const LAUNCH_TITLES: Record<(typeof LAUNCH_SET)[number], string> = {
   'com.cloudflare.mcp/mcp': 'Cloudflare',
 };
 
+/**
+ * The rows the registry does not carry, written here because a reviewed client
+ * needs a row to hang from (issue #1229).
+ *
+ * GitHub publishes a remote MCP server and is not in the registry at all, so
+ * there is nothing for the mirror to copy: the address, the name and the
+ * description are ours, and the sync upserts them on every run. They are written
+ * **before** the sweep that retires rows the registry stopped serving, so a
+ * curated row is never mistaken for one that vanished.
+ *
+ * A curated row is a publisher entry, not a vouch: it still needs an admin to
+ * verify it, and the store still hides it until the probe (or its
+ * pre-registered client) says it can be connected.
+ */
+const CURATED_SERVERS: readonly McpCatalogUpsertRow[] = [
+  {
+    registryName: 'com.github/mcp',
+    title: 'GitHub',
+    description:
+      "Repositories, issues, pull requests, code search and projects, through GitHub's remote MCP server.",
+    version: null,
+    remoteUrl: 'https://api.githubcopilot.com/mcp/',
+    iconUrl: null,
+    iconMime: null,
+    status: 'active',
+    publishedAt: null,
+    registryUpdatedAt: null,
+    raw: null,
+  },
+];
+
+const CURATED_TITLES: Record<string, string> = Object.fromEntries(
+  CURATED_SERVERS.map((row) => [row.registryName, row.title ?? row.registryName])
+);
+
 const REGISTRY_STATUSES = new Set(['active', 'deprecated', 'deleted']);
 
 export type McpCatalogSyncMode = 'pass' | 'incremental';
@@ -140,6 +176,8 @@ interface CatalogServiceDependencies {
   repository: McpMarketplaceRepository;
   registry: McpRegistryClient;
   remote: McpRemoteClient;
+  /** The reviewed clients a row can be connected with, keyed by catalogue row. */
+  staticClients?: McpStaticClientMap;
   now?: () => Date;
 }
 
@@ -164,9 +202,10 @@ function toMemberRow(row: McpCatalogListRow): McpCatalogRow {
   };
 }
 
-function toAdminRow(row: McpCatalogListRow): McpCatalogAdminRow {
+function toAdminRow(row: McpCatalogListRow, preRegistered: boolean): McpCatalogAdminRow {
   return {
     ...toMemberRow(row),
+    registrationKind: preRegistered ? 'static' : 'dcr',
     titleOverride: row.title_override,
     descriptionAr: row.description_ar,
     remoteUrl: row.remote_url,
@@ -253,6 +292,7 @@ export function createMcpCatalogService({
   repository,
   registry,
   remote,
+  staticClients = new Map(),
   now = () => new Date(),
 }: CatalogServiceDependencies): McpCatalogService {
   async function search({
@@ -286,7 +326,10 @@ export function createMcpCatalogService({
       includeHidden: true,
       storeOnly: false,
     });
-    return { servers: rows.map(toAdminRow), nextCursor };
+    return {
+      servers: rows.map((row) => toAdminRow(row, staticClients.has(row.registry_name))),
+      nextCursor,
+    };
   }
 
   async function adminUpdate(input: McpCatalogAdminUpdate): Promise<void> {
@@ -478,6 +521,20 @@ export function createMcpCatalogService({
     }
 
     /*
+      The curated rows are written before anything sweeps: a pass that retires
+      what the registry stopped serving must not see a row the registry never
+      served as one that vanished (`markCatalogServersDeleted` compares
+      `fetched_at` against the pass's start, and this write is after it).
+    */
+    try {
+      await repository.upsertCatalogServers([...CURATED_SERVERS]);
+    } catch (caught) {
+      logger.warn('MCP catalogue: curated rows failed to write', {
+        error: caught instanceof Error ? caught.message : String(caught),
+      });
+    }
+
+    /*
       The store's rows are the promise, so they are measured on the sync rather
       than only when a screen draws them: a verified server that went down must
       stop being offered, and one that came back must return. It is a small
@@ -498,18 +555,20 @@ export function createMcpCatalogService({
       appears, because the store's query also asks for `connectable = true`.
     */
     try {
-      const seeded = await repository.verifyLaunchSet([...LAUNCH_SET], now().toISOString());
+      // The launch set plus the rows the registry does not carry: a curated row
+      // is seeded and measured the same way, because a provider we wrote by hand
+      // is still one a member taps.
+      const seedNames = [...LAUNCH_SET, ...CURATED_SERVERS.map((row) => row.registryName)];
+      const seedTitles: Record<string, string> = { ...LAUNCH_TITLES, ...CURATED_TITLES };
+      const seeded = await repository.verifyLaunchSet(seedNames, now().toISOString());
       // The first run that seeds them measures them too: waiting for the daily
       // verified probe would leave the store empty for days. They run in
       // parallel, so this is one probe's wall time rather than six.
       if (seeded > 0) {
-        for (const [registryName, title] of Object.entries(LAUNCH_TITLES)) {
+        for (const [registryName, title] of Object.entries(seedTitles)) {
           await repository.setTitleOverrideIfEmpty(registryName, title);
         }
-        await probeAddresses(
-          await repository.getCatalogAddresses([...LAUNCH_SET]),
-          LAUNCH_SET.length
-        );
+        await probeAddresses(await repository.getCatalogAddresses(seedNames), seedNames.length);
       }
     } catch (caught) {
       logger.warn('MCP catalogue: launch set seed failed', {
@@ -586,7 +645,9 @@ export function createMcpCatalogService({
     await Promise.all(
       batch.map(async (row) => {
         try {
-          const verdict = await remote.probeConnectable(row.remote_override ?? row.remote_url);
+          const verdict = await remote.probeConnectable(row.remote_override ?? row.remote_url, {
+            preRegistered: staticClients.has(row.registry_name),
+          });
           await repository.saveCatalogProbe(row.registry_name, {
             connectable: verdict.connectable,
             reason: verdict.reason,

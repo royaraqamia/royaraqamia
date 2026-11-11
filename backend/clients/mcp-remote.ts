@@ -20,6 +20,8 @@ import { EgressBlockedError, createGuardedFetch, readCappedText } from '@/backen
 import {
   McpRemoteError,
   type McpConnectProbe,
+  type McpDiscovery,
+  type McpOAuthClient,
   type McpRemoteFailure,
 } from '@/backend/shared/domain/mcp-remote';
 import { logger } from '@/backend/shared/logger';
@@ -46,21 +48,6 @@ import { logger } from '@/backend/shared/logger';
  * agreed to.
  */
 
-/** A discovery document reduced to what this client needs to keep. */
-export interface McpDiscovery {
-  /** The resource server we asked about, canonicalised. */
-  resource: string;
-  authorizationServer: string;
-  authorizationEndpoint: string;
-  tokenEndpoint: string;
-  registrationEndpoint: string | null;
-  scopes: string[];
-  /** The brand mark the resource metadata publishes, when it is an https URL. */
-  logoUrl: string | null;
-  /** Kept verbatim so the connection row can record what it agreed to. */
-  metadata: AuthorizationServerMetadata;
-}
-
 export interface McpRegistration {
   clientId: string;
   clientSecret: string | null;
@@ -77,7 +64,11 @@ export interface McpRemoteTool {
 
 // Re-exported for the callers that already speak to this client; the class
 // itself lives in the domain so a service may match on it.
-export { McpRemoteError, type McpRemoteFailure };
+export {
+  McpRemoteError,
+  type McpDiscovery,
+  type McpRemoteFailure,
+} from '@/backend/shared/domain/mcp-remote';
 
 /** The ceiling a catalogue probe gets, against the 20s a real call may take. */
 const PROBE_TIMEOUT_MS = 4_000;
@@ -125,8 +116,17 @@ export interface McpRemoteClient {
    * (phase 2, #1223). A measurement, not a call: it answers `false` with a
    * reason instead of throwing, because the caller is filling a column, not
    * serving a member's tap.
+   *
+   * `preRegistered` is the one case a probe cannot measure: the row carries a
+   * client we registered by hand, so a missing `registration_endpoint` — or a
+   * provider that hides its metadata from a datacenter IP — is not a refusal.
+   * The admin's reviewed entry is the verdict, and the probe still reads the
+   * document when it can, for the brand mark.
    */
-  probeConnectable(serverUrl: string | URL): Promise<McpConnectProbe>;
+  probeConnectable(
+    serverUrl: string | URL,
+    options?: { preRegistered?: boolean }
+  ): Promise<McpConnectProbe>;
   register(input: {
     discovery: McpDiscovery;
     redirectUri: string;
@@ -135,23 +135,28 @@ export interface McpRemoteClient {
   /**
    * The URL the member is sent to, and the PKCE verifier that must survive until
    * the callback. The SDK builds it; the caller stores the verifier encrypted.
+   *
+   * `scopes` is only sent when a pre-registered client names them: a DCR
+   * registration declares none on purpose (the provider's default is the
+   * starting grant), and a hand-registered app has no default to fall back on.
    */
   authorizeUrl(input: {
     discovery: McpDiscovery;
-    client: { clientId: string; clientSecret: string | null };
+    client: McpOAuthClient;
     redirectUri: string;
     state: string;
+    scopes?: string[];
   }): Promise<{ url: string; codeVerifier: string }>;
   exchange(input: {
     discovery: McpDiscovery;
-    client: { clientId: string; clientSecret: string | null };
+    client: McpOAuthClient;
     code: string;
     codeVerifier: string;
     redirectUri: string;
   }): Promise<OAuthTokens>;
   refresh(input: {
     discovery: McpDiscovery;
-    client: { clientId: string; clientSecret: string | null };
+    client: McpOAuthClient;
     refreshToken: string;
   }): Promise<OAuthTokens>;
   /**
@@ -162,7 +167,7 @@ export interface McpRemoteClient {
    */
   revoke(input: {
     metadata: AuthorizationServerMetadata;
-    client: { clientId: string; clientSecret: string | null };
+    client: McpOAuthClient;
     token: string;
     tokenTypeHint: 'access_token' | 'refresh_token';
   }): Promise<boolean>;
@@ -177,16 +182,16 @@ interface ClientDependencies {
 }
 
 /** What the SDK holds for a registered client, in the shape its helpers want. */
-function clientInformation(client: {
-  clientId: string;
-  clientSecret: string | null;
-}): OAuthClientInformationFull {
+function clientInformation(client: McpOAuthClient): OAuthClientInformationFull {
   return {
     client_id: client.clientId,
     ...(client.clientSecret ? { client_secret: client.clientSecret } : {}),
     // The SDK reads these when the server's metadata is silent about methods.
     redirect_uris: [],
     grant_types: ['authorization_code', 'refresh_token'],
+    ...(client.tokenEndpointAuthMethod
+      ? { token_endpoint_auth_method: client.tokenEndpointAuthMethod }
+      : {}),
   } as OAuthClientInformationFull;
 }
 
@@ -350,7 +355,37 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
   return {
     discover,
 
-    async probeConnectable(serverUrl) {
+    async probeConnectable(serverUrl, { preRegistered = false } = {}) {
+      /*
+        A pre-registered client is the one verdict the probe cannot take away.
+        The row carries a client we created by hand, so the two things discovery
+        would refuse it for — no `registration_endpoint`, or a provider that
+        hides its metadata from a datacenter IP — are the reasons it exists. The
+        document is still read when it answers, for the brand mark; only the
+        egress policy can still refuse the host.
+      */
+      if (preRegistered) {
+        let logoUrl: string | null = null;
+        let logoMime: string | null = null;
+        try {
+          const discovery = await discoverResourceMetadata(serverUrl, probeFetch);
+          if (discovery.resourceMetadataUrl) {
+            const info = await discoverOAuthServerInfo(serverUrl, {
+              fetchFn: probeFetch,
+              resourceMetadataUrl: discovery.resourceMetadataUrl,
+            });
+            logoUrl = resourceLogoUrl(info.resourceMetadata);
+            logoMime = iconMimeFromUrl(logoUrl);
+          }
+        } catch (error) {
+          if (error instanceof EgressBlockedError) {
+            return { connectable: false, reason: 'blocked', logoUrl: null, logoMime: null };
+          }
+          // Measured by a person, not by this probe: keep the verdict.
+        }
+        return { connectable: true, reason: null, logoUrl, logoMime };
+      }
+
       /*
         The three sources are asked explicitly, because the difference matters to
         the admin reading the verdict: a 404 at the root is not the end of the
@@ -450,7 +485,7 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
       }
     },
 
-    async authorizeUrl({ discovery, client, redirectUri, state }) {
+    async authorizeUrl({ discovery, client, redirectUri, state, scopes }) {
       try {
         const { authorizationUrl, codeVerifier } = await startAuthorization(
           discovery.authorizationServer,
@@ -460,6 +495,7 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
             redirectUrl: redirectUri,
             state,
             resource: discovery.resource,
+            ...(scopes && scopes.length > 0 ? { scope: scopes.join(' ') } : {}),
           }
         );
         return { url: authorizationUrl.toString(), codeVerifier };

@@ -592,3 +592,88 @@ describe('the connected-app cap', () => {
     expect(fake.credentials.size).toBe(0);
   });
 });
+
+describe('pre-registered client', () => {
+  /**
+   * The row GitHub's client exists for: no `registration_endpoint`, so the
+   * dynamic path refuses it. The static path must not even ask discovery, and
+   * the scopes must reach the authorize URL — a hand-registered app has no
+   * provider default to fall back on.
+   */
+  const STATIC = new Map([
+    [
+      CATALOG.registry_name,
+      {
+        registryName: CATALOG.registry_name,
+        clientId: 'static-client',
+        clientSecret: 'static-secret',
+        authorizationServer: 'https://auth.notion.example',
+        authorizationEndpoint: 'https://auth.notion.example/authorize',
+        tokenEndpoint: 'https://auth.notion.example/token',
+        revocationEndpoint: null,
+        scopes: ['read', 'write'],
+        tokenEndpointAuthMethod: 'client_secret_post' as const,
+      },
+    ],
+  ]);
+
+  it('authorises with the reviewed client and its scopes, without discovering', async () => {
+    const { repository } = fakeRepository();
+    const remote = fakeRemote({
+      discover: vi.fn(async () => ({ ...DISCOVERY, registrationEndpoint: null })),
+    });
+    const service = createMcpConnectService({ repository, remote, staticClients: STATIC });
+
+    await service.start({
+      userId: 'user-1',
+      registryName: CATALOG.registry_name,
+      redirectUri: REDIRECT,
+    });
+
+    expect(remote.discover).not.toHaveBeenCalled();
+    expect(remote.register).not.toHaveBeenCalled();
+    expect(remote.authorizeUrl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        client: expect.objectContaining({
+          clientId: 'static-client',
+          tokenEndpointAuthMethod: 'client_secret_post',
+        }),
+        scopes: ['read', 'write'],
+      })
+    );
+  });
+
+  it('stores the connection as static, with the secret encrypted', async () => {
+    const { repository, credentials } = fakeRepository();
+    const remote = fakeRemote();
+    const service = createMcpConnectService({ repository, remote, staticClients: STATIC });
+
+    const { authorizeUrl } = await service.start({
+      userId: 'user-1',
+      registryName: CATALOG.registry_name,
+      redirectUri: REDIRECT,
+    });
+    const state = new URL(authorizeUrl).searchParams.get('state') ?? '';
+    const { connectionId } = await service.complete({ userId: 'user-1', state, code: 'code-1' });
+
+    const stored = credentials.get(connectionId)!;
+    expect(stored.registration_kind).toBe('static');
+    expect(stored.client_id).toBe('static-client');
+    expect(stored.client_secret_enc).not.toContain('static-secret');
+  });
+
+  it('leaves a row with no reviewed client on the dynamic path', async () => {
+    const { repository } = fakeRepository();
+    const remote = fakeRemote();
+    const service = createMcpConnectService({ repository, remote });
+
+    await service.start({
+      userId: 'user-1',
+      registryName: CATALOG.registry_name,
+      redirectUri: REDIRECT,
+    });
+
+    expect(remote.discover).toHaveBeenCalledTimes(1);
+    expect(remote.register).toHaveBeenCalledTimes(1);
+  });
+});

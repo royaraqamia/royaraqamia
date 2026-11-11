@@ -1,6 +1,10 @@
 import type { McpMarketplaceRepository } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
-import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
+import { McpRemoteError, type McpOAuthClient } from '@/backend/shared/domain/mcp-remote';
+import {
+  staticClientDiscovery,
+  type McpStaticClientMap,
+} from '@/backend/shared/domain/mcp-static-clients';
 import { createPlanGate } from '@/backend/config/plans';
 import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
@@ -82,6 +86,12 @@ export interface McpConnectService {
 interface ConnectServiceDependencies {
   repository: McpMarketplaceRepository;
   remote: McpRemoteClient;
+  /**
+   * The reviewed clients we registered by hand, keyed by catalogue row. Empty is
+   * the DCR-only world this flow was built for; a row that has one skips
+   * discovery and registration entirely (`backend/config/mcp-static-clients.ts`).
+   */
+  staticClients?: McpStaticClientMap;
   /** The name we register with a third party. */
   clientName?: string;
   now?: () => Date;
@@ -94,6 +104,7 @@ const DEFAULT_CLIENT_NAME = 'royaraqamia';
 export function createMcpConnectService({
   repository,
   remote,
+  staticClients = new Map(),
   clientName = DEFAULT_CLIENT_NAME,
   now = () => new Date(),
   assertConnectionSlot,
@@ -141,6 +152,101 @@ export function createMcpConnectService({
     return server;
   }
 
+  /**
+   * Who we are at the provider, and the discovery that goes with it.
+   *
+   * Three answers, in this order: a client a person registered (the reviewed
+   * table), one we registered earlier and cached, or — only during `start` — a
+   * fresh dynamic registration. `complete` may not register: a callback is a
+   * consent coming back, not a place to create a client.
+   */
+  async function resolveClient({
+    registryName,
+    serverUrl,
+    redirectUri,
+    mayRegister,
+  }: {
+    registryName: string;
+    serverUrl: string;
+    redirectUri: string;
+    mayRegister: boolean;
+  }) {
+    const preRegistered = staticClients.get(registryName);
+    if (preRegistered) {
+      return {
+        discovery: staticClientDiscovery(preRegistered, serverUrl),
+        client: {
+          clientId: preRegistered.clientId,
+          clientSecret: preRegistered.clientSecret,
+          tokenEndpointAuthMethod: preRegistered.tokenEndpointAuthMethod,
+        } satisfies McpOAuthClient,
+        // The secret is configured in the environment, so it is encrypted on the
+        // way to the credential row exactly like a registered one.
+        clientSecretEnc: preRegistered.clientSecret
+          ? encryptSecret(preRegistered.clientSecret)
+          : null,
+        registrationKind: 'static' as const,
+        scopes: preRegistered.scopes,
+      };
+    }
+
+    const discovery = await remote.discover(serverUrl);
+    let registration = await repository.getRegistration(discovery.authorizationServer, redirectUri);
+
+    if (!registration) {
+      if (!mayRegister) {
+        throw new McpConnectError(
+          'registration',
+          'تغيّر تسجيل التطبيق أثناء الربط. ابدأ الربط من جديد.'
+        );
+      }
+      if (!discovery.registrationEndpoint) {
+        throw new McpConnectError(
+          'registration',
+          'التطبيق لا يسمح بتسجيل عملاء جدد، ولا يمكن ربطه',
+          new McpRemoteError('registration', 'no registration_endpoint')
+        );
+      }
+
+      try {
+        const registered = await remote.register({
+          discovery,
+          redirectUri,
+          clientName,
+        });
+        registration = {
+          authorization_server: discovery.authorizationServer,
+          redirect_uri: redirectUri,
+          client_id: registered.clientId,
+          client_secret_enc: registered.clientSecret
+            ? encryptSecret(registered.clientSecret)
+            : null,
+          registration_kind: 'dcr',
+        };
+        await repository.saveRegistration(registration);
+      } catch (error) {
+        throw new McpConnectError(
+          'registration',
+          'تعذّر تسجيل التطبيق لدينا، ولا يمكن ربطه',
+          error
+        );
+      }
+    }
+
+    return {
+      discovery,
+      client: {
+        clientId: registration.client_id,
+        clientSecret: registration.client_secret_enc
+          ? decryptSecret(registration.client_secret_enc)
+          : null,
+      } satisfies McpOAuthClient,
+      clientSecretEnc: registration.client_secret_enc,
+      registrationKind: registration.registration_kind,
+      scopes: [] as string[],
+    };
+  }
+
   return {
     async start({ userId, registryName, redirectUri }) {
       const server = await catalogServer(registryName);
@@ -149,60 +255,22 @@ export function createMcpConnectService({
       // so the cap is only asked about a connection that would be new.
       await requireSlot(userId, registryName);
 
-      const discovery = await remote.discover(server.remote_override ?? server.remote_url);
-
-      let registration = await repository.getRegistration(
-        discovery.authorizationServer,
-        redirectUri
-      );
-
-      if (!registration) {
-        if (!discovery.registrationEndpoint) {
-          throw new McpConnectError(
-            'registration',
-            'التطبيق لا يسمح بتسجيل عملاء جدد، ولا يمكن ربطه',
-            new McpRemoteError('registration', 'no registration_endpoint')
-          );
-        }
-
-        try {
-          const registered = await remote.register({
-            discovery,
-            redirectUri,
-            clientName,
-          });
-          registration = {
-            authorization_server: discovery.authorizationServer,
-            redirect_uri: redirectUri,
-            client_id: registered.clientId,
-            client_secret_enc: registered.clientSecret
-              ? encryptSecret(registered.clientSecret)
-              : null,
-            registration_kind: 'dcr',
-          };
-          await repository.saveRegistration(registration);
-        } catch (error) {
-          throw new McpConnectError(
-            'registration',
-            'تعذّر تسجيل التطبيق لدينا، ولا يمكن ربطه',
-            error
-          );
-        }
-      }
+      const serverUrl = server.remote_override ?? server.remote_url;
+      const { discovery, client, scopes } = await resolveClient({
+        registryName,
+        serverUrl,
+        redirectUri,
+        mayRegister: true,
+      });
 
       const state = generateOpaqueToken();
-      const client = {
-        clientId: registration.client_id,
-        clientSecret: registration.client_secret_enc
-          ? decryptSecret(registration.client_secret_enc)
-          : null,
-      };
 
       const { url, codeVerifier } = await remote.authorizeUrl({
         discovery,
         client,
         redirectUri,
         state,
+        scopes,
       });
 
       await repository.saveAttempt({
@@ -232,24 +300,12 @@ export function createMcpConnectService({
       // exchanged rather than after a consent nobody counted.
       await requireSlot(userId, attempt.registry_name);
 
-      const discovery = await remote.discover(attempt.server_url);
-      const registration = await repository.getRegistration(
-        discovery.authorizationServer,
-        attempt.redirect_uri
-      );
-      if (!registration) {
-        throw new McpConnectError(
-          'registration',
-          'تغيّر تسجيل التطبيق أثناء الربط. ابدأ الربط من جديد.'
-        );
-      }
-
-      const client = {
-        clientId: registration.client_id,
-        clientSecret: registration.client_secret_enc
-          ? decryptSecret(registration.client_secret_enc)
-          : null,
-      };
+      const { discovery, client, clientSecretEnc, registrationKind } = await resolveClient({
+        registryName: attempt.registry_name,
+        serverUrl: attempt.server_url,
+        redirectUri: attempt.redirect_uri,
+        mayRegister: false,
+      });
 
       const tokens = await remote.exchange({
         discovery,
@@ -282,9 +338,9 @@ export function createMcpConnectService({
         connectionId: connection.id,
         authorizationServer: discovery.authorizationServer,
         tokenEndpoint: discovery.tokenEndpoint,
-        registrationKind: registration.registration_kind,
-        clientId: registration.client_id,
-        clientSecretEnc: registration.client_secret_enc,
+        registrationKind,
+        clientId: client.clientId,
+        clientSecretEnc,
         accessTokenEnc: encryptSecret(tokens.access_token),
         refreshTokenEnc: tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null,
         scope: tokens.scope ?? null,

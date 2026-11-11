@@ -5,8 +5,43 @@
  * from the clients layer. The client raises it; the domain owns its shape.
  */
 
+import type { AuthorizationServerMetadata } from '@modelcontextprotocol/sdk/shared/auth.js';
+
+/**
+ * A discovery document reduced to what this client needs to keep.
+ *
+ * It lives here, beside the failure, because a service has to be able to build
+ * one without importing the client: a pre-registered client's endpoints are a
+ * reviewed table, not a discovery result (`backend/shared/domain/mcp-static-clients.ts`).
+ */
+export interface McpDiscovery {
+  /** The resource server we asked about, canonicalised. */
+  resource: string;
+  authorizationServer: string;
+  authorizationEndpoint: string;
+  tokenEndpoint: string;
+  registrationEndpoint: string | null;
+  scopes: string[];
+  /** The brand mark the resource metadata publishes, when it is an https URL. */
+  logoUrl: string | null;
+  /** Kept verbatim so the connection row can record what it agreed to. */
+  metadata: AuthorizationServerMetadata;
+}
+
 export type McpRemoteFailure =
   'blocked' | 'unreachable' | 'discovery' | 'registration' | 'authorization' | 'protocol';
+
+/**
+ * Who we are at a provider: the pair the flow stores encrypted, plus the method
+ * the token endpoint expects. DCR leaves the method unset because the provider
+ * told us during registration; a pre-registered app carries the one its console
+ * was configured with.
+ */
+export interface McpOAuthClient {
+  clientId: string;
+  clientSecret: string | null;
+  tokenEndpointAuthMethod?: 'client_secret_basic' | 'client_secret_post' | 'none';
+}
 
 /**
  * Why a catalogue row cannot be connected, as the catalogue stores it

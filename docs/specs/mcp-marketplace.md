@@ -180,7 +180,8 @@ redirect becomes credentials.
    `GET {authorization_server}/.well-known/oauth-authorization-server` → endpoints and scopes.
 2. No cached registration for this authorization server and redirect URI, and the server
    offers `registration_endpoint` → DCR with our client name and redirect URI. A server that
-   refuses DCR is not connectable in v1, and the row says so before the member taps it.
+   refuses DCR is not connectable — unless the row carries a reviewed pre-registered client, in
+   which case step 1 and step 2 are both skipped («Pre-registered clients», below).
 3. Build the authorize URL: PKCE S256, `state`, our scopes mapped to what the server advertises.
    Store the attempt (verifier encrypted, hashed state), then redirect.
 4. The provider consents and redirects to `/mcp/callback?code&state`.
@@ -194,25 +195,65 @@ redirect becomes credentials.
 publishes would ask the member for the widest consent the provider offers, on the strength of a
 guess about which tools need what; the provider's own default is the starting grant, and widening
 it is a choice someone makes on purpose. What that default actually is gets recorded here once a
-real connection is measured.
+real connection is measured. The one exception is a pre-registered client, which has no provider
+default: its reviewed entry names the scopes its app was created for, and they are sent.
 
-### Measured against real servers (2026-11-10)
+### Measured against real servers (2026-11-10, re-measured 2026-11-11)
 
 Eleven popular remote servers, probed for RFC 9728 resource metadata, an authorization server and
 dynamic registration:
 
-| Server                                              | Connectable | Why not                                              |
-| --------------------------------------------------- | ----------- | ---------------------------------------------------- |
-| Linear, Sentry, Vercel, Supabase, Canva, Cloudflare | yes         | DCR + PKCE S256 published                            |
-| Notion, Figma, Atlassian                            | no          | no `/.well-known/oauth-protected-resource`           |
-| Stripe                                              | no          | issuer publishes no metadata                         |
-| GitHub                                              | no          | no dynamic registration (pre-registered client only) |
+| Server                                              | Connectable                  | Why not                                                                                 |
+| --------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------- |
+| Linear, Sentry, Vercel, Supabase, Canva, Cloudflare | yes                          | DCR + PKCE S256 published                                                               |
+| Atlassian                                           | yes                          | root 404, but the `401` names the path-aware document; tenant AS publishes DCR          |
+| Stripe                                              | yes                          | `mcp.stripe.com` publishes RFC 9728 + AS metadata + DCR (it did not on 2026-11-10)      |
+| GitHub                                              | pre-registered               | resource metadata exists; `github.com/login/oauth` publishes no `registration_endpoint` |
+| Notion, Figma                                       | unmeasured from this network | 403 / 451 to a non-deployment egress; measured on production                            |
 
 Three of the most requested apps in the market are therefore not connectable by this flow, and
 that is not a bug to paper over: a pre-registered client per provider is a separate piece of work
 (one client id and secret each, in env), and a server with no resource metadata would have to be
 guessed at. Phase 2's catalogue says which rows can be connected before a member taps one
 («The connectable verdict», below), rather than explaining it after a refusal.
+
+### Pre-registered clients (#1229)
+
+Two providers cannot be reached by the flow above: one publishes no RFC 9728 resource metadata at
+all, and one publishes everything except `registration_endpoint`. Guessing their endpoints is the
+refusal the client exists for, so the alternative is a **reviewed entry**: the endpoints a person
+measured, and a client a person created in that provider's console.
+
+- **The table is code, the secret is environment.** `backend/config/mcp-static-clients.ts` names,
+  per catalogue row, the authorization server, both endpoints, the scopes and the token-endpoint
+  auth method, with the date each was read. The console supplies only
+  `MCP_STATIC_CLIENT_<KEY>_ID` and `MCP_STATIC_CLIENT_<KEY>_SECRET`. A definition with no
+  `client_id` is inert: its row behaves exactly as before.
+- **A row with a client skips discovery and registration.** `start` and `complete` build the same
+  discovery shape from the entry, so the authorize URL, the token exchange and the refresh path do
+  not branch on where the endpoints came from. `mcp_connection_credentials.registration_kind`
+  records `static`, and the secret is encrypted on the way in like a registered one.
+- **The probe cannot veto it.** A pre-registered row is `connectable` even when the provider hides
+  its metadata from our probe, because a person measured the flow; the document is still read for
+  the brand mark, and the egress policy can still refuse the host. The Admin Console shows a
+  «عميل مسجّل مسبقاً» badge, so verification is a decision about a known path.
+- **A provider the registry does not carry is a curated row.** GitHub has no entry in the
+  registry at all, so `catalog-service.ts` writes the row itself (`CURATED_SERVERS`) on every
+  sync, before the sweep that retires rows the registry stopped serving. It is a publisher entry,
+  not a vouch: the admin still verifies it, and the store still hides it until its verdict is true.
+- **Adding a provider** is: measure its resource and authorization metadata, create the app in its
+  console with the callback `https://royaraqamia.com/mcp/callback`, add the definition and the two
+  environment variables, run the sync, then verify the row in the Admin Console.
+
+Which path each provider takes today:
+
+| Provider                                            | Path                                                            | Client                                    | Scopes                                            |
+| --------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------- |
+| Vercel, Linear, Supabase, Sentry, Canva, Cloudflare | DCR                                                             | none                                      | provider default                                  |
+| Atlassian                                           | DCR (path-aware resource document, tenant authorization server) | none                                      | provider default                                  |
+| Stripe                                              | DCR (`access.stripe.com/mcp`)                                   | none                                      | provider default                                  |
+| GitHub                                              | static                                                          | `MCP_STATIC_CLIENT_GITHUB_ID` / `_SECRET` | `repo read:org read:user user:email read:project` |
+| Notion, Figma                                       | measured on production before a decision                        | —                                         | —                                                 |
 
 ## The catalogue mirror (phase 2, #1223)
 
