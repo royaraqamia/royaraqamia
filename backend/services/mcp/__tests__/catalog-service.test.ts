@@ -51,6 +51,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
   }> = [];
   const updates: Array<{ registryName: string; patch: unknown }> = [];
   const seeded: string[][] = [];
+  const marks: Array<{ registryName: string; icon: string }> = [];
   const marked: string[] = [];
   const retired: string[] = [];
 
@@ -101,6 +102,9 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
       return 0;
     },
     setTitleOverrideIfEmpty: async () => undefined,
+    setIconOverrideIfEmpty: async (registryName, icon) => {
+      marks.push({ registryName, icon });
+    },
     getCatalogSyncState: async () => ({ ...state }),
     saveCatalogSyncState: async (patch) => {
       Object.assign(state, patch);
@@ -108,7 +112,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     ...overrides,
   };
 
-  return { repository, state, upserts, probes, updates, seeded, marked, retired };
+  return { repository, state, upserts, probes, updates, seeded, marked, retired, marks };
 }
 
 function fakeRegistry(pages: McpRegistryPage[]): McpRegistryClient {
@@ -370,6 +374,7 @@ describe('the search', () => {
       registry_icon_mime: 'image/png',
       probe_icon_url: null,
       probe_icon_mime: null,
+      icon_override: null,
       featured_rank: 3,
       verified_at: '2026-11-14T00:00:00.000Z',
       blocked_at: null,
@@ -591,6 +596,7 @@ function serverRow(overrides: Partial<McpCatalogServerRecord> = {}): McpCatalogS
     registry_icon_mime: 'image/svg+xml',
     probe_icon_url: null,
     probe_icon_mime: null,
+    icon_override: null,
     verified_at: null,
     connectable: true,
     connectable_reason: null,
@@ -891,6 +897,7 @@ describe('a pre-registered client (issue #1229)', () => {
             registry_icon_mime: null,
             probe_icon_url: null,
             probe_icon_mime: null,
+            icon_override: null,
             featured_rank: null,
             verified_at: NOW.toISOString(),
             blocked_at: null,
@@ -910,5 +917,132 @@ describe('a pre-registered client (issue #1229)', () => {
 
     expect(repository.seeded[0]).toContain(GITHUB);
     expect(page.servers[0]?.registrationKind).toBe('static');
+  });
+});
+
+describe('the mark an admin chooses', () => {
+  it('accepts a path we ship', async () => {
+    const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate({
+      registryName: 'com.vercel/vercel-mcp',
+      iconOverride: '/brand/mcp/vercel.svg',
+    });
+
+    expect(repository.updates[0]?.patch).toEqual({ icon_override: '/brand/mcp/vercel.svg' });
+  });
+
+  it('refuses a path outside our marks and a non-https URL', async () => {
+    const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
+    const service = build({ repository, pages: [] });
+
+    await expect(
+      service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', iconOverride: '/etc/passwd' })
+    ).rejects.toMatchObject({ failure: 'invalid_icon' });
+
+    await expect(
+      service.adminUpdate({
+        registryName: 'com.vercel/vercel-mcp',
+        iconOverride: 'http://cdn.example/logo.svg',
+      })
+    ).rejects.toMatchObject({ failure: 'invalid_icon' });
+  });
+
+  it('refuses a first vouch for a row with no mark at all', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () =>
+        serverRow({
+          registry_icon_url: null,
+          registry_icon_mime: null,
+          probe_icon_url: null,
+          probe_icon_mime: null,
+        }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await expect(
+      service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', verified: true })
+    ).rejects.toMatchObject({ failure: 'no_mark' });
+  });
+
+  it('accepts the first vouch when the same request supplies the mark', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () =>
+        serverRow({
+          registry_icon_url: null,
+          registry_icon_mime: null,
+          probe_icon_url: null,
+          probe_icon_mime: null,
+        }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate({
+      registryName: 'com.vercel/vercel-mcp',
+      verified: true,
+      iconOverride: 'https://mcp.vercel.com/icon.svg',
+    });
+
+    expect(repository.updates[0]?.patch).toMatchObject({
+      icon_override: 'https://mcp.vercel.com/icon.svg',
+      verified_at: NOW.toISOString(),
+    });
+  });
+});
+
+describe('brand marks (the eleven letters)', () => {
+  it('seeds the shipped mark for every row that has one, on every sync', async () => {
+    const repository = fakeRepository();
+    const service = build({ repository, pages: [rows(120, null)] });
+
+    await service.sync();
+
+    const github = repository.marks.find((mark) => mark.registryName === 'com.github/mcp');
+    expect(github).toEqual({
+      registryName: 'com.github/mcp',
+      icon: '/brand/mcp/github.svg',
+    });
+  });
+
+  it("prefers the mark we ship over the registry's and the probe's", async () => {
+    const repository = fakeRepository({
+      listCatalogServers: async () => ({
+        rows: [
+          {
+            registry_name: 'com.vercel/vercel-mcp',
+            title: 'Vercel',
+            title_override: 'Vercel',
+            description: 'An MCP server for Vercel',
+            name_ar: null,
+            description_ar: null,
+            remote_url: 'https://mcp.vercel.com',
+            remote_override: null,
+            status: 'active',
+            version: null,
+            published_at: null,
+            fetched_at: NOW.toISOString(),
+            registry_icon_url: 'https://registry.example/vercel.png',
+            registry_icon_mime: 'image/png',
+            probe_icon_url: 'https://mcp.vercel.com/logo.svg',
+            probe_icon_mime: 'image/svg+xml',
+            icon_override: '/brand/mcp/vercel.svg',
+            featured_rank: null,
+            verified_at: NOW.toISOString(),
+            blocked_at: null,
+            blocked_reason: null,
+            connectable: true,
+            connectable_reason: null,
+            probed_at: NOW.toISOString(),
+          },
+        ],
+        nextCursor: null,
+      }),
+    });
+    const service = build({ repository, pages: [] });
+
+    const page = await service.search({ q: '', cursor: null });
+
+    expect(page.servers[0]?.iconUrl).toBe('/brand/mcp/vercel.svg');
   });
 });

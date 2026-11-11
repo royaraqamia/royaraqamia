@@ -42,6 +42,7 @@ const CATALOG: McpCatalogServerRecord = {
   registry_icon_mime: null,
   probe_icon_url: null,
   probe_icon_mime: null,
+  icon_override: null,
   verified_at: '2026-11-14T00:00:00.000Z',
   connectable: true,
   connectable_reason: null,
@@ -215,6 +216,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     updateCatalogServer: async () => undefined,
     verifyLaunchSet: async () => 0,
     setTitleOverrideIfEmpty: async () => undefined,
+    setIconOverrideIfEmpty: async () => undefined,
     getCatalogSyncState: async () => ({
       cursor: null,
       pass_started_at: null,

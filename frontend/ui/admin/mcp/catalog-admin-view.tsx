@@ -5,6 +5,7 @@ import Image from 'next/image';
 import {
   BadgeCheck,
   Ban,
+  ImageIcon,
   Link2,
   Loader2,
   PackageSearch,
@@ -50,7 +51,7 @@ import {
  * replaces the registry's English.
  */
 
-type RowActionMode = 'block' | 'unblock' | 'arabic' | 'verify' | 'remote';
+type RowActionMode = 'block' | 'unblock' | 'arabic' | 'mark' | 'verify' | 'remote';
 
 interface RowAction {
   row: McpCatalogAdminRow;
@@ -197,6 +198,7 @@ export function McpCatalogAdminView() {
                     </Badge>
                   )}
                   {row.blocked && <Badge variant="destructive">{COPY.blockedBadge}</Badge>}
+                  {!row.iconUrl && <Badge variant="warning">{COPY.noMarkBadge}</Badge>}
                   {row.status === 'deprecated' && (
                     <Badge variant="warning">{COPY.deprecatedBadge}</Badge>
                   )}
@@ -218,11 +220,13 @@ export function McpCatalogAdminView() {
                   <Button
                     variant={row.verifiedAt ? 'outline' : 'default'}
                     size="sm"
-                    disabled={!row.verifiedAt && row.connectable !== true}
+                    disabled={!row.verifiedAt && (row.connectable !== true || !row.iconUrl)}
                     title={
                       !row.verifiedAt && row.connectable !== true
                         ? COPY.verifyNeedsConnectable
-                        : undefined
+                        : !row.verifiedAt && !row.iconUrl
+                          ? COPY.verifyNeedsMark
+                          : undefined
                     }
                     onClick={() => setAction({ row, mode: 'verify' })}
                   >
@@ -248,6 +252,14 @@ export function McpCatalogAdminView() {
                   >
                     <PencilLine className="size-4" aria-hidden="true" />
                     {COPY.arabicAction}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAction({ row, mode: 'mark' })}
+                  >
+                    <ImageIcon className="size-4" aria-hidden="true" />
+                    {COPY.markAction}
                   </Button>
                   <Button
                     variant={row.blocked ? 'outline' : 'destructive'}
@@ -343,6 +355,16 @@ export function McpCatalogAdminView() {
               }}
             />
           )}
+          {action?.mode === 'mark' && (
+            <MarkForm
+              row={action.row}
+              onCancel={() => setAction(null)}
+              onDone={() => {
+                setAction(null);
+                reload();
+              }}
+            />
+          )}
           {action?.mode === 'remote' && (
             <RemoteForm
               row={action.row}
@@ -387,7 +409,11 @@ function CatalogueMark({ row }: { row: McpCatalogAdminRow }) {
 
   return (
     <Image
-      src={`/mcp/icon?name=${encodeURIComponent(row.registryName)}`}
+      src={
+        row.iconUrl.startsWith('/')
+          ? row.iconUrl
+          : `/mcp/icon?name=${encodeURIComponent(row.registryName)}`
+      }
       alt=""
       width={40}
       height={40}
@@ -671,6 +697,81 @@ function RemoteForm({ row, onCancel, onDone }: FormProps) {
           {COPY.cancel}
         </Button>
         <Button size="sm" onClick={() => void save()} disabled={saving}>
+          {saving && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+          {COPY.save}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+/**
+ * The row's mark: a path we ship (`/brand/...`) or an https URL the publisher
+ * serves. The proxy fetches the latter through the egress policy, so the
+ * member's browser never talks to the provider; clearing the field follows the
+ * two measured sources again.
+ */
+function MarkForm({ row, onCancel, onDone }: FormProps) {
+  const [url, setUrl] = useState(row.iconOverride ?? '');
+  const [saving, setSaving] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  async function write(next: string | null, clearingNow = false) {
+    if (clearingNow) setClearing(true);
+    else setSaving(true);
+    try {
+      await updateAdminMcpCatalogRow({ registryName: row.registryName, iconOverride: next });
+      toast.success(COPY.saved);
+      onDone();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : COPY.saveFailed);
+    } finally {
+      setSaving(false);
+      setClearing(false);
+    }
+  }
+
+  return (
+    <>
+      <DialogTitle className="leading-snug!">{COPY.markTitle}</DialogTitle>
+      <DialogDescription className="text-pretty">{COPY.markDescription}</DialogDescription>
+
+      <div className="flex items-center gap-3">
+        <CatalogueMark row={row} />
+        <p className="text-xs text-muted-foreground">{COPY.markPreviewHint}</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="mcp-icon-url">{COPY.markUrlLabel}</Label>
+        <Input
+          id="mcp-icon-url"
+          value={url}
+          maxLength={500}
+          dir="ltr"
+          placeholder="/brand/mcp/github.svg"
+          onChange={(event) => setUrl(event.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">{COPY.markUrlHint}</p>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={onCancel} disabled={saving || clearing}>
+          {COPY.cancel}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => void write(null, true)}
+          disabled={saving || clearing || row.iconOverride === null}
+        >
+          {clearing && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+          {COPY.markClear}
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => void write(url.trim() || null)}
+          disabled={saving || clearing}
+        >
           {saving && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
           {COPY.save}
         </Button>

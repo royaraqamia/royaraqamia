@@ -28,13 +28,18 @@ export function createMcpIconService({
       if (registryName.length === 0 || registryName.length > 200) return null;
 
       const server = await repository.getCatalogServer(registryName);
-      const iconUrl = server ? (server.probe_icon_url ?? server.registry_icon_url) : null;
+      const iconUrl = server
+        ? (server.icon_override ?? server.probe_icon_url ?? server.registry_icon_url)
+        : null;
       if (
         !server ||
         server.status !== 'active' ||
         server.blocked_at !== null ||
         server.verified_at === null ||
-        !iconUrl
+        !iconUrl ||
+        // A mark we ship is same-origin and served as it is; proxying it would
+        // be a request to ourselves.
+        iconUrl.startsWith('/')
       ) {
         return null;
       }

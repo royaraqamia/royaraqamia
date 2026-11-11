@@ -138,6 +138,12 @@ export const McpCatalogAdminRowSchema = McpCatalogRowSchema.extend({
   remoteOptions: z.array(McpCatalogRemoteOptionSchema),
   /** The Latin name an admin wrote; `title` already falls back to it. */
   titleOverride: z.string().nullable(),
+  /**
+   * The mark the row draws: a path we ship (`/brand/mcp/...`) or an https URL an
+   * admin pasted from the publisher's own brand page. `null` follows the two
+   * measured sources.
+   */
+  iconOverride: z.string().nullable(),
   /** The override as stored, so the field can be edited rather than only shown. */
   descriptionAr: z.string().nullable(),
   /** The registry's own status: `active`, `deprecated`, `deleted`. */
@@ -178,6 +184,8 @@ export const McpCatalogAdminUpdateSchema = z
     nameAr: z.string().trim().max(120).nullable().optional(),
     /** The Latin name the store draws, when the registry has none or a worse one. */
     titleOverride: z.string().trim().max(120).nullable().optional(),
+    /** A shipped path (`/brand/...`) or an https URL the publisher serves. */
+    iconOverride: z.string().trim().max(500).nullable().optional(),
     descriptionAr: z.string().trim().max(1000).nullable().optional(),
     /** The store's admission rule; the service refuses a row not measured connectable. */
     verified: z.boolean().optional(),
@@ -250,6 +258,17 @@ export const MCP_CATALOG_ADMIN_COPY = {
   blockAction: 'إيقاف',
   unblockAction: 'إلغاء الإيقاف',
   arabicAction: 'الاسم والوصف',
+  markAction: 'الشعار',
+  markTitle: 'شعار التطبيق',
+  markDescription:
+    'الشعار هو ما يميّز البطاقة في المتجر. اختر مساراً من شعاراتنا أو رابطاً من المزوّد نفسه؛ يُجلب عبر سياستنا، ولا يصل متصفح العضو إلى المزوّد.',
+  markUrlLabel: 'مسار الشعار أو رابطه',
+  markUrlHint:
+    'مسار يبدأ بـ /brand/، أو رابط https. تركه فارغاً يعود إلى شعار السجل أو شعار الفحص.',
+  markPreviewHint: 'هكذا تظهر العلامة في المتجر.',
+  markClear: 'اترك شعار المزوّد',
+  noMarkBadge: 'بلا شعار',
+  verifyNeedsMark: 'لا يمكن اعتماد تطبيق بلا شعار: بطاقته سترسم حرفاً. أضف الشعار ثم أعد المحاولة.',
   blockTitle: 'إيقاف تطبيق',
   blockDescription: 'لن يظهر التطبيق في المتجر، ولن يبدأ ربطه. اكتب السبب: هو ما يقرأه من يحاول.',
   blockReasonLabel: 'سبب الإيقاف',

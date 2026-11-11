@@ -121,6 +121,7 @@ function fakeRepository(
     updateCatalogServer: async () => undefined,
     verifyLaunchSet: async () => 0,
     setTitleOverrideIfEmpty: async () => undefined,
+    setIconOverrideIfEmpty: async () => undefined,
     getCatalogSyncState: async () => ({
       cursor: null,
       pass_started_at: null,

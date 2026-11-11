@@ -129,6 +129,33 @@ const CURATED_TITLES: Record<string, string> = Object.fromEntries(
   CURATED_SERVERS.map((row) => [row.registryName, row.title ?? row.registryName])
 );
 
+/**
+ * The marks we ship, per catalogue row, as same-origin paths.
+ *
+ * The registry's `icons` and the provider's `logo_uri` are empty for the rows
+ * members ask for most, so eleven cards fell back to eleven letters. These are
+ * the publishers' own marks, taken from Simple Icons (CC0) and served from
+ * `public/brand/mcp`, which keeps the rule the icon proxy exists for: a
+ * member's browser never fetches a third party. The mark stays the owner's
+ * trademark, used to identify the app it belongs to.
+ *
+ * `icon_override` is written only where it is null, so a mark an admin changes
+ * later survives the daily sync. Canva is absent: Simple Icons has no mark for
+ * it, and a wrong logo is worse than a monogram.
+ */
+const BRAND_MARKS: Record<string, string> = {
+  'com.github/mcp': '/brand/mcp/github.svg',
+  'com.notion/mcp': '/brand/mcp/notion.svg',
+  'com.figma.mcp/mcp': '/brand/mcp/figma.svg',
+  'com.atlassian/atlassian-mcp-server': '/brand/mcp/atlassian.svg',
+  'com.stripe/mcp': '/brand/mcp/stripe.svg',
+  'com.vercel/vercel-mcp': '/brand/mcp/vercel.svg',
+  'com.supabase/mcp': '/brand/mcp/supabase.svg',
+  'app.linear/linear': '/brand/mcp/linear.svg',
+  'io.github.getsentry/sentry-mcp': '/brand/mcp/sentry.svg',
+  'com.cloudflare.mcp/mcp': '/brand/mcp/cloudflare.svg',
+};
+
 const REGISTRY_STATUSES = new Set(['active', 'deprecated', 'deleted']);
 
 export type McpCatalogSyncMode = 'pass' | 'incremental';
@@ -160,7 +187,8 @@ export interface McpCatalogService {
 }
 
 /** A refusal from the Admin Console that has a sentence for the person who asked. */
-export type McpCatalogAdminFailure = 'unknown_app' | 'not_connectable' | 'invalid_remote';
+export type McpCatalogAdminFailure =
+  'unknown_app' | 'not_connectable' | 'invalid_remote' | 'invalid_icon' | 'no_mark';
 
 export class McpCatalogError extends Error {
   constructor(
@@ -193,7 +221,7 @@ function toMemberRow(row: McpCatalogListRow): McpCatalogRow {
     title: row.title_override ?? row.title,
     description: row.description_ar ?? row.description,
     nameAr: row.name_ar,
-    iconUrl: row.probe_icon_url ?? row.registry_icon_url,
+    iconUrl: row.icon_override ?? row.probe_icon_url ?? row.registry_icon_url,
     verified: row.verified_at !== null,
     featuredRank: row.featured_rank,
     connectable: row.connectable,
@@ -207,6 +235,7 @@ function toAdminRow(row: McpCatalogListRow, preRegistered: boolean): McpCatalogA
     ...toMemberRow(row),
     registrationKind: preRegistered ? 'static' : 'dcr',
     titleOverride: row.title_override,
+    iconOverride: row.icon_override,
     descriptionAr: row.description_ar,
     remoteUrl: row.remote_url,
     remoteOverride: row.remote_override,
@@ -396,6 +425,36 @@ export function createMcpCatalogService({
       patch.description_ar = input.descriptionAr?.trim() || null;
     if (input.featuredRank !== undefined) patch.featured_rank = input.featuredRank;
 
+    /*
+      The mark is the third source, and the only one an admin writes: a path we
+      ship (`/brand/...`) or an https URL the publisher serves. Anything else is
+      refused, because a member's browser will render whatever this holds — the
+      proxy only ever fetches it through the egress policy.
+    */
+    if (input.iconOverride !== undefined) {
+      const next = input.iconOverride?.trim() || null;
+      if (next !== null) {
+        if (next.startsWith('/')) {
+          if (!next.startsWith('/brand/')) {
+            throw new McpCatalogError(
+              'invalid_icon',
+              'الشعار يجب أن يكون مساراً من شعاراتنا أو رابط https.'
+            );
+          }
+        } else {
+          try {
+            assertEgressUrl(next);
+          } catch (error) {
+            if (error instanceof EgressBlockedError) {
+              throw new McpCatalogError('invalid_icon', error.message);
+            }
+            throw error;
+          }
+        }
+      }
+      patch.icon_override = next;
+    }
+
     if (input.verified === true) {
       /*
         Verification is a vouch, not a measurement, so a first vouch needs the
@@ -410,6 +469,24 @@ export function createMcpCatalogService({
           'not_connectable',
           'لا يمكن اعتماد تطبيق لم يثبت أن ربطه ممكن. افحصه الآن ثم أعد المحاولة.'
         );
+      }
+      /*
+        The store's promise includes the mark: a row a member cannot recognise
+        is the letter tile ADR-0162 exists to delete. The check is on the first
+        vouch only — a row already published can still be edited while its mark
+        is being fixed.
+      */
+      if (existing.verified_at === null) {
+        const mark =
+          patch.icon_override !== undefined
+            ? patch.icon_override
+            : (existing.icon_override ?? existing.probe_icon_url ?? existing.registry_icon_url);
+        if (!mark) {
+          throw new McpCatalogError(
+            'no_mark',
+            'لا يمكن اعتماد تطبيق بلا شعار: بطاقته سترسم حرفاً بدل علامته. أضف الشعار ثم أعد المحاولة.'
+          );
+        }
       }
       // Saving a verified row's rank must not move the date it was vouched for.
       patch.verified_at = existing.verified_at ?? now().toISOString();
@@ -569,6 +646,16 @@ export function createMcpCatalogService({
           await repository.setTitleOverrideIfEmpty(registryName, title);
         }
         await probeAddresses(await repository.getCatalogAddresses(seedNames), seedNames.length);
+      }
+
+      /*
+        The brand marks run on every sync, not only on the run that seeds the
+        store: a store that is already verified is exactly where the eleven
+        letters were. The write is a no-op wherever a mark already exists, so a
+        daily run costs one skipped update per row.
+      */
+      for (const [registryName, icon] of Object.entries(BRAND_MARKS)) {
+        await repository.setIconOverrideIfEmpty(registryName, icon);
       }
     } catch (caught) {
       logger.warn('MCP catalogue: launch set seed failed', {

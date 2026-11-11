@@ -1143,6 +1143,7 @@ export type Database = {
           description_ar: string | null;
           featured_rank: number | null;
           fetched_at: string;
+          icon_override: string | null;
           name_ar: string | null;
           probe_icon_mime: string | null;
           probe_icon_url: string | null;
@@ -1173,6 +1174,7 @@ export type Database = {
           description_ar?: string | null;
           featured_rank?: number | null;
           fetched_at?: string;
+          icon_override?: string | null;
           name_ar?: string | null;
           probe_icon_mime?: string | null;
           probe_icon_url?: string | null;
@@ -1202,6 +1204,7 @@ export type Database = {
           description_ar?: string | null;
           featured_rank?: number | null;
           fetched_at?: string;
+          icon_override?: string | null;
           name_ar?: string | null;
           probe_icon_mime?: string | null;
           probe_icon_url?: string | null;
