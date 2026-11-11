@@ -83,7 +83,7 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 ## Components
 
-A component is finished when the surface that draws it is native: 75 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 76 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -93,6 +93,7 @@ A component is finished when the surface that draws it is native: 75 ported comp
 - [ ] `shell-tab-bar` on **home** · #647
 - [ ] `shell-services` on **home** · #647
 - [x] `shell-back-control` on **account-faq** · #967
+- [ ] `apps-surface` on **mcp-apps** · #1256
 - [ ] `home-strip` on **home** · #1194
 - [ ] `home-empty` on **home** · #1194
 - [ ] `home-picker` on **home** · #1194
