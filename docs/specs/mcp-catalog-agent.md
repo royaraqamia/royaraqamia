@@ -18,7 +18,11 @@ standing between the probe and the publish.
 3. **`apply`** validates every decision (source host, `/brand/` file present, the
    `logo_uri` is the one the probe measured), attaches the registry source text
    itself, applies mark → copy → verify, enforces the publish cap, and records the
-   row that stopped the page at the cap.
+   row that stopped the page at the cap. A row already published is offered the
+   same mark and copy (`needsMark` / `needsCopy` are measured for it too) and gets
+   them as an edit: no second vouch, no cap, and its `verified_at` does not move
+   (#1302). That is the only way a seeded row's letter tile is ever replaced — a
+   row published before it had a mark is otherwise re-checked and nothing more.
 
 The checks decide. A row that fails waits as a skip event with a category
 (`no_mark`, `no_registration`, `check_failed`, `repo_pr_pending`,
