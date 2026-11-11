@@ -166,15 +166,22 @@ export function get30DayCalendarGrid(
   todayStr: string
 ): { date: string; dayLabel: string; isToday: boolean }[] {
   const grid: { date: string; dayLabel: string; isToday: boolean }[] = [];
-  const today = new Date(todayStr);
+  // `todayStr` is a calendar day, not an instant: build every cell at UTC
+  // midnight from the string's own parts, so `date`, `isToday` and the weekday
+  // label describe the same day whatever the browser's offset (#1113).
+  const [year, month, day] = todayStr.split('-').map(Number);
+  const today = new Date(Date.UTC(year!, month! - 1, day!));
 
   for (let i = 29; i >= 0; i--) {
     const d = new Date(today);
-    d.setDate(d.getDate() - i);
+    d.setUTCDate(d.getUTCDate() - i);
     const dStr = d.toISOString().split('T')[0]!;
     grid.push({
       date: dStr,
-      dayLabel: d.toLocaleDateString('ar-SA-u-nu-latn', { weekday: 'short' }),
+      dayLabel: d.toLocaleDateString('ar-SA-u-nu-latn', {
+        weekday: 'short',
+        timeZone: 'UTC',
+      }),
       isToday: dStr === todayStr,
     });
   }
