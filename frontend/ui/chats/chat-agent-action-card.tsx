@@ -46,7 +46,7 @@ export function ActionCard({
   return (
     <div className="w-full max-w-[85%] rounded-2xl border border-border/70 bg-card/80 px-3 py-2 text-sm shadow-xs">
       <p className="font-bold leading-relaxed text-foreground">
-        {chatAgentActionSentence(action.tool, action.args)}
+        {chatAgentActionSentence(action.tool, action.args, action.appName)}
       </p>
       <p
         className={cn(

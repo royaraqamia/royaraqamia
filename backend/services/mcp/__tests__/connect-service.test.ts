@@ -146,9 +146,13 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
         expires_at: input.expiresAt,
         issued_at: '2026-11-14T00:00:00.000Z',
         metadata: input.metadata,
+        refresh_claimed_at: null,
       });
     },
     getCredentials: async (id) => credentials.get(id) ?? null,
+    claimRefresh: async () => null,
+    releaseRefresh: async () => undefined,
+    listUsableTools: async () => [],
     saveTools: async (id, list: McpToolInput[]) => {
       tools.set(
         id,

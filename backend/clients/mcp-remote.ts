@@ -101,6 +101,35 @@ function resourceLogoUrl(metadata: unknown): string | null {
   }
 }
 
+/**
+ * Whether the provider refused the grant itself.
+ *
+ * The SDK parses an OAuth error body into a class carrying `errorCode`, so the
+ * check is on the code rather than on an imported class: this client speaks to
+ * the SDK's client half, and a server-half class is an import this module does
+ * not need to own.
+ */
+function isInvalidGrant(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { errorCode?: unknown }).errorCode === 'invalid_grant'
+  );
+}
+
+/**
+ * Whether the server refused the bearer token we presented.
+ *
+ * The transport raises `StreamableHTTPError` with the response's status in
+ * `code`; 401 and 403 are both "this token does not open this server", which is
+ * a refresh and a retry, not a protocol fault.
+ */
+function refusedToken(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const code = (error as { code?: unknown }).code;
+  return code === 401 || code === 403;
+}
+
 /** The mime an icon URL names, for the proxy's allowlist; `null` when it does not. */
 function iconMimeFromUrl(value: string | null): string | null {
   if (!value) return null;
@@ -168,6 +197,29 @@ export interface McpRemoteClient {
   }): Promise<boolean>;
   /** `initialize` + `tools/list`, in one connection that is closed again. */
   listTools(input: { serverUrl: string | URL; accessToken: string }): Promise<McpRemoteTool[]>;
+  /**
+   * One `tools/call`, in one connection that is closed again (phase 4 / #1225).
+   *
+   * The answer is returned as the server wrote it, minus the protocol envelope:
+   * `isError` is the server's own verdict about the call, and `content` is what
+   * the model reads. Nothing here interprets either — a remote answer is data.
+   */
+  callTool(input: {
+    serverUrl: string | URL;
+    accessToken: string;
+    name: string;
+    args: Record<string, unknown>;
+    signal?: AbortSignal;
+  }): Promise<McpRemoteCallResult>;
+}
+
+/** What a `tools/call` answered, reduced to what a turn can carry. */
+export interface McpRemoteCallResult {
+  /** The server's own `isError`: the call ran and refused, rather than failed. */
+  isError: boolean;
+  content: unknown;
+  /** The structured answer, when the server publishes one. */
+  structured: unknown;
 }
 
 interface ClientDependencies {
@@ -496,6 +548,19 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
         // The SDK keeps the old refresh token when the server does not rotate.
         return { ...tokens, refresh_token: tokens.refresh_token ?? refreshToken };
       } catch (error) {
+        /*
+          `invalid_grant` is the provider's own answer for a refresh token that
+          is expired, revoked, or was already spent by a rotation. It is not a
+          failure to retry: the connection needs the member's consent again, and
+          the caller turns this into `needs_reauth` rather than a failed turn.
+        */
+        if (isInvalidGrant(error)) {
+          throw new McpRemoteError(
+            'reauth',
+            'انتهت صلاحية الوصول إلى التطبيق. أعد ربطه من «تطبيقاتنا».',
+            error
+          );
+        }
         mapFailure(error, 'authorization', 'انتهت صلاحية الوصول إلى التطبيق، ويلزم إعادة الربط');
       }
     },
@@ -559,6 +624,42 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
         }));
       } catch (error) {
         mapFailure(error, 'protocol', 'تعذّر قراءة أدوات التطبيق');
+      } finally {
+        await client.close().catch(() => undefined);
+      }
+    },
+
+    async callTool({ serverUrl, accessToken, name, args, signal }) {
+      const client = new Client(
+        { name: 'royaraqamia', version: MCP_SERVER_VERSION },
+        { capabilities: {} }
+      );
+      const transport = new StreamableHTTPClientTransport(new URL(serverUrl), {
+        fetch: guardedFetch,
+        requestInit: { headers: { Authorization: `Bearer ${accessToken}` } },
+      });
+
+      try {
+        await client.connect(transport);
+        const result = await client.callTool({ name, arguments: args }, undefined, {
+          signal,
+        });
+        return {
+          isError: result.isError === true,
+          content: result.content ?? null,
+          structured: result.structuredContent ?? null,
+        };
+      } catch (error) {
+        // A refused token is its own answer: the caller refreshes once and asks
+        // again, and only a second refusal means the grant is gone.
+        if (refusedToken(error)) {
+          throw new McpRemoteError(
+            'unauthorized',
+            'رفض التطبيق صلاحية الوصول الحالية. سنحاول التجديد.',
+            error
+          );
+        }
+        mapFailure(error, 'protocol', 'تعذّر تنفيذ الأداة لدى التطبيق');
       } finally {
         await client.close().catch(() => undefined);
       }

@@ -21,6 +21,7 @@ import {
   disconnectMcpConnection,
   getMcpConnection,
   setMcpConnectionTool,
+  startMcpConnection,
   updateMcpConnection,
 } from '@/frontend/api/mcp-connections';
 import { ApiError } from '@/frontend/transport/http';
@@ -58,6 +59,7 @@ export function McpConnectionView({
   const [savingEnabled, setSavingEnabled] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -102,6 +104,25 @@ export function McpConnectionView({
       return;
     }
     await load();
+  };
+
+  /**
+   * The one repair a dead grant has (#1227): the same consent flow again. It
+   * reuses the connection's slot — `start` finds the live row — so a member who
+   * hit a cap is not asked to free one to reconnect an app they already have.
+   */
+  const reconnect = async () => {
+    if (!connection) return;
+    setReconnecting(true);
+    setActionError(null);
+    try {
+      const { authorizeUrl } = await startMcpConnection(connection.registryName);
+      // The consent page is a third party's origin; the whole document leaves.
+      window.location.assign(authorizeUrl);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : COPY.reconnectFailed);
+      setReconnecting(false);
+    }
   };
 
   const toggleTool = async (tool: McpConnectionTool) => {
@@ -207,7 +228,25 @@ export function McpConnectionView({
       </header>
 
       {connection.status === 'needs_reauth' && (
-        <Notice tone="warning">{COPY.detailNeedsReauth}</Notice>
+        <div className="space-y-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+          <p className="flex items-start gap-2 text-sm font-bold text-amber-700 dark:text-amber-300">
+            <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+            {COPY.detailNeedsReauth}
+          </p>
+          <button
+            type="button"
+            onClick={() => void reconnect()}
+            disabled={reconnecting}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          >
+            {reconnecting ? (
+              <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+            )}
+            {reconnecting ? COPY.reconnecting : COPY.reconnect}
+          </button>
+        </div>
       )}
       {connection.status === 'error' && (
         <Notice tone="danger">{connection.lastError ?? COPY.detailUnreachable}</Notice>

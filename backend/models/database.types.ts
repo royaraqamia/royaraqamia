@@ -1300,6 +1300,7 @@ export type Database = {
           expires_at: string | null;
           issued_at: string;
           metadata: Json | null;
+          refresh_claimed_at: string | null;
           refresh_token_enc: string | null;
           registration_kind: string;
           scope: string | null;
@@ -1314,6 +1315,7 @@ export type Database = {
           expires_at?: string | null;
           issued_at?: string;
           metadata?: Json | null;
+          refresh_claimed_at?: string | null;
           refresh_token_enc?: string | null;
           registration_kind: string;
           scope?: string | null;
@@ -1328,6 +1330,7 @@ export type Database = {
           expires_at?: string | null;
           issued_at?: string;
           metadata?: Json | null;
+          refresh_claimed_at?: string | null;
           refresh_token_enc?: string | null;
           registration_kind?: string;
           scope?: string | null;

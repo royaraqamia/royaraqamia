@@ -20,6 +20,14 @@ import {
   type McpIconService,
 } from '@/backend/services/mcp/marketplace/icon-service';
 import {
+  createMcpAccessTokenService,
+  type McpAccessTokenService,
+} from '@/backend/services/mcp/marketplace/access-token-service';
+import {
+  createMcpAppToolsService,
+  type McpAppToolsService,
+} from '@/backend/services/mcp/marketplace/app-tools-service';
+import {
   createMcpConnectedAppService,
   type McpConnectedAppService,
 } from '@/backend/services/mcp/connected-apps';
@@ -93,5 +101,35 @@ export function createDefaultMcpConnectionService(): McpConnectionService {
   return createMcpConnectionService({
     repository: createMcpMarketplaceRepository(),
     remote: createMcpRemoteClient(),
+  });
+}
+
+/**
+ * The token a remote call spends, refreshed before it expires (#1227).
+ *
+ * One service rather than a function on the remote client, because the claim
+ * that stops two callers spending one refresh token is a database write: the
+ * client opens sockets and knows nothing about a member.
+ */
+export function createDefaultMcpAccessTokenService(): McpAccessTokenService {
+  return createMcpAccessTokenService({
+    repository: createMcpMarketplaceRepository(),
+    remote: createMcpRemoteClient(),
+  });
+}
+
+/**
+ * The apps' tools as the assistant may use them (phase 4 / #1225): the flat
+ * catalog a turn plans from, one call as the member, and the display names a
+ * proposal card resolves.
+ *
+ * It shares the repository and the remote client with the connect flow, so the
+ * row the assistant calls is the row the member connected.
+ */
+export function createDefaultMcpAppToolsService(): McpAppToolsService {
+  return createMcpAppToolsService({
+    repository: createMcpMarketplaceRepository(),
+    remote: createMcpRemoteClient(),
+    tokens: createDefaultMcpAccessTokenService(),
   });
 }

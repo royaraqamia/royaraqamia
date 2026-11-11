@@ -188,6 +188,8 @@ export interface McpConnectionCredentialsRecord {
   expires_at: string | null;
   issued_at: string;
   metadata: Json | null;
+  /** The caller spending the refresh token, or `null` when nobody is. */
+  refresh_claimed_at: string | null;
 }
 
 export interface McpConnectionToolRecord {
@@ -383,12 +385,43 @@ export interface McpMarketplaceRepository {
   getCredentials(connectionId: string): Promise<McpConnectionCredentialsRecord | null>;
 
   /**
+   * Claims the right to spend one refresh token, atomically.
+   *
+   * The write is conditional on nobody else holding the claim, so two callers
+   * that notice the same expiring token cannot both exchange the same refresh
+   * token — a provider that rotates answers the second with `invalid_grant`,
+   * which reads to the member as a revocation they never made. A claim older
+   * than `staleBefore` is abandoned by a caller that died mid-refresh, and may
+   * be taken. `null` means another caller holds it.
+   */
+  claimRefresh(
+    connectionId: string,
+    now: string,
+    staleBefore: string
+  ): Promise<McpConnectionCredentialsRecord | null>;
+
+  /** Gives the claim back after a refresh that produced nothing. */
+  releaseRefresh(connectionId: string): Promise<void>;
+
+  /**
    * Upserts what `tools/list` answered. Tools the server no longer advertises are
    * left in place — `last_seen_at` stops moving — because deleting them would
    * delete the member's own switches on a server's bad day.
    */
   saveTools(connectionId: string, tools: McpToolInput[]): Promise<void>;
   listTools(connectionId: string): Promise<McpConnectionToolRecord[]>;
+
+  /**
+   * Every tool of every connection the member could use right now: the
+   * connection is enabled and not revoked, and the tool is switched on.
+   *
+   * Two queries rather than a join, because the tool table is keyed by
+   * connection and the pair is small — a member holds tens of connections, not
+   * thousands, and the assistant reads this once per turn.
+   */
+  listUsableTools(
+    userId: string
+  ): Promise<Array<{ connection: McpConnectionRecord; tool: McpConnectionToolRecord }>>;
 
   /** Starts a handshake. The state is stored hashed; the verifier encrypted. */
   saveAttempt(input: {
@@ -804,6 +837,11 @@ export function createMcpMarketplaceRepository(
           expires_at: input.expiresAt,
           metadata: input.metadata,
           issued_at: new Date().toISOString(),
+          // The write that replaces the tokens is also the release of the
+          // claim: whoever claimed the refresh is done with it either way, and
+          // a claim left behind would make the next caller wait for the stale
+          // window before it could refresh at all.
+          refresh_claimed_at: null,
         },
         { onConflict: 'connection_id' }
       );
@@ -818,6 +856,28 @@ export function createMcpMarketplaceRepository(
         .maybeSingle();
       if (error) throw error;
       return (data as McpConnectionCredentialsRecord | null) ?? null;
+    },
+
+    async claimRefresh(connectionId, now, staleBefore) {
+      // One statement: the filter is part of the write, so a second caller's
+      // update matches no row and it learns that from an empty answer.
+      const { data, error } = await supabase
+        .from(CREDENTIALS_TABLE)
+        .update({ refresh_claimed_at: now })
+        .eq('connection_id', connectionId)
+        .or(`refresh_claimed_at.is.null,refresh_claimed_at.lt.${staleBefore}`)
+        .select()
+        .maybeSingle();
+      if (error) throw error;
+      return (data as McpConnectionCredentialsRecord | null) ?? null;
+    },
+
+    async releaseRefresh(connectionId) {
+      const { error } = await supabase
+        .from(CREDENTIALS_TABLE)
+        .update({ refresh_claimed_at: null })
+        .eq('connection_id', connectionId);
+      if (error) throw error;
     },
 
     async saveTools(connectionId, tools) {
@@ -846,6 +906,40 @@ export function createMcpMarketplaceRepository(
         .order('tool_name', { ascending: true });
       if (error) throw error;
       return (data ?? []) as McpConnectionToolRecord[];
+    },
+
+    async listUsableTools(userId) {
+      const { data: connections, error: connectionsError } = await supabase
+        .from(CONNECTIONS_TABLE)
+        .select('*')
+        .eq('user_id', userId)
+        .eq('enabled', true)
+        .neq('status', 'revoked')
+        // A connection waiting for the member's consent is not called: its
+        // token is the one the provider already refused.
+        .neq('status', 'needs_reauth')
+        .order('id', { ascending: true });
+      if (connectionsError) throw connectionsError;
+
+      const rows = (connections ?? []) as McpConnectionRecord[];
+      if (rows.length === 0) return [];
+
+      const { data: tools, error: toolsError } = await supabase
+        .from(TOOLS_TABLE)
+        .select('*')
+        .in(
+          'connection_id',
+          rows.map((row) => row.id)
+        )
+        .eq('enabled', true)
+        .order('tool_name', { ascending: true });
+      if (toolsError) throw toolsError;
+
+      const byConnection = new Map(rows.map((row) => [row.id, row] as const));
+      return ((tools ?? []) as McpConnectionToolRecord[]).flatMap((tool) => {
+        const connection = byConnection.get(tool.connection_id);
+        return connection ? [{ connection, tool }] : [];
+      });
     },
 
     async saveAttempt(input) {

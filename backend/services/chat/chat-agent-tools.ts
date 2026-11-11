@@ -47,6 +47,14 @@ export interface ChatAgentToolContext {
   supabase: SupabaseClient<Database>;
   /** The caller's address, for the services that rate-limit a submission. */
   ip: string;
+  /**
+   * The turn's search over the apps the member connected, when there is one
+   * (ADR-0155, decision 7). The matches are declared to the model for the next
+   * round, so a miss in the router costs one call, not the turn.
+   */
+  findAppTools?: (
+    query: string
+  ) => Promise<Array<{ name: string; appName: string; description: string; readOnly: boolean }>>;
 }
 
 export interface ChatAgentTool {
@@ -155,6 +163,10 @@ const ProjectRequestArgs = z.strictObject({
 });
 
 const ChangeNameArgs = z.strictObject({ name: ProfileNameSchema });
+
+const FindAppToolsArgs = z.strictObject({
+  query: z.string().trim().min(2, 'اكتب ما تبحث عنه').max(120, 'النصّ طويل جداً'),
+});
 
 /** The Damascus calendar day, which is the day every meter in the app resets on. */
 function damascusToday(now: Date = new Date()): string {
@@ -561,6 +573,18 @@ const tools: ChatAgentTool[] = [
       return loadAgencySkill(input.id);
     },
   },
+  {
+    name: 'find_app_tools',
+    kind: 'read',
+    description:
+      'البحث في أدوات التطبيقات التي ربطها العضو. استخدمها حين يطلب شيئاً من تطبيق خارجي ولم تجد أداته بين أدواتك؛ تعيد أسماء الأدوات المطابقة لتستدعيها في الخطوة التالية.',
+    schema: FindAppToolsArgs,
+    async run(args, context) {
+      const input = FindAppToolsArgs.parse(args);
+      if (!context.findAppTools) return { tools: [] };
+      return { tools: await context.findAppTools(input.query) };
+    },
+  },
 ];
 
 const byName = new Map<string, ChatAgentTool>(tools.map((tool) => [tool.name, tool]));
@@ -586,6 +610,21 @@ export function chatAgentToolDefinitions(): Array<{
       parameters: toJsonSchema(tool.schema),
     },
   }));
+}
+
+/**
+ * The first-party declarations a turn carries.
+ *
+ * `find_app_tools` is the one that is conditional: a member with no connected
+ * app has nothing to find, and a tool that promises a search over nothing is an
+ * invitation to waste a round. Every other tool is always declared.
+ */
+export function chatAgentToolDefinitionsForTurn(input: {
+  hasApps: boolean;
+}): ReturnType<typeof chatAgentToolDefinitions> {
+  return chatAgentToolDefinitions().filter(
+    (definition) => input.hasApps || definition.function.name !== 'find_app_tools'
+  );
 }
 
 /**
