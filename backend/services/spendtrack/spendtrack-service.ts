@@ -69,6 +69,25 @@ export interface ExpenseAlertInfo {
   categoryId: string;
 }
 
+/**
+ * A real calendar day, not just the right shape: `2026-02-30` and `2026-13-45`
+ * matched the old `YYYY-MM-DD` test, reached the single batch insert, and made
+ * Postgres reject the whole file (issue #1264). A parsed date only counts when
+ * it round-trips to the same string.
+ */
+function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const year = Number(value.slice(0, 4));
+  const month = Number(value.slice(5, 7));
+  const day = Number(value.slice(8, 10));
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  );
+}
+
 export class SpendtrackService {
   constructor(
     private readonly repository: SpendtrackRepository,
@@ -174,7 +193,7 @@ export class SpendtrackService {
     rows.forEach((row, index) => {
       const rowNumber = index + 1;
       let error: string | null = null;
-      if (!row.date || !/^\d{4}-\d{2}-\d{2}$/.test(row.date)) error = 'تاريخ غير صالح';
+      if (!row.date || !isCalendarDate(row.date)) error = 'تاريخ غير صالح';
       else if (isNaN(row.amount) || row.amount <= 0) error = 'مبلغ غير صالح';
       else if (!row.category.trim()) error = 'التصنيف مطلوب';
       if (error) {

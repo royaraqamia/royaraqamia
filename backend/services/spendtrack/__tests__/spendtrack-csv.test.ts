@@ -108,6 +108,16 @@ describe('parseCsv', () => {
     ]);
   });
 
+  it('parses a quoted grouped amount as the whole number', () => {
+    expect(parseCsv('2026-11-01,"1,234.56",طعام,اختبار')).toEqual([
+      { date: '2026-11-01', amount: 1234.56, category: 'طعام', description: 'اختبار' },
+    ]);
+  });
+
+  it('marks an amount with leftover characters as invalid instead of truncating it', () => {
+    expect(parseCsv('2026-11-01,12abc,طعام,اختبار')[0]?.amount).toBeNaN();
+  });
+
   it('drops blank lines', () => {
     expect(parseCsv('2026-08-01,5,طعام,قهوة\n\n')).toHaveLength(1);
     expect(parseCsv('2026-08-01,5,طعام,قهوة\r\n\r\n2026-08-02,7,طعام,خبز\r\n')).toHaveLength(2);

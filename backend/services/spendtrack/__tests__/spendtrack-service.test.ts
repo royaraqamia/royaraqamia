@@ -301,6 +301,76 @@ describe('SpendtrackService CSV export/import', () => {
     ]);
   });
 
+  it.each(['2026-13-45', '2026-02-30', '2026-1-1'])(
+    'reports the impossible date %s and imports only the valid row',
+    async (date) => {
+      const { repository } = makeRepo();
+      (repository.getUserCategories as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { id: 'cat-1', name: 'طعام', colorHex: '#ff0000' },
+      ]);
+      (repository.createExpensesMany as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      const service = makeService(repository);
+
+      const content = `${date},10,طعام,x\n2026-08-01,20,طعام,valid`;
+      const result = await service.importExpensesCsv('u-1', content);
+
+      expect(result).toEqual({
+        imported: 1,
+        skipped: 0,
+        errors: [{ row: 1, message: 'تاريخ غير صالح' }],
+      });
+      expect(repository.createExpensesMany).toHaveBeenCalledWith([
+        {
+          user_id: 'u-1',
+          amount: 20,
+          category_id: 'cat-1',
+          date: '2026-08-01',
+          description: 'valid',
+        },
+      ]);
+    }
+  );
+
+  it('imports a quoted grouped amount as the whole number, not its first group', async () => {
+    const { repository } = makeRepo();
+    (repository.getUserCategories as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'cat-1', name: 'طعام', colorHex: '#ff0000' },
+    ]);
+    (repository.createExpensesMany as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const service = makeService(repository);
+
+    const result = await service.importExpensesCsv('u-1', '2026-11-01,"1,234.56",طعام,اختبار');
+
+    expect(result.errors).toHaveLength(0);
+    expect(repository.createExpensesMany).toHaveBeenCalledWith([
+      {
+        user_id: 'u-1',
+        amount: 1234.56,
+        category_id: 'cat-1',
+        date: '2026-11-01',
+        description: 'اختبار',
+      },
+    ]);
+  });
+
+  it('rejects an amount with leftover characters instead of truncating it', async () => {
+    const { repository } = makeRepo();
+    (repository.getUserCategories as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'cat-1', name: 'طعام', colorHex: '#ff0000' },
+    ]);
+    (repository.createExpensesMany as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const service = makeService(repository);
+
+    const result = await service.importExpensesCsv('u-1', '2026-11-01,12abc,طعام,اختبار');
+
+    expect(result).toEqual({
+      imported: 0,
+      skipped: 0,
+      errors: [{ row: 1, message: 'مبلغ غير صالح' }],
+    });
+    expect(repository.createExpensesMany).toHaveBeenCalledWith([]);
+  });
+
   it('creates missing categories before importing their rows', async () => {
     const { repository } = makeRepo();
     (repository.getUserCategories as ReturnType<typeof vi.fn>)
