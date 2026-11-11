@@ -128,7 +128,7 @@ export function createMcpConnectService({
         }
       }
 
-      const discovery = await remote.discover(server.remote_url);
+      const discovery = await remote.discover(server.remote_override ?? server.remote_url);
 
       let registration = await repository.getRegistration(
         discovery.authorizationServer,
@@ -188,7 +188,7 @@ export function createMcpConnectService({
         stateHash: hashToken(state),
         userId,
         registryName,
-        serverUrl: server.remote_url,
+        serverUrl: server.remote_override ?? server.remote_url,
         codeVerifierEnc: encryptSecret(codeVerifier),
         redirectUri,
         expiresAt: new Date(now().getTime() + ATTEMPT_TTL_MS).toISOString(),

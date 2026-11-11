@@ -104,9 +104,31 @@ export const McpCatalogSearchQuerySchema = z.object({
 
 export type McpCatalogSearchQuery = z.infer<typeof McpCatalogSearchQuerySchema>;
 
+/** One address the registry publishes for a row, so an admin can pick it. */
+export const McpCatalogRemoteOptionSchema = z.object({
+  /** The `remotes[]` entry's URL, verbatim. */
+  url: z.string().min(1),
+  /** `streamable-http`, `sse`, or whatever else the publisher declared. */
+  type: z.string().min(1),
+});
+
+export type McpCatalogRemoteOption = z.infer<typeof McpCatalogRemoteOptionSchema>;
+
 /** A catalogue row as the Admin Console draws it, takedown included. */
 export const McpCatalogAdminRowSchema = McpCatalogRowSchema.extend({
+  /** The address the mirror keeps: the first remote the policy accepted. */
   remoteUrl: z.string(),
+  /**
+   * The admin's choice of remote, when it differs from the registry's first
+   * accepted one. `null` means "follow the registry", which is the sync's job.
+   */
+  remoteOverride: z.string().nullable(),
+  /**
+   * Every address the registry publishes for this server, from the `raw` entry
+   * it sent. The console offers these beside a free-text `https` field, because
+   * a publisher's list is a starting point and not a guarantee.
+   */
+  remoteOptions: z.array(McpCatalogRemoteOptionSchema),
   /** The Latin name an admin wrote; `title` already falls back to it. */
   titleOverride: z.string().nullable(),
   /** The override as stored, so the field can be edited rather than only shown. */
@@ -153,6 +175,12 @@ export const McpCatalogAdminUpdateSchema = z
     /** The store's admission rule; the service refuses a row not measured connectable. */
     verified: z.boolean().optional(),
     featuredRank: z.number().int().min(0).max(999999).nullable().optional(),
+    /**
+     * The address the probe measures and the connect flow opens, or `null` to
+     * follow the remote the registry's first accepted entry names. The service
+     * holds it to the egress policy; the schema only bounds the size.
+     */
+    remoteOverride: z.string().trim().max(2048).nullable().optional(),
   })
   .refine((body) => body.blocked !== true || (body.blockedReason ?? '').length > 0, {
     message: 'سبب الإيقاف مطلوب',
@@ -225,6 +253,14 @@ export const MCP_CATALOG_ADMIN_COPY = {
   nameEnLabel: 'الاسم باللاتينية',
   nameArLabel: 'الاسم بالعربية (اختياري)',
   descriptionArLabel: 'الوصف بالعربية',
+  remoteAction: 'العنوان',
+  remoteTitle: 'عنوان الخادم',
+  remoteDescription:
+    'السجل ينشر أكثر من عنوان للخادم الواحد، والمتجر يختار أوله المقبول. اختر عنواناً آخر حين ينشر العنوان الأول وثيقة بلا مصادقة.',
+  remoteOptionsLabel: 'عناوين السجل',
+  remoteUrlLabel: 'العنوان المستخدم',
+  remoteUrlHint: 'يجب أن يبدأ بـ https. تغيير العنوان يلغي نتيجة الفحص حتى تفحصه من جديد.',
+  remoteRegistryHint: 'ما دام العنوان هو عنوان السجل، يبقى المتجر تابعاً له إذا تغيّر.',
   save: 'حفظ',
   cancel: 'إلغاء',
   saved: 'تم الحفظ.',

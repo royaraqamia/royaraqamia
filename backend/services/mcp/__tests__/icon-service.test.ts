@@ -20,6 +20,7 @@ const VERIFIED: McpCatalogServerRecord = {
   name_ar: null,
   description_ar: null,
   remote_url: 'https://mcp.vercel.com',
+  remote_override: null,
   status: 'active',
   blocked_at: null,
   blocked_reason: null,

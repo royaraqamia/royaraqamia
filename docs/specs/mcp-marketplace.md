@@ -90,16 +90,17 @@ shape as `mcp_oauth_*`:
 
 **`mcp_catalog_servers`** — the registry mirror.
 
-| Column                                              | Why                                                                                                                           |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `registry_name` (pk)                                | `ac.inference.sh/mcp`; the registry's own key                                                                                 |
-| `title`, `description`, `version`                   | Straight from the registry, in its words                                                                                      |
-| `name_ar`, `description_ar`                         | Nullable overrides; the registry is English-only, and a screen that is otherwise Arabic cannot be left to machine translation |
-| `remote_url`, `transport`                           | The one entry we can actually reach                                                                                           |
-| `status`                                            | `active`, `deprecated`, `deleted` from `_meta.io.modelcontextprotocol.registry/official`                                      |
-| `published_at`, `registry_updated_at`, `fetched_at` | Freshness, and which rows the cron stopped seeing                                                                             |
-| `blocked_at`, `blocked_reason`                      | The takedown switch                                                                                                           |
-| `raw`                                               | The registry document, for anything a later phase wants                                                                       |
+| Column                                              | Why                                                                                                                              |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `registry_name` (pk)                                | `ac.inference.sh/mcp`; the registry's own key                                                                                    |
+| `title`, `description`, `version`                   | Straight from the registry, in its words                                                                                         |
+| `name_ar`, `description_ar`                         | Nullable overrides; the registry is English-only, and a screen that is otherwise Arabic cannot be left to machine translation    |
+| `remote_url`, `transport`                           | The one entry we can actually reach                                                                                              |
+| `remote_override`                                   | The admin's choice of remote; the sync never writes it, and `coalesce(remote_override, remote_url)` is what is probed and opened |
+| `status`                                            | `active`, `deprecated`, `deleted` from `_meta.io.modelcontextprotocol.registry/official`                                         |
+| `published_at`, `registry_updated_at`, `fetched_at` | Freshness, and which rows the cron stopped seeing                                                                                |
+| `blocked_at`, `blocked_reason`                      | The takedown switch                                                                                                              |
+| `raw`                                               | The registry document, for anything a later phase wants                                                                          |
 
 **`mcp_connections`** — one member's connection to one server.
 
@@ -254,12 +255,48 @@ It is filled **on demand**, for the rows a screen actually draws:
 - A search returns a page of at most 20 rows; the unprobed ones among them are probed **after**
   the response is flushed (`after()`), at most five per request. A member's search never waits on
   five strangers' servers.
-- A verdict stands for seven days; a row whose `remote_url` moved loses it in the same write,
-  because the address is what was measured.
+- A verdict stands for seven days; a row whose effective address
+  (`coalesce(remote_override, remote_url)`) moved loses it in the same write, because the address is
+  what was measured.
 - `null` is a third state, not a silent "no": the Admin Console says «لم نتحقق بعد», and the row is
   not in the store until an admin has a verdict and verifies it. A member's store never lists a row
   whose verdict is not `true`, and a probe that times out is recorded as `unreachable` rather than
   `no_metadata`, because a server that never answered is not a server that published nothing.
+
+### Choosing a remote
+
+The registry publishes several `remotes[]` for one server, and the mirror keeps
+only the first `streamable-http` entry the egress policy accepts. That first entry
+is the publisher's ordering, not a judgement about which server a member needs:
+`com.cloudflare.mcp/mcp` lists `https://docs.mcp.cloudflare.com/mcp` — a no-auth
+docs server that publishes no RFC 9728 document — and the account server at
+`https://observability.mcp.cloudflare.com/mcp` beside it, which does. The mirror
+measured the wrong one and the store hid a server that can be connected.
+
+So the address is a decision an admin can make:
+
+- **`remote_override`** holds it, and the sync never writes it — the same shape as
+  `title_override`. The **effective address** is `coalesce(remote_override,
+remote_url)`: the probe measures it and the connect flow opens it, so the verdict
+  an admin reads is about the server a member will actually reach.
+- **Selecting is a list and a field.** The Admin Console lists the `remotes[]` from
+  the row's `raw` registry entry and accepts any `https` URL the egress policy
+  would let us fetch. A URL nobody selected is never probed; clearing the field
+  follows the registry's own choice again, so a pinned address is a deliberate act
+  and not a default.
+- **The probe asks three sources, in this order:** the root
+  `/.well-known/oauth-protected-resource`, the path-aware
+  `/.well-known/oauth-protected-resource/<resource-path>`, and finally the
+  `resource_metadata="…"` URL a `401` on the MCP endpoint names in
+  `WWW-Authenticate`. A `404` at the root followed by a `200` at the path-aware
+  address is **connectable**, not `no_metadata`; only a host that answered nothing
+  at all is `unreachable`.
+- **A moved address loses its verdict.** Changing the override clears
+  `connectable`, `connectable_reason`, `probed_at` and the probe's mark in the same
+  write, exactly as a registry URL change does, and the row reads «لم نتحقق بعد»
+  until «فحص الآن» runs. The registry moving its own first remote does **not**
+  clear a verdict that was measured at an override, because that address did not
+  move.
 
 ### The store is curated (ADR-0162)
 

@@ -33,6 +33,8 @@ export interface McpCatalogServerRecord {
   name_ar: string | null;
   description_ar: string | null;
   remote_url: string;
+  /** The admin's choice of remote; `null` follows the registry's first one. */
+  remote_override: string | null;
   status: string;
   blocked_at: string | null;
   blocked_reason: string | null;
@@ -73,6 +75,8 @@ export interface McpCatalogListRow {
   name_ar: string | null;
   description_ar: string | null;
   remote_url: string;
+  /** The admin's choice of remote; `null` follows the registry's first one. */
+  remote_override: string | null;
   status: string;
   version: string | null;
   published_at: string | null;
@@ -88,12 +92,16 @@ export interface McpCatalogListRow {
   connectable: boolean | null;
   connectable_reason: string | null;
   probed_at: string | null;
+  /** The registry document, only selected for the Admin Console. */
+  raw?: Json | null;
 }
 
 /** What a probe needs: the address, and whether the verdict is due. */
 export interface McpCatalogAddressRecord {
   registry_name: string;
   remote_url: string;
+  /** The address the admin chose, when it differs from the registry's. */
+  remote_override: string | null;
   probed_at: string | null;
   blocked_at: string | null;
   status: string;
@@ -112,7 +120,15 @@ export interface McpCatalogSyncStateRecord {
 
 /** The columns a list selects; one list, two audiences. */
 const CATALOG_LIST_COLUMNS =
-  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
+  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
+
+/**
+ * The Admin Console also picks a remote out of the registry document, so it is
+ * the only list that selects `raw`; a member's page already pays for the rows
+ * it draws and does not need a second copy of the registry's own JSON.
+ */
+const CATALOG_ADMIN_LIST_COLUMNS =
+  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at, raw';
 
 /**
  * PostgREST takes the rows in the body and the names in the URL, so both are
@@ -275,7 +291,7 @@ export interface McpMarketplaceRepository {
     }
   ): Promise<void>;
 
-  /** The takedown switch, the two Arabic overrides, and the store's admission. */
+  /** The takedown switch, the overrides, and the store's admission. */
   updateCatalogServer(
     registryName: string,
     patch: Partial<{
@@ -287,6 +303,12 @@ export interface McpMarketplaceRepository {
       verification_withdrawn_at: string | null;
       featured_rank: number | null;
       title_override: string | null;
+      remote_override: string | null;
+      connectable: boolean | null;
+      connectable_reason: string | null;
+      probed_at: string | null;
+      probe_icon_url: string | null;
+      probe_icon_mime: string | null;
     }>
   ): Promise<void>;
 
@@ -401,7 +423,7 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
         .select(
-          'registry_name, title, description, name_ar, description_ar, remote_url, status, blocked_at, blocked_reason, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, verified_at, connectable, connectable_reason, probed_at'
+          'registry_name, title, description, name_ar, description_ar, remote_url, remote_override, status, blocked_at, blocked_reason, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, verified_at, connectable, connectable_reason, probed_at'
         )
         .eq('registry_name', registryName)
         .maybeSingle();
@@ -416,18 +438,25 @@ export function createMcpMarketplaceRepository(
       const names = rows.map((row) => row.registryName);
 
       // Which rows are new or moved? Those lose their verdict; every other row
-      // keeps it, so a sync never erases a measurement it did not make.
-      const knownUrls = new Map<string, string>();
+      // keeps it, so a sync never erases a measurement it did not make. The
+      // address that was measured is the effective one: an admin's override
+      // means the registry moving its own entry does not move what we probe.
+      const known = new Map<string, { url: string; override: string | null }>();
       for (const batch of chunk(names, CATALOG_LOOKUP_BATCH)) {
         const { data, error } = await supabase
           .from(CATALOG_TABLE)
-          .select('registry_name, remote_url')
+          .select('registry_name, remote_url, remote_override')
           .in('registry_name', batch);
         if (error) throw error;
         for (const row of data ?? []) {
-          knownUrls.set(row.registry_name as string, row.remote_url as string);
+          known.set(row.registry_name as string, {
+            url: row.remote_url as string,
+            override: (row.remote_override as string | null) ?? null,
+          });
         }
       }
+
+      const effective = (url: string, override: string | null): string => override ?? url;
 
       const base = (row: McpCatalogUpsertRow): CatalogInsert => ({
         registry_name: row.registryName,
@@ -447,8 +476,17 @@ export function createMcpMarketplaceRepository(
         raw: row.raw,
       });
 
-      const unmoved = rows.filter((row) => knownUrls.get(row.registryName) === row.remoteUrl);
-      const moved = rows.filter((row) => knownUrls.get(row.registryName) !== row.remoteUrl);
+      // A row nobody has mirrored yet is new, and a new address is unmeasured.
+      const wasMeasured = (row: McpCatalogUpsertRow): boolean => {
+        const previous = known.get(row.registryName);
+        if (!previous) return false;
+        return (
+          effective(previous.url, previous.override) === effective(row.remoteUrl, previous.override)
+        );
+      };
+
+      const unmoved = rows.filter(wasMeasured);
+      const moved = rows.filter((row) => !wasMeasured(row));
 
       const writes: CatalogInsert[] = unmoved.map(base);
       writes.push(
@@ -457,6 +495,10 @@ export function createMcpMarketplaceRepository(
           connectable: null,
           connectable_reason: null,
           probed_at: null,
+          // The mark was measured at the old address, so it goes with the
+          // verdict; the registry's own icon is rewritten above either way.
+          probe_icon_url: null,
+          probe_icon_mime: null,
         }))
       );
 
@@ -506,9 +548,13 @@ export function createMcpMarketplaceRepository(
         key. That is one `order=` pair and no keyset cursor, which is why the
         table no longer needs a generated sort key.
       */
+      // The column list is a string rather than a literal on purpose: the admin
+      // list is the store's list plus `raw`, and a union of two literals is not
+      // something PostgREST's select typer can read.
+      const columns: string = storeOnly ? CATALOG_LIST_COLUMNS : CATALOG_ADMIN_LIST_COLUMNS;
       let builder = supabase
         .from(CATALOG_TABLE)
-        .select(CATALOG_LIST_COLUMNS)
+        .select(columns)
         .limit(storeOnly ? STORE_MAX_ROWS : limit + 1);
 
       if (storeOnly) {
@@ -546,7 +592,9 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await builder;
       if (error) throw error;
 
-      const rows = (data ?? []) as McpCatalogListRow[];
+      // A non-literal select is `GenericStringError` to PostgREST's typer; the
+      // columns above are the contract, and the shapes below are the row types.
+      const rows = (data ?? []) as unknown as McpCatalogListRow[];
       if (storeOnly) return { rows, nextCursor: null };
 
       const hasMore = rows.length > limit;
@@ -562,7 +610,7 @@ export function createMcpMarketplaceRepository(
     async listVerifiedAddresses(limit) {
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
-        .select('registry_name, remote_url, probed_at, blocked_at, status')
+        .select('registry_name, remote_url, remote_override, probed_at, blocked_at, status')
         .eq('status', 'active')
         .is('blocked_at', null)
         .not('verified_at', 'is', null)
@@ -579,7 +627,7 @@ export function createMcpMarketplaceRepository(
       for (const batch of chunk(registryNames, CATALOG_LOOKUP_BATCH)) {
         const { data, error } = await supabase
           .from(CATALOG_TABLE)
-          .select('registry_name, remote_url, probed_at, blocked_at, status')
+          .select('registry_name, remote_url, remote_override, probed_at, blocked_at, status')
           .in('registry_name', batch);
         if (error) throw error;
         found.push(...((data ?? []) as McpCatalogAddressRecord[]));

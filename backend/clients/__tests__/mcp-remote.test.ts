@@ -29,7 +29,12 @@ const SERVER_METADATA = {
 };
 
 function fakeNetwork(
-  routes: Array<{ match: (url: string) => boolean; body: unknown; status?: number }>
+  routes: Array<{
+    match: (url: string) => boolean;
+    body?: unknown;
+    status?: number;
+    headers?: Record<string, string>;
+  }>
 ) {
   return vi.fn(async (input: string | URL, _init?: RequestInit) => {
     const url = String(input);
@@ -37,7 +42,7 @@ function fakeNetwork(
       if (route.match(url)) {
         return new Response(JSON.stringify(route.body), {
           status: route.status ?? 200,
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'application/json', ...route.headers },
         });
       }
     }
@@ -104,6 +109,60 @@ describe('discover', () => {
 });
 
 describe('probeConnectable', () => {
+  it('finds the path-aware document when the root answers 404', async () => {
+    // Cloudflare's account server answers exactly this way: no root document,
+    // a document at `/.well-known/oauth-protected-resource/mcp`.
+    const remote = client([
+      {
+        match: (url: string) =>
+          url === 'https://mcp.example.com/.well-known/oauth-protected-resource/mcp',
+        body: RESOURCE_METADATA,
+      },
+      { ...discoveryRoutes[1]!, match: () => true },
+    ]);
+
+    await expect(remote.probeConnectable('https://mcp.example.com/mcp')).resolves.toMatchObject({
+      connectable: true,
+      reason: null,
+    });
+  });
+
+  it('reads the document a 401 on the MCP endpoint names', async () => {
+    const remote = client([
+      {
+        match: (url: string) => url === 'https://mcp.example.com/mcp',
+        status: 401,
+        headers: {
+          'www-authenticate':
+            'Bearer realm="OAuth", resource_metadata="https://mcp.example.com/auth-metadata"',
+        },
+      },
+      {
+        match: (url: string) => url === 'https://mcp.example.com/auth-metadata',
+        body: RESOURCE_METADATA,
+      },
+      { ...discoveryRoutes[1]!, match: () => true },
+    ]);
+
+    await expect(remote.probeConnectable('https://mcp.example.com/mcp')).resolves.toMatchObject({
+      connectable: true,
+      reason: null,
+    });
+  });
+
+  it('does not call a root 404 a server that publishes nothing', async () => {
+    // The root is missing, the path-aware document is missing, and the endpoint
+    // challenges without naming one: still "no metadata", never "unreachable".
+    const remote = client([
+      { match: (url: string) => url === 'https://mcp.example.com/mcp', status: 401 },
+    ]);
+
+    await expect(remote.probeConnectable('https://mcp.example.com/mcp')).resolves.toMatchObject({
+      connectable: false,
+      reason: 'no_metadata',
+    });
+  });
+
   it('records a connectable server and the mark it publishes', async () => {
     const remote = client([
       {

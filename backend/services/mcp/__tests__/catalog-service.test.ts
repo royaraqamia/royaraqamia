@@ -344,6 +344,7 @@ describe('the search', () => {
       name_ar: null,
       description_ar: 'صفحات وقواعد بيانات',
       remote_url: 'https://mcp.notion.example/mcp',
+      remote_override: null,
       status: 'active',
       version: '1.0.0',
       published_at: '2026-11-01T00:00:00.000Z',
@@ -427,6 +428,7 @@ describe('the connectability probe', () => {
     return {
       registry_name: 'com.example/mcp',
       remote_url: 'https://mcp.example.com/mcp',
+      remote_override: null,
       probed_at: null,
       blocked_at: null,
       status: 'active',
@@ -556,30 +558,31 @@ describe('the connectability probe', () => {
   });
 });
 
-describe('the store admission', () => {
-  function serverRow(overrides: Partial<McpCatalogServerRecord> = {}): McpCatalogServerRecord {
-    return {
-      registry_name: 'com.vercel/vercel-mcp',
-      title: 'Vercel',
-      description: 'An MCP server for Vercel',
-      name_ar: null,
-      description_ar: null,
-      remote_url: 'https://mcp.vercel.com',
-      status: 'active',
-      blocked_at: null,
-      blocked_reason: null,
-      registry_icon_url: 'https://mcp.vercel.com/icons/vercel-light.svg',
-      registry_icon_mime: 'image/svg+xml',
-      probe_icon_url: null,
-      probe_icon_mime: null,
-      verified_at: null,
-      connectable: true,
-      connectable_reason: null,
-      probed_at: NOW.toISOString(),
-      ...overrides,
-    };
-  }
+function serverRow(overrides: Partial<McpCatalogServerRecord> = {}): McpCatalogServerRecord {
+  return {
+    registry_name: 'com.vercel/vercel-mcp',
+    title: 'Vercel',
+    description: 'An MCP server for Vercel',
+    name_ar: null,
+    description_ar: null,
+    remote_url: 'https://mcp.vercel.com',
+    remote_override: null,
+    status: 'active',
+    blocked_at: null,
+    blocked_reason: null,
+    registry_icon_url: 'https://mcp.vercel.com/icons/vercel-light.svg',
+    registry_icon_mime: 'image/svg+xml',
+    probe_icon_url: null,
+    probe_icon_mime: null,
+    verified_at: null,
+    connectable: true,
+    connectable_reason: null,
+    probed_at: NOW.toISOString(),
+    ...overrides,
+  };
+}
 
+describe('the store admission', () => {
   it('verifies a measured row and records the moment', async () => {
     const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
     const service = build({ repository, pages: [] });
@@ -655,5 +658,138 @@ describe('the store admission', () => {
       verified_at: '2026-11-01T00:00:00.000Z',
       verification_withdrawn_at: null,
     });
+  });
+});
+
+describe('the remote choice', () => {
+  const ACCOUNT = 'https://observability.mcp.cloudflare.com/mcp';
+
+  it('stores the admin’s address and clears the verdict that measured the old one', async () => {
+    const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', remoteOverride: ACCOUNT });
+
+    expect(repository.updates[0]?.patch).toEqual({
+      remote_override: ACCOUNT,
+      connectable: null,
+      connectable_reason: null,
+      probed_at: null,
+      probe_icon_url: null,
+      probe_icon_mime: null,
+    });
+  });
+
+  it('measures the chosen address rather than the one the mirror picked', async () => {
+    const address = (overrides: Partial<McpCatalogAddressRecord> = {}) => ({
+      registry_name: 'com.cloudflare.mcp/mcp',
+      remote_url: 'https://docs.mcp.cloudflare.com/mcp',
+      remote_override: null,
+      probed_at: null,
+      blocked_at: null,
+      status: 'active',
+      ...overrides,
+    });
+    const repository = fakeRepository({
+      getCatalogAddresses: async () => [address({ remote_override: ACCOUNT })],
+    });
+    const remote = fakeRemote();
+    const service = build({ repository, pages: [], remote });
+
+    await service.probe(['com.cloudflare.mcp/mcp'], { force: true });
+
+    expect(remote.probeConnectable).toHaveBeenCalledWith(ACCOUNT);
+  });
+
+  it('keeps a verdict when the same address is saved again', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () => serverRow({ remote_override: ACCOUNT }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', remoteOverride: ACCOUNT });
+
+    expect(repository.updates[0]?.patch).toEqual({ remote_override: ACCOUNT });
+  });
+
+  it('clears the override so the registry’s own address is followed again', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () => serverRow({ remote_override: ACCOUNT }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await service.adminUpdate({ registryName: 'com.vercel/vercel-mcp', remoteOverride: null });
+
+    expect(repository.updates[0]?.patch).toMatchObject({
+      remote_override: null,
+      connectable: null,
+      probed_at: null,
+    });
+  });
+
+  it('refuses an address the egress policy would not fetch', async () => {
+    const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
+    const service = build({ repository, pages: [] });
+
+    await expect(
+      service.adminUpdate({
+        registryName: 'com.vercel/vercel-mcp',
+        remoteOverride: 'http://mcp.vercel.com',
+      })
+    ).rejects.toMatchObject({ failure: 'invalid_remote' });
+
+    expect(repository.updates).toEqual([]);
+  });
+
+  it('refuses to vouch for an address it has not measured in the same request', async () => {
+    const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
+    const service = build({ repository, pages: [] });
+
+    await expect(
+      service.adminUpdate({
+        registryName: 'com.vercel/vercel-mcp',
+        remoteOverride: ACCOUNT,
+        verified: true,
+      })
+    ).rejects.toMatchObject({ failure: 'not_connectable' });
+
+    expect(repository.updates).toEqual([]);
+  });
+
+  it('offers the registry’s own addresses beside the one it keeps', async () => {
+    const repository = fakeRepository({
+      listCatalogServers: async () => ({
+        rows: [
+          {
+            ...serverRow(),
+            title_override: null,
+            version: '1.0.0',
+            published_at: null,
+            fetched_at: NOW.toISOString(),
+            featured_rank: null,
+            raw: {
+              server: {
+                name: 'com.cloudflare.mcp/mcp',
+                remotes: [
+                  { type: 'streamable-http', url: 'https://docs.mcp.cloudflare.com/mcp' },
+                  { type: 'streamable-http', url: ACCOUNT },
+                  { type: 'sse', url: 'https://sse.mcp.cloudflare.com/sse' },
+                ],
+              },
+            },
+          } as unknown as McpCatalogListRow,
+        ],
+        nextCursor: null,
+      }),
+    });
+    const service = build({ repository, pages: [] });
+
+    const page = await service.adminList({ q: '', cursor: null });
+
+    expect(page.servers[0]?.remoteOptions).toEqual([
+      { type: 'streamable-http', url: 'https://docs.mcp.cloudflare.com/mcp' },
+      { type: 'streamable-http', url: ACCOUNT },
+      { type: 'sse', url: 'https://sse.mcp.cloudflare.com/sse' },
+    ]);
   });
 });
