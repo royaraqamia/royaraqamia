@@ -48,6 +48,14 @@ const CATALOG: McpCatalogServerRecord = {
   probed_at: '2026-11-14T00:00:00.000Z',
 };
 
+/** A second connectable app, for the two consented flows of a shared cap. */
+const SLACK: McpCatalogServerRecord = {
+  ...CATALOG,
+  registry_name: 'io.example/slack',
+  title: 'Slack',
+  remote_url: 'https://mcp.slack.example/mcp',
+};
+
 const DISCOVERY: McpDiscovery = {
   resource: 'https://mcp.notion.example/mcp',
   authorizationServer: 'https://auth.notion.example',
@@ -486,5 +494,101 @@ describe('complete', () => {
     expect(connection.status).toBe('error');
     expect(connection.last_error).toBeTruthy();
     expect(fake.credentials.get(connectionId)?.access_token_enc).toBeTruthy();
+  });
+});
+
+/**
+ * The cap is asked twice — once before the browser leaves, once when the
+ * consent comes back — and the table's trigger is the third door (#1266). Two
+ * flows opened under the same last free slot must not both settle.
+ */
+describe('the connected-app cap', () => {
+  const liveCount = (connections: Map<string, McpConnectionRecord>, userId: string) =>
+    [...connections.values()].filter((row) => row.user_id === userId && row.status !== 'revoked')
+      .length;
+
+  function atCap(cap: number) {
+    const fake = fakeRepository({
+      getCatalogServer: async (registryName) =>
+        [CATALOG, SLACK].find((row) => row.registry_name === registryName) ?? null,
+    });
+    const remote = fakeRemote();
+    const assertSlot = vi.fn(async (userId: string) => {
+      if (liveCount(fake.connections, userId) >= cap) throw new Error('cap reached');
+    });
+    const service = createMcpConnectService({
+      repository: fake.repository,
+      remote,
+      assertConnectionSlot: assertSlot,
+    });
+    const stateOf = async (registryName: string) => {
+      const { authorizeUrl } = await service.start({
+        userId: 'user-1',
+        registryName,
+        redirectUri: REDIRECT,
+      });
+      return new URL(authorizeUrl).searchParams.get('state') ?? '';
+    };
+    return { ...fake, remote, assertSlot, service, stateOf };
+  }
+
+  it('refuses the second consent when the cap was spent while both were pending', async () => {
+    const fake = atCap(1);
+    const first = await fake.stateOf(CATALOG.registry_name);
+    const second = await fake.stateOf(SLACK.registry_name);
+
+    await fake.service.complete({ userId: 'user-1', state: first, code: 'code-1' });
+
+    const error = await fake.service
+      .complete({ userId: 'user-1', state: second, code: 'code-2' })
+      .catch((refusal) => refusal);
+
+    expect(error).toBeInstanceOf(McpConnectError);
+    expect(error.failure).toBe('plan_limit');
+    expect(error.message).toBe('وصلت إلى حدّ التطبيقات في خطتك. افصل تطبيقاً أو ارتقِ بالخطة.');
+    expect(liveCount(fake.connections, 'user-1')).toBe(1);
+    // Refused before the code was exchanged: the attempt is spent either way,
+    // and the provider must not be asked for tokens nobody keeps.
+    expect(fake.remote.exchange).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not charge a re-consent for a slot it already holds', async () => {
+    const fake = atCap(1);
+    const first = await fake.stateOf(CATALOG.registry_name);
+    await fake.service.complete({ userId: 'user-1', state: first, code: 'code-1' });
+
+    const again = await fake.stateOf(CATALOG.registry_name);
+    const { connectionId } = await fake.service.complete({
+      userId: 'user-1',
+      state: again,
+      code: 'code-2',
+    });
+
+    expect(connectionId).toBe('conn-1');
+    expect(fake.connections.size).toBe(1);
+    // The first start and the first complete; the re-consent asked about neither.
+    expect(fake.assertSlot).toHaveBeenCalledTimes(2);
+  });
+
+  it('answers the plan sentence when the write itself is refused', async () => {
+    // The trigger's SQLSTATE: the row arrived between the check and the insert.
+    const raced = Object.assign(new Error('the plan cap for mcp_connected_apps is reached'), {
+      code: 'PL001',
+    });
+    const fake = atCap(10);
+    const createConnection = vi
+      .spyOn(fake.repository, 'createConnection')
+      .mockRejectedValueOnce(raced);
+    const state = await fake.stateOf(CATALOG.registry_name);
+
+    const error = await fake.service
+      .complete({ userId: 'user-1', state, code: 'code-1' })
+      .catch((refusal) => refusal);
+
+    createConnection.mockRestore();
+
+    expect(error).toBeInstanceOf(McpConnectError);
+    expect(error.failure).toBe('plan_limit');
+    expect(fake.credentials.size).toBe(0);
   });
 });

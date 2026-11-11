@@ -1,7 +1,4 @@
-import {
-  type McpMarketplaceRepository,
-  type McpConnectionRecord,
-} from '@/backend/repositories/mcp/marketplace-repository';
+import type { McpMarketplaceRepository } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
 import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
 import { createPlanGate } from '@/backend/config/plans';
@@ -54,6 +51,21 @@ export class McpConnectError extends Error {
 /** The attempt a consent may sit on: long enough to sign in, short enough to forget. */
 const ATTEMPT_TTL_MS = 10 * 60 * 1000;
 
+/** The refusal at the connected-app cap, one copy for both calls that ask. */
+const PLAN_LIMIT_SENTENCE = 'وصلت إلى حدّ التطبيقات في خطتك. افصل تطبيقاً أو ارتقِ بالخطة.';
+
+/**
+ * The cap trigger's SQLSTATE (`private.assert_owned_item_cap`). The check here
+ * settles a race most of the time; when two callbacks pass it together, Postgres
+ * is the one that refuses, and the member should read the same sentence rather
+ * than a generic failure.
+ */
+function isPlanCapRefusal(error: unknown): boolean {
+  return (
+    typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 'PL001'
+  );
+}
+
 export interface McpConnectService {
   start(input: {
     userId: string;
@@ -92,6 +104,26 @@ export function createMcpConnectService({
       await createPlanGate().cap(userId, OWNED_ITEMS.mcpConnectedApps, 1);
     });
 
+  /**
+   * Ask the cap about a connection that would be new. Re-consenting for a
+   * server the member already connected reuses its slot, so a live row for that
+   * server is not counted twice.
+   *
+   * Both calls ask: `start` before the browser leaves, for the refusal the
+   * member reads on the page, and `complete` when the consent comes back,
+   * because the last free slot can be spent while two flows are open.
+   */
+  async function requireSlot(userId: string, registryName: string) {
+    const existing = await repository.findLiveConnection(userId, registryName);
+    if (existing) return;
+
+    try {
+      await checkSlot(userId);
+    } catch (error) {
+      throw new McpConnectError('plan_limit', PLAN_LIMIT_SENTENCE, error);
+    }
+  }
+
   /** The catalogue row, or the refusal that says why there is none. */
   async function catalogServer(registryName: string) {
     const server = await repository.getCatalogServer(registryName);
@@ -115,18 +147,7 @@ export function createMcpConnectService({
 
       // Re-consenting for a server the member already connected reuses its slot,
       // so the cap is only asked about a connection that would be new.
-      const existing = await repository.findLiveConnection(userId, registryName);
-      if (!existing) {
-        try {
-          await checkSlot(userId);
-        } catch (error) {
-          throw new McpConnectError(
-            'plan_limit',
-            'وصلت إلى حدّ التطبيقات في خطتك. افصل تطبيقاً أو ارتقِ بالخطة.',
-            error
-          );
-        }
-      }
+      await requireSlot(userId, registryName);
 
       const discovery = await remote.discover(server.remote_override ?? server.remote_url);
 
@@ -205,6 +226,12 @@ export function createMcpConnectService({
         throw new McpConnectError('expired_state', 'انتهت صلاحية طلب الربط. ابدأ الربط من جديد.');
       }
 
+      // The cap belongs to the write, not to the redirect that started it: two
+      // flows can be opened under the same last free slot and both come back.
+      // The attempt is already claimed, so this refuses before the code is
+      // exchanged rather than after a consent nobody counted.
+      await requireSlot(userId, attempt.registry_name);
+
       const discovery = await remote.discover(attempt.server_url);
       const registration = await repository.getRegistration(
         discovery.authorizationServer,
@@ -233,14 +260,23 @@ export function createMcpConnectService({
       });
 
       const server = await catalogServer(attempt.registry_name);
-      const connection: McpConnectionRecord =
-        (await repository.findLiveConnection(userId, attempt.registry_name)) ??
-        (await repository.createConnection({
-          userId,
-          registryName: attempt.registry_name,
-          serverUrl: attempt.server_url,
-          displayName: server.name_ar ?? server.title ?? attempt.registry_name,
-        }));
+      let connection = await repository.findLiveConnection(userId, attempt.registry_name);
+      if (!connection) {
+        try {
+          connection = await repository.createConnection({
+            userId,
+            registryName: attempt.registry_name,
+            serverUrl: attempt.server_url,
+            displayName: server.name_ar ?? server.title ?? attempt.registry_name,
+          });
+        } catch (error) {
+          // The trigger's refusal is this same cap, reached between the check
+          // above and this insert: a race is the one thing left that can spend
+          // the last slot after `requireSlot` said there was one.
+          if (!isPlanCapRefusal(error)) throw error;
+          throw new McpConnectError('plan_limit', PLAN_LIMIT_SENTENCE, error);
+        }
+      }
 
       await repository.saveCredentials({
         connectionId: connection.id,

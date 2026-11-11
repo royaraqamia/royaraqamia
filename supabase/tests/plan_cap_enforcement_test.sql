@@ -18,7 +18,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(62);
+select plan(70);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -868,6 +868,102 @@ select is(
   ) ->> 'allowed')::boolean,
   false,
   'the address-only visitor is refused by its own event, not the member row'
+);
+
+-- ---------------------------------------------------------------------------
+-- Connectors: the connected-app cap is one pool, and the write is refused (#1266)
+-- ---------------------------------------------------------------------------
+
+-- `mcp_connected_apps` counts the inbound OAuth clients and the live outbound
+-- connections in one pool (ADR-0155). The outbound half had no trigger, so a
+-- write that skipped the service — a second consent callback, a direct insert —
+-- could sit over the cap. Free is one.
+
+set local session_replication_role = replica;
+
+insert into public.mcp_catalog_servers (registry_name, remote_url)
+values
+  ('io.example/cap-one', 'https://one.example/mcp'),
+  ('io.example/cap-two', 'https://two.example/mcp');
+
+insert into public.mcp_connections (user_id, registry_name, server_url)
+values (
+  '00000000-0000-0000-0000-00000000ca09',
+  'io.example/cap-one',
+  'https://one.example/mcp'
+);
+
+-- An account that was already over the cap when the trigger arrived: the
+-- trigger never deletes, so both rows stay and only a new write is refused.
+insert into public.mcp_connections (user_id, registry_name, server_url)
+values
+  ('00000000-0000-0000-0000-00000000ca0a', 'io.example/cap-one', 'https://one.example/mcp'),
+  ('00000000-0000-0000-0000-00000000ca0a', 'io.example/cap-two', 'https://two.example/mcp');
+
+set local session_replication_role = origin;
+
+select throws_ok(
+  $$insert into public.mcp_connections (user_id, registry_name, server_url)
+    values (
+      '00000000-0000-0000-0000-00000000ca09',
+      'io.example/cap-two',
+      'https://two.example/mcp'
+    )$$,
+  'PL001',
+  null,
+  'a second live connection is refused at the free cap'
+);
+
+select lives_ok(
+  $$insert into public.mcp_connections (user_id, registry_name, server_url, status)
+    values (
+      '00000000-0000-0000-0000-00000000ca09',
+      'io.example/cap-two',
+      'https://two.example/mcp',
+      'revoked'
+    )$$,
+  'a revoked row takes no slot, so writing one is not refused'
+);
+
+select is(
+  private.owned_item_count('00000000-0000-0000-0000-00000000ca09', 'mcp_connected_apps'),
+  1,
+  'the count is the live connection, not the revoked one'
+);
+
+select lives_ok(
+  $$delete from public.mcp_connections
+     where user_id = '00000000-0000-0000-0000-00000000ca09'
+       and status = 'active'$$,
+  'disconnecting at the cap still works'
+);
+
+select lives_ok(
+  $$insert into public.mcp_connections (user_id, registry_name, server_url)
+    values (
+      '00000000-0000-0000-0000-00000000ca09',
+      'io.example/cap-two',
+      'https://two.example/mcp'
+    )$$,
+  'the freed slot accepts the next connection'
+);
+
+select is(
+  private.owned_item_count('00000000-0000-0000-0000-00000000ca09', 'mcp_connected_apps'),
+  1,
+  'the freed slot is the new row, not a second one beside it'
+);
+
+select is(
+  private.owned_item_count('00000000-0000-0000-0000-00000000ca0a', 'mcp_connected_apps'),
+  2,
+  'an account already over the cap keeps its rows'
+);
+
+select lives_ok(
+  $$update public.mcp_connections set display_name = 'renamed'
+     where user_id = '00000000-0000-0000-0000-00000000ca0a'$$,
+  'editing a row that already holds a slot is not a new slot, over cap or not'
 );
 
 -- ---------------------------------------------------------------------------
