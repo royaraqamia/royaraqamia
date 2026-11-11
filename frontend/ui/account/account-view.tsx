@@ -1,11 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { User, Lock } from 'lucide-react';
+import { User } from 'lucide-react';
 
 import { useSession } from '@/frontend/state/session-provider';
-import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
-import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
@@ -26,8 +23,6 @@ function AccountSkeleton() {
 
 export function AccountView() {
   const { user, isLoading, profileName, profileAvatarUrl, signOut } = useSession();
-  /** The destination a guest picked; also what the sign-in prompt returns them to. */
-  const [promptHref, setPromptHref] = useState<string | null>(null);
 
   if (isLoading) {
     return <AccountSkeleton />;
@@ -46,7 +41,6 @@ export function AccountView() {
   // it, so we must not fall back to auth metadata or "delete avatar" could not
   // take effect for OAuth accounts.
   const avatarUrl = profileAvatarUrl?.trim() || null;
-  const loginHref = `/auth/login?redirect=${encodeURIComponent(promptHref ?? '/account')}`;
 
   return (
     <div className="space-y-6">
@@ -73,7 +67,6 @@ export function AccountView() {
       {/* Account actions — every row is public; the ones behind a session open the
           sign-in prompt instead of navigating. */}
       <AccountRows
-        onRequireAuth={setPromptHref}
         onSignOut={() => {
           signOut().then(() => {
             window.location.href = '/';
@@ -82,32 +75,6 @@ export function AccountView() {
       >
         <InstallSection />
       </AccountRows>
-
-      {/* Guest gate for the rows above — the same nudge the community FAB and the
-          notification bell give, aimed at the page they picked. */}
-      <Dialog
-        open={promptHref !== null}
-        onOpenChange={(next) => {
-          if (!next) setPromptHref(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-md" hideClose aria-describedby={undefined}>
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
-              <Lock size={24} aria-hidden="true" />
-            </div>
-            <DialogTitle className="leading-snug!">سجِّل الدُّخول للمتابعة</DialogTitle>
-          </div>
-
-          <DialogActions onCancel={() => setPromptHref(null)}>
-            <SignInCta
-              href={loginHref}
-              dismiss={() => setPromptHref(null)}
-              className="w-full sm:w-auto"
-            />
-          </DialogActions>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

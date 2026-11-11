@@ -20,6 +20,8 @@ object AccountRowsCopy {
     const val ADMIN = "الإدارة"
     const val FAQ = "الأسئلة الشَّائعة"
     const val CONTACT = "تواصل معنا"
+    const val SIGN_IN_PROMPT = "سجِّل الدُّخول للمتابعة"
+    const val SIGN_IN = "تسجيل الدُّخول"
     const val SIGN_OUT = "تسجيل الخروج"
     const val SIGN_OUT_MESSAGE = "هل أنت متأكِّد أنَّك تريد تسجيل الخروج؟"
     const val CANCEL = "إلغاء"

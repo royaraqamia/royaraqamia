@@ -19,13 +19,12 @@ import { SUPPORT_USERNAME } from '@/frontend/shared/constants';
 import { useSession } from '@/frontend/state/session-provider';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { PushNotificationToggle } from '@/frontend/ui/shared/push-notification-toggle';
+import { SignInPromptDialog } from '@/frontend/ui/shared/sign-in-prompt-dialog';
 import { AccountRow } from './account-row';
 import { rowClasses } from './row-classes';
 import { ACCOUNT_ROWS_COPY } from './account-rows-copy';
 
 interface AccountRowsProps {
-  /** Replaces navigation for a visitor with no session — the row opens the prompt. */
-  onRequireAuth: (href: string) => void;
   /** The signed-in member's sign-out, after the question below is answered. */
   onSignOut: () => void;
   /** Rows that belong between the account actions and the public links. */
@@ -37,8 +36,8 @@ interface AccountRowsProps {
  *
  * The page's action rows, the public links under them and the question before a
  * sign-out, extracted so the app can draw the same screen from the same words
- * (ADR-0098). A member gets a link and a sign-out button; a guest gets the rows
- * as buttons that open the sign-in prompt, and no sign-out.
+ * (ADR-0098). A member gets a link and a sign-out button; a guest gets the gated
+ * rows as buttons that open the sign-in prompt, and no sign-out.
  *
  * The news and links rows are not here any more (ADR-0153): each app opens its
  * own account screen from its own page's FAB, and the row duplicated that door.
@@ -46,9 +45,11 @@ interface AccountRowsProps {
  * The shell-only rows (`InstallSection`, `ShellChangelogRow`) arrive as children
  * so they keep the page's order: after the account actions and before the FAQ.
  */
-export function AccountRows({ onRequireAuth, onSignOut, children }: AccountRowsProps) {
+export function AccountRows({ onSignOut, children }: AccountRowsProps) {
   const { user, isAdmin } = useSession();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
+  /** The destination a guest picked; also what the sign-in prompt returns them to. */
+  const [promptHref, setPromptHref] = useState<string | null>(null);
 
   return (
     <>
@@ -62,21 +63,21 @@ export function AccountRows({ onRequireAuth, onSignOut, children }: AccountRowsP
           href="/account/submissions"
           icon={ClipboardList}
           label={ACCOUNT_ROWS_COPY.submissions}
-          onRequireAuth={onRequireAuth}
+          onRequireAuth={setPromptHref}
         />
 
         <AccountRow
           href="/account/posts"
           icon={FileText}
           label={ACCOUNT_ROWS_COPY.posts}
-          onRequireAuth={onRequireAuth}
+          onRequireAuth={setPromptHref}
         />
 
         <AccountRow
           href="/account/blocked"
           icon={ShieldOff}
           label={ACCOUNT_ROWS_COPY.blocked}
-          onRequireAuth={onRequireAuth}
+          onRequireAuth={setPromptHref}
         />
 
         {/* Public: a visitor may read the plans without an account, so this is a
@@ -92,12 +93,13 @@ export function AccountRows({ onRequireAuth, onSignOut, children }: AccountRowsP
         <PlainRow href="/account/faq" icon={CircleQuestionMark} label={ACCOUNT_ROWS_COPY.faq} />
 
         {/* Support is a chat with the site's own account, in the product rather
-            than on WhatsApp. A guest lands on the chat screen's sign-in prompt,
-            which returns them here after signing in. */}
-        <PlainRow
+            than on WhatsApp. Gated like the rows above: a guest gets the prompt
+            here and the sign-in page returns them to the chat they picked. */}
+        <AccountRow
           href={`/chats/new?to=${encodeURIComponent(SUPPORT_USERNAME)}`}
           icon={MessageCircle}
           label={ACCOUNT_ROWS_COPY.contact}
+          onRequireAuth={setPromptHref}
         />
 
         {user && (
@@ -129,6 +131,17 @@ export function AccountRows({ onRequireAuth, onSignOut, children }: AccountRowsP
         }}
         onCancel={() => setIsSignOutOpen(false)}
         variant="danger"
+      />
+
+      {/* The guest gate for the rows above — the same nudge the community FAB and
+          the notification bell give, aimed at the page they picked. */}
+      <SignInPromptDialog
+        open={promptHref !== null}
+        onDismiss={() => setPromptHref(null)}
+        redirectTo={promptHref ?? '/account'}
+        title={ACCOUNT_ROWS_COPY.signInPrompt}
+        signInLabel={ACCOUNT_ROWS_COPY.signIn}
+        cancelLabel={ACCOUNT_ROWS_COPY.cancel}
       />
     </>
   );

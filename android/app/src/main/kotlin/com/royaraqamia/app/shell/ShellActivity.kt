@@ -303,6 +303,7 @@ class ShellActivity : ComponentActivity() {
                                     profileRepository = graph.accountProfile,
                                     usageRepository = graph.accountUsage,
                                     onOpenRoute = ::openRoute,
+                                    onSignIn = ::showSignIn,
                                     onSignOut = ::signOut,
                                 )
                             "/habitflow" -> HabitflowScreen(repository = graph.habitflow)

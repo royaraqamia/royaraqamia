@@ -106,6 +106,7 @@ class AccountScreenTest {
         state: AccountUiState = AccountUiState.Member,
         isAdmin: Boolean = false,
         onOpenRoute: (String) -> Unit = {},
+        onSignIn: () -> Unit = {},
         onSignOut: () -> Unit = {},
     ) {
         compose.setContent {
@@ -118,6 +119,7 @@ class AccountScreenTest {
                             profileRepository = profileRepository(),
                             usageRepository = usageRepository(),
                             onOpenRoute = onOpenRoute,
+                            onSignIn = onSignIn,
                             onSignOut = onSignOut,
                         )
                     }
@@ -144,6 +146,23 @@ class AccountScreenTest {
         compose.onNodeWithTag(AccountTags.row("contact")).performScrollTo().performClick()
 
         assertEquals("/chats/new?to=royaraqamia", opened)
+    }
+
+    @Test
+    fun `a guest pressing support is asked to sign in instead of handed the chat`() {
+        var opened: String? = null
+        var prompted = false
+        draw(
+            state = AccountUiState.Guest,
+            onOpenRoute = { opened = it },
+            onSignIn = { prompted = true },
+        )
+
+        compose.onNodeWithTag(AccountTags.row("contact")).performScrollTo().performClick()
+
+        assertEquals(null, opened)
+        compose.onNodeWithTag(AccountTags.SIGN_IN_PROMPT).performClick()
+        assertTrue("the prompt offered the sign-in the row needs", prompted)
     }
 
     @Test

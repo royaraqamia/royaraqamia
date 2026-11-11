@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
@@ -10,6 +10,9 @@ import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { SignInPromptDialog } from '@/frontend/ui/shared/sign-in-prompt-dialog';
+import { whenGuardDropped } from '@/frontend/ui/primitives/overlay-back';
+import { ACCOUNT_ROWS_COPY } from '@/frontend/ui/account/account-rows-copy';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { newChatInitialState, newChatReducer } from './new-chat-view.reducer';
 import type { ChatPreview } from '@/shared/contracts/chat';
@@ -34,6 +37,10 @@ export function NewChatView() {
   const { user, isLoading: isSessionLoading } = useSession();
   const [state, dispatch] = useReducer(newChatReducer, undefined, newChatInitialState);
   const { preview, error, isLoading, isRequesting } = state;
+  /** The guest prompt's own close: leaving the page only once its entry is gone. */
+  const [isPromptClosed, setIsPromptClosed] = useState(false);
+  /** The guest's way out of the prompt: the page they opened this one from. */
+  const goBack = useBackAction('/account');
 
   useEffect(() => {
     if (!handle || !user) {
@@ -96,16 +103,24 @@ export function NewChatView() {
   }
 
   if (!user) {
+    // Not a page of its own: the same prompt the account rows open, over the empty
+    // surface, so a guest is asked once and the sign-in page brings them back to
+    // the chat they picked. Any close other than the sign-in link leaves the page
+    // they arrived from — after the prompt's history entry is off, so the back
+    // control is not one press away from the empty surface.
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
-        <p className="text-sm font-bold text-foreground">سجِّل الدُّخول لبدء محادثة</p>
-        <Link
-          href={`/auth/login?redirect=${encodeURIComponent(`/chats/new?to=${handle}`)}`}
-          className="mt-4 inline-flex h-11 items-center rounded-full bg-primary px-6 text-sm font-bold text-primary-foreground"
-        >
-          تسجيل الدُّخول
-        </Link>
-      </div>
+      <SignInPromptDialog
+        open={!isPromptClosed}
+        onDismiss={() => {
+          setIsPromptClosed(true);
+          void whenGuardDropped().then(goBack);
+        }}
+        onClose={() => setIsPromptClosed(true)}
+        redirectTo={handle ? `/chats/new?to=${handle}` : '/account'}
+        title={ACCOUNT_ROWS_COPY.signInPrompt}
+        signInLabel={ACCOUNT_ROWS_COPY.signIn}
+        cancelLabel={ACCOUNT_ROWS_COPY.cancel}
+      />
     );
   }
 
