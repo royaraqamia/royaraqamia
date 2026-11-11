@@ -283,6 +283,30 @@
       ]
     },
     {
+      "id": "shell-back-control",
+      "surface": "account-faq",
+      "issue": "#967",
+      "web": {
+        "route": "app/account/faq/page.tsx",
+        "component": "frontend/ui/shared/back-button.tsx",
+        "copyModule": "frontend/ui/shared/back-control-copy.ts",
+        "copyExport": "BACK_CONTROL_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellBackControl.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/shell/ShellBackControl.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/shell/BackControlCopy.kt",
+        "copyObject": "BackControlCopy"
+      },
+      "copySource": "shared/copy/back-control.json",
+      "states": [
+        {
+          "name": "Label",
+          "copy": "label"
+        }
+      ]
+    },
+    {
       "id": "home-strip",
       "surface": "home",
       "issue": "#1194",

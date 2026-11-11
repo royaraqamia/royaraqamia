@@ -1,0 +1,19 @@
+{
+  "surface": "account-faq",
+  "component": "shell-back-control",
+  "web": {
+    "file": "frontend/ui/shared/back-control-copy.ts",
+    "export": "BACK_CONTROL_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/shell/BackControlCopy.kt",
+    "object": "BackControlCopy"
+  },
+  "notes": {
+    "source": "The floating back control every secondary page wears (#967). `frontend/ui/shared/back-button.tsx` is the reference: one word, announced by the control and drawn nowhere else, so the app's copy of it comes from this source rather than being typed into Kotlin (ADR-0098).",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails the label if the reference component stops rendering it."
+  },
+  "strings": {
+    "label": "رجوع"
+  }
+}

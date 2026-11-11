@@ -286,6 +286,7 @@ class ShellActivity : ComponentActivity() {
                         onToggleHomeService = { route ->
                             lifecycleScope.launch { homeServices.toggle(route) }
                         },
+                        onBack = ::goBack,
                     ) {
                         // The launch and every sign-in/sign-out run the same load:
                         // the device's list for a guest, the account's (merged once)
@@ -676,30 +677,37 @@ class ShellActivity : ComponentActivity() {
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    // The assistant's sheet is an overlay, so back closes it before
-                    // the destination under it moves (ADR-0143).
-                    if (assistantOpen) {
-                        assistantOpen = false
-                        return
-                    }
-                    // A card the frame was brought forward for is a screen of its
-                    // own (#652): back is "later", not a walk down a stack the user
-                    // cannot see.
-                    if (update.state !is ShellUpdateUiState.Idle) {
-                        update.decline()
-                        return
-                    }
-                    if (stack.back()) {
-                        current = stack.route
-                        handOver()
-                    } else {
-                        // Home is the root (ADR-0082): this is the one back that
-                        // closes the app, and no other destination may reach it.
-                        finish()
-                    }
+                    goBack()
                 }
             },
         )
+    }
+
+    /**
+     * The one back the app has: the gesture, and the secondary frame's floating
+     * control (#967), walk the same stack.
+     */
+    private fun goBack() {
+        // The assistant's sheet is an overlay, so back closes it before the
+        // destination under it moves (ADR-0143).
+        if (assistantOpen) {
+            assistantOpen = false
+            return
+        }
+        // A card the frame was brought forward for is a screen of its own (#652):
+        // back is "later", not a walk down a stack the user cannot see.
+        if (update.state !is ShellUpdateUiState.Idle) {
+            update.decline()
+            return
+        }
+        if (stack.back()) {
+            current = stack.route
+            handOver()
+        } else {
+            // Home is the root (ADR-0082): this is the one back that closes the
+            // app, and no other destination may reach it.
+            finish()
+        }
     }
 
     override fun onNewIntent(intent: Intent) {        super.onNewIntent(intent)

@@ -5,6 +5,7 @@ import { ArrowRight } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { cn } from '@/frontend/shared/cn';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
+import { BACK_CONTROL_COPY } from './back-control-copy';
 
 /**
  * Generic, route-agnostic back control — the single back affordance in the app.
@@ -18,7 +19,13 @@ import { useBackAction } from '@/frontend/ui/navbar/use-back';
  * `className` is merged last, so a host surface (the sticky back header) can
  * restyle it without a second implementation of the same decision.
  */
-export function BackButton({ label = 'رجوع', className }: { label?: string; className?: string }) {
+export function BackButton({
+  label = BACK_CONTROL_COPY.label,
+  className,
+}: {
+  label?: string;
+  className?: string;
+}) {
   const goBack = useBackAction();
 
   return (

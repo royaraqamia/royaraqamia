@@ -310,6 +310,11 @@ const PREPARE: Record<
   'at-rest': async (_page, visit) => {
     await visit();
   },
+  // The frame's second chrome (#967): a drill-down wears no bar, so the page is
+  // a real secondary route and the recording is the band and the back control.
+  'chrome/secondary': async (_page, visit) => {
+    await visit();
+  },
   // A list with one row: the guest store takes the write on the device, so the
   // state is reached through the page's own control rather than a fixture row.
   // The new habit is always this browser context's, and the count it produces is
@@ -634,13 +639,13 @@ test.describe('the visual gate', () => {
         const regionSelector = spec.capture
           ? elements.find((element) => element.name === spec.capture)?.selector
           : null;
+        // A state may name its own route (#967): the frame's two chromes are two
+        // pages, a primary one and a drill-down, and the second is not `/`.
+        const route = spec.route ?? surface.web.route;
         const visit = async (origin?: string) => {
-          await page.goto(
-            origin ? new URL(surface.web.route, origin).toString() : surface.web.route,
-            {
-              waitUntil: 'domcontentloaded',
-            }
-          );
+          await page.goto(origin ? new URL(route, origin).toString() : route, {
+            waitUntil: 'domcontentloaded',
+          });
           if (regionSelector) {
             const region = page.locator(regionSelector).first();
             await region.waitFor({ timeout: 30_000 });
@@ -693,7 +698,7 @@ test.describe('the visual gate', () => {
               {
                 surface: surface.surface,
                 state: state.name,
-                route: surface.web.route,
+                route,
                 viewport: { ...VIEWPORT, deviceScaleFactor: DEVICE_SCALE },
                 elements: measured,
               },

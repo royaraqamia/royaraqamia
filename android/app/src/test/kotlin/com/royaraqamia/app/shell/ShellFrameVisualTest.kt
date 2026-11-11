@@ -33,13 +33,15 @@ import org.robolectric.annotation.GraphicsMode
  *
  * The frame is one recording rather than one per screen because it is drawn once,
  * before any screen: measuring it per surface would measure the same bars thirty
- * times and still not say which of them moved. The bars' boxes are measured; the
- * type sizes and weights are read from the objects the bars draw with
- * ([TabLabelSize], [ServicesLabelWeight], the theme's typography), because Compose
- * does not expose resolved typography through the semantics tree. There is no
- * raster: the page's bars are glass over its own content, and the account tab
- * carries the member's avatar over it, so the frame's pixels are not the frame's
- * (the gate entry's `why` says so).
+ * times and still not say which of them moved. Its two chromes are two states of
+ * the same contract (#967): `at-rest` on the primary frame, and `secondary` on a
+ * drill-down that drops the bars for the page's floating back control. The bars'
+ * boxes are measured; the type sizes and weights are read from the objects the
+ * bars draw with ([TabLabelSize], [ServicesLabelWeight], the theme's typography),
+ * because Compose does not expose resolved typography through the semantics tree.
+ * There is no raster: the page's bars are glass over its own content, and the
+ * account tab carries the member's avatar over it, so the frame's pixels are not
+ * the frame's (the gate entry's `why` says so).
  *
  * The screen is composed inside a 393 x 852 dp box because the window is 1080 px
  * at DPR 2.75, which is 392.7dp: the page is 393 CSS px and the boxes have to be
@@ -146,5 +148,60 @@ class ShellFrameVisualTest {
         // No raster: the frame's gate entry declares `raster: "none"` and says why
         // (the page's bars are glass over its own content), so the numbers are the
         // whole recording.
+    }
+
+    @Test
+    fun `the secondary frame records the page's band and back control`() {
+        compose.setContent {
+            RoyaraqamiaTheme {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.width(393.dp).height(852.dp)) {
+                        // A drill-down: the page draws SecondaryHeader here, and
+                        // the frame draws the same band and corner instead of the
+                        // two bars (#967).
+                        ShellFrame(
+                            currentRoute = "/account/faq",
+                            onSelect = {},
+                            onOpenRoute = {},
+                            unreadCount = 0,
+                        )
+                    }
+                }
+            }
+        }
+
+        fun bounds(tag: String) = compose.onNodeWithTag(tag).getUnclippedBoundsInRoot()
+        fun top(tag: String) = bounds(tag).top.value
+        fun left(tag: String) = bounds(tag).left.value
+        fun width(tag: String): Float {
+            val box = bounds(tag)
+            return (box.right - box.left).value
+        }
+
+        fun height(tag: String): Float {
+            val box = bounds(tag)
+            return (box.bottom - box.top).value
+        }
+
+        val json =
+            """
+            {
+              "surface": "chrome",
+              "elements": {
+                "back": {
+                  "top": ${top(ChromeTags.BACK)},
+                  "left": ${left(ChromeTags.BACK)},
+                  "width": ${width(ChromeTags.BACK)},
+                  "height": ${height(ChromeTags.BACK)}
+                },
+                "content": {
+                  "top": ${top(ChromeTags.CONTENT)}
+                }
+              }
+            }
+            """.trimIndent()
+
+        val dir = File("../../e2e/__visual__/chrome/secondary").apply { mkdirs() }
+        File(dir, "app.json").writeText(json)
     }
 }

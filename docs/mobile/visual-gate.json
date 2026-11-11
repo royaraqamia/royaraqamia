@@ -625,10 +625,16 @@
       "test": "android/app/src/test/kotlin/com/royaraqamia/app/shell/ShellFrameVisualTest.kt"
     },
     "raster": "none",
-    "why": "The site's bars are glass over the page's own content (`bg-neutral-950/40` with `backdrop-filter`), and the account tab carries the member's avatar floated over it, so a capture of the frame is a capture of the page's hero and of whoever is signed in - not of the chrome. Compose has no `backdrop-filter` (ADR-0118 already records that), so the frame is gated by its contract, and the reason it has no raster is written here rather than hidden in a baseline wide enough to pass a different bar.",
+    "why": "The site's bars are glass over the page's own content (`bg-neutral-950/40` with `backdrop-filter`), and the account tab carries the member's avatar floated over it, so a capture of the frame is a capture of the page's hero and of whoever is signed in - not of the chrome. Compose has no `backdrop-filter` (ADR-0118 already records that), so the frame is gated by its contract, and the reason it has no raster is written here rather than hidden in a baseline wide enough to pass a different bar. The secondary state is the same frame with no bars at all: its control floats over the page's content too, so there is no frame-only raster to compare.",
     "states": [
       {
         "name": "at-rest",
+        "tolerance": {
+          "length": 0.5
+        }
+      },
+      {
+        "name": "secondary",
         "tolerance": {
           "length": 0.5
         }
