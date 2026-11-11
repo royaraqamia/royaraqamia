@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -32,8 +33,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -65,10 +68,12 @@ import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.ui.vectors.LucideVectors
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
+import java.util.Locale
 
 /**
  * What the outbox is doing with one of the member's lines (#1033).
@@ -110,6 +115,8 @@ fun ChatThread(
      * live line — it still reads once on open and answers every write.
      */
     hints: ChatHintSource? = null,
+    /** The member's presence stream; absent in a test or an unwired tree. */
+    presence: ChatPresenceSource? = null,
     onOpenAttachment: (String) -> Unit = {},
     onOpenAssistantThread: (String) -> Unit = {},
 ) {
@@ -132,6 +139,16 @@ fun ChatThread(
     var markedLine by remember { mutableStateOf<String?>(null) }
     /** The lines the queue still owes, by their client id (#1127). */
     var pendingLines by remember { mutableStateOf<Map<String, ChatPending>>(emptyMap()) }
+
+    /** What the peer is doing, as the wire word, or null when they are idle. */
+    var peerPresence by remember { mutableStateOf<String?>(null) }
+    var presenceStamp by remember { mutableLongStateOf(0L) }
+    var lastTypingSent by remember { mutableLongStateOf(0L) }
+
+    /** Who this thread's live line is about, and who it is drawn for. */
+    val presenceThread = (read as? ChatThreadUiState.Live)?.thread
+    val selfId = presenceThread?.me?.userId
+    val peerId = presenceThread?.counterpart?.id
 
     /** One read of the thread and its lines, and the read watermark it stamps. */
     suspend fun load() {
@@ -226,6 +243,23 @@ fun ChatThread(
         }
     }
 
+    /**
+     * The write-only half (ADR-0165): one channel into the peer's stream while
+     * this thread is open. A guest, an assistant thread or a group has no peer,
+     * so there is nothing to join.
+     */
+    val publisher =
+        remember(presence, selfId, peerId) {
+            if (presence != null && selfId != null && peerId != null) {
+                presence.publisher(peerId, selfId)
+            } else {
+                null
+            }
+        }
+    DisposableEffect(publisher) {
+        onDispose { publisher?.close() }
+    }
+
     /** One write's outcome, as the alert the screen shows. */
     suspend fun report(result: ApiResult<Unit>, fallback: String) {
         failure =
@@ -271,6 +305,8 @@ fun ChatThread(
                     draft = ""
                     attached = emptyList()
                     failure = null
+                    lastTypingSent = 0
+                    publisher?.announce(conversationId, ChatPresence.STOP)
                     load()
                 }
                 is ApiResult.Failure ->
@@ -280,6 +316,109 @@ fun ChatThread(
             sending = false
         }
     }
+
+    /**
+     * A finished clip is its own message, sent the moment it lands: the same
+     * order the site's composer uses, so a voice note is never staged beside a
+     * draft the member has not finished (#933).
+     */
+    val recorder =
+        rememberVoiceNoteRecorder { clip ->
+            scope.launch {
+                sending = true
+                val senderId = (read as? ChatThreadUiState.Live)?.thread?.me?.userId
+                when (
+                    val result =
+                        repository.sendWithAttachments(
+                            conversationId,
+                            "",
+                            listOf(clip),
+                            senderId = senderId,
+                        )
+                ) {
+                    is ApiResult.Success -> {
+                        failure = null
+                        load()
+                    }
+                    is ApiResult.Failure ->
+                        failure =
+                            ChatFailure.sentenceOf(result.error) ?: ChatThreadCopy.REQUEST_FAILED
+                }
+                sending = false
+            }
+        }
+
+    /** A keystroke, throttled at the site's window; a recording outranks it. */
+    fun announceTyping() {
+        if (recorder.isRecording) return
+        val now = System.currentTimeMillis()
+        if (now - lastTypingSent < ChatPresence.TYPING_THROTTLE_MS) return
+        lastTypingSent = now
+        publisher?.announce(conversationId, ChatPresenceState.Typing.wire)
+    }
+
+    // The member's own stream while this thread is open: one subscription, and
+    // only the counterpart's events for this conversation are believed.
+    LaunchedEffect(presence, selfId, peerId, conversationId) {
+        val source = presence ?: return@LaunchedEffect
+        if (selfId == null || peerId == null) return@LaunchedEffect
+
+        val subscription =
+            source.listen(selfId) { event ->
+                if (event.conversationId != conversationId || event.userId != peerId) {
+                    return@listen
+                }
+                peerPresence = event.state.takeIf { it != ChatPresence.STOP }
+                presenceStamp = System.currentTimeMillis()
+            }
+        try {
+            awaitCancellation()
+        } finally {
+            subscription.close()
+        }
+    }
+
+    // The reader forgets each state on its own window, so a dropped stop cannot
+    // pin the line on screen.
+    LaunchedEffect(peerPresence, presenceStamp) {
+        val state = peerPresence ?: return@LaunchedEffect
+        val observed = presenceStamp
+        delay(
+            if (state == ChatPresenceState.Recording.wire) {
+                ChatPresence.RECORDING_TIMEOUT_MS
+            } else {
+                ChatPresence.TYPING_TIMEOUT_MS
+            }
+        )
+        if (presenceStamp == observed) peerPresence = null
+    }
+
+    // A recording is a long state: announce it, then keep it alive every window
+    // until the microphone closes, and say stop when it does.
+    LaunchedEffect(recorder.isRecording) {
+        if (!recorder.isRecording) {
+            publisher?.announce(conversationId, ChatPresence.STOP)
+            return@LaunchedEffect
+        }
+        while (true) {
+            publisher?.announce(conversationId, ChatPresenceState.Recording.wire)
+            delay(ChatPresence.RECORDING_HEARTBEAT_MS)
+        }
+    }
+
+    // The five-minute ceiling ends the capture and sends what was said.
+    LaunchedEffect(recorder.isRecording, recorder.elapsedMs) {
+        if (recorder.isRecording && recorder.elapsedMs >= VOICE_NOTE_MAX_MS) {
+            recorder.finish()
+        }
+    }
+
+    val presenceText =
+        when (peerPresence) {
+            ChatPresenceState.Typing.wire -> ChatThreadCopy.TYPING_NOW
+            ChatPresenceState.Recording.wire -> ChatThreadCopy.RECORDING_NOW
+            else -> null
+        }
 
     Box(modifier = modifier.fillMaxSize()) {
         when (val shown = read) {
@@ -299,6 +438,8 @@ fun ChatThread(
                     editing = editing,
                     editingText = editingText,
                     pendingLines = pendingLines,
+                    presence = presenceText,
+                    recorder = recorder,
                     onRetry = { message ->
                         message.clientId?.let { clientId ->
                             scope.launch {
@@ -307,7 +448,10 @@ fun ChatThread(
                             }
                         }
                     },
-                    onDraft = { draft = it },
+                    onDraft = {
+                        draft = it
+                        if (it.isNotBlank()) announceTyping()
+                    },
                     onSend = ::send,
                     onPick = ::addFiles,
                     onRemoveAttachment = { index ->
@@ -443,6 +587,9 @@ private fun ThreadBody(
     editing: String?,
     editingText: String,
     pendingLines: Map<String, ChatPending>,
+    /** The live line under the name, or null when the peer is idle. */
+    presence: String?,
+    recorder: VoiceNoteRecorderState,
     onRetry: (ChatMessagePageResponseMessagesItem) -> Unit,
     onDraft: (String) -> Unit,
     onSend: () -> Unit,
@@ -478,6 +625,7 @@ private fun ThreadBody(
         ThreadHeader(
             thread = thread,
             counterpart = counterpart?.username,
+            presence = presence,
             menuOpen = menuOpen,
             onMenu = onMenu,
             onBlock = { onDialog(ChatDialog.Block) },
@@ -540,6 +688,7 @@ private fun ThreadBody(
             draft = draft,
             attached = attached,
             sending = sending,
+            recorder = recorder,
             onDraft = onDraft,
             onSend = onSend,
             onPick = onPick,
@@ -562,6 +711,7 @@ private fun ThreadBody(
 private fun ThreadHeader(
     thread: ChatThreadResponseThread,
     counterpart: String?,
+    presence: String?,
     menuOpen: Boolean,
     onMenu: (Boolean) -> Unit,
     onBlock: () -> Unit,
@@ -598,13 +748,26 @@ private fun ThreadHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = counterpart?.let { "@$it" } ?: "",
-                style = type.xs,
-                color = RoyColors.mutedForeground.copy(alpha = 0.7f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            /*
+              One slot, two sentences: the live line takes the handle's place and
+              gives it back when the peer stops (ADR-0165). The header's height is
+              the avatar's either way, so nothing jumps.
+            */
+            if (presence != null) {
+                ChatPresenceLine(
+                    label = presence,
+                    style = type.xs,
+                    color = RoyColors.primary,
+                )
+            } else {
+                Text(
+                    text = counterpart?.let { "@$it" } ?: "",
+                    style = type.xs,
+                    color = RoyColors.mutedForeground.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
         Box {
@@ -885,6 +1048,7 @@ private fun Footer(
     draft: String,
     attached: List<ChatComposeFile>,
     sending: Boolean,
+    recorder: VoiceNoteRecorderState,
     onDraft: (String) -> Unit,
     onSend: () -> Unit,
     onPick: (List<ChatComposeFile>) -> Unit,
@@ -905,40 +1069,48 @@ private fun Footer(
     ) {
         when (face) {
             ThreadFace.WRITE -> {
-                ChatComposerAttach(
-                    files = attached,
-                    enabled = !sending,
-                    onPicked = onPick,
-                    onRemove = onRemoveAttachment,
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    OutlinedTextField(
-                        value = draft,
-                        onValueChange = onDraft,
-                        modifier = Modifier.weight(1f).heightIn(min = 44.dp, max = 128.dp),
-                        placeholder = {
-                            Text(text = ChatThreadCopy.PLACEHOLDER, style = type.small)
-                        },
-                        label = { Text(text = ChatThreadCopy.MESSAGE_LABEL, style = type.xs) },
-                        singleLine = false,
-                        maxLines = 4,
+                if (recorder.isRecording || recorder.isPreparing) {
+                    ChatRecordingBar(recorder)
+                } else {
+                    ChatComposerAttach(
+                        files = attached,
+                        enabled = !sending,
+                        onPicked = onPick,
+                        onRemove = onRemoveAttachment,
                     )
-                    IconButton(
-                        onClick = onSend,
-                        enabled = !sending && (draft.trim().isNotEmpty() || attached.isNotEmpty()),
-                        modifier =
-                            Modifier.size(44.dp)
-                                .background(RoyColors.primary, CircleShape),
+                    val hasContent = draft.trim().isNotEmpty() || attached.isNotEmpty()
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                        verticalAlignment = Alignment.Bottom,
                     ) {
-                        Icon(
-                            imageVector = LucideVectors.Send,
-                            contentDescription = ChatThreadCopy.SEND,
-                            tint = RoyColors.primaryForeground,
-                            modifier = Modifier.size(16.dp),
+                        OutlinedTextField(
+                            value = draft,
+                            onValueChange = onDraft,
+                            modifier = Modifier.weight(1f).heightIn(min = 44.dp, max = 128.dp),
+                            placeholder = {
+                                Text(text = ChatThreadCopy.PLACEHOLDER, style = type.small)
+                            },
+                            label = { Text(text = ChatThreadCopy.MESSAGE_LABEL, style = type.xs) },
+                            singleLine = false,
+                            maxLines = 4,
                         )
+                        IconButton(
+                            onClick = { if (hasContent) onSend() else recorder.record() },
+                            enabled = !sending && !recorder.isPreparing,
+                            modifier =
+                                Modifier.size(44.dp)
+                                    .background(RoyColors.primary, CircleShape),
+                        ) {
+                            Icon(
+                                imageVector =
+                                    if (hasContent) LucideVectors.Send else LucideVectors.Mic,
+                                contentDescription =
+                                    if (hasContent) ChatThreadCopy.SEND
+                                    else ChatThreadCopy.RECORD_LABEL,
+                                tint = RoyColors.primaryForeground,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -1039,6 +1211,69 @@ private fun Footer(
                 )
         }
     }
+}
+
+/** The live capture: the timer, the meter, and the two ways out of it. */
+@Composable
+private fun ChatRecordingBar(recorder: VoiceNoteRecorderState) {
+    val type = LocalRoyTypeScale.current
+    val spacing = LocalRoySpacing.current
+
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                .background(RoyColors.destructive.copy(alpha = 0.1f), RoundedCornerShape(12.dp))
+                .padding(horizontal = spacing.elementGapSm, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(8.dp).background(RoyColors.destructive, CircleShape))
+        Text(
+            text = voiceDuration(recorder.elapsedMs),
+            style = type.xs,
+            color = RoyColors.foreground,
+            maxLines = 1,
+        )
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            recorder.levels.takeLast(VOICE_LEVEL_BARS).forEach { level ->
+                Box(
+                    modifier =
+                        Modifier.width(3.dp)
+                            .height((4 + level * 16).dp)
+                            .background(
+                                RoyColors.destructive.copy(alpha = 0.7f),
+                                RoundedCornerShape(2.dp),
+                            )
+                )
+            }
+        }
+        IconButton(onClick = recorder::cancel, modifier = Modifier.size(24.dp)) {
+            Icon(
+                imageVector = LucideVectors.X,
+                contentDescription = ChatThreadCopy.CANCEL_RECORDING,
+                tint = RoyColors.mutedForeground,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+        IconButton(onClick = recorder::finish, modifier = Modifier.size(32.dp)) {
+            Icon(
+                imageVector = LucideVectors.Square,
+                contentDescription = ChatThreadCopy.STOP_RECORDING,
+                tint = RoyColors.destructive,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+    }
+}
+
+/** `m:ss`, ASCII digits whatever the phone's locale says. */
+private fun voiceDuration(ms: Long): String {
+    val total = (ms / 1_000).coerceAtLeast(0)
+    return String.format(Locale.US, "%d:%02d", total / 60, total % 60)
 }
 
 @Composable

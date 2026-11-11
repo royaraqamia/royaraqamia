@@ -19,7 +19,7 @@ import {
   useChatAssistant,
   type ChatAssistantState,
 } from '@/frontend/state/chats/use-chat-assistant';
-import { useChatTyping } from '@/frontend/state/chats/use-chat-typing';
+import { useChatPresence } from '@/frontend/state/chats/use-chat-presence';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { blockChatUser, reportChat } from '@/frontend/api/chats';
@@ -39,7 +39,8 @@ import { useKeyboardInset } from '@/frontend/ui/shared/keyboard-inset';
 import { ReportChatDialog } from './report-chat-dialog';
 import { AssistantMark } from './assistant-mark';
 import { ASSISTANT_COPY } from './assistant-copy';
-import { readReceiptOf, typingLabel, type ChatReadReceipt } from './read-receipt';
+import { readReceiptOf, type ChatReadReceipt } from './read-receipt';
+import { PresenceIndicator } from './presence-indicator';
 import { formatDaySeparator, isNewDay } from './thread-days';
 import { ActionCard } from './chat-agent-action-card';
 import { AssistantComposer } from './chat-assistant-composer';
@@ -57,6 +58,7 @@ import {
   chatAttachmentIsInlineImage,
   type ChatAttachment,
   type ChatMessage,
+  type ChatPresenceState,
   type ChatThread,
 } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
@@ -95,6 +97,18 @@ function counterpartOf(thread: ChatThread) {
   return (
     (thread.participants ?? []).find((participant) => participant.userId !== meId)?.peer ?? null
   );
+}
+
+/**
+ * The live sentence a peer's state draws, in the thread's own words (#819).
+ *
+ * The copy source owns both strings, and the app reads the same two, so the
+ * header cannot word a recording differently from the list. `CHAT_THREAD_COPY`
+ * is named here rather than retyped, which is what `check:parity` enforces.
+ */
+function presenceText(state: ChatPresenceState | null): string | null {
+  if (!state) return null;
+  return state === 'recording' ? CHAT_THREAD_COPY.recordingNow : CHAT_THREAD_COPY.typingNow;
 }
 
 /** What a waiting answer says: the request that started this thread. */
@@ -163,11 +177,14 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     return byMessage;
   }, [actions]);
 
-  // The channel is joined only where someone can actually write: a thread this
-  // member cannot post in has no typing to draw and nothing to broadcast.
-  const { typers, noteTyping, stopTyping } = useChatTyping(
+  // Presence is joined only where someone can actually write: a thread this
+  // member cannot post in has nothing to hear and nothing to broadcast.
+  const presencePeerId = thread?.kind === 'direct' ? (counterpartOf(thread)?.id ?? null) : null;
+  const presenceEnabled = state === 'write' && presencePeerId !== null;
+  const { peer, noteTyping, noteRecording, stopTyping } = useChatPresence(
     conversationId,
-    state === 'write' ? (user?.id ?? null) : null
+    presenceEnabled ? (user?.id ?? null) : null,
+    presenceEnabled ? presencePeerId : null
   );
 
   if (isLoading) {
@@ -204,7 +221,17 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   }
 
   const counterpart = counterpartOf(thread);
-  const typing = typingLabel(thread, typers);
+  /**
+   * The live line under the name. نور's turn is the member's own request, so its
+   * sentence comes from the assistant's words; a peer's comes from the thread's
+   * copy source, where the app reads the same two strings.
+   */
+  const presence =
+    thread.kind === 'agent'
+      ? assistant.isStreaming
+        ? ASSISTANT_COPY.thinking
+        : null
+      : presenceText(peer);
 
   async function sendWith(staged: File[]) {
     if (isSending) return;
@@ -315,6 +342,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
       <ThreadHeader
         thread={thread}
         counterpart={counterpart}
+        presence={presence}
         onReport={() => setReporting(true)}
         onBlock={() => setConfirm({ kind: 'block' })}
       />
@@ -395,14 +423,10 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             })
           )}
 
-          {assistant.isStreaming && (
+          {assistant.isStreaming && assistant.streamingText && (
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
-                {assistant.streamingText ? (
-                  <p className="whitespace-pre-wrap break-words">{assistant.streamingText}</p>
-                ) : (
-                  <p className="text-xs italic opacity-70">{ASSISTANT_COPY.thinking}</p>
-                )}
+                <p className="whitespace-pre-wrap break-words">{assistant.streamingText}</p>
               </div>
             </div>
           )}
@@ -437,16 +461,6 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         </div>
       </div>
 
-      {/* Who is writing, drawn from a broadcast that is never stored (#816). */}
-      {typing && (
-        <p
-          aria-live="polite"
-          className="shrink-0 px-4 pb-1 text-[11px] font-medium text-muted-foreground"
-        >
-          {typing}
-        </p>
-      )}
-
       <ThreadFooter
         thread={thread}
         state={state}
@@ -461,6 +475,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         onRemoveFile={(index) => setFiles((current) => current.filter((_, at) => at !== index))}
         onSend={() => void handleSend()}
         onRecorded={handleRecorded}
+        onRecording={noteRecording}
         onAsk={(body, staged) => {
           void assistant.ask(body, staged).then((sent) => {
             if (sent) setDraft('');
@@ -558,11 +573,14 @@ type Confirm =
 function ThreadHeader({
   thread,
   counterpart,
+  presence,
   onReport,
   onBlock,
 }: {
   thread: ChatThread;
   counterpart: ReturnType<typeof counterpartOf>;
+  /** The live line under the name, or null when the peer is idle. */
+  presence: string | null;
   onReport: () => void;
   onBlock: () => void;
 }) {
@@ -598,13 +616,19 @@ function ThreadHeader({
 
       <div className="min-w-0 flex-1 text-start">
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
-        {/* The assistant's thread has one participant, so a member count would
-            read "1 members"; the assistant is not one (#817). */}
-        {thread.kind !== 'agent' && counterpart && (
+        {/*
+          One slot, two sentences: while a peer is writing or recording, the
+          live line takes the handle's place and returns it when it ends. The
+          header's height is the avatar's (36px) either way, so nothing jumps
+          (#816, ADR-0165).
+        */}
+        {presence ? (
+          <PresenceIndicator label={presence} className="text-xs" />
+        ) : thread.kind !== 'agent' && counterpart ? (
           <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
             @{counterpart.username}
           </p>
-        )}
+        ) : null}
       </div>
     </>
   );
@@ -736,6 +760,7 @@ function ThreadFooter({
   onRemoveFile,
   onSend,
   onRecorded,
+  onRecording,
   onAsk,
   onAccept,
   onDecline,
@@ -757,6 +782,8 @@ function ThreadFooter({
   onRemoveFile: (index: number) => void;
   onSend: () => void;
   onRecorded: (clip: File) => void;
+  /** The microphone opened or closed, for the peer's live line. */
+  onRecording: (recording: boolean) => void;
   onAsk: (body: string, files: File[]) => void;
   onAccept: () => void;
   onDecline: () => void;
@@ -797,11 +824,15 @@ function ThreadFooter({
           onAddFiles={onAddFiles}
           onRemoveFile={onRemoveFile}
           onRecorded={onRecorded}
+          onRecordingChange={onRecording}
           disabled={isSending}
           placeholder={CHAT_THREAD_COPY.placeholder}
           ariaLabel={CHAT_THREAD_COPY.messageLabel}
           sendLabel={CHAT_THREAD_COPY.send}
           sendIcon={<Send size={16} />}
+          recordLabel={CHAT_THREAD_COPY.recordLabel}
+          stopLabel={CHAT_THREAD_COPY.stopRecording}
+          cancelLabel={CHAT_THREAD_COPY.cancelRecording}
         />
       </form>
     );

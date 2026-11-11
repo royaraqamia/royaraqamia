@@ -9,6 +9,7 @@ import {
 } from '@/frontend/transport/supabase/chat-attachments';
 import type { ChatAgentAllowance, ChatAgentEvent } from '@/shared/contracts/chat';
 import { chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
+import { beginAssistantTurn, endAssistantTurn } from './assistant-turn';
 import { chatAssistantInitialState, chatAssistantReducer } from './use-chat-assistant.reducer';
 
 export interface ChatAssistantState {
@@ -74,6 +75,7 @@ export function useChatAssistant(
       if ((!question && files.length === 0) || isStreaming) return false;
 
       dispatch({ type: 'turnStarted' });
+      beginAssistantTurn(conversationId);
 
       let failure: string | null = null;
 
@@ -112,6 +114,7 @@ export function useChatAssistant(
         failure = caught instanceof Error && caught.message ? caught.message : 'تعذّر إرسال السؤال';
       } finally {
         dispatch({ type: 'turnSettled', failure });
+        endAssistantTurn(conversationId);
       }
 
       // Both outcomes spend or return allowance, so the meter is re-read either

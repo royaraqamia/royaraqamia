@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { readReceiptOf, typingLabel } from '@/frontend/ui/chats/read-receipt';
+import { readReceiptOf } from '@/frontend/ui/chats/read-receipt';
 import type { ChatMessage, ChatParticipant, ChatPeer, ChatThread } from '@/shared/contracts/chat';
 
 const ME = 'me';
@@ -104,18 +104,5 @@ describe('readReceiptOf', () => {
     const thread = makeThread('group', [participant(ME, null), participant(PEER, AFTER)]);
 
     expect(readReceiptOf(thread, makeMessage(LINE), true)).toBeNull();
-  });
-});
-
-/** The who-is-writing sentence: a direct thread names the act. */
-describe('typingLabel', () => {
-  const direct = makeThread('direct', [participant(ME, null), participant(PEER, null)]);
-
-  it('says nothing when nobody is writing', () => {
-    expect(typingLabel(direct, [])).toBeNull();
-  });
-
-  it('names the act in a direct thread, which the header already names', () => {
-    expect(typingLabel(direct, [PEER])).toBe('يكتب الآن...');
   });
 });

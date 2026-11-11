@@ -49,12 +49,3 @@ export function readReceiptOf(
   if (thread.kind === 'direct') return { kind: 'peer' };
   return null;
 }
-
-/**
- * Who is writing, as the thread words it. A direct thread already names the peer
- * in its header, so it needs only the act (#816).
- */
-export function typingLabel(_thread: ChatThread, typers: string[]): string | null {
-  if (typers.length === 0) return null;
-  return 'يكتب الآن...';
-}

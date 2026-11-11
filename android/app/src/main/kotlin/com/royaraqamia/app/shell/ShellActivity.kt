@@ -544,6 +544,7 @@ class ShellActivity : ComponentActivity() {
                                     ChatRoutes.isChatsTab(current) ->
                                         ChatsScreen(
                                             repository = graph.chats,
+                                            presence = graph.chatPresence,
                                             onOpenThread = { openRoute(ChatRoutes.threadOf(it)) },
                                             onOpenAssistant = { openRoute(ChatRoutes.threadOf(it)) },
                                             onNewChat = { openRoute("/chats/new") },
@@ -554,6 +555,7 @@ class ShellActivity : ComponentActivity() {
                                             conversationId = conversationId,
                                             repository = graph.chats,
                                             hints = graph.chatHints,
+                                            presence = graph.chatPresence,
                                             onOpenAttachment = ::openExternal,
                                             // The assistant's thread is the
                                             // document: it streams rather than

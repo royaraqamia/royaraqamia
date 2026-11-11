@@ -8,8 +8,10 @@ import com.royaraqamia.app.account.TransportAvatarLoader
 import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.chats.ChatHintSource
+import com.royaraqamia.app.chats.ChatPresenceSource
 import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.chats.RealtimeChatHints
+import com.royaraqamia.app.chats.RealtimeChatPresence
 import com.royaraqamia.app.chats.SupabaseChatAttachmentStorage
 import com.royaraqamia.app.community.CommunityComposerRepository
 import com.royaraqamia.app.community.CommunityEditorRepository
@@ -118,6 +120,8 @@ class AppGraph private constructor(
     val realtime: RealtimeClient,
     /** The open thread's hint channels, on that one client. */
     val chatHints: ChatHintSource,
+    /** Typing and recording, on the same socket (ADR-0165). */
+    val chatPresence: ChatPresenceSource,
     val habitflow: HabitflowRepository,
     /** SpendTrack's store and queue (#653). */
     val spendtrack: SpendtrackRepository,
@@ -302,6 +306,7 @@ class AppGraph private constructor(
                         },
                 )
             val chatHints = RealtimeChatHints(realtime)
+            val chatPresence = RealtimeChatPresence(realtime)
 
             // The composer's files go to the same bucket the site writes, on the
             // session the bucket's policy admits (#933). The storage base is the
@@ -382,6 +387,7 @@ class AppGraph private constructor(
                     ),
                 realtime = realtime,
                 chatHints = chatHints,
+                chatPresence = chatPresence,
                 quran =
                     AssetQuranRepository(
                         context = context,

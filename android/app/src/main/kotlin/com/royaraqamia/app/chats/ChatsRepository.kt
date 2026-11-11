@@ -112,6 +112,9 @@ class ChatsRepository(
 
     // --- Reads ----------------------------------------------------------------
 
+    /** The signed-in member's id, or null for a guest: a presence stream is per account. */
+    fun selfId(): String? = (identity() as? Identity.User)?.id
+
     /** The tab's rows, written to the device, or the last answer when it cannot. */
     suspend fun threads(): ApiResult<List<ChatThreadsResponseThreadsItem>> =
         withContext(Dispatchers.IO) {

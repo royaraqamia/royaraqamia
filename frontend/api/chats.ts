@@ -1,6 +1,9 @@
 import {
-  chatTypingTopic,
-  CHAT_TYPING_EVENTS,
+  chatPresenceTopic,
+  CHAT_PRESENCE_EVENTS,
+  chatPresenceEventOf,
+  type ChatPresenceEvent,
+  type ChatPresenceState,
   type ChatAgentEvent,
   type ChatAssistantState,
   type ChatConversationSummary,
@@ -415,53 +418,66 @@ export function subscribeToChatRoster(conversationId: string, onChange: () => vo
   });
 }
 
-export interface ChatTypingChannel {
-  /** Say the caller is writing. The throttle is the composer's, not the channel's. */
-  typing: () => void;
-  /** Say the caller stopped, so the indicator goes now rather than in five seconds. */
-  stop: () => void;
+export interface ChatPresenceWriter {
+  /** Say the caller is writing or recording. The throttle is the caller's. */
+  announce: (conversationId: string, state: ChatPresenceState) => void;
+  /** Say the state ended, so the indicator goes now rather than on expiry. */
+  stop: (conversationId: string) => void;
   leave: () => void;
 }
 
 /**
- * A thread's typing channel. Nothing here is stored: the topic is private (the
- * policy calls `private.chat_is_participant`), so a member outside the
- * conversation cannot join it, and the payload is only an identity — the reader
- * draws a sentence, never a message (ADR-0113 rejects broadcasting content).
+ * The member's own presence stream (ADR-0165).
  *
- * A peer id in the payload is what a group needs to name who is writing. It is
- * the sender's own word either way: this is a cosmetic signal, not a fact any
- * screen reads a decision from.
+ * The reader joins **their own** topic and receives what their peers publish
+ * into it; the payload names the conversation, which is what lets one
+ * subscription serve the open thread and every row of the list. Nothing here is
+ * stored: the topic is private (the policy names the owner for reads and the
+ * conversation's other member for writes), and the payload is an identity and a
+ * state — never a message (ADR-0113).
  */
-export function joinChatTyping(
-  conversationId: string,
+export function joinChatPresenceReader(
   selfId: string,
-  handlers: { onTyping: (userId: string) => void; onStop: (userId: string) => void }
-): ChatTypingChannel {
+  onEvent: (event: ChatPresenceEvent) => void
+): { leave: () => void } {
   const channel = joinBroadcastChannel({
-    topic: chatTypingTopic(conversationId),
+    topic: chatPresenceTopic(selfId),
     handlers: {
-      [CHAT_TYPING_EVENTS.typing]: (payload) => {
-        const userId = senderOf(payload, selfId);
-        if (userId) handlers.onTyping(userId);
-      },
-      [CHAT_TYPING_EVENTS.stop]: (payload) => {
-        const userId = senderOf(payload, selfId);
-        if (userId) handlers.onStop(userId);
+      [CHAT_PRESENCE_EVENTS.presence]: (payload) => {
+        const event = chatPresenceEventOf(payload, selfId);
+        if (event) onEvent(event);
       },
     },
   });
 
-  return {
-    typing: () => channel.send(CHAT_TYPING_EVENTS.typing, { userId: selfId }),
-    stop: () => channel.send(CHAT_TYPING_EVENTS.stop, { userId: selfId }),
-    leave: channel.leave,
-  };
+  return { leave: channel.leave };
 }
 
-/** The writer's id, unless the event is the caller's own or carries no identity. */
-function senderOf(payload: Record<string, unknown>, selfId: string): string | null {
-  const userId = payload.userId;
-  if (typeof userId !== 'string' || !userId || userId === selfId) return null;
-  return userId;
+/**
+ * The peer's presence stream, joined for **writing only**.
+ *
+ * Realtime admits a private channel with at least one read or write permission,
+ * and the insert policy is what admits this join; the peer's select policy does
+ * not name the caller, so nothing written here is echoed back. A peer id is a
+ * counterpart the thread already knows — never a value typed by the caller.
+ */
+export function joinChatPresenceWriter(peerId: string, selfId: string): ChatPresenceWriter {
+  const channel = joinBroadcastChannel({
+    topic: chatPresenceTopic(peerId),
+    handlers: {},
+  });
+
+  const publish = (conversationId: string, state: ChatPresenceEvent['state']) => {
+    channel.send(CHAT_PRESENCE_EVENTS.presence, {
+      conversationId,
+      userId: selfId,
+      state,
+    });
+  };
+
+  return {
+    announce: (conversationId, state) => publish(conversationId, state),
+    stop: (conversationId) => publish(conversationId, 'stop'),
+    leave: channel.leave,
+  };
 }

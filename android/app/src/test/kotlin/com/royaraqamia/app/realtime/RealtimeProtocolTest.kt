@@ -2,8 +2,10 @@ package com.royaraqamia.app.realtime
 
 import com.royaraqamia.app.chats.ChatRealtime
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -46,10 +48,10 @@ class RealtimeProtocolTest {
     }
 
     @Test
-    fun `the typing topic joins private so realtime messages rls decides who may listen`() {
+    fun `the presence topic joins private so realtime messages rls decides who may listen`() {
         val wire =
             RealtimeProtocol.join(
-                ChatRealtime.typingSpec("c-1"),
+                ChatRealtime.presenceSpec("peer-1"),
                 accessToken = "access-1",
                 ref = "2",
             )
@@ -59,10 +61,34 @@ class RealtimeProtocolTest {
                 .jsonObject["config"]!!
                 .jsonObject
 
+        assertEquals(
+            "realtime:presence:peer-1",
+            json.parseToJsonElement(wire).jsonObject["topic"]!!.jsonPrimitive.content,
+        )
         assertEquals(true, config["private"]!!.jsonPrimitive.content.toBoolean())
-        val events = (config["broadcast"]!!.jsonObject["events"] as kotlinx.serialization.json.JsonArray)
-            .map { it.jsonPrimitive.content }
-        assertEquals(listOf("typing", "stop"), events)
+        val events =
+            (config["broadcast"]!!.jsonObject["events"] as kotlinx.serialization.json.JsonArray)
+                .map { it.jsonPrimitive.content }
+        assertEquals(listOf("presence"), events)
+    }
+
+    @Test
+    fun `a push names the join it belongs to`() {
+        val wire =
+            RealtimeProtocol.push(
+                joinRef = "2",
+                topic = "presence:peer-1",
+                event = "presence",
+                payload = buildJsonObject { put("state", "typing") },
+                ref = "7",
+            )
+        val frame = json.parseToJsonElement(wire).jsonObject
+
+        assertEquals("realtime:presence:peer-1", frame["topic"]!!.jsonPrimitive.content)
+        assertEquals("presence", frame["event"]!!.jsonPrimitive.content)
+        assertEquals("7", frame["ref"]!!.jsonPrimitive.content)
+        assertEquals("2", frame["join_ref"]!!.jsonPrimitive.content)
+        assertEquals("typing", frame["payload"]!!.jsonObject["state"]!!.jsonPrimitive.content)
     }
 
     @Test
@@ -91,11 +117,11 @@ class RealtimeProtocolTest {
 
         val broadcast =
             RealtimeProtocol.parse(
-                """{"topic":"realtime:chat:c-1","event":"typing","payload":{"userId":"peer-1"}}"""
+                """{"topic":"realtime:presence:me","event":"presence","payload":{"conversationId":"c-1","state":"typing"}}"""
             )
         val message = broadcast as RealtimeProtocol.Incoming.Broadcast
-        assertEquals("typing", message.event)
-        assertEquals("peer-1", message.payload["userId"]!!.jsonPrimitive.content)
+        assertEquals("presence", message.event)
+        assertEquals("c-1", message.payload["conversationId"]!!.jsonPrimitive.content)
     }
 
     @Test

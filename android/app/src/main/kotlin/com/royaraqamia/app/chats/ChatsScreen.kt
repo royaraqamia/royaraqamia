@@ -52,6 +52,8 @@ import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.ui.vectors.LucideVectors
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -75,6 +77,8 @@ import kotlinx.coroutines.launch
 fun ChatsScreen(
     repository: ChatsRepository,
     modifier: Modifier = Modifier,
+    /** The member's presence stream; absent in a test or a tree without Realtime. */
+    presence: ChatPresenceSource? = null,
     onOpenThread: (String) -> Unit = {},
     onOpenAssistant: (String) -> Unit = {},
     onNewChat: () -> Unit = {},
@@ -89,6 +93,49 @@ fun ChatsScreen(
     var assistantBusy by remember { mutableStateOf(false) }
     var answering by remember { mutableStateOf<Answering?>(null) }
     var busy by remember { mutableStateOf(false) }
+    /** The live state each row is drawing, keyed by conversation id. */
+    var presenceByThread by remember { mutableStateOf<Map<String, ChatPresenceEvent>>(emptyMap()) }
+    var presenceStamps by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
+
+    // One subscription for the whole list, and the sender is checked against the
+    // row's own counterpart when it is drawn (ADR-0165).
+    val selfId = repository.selfId()
+    LaunchedEffect(presence, selfId) {
+        val source = presence ?: return@LaunchedEffect
+        if (selfId == null) return@LaunchedEffect
+        val subscription = source.listen(selfId) { event ->
+            if (event.state == ChatPresence.STOP) {
+                presenceByThread = presenceByThread - event.conversationId
+                presenceStamps = presenceStamps - event.conversationId
+            } else {
+                presenceByThread = presenceByThread + (event.conversationId to event)
+                presenceStamps = presenceStamps + (event.conversationId to System.currentTimeMillis())
+            }
+        }
+        try {
+            awaitCancellation()
+        } finally {
+            subscription.close()
+        }
+    }
+
+    // The reader forgets a row on its own window, so a dropped stop cannot pin it.
+    LaunchedEffect(presenceByThread, presenceStamps) {
+        if (presenceByThread.isEmpty()) return@LaunchedEffect
+        delay(1_000)
+        val now = System.currentTimeMillis()
+        presenceByThread =
+            presenceByThread.filter { (id, event) ->
+                val stamp = presenceStamps[id] ?: 0L
+                val window =
+                    if (event.state == ChatPresenceState.Recording.wire) {
+                        ChatPresence.RECORDING_TIMEOUT_MS
+                    } else {
+                        ChatPresence.TYPING_TIMEOUT_MS
+                    }
+                now - stamp <= window
+            }
+    }
 
     LaunchedEffect(repository, attempts) {
         // The device's last answer first (#1127): a cold launch with the radio
@@ -155,6 +202,7 @@ fun ChatsScreen(
             is ChatsUiState.Live ->
                 ChatsList(
                     threads = shown.threads,
+                    presence = presenceByThread,
                     assistantLocked = assistantLocked,
                     assistantBusy = assistantBusy,
                     failure = failure,
@@ -228,6 +276,7 @@ private suspend fun assistantLockedNow(repository: ChatsRepository): Boolean =
 @Composable
 private fun ChatsList(
     threads: List<ChatThreadsResponseThreadsItem>,
+    presence: Map<String, ChatPresenceEvent>,
     assistantLocked: Boolean,
     assistantBusy: Boolean,
     failure: String?,
@@ -332,7 +381,7 @@ private fun ChatsList(
                                     Recipes.Card.radius,
                                 ),
                     ) {
-                        ThreadRow(thread = assistant, onOpen = onOpenThread)
+                        ThreadRow(thread = assistant, presence = null, onOpen = onOpenThread)
                     }
                 }
             }
@@ -358,7 +407,11 @@ private fun ChatsList(
                             if (index > 0) {
                                 HorizontalDivider(color = RoyColors.border.copy(alpha = 0.4f))
                             }
-                            ThreadRow(thread = thread, onOpen = onOpenThread)
+                            ThreadRow(
+                                thread = thread,
+                                presence = presence[thread.id],
+                                onOpen = onOpenThread,
+                            )
                         }
                     }
                 }
@@ -528,10 +581,22 @@ private fun RequestRow(
 @Composable
 private fun ThreadRow(
     thread: ChatThreadsResponseThreadsItem,
+    presence: ChatPresenceEvent?,
     onOpen: (String) -> Unit,
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
+    /** Only the row's own counterpart may put words in its mouth (ADR-0165). */
+    val live =
+        presence
+            ?.takeIf { it.userId == thread.counterpart?.id }
+            ?.presence
+    val liveText =
+        when (live) {
+            ChatPresenceState.Typing -> ChatsListCopy.TYPING_NOW
+            ChatPresenceState.Recording -> ChatsListCopy.RECORDING_NOW
+            null -> null
+        }
 
     Row(
         modifier =
@@ -555,14 +620,32 @@ private fun ThreadRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = previewOf(thread),
-                style = type.xs,
-                color = RoyColors.mutedForeground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = spacing.elementGapSm / 2),
-            )
+            if (thread.status == ChatThreadsResponseThreadsItemStatus.DECLINED) {
+                Text(
+                    text = previewOf(thread),
+                    style = type.xs,
+                    color = RoyColors.mutedForeground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = spacing.elementGapSm / 2),
+                )
+            } else if (liveText != null) {
+                ChatPresenceLine(
+                    label = liveText,
+                    style = type.xs,
+                    color = RoyColors.primary,
+                    modifier = Modifier.padding(top = spacing.elementGapSm / 2),
+                )
+            } else {
+                Text(
+                    text = previewOf(thread),
+                    style = type.xs,
+                    color = RoyColors.mutedForeground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = spacing.elementGapSm / 2),
+                )
+            }
         }
 
         Column(horizontalAlignment = Alignment.End) {

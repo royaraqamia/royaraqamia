@@ -1,5 +1,10 @@
 # 0116. Presence is a channel, a receipt is the watermark
 
+> **Amended by [ADR 0165](0165-presence-is-a-per-member-stream.md).** Typing now travels on a
+> per-member `presence:<user id>` private topic rather than `chat:<conversation id>`, so the chats
+> list can draw it once for every row; the refusal of "presence beyond the open thread" is narrowed
+> to the list, and still forbids a table, an online dot and a delivered receipt.
+
 [#816](https://github.com/royaraqamia/royaraqamia/issues/816) gives a chat thread the two facts a
 conversation has that a message log cannot hold: someone is writing right now, and someone has read
 what was written. ADR-0113 deliberately refused both as tables — a typing row is dead the moment it

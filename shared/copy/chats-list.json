@@ -37,6 +37,8 @@
     "newChat": "محادثة جديدة",
     "declinedLabel": "رُفضت المحادثة",
     "noMessages": "لا رسائل بعد",
+    "typingNow": "يكتب الآن...",
+    "recordingNow": "يُسجِّل رسالة صوتيَّة...",
     "attachmentOnly": "مرفق",
     "agentPrefix": "نور: ",
     "unreadOverflow": "99+",

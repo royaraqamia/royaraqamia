@@ -42,11 +42,15 @@ export function ChatComposer({
   onAddFiles,
   onRemoveFile,
   onRecorded,
+  onRecordingChange,
   disabled,
   placeholder,
   ariaLabel,
   sendLabel,
   sendIcon,
+  recordLabel = VOICE_COPY.record,
+  stopLabel = VOICE_COPY.stopAndSend,
+  cancelLabel = VOICE_COPY.cancelRecording,
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -58,6 +62,8 @@ export function ChatComposer({
   onRemoveFile: (index: number) => void;
   /** A finished clip, already a WAV; the parent stages and sends it. */
   onRecorded: (file: File) => void;
+  /** The microphone opened or closed, so the thread can announce it. */
+  onRecordingChange?: (recording: boolean) => void;
   disabled: boolean;
   placeholder: string;
   ariaLabel: string;
@@ -65,6 +71,10 @@ export function ChatComposer({
   sendLabel: string;
   /** The send glyph, named by the thread that draws the row (ADR-0100). */
   sendIcon: ReactNode;
+  /** The microphone, the bar's cancel and its stop-and-send, named by the thread. */
+  recordLabel?: string;
+  stopLabel?: string;
+  cancelLabel?: string;
 }) {
   const recorder = useVoiceRecorder();
   const [locked, setLocked] = useState(false);
@@ -87,6 +97,28 @@ export function ChatComposer({
   useEffect(() => {
     if (recorder.error) toast.error(recorder.error, { id: 'chat-composer-error' });
   }, [recorder.error]);
+
+  /**
+   * The peer hears the microphone, not the intention: this mirrors the
+   * recorder's own state once per change, and ends the line when the composer
+   * goes away. A hands-free recording is kept alive by the presence hook's
+   * heartbeat, so one announcement is all this side sends.
+   */
+  const announcedRecording = useRef(false);
+  useEffect(() => {
+    if (!onRecordingChange) return;
+
+    if (announcedRecording.current !== recorder.isRecording) {
+      announcedRecording.current = recorder.isRecording;
+      onRecordingChange(recorder.isRecording);
+    }
+
+    return () => {
+      if (!announcedRecording.current) return;
+      announcedRecording.current = false;
+      onRecordingChange(false);
+    };
+  }, [onRecordingChange, recorder.isRecording]);
 
   // The cap ends the capture by itself, and the note is still sent: someone who
   // kept talking past five minutes gets their words, not a discarded clip.
@@ -181,7 +213,7 @@ export function ChatComposer({
               <button
                 type="button"
                 onClick={cancel}
-                aria-label={VOICE_COPY.cancelRecording}
+                aria-label={cancelLabel}
                 className="shrink-0 rounded p-0.5 hover:text-destructive"
               >
                 <X size={13} />
@@ -204,7 +236,7 @@ export function ChatComposer({
               type="button"
               variant="ghost"
               size="icon-sm"
-              aria-label={VOICE_COPY.stopAndSend}
+              aria-label={stopLabel}
               disabled={recorder.isPreparing}
               onClick={() => void finish()}
               className="text-destructive"
@@ -262,7 +294,7 @@ export function ChatComposer({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                aria-label={VOICE_COPY.record}
+                aria-label={recordLabel}
                 aria-pressed={false}
                 disabled={disabled || recorder.isPreparing}
                 onPointerDown={onPointerDown}
