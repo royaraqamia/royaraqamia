@@ -19,6 +19,8 @@ interface SubscribeFormProps {
   /** Lets the surrounding page step aside once the request has been sent. */
   onSubmitted?: () => void;
   defaultName: string;
+  /** The signed-in account the request will belong to. */
+  accountId: string;
 }
 
 /**
@@ -29,13 +31,18 @@ interface SubscribeFormProps {
  * Offline-first like the other lead forms: a submission made with the network
  * off is queued in the Outbox and replayed on reconnection, and the Reference
  * Code it comes back with flips the form to its confirmation (ADR-0029).
+ *
+ * Unlike them, this request belongs to an account, so its queue, its receipt and
+ * its pending state are all keyed by `accountId`: a member who signs out leaves
+ * the request on their own account, and the next member on the device sees
+ * neither it nor its code (#1084).
  */
-export function SubscribeForm({ onSubmitted, defaultName }: SubscribeFormProps) {
+export function SubscribeForm({ onSubmitted, defaultName, accountId }: SubscribeFormProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   // Remembered across a refresh, so a reload still shows the reference code.
-  const receipt = useSubmissionReceipt('subscription');
+  const receipt = useSubmissionReceipt('subscription', accountId);
   const referenceCode = receipt.referenceCode;
-  const lead = useLeadSubmission();
+  const lead = useLeadSubmission(accountId);
   const [queued, setQueued] = useState(false);
 
   const {

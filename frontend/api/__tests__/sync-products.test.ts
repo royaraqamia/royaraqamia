@@ -11,7 +11,7 @@ import { NotesLocalStore } from '@/frontend/api/notes/local-store';
 import { QuranLocalStore } from '@/frontend/api/quran/local-store';
 import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
 import { DRAINABLE_PRODUCTS, PULLABLE_PRODUCTS } from '@/frontend/api/sync-products';
-import { userIdentity } from '@/frontend/shared/local-store/identity';
+import { userIdentity, type LocalIdentity } from '@/frontend/shared/local-store/identity';
 
 /**
  * The registry names databases by string, because a service worker cannot import
@@ -24,7 +24,10 @@ import { userIdentity } from '@/frontend/shared/local-store/identity';
 const SESSION = { userId: 'u-1' };
 
 /** How a *page* opens each product's store, which is the thing to agree with. */
-const PAGE_STORES: Record<string, (factory: IDBFactory) => Promise<{ close: () => void }>> = {
+const PAGE_STORES: Record<
+  string,
+  (factory: IDBFactory, identity: LocalIdentity) => Promise<{ close: () => void }>
+> = {
   habitflow: (factory) => HabitLocalStore.open(userIdentity(SESSION.userId), factory),
   spendtrack: (factory) => SpendtrackLocalStore.open(userIdentity(SESSION.userId), factory),
   blogpress: (factory) => BlogpressLocalStore.open(userIdentity(SESSION.userId), factory),
@@ -32,7 +35,10 @@ const PAGE_STORES: Record<string, (factory: IDBFactory) => Promise<{ close: () =
   quran: (factory) => QuranLocalStore.open(userIdentity(SESSION.userId), factory),
   linksnap: (factory) => LinksnapLocalStore.open(userIdentity(SESSION.userId), factory),
   notes: (factory) => NotesLocalStore.open(userIdentity(SESSION.userId), factory),
-  leads: (factory) => LeadsLocalStore.open(factory),
+  // The only product with a row per partition: this opens whichever identity
+  // the registry resolved, so the guest queue and an account's queue are both
+  // found under the same database name.
+  leads: (factory, identity) => LeadsLocalStore.open(identity, factory),
 };
 
 async function existingDatabases(factory: IDBFactory): Promise<string[]> {
@@ -44,9 +50,18 @@ async function existingDatabases(factory: IDBFactory): Promise<string[]> {
 
 describe('DRAINABLE_PRODUCTS', () => {
   it('covers every product this test knows a page store for', () => {
-    expect(DRAINABLE_PRODUCTS.map((product) => product.product).sort()).toEqual(
+    // `leads` has one row per partition, so the registry is compared as a set.
+    expect([...new Set(DRAINABLE_PRODUCTS.map((product) => product.product))].sort()).toEqual(
       Object.keys(PAGE_STORES).sort()
     );
+  });
+
+  it('drains the leads Outbox from both the guest and the signed-in account', () => {
+    const identities = DRAINABLE_PRODUCTS.filter((product) => product.product === 'leads').map(
+      (product) => product.identity(SESSION)
+    );
+
+    expect(identities).toEqual(['guest', userIdentity(SESSION.userId)]);
   });
 
   it('includes LinkSnap, whose routes accept the session cookie a worker presents', () => {
@@ -72,7 +87,7 @@ describe('DRAINABLE_PRODUCTS', () => {
         expect(await existingDatabases(factory)).toEqual(before);
 
         // The page opens its real store, under whatever identity it uses.
-        const pageStore = await PAGE_STORES[product.product]!(factory);
+        const pageStore = await PAGE_STORES[product.product]!(factory, identity!);
         pageStore.close();
 
         const opened = await product.open({

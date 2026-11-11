@@ -81,6 +81,7 @@ async function MemberSubscribeForm({ userId }: { userId: string }) {
   return (
     <SubscribeFlow
       defaultName=""
+      accountId={userId}
       summary={
         <SubscribePlanSummary
           price={price}

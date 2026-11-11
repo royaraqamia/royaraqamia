@@ -65,6 +65,11 @@ export interface SubscriptionRequest {
  *
  * `client_id` is the Outbox's client-minted idempotency key (ADR-0029, ticket
  * #169): a submission queued offline and replayed must not create two rows.
+ *
+ * `user_id` is the account the submission was written for. It never overrides the
+ * session: the controller rejects a body whose `user_id` is not the signed-in
+ * account, so a queue left behind by one member can never be written under the
+ * next member's account (#1084).
  */
 export const SubscriptionRequestSchema = z.object({
   full_name: z
@@ -74,6 +79,7 @@ export const SubscriptionRequestSchema = z.object({
     .max(SUBSCRIPTION_NAME_MAX, 'الاسم طويل جدًّا'),
   phone_whatsapp: z.string().trim().regex(whatsappPhoneRegex, 'رقم واتساب غير صحيح'),
   client_id: z.string().uuid('مُعرَّف الطَّلب غير صحيح').optional(),
+  user_id: z.string().uuid('مُعرَّف الحساب غير صحيح').optional(),
 });
 
 export type SubscriptionRequestInput = z.infer<typeof SubscriptionRequestSchema>;

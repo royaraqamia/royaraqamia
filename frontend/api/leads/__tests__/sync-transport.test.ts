@@ -16,6 +16,7 @@ import {
   leadKindForIntent,
 } from '@/frontend/api/leads/sync-transport';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
+import { userIdentity } from '@/frontend/shared/local-store/identity';
 
 function entry(type: string, payload: Record<string, unknown>): OutboxEntry {
   return {
@@ -76,6 +77,61 @@ describe('createLeadHttpSyncTransport', () => {
     await expect(transport.send(entry('nope.submit', {}))).rejects.toThrow(
       'Unknown outbox intent type: nope.submit'
     );
+  });
+
+  // #1084: the subscription is the one lead whose server row belongs to an
+  // account, so its replay may not leave that account's partition.
+  it('replays a subscription from its account and scopes the receipt to it', async () => {
+    const transport = createLeadHttpSyncTransport(userIdentity('user-a'));
+    await transport.send(
+      entry('subscription.submit', {
+        client_id: 'c-4',
+        user_id: 'user-a',
+        full_name: 'أحمد الحسن',
+      })
+    );
+
+    expect(request).toHaveBeenCalledWith('/api/me/subscriptions', {
+      method: 'POST',
+      body: JSON.stringify({
+        client_id: 'c-4',
+        user_id: 'user-a',
+        full_name: 'أحمد الحسن',
+      }),
+    });
+    expect(writeSubmissionReceipt).toHaveBeenCalledWith(
+      'subscription',
+      'TRN-2026-A7K2M9QX',
+      'user-a'
+    );
+  });
+
+  it('refuses a subscription left in the guest queue instead of replaying it', async () => {
+    const transport = createLeadHttpSyncTransport();
+
+    await expect(
+      transport.send(entry('subscription.submit', { client_id: 'c-5', user_id: 'user-a' }))
+    ).rejects.toThrow(/من غير حساب/);
+    expect(request).not.toHaveBeenCalled();
+    expect(writeSubmissionReceipt).not.toHaveBeenCalled();
+  });
+
+  it('refuses a subscription queued for another account', async () => {
+    const transport = createLeadHttpSyncTransport(userIdentity('user-b'));
+
+    await expect(
+      transport.send(entry('subscription.submit', { client_id: 'c-6', user_id: 'user-a' }))
+    ).rejects.toThrow(/حساب آخر/);
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it('refuses a legacy subscription entry that carries no account', async () => {
+    const transport = createLeadHttpSyncTransport(userIdentity('user-a'));
+
+    await expect(
+      transport.send(entry('subscription.submit', { client_id: 'c-7' }))
+    ).rejects.toThrow(/حساب آخر/);
+    expect(request).not.toHaveBeenCalled();
   });
 });
 
