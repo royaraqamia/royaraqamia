@@ -112,7 +112,6 @@ test.describe('primary pages', () => {
     '/notes',
     '/spendtrack',
     '/habitflow',
-    '/mcp/guide',
   ]) {
     test(`${path} keeps the top nav and the bottom tab bar`, async ({ page }) => {
       await page.goto(path);

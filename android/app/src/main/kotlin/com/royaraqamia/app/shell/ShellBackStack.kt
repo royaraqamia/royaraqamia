@@ -68,7 +68,7 @@ class ShellBackStack(start: String = Routes.HOME) {
 
         if (route == Routes.HOME) return false
 
-        val target = if (Routes.isPrimary(route)) Routes.HOME else Routes.parentOf(route)
+        val target = if (Routes.isTabDestination(route)) Routes.HOME else Routes.parentOf(route)
         if (Routes.normalize(target) == route) return false
         replace(target)
         return true

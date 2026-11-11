@@ -7,12 +7,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The route grammar the shell and the site must agree on (#647).
+ * The route grammar the shell and the site must agree on (#647, #967).
  *
  * The web half is `frontend/ui/__tests__/route-kind.test.ts`, which re-derives the
  * layout-only table from `app/`. This half pins the same answers on the app's side:
- * three primary destinations, a walk up the URL that steps over layout-only folders,
- * and two link shapes that become routes.
+ * three tab destinations, the routes that wear the app chrome, a walk up the URL
+ * that steps over layout-only folders, and two link shapes that become routes.
  */
 class RoutesTest {
     @Test
@@ -25,16 +25,56 @@ class RoutesTest {
     }
 
     @Test
-    fun `exactly three routes wear the tab bar`() {
-        assertTrue(Routes.isPrimary("/"))
-        assertTrue(Routes.isPrimary("/community"))
-        assertTrue(Routes.isPrimary("/account"))
-        assertTrue(Routes.isPrimary("/community/"))
-        assertTrue(Routes.isPrimary("/account?tab=posts"))
+    fun `exactly three routes are tab destinations`() {
+        assertTrue(Routes.isTabDestination("/"))
+        assertTrue(Routes.isTabDestination("/community"))
+        assertTrue(Routes.isTabDestination("/account"))
+        assertTrue(Routes.isTabDestination("/community/"))
+        assertTrue(Routes.isTabDestination("/account?tab=posts"))
 
-        assertFalse(Routes.isPrimary("/community/post"))
-        assertFalse(Routes.isPrimary("/account/plan"))
-        assertFalse(Routes.isPrimary("/rates"))
+        assertFalse(Routes.isTabDestination("/community/post"))
+        assertFalse(Routes.isTabDestination("/account/plan"))
+        assertFalse(Routes.isTabDestination("/rates"))
+        assertFalse(Routes.isTabDestination(null))
+    }
+
+    @Test
+    fun `the app chrome is the page's isPrimaryRoute`() {
+        // The three destinations, the nine app roots, the reader's mode and the
+        // printed certificate's standalone route (ADR-0149, ADR-0152).
+        for (path in
+            listOf(
+                "/",
+                "/community",
+                "/account",
+                "/news",
+                "/rates",
+                "/scan",
+                "/quran",
+                "/athkar",
+                "/athkar/evening",
+                "/linksnap",
+                "/habitflow",
+                "/spendtrack",
+                "/notes",
+                "/verify",
+            )) {
+            assertTrue("$path wears the app chrome", Routes.isPrimary(path))
+        }
+
+        for (path in
+            listOf(
+                "/community/post",
+                "/account/plan",
+                "/account/faq",
+                "/mcp/guide",
+                "/mcp/apps",
+                "/quran/2",
+                "/auth/callback",
+            )) {
+            assertFalse("$path wears the secondary chrome", Routes.isPrimary(path))
+        }
+
         assertFalse(Routes.isPrimary(null))
     }
 

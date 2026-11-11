@@ -17,8 +17,20 @@ package com.royaraqamia.app.shell
  * the web half honest.
  */
 object Routes {
-    /** The bottom-tab destinations, and nothing else. */
-    val primary: List<String> = listOf("/", "/community", "/account")
+    /** The three bottom-tab destinations, and nothing else. */
+    private val tabDestinations: List<String> = listOf("/", "/community", "/account")
+
+    /**
+     * The routes that wear the app chrome (#967): the three destinations, the
+     * nine app roots the picker offers (ADR-0149), the reader's own mode route,
+     * and `/verify`, the standalone destination a printed certificate opens
+     * (ADR-0152). It mirrors `isPrimaryRoute` in
+     * `frontend/ui/navbar/route-kind.ts`; a route that answers true there keeps
+     * the top bar and the tab bar here, and one that answers false drops them
+     * for the floating back control `SecondaryHeader` draws.
+     */
+    val primary: List<String> =
+        tabDestinations + ServicesEntry.rows.map { it.route } + listOf("/athkar/evening", "/verify")
 
     /** The app's root: back from here is the one back that leaves the app. */
     const val HOME = "/"
@@ -59,7 +71,19 @@ object Routes {
         return if (trimmed.isEmpty()) HOME else trimmed
     }
 
+    /** True while [path] wears the app chrome: top bar and bottom tab bar. */
     fun isPrimary(path: String?): Boolean = path != null && primary.contains(normalize(path))
+
+    /**
+     * True for the three destinations the tab bar's own slots open.
+     *
+     * Distinct from [isPrimary] on purpose: an app root wears the app chrome but
+     * is not a tab slot, and the back stack's "a tab comes back to home" rule
+     * must not treat `/athkar/evening` as one — the site walks that route up to
+     * `/athkar`, not down to the door.
+     */
+    fun isTabDestination(path: String?): Boolean =
+        path != null && tabDestinations.contains(normalize(path))
 
 /** The notification centre (#659): still the document, and the bell's destination. */
 const val NOTIFICATIONS_ROUTE = "/notifications"

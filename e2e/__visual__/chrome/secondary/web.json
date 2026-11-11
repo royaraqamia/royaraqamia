@@ -1,0 +1,21 @@
+{
+  "surface": "chrome",
+  "state": "secondary",
+  "route": "/account/faq",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "back": {
+      "top": 12,
+      "left": 337,
+      "width": 44,
+      "height": 44
+    },
+    "content": {
+      "top": 56
+    }
+  }
+}
