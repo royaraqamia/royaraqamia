@@ -43,6 +43,7 @@ fun AccountScreen(
     profileRepository: AccountProfileRepository,
     usageRepository: AccountUsageRepository,
     onOpenRoute: (String) -> Unit,
+    onSignIn: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -72,6 +73,7 @@ fun AccountScreen(
             state = state,
             isAdmin = isAdmin,
             onOpenRoute = onOpenRoute,
+            onSignIn = onSignIn,
             onSignOut = onSignOut,
         )
     }

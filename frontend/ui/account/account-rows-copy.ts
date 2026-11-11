@@ -18,6 +18,8 @@ export const ACCOUNT_ROWS_COPY = {
   admin: 'الإدارة',
   faq: 'الأسئلة الشَّائعة',
   contact: 'تواصل معنا',
+  signInPrompt: 'سجِّل الدُّخول للمتابعة',
+  signIn: 'تسجيل الدُّخول',
   signOut: 'تسجيل الخروج',
   signOutMessage: 'هل أنت متأكِّد أنَّك تريد تسجيل الخروج؟',
   cancel: 'إلغاء',

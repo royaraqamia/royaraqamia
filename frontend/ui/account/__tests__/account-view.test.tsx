@@ -70,11 +70,10 @@ describe('AccountView', () => {
     );
     expect(screen.getByText('تواصل معنا')).toBeInTheDocument();
 
-    // Support is a chat with the site's own account, not WhatsApp.
-    expect(screen.getByRole('link', { name: /تواصل معنا/ })).toHaveAttribute(
-      'href',
-      '/chats/new?to=royaraqamia'
-    );
+    // Support is a chat with the site's own account, not WhatsApp — and it is
+    // gated like the rows above, so a guest is asked before it navigates.
+    expect(screen.getByRole('button', { name: /تواصل معنا/ })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /تواصل معنا/ })).not.toBeInTheDocument();
 
     // The FAQ row is public: a guest gets a link, not the sign-in prompt.
     expect(screen.getByRole('link', { name: /الأسئلة الشَّائعة/ })).toHaveAttribute(
@@ -127,6 +126,18 @@ describe('AccountView', () => {
     fireEvent.click(cta);
     await waitFor(() =>
       expect(router.push).toHaveBeenCalledWith('/auth/login?redirect=%2Faccount%2Fblocked')
+    );
+  });
+
+  it('asks a guest to sign in for تواصل معنا and returns them to the support chat', async () => {
+    render(<AccountView />);
+
+    fireEvent.click(screen.getByRole('button', { name: /تواصل معنا/ }));
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /تسجيل الدُّخول/ })).toHaveAttribute(
+      'href',
+      '/auth/login?redirect=%2Fchats%2Fnew%3Fto%3Droyaraqamia'
     );
   });
 

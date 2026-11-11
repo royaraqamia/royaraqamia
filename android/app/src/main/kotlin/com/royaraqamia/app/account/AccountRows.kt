@@ -34,6 +34,7 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
 object AccountTags {
     const val SIGN_OUT = "account-sign-out"
     const val SIGN_OUT_CONFIRM = "account-sign-out-confirm"
+    const val SIGN_IN_PROMPT = "account-sign-in-prompt"
 
     fun row(id: String): String = "account-row-$id"
 }
@@ -44,6 +45,8 @@ private data class AccountLink(
     val icon: ImageVector,
     val label: String,
     val route: String,
+    /** Behind a session: a guest is asked to sign in rather than handed the route. */
+    val gated: Boolean = false,
 )
 
 /**
@@ -60,16 +63,23 @@ private data class AccountLink(
  * while its surface is still the web's, and the shell's own `NativeSurfaces`
  * decides when a route is drawn natively instead. The screen therefore never
  * learns a URL or a product.
+ *
+ * The rows behind a session are gated at the row, the way the site gates them: a
+ * guest is asked to sign in instead of being handed a page they cannot read, and
+ * the row's `gated` flag is the same list the site's `AccountRow` draws from.
  */
 @Composable
 fun AccountRows(
     state: AccountUiState,
     isAdmin: Boolean,
     onOpenRoute: (String) -> Unit,
+    onSignIn: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var confirmingSignOut by remember { mutableStateOf(false) }
+    /** The gated row a guest pressed; the prompt below answers it. */
+    var promptingSignIn by remember { mutableStateOf(false) }
 
     Column(
         modifier =
@@ -81,12 +91,33 @@ fun AccountRows(
         verticalArrangement = Arrangement.spacedBy(LocalRoySpacing.current.elementGapSm),
     ) {
         for (link in links(isAdmin)) {
-            AccountRow(link = link, onClick = { onOpenRoute(link.route) })
+            AccountRow(
+                link = link,
+                onClick = {
+                    // The site's guest gate, at the row: the prompt instead of a
+                    // page the visitor cannot read.
+                    if (state is AccountUiState.Guest && link.gated) {
+                        promptingSignIn = true
+                    } else {
+                        onOpenRoute(link.route)
+                    }
+                },
+            )
         }
 
         if (state is AccountUiState.Member) {
             SignOutRow(onClick = { confirmingSignOut = true })
         }
+    }
+
+    if (promptingSignIn) {
+        SignInPrompt(
+            onDismiss = { promptingSignIn = false },
+            onConfirm = {
+                promptingSignIn = false
+                onSignIn()
+            },
+        )
     }
 
     if (confirmingSignOut) {
@@ -109,6 +140,7 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
                 icon = LucideVectors.ClipboardList,
                 label = AccountRowsCopy.SUBMISSIONS,
                 route = "/account/submissions",
+                gated = true,
             )
         )
         add(
@@ -117,6 +149,7 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
                 icon = LucideVectors.FileText,
                 label = AccountRowsCopy.POSTS,
                 route = "/account/posts",
+                gated = true,
             )
         )
         add(
@@ -125,6 +158,7 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
                 icon = LucideVectors.ShieldOff,
                 label = AccountRowsCopy.BLOCKED,
                 route = "/account/blocked",
+                gated = true,
             )
         )
         add(
@@ -161,6 +195,7 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
                 icon = LucideVectors.MessageCircle,
                 label = AccountRowsCopy.CONTACT,
                 route = "/chats/new?to=$SUPPORT_USERNAME",
+                gated = true,
             )
         )
     }
@@ -236,6 +271,33 @@ private fun SignOutRow(onClick: () -> Unit) {
             )
         }
     }
+}
+
+/** The guest gate the site draws in a dialogue, in the app's own alert. */
+@Composable
+private fun SignInPrompt(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    val type = LocalRoyTypeScale.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = AccountRowsCopy.SIGN_IN_PROMPT,
+                style = type.small.copy(fontWeight = FontWeight.Bold),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                modifier = Modifier.testTag(AccountTags.SIGN_IN_PROMPT),
+            ) {
+                Text(text = AccountRowsCopy.SIGN_IN, color = RoyColors.primary)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(AccountRowsCopy.CANCEL) }
+        },
+    )
 }
 
 /** The page's question before a sign-out, and its quiet way out. */
