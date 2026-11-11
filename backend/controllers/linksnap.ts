@@ -468,7 +468,8 @@ export async function redirectShortCode(
 
 export async function unlockLinkPassword(
   ip: string,
-  body: { code?: unknown; password?: unknown }
+  body: { code?: unknown; password?: unknown },
+  defer?: DeferredWork
 ): Promise<HttpResult> {
   try {
     const rateLimitResult = await checkRateLimitApi(unlockRateLimitPolicy(ip));
@@ -478,7 +479,7 @@ export async function unlockLinkPassword(
       throw new AppError('رمز الرَّابط وكلمة المرور مطلوبان.', 400);
     }
 
-    const originalUrl = await createUnlockLinkService().execute(body.code, body.password, {
+    const originalUrl = await createUnlockLinkService(defer).execute(body.code, body.password, {
       referrer: null,
       userAgent: null,
       ipCountry: null,

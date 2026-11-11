@@ -92,11 +92,12 @@ export function createRedirectUrlService(defer?: DeferredWork): RedirectUrlServi
   );
 }
 
-export function createUnlockLinkService(): UnlockLinkService {
+export function createUnlockLinkService(defer?: DeferredWork): UnlockLinkService {
   return new UnlockLinkService(
     createShortLinkRepository(),
     createAnalyticsRepository(),
-    createLinkClickedNotifier()
+    createLinkClickedNotifier(),
+    defer
   );
 }
 

@@ -1,7 +1,9 @@
 import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import type { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import {
+  fireAndForget,
   ShortLinkRedirectError,
+  type DeferredWork,
   type LinkClickedNotifier,
 } from '@/backend/services/linksnap/redirect-url';
 import { verifyPassword } from '@/backend/shared/password-hash';
@@ -12,7 +14,8 @@ export class UnlockLinkService {
   constructor(
     private shortLinkRepository: ShortLinkRepository,
     private analyticsRepository: AnalyticsRepository,
-    private readonly notifyLinkClicked?: LinkClickedNotifier
+    private readonly notifyLinkClicked?: LinkClickedNotifier,
+    private readonly defer: DeferredWork = fireAndForget
   ) {}
 
   /**
@@ -51,25 +54,33 @@ export class UnlockLinkService {
       throw new AppError('كلمة المرور غير صحيحة.', 401);
     }
 
-    this.analyticsRepository
-      .recordClick({
-        linkCode: code,
-        referrer: metadata.referrer,
-        userAgent: metadata.userAgent,
-        ipCountry: metadata.ipCountry,
-      })
-      .catch((err) => {
-        logger.error(`Failed to log analytics click for code [${code}]`, { error: String(err) });
-      });
+    // The click write and the owner notification are off the unlock path;
+    // `defer` keeps the instance alive for them (`after()` on the route) or
+    // falls back to fire-and-forget in tests. Without it, Fluid compute can cut
+    // the write when the response is sent and the click goes missing.
+    this.defer(
+      this.analyticsRepository
+        .recordClick({
+          linkCode: code,
+          referrer: metadata.referrer,
+          userAgent: metadata.userAgent,
+          ipCountry: metadata.ipCountry,
+        })
+        .catch((err) => {
+          logger.error(`Failed to log analytics click for code [${code}]`, { error: String(err) });
+        })
+    );
 
-    if (link.userId) {
-      this.notifyLinkClicked?.({
-        userId: link.userId,
-        code,
-        originalUrl: link.originalUrl,
-      }).catch((err) => {
-        logger.error(`Failed to notify link owner for code [${code}]`, { error: String(err) });
-      });
+    if (link.userId && this.notifyLinkClicked) {
+      this.defer(
+        this.notifyLinkClicked({
+          userId: link.userId,
+          code,
+          originalUrl: link.originalUrl,
+        }).catch((err) => {
+          logger.error(`Failed to notify link owner for code [${code}]`, { error: String(err) });
+        })
+      );
     }
 
     return link.originalUrl;
