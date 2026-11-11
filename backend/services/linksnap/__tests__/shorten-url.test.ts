@@ -138,6 +138,20 @@ describe('ShortenUrlService.execute', () => {
     );
   });
 
+  it.each(['unlock', 'api', '_private', 'account', 'pricing'])(
+    'refuses the reserved custom code %s and writes nothing',
+    async (reserved) => {
+      const { repository, service } = makeRepo();
+      (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+
+      await expect(service.execute('https://example.com', null, reserved)).rejects.toThrow(
+        'This custom short code is reserved. Please try another one.'
+      );
+      expect(repository.exists).not.toHaveBeenCalled();
+      expect(repository.create).not.toHaveBeenCalled();
+    }
+  );
+
   it('rejects invalid URLs', async () => {
     const { repository, service } = makeRepo();
     await expect(service.execute('example.com', null)).rejects.toThrow(

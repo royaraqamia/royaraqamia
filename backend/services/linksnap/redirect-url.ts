@@ -3,11 +3,51 @@ import type { AnalyticsRepository } from '@/backend/repositories/linksnap/analyt
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { logger } from '@/backend/shared/logger';
 
+/**
+ * Every first path segment Next serves from a static directory in `app/`. A
+ * static route wins over the dynamic `app/[code]` redirect, so a short code
+ * equal to one of these is shadowed by the page and never resolves.
+ *
+ * A new top-level route is one edit here; `redirect.test.ts` walks `app/` and
+ * fails while a static segment is missing, so it cannot be forgotten.
+ */
+export const APP_ROUTE_SEGMENTS: readonly string[] = [
+  'account',
+  'admin',
+  'api',
+  'app-info',
+  'athkar',
+  'auth',
+  'chats',
+  'community',
+  'consultation',
+  'downloader',
+  'habitflow',
+  'hire',
+  'linksnap',
+  'mcp',
+  'news',
+  'notes',
+  'notifications',
+  'pricing',
+  'privacy',
+  'quran',
+  'rates',
+  'request-project',
+  'scan',
+  'security',
+  'spendtrack',
+  'terms',
+  'training',
+  'u',
+  'verify',
+];
+
 export function isReservedShortCode(code: string): boolean {
   return (
     code.startsWith('_') ||
     code.includes('.') ||
-    code === 'api' ||
+    APP_ROUTE_SEGMENTS.includes(code) ||
     code === 'favicon.ico' ||
     code === 'unlock'
   );
