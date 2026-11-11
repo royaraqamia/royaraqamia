@@ -38,7 +38,8 @@ on:
         default: ''
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
   issues: write
 
 concurrency:
@@ -116,7 +117,10 @@ jobs:
                third-party logo site for this source.
             3. `simple_icons` — the official Simple Icons mark (CC0), as
                `https://cdn.simpleicons.org/<slug>` where `<slug>` is the Simple
-               Icons slug. Never use a slug you have not confirmed exists.
+               Icons slug. Never use a slug you have not confirmed exists. Add
+               `"vendor": true` when the mark should ship with the site: the
+               runner fetches the SVG, opens one batched pull request, and the
+               row waits as `repo_pr_pending` until a person merges it.
 
             A mark is the real mark or nothing. Do not approximate a logo, do not
             build one from the name, and do not reuse a different product's mark.
@@ -154,6 +158,37 @@ jobs:
           MCP_CATALOG_AGENT_ENABLED: ${{ vars.MCP_CATALOG_AGENT_ENABLED || 'false' }}
           MCP_CATALOG_AGENT_DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: node scripts/mcp-catalog-agent.mjs apply
+
+      - name: Open the batched mark pull request
+        # The one human step left in the loop: at most one pull request per run,
+        # listing each row, its source URL and the mark. The rows wait as
+        # `repo_pr_pending` until it merges.
+        if: always() && steps.apply.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MARKS_BODY: /tmp/mcp-catalog-agent-marks.md
+        run: |
+          set -euo pipefail
+          if [ ! -s "$MARKS_BODY" ]; then
+            echo "No vendored marks this run."
+            exit 0
+          fi
+
+          gh auth setup-git
+          branch="mcp-catalog-marks-${GITHUB_RUN_ID}"
+          git checkout -b "$branch"
+          git add public/brand/mcp
+          if git diff --cached --quiet; then
+            echo "No new mark files to ship."
+            exit 0
+          fi
+          git -c user.name='MCP catalogue agent' \
+              -c user.email='actions@users.noreply.github.com' \
+              commit -m "feat(mcp): add brand marks for the catalogue"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "feat(mcp): add brand marks for the catalogue" \
+            --body-file "$MARKS_BODY"
 
       - name: Record withdrawals where a person can see them
         # A published row leaving the store is something a member can meet. One

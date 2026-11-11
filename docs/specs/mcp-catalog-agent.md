@@ -66,9 +66,9 @@ is the endpoint's verb allowlist, not a database role.
 
 - Creating an OAuth client in a provider's console (the static-client map is code
   - env, reviewed, and the agent never invents one).
-- Merging the batched mark pull request, when a brand's SVG has to ship with the
-  site. Until it merges the row waits as `repo_pr_pending`; the first run after
-  the merge publishes it.
+- Merging the batched mark pull request the run opens when it vendors a Simple
+  Icons SVG (one request per run, listing the rows and sources). Until it merges
+  the row waits as `repo_pr_pending`; the first run after the merge publishes it.
 - Reading the withdrawal tracking issue (`MCP catalogue agent: runs and
 withdrawals`), which is deduped by title and commented once per run that took a
   row out.
