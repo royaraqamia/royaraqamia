@@ -217,6 +217,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     listCatalogServers: async () => ({ rows: [], nextCursor: null }),
     getCatalogAddresses: async () => [],
     listAgentCandidates: async () => [],
+    listRecentSkips: async () => [],
     catalogCoverage: async () => ({ eligible: 0, published: 0, waiting: 0 }),
     listLatestSkips: async () => [],
     getCatalogRows: async () => [],
