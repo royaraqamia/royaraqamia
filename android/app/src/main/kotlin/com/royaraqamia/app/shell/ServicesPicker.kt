@@ -175,7 +175,7 @@ fun ServicesSheet(
                         .padding(
                             start = AppsSheetMetrics.bandPadding,
                             end = AppsSheetMetrics.bandPadding,
-                            top = AppsSheetMetrics.bandPadding,
+                            top = AppsSheetMetrics.bandPaddingTop,
                             bottom = AppsSheetMetrics.bandPadding,
                         ),
                     verticalArrangement = Arrangement.spacedBy(AppsSheetMetrics.bandGap),
@@ -439,19 +439,20 @@ internal object AppsSheetMetrics {
     val headerPadding = 16.dp
     val headerPaddingEnd = 8.dp
     val headerPaddingTop = 12.dp
-    val headerPaddingBottom = 12.dp
+    val headerPaddingBottom = 8.dp
     val titleTextSize = 18.sp
-    val closeSize = 44.dp
+    val closeSize = 28.dp
     val closeIconSize = 20.dp
 
     val bandPadding = 12.dp
+    val bandPaddingTop = 8.dp
     val bandGap = 8.dp
     val tabGap = 8.dp
     val tabHorizontalPadding = 12.dp
     val tabVerticalPadding = 8.dp
     val tabTextSize = 13.sp
 
-    val searchHeight = 44.dp
+    val searchHeight = 40.dp
     val searchRadius = 12.dp
     val searchTextSize = 14.sp
 
