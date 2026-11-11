@@ -5,6 +5,7 @@ import Image from 'next/image';
 import {
   BadgeCheck,
   Ban,
+  Link2,
   Loader2,
   PackageSearch,
   PencilLine,
@@ -33,6 +34,7 @@ import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
+import { cn } from '@/frontend/shared/cn';
 import {
   MCP_CATALOG_ADMIN_COPY as COPY,
   type McpCatalogAdminRow,
@@ -48,7 +50,7 @@ import {
  * replaces the registry's English.
  */
 
-type RowActionMode = 'block' | 'unblock' | 'arabic' | 'verify';
+type RowActionMode = 'block' | 'unblock' | 'arabic' | 'verify' | 'remote';
 
 interface RowAction {
   row: McpCatalogAdminRow;
@@ -195,7 +197,7 @@ export function McpCatalogAdminView() {
                   {row.status === 'deprecated' && (
                     <Badge variant="warning">{COPY.deprecatedBadge}</Badge>
                   )}
-                  {!row.verifiedAt && (
+                  {(!row.verifiedAt || row.connectable === null) && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -227,6 +229,14 @@ export function McpCatalogAdminView() {
                       <BadgeCheck className="size-4" aria-hidden="true" />
                     )}
                     {row.verifiedAt ? COPY.manageVerifiedAction : COPY.verifyAction}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAction({ row, mode: 'remote' })}
+                  >
+                    <Link2 className="size-4" aria-hidden="true" />
+                    {COPY.remoteAction}
                   </Button>
                   <Button
                     variant="outline"
@@ -265,8 +275,13 @@ export function McpCatalogAdminView() {
                   )}
 
                   <p className="mt-2 truncate text-xs text-muted-foreground" dir="ltr">
-                    {row.remoteUrl}
+                    {row.remoteOverride ?? row.remoteUrl}
                   </p>
+                  {row.remoteOverride && (
+                    <p className="truncate text-xs text-muted-foreground/70" dir="ltr">
+                      {row.remoteUrl}
+                    </p>
+                  )}
                 </div>
               </div>
             </li>
@@ -317,6 +332,16 @@ export function McpCatalogAdminView() {
           )}
           {action?.mode === 'arabic' && (
             <ArabicForm
+              row={action.row}
+              onCancel={() => setAction(null)}
+              onDone={() => {
+                setAction(null);
+                reload();
+              }}
+            />
+          )}
+          {action?.mode === 'remote' && (
+            <RemoteForm
               row={action.row}
               onCancel={() => setAction(null)}
               onDone={() => {
@@ -532,6 +557,112 @@ function ArabicForm({ row, onCancel, onDone }: FormProps) {
           onChange={(event) => setDescriptionAr(event.target.value)}
         />
       </div>
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
+          {COPY.cancel}
+        </Button>
+        <Button size="sm" onClick={() => void save()} disabled={saving}>
+          {saving && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+          {COPY.save}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+/**
+ * The remote, from the registry's own list or typed.
+ *
+ * The registry publishes one or more `remotes[]` per server and the mirror keeps
+ * only the first `streamable-http` entry the egress policy accepts. That first
+ * entry is often a docs server that publishes no RFC 9728 document, while an
+ * account server beside it does — which is why this choice exists. Saving a
+ * different address clears the verdict, because the address is what was
+ * measured; the row then says «لم نتحقق بعد» until «فحص الآن» runs.
+ */
+function RemoteForm({ row, onCancel, onDone }: FormProps) {
+  const [url, setUrl] = useState(row.remoteOverride ?? row.remoteUrl);
+  const [saving, setSaving] = useState(false);
+
+  /*
+    The registry's own address is stored as no override at all, so a later change
+    to it is followed rather than pinned to a stale copy of it.
+  */
+  function override(): string | null {
+    const next = url.trim();
+    return next === '' || next === row.remoteUrl ? null : next;
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      await updateAdminMcpCatalogRow({
+        registryName: row.registryName,
+        remoteOverride: override(),
+      });
+      toast.success(COPY.saved);
+      onDone();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : COPY.saveFailed);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const selected = override();
+
+  return (
+    <>
+      <DialogTitle className="leading-snug!">{COPY.remoteTitle}</DialogTitle>
+      <DialogDescription className="text-pretty">{COPY.remoteDescription}</DialogDescription>
+
+      <div className="space-y-2">
+        <Label htmlFor="mcp-remote-url">{COPY.remoteUrlLabel}</Label>
+        <Input
+          id="mcp-remote-url"
+          value={url}
+          maxLength={2048}
+          dir="ltr"
+          placeholder={row.remoteUrl}
+          onChange={(event) => setUrl(event.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">{COPY.remoteUrlHint}</p>
+      </div>
+
+      {row.remoteOptions.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">{COPY.remoteOptionsLabel}</p>
+          <ul className="space-y-1">
+            {row.remoteOptions.map((option) => {
+              const chosen = (selected ?? row.remoteUrl) === option.url;
+              return (
+                <li key={`${option.type}:${option.url}`}>
+                  <button
+                    type="button"
+                    onClick={() => setUrl(option.url)}
+                    aria-pressed={chosen}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-start text-xs transition-colors',
+                      chosen
+                        ? 'border-primary/60 bg-primary/10'
+                        : 'border-border/60 hover:bg-muted/50'
+                    )}
+                  >
+                    <span className="shrink-0 text-muted-foreground" dir="ltr">
+                      {option.type}
+                    </span>
+                    <span className="truncate" dir="ltr">
+                      {option.url}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-xs text-muted-foreground">{COPY.remoteRegistryHint}</p>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
           {COPY.cancel}

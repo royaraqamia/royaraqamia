@@ -124,7 +124,7 @@ export interface McpCatalogService {
 }
 
 /** A refusal from the Admin Console that has a sentence for the person who asked. */
-export type McpCatalogAdminFailure = 'unknown_app' | 'not_connectable';
+export type McpCatalogAdminFailure = 'unknown_app' | 'not_connectable' | 'invalid_remote';
 
 export class McpCatalogError extends Error {
   constructor(
@@ -170,6 +170,8 @@ function toAdminRow(row: McpCatalogListRow): McpCatalogAdminRow {
     titleOverride: row.title_override,
     descriptionAr: row.description_ar,
     remoteUrl: row.remote_url,
+    remoteOverride: row.remote_override,
+    remoteOptions: registryRemotes(row.raw),
     status: row.status,
     version: row.version,
     iconMime: row.probe_icon_mime ?? row.registry_icon_mime,
@@ -179,6 +181,29 @@ function toAdminRow(row: McpCatalogListRow): McpCatalogAdminRow {
     verifiedAt: row.verified_at,
     fetchedAt: row.fetched_at,
   };
+}
+
+/**
+ * The addresses the registry published for this row, read from the document it
+ * sent. The mirror keeps its own reduced fields; this is the one place the raw
+ * entry is mined, and it only feeds an admin's choice — a malformed entry is
+ * skipped rather than allowed to break the list.
+ */
+function registryRemotes(raw: unknown): McpCatalogAdminRow['remoteOptions'] {
+  if (!raw || typeof raw !== 'object') return [];
+  const server = (raw as { server?: unknown }).server;
+  if (!server || typeof server !== 'object') return [];
+  const remotes = (server as { remotes?: unknown }).remotes;
+  if (!Array.isArray(remotes)) return [];
+
+  const options: McpCatalogAdminRow['remoteOptions'] = [];
+  for (const remote of remotes) {
+    if (!remote || typeof remote !== 'object') continue;
+    const { url, type } = remote as { url?: unknown; type?: unknown };
+    if (typeof url !== 'string' || url.length === 0) continue;
+    options.push({ url, type: typeof type === 'string' && type.length > 0 ? type : 'remote' });
+  }
+  return options;
 }
 
 /**
@@ -266,6 +291,51 @@ export function createMcpCatalogService({
 
   async function adminUpdate(input: McpCatalogAdminUpdate): Promise<void> {
     const patch: Parameters<McpMarketplaceRepository['updateCatalogServer']>[1] = {};
+    // The row is read once, and only when an edit needs to know what it is
+    // replacing: two reads in one request could disagree.
+    let server: Awaited<ReturnType<McpMarketplaceRepository['getCatalogServer']>> | undefined;
+
+    async function currentRow() {
+      if (server === undefined) server = await repository.getCatalogServer(input.registryName);
+      if (!server || server.status === 'deleted') {
+        throw new McpCatalogError('unknown_app', 'هذا التطبيق غير موجود في المتجر');
+      }
+      return server;
+    }
+
+    /*
+      The remote an admin chooses replaces the one the mirror picked, and it is
+      the address that was measured: a row that moves loses its verdict, the
+      probe's mark and the date, in the same write. The registry's own entry is
+      left alone, so clearing the override follows it again.
+    */
+    let remoteMoved = false;
+    if (input.remoteOverride !== undefined) {
+      const next = input.remoteOverride?.trim() || null;
+      if (next !== null) {
+        try {
+          assertEgressUrl(next);
+        } catch (error) {
+          if (error instanceof EgressBlockedError) {
+            throw new McpCatalogError('invalid_remote', error.message);
+          }
+          throw error;
+        }
+      }
+
+      const existing = await currentRow();
+      remoteMoved =
+        (existing.remote_override ?? existing.remote_url) !== (next ?? existing.remote_url);
+      patch.remote_override = next;
+
+      if (remoteMoved) {
+        patch.connectable = null;
+        patch.connectable_reason = null;
+        patch.probed_at = null;
+        patch.probe_icon_url = null;
+        patch.probe_icon_mime = null;
+      }
+    }
 
     if (input.blocked === true) {
       patch.blocked_at = now().toISOString();
@@ -287,20 +357,19 @@ export function createMcpCatalogService({
       /*
         Verification is a vouch, not a measurement, so a first vouch needs the
         measurement to exist. A row already verified can still be edited — its
-        rank, for instance — even if a later probe has not run yet.
+        rank, for instance — even if a later probe has not run yet. A request
+        that also moves the remote cannot vouch for the new address in the same
+        breath: it has not been measured.
       */
-      const server = await repository.getCatalogServer(input.registryName);
-      if (!server || server.status === 'deleted') {
-        throw new McpCatalogError('unknown_app', 'هذا التطبيق غير موجود في المتجر');
-      }
-      if (server.verified_at === null && server.connectable !== true) {
+      const existing = await currentRow();
+      if (remoteMoved || (existing.verified_at === null && existing.connectable !== true)) {
         throw new McpCatalogError(
           'not_connectable',
           'لا يمكن اعتماد تطبيق لم يثبت أن ربطه ممكن. افحصه الآن ثم أعد المحاولة.'
         );
       }
       // Saving a verified row's rank must not move the date it was vouched for.
-      patch.verified_at = server.verified_at ?? now().toISOString();
+      patch.verified_at = existing.verified_at ?? now().toISOString();
       patch.verification_withdrawn_at = null;
     } else if (input.verified === false) {
       patch.verified_at = null;
@@ -517,7 +586,7 @@ export function createMcpCatalogService({
     await Promise.all(
       batch.map(async (row) => {
         try {
-          const verdict = await remote.probeConnectable(row.remote_url);
+          const verdict = await remote.probeConnectable(row.remote_override ?? row.remote_url);
           await repository.saveCatalogProbe(row.registry_name, {
             connectable: verdict.connectable,
             reason: verdict.reason,

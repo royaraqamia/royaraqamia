@@ -3,14 +3,16 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import {
   discoverOAuthServerInfo,
   exchangeAuthorization,
+  extractWWWAuthenticateParams,
   refreshAuthorization,
   registerClient,
   startAuthorization,
 } from '@modelcontextprotocol/sdk/client/auth.js';
-import type {
-  AuthorizationServerMetadata,
-  OAuthClientInformationFull,
-  OAuthTokens,
+import {
+  OAuthProtectedResourceMetadataSchema,
+  type AuthorizationServerMetadata,
+  type OAuthClientInformationFull,
+  type OAuthTokens,
 } from '@modelcontextprotocol/sdk/shared/auth.js';
 
 import { MCP_SERVER_VERSION } from '@/backend/services/mcp/constants';
@@ -188,6 +190,101 @@ function clientInformation(client: {
   } as OAuthClientInformationFull;
 }
 
+/** Where a server publishes its RFC 9728 document, or why none was found. */
+interface ResourceMetadataDiscovery {
+  /** The URL that answered with a usable document; `null` when none did. */
+  resourceMetadataUrl: URL | null;
+  /** True when the origin answered at least one HTTP response at all. */
+  answered: boolean;
+}
+
+/** One well-known request, reduced to whether a usable document answered. */
+async function readResourceMetadata(
+  url: URL,
+  fetchFn: typeof fetch
+): Promise<{ answered: boolean; found: boolean }> {
+  let response: Response;
+  try {
+    response = await fetchFn(url, { headers: { accept: 'application/json' } });
+  } catch (error) {
+    if (error instanceof EgressBlockedError) throw error;
+    return { answered: false, found: false };
+  }
+
+  if (!response.ok) {
+    await response.body?.cancel().catch(() => undefined);
+    return { answered: true, found: false };
+  }
+
+  try {
+    const parsed = OAuthProtectedResourceMetadataSchema.safeParse(
+      JSON.parse(await readCappedText(response))
+    );
+    return { answered: true, found: parsed.success };
+  } catch {
+    // A 200 that is not a document (or is larger than the ceiling) is no
+    // document, and the next source may still publish one.
+    return { answered: true, found: false };
+  }
+}
+
+/**
+ * The three routes a server may publish its resource metadata on, in the order
+ * that costs least:
+ *
+ * 1. the root document, `/.well-known/oauth-protected-resource`;
+ * 2. the path-aware one, `/.well-known/oauth-protected-resource/<path>`;
+ * 3. the URL a `401` on the MCP endpoint names in
+ *    `WWW-Authenticate: Bearer resource_metadata="…"`.
+ *
+ * The second is the one that mattered: `observability.mcp.cloudflare.com/mcp`
+ * answers `404` at the root and `200` at its path-aware address, and asking only
+ * the root recorded a connectable server as `no_metadata` (issue #1270). The
+ * third is what a server that only challenges a POST publishes.
+ *
+ * `answered` is what separates "publishes nothing" from "never answered": any
+ * HTTP response at all means the host is up, which is the difference between
+ * `no_metadata` and `unreachable` on the Admin Console.
+ */
+async function discoverResourceMetadata(
+  serverUrl: string | URL,
+  fetchFn: typeof fetch
+): Promise<ResourceMetadataDiscovery> {
+  const resource = new URL(String(serverUrl));
+  const path = resource.pathname.replace(/\/+$/, '');
+
+  const candidates = [new URL('/.well-known/oauth-protected-resource', resource)];
+  if (path.length > 0) {
+    candidates.push(new URL(`/.well-known/oauth-protected-resource${path}`, resource));
+  }
+
+  let answered = false;
+  for (const candidate of candidates) {
+    const document = await readResourceMetadata(candidate, fetchFn);
+    answered = answered || document.answered;
+    if (document.found) return { resourceMetadataUrl: candidate, answered };
+  }
+
+  try {
+    const challenge = await fetchFn(resource, {
+      headers: { accept: 'application/json, text/event-stream' },
+    });
+    answered = true;
+    const named = extractWWWAuthenticateParams(challenge).resourceMetadataUrl;
+    await challenge.body?.cancel().catch(() => undefined);
+
+    if (named) {
+      const document = await readResourceMetadata(named, fetchFn);
+      answered = answered || document.answered;
+      if (document.found) return { resourceMetadataUrl: named, answered };
+    }
+  } catch (error) {
+    if (error instanceof EgressBlockedError) throw error;
+  }
+
+  return { resourceMetadataUrl: null, answered };
+}
+
 export function createMcpRemoteClient(dependencies: ClientDependencies = {}): McpRemoteClient {
   const guardedFetch = createGuardedFetch({
     ...(dependencies.fetchImpl ? { fetchImpl: dependencies.fetchImpl } : {}),
@@ -220,7 +317,15 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
   async function discover(serverUrl: string | URL): Promise<McpDiscovery> {
     let info;
     try {
-      info = await discoverOAuthServerInfo(serverUrl, { fetchFn: guardedFetch });
+      // The same three-source resolution the probe uses, so the verdict an
+      // admin reads is measured at the document the connect flow will read.
+      const resource = await discoverResourceMetadata(serverUrl, guardedFetch);
+      info = await discoverOAuthServerInfo(serverUrl, {
+        fetchFn: guardedFetch,
+        ...(resource.resourceMetadataUrl
+          ? { resourceMetadataUrl: resource.resourceMetadataUrl }
+          : {}),
+      });
     } catch (error) {
       mapFailure(error, 'discovery', 'تعذّر قراءة إعدادات المصادقة لدى التطبيق');
     }
@@ -247,16 +352,16 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
 
     async probeConnectable(serverUrl) {
       /*
-        A pre-flight, because the difference matters to the admin reading the
-        verdict: the SDK's discovery throws for both "the server answered 404 on
-        the well-known document" and "the server never answered", and calling a
-        timeout "no metadata" is a diagnosis nobody measured. Any HTTP answer —
-        200, 404, even 500 — means the host is up; only a failed request means we
-        could not measure it.
+        The three sources are asked explicitly, because the difference matters to
+        the admin reading the verdict: a 404 at the root is not the end of the
+        story (the path-aware document is behind it), and "publishes nothing" is
+        not "never answered" — a timeout is recorded as `unreachable` rather than
+        `no_metadata`, because a server that never answered is not a server that
+        published nothing.
       */
-      const wellKnown = new URL('/.well-known/oauth-protected-resource', serverUrl);
+      let discovery: ResourceMetadataDiscovery;
       try {
-        await probeFetch(wellKnown, { headers: { accept: 'application/json' } });
+        discovery = await discoverResourceMetadata(serverUrl, probeFetch);
       } catch (error) {
         if (error instanceof EgressBlockedError) {
           return { connectable: false, reason: 'blocked', logoUrl: null, logoMime: null };
@@ -268,8 +373,20 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
         return { connectable: false, reason: 'unreachable', logoUrl: null, logoMime: null };
       }
 
+      if (!discovery.answered) {
+        logger.warn('MCP marketplace: connectability probe got no answer', {
+          url: String(serverUrl),
+        });
+        return { connectable: false, reason: 'unreachable', logoUrl: null, logoMime: null };
+      }
+
       try {
-        const info = await discoverOAuthServerInfo(serverUrl, { fetchFn: probeFetch });
+        const info = await discoverOAuthServerInfo(serverUrl, {
+          fetchFn: probeFetch,
+          ...(discovery.resourceMetadataUrl
+            ? { resourceMetadataUrl: discovery.resourceMetadataUrl }
+            : {}),
+        });
         const metadata = info.authorizationServerMetadata;
         const logoUrl = resourceLogoUrl(info.resourceMetadata);
         const logoMime = iconMimeFromUrl(logoUrl);

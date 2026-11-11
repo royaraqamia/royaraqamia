@@ -1153,6 +1153,7 @@ export type Database = {
           registry_icon_url: string | null;
           registry_name: string;
           registry_updated_at: string | null;
+          remote_override: string | null;
           remote_url: string;
           search_text: string | null;
           status: string;
@@ -1182,6 +1183,7 @@ export type Database = {
           registry_icon_url?: string | null;
           registry_name: string;
           registry_updated_at?: string | null;
+          remote_override?: string | null;
           remote_url: string;
           status?: string;
           title?: string | null;
@@ -1210,6 +1212,7 @@ export type Database = {
           registry_icon_url?: string | null;
           registry_name?: string;
           registry_updated_at?: string | null;
+          remote_override?: string | null;
           remote_url?: string;
           status?: string;
           title?: string | null;
