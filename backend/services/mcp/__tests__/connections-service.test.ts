@@ -101,6 +101,9 @@ function fakeRepository(
     },
     saveCredentials: async () => undefined,
     getCredentials: async () => seed.credentials ?? null,
+    claimRefresh: async () => null,
+    releaseRefresh: async () => undefined,
+    listUsableTools: async () => [],
     saveTools: async () => undefined,
     listTools: async (id) => tools.get(id) ?? [],
     saveAttempt: async () => undefined,
@@ -169,6 +172,7 @@ describe('the member’s connections', () => {
         scope: null,
         expires_at: null,
         issued_at: '2026-11-01T10:00:00.000Z',
+        refresh_claimed_at: null,
         metadata: {
           issuer: 'https://auth.example.com',
           revocation_endpoint: 'https://auth.example.com/revoke',
@@ -295,6 +299,7 @@ describe('the member’s connections', () => {
         scope: null,
         expires_at: null,
         issued_at: '2026-11-01T10:00:00.000Z',
+        refresh_claimed_at: null,
         metadata: { issuer: 'https://auth.example.com' } as never,
       },
     });

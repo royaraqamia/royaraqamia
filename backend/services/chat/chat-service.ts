@@ -60,7 +60,12 @@ export interface ChatServiceDeps {
    * assistant — the thread then simply carries no cards.
    */
   actions?: {
-    listForMessages(messageIds: string[]): Promise<ChatAgentAction[]>;
+    /**
+     * The member is passed as well as the messages: a card that names one of
+     * their connected apps resolves the app's name from that member's own
+     * connections, and a stranger's thread never lends one.
+     */
+    listForMessages(userId: string, messageIds: string[]): Promise<ChatAgentAction[]>;
   };
   /**
    * In-app notification producer (the request stage, ADR-0113). Wired to the
@@ -265,7 +270,10 @@ export class ChatService {
 
     const messages = await this.hydrate(records);
     const actions = this.deps.actions
-      ? await this.deps.actions.listForMessages(records.map((record) => record.id))
+      ? await this.deps.actions.listForMessages(
+          userId,
+          records.map((record) => record.id)
+        )
       : [];
 
     return {

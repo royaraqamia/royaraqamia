@@ -17,6 +17,7 @@ import {
   type ChatAgentServiceDeps,
 } from '@/backend/services/chat/chat-agent-service';
 import type { ChatAgentTool } from '@/backend/services/chat/chat-agent-tools';
+import type { McpAppTool } from '@/backend/services/mcp/marketplace/app-tools-service';
 import { DOCUMENT_PAGES_MAX } from '@/backend/services/chat/document-text';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
@@ -113,17 +114,22 @@ function message(id: string, senderKind: ChatMessage['senderKind'], body: string
 /** A client that answers each round from a script, and remembers what it read. */
 function scriptedClient(rounds: AiChatStreamEvent[][]): AiChatClient & {
   calls: AiChatWireMessage[][];
+  /** The declarations each round was offered, which is the router's output. */
+  offered: Array<Array<{ function: { name: string } }>>;
 } {
   const calls: AiChatWireMessage[][] = [];
+  const offered: Array<Array<{ function: { name: string } }>> = [];
 
   return {
     model: 'deepseek-v4.1-flash',
     calls,
+    offered,
 
     async *streamReply() {},
     transcribe: async () => null,
-    async *streamWithTools(messages) {
+    async *streamWithTools(messages, tools) {
       calls.push(messages);
+      offered.push(tools);
       const round = rounds[calls.length - 1] ?? [];
       for (const event of round) yield event;
     },
@@ -857,5 +863,174 @@ describe('the assistant’s tools (#818)', () => {
       'conversation-1',
       'لم أستطع إكمال ما طلبته الآن. أعد صياغة الطلب أو أكمل ما تريده بنفسك.'
     );
+  });
+});
+
+/**
+ * The apps the member connected (ADR-0155, phase 4 / #1225).
+ *
+ * What these pin is the whole promise of the phase: a connected server's tool
+ * is callable inside a turn and its answer reaches the model, a write is a card
+ * that names the app, a question that mentions no app carries no remote
+ * declaration, and a miss in the router is recoverable inside the same turn.
+ */
+describe('the assistant turn, with a connected app', () => {
+  function appTool(patch: Partial<McpAppTool> = {}): McpAppTool {
+    return {
+      connectionId: 'conn-1',
+      appName: 'Notion',
+      toolName: 'search',
+      description: 'Search pages and databases',
+      inputSchema: { type: 'object', properties: { query: { type: 'string' } } },
+      readOnly: true,
+      permissionLevel: 'ask',
+      ...patch,
+    };
+  }
+
+  function fakeApps(catalog: McpAppTool[]) {
+    return {
+      catalog: vi.fn(async () => catalog),
+      call: vi.fn(async () => ({
+        isError: false,
+        content: [{ type: 'text', text: 'وجدت صفحتين' }],
+        structured: null,
+      })),
+    };
+  }
+
+  const READ = 'ابحث في Notion عن صفحة';
+
+  it('declares a connected tool, runs it, and lets its answer reach the model', async () => {
+    const client = scriptedClient([
+      [toolCall('app_notion_search', { query: 'خطة' })],
+      textStream('وجدت صفحتين في نوتشن.'),
+    ]);
+    const apps = fakeApps([appTool()]);
+    const { service } = makeService({ client, apps });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', READ, TURN_CONTEXT));
+
+    // The declaration the model chose from, and the answer it was given.
+    expect(client.offered[0]?.map((tool) => tool.function.name)).toContain('app_notion_search');
+    expect(apps.call).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        connectionId: 'conn-1',
+        toolName: 'search',
+        args: { query: 'خطة' },
+        intent: 'turn',
+      })
+    );
+
+    const answer = client.calls[1]?.find((entry) => entry.role === 'tool');
+    expect(String(answer?.content)).toContain('وجدت صفحتين');
+    expect(events).toContainEqual({
+      type: 'tool',
+      name: 'app_notion_search',
+      label: 'قراءة من Notion',
+    });
+  });
+
+  it('proposes a write, naming the app and keeping the connection in the audit row', async () => {
+    const client = scriptedClient([
+      [toolCall('app_notion_create_page', { title: 'خطة' })],
+      textStream('عرضت عليك إنشاء الصفحة.'),
+    ]);
+    const apps = fakeApps([
+      appTool({ toolName: 'create_page', description: 'Create a page', readOnly: false }),
+    ]);
+    const { service, actions } = makeService({ client, apps });
+
+    await collect(service.turn('user-1', 'conversation-1', READ, TURN_CONTEXT));
+
+    expect(actions.propose).toHaveBeenCalledWith(
+      'conversation-1',
+      'app:conn-1:create_page',
+      { title: 'خطة' },
+      { appName: 'Notion' }
+    );
+    // The card is the write: nothing ran on the server.
+    expect(apps.call).not.toHaveBeenCalled();
+  });
+
+  it('runs a write inside the turn only when the member widened that app to all', async () => {
+    const client = scriptedClient([
+      [toolCall('app_notion_create_page', { title: 'خطة' })],
+      textStream('أنشأت الصفحة.'),
+    ]);
+    const apps = fakeApps([
+      appTool({
+        toolName: 'create_page',
+        description: 'Create a page',
+        readOnly: false,
+        permissionLevel: 'all',
+      }),
+    ]);
+    const { service, actions } = makeService({ client, apps });
+
+    await collect(service.turn('user-1', 'conversation-1', READ, TURN_CONTEXT));
+
+    expect(apps.call).toHaveBeenCalledTimes(1);
+    expect(actions.propose).not.toHaveBeenCalled();
+  });
+
+  it('injects no remote declaration for a question that mentions no app', async () => {
+    const client = scriptedClient([textStream('صرفت هذا الشهر 1200.')]);
+    const apps = fakeApps([appTool()]);
+    const { service } = makeService({ client, apps });
+
+    await collect(service.turn('user-1', 'conversation-1', 'كم صرفت هذا الشهر؟', TURN_CONTEXT));
+
+    const names = client.offered[0]?.map((tool) => tool.function.name) ?? [];
+    expect(names.some((name) => name.startsWith('app_'))).toBe(false);
+    // The recovery path is still there: the member has an app to find.
+    expect(names).toContain('find_app_tools');
+  });
+
+  it('carries no app search at all when the member has no app', async () => {
+    const client = scriptedClient([textStream('أهلاً.')]);
+    const { service } = makeService({ client, apps: fakeApps([]) });
+
+    await collect(service.turn('user-1', 'conversation-1', 'أهلاً', TURN_CONTEXT));
+
+    const names = client.offered[0]?.map((tool) => tool.function.name) ?? [];
+    expect(names).not.toContain('find_app_tools');
+  });
+
+  it('recovers a tool the router missed, inside the same turn', async () => {
+    const client = scriptedClient([
+      [toolCall('find_app_tools', { query: 'notion search' })],
+      [toolCall('app_notion_search', { query: 'خطة' }, 'call-2')],
+      textStream('وجدتها.'),
+    ]);
+    const apps = fakeApps([appTool()]);
+    const { service } = makeService({ client, apps });
+
+    // The member's words never matched the English tool, so the router missed it.
+    await collect(service.turn('user-1', 'conversation-1', 'أضف صفحة', TURN_CONTEXT));
+
+    expect(client.offered[1]?.map((tool) => tool.function.name)).toContain('app_notion_search');
+    expect(apps.call).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops at three remote calls in one turn', async () => {
+    const client = scriptedClient([
+      [
+        toolCall('app_notion_search', { query: 'a' }, 'call-1'),
+        toolCall('app_notion_search', { query: 'b' }, 'call-2'),
+      ],
+      [
+        toolCall('app_notion_search', { query: 'c' }, 'call-3'),
+        toolCall('app_notion_search', { query: 'd' }, 'call-4'),
+      ],
+      textStream('هذا ما وجدته.'),
+    ]);
+    const apps = fakeApps([appTool()]);
+    const { service } = makeService({ client, apps });
+
+    await collect(service.turn('user-1', 'conversation-1', READ, TURN_CONTEXT));
+
+    expect(apps.call).toHaveBeenCalledTimes(3);
   });
 });

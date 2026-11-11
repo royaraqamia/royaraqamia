@@ -5,6 +5,7 @@ import type { ChatAgentActionRepository } from '@/backend/repositories/chat/chat
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
 import { AppError } from '@/backend/shared/errors';
+import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
 import { RepositoryError } from '@/backend/shared/repository-error';
 import {
   ChatAgentActionService,
@@ -203,5 +204,73 @@ describe('confirming a proposal (#818)', () => {
 
     expect(caught).toBeInstanceOf(ChatAgentError);
     expect((caught as ChatAgentError).status).toBe(409);
+  });
+});
+
+/**
+ * A proposal that names one of the member's apps (ADR-0155, decision 11).
+ *
+ * The row keeps `app:<connectionId>:<tool>`, so the confirmation has to find the
+ * connection rather than the compile-time registry — and a server's own refusal
+ * is a failed card, not an applied one.
+ */
+describe('confirming an app’s proposal (#1225)', () => {
+  const remoteRow = () => proposal({ tool: 'app:conn-1:create_page', args: { title: 'خطة' } });
+
+  it('calls the app as the member, with the arguments the card showed', async () => {
+    const call = vi.fn(async () => ({
+      isError: false,
+      content: [{ type: 'text', text: 'created' }],
+      structured: null,
+    }));
+    const { service } = makeService({
+      repo: repository(remoteRow()).repo,
+      actions: { apps: { call } },
+    });
+
+    const action = await service.confirm('user-1', 'conversation-1', 'action-1', CONTEXT);
+
+    expect(call).toHaveBeenCalledWith({
+      userId: 'user-1',
+      connectionId: 'conn-1',
+      toolName: 'create_page',
+      args: { title: 'خطة' },
+      // The member's own tap is the asking, whatever the connection's level.
+      intent: 'confirmed',
+    });
+    expect(action.status).toBe('applied');
+    expect(action.result).toMatchObject({ result: { isError: false } });
+  });
+
+  it('keeps a server’s own refusal as the reason, bounded', async () => {
+    const call = vi.fn(async () => ({
+      isError: true,
+      content: [{ type: 'text', text: 'missing permission: pages:write' }],
+      structured: null,
+    }));
+    const { service } = makeService({
+      repo: repository(remoteRow()).repo,
+      actions: { apps: { call } },
+    });
+
+    const action = await service.confirm('user-1', 'conversation-1', 'action-1', CONTEXT);
+
+    expect(action.status).toBe('failed');
+    expect(action.result?.error).toBe('missing permission: pages:write');
+  });
+
+  it('draws a dead grant as a refusal with the server’s sentence', async () => {
+    const call = vi.fn(async () => {
+      throw new McpRemoteError('reauth', 'انتهت صلاحية الوصول إلى التطبيق.');
+    });
+    const { service } = makeService({
+      repo: repository(remoteRow()).repo,
+      actions: { apps: { call } },
+    });
+
+    const action = await service.confirm('user-1', 'conversation-1', 'action-1', CONTEXT);
+
+    expect(action.status).toBe('failed');
+    expect(action.result?.error).toBe('انتهت صلاحية الوصول إلى التطبيق.');
   });
 });

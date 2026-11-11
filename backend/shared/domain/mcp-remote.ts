@@ -6,7 +6,25 @@
  */
 
 export type McpRemoteFailure =
-  'blocked' | 'unreachable' | 'discovery' | 'registration' | 'authorization' | 'protocol';
+  | 'blocked'
+  | 'unreachable'
+  | 'discovery'
+  | 'registration'
+  | 'authorization'
+  | 'protocol'
+  /**
+   * The access token was refused (401/403). A token we believed valid may have
+   * been revoked or expired early, so a caller refreshes once and retries; a
+   * second refusal is `reauth`.
+   */
+  | 'unauthorized'
+  /**
+   * The grant itself is gone: the provider refused the refresh token, or the
+   * access token it issued is refused. The member has to connect the app again
+   * — nothing on this side can repair it, and saying "try again" would be
+   * advice that can never work.
+   */
+  | 'reauth';
 
 /**
  * Why a catalogue row cannot be connected, as the catalogue stores it

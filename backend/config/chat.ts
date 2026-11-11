@@ -21,8 +21,11 @@ import {
   type ChatAgentServiceDeps,
 } from '@/backend/services/chat/chat-agent-service';
 import { ChatAttachmentSweepService } from '@/backend/services/chat/chat-attachment-sweep';
+import { attachAppNames } from '@/backend/services/chat/chat-app-tools';
+import { appToolParts } from '@/shared/contracts/chat-agent-actions';
 import { createPublicUsersRepositoryServer } from '@/backend/config/users';
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
+import { createDefaultMcpAppToolsService } from '@/backend/config/mcp';
 import { createPlanGate } from '@/backend/config/plans';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createAiChatClient } from '@/backend/clients/ai-chat';
@@ -54,10 +57,30 @@ export function createSupabaseChatService(
     // the table does, so signing and removal run on the caller's own session.
     attachments: createChatAttachmentStorage(supabase),
     // A proposal is read on the same session, so a member sees only the cards
-    // of a thread they are in (#818).
+    // of a thread they are in (#818). A card that names one of their connected
+    // apps resolves that app's current name here, from their own connections:
+    // the row keeps `app:<connectionId>:<tool>` so a rename never orphans it.
     actions: {
-      listForMessages: async (messageIds) =>
-        createSupabaseChatAgentActionRepository(supabase).listForMessages(messageIds),
+      listForMessages: async (userId, messageIds) => {
+        const rows =
+          await createSupabaseChatAgentActionRepository(supabase).listForMessages(messageIds);
+        const connectionIds = [
+          ...new Set(
+            rows.flatMap((row) => {
+              const parts = appToolParts(row.tool);
+              return parts ? [parts.connectionId] : [];
+            })
+          ),
+        ];
+        if (connectionIds.length === 0) return rows;
+
+        // A name we cannot resolve (a disconnected app) leaves the card
+        // readable, which is the whole point of storing the id.
+        const names = await createDefaultMcpAppToolsService()
+          .names(userId, connectionIds)
+          .catch(() => new Map<string, string>());
+        return attachAppNames(rows, names);
+      },
     },
     // A request is delivered on the service role: `notifications` grants INSERT
     // to `service_role` only, and the producer is fail-safe by contract.
@@ -103,6 +126,10 @@ export function createSupabaseChatAgentService(
     // not be able to forge one); the member's own confirmation is a separate
     // service, on their own session.
     actions: createSupabaseChatAgentActionService(supabase),
+    // The apps the member connected, when the marketplace is configured: the
+    // turn declares at most sixteen of their tools, and a write among them is a
+    // card like any other (ADR-0155, decision 7).
+    apps: createDefaultMcpAppToolsService(),
     ...deps,
   });
 }
@@ -141,6 +168,9 @@ export function createSupabaseChatAgentActionService(
     actions: createSupabaseChatAgentActionRepository(supabase, admin),
     agent: createSupabaseChatAgentRepository(admin),
     chats: createSupabaseChatService(supabase),
+    // A confirmed card for one of the member's apps is a call on that app's
+    // server, made with the member's own grant (#1225).
+    apps: createDefaultMcpAppToolsService(),
     ...deps,
   });
 }

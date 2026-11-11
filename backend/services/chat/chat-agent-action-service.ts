@@ -9,11 +9,13 @@ import {
   type ChatAgentTool,
   type ChatAgentToolContext,
 } from '@/backend/services/chat/chat-agent-tools';
+import type { McpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
 import { logger } from '@/backend/shared/logger';
 import { AppError } from '@/backend/shared/errors';
 import { RepositoryError } from '@/backend/shared/repository-error';
 import { ChatAgentError } from '@/backend/services/chat/chat-agent-service';
 import {
+  appToolParts,
   chatAgentActionSentence,
   type ChatAgentAction,
 } from '@/shared/contracts/chat-agent-actions';
@@ -39,6 +41,11 @@ export interface ChatAgentActionServiceDeps {
   chats: ChatService;
   /** The registry, overridable so a test can pin one tool. */
   resolveTool?: (name: string) => ChatAgentTool | null;
+  /**
+   * The apps the member connected: a proposal that names one runs on the remote
+   * server when the member confirms it, not on a service of ours (#1225).
+   */
+  apps?: Pick<McpAppToolsService, 'call'>;
 }
 
 export interface ChatAgentActionResolutionContext {
@@ -67,18 +74,22 @@ export class ChatAgentActionService {
   async propose(
     conversationId: string,
     tool: string,
-    args: Record<string, unknown>
+    args: Record<string, unknown>,
+    options: { appName?: string } = {}
   ): Promise<{ message: ChatMessage; action: ChatAgentAction }> {
     const record = await this.deps.agent.insertAgentMessage(
       conversationId,
-      chatAgentActionSentence(tool, args)
+      chatAgentActionSentence(tool, args, options.appName)
     );
-    const action = await this.deps.actions.insertProposal({
+    const inserted = await this.deps.actions.insertProposal({
       conversationId,
       messageId: record.id,
       tool,
       args,
     });
+    // The card is drawn from this answer before the thread is read again, so the
+    // app's name rides on it now rather than only on the next page's rows.
+    const action = options.appName ? { ...inserted, appName: options.appName } : inserted;
 
     return {
       message: {
@@ -118,6 +129,40 @@ export class ChatAgentActionService {
 
     const claimed = await this.deps.actions.claim(conversationId, actionId, userId);
     if (!claimed) throw new ChatAgentError(409, ALREADY_RESOLVED);
+
+    // A tool of an app we do not own: the confirmation is the call itself, on
+    // the member's own connection and with the member's own grant.
+    const remote = appToolParts(claimed.tool);
+    if (remote) {
+      if (!this.deps.apps) {
+        return this.settle(conversationId, claimed, 'failed', { error: 'أداة غير معروفة' });
+      }
+
+      try {
+        const result = await this.deps.apps.call({
+          userId,
+          connectionId: remote.connectionId,
+          toolName: remote.toolName,
+          args: claimed.args,
+          // The member's own tap is the asking, whatever the connection's level.
+          intent: 'confirmed',
+        });
+
+        const refusal = remoteRefusal(result);
+        if (refusal) {
+          return this.settle(conversationId, claimed, 'failed', { error: refusal });
+        }
+        return this.settle(conversationId, claimed, 'applied', { result: result ?? null });
+      } catch (error) {
+        const reason = refusalSentence(error);
+        logger.warn('Assistant app action failed', {
+          tool: claimed.tool,
+          conversationId,
+          error: String(reason),
+        });
+        return this.settle(conversationId, claimed, 'failed', { error: reason });
+      }
+    }
 
     const tool = (this.deps.resolveTool ?? chatAgentTool)(claimed.tool);
     if (!tool) {
@@ -186,6 +231,35 @@ export class ChatAgentActionService {
     if (!thread) throw new ChatAgentError(404, 'المحادثة غير موجودة');
     if (thread.kind !== 'agent') throw new ChatAgentError(400, NOT_ASSISTANT_THREAD);
   }
+}
+
+/**
+ * A remote call the server itself marked as failed, in the words it wrote.
+ *
+ * `isError` is the MCP server's own verdict about the call: it ran and refused,
+ * which is a different outcome from a call that never reached it, and the card
+ * has to say so rather than claim the write was applied. The text is the
+ * server's, so it is bounded like any other untrusted content.
+ */
+function remoteRefusal(result: unknown): string | null {
+  if (typeof result !== 'object' || result === null) return null;
+  if ((result as { isError?: unknown }).isError !== true) return null;
+
+  const content = (result as { content?: unknown }).content;
+  const words = Array.isArray(content)
+    ? content
+        .map((block) =>
+          typeof block === 'object' &&
+          block !== null &&
+          typeof (block as { text?: unknown }).text === 'string'
+            ? (block as { text: string }).text.trim()
+            : ''
+        )
+        .filter(Boolean)
+        .join(' ')
+    : '';
+
+  return words ? words.slice(0, 300) : 'رفض التطبيق تنفيذ الإجراء.';
 }
 
 function isRefusal(value: unknown): value is { error: string } {

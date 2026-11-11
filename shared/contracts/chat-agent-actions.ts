@@ -22,8 +22,20 @@ export interface ChatAgentAction {
   conversationId: string;
   /** The assistant's line the proposal is drawn under. */
   messageId: string;
+  /**
+   * The tool: a name from `CHAT_AGENT_TOOL_NAMES`, or `app:<connectionId>:<tool>`
+   * for a tool of an app we do not own (ADR-0155, decision 11).
+   */
   tool: string;
   args: Record<string, unknown>;
+  /**
+   * The app a remote tool belongs to, as the member named it.
+   *
+   * Resolved when the card is read, not when it is written, so a rename updates
+   * the history and a disconnected app leaves a card that still reads. `null`
+   * means the connection is gone; a first-party tool has no app at all.
+   */
+  appName?: string | null;
   status: ChatAgentActionStatus;
   /** The service's answer for an applied action, or the reason it was refused. */
   result: Record<string, unknown> | null;
@@ -55,6 +67,10 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'change_display_name',
   'list_specialists',
   'load_specialist',
+  // The recovery path for an app tool the router missed (ADR-0155, decision 7).
+  // Declared only when the member has an enabled app, so a turn with no
+  // connections carries no invitation to look for one.
+  'find_app_tools',
 ] as const;
 
 export type ChatAgentToolName = (typeof CHAT_AGENT_TOOL_NAMES)[number];
@@ -93,6 +109,7 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
   change_display_name: { kind: 'write', label: 'تغيير اسم العرض' },
   list_specialists: { kind: 'read', label: 'قراءة دليل المتخصصين' },
   load_specialist: { kind: 'read', label: 'تحميل متخصص' },
+  find_app_tools: { kind: 'read', label: 'البحث في أدوات التطبيقات' },
 };
 
 export function isChatAgentToolName(value: string): value is ChatAgentToolName {
@@ -134,13 +151,63 @@ function amount(value: unknown): string {
 }
 
 /**
+ * The two halves of a remote tool's audit name, or `null` for a first-party one.
+ *
+ * The stored form is `app:<connectionId>:<tool>`: stable across a rename and
+ * across a second member connecting the same app, which is the whole reason the
+ * model's `app_<slug>_<tool>` name is never persisted (ADR-0155, decision 11).
+ */
+export function appToolParts(tool: string): { connectionId: string; toolName: string } | null {
+  if (!tool.startsWith('app:')) return null;
+  const rest = tool.slice('app:'.length);
+  const separator = rest.indexOf(':');
+  if (separator <= 0 || separator === rest.length - 1) return null;
+  return { connectionId: rest.slice(0, separator), toolName: rest.slice(separator + 1) };
+}
+
+/** The arguments a card shows for a tool we did not write, bounded and readable. */
+function appArguments(values: Record<string, unknown>): string {
+  return Object.entries(values)
+    .slice(0, 3)
+    .map(([key, value]) => {
+      const shown =
+        typeof value === 'string'
+          ? value
+          : typeof value === 'number' || typeof value === 'boolean'
+            ? String(value)
+            : (JSON.stringify(value) ?? '');
+      return `${key}: ${shown.length > 40 ? `${shown.slice(0, 40)}…` : shown}`;
+    })
+    .filter((pair) => !pair.endsWith(': '))
+    .join('، ');
+}
+
+/**
  * The proposal in plain words: the tool's name in Arabic, then the arguments a
  * member would recognise. It never throws — a proposal whose arguments do not
  * parse is exactly the case the confirm step refuses, and the card still has to
  * draw something readable.
+ *
+ * A remote tool has no Arabic label we wrote, so the card names the app the
+ * member chose and the server's own tool name beside the arguments. `appName`
+ * is resolved when the card is read; without it (a connection since deleted) the
+ * card still says what was proposed.
  */
-export function chatAgentActionSentence(tool: string, args: unknown): string {
+export function chatAgentActionSentence(
+  tool: string,
+  args: unknown,
+  appName?: string | null
+): string {
   const values = (typeof args === 'object' && args !== null ? args : {}) as Record<string, unknown>;
+
+  const remote = appToolParts(tool);
+  if (remote) {
+    const app = text(appName ?? '') || 'تطبيق';
+    const name = remote.toolName.replace(/[_-]+/g, ' ').trim() || 'إجراء';
+    const shown = appArguments(values);
+    return [`${app} — ${name}`, shown].filter(Boolean).join(' · ');
+  }
+
   const info = isChatAgentToolName(tool) ? CHAT_AGENT_TOOLS[tool] : null;
   const label = info?.label ?? 'إجراء';
 
