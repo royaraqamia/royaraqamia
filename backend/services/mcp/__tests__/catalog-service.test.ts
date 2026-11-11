@@ -104,6 +104,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     },
     countCatalogServers: async () => 0,
     listCatalogServers: async () => ({ rows: [], nextCursor: null }),
+    listAgentCandidates: async () => [],
     getCatalogAddresses: async () => [],
     listVerifiedAddresses: async () => [],
     saveCatalogProbe: async (registryName, probe) => {

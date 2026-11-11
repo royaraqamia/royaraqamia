@@ -501,6 +501,7 @@ export function createMcpCatalogService({
           source: actor.source ?? 'registry',
           evidence: {
             fields,
+            from: ['title', 'description'],
             registry: { title: existing.title, description: existing.description },
           },
         });

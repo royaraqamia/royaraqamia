@@ -321,6 +321,13 @@ export interface McpMarketplaceRepository {
   getCatalogAddresses(registryNames: string[]): Promise<McpCatalogAddressRecord[]>;
 
   /**
+   * The capped page an unattended run works on (#1293): active, unblocked rows,
+   * unverified first, then the ones whose measurement is oldest. Blocked and
+   * retired rows are never offered; the agent's takedown is a withdraw.
+   */
+  listAgentCandidates(limit: number): Promise<McpCatalogListRow[]>;
+
+  /**
    * Verified rows whose verdict is due again. The store must stop offering a
    * server that went down even when no member draws it, so the sync re-probes
    * these rather than waiting for a screen.
@@ -731,6 +738,23 @@ export function createMcpMarketplaceRepository(
         found.push(...((data ?? []) as McpCatalogAddressRecord[]));
       }
       return found;
+    },
+
+    async listAgentCandidates(limit) {
+      const { data, error } = await supabase
+        .from(CATALOG_TABLE)
+        .select(
+          'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, verified_at, connectable, connectable_reason, probed_at, icon_override, probe_icon_url, registry_icon_url'
+        )
+        .eq('status', 'active')
+        .is('blocked_at', null)
+        // Unverified first; within each group, the one measured longest ago.
+        .order('verified_at', { ascending: true, nullsFirst: true })
+        .order('probed_at', { ascending: true, nullsFirst: true })
+        .order('registry_name', { ascending: true })
+        .limit(limit);
+      if (error) throw error;
+      return (data ?? []) as unknown as McpCatalogListRow[];
     },
 
     async saveCatalogProbe(registryName, probe) {
