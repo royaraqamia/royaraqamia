@@ -151,7 +151,7 @@ function fakeRemote(overrides: Partial<McpRemoteClient> = {}): McpRemoteClient {
   } as McpRemoteClient;
 }
 
-describe('the memberâ€™s connections', () => {
+describe('the member’s connections', () => {
   beforeEach(() => {
     process.env.MCP_TOKEN_ENCRYPTION_KEY = 'a'.repeat(64);
   });

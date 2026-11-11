@@ -38,11 +38,13 @@ export interface McpCatalogServerRecord {
   status: string;
   blocked_at: string | null;
   blocked_reason: string | null;
-  /** The two measured sources; the service prefers the probe's. */
+  /** The two measured sources, and the mark we ship or an admin chose. */
   registry_icon_url: string | null;
   registry_icon_mime: string | null;
   probe_icon_url: string | null;
   probe_icon_mime: string | null;
+  /** A same-origin path or an https URL; wins over both measured sources. */
+  icon_override: string | null;
   /** The admin's vouch; a row without one is not in the store. */
   verified_at: string | null;
   /** The measured verdict; `null` is "nobody has asked yet". */
@@ -307,6 +309,7 @@ export interface McpMarketplaceRepository {
       verification_withdrawn_at: string | null;
       featured_rank: number | null;
       title_override: string | null;
+      icon_override: string | null;
       remote_override: string | null;
       connectable: boolean | null;
       connectable_reason: string | null;
@@ -465,7 +468,7 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
         .select(
-          'registry_name, title, description, name_ar, description_ar, remote_url, remote_override, status, blocked_at, blocked_reason, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, verified_at, connectable, connectable_reason, probed_at'
+          'registry_name, title, description, name_ar, description_ar, remote_url, remote_override, status, blocked_at, blocked_reason, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, verified_at, connectable, connectable_reason, probed_at'
         )
         .eq('registry_name', registryName)
         .maybeSingle();

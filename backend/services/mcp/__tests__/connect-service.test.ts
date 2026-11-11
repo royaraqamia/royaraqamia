@@ -42,6 +42,7 @@ const CATALOG: McpCatalogServerRecord = {
   registry_icon_mime: null,
   probe_icon_url: null,
   probe_icon_mime: null,
+  icon_override: null,
   verified_at: '2026-11-14T00:00:00.000Z',
   connectable: true,
   connectable_reason: null,
@@ -426,7 +427,7 @@ describe('complete', () => {
     ).rejects.toMatchObject({ failure: 'expired_state' });
   });
 
-  it('refuses another memberâ€™s state', async () => {
+  it('refuses another member’s state', async () => {
     const { service, state } = await started();
 
     await expect(
@@ -503,8 +504,8 @@ describe('complete', () => {
 });
 
 /**
- * The cap is asked twice â€” once before the browser leaves, once when the
- * consent comes back â€” and the table's trigger is the third door (#1266). Two
+ * The cap is asked twice — once before the browser leaves, once when the
+ * consent comes back — and the table's trigger is the third door (#1266). Two
  * flows opened under the same last free slot must not both settle.
  */
 describe('the connected-app cap', () => {
@@ -550,9 +551,7 @@ describe('the connected-app cap', () => {
 
     expect(error).toBeInstanceOf(McpConnectError);
     expect(error.failure).toBe('plan_limit');
-    expect(error.message).toBe(
-      'ÙˆØµÙ„Øª Ø¥Ù„Ù‰ Ø­Ø¯Ù‘ Ø§Ù„ØªØ·Ø¨ÙŠÙ‚Ø§Øª ÙÙŠ Ø®Ø·ØªÙƒ. Ø§ÙØµÙ„ ØªØ·Ø¨ÙŠÙ‚Ø§Ù‹ Ø£Ùˆ Ø§Ø±ØªÙ‚Ù Ø¨Ø§Ù„Ø®Ø·Ø©.'
-    );
+    expect(error.message).toBe('وصلت إلى حدّ التطبيقات في خطتك. افصل تطبيقاً أو ارتقِ بالخطة.');
     expect(liveCount(fake.connections, 'user-1')).toBe(1);
     // Refused before the code was exchanged: the attempt is spent either way,
     // and the provider must not be asked for tokens nobody keeps.
@@ -604,7 +603,7 @@ describe('pre-registered client', () => {
   /**
    * The row GitHub's client exists for: no `registration_endpoint`, so the
    * dynamic path refuses it. The static path must not even ask discovery, and
-   * the scopes must reach the authorize URL â€” a hand-registered app has no
+   * the scopes must reach the authorize URL — a hand-registered app has no
    * provider default to fall back on.
    */
   const STATIC = new Map([

@@ -28,6 +28,7 @@ const VERIFIED: McpCatalogServerRecord = {
   registry_icon_mime: 'image/svg+xml',
   probe_icon_url: null,
   probe_icon_mime: null,
+  icon_override: null,
   verified_at: '2026-11-14T00:00:00.000Z',
   connectable: true,
   connectable_reason: null,

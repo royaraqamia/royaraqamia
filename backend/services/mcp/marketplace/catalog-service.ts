@@ -187,7 +187,8 @@ export interface McpCatalogService {
 }
 
 /** A refusal from the Admin Console that has a sentence for the person who asked. */
-export type McpCatalogAdminFailure = 'unknown_app' | 'not_connectable' | 'invalid_remote';
+export type McpCatalogAdminFailure =
+  'unknown_app' | 'not_connectable' | 'invalid_remote' | 'invalid_icon' | 'no_mark';
 
 export class McpCatalogError extends Error {
   constructor(
@@ -234,6 +235,7 @@ function toAdminRow(row: McpCatalogListRow, preRegistered: boolean): McpCatalogA
     ...toMemberRow(row),
     registrationKind: preRegistered ? 'static' : 'dcr',
     titleOverride: row.title_override,
+    iconOverride: row.icon_override,
     descriptionAr: row.description_ar,
     remoteUrl: row.remote_url,
     remoteOverride: row.remote_override,
@@ -423,6 +425,36 @@ export function createMcpCatalogService({
       patch.description_ar = input.descriptionAr?.trim() || null;
     if (input.featuredRank !== undefined) patch.featured_rank = input.featuredRank;
 
+    /*
+      The mark is the third source, and the only one an admin writes: a path we
+      ship (`/brand/...`) or an https URL the publisher serves. Anything else is
+      refused, because a member's browser will render whatever this holds — the
+      proxy only ever fetches it through the egress policy.
+    */
+    if (input.iconOverride !== undefined) {
+      const next = input.iconOverride?.trim() || null;
+      if (next !== null) {
+        if (next.startsWith('/')) {
+          if (!next.startsWith('/brand/')) {
+            throw new McpCatalogError(
+              'invalid_icon',
+              'الشعار يجب أن يكون مساراً من شعاراتنا أو رابط https.'
+            );
+          }
+        } else {
+          try {
+            assertEgressUrl(next);
+          } catch (error) {
+            if (error instanceof EgressBlockedError) {
+              throw new McpCatalogError('invalid_icon', error.message);
+            }
+            throw error;
+          }
+        }
+      }
+      patch.icon_override = next;
+    }
+
     if (input.verified === true) {
       /*
         Verification is a vouch, not a measurement, so a first vouch needs the
@@ -437,6 +469,24 @@ export function createMcpCatalogService({
           'not_connectable',
           'لا يمكن اعتماد تطبيق لم يثبت أن ربطه ممكن. افحصه الآن ثم أعد المحاولة.'
         );
+      }
+      /*
+        The store's promise includes the mark: a row a member cannot recognise
+        is the letter tile ADR-0162 exists to delete. The check is on the first
+        vouch only — a row already published can still be edited while its mark
+        is being fixed.
+      */
+      if (existing.verified_at === null) {
+        const mark =
+          patch.icon_override !== undefined
+            ? patch.icon_override
+            : (existing.icon_override ?? existing.probe_icon_url ?? existing.registry_icon_url);
+        if (!mark) {
+          throw new McpCatalogError(
+            'no_mark',
+            'لا يمكن اعتماد تطبيق بلا شعار: بطاقته سترسم حرفاً بدل علامته. أضف الشعار ثم أعد المحاولة.'
+          );
+        }
       }
       // Saving a verified row's rank must not move the date it was vouched for.
       patch.verified_at = existing.verified_at ?? now().toISOString();
