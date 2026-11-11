@@ -315,16 +315,46 @@ export interface ChatMessagePage {
 }
 
 /**
- * The assistant's allowance, as the thread's composer reads it. Both numbers
- * reset at Damascus midnight (`resetsAt`), and the project's is shared by every
- * member because the provider's free limits are per project (#817).
+ * The assistant's own meters, as the composer reads them. Both numbers reset at
+ * Damascus midnight (`resetsAt`), and the project's is shared by every member
+ * because the provider's free limits are per project (#817).
  */
-export interface ChatAgentAllowance {
+export interface ChatAgentMeters {
   plan: PlanId;
   member: { used: number; cap: number };
   project: { used: number; limit: number };
   resetsAt: string;
 }
+
+/**
+ * The day's remote-app calls, beside the turn's own count (#1226).
+ *
+ * `used` and `cap` are the `mcp.call` row of the catalogue, so the pricing page
+ * and the composer quote one number (ADR-0093). `connected` is how many apps the
+ * member holds: a member with none is not shown a meter for allowance they have
+ * no way to spend.
+ */
+export interface ChatAgentAppMeter {
+  used: number;
+  cap: number;
+  connected: number;
+}
+
+/** The assistant's allowance: the turn's meters plus the app calls' (#1226). */
+export interface ChatAgentAllowance extends ChatAgentMeters {
+  apps: ChatAgentAppMeter;
+}
+
+/**
+ * The sentence an app call answers with once the day's allowance is spent.
+ *
+ * It is shared rather than copied so the refusal a turn hands back and the line
+ * the composer draws are the same words (#1226). A reset time is not named: the
+ * counter's row resets at Damascus midnight like every other daily count, and a
+ * turn does not read the clock again to say so.
+ */
+export const CHAT_APP_CALLS_SPENT =
+  'انتهى حدّ استدعاءات التطبيقات لليوم. يعود الحد بعد منتصف الليل.';
 
 /**
  * What the thread needs before it draws a composer: whether a provider key is
@@ -576,6 +606,10 @@ export const ChatAssistantAllowanceSchema = z.object({
   member: z.object({ used: z.number(), cap: z.number() }),
   project: z.object({ used: z.number(), limit: z.number() }),
   resetsAt: z.string(),
+  // Optional on the wire so a stored snapshot written before the app meter
+  // (#1226) still decodes on the app that ships after it; this build always
+  // sends it.
+  apps: z.object({ used: z.number(), cap: z.number(), connected: z.number() }).optional(),
 });
 
 export const ChatAssistantStateSchema = z.object({

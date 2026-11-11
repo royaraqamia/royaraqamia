@@ -41,6 +41,7 @@ const freeCaps: PlanCaps = {
     'quran.surah.read': { window: 'daily', cap: 5 },
     'downloader.job.create': { window: 'lifetime', cap: 5 },
     'chat.agent.turn': { window: 'daily', cap: 0 },
+    'mcp.call': { window: 'daily', cap: 5 },
   },
 };
 

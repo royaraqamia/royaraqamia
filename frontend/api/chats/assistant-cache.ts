@@ -62,6 +62,7 @@ function isAllowance(value: unknown): value is ChatAgentAllowance {
   const allowance = value as Record<string, unknown>;
   const member = allowance.member as Record<string, unknown> | undefined;
   const project = allowance.project as Record<string, unknown> | undefined;
+  const apps = allowance.apps as Record<string, unknown> | undefined;
   return (
     typeof allowance.plan === 'string' &&
     typeof allowance.resetsAt === 'string' &&
@@ -70,7 +71,13 @@ function isAllowance(value: unknown): value is ChatAgentAllowance {
     typeof member.cap === 'number' &&
     !!project &&
     typeof project.used === 'number' &&
-    typeof project.limit === 'number'
+    typeof project.limit === 'number' &&
+    // A snapshot written before the app meter (#1226) has no `apps`; it is a
+    // cache miss rather than a composer that draws `undefined`.
+    !!apps &&
+    typeof apps.used === 'number' &&
+    typeof apps.cap === 'number' &&
+    typeof apps.connected === 'number'
   );
 }
 

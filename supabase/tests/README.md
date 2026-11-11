@@ -74,6 +74,14 @@ test here.
   `pro`, and a Free member as `free` with no allowance.
 - `record_usage` lets an Admin's assistant turn through and still refuses a Free member's.
 
+`mcp_call_counter_test.sql` (#1226, ADR-0155):
+
+- `mcp.call` is seeded daily at 5 on Free and 50 on Pro, with no visitor allowance, and
+  `get_usage_counters` answers the same cap the wall enforces — one catalogue row for the composer,
+  the pricing page and `record_usage`.
+- A Free member's five calls of the day are allowed and the sixth is refused before the remote call;
+  a live Pro activation spends against 50; a visitor is refused; an Admin is let through.
+
 In `rls_authorization_test.sql` every write attempt is expected to be _refused_, so a failed
 rollback cannot leave data behind. `plan_cap_enforcement_test.sql` also writes rows to reach a
 cap; it seeds them with `session_replication_role = replica` and rolls the whole file back.
@@ -253,7 +261,11 @@ fixtures (an `auth.users` row per owner, an expense list at the cap) still need 
 (the two function bodies, every assertion's arithmetic and the Admin exemption), so only the
 pgTAP harness around it needs `supabase test db`.
 
-`chats_test.sql` (#843) is in the same position: no Docker on the writing machine, so the guard, the
+`mcp_call_counter_test.sql` (#1226) is unrun like the rest: its fixtures mirror `plan_reads_test.sql`
+(no Auth rows, the role switcher only around the seeding), and the only new shape is the
+`generate_series` loop that spends the five free calls — if `plan(7)` and the run disagree, look
+at that loop first, because `record_usage` is volatile and the subquery's evaluation order is what
+the fifth call depends on.`chats_test.sql` (#843) is in the same position: no Docker on the writing machine, so the guard, the
 policy and the fixtures are unrun. Its shapes mirror `plan_cap_enforcement_test.sql` (replica-role
 fixtures, a rolled-back file, one `set local role authenticated` block), which is the closest
 available rehearsal.

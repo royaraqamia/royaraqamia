@@ -255,4 +255,13 @@ describe('the catalog a turn plans from', () => {
     );
     await expect(apps.names('user-2', ['conn-1'])).resolves.toEqual(new Map());
   });
+
+  it('counts a live app for the composer’s meter and not a revoked one (#1226)', async () => {
+    const live = service();
+    await expect(live.apps.connectedCount('user-1')).resolves.toBe(1);
+    await expect(live.apps.connectedCount('user-2')).resolves.toBe(0);
+
+    const revoked = service({ repository: fakeRepository({ connection: { status: 'revoked' } }) });
+    await expect(revoked.apps.connectedCount('user-1')).resolves.toBe(0);
+  });
 });

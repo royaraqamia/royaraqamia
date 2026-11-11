@@ -12,8 +12,10 @@ import {
   type ChatAgentActionServiceDeps,
 } from '@/backend/services/chat/chat-agent-action-service';
 import { ChatAgentError } from '@/backend/services/chat/chat-agent-service';
+import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import type { ChatAgentTool } from '@/backend/services/chat/chat-agent-tools';
 import type { ChatService } from '@/backend/services/chat/chat-service';
+import { CHAT_APP_CALLS_SPENT } from '@/shared/contracts/chat';
 
 const CONTEXT = { supabase: {} as never, ip: '127.0.0.1' };
 
@@ -88,16 +90,21 @@ function makeService(
 ) {
   const actions = overrides.repo ?? repository(proposal()).repo;
   const tool = overrides.tool ?? null;
+  const reserveAppCall = vi.fn(async () => ({
+    eventId: 'event-app-1',
+    release: vi.fn(async () => undefined),
+  }));
 
   const service = new ChatAgentActionService({
     actions,
     agent: { insertAgentMessage: vi.fn(), allowance: vi.fn() } as unknown as ChatAgentRepository,
     chats: { getThread: vi.fn(async () => AGENT_THREAD) } as unknown as ChatService,
     resolveTool: () => tool,
+    reserveAppCall,
     ...overrides.actions,
   });
 
-  return { service, actions };
+  return { service, actions, reserveAppCall };
 }
 
 function writeTool(run: ChatAgentTool['run']): ChatAgentTool {
@@ -242,6 +249,46 @@ describe('confirming an app’s proposal (#1225)', () => {
     expect(action.result).toMatchObject({ result: { isError: false } });
   });
 
+  it('counts the call the member confirmed (#1226)', async () => {
+    const call = vi.fn(async () => ({ isError: false, content: [], structured: null }));
+    const { service, reserveAppCall } = makeService({
+      repo: repository(remoteRow()).repo,
+      actions: { apps: { call } },
+    });
+
+    await service.confirm('user-1', 'conversation-1', 'action-1', CONTEXT);
+
+    expect(reserveAppCall).toHaveBeenCalledWith('user-1');
+    expect(call).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses at zero in the sentence the composer shows, and never calls the app', async () => {
+    const call = vi.fn();
+    const reserveAppCall = vi.fn(async () => {
+      throw new UsageLimitReachedError(
+        {
+          key: 'mcp.call',
+          label: 'استدعاء تطبيق خارجي',
+          window: 'daily',
+          cap: 5,
+          used: 5,
+          remaining: 0,
+        },
+        false
+      );
+    });
+    const { service } = makeService({
+      repo: repository(remoteRow()).repo,
+      actions: { apps: { call }, reserveAppCall },
+    });
+
+    const action = await service.confirm('user-1', 'conversation-1', 'action-1', CONTEXT);
+
+    expect(call).not.toHaveBeenCalled();
+    expect(action.status).toBe('failed');
+    expect(action.result?.error).toBe(CHAT_APP_CALLS_SPENT);
+  });
+
   it('keeps a server’s own refusal as the reason, bounded', async () => {
     const call = vi.fn(async () => ({
       isError: true,
@@ -257,6 +304,20 @@ describe('confirming an app’s proposal (#1225)', () => {
 
     expect(action.status).toBe('failed');
     expect(action.result?.error).toBe('missing permission: pages:write');
+  });
+
+  it('declining an app’s card spends nothing (#1226)', async () => {
+    const call = vi.fn();
+    const { service, reserveAppCall } = makeService({
+      repo: repository(remoteRow()).repo,
+      actions: { apps: { call } },
+    });
+
+    const action = await service.reject('user-1', 'conversation-1', 'action-1');
+
+    expect(action.status).toBe('rejected');
+    expect(reserveAppCall).not.toHaveBeenCalled();
+    expect(call).not.toHaveBeenCalled();
   });
 
   it('draws a dead grant as a refusal with the server’s sentence', async () => {

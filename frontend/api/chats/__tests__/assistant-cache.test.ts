@@ -23,6 +23,7 @@ const ALLOWANCE: ChatAgentAllowance = {
   member: { used: 1, cap: 40 },
   project: { used: 10, limit: 900 },
   resetsAt: '2026-11-10T00:00:00.000Z',
+  apps: { used: 0, cap: 0, connected: 0 },
 };
 
 const QUOTA = {

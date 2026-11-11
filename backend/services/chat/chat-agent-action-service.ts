@@ -14,12 +14,15 @@ import { logger } from '@/backend/shared/logger';
 import { AppError } from '@/backend/shared/errors';
 import { RepositoryError } from '@/backend/shared/repository-error';
 import { ChatAgentError } from '@/backend/services/chat/chat-agent-service';
+import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
 import {
   appToolParts,
   chatAgentActionSentence,
   type ChatAgentAction,
 } from '@/shared/contracts/chat-agent-actions';
-import type { ChatMessage } from '@/shared/contracts/chat';
+import { CHAT_APP_CALLS_SPENT, type ChatMessage } from '@/shared/contracts/chat';
+import type { Reservation } from '@/backend/services/plans/plan-gate';
+import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 
 /**
  * A proposal, and the one member who may resolve it (ADR-0113, #818).
@@ -46,6 +49,12 @@ export interface ChatAgentActionServiceDeps {
    * server when the member confirms it, not on a service of ours (#1225).
    */
   apps?: Pick<McpAppToolsService, 'call'>;
+  /**
+   * One remote call to an app we do not own (#1226). A card is the member's own
+   * request, so it spends the same counter a turn's call does — and a declined
+   * card never reaches this.
+   */
+  reserveAppCall(userId: string): Promise<Reservation>;
 }
 
 export interface ChatAgentActionResolutionContext {
@@ -138,6 +147,17 @@ export class ChatAgentActionService {
         return this.settle(conversationId, claimed, 'failed', { error: 'أداة غير معروفة' });
       }
 
+      // Counted before it leaves, exactly like a turn's call (#1226).
+      let appCall: Reservation;
+      try {
+        appCall = await this.deps.reserveAppCall(userId);
+      } catch (error) {
+        if (error instanceof UsageLimitReachedError) {
+          return this.settle(conversationId, claimed, 'failed', { error: CHAT_APP_CALLS_SPENT });
+        }
+        throw error;
+      }
+
       try {
         const result = await this.deps.apps.call({
           userId,
@@ -154,6 +174,14 @@ export class ChatAgentActionService {
         }
         return this.settle(conversationId, claimed, 'applied', { result: result ?? null });
       } catch (error) {
+        // A refusal answered before the request left spends nothing; anything
+        // else may have reached the server, and a call that left is a call.
+        if (
+          error instanceof McpRemoteError &&
+          (error.failure === 'protocol' || error.failure === 'reauth')
+        ) {
+          await appCall.release();
+        }
         const reason = refusalSentence(error);
         logger.warn('Assistant app action failed', {
           tool: claimed.tool,

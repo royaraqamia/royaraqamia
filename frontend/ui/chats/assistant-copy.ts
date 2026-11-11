@@ -26,6 +26,13 @@ export const ASSISTANT_COPY = {
   interrupted: 'توقّف الرد قبل أن يكتمل.',
   /** `{remaining}` and `{cap}` are filled from the server's own numbers. */
   remaining: 'المتبقي اليوم: {remaining} من {cap}',
+  /**
+   * The app-call meter beside the turn's (#1226). `{used}` and `{cap}` are the
+   * `mcp.call` row of the catalogue; the spent sentence itself is
+   * `CHAT_APP_CALLS_SPENT`, shared with the server so the refusal a turn hands
+   * back is the line this composer draws.
+   */
+  appsMeter: 'تطبيقات: {used} من {cap} اليوم',
   /** The sentence a spent day shows: `{time}` is the Damascus reset instant. */
   limitReached: 'وصلت إلى حد اليوم. يعود الحد بعد {time}.',
   midnight: 'منتصف الليل',
