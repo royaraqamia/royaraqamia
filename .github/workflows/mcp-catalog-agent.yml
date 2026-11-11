@@ -38,6 +38,8 @@ on:
         default: ''
 
 permissions:
+  # The opencode action authenticates with OIDC; without this it fails before the model runs.
+  id-token: write
   contents: write
   pull-requests: write
   issues: write
