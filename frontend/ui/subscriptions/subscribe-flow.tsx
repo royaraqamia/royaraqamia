@@ -9,6 +9,8 @@ interface SubscribeFlowProps {
   summary: ReactNode;
   /** The account's name, so the form does not ask twice. */
   defaultName: string;
+  /** The signed-in account the request belongs to (#1084). */
+  accountId: string;
 }
 
 /**
@@ -16,14 +18,18 @@ interface SubscribeFlowProps {
  * confirmation is what deserves the screen, and the pitch is what they just
  * acted on.
  */
-export function SubscribeFlow({ summary, defaultName }: SubscribeFlowProps) {
+export function SubscribeFlow({ summary, defaultName, accountId }: SubscribeFlowProps) {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   return (
     <div className="space-y-8">
       {!isSubmitted ? summary : null}
 
-      <SubscribeForm onSubmitted={() => setIsSubmitted(true)} defaultName={defaultName} />
+      <SubscribeForm
+        onSubmitted={() => setIsSubmitted(true)}
+        defaultName={defaultName}
+        accountId={accountId}
+      />
     </div>
   );
 }

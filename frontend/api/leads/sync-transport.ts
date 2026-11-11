@@ -1,5 +1,10 @@
 import { request } from '@/frontend/transport/http';
 import {
+  GUEST_IDENTITY,
+  identityUserId,
+  type LocalIdentity,
+} from '@/frontend/shared/local-store/identity';
+import {
   PermanentSyncError,
   type SyncTransport,
 } from '@/frontend/shared/local-store/sync-transport';
@@ -45,12 +50,37 @@ export function leadKindForIntent(type: string): LeadFormKind | null {
  * it already created instead of duplicating the lead. On success the returned
  * Reference Code is written to the submission receipt, which is what flips the
  * still-mounted form to its confirmation (ticket #169).
+ *
+ * `identity` is the Outbox partition this transport drains. A subscription is
+ * the one lead whose server row belongs to an account, so it may only be
+ * replayed from that account's partition, carrying that account's id: a queue
+ * left behind by a signed-out member must never be written under the next
+ * member's session (#1084). The server enforces the same rule; this is the half
+ * that keeps the request from being sent at all.
  */
-export function createLeadHttpSyncTransport(): SyncTransport {
+export function createLeadHttpSyncTransport(
+  identity: LocalIdentity = GUEST_IDENTITY
+): SyncTransport {
+  const accountId = identityUserId(identity);
+
   return {
     async send(entry) {
       const endpoint = INTENT_ENDPOINTS[entry.type];
       if (!endpoint) throw new PermanentSyncError(`Unknown outbox intent type: ${entry.type}`);
+
+      if (entry.type === LEAD_INTENT_TYPES.subscription) {
+        if (!accountId) {
+          throw new PermanentSyncError(
+            'طلب الاشتراك محفوظ لحساب صاحبه؛ لا يمكن إعادة إرساله من غير حساب.'
+          );
+        }
+        const submittedBy = (entry.payload as { user_id?: unknown } | null)?.user_id;
+        if (submittedBy !== accountId) {
+          throw new PermanentSyncError(
+            'هذا الطلب أرسله حساب آخر. سجّل الدخول بالحساب الذي أرسله.'
+          );
+        }
+      }
 
       const result = await request<{ referenceCode?: string }>(endpoint, {
         method: 'POST',
@@ -59,7 +89,10 @@ export function createLeadHttpSyncTransport(): SyncTransport {
 
       const kind = INTENT_KINDS[entry.type];
       if (kind && result?.referenceCode) {
-        writeSubmissionReceipt(kind, result.referenceCode);
+        // Only the account-scoped form names an account; the others keep the
+        // device-wide receipt exactly as before.
+        if (accountId) writeSubmissionReceipt(kind, result.referenceCode, accountId);
+        else writeSubmissionReceipt(kind, result.referenceCode);
       }
     },
   };

@@ -38,6 +38,7 @@ import {
   GUEST_IDENTITY,
   localStoreName,
   userIdentity,
+  type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
 import { openOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
 import type { SyncTransport } from '@/frontend/shared/local-store/sync-transport';
@@ -73,10 +74,13 @@ function signedInIdentity(session: DrainSession | null) {
  * Opens just the Outbox of a product whose transport needs nothing more. The
  * store is opened only if it already exists, and at its current version: a
  * worker wake must never create or migrate a database it does not own.
+ *
+ * The transport factory receives the identity the row resolved to, for the one
+ * product whose replay has to know which account it belongs to (`leads`).
  */
 function openOutboxOnly(
   product: string,
-  createTransport: () => SyncTransport
+  createTransport: (identity: LocalIdentity) => SyncTransport
 ): (deps: OpenProductDeps) => Promise<OpenedProduct | null> {
   return async ({ identity, existingDatabases, factory }) => {
     const opened = await openOutboxAccess(localStoreName(product, identity), {
@@ -85,7 +89,7 @@ function openOutboxOnly(
     });
     if (!opened) return null;
 
-    return { store: opened.store, transport: createTransport(), close: opened.close };
+    return { store: opened.store, transport: createTransport(identity), close: opened.close };
   };
 }
 
@@ -93,7 +97,7 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
   {
     product: 'habitflow',
     identity: signedInIdentity,
-    open: openOutboxOnly('habitflow', createHttpSyncTransport),
+    open: openOutboxOnly('habitflow', () => createHttpSyncTransport()),
     createEngine: (deps) => new HabitSyncEngine(deps),
   },
   {
@@ -168,9 +172,25 @@ export const DRAINABLE_PRODUCTS: readonly DrainableProduct[] = [
      * Lead submissions are the exception to the identity rule: the store *is*
      * the guest namespace, and a guest's project request is meaningful on its
      * own, so it drains with or without a session.
+     *
+     * A `subscription.submit` found here is a leftover from before #1084; the
+     * transport refuses it permanently rather than replaying another account's
+     * request under whoever is signed in now.
      */
     identity: () => GUEST_IDENTITY,
-    open: openOutboxOnly('leads', createLeadHttpSyncTransport),
+    open: openOutboxOnly('leads', (identity) => createLeadHttpSyncTransport(identity)),
+    createEngine: (deps) => new LeadsSyncEngine(deps),
+  },
+  {
+    product: 'leads',
+    /**
+     * The account partition of the same product: a subscription request queued
+     * offline belongs to the member who wrote it, so it lives in their namespace
+     * and drains only while that member is the session (#1084). The anonymous
+     * forms never write here.
+     */
+    identity: signedInIdentity,
+    open: openOutboxOnly('leads', (identity) => createLeadHttpSyncTransport(identity)),
     createEngine: (deps) => new LeadsSyncEngine(deps),
   },
 ];

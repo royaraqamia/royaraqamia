@@ -28,9 +28,14 @@ export interface LeadIntent {
 }
 
 /**
- * Leads are anonymous, so their Outbox is not partitioned per account: one
- * durable queue holds every lead form's pending submits on the device until the
- * server has acknowledged each one (ticket #169).
+ * Training, project-request and retainer submissions are anonymous, so their
+ * Outbox is the guest namespace: one durable queue holds their pending submits
+ * on the device until the server has acknowledged each one (ticket #169).
+ *
+ * «اشترك الآن» is the exception: its server row is bound to the session's
+ * account, so a queued subscription belongs to the account that wrote it and
+ * lives in that account's namespace (#1084). Sharing the guest queue would let
+ * one account's pending request replay under the next account's session.
  */
 export const LEADS_STORE_VERSION = 1;
 
@@ -77,13 +82,20 @@ export class LeadsLocalStore {
     for (const listener of this.writeListeners) listener();
   }
 
-  static async open(factory: IDBFactory = globalThis.indexedDB): Promise<LeadsLocalStore> {
+  /**
+   * Opens the Outbox for one identity: the guest namespace by default, or an
+   * account's when the caller is a form whose request belongs to that account.
+   */
+  static async open(
+    identity: LocalIdentity = GUEST_IDENTITY,
+    factory: IDBFactory = globalThis.indexedDB
+  ): Promise<LeadsLocalStore> {
     const db = await openLocalStore(
-      localStoreName(PRODUCT, GUEST_IDENTITY),
+      localStoreName(PRODUCT, identity),
       leadsStoreMigrations,
       factory
     );
-    return new LeadsLocalStore(db, GUEST_IDENTITY);
+    return new LeadsLocalStore(db, identity);
   }
 
   /**

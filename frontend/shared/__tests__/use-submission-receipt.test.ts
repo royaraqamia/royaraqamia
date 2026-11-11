@@ -3,6 +3,7 @@ import { act, renderHook } from '@testing-library/react';
 
 import {
   readSubmissionReceipt,
+  SUBMISSION_RECEIPT_EVENT,
   writeSubmissionReceipt,
 } from '@/frontend/shared/submission-receipt';
 import { useSubmissionReceipt } from '@/frontend/shared/use-submission-receipt';
@@ -30,5 +31,32 @@ describe('useSubmissionReceipt', () => {
     act(() => result.current.dismiss());
     expect(result.current.referenceCode).toBeNull();
     expect(readSubmissionReceipt('training')).toBeNull();
+  });
+});
+
+// #1084: the subscription receipt belongs to the account that submitted it.
+describe('useSubmissionReceipt, per account', () => {
+  it('restores only the current account’s code', () => {
+    writeSubmissionReceipt('subscription', 'SUB-2026-ACCOUNT-A', 'user-a');
+
+    const a = renderHook(() => useSubmissionReceipt('subscription', 'user-a'));
+    const b = renderHook(() => useSubmissionReceipt('subscription', 'user-b'));
+
+    expect(a.result.current.referenceCode).toBe('SUB-2026-ACCOUNT-A');
+    expect(b.result.current.referenceCode).toBeNull();
+  });
+
+  it('ignores a receipt announced for another account', () => {
+    const { result } = renderHook(() => useSubmissionReceipt('subscription', 'user-b'));
+
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(SUBMISSION_RECEIPT_EVENT, {
+          detail: { kind: 'subscription', code: 'SUB-2026-ACCOUNT-A', accountId: 'user-a' },
+        })
+      );
+    });
+
+    expect(result.current.referenceCode).toBeNull();
   });
 });

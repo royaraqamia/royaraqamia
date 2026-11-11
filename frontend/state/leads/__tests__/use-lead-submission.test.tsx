@@ -30,6 +30,7 @@ vi.mock('@/frontend/api/leads/sync-transport', async (importOriginal) => {
 });
 
 import { LeadsLocalStore } from '@/frontend/api/leads/local-store';
+import { userIdentity } from '@/frontend/shared/local-store/identity';
 import { useLeadSubmission } from '@/frontend/state/leads/use-lead-submission';
 
 const VALUE = {
@@ -38,6 +39,11 @@ const VALUE = {
   phone_whatsapp: '+963968478904',
   goal: 'أريد بناء متجر إلكتروني.',
   cohort_id: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+};
+
+const SUBSCRIPTION = {
+  full_name: 'أحمد العلي',
+  phone_whatsapp: '+963968478904',
 };
 
 function setOnline(value: boolean) {
@@ -205,5 +211,60 @@ describe('useLeadSubmission', () => {
     const store = await LeadsLocalStore.open();
     expect(await store.getOutbox()).toHaveLength(1);
     store.close();
+  });
+
+  // #1084: one shared browser, account A then account B. A's offline
+  // subscription belongs to A, so B neither sees it, is blocked by it, nor
+  // replays it.
+  it('keeps a queued subscription in the account that wrote it', async () => {
+    setOnline(false);
+    const a = renderHook(() => useLeadSubmission('user-a'));
+    await waitFor(() => expect(a.result.current.ready).toBe(true));
+
+    let outcome: Awaited<ReturnType<typeof a.result.current.submit>> | undefined;
+    await act(async () => {
+      outcome = await a.result.current.submit({ kind: 'subscription', value: SUBSCRIPTION });
+    });
+    expect(outcome).toEqual({ status: 'queued' });
+
+    const aStore = await LeadsLocalStore.open(userIdentity('user-a'));
+    const aOutbox = await aStore.getOutbox();
+    expect(aOutbox).toHaveLength(1);
+    expect(aOutbox[0]?.type).toBe('subscription.submit');
+    expect(aOutbox[0]?.payload).toMatchObject({ user_id: 'user-a' });
+
+    // Nothing went into the shared guest queue the anonymous forms use.
+    const guestStore = await LeadsLocalStore.open();
+    expect(await guestStore.getOutbox()).toHaveLength(0);
+
+    a.unmount();
+
+    // B signs in on the same device: A's queue is invisible and does not block
+    // B's own submission.
+    setOnline(true);
+    const b = renderHook(() => useLeadSubmission('user-b'));
+    await waitFor(() => expect(b.result.current.ready).toBe(true));
+
+    expect(b.result.current.pendingKinds.has('subscription')).toBe(false);
+    expect(b.result.current.pending).toBe(0);
+
+    const bStore = await LeadsLocalStore.open(userIdentity('user-b'));
+    expect(await bStore.getOutbox()).toHaveLength(0);
+    // A's entry is untouched, and B's flush never sent it.
+    expect(await aStore.getOutbox()).toHaveLength(1);
+    expect(sentTypes).not.toContain('subscription.submit');
+
+    b.unmount();
+
+    // A signs back in: their own queue replays.
+    const aAgain = renderHook(() => useLeadSubmission('user-a'));
+    await waitFor(() => expect(aAgain.result.current.ready).toBe(true));
+    await waitFor(() => expect(sentTypes).toContain('subscription.submit'));
+    await waitFor(async () => expect(await aStore.getOutbox()).toHaveLength(0));
+
+    aAgain.unmount();
+    aStore.close();
+    bStore.close();
+    guestStore.close();
   });
 });

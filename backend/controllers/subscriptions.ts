@@ -49,6 +49,18 @@ export async function submitSubscriptionRequest(body: unknown): Promise<HttpResu
 
   return withAuthenticatedUser(
     async ({ userId }) => {
+      // A payload that names an account is a replayed offline submission: it may
+      // only be written for the account that queued it. Rejecting a mismatch
+      // with a 4xx is what turns "wrong account" into a permanent Outbox
+      // failure the reader can see, instead of retrying under whoever is signed
+      // in now (#1084).
+      if (parsed.data.user_id && parsed.data.user_id !== userId) {
+        return jsonResult(403, {
+          success: false,
+          error: 'هذا الطلب مُسجَّل لحساب آخر. سجّل الدخول بالحساب الذي أرسله.',
+        } satisfies SubscriptionRequestActionResult);
+      }
+
       try {
         const request = await createDefaultSubscriptionRequestService().submit(parsed.data, {
           userId,

@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LeadsLocalStore } from '@/frontend/api/leads/local-store';
+import { GUEST_IDENTITY } from '@/frontend/shared/local-store/identity';
 
 let factory: IDBFactory;
 beforeEach(() => {
@@ -10,7 +11,7 @@ beforeEach(() => {
 
 describe('LeadsLocalStore', () => {
   it('queues a submission and preserves replay order', async () => {
-    const store = await LeadsLocalStore.open(factory);
+    const store = await LeadsLocalStore.open(GUEST_IDENTITY, factory);
     await store.enqueue({ entity: 'lead', type: 'training.submit', payload: { a: 1 } });
     await store.enqueue({ entity: 'lead', type: 'retainer.submit', payload: { b: 2 } });
 
@@ -22,7 +23,7 @@ describe('LeadsLocalStore', () => {
   });
 
   it('removes an acknowledged intent and patches a failed one', async () => {
-    const store = await LeadsLocalStore.open(factory);
+    const store = await LeadsLocalStore.open(GUEST_IDENTITY, factory);
     await store.enqueue({ entity: 'lead', type: 'training.submit', payload: {} });
     const [entry] = await store.getOutbox();
 
@@ -38,7 +39,7 @@ describe('LeadsLocalStore', () => {
   });
 
   it('notifies subscribers on every committed write', async () => {
-    const store = await LeadsLocalStore.open(factory);
+    const store = await LeadsLocalStore.open(GUEST_IDENTITY, factory);
     let calls = 0;
     const unsubscribe = store.subscribeWrites(() => {
       calls += 1;
@@ -54,7 +55,7 @@ describe('LeadsLocalStore', () => {
   // has to stay callable after `close()` — as a no-op, and without ever opening
   // a transaction on the closed connection.
   it('resolves instead of throwing when a late caller uses a closed store', async () => {
-    const store = await LeadsLocalStore.open(factory);
+    const store = await LeadsLocalStore.open(GUEST_IDENTITY, factory);
     await store.enqueue({ entity: 'lead', type: 'training.submit', payload: {} });
     const [entry] = await store.getOutbox();
 
@@ -77,7 +78,7 @@ describe('LeadsLocalStore', () => {
   });
 
   it('does not wake write subscribers for a write that never landed', async () => {
-    const store = await LeadsLocalStore.open(factory);
+    const store = await LeadsLocalStore.open(GUEST_IDENTITY, factory);
     let calls = 0;
     store.subscribeWrites(() => {
       calls += 1;

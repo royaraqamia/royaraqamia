@@ -19,6 +19,11 @@ import {
 import { LeadsSyncEngine } from '@/frontend/api/leads/sync-engine';
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
+import {
+  GUEST_IDENTITY,
+  userIdentity,
+  type LocalIdentity,
+} from '@/frontend/shared/local-store/identity';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
@@ -71,7 +76,11 @@ function isOnline(): boolean {
 }
 
 /** Sends a lead straight to its endpoint, carrying the client-minted key. */
-function dispatch(input: LeadSubmitInput, clientId: string): Promise<SubmitResult> {
+function dispatch(
+  input: LeadSubmitInput,
+  clientId: string,
+  accountId?: string | null
+): Promise<SubmitResult> {
   switch (input.kind) {
     case 'training':
       return submitTrainingApplication({ ...input.value, client_id: clientId });
@@ -80,20 +89,44 @@ function dispatch(input: LeadSubmitInput, clientId: string): Promise<SubmitResul
     case 'retainer':
       return submitRetainer({ ...input.value, client_id: clientId });
     case 'subscription':
-      return submitSubscriptionRequest({ ...input.value, client_id: clientId });
+      return submitSubscriptionRequest({
+        ...input.value,
+        client_id: clientId,
+        ...(accountId ? { user_id: accountId } : {}),
+      });
   }
 }
 
 /**
- * Owns the lead-form Outbox and its Sync Engine (ADR-0029, ticket #169). The
- * three non-inventory forms share one durable queue: a submission made with the
- * network off is enqueued and replayed on reconnection, and the transport writes
- * the Reference Code back to the submission receipt so the form can show it.
- *
- * Leads are anonymous, so the queue flushes regardless of session (`isSignedIn`
- * is always true) — the server attributes a signed-in submitter via the cookie.
+ * The body a queued intent replays. A subscription carries the account that
+ * submitted it, so the replay can be refused if it ever runs under another
+ * session (#1084); the anonymous forms carry no account at all.
  */
-export function useLeadSubmission(): LeadSubmissionState {
+function queuedPayload(
+  input: LeadSubmitInput,
+  clientId: string,
+  accountId?: string | null
+): object {
+  if (input.kind === 'subscription' && accountId) {
+    return { ...input.value, client_id: clientId, user_id: accountId };
+  }
+  return { ...input.value, client_id: clientId };
+}
+
+/**
+ * Owns a lead-form Outbox and its Sync Engine (ADR-0029, ticket #169). The three
+ * anonymous forms share the guest queue: a submission made with the network off
+ * is enqueued and replayed on reconnection, and the transport writes the
+ * Reference Code back to the submission receipt so the form can show it.
+ *
+ * `accountId` selects the account's queue instead, and the form that passes it
+ * is the subscription request — the one whose server row is bound to an account.
+ * A subscription queued by A therefore lives in A's namespace, never replays
+ * under B's session, and leaves B's form untouched (#1084). The anonymous forms
+ * pass nothing and keep flushing regardless of session (`isSignedIn` is always
+ * true) — the server attributes a signed-in submitter via the cookie.
+ */
+export function useLeadSubmission(accountId?: string | null): LeadSubmissionState {
   const [ready, setReady] = useState(false);
   const [online, setOnline] = useState(true);
   const [status, setStatus] = useState<SyncStatus>(EMPTY_STATUS);
@@ -101,6 +134,7 @@ export function useLeadSubmission(): LeadSubmissionState {
 
   const storeRef = useRef<LeadsLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
+  const identity: LocalIdentity = accountId ? userIdentity(accountId) : GUEST_IDENTITY;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -108,13 +142,30 @@ export function useLeadSubmission(): LeadSubmissionState {
     let opened: LeadsLocalStore | null = null;
     let engine: SyncEngine | null = null;
 
+    // A different account means a different queue: drop the previous one's
+    // counts before the new store opens, so nothing on screen claims to be this
+    // member's pending work.
+    setEntries((current) => (current.length === 0 ? current : []));
+    setStatus((current) =>
+      current.pending === 0 && current.failed === 0 && current.lastError === null
+        ? current
+        : EMPTY_STATUS
+    );
+
     const refreshEntries = async (store: LeadsLocalStore) => {
       const next = await store.getOutbox();
       if (!cancelled) setEntries(next);
     };
 
-    LeadsLocalStore.open()
+    LeadsLocalStore.open(identity)
       .then((store) => {
+        // The identity changed (or the form unmounted) while the store was
+        // opening: this connection belongs to a queue nobody is looking at now.
+        if (cancelled) {
+          store.close();
+          return;
+        }
+
         opened = store;
         storeRef.current = store;
         setReady(true);
@@ -130,7 +181,7 @@ export function useLeadSubmission(): LeadSubmissionState {
 
         engine = new LeadsSyncEngine({
           store,
-          transport: createLeadHttpSyncTransport(),
+          transport: createLeadHttpSyncTransport(identity),
           isSignedIn: () => true,
           onStatus: (next) => {
             setStatus(next);
@@ -155,7 +206,7 @@ export function useLeadSubmission(): LeadSubmissionState {
       storeRef.current = null;
       setReady(false);
     };
-  }, []);
+  }, [identity]);
 
   useEffect(() => {
     setOnline(isOnline());
@@ -179,43 +230,46 @@ export function useLeadSubmission(): LeadSubmissionState {
     };
   }, []);
 
-  const submit = useCallback(async (input: LeadSubmitInput): Promise<LeadSubmitOutcome> => {
-    const clientId = uuidv7();
-    const type = LEAD_INTENT_TYPES[input.kind];
-    const store = storeRef.current;
+  const submit = useCallback(
+    async (input: LeadSubmitInput): Promise<LeadSubmitOutcome> => {
+      const clientId = uuidv7();
+      const type = LEAD_INTENT_TYPES[input.kind];
+      const store = storeRef.current;
 
-    // Offline with a ready queue: never touch the network, land it in the Outbox.
-    if (store && !isOnline()) {
-      await store.enqueue({
-        entity: 'lead',
-        type,
-        payload: { ...input.value, client_id: clientId },
-      });
-      return { status: 'queued' };
-    }
+      // Offline with a ready queue: never touch the network, land it in the Outbox.
+      if (store && !isOnline()) {
+        await store.enqueue({
+          entity: 'lead',
+          type,
+          payload: queuedPayload(input, clientId, accountId),
+        });
+        return { status: 'queued' };
+      }
 
-    const result = await dispatch(input, clientId);
+      const result = await dispatch(input, clientId, accountId);
 
-    if (result.success && result.referenceCode) {
-      return { status: 'sent', referenceCode: result.referenceCode };
-    }
+      if (result.success && result.referenceCode) {
+        return { status: 'sent', referenceCode: result.referenceCode };
+      }
 
-    // No HTTP status means the request never reached the server (a dropped
-    // connection, an aborted fetch) — queue it rather than lose the submission.
-    if (store && result.status === undefined) {
-      await store.enqueue({
-        entity: 'lead',
-        type,
-        payload: { ...input.value, client_id: clientId },
-      });
-      return { status: 'queued' };
-    }
+      // No HTTP status means the request never reached the server (a dropped
+      // connection, an aborted fetch) — queue it rather than lose the submission.
+      if (store && result.status === undefined) {
+        await store.enqueue({
+          entity: 'lead',
+          type,
+          payload: queuedPayload(input, clientId, accountId),
+        });
+        return { status: 'queued' };
+      }
 
-    return {
-      status: 'error',
-      error: result.error ?? 'حدث خطأ غير متوقَّع. الرَّجاء المحاولة مرَّة أخرى.',
-    };
-  }, []);
+      return {
+        status: 'error',
+        error: result.error ?? 'حدث خطأ غير متوقَّع. الرَّجاء المحاولة مرَّة أخرى.',
+      };
+    },
+    [accountId]
+  );
 
   const retry = useCallback(() => {
     void engineRef.current?.retry();
