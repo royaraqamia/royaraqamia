@@ -1,14 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { AlertTriangle, Loader2, Plug, Plus, RefreshCw, ShieldAlert, Unplug } from 'lucide-react';
+import {
+  AlertTriangle,
+  BadgeCheck,
+  Loader2,
+  Plug,
+  Plus,
+  RefreshCw,
+  ShieldAlert,
+  Unplug,
+} from 'lucide-react';
 
 import { MCP_MARKETPLACE_COPY as COPY } from '@/frontend/ui/mcp/marketplace-copy';
 
 import { appsCacheKey, readAppsCache, writeAppsCache } from './apps-cache';
 
-import type { McpCatalogConnectReason, McpCatalogRow } from '@/shared/contracts/mcp-catalog';
+import type { McpCatalogRow } from '@/shared/contracts/mcp-catalog';
 import type { McpConnection, McpPermissionLevel } from '@/shared/contracts/mcp-marketplace';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
@@ -240,7 +250,10 @@ export function StoreTab({ query, connect }: StoreTabProps) {
         ) : servers === null ? (
           <LoadingBlocks rows={2} />
         ) : servers.length === 0 ? (
-          <EmptyCard title={COPY.searchEmptyTitle} body={COPY.searchEmptyBody} />
+          <EmptyCard
+            title={query.trim() ? COPY.searchEmptyTitle : COPY.storeEmptyTitle}
+            body={query.trim() ? COPY.searchEmptyBody : COPY.storeEmptyBody}
+          />
         ) : (
           <div aria-busy={searching} className="space-y-2.5">
             <ul
@@ -389,7 +402,12 @@ function ConnectionStatusBadge({ status }: { status: McpConnection['status'] }) 
 }
 
 /**
- * One catalogue row: the server's own name, its description, and the way in.
+ * One catalogue row: the server's mark, its own name, its description, and the
+ * way in.
+ *
+ * Only a verified, connectable row reaches this screen, so the row does not
+ * explain why it cannot be linked: there is nothing here that cannot. The mark
+ * is proxied by us (`/mcp/icon`) and a missing one is a monogram, never a hole.
  *
  * A server the member already connected is not offered a second crossing: the
  * row shows the connection's own state and links to its screen. The connect
@@ -409,38 +427,33 @@ function CatalogueRow({
   disabled: boolean;
   onConnect: () => void;
 }) {
-  const blocked = server.connectable === false;
   const name = server.title ?? server.registryName;
 
   return (
     <div className="flex items-start justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5">
-      <div className="min-w-0 flex-1 space-y-1">
-        <p className="truncate max-sm:text-sm font-bold text-foreground sm:text-base">
-          {name}
-          {server.nameAr && (
-            <span className="ms-2 text-xs font-medium text-muted-foreground">{server.nameAr}</span>
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <CatalogueMark server={server} />
+        <div className="min-w-0 space-y-1">
+          <p className="flex min-w-0 items-center gap-1.5 max-sm:text-sm font-bold text-foreground sm:text-base">
+            <span className="truncate">{name}</span>
+            <BadgeCheck
+              role="img"
+              aria-label={COPY.verifiedBadge}
+              className="h-4 w-4 shrink-0 text-primary"
+            />
+            {server.nameAr && (
+              <span className="truncate text-xs font-medium text-muted-foreground">
+                {server.nameAr}
+              </span>
+            )}
+          </p>
+          {server.description && (
+            <p dir="auto" className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {server.description}
+            </p>
           )}
-        </p>
-        {server.description && (
-          <p dir="auto" className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-            {server.description}
-          </p>
-        )}
-        {connection ? (
-          <ConnectionBadges connection={connection} />
-        ) : (
-          <p className="text-xs">
-            <span
-              className={
-                blocked
-                  ? 'font-bold text-amber-600 dark:text-amber-300'
-                  : 'font-bold text-muted-foreground'
-              }
-            >
-              {connectableLabel(server)}
-            </span>
-          </p>
-        )}
+          {connection && <ConnectionBadges connection={connection} />}
+        </div>
       </div>
 
       {connection ? (
@@ -455,7 +468,7 @@ function CatalogueRow({
         <button
           type="button"
           onClick={onConnect}
-          disabled={disabled || blocked}
+          disabled={disabled}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 max-sm:text-xs font-bold text-primary transition-safe duration-150 ease-out hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm"
         >
           {connecting ? (
@@ -470,25 +483,33 @@ function CatalogueRow({
   );
 }
 
-function connectableLabel(server: McpCatalogRow): string {
-  if (server.connectable === true) return COPY.connectableYes;
-  if (server.connectable === false) {
-    return `${COPY.connectableNo} — ${reasonLabel(server.connectableReason)}`;
-  }
-  return COPY.connectableUnknown;
-}
+/** The row's brand mark, or the first letter of its name when it has none. */
+function CatalogueMark({ server }: { server: McpCatalogRow }) {
+  const name = server.title ?? server.registryName;
+  const [failed, setFailed] = useState(false);
 
-function reasonLabel(reason: McpCatalogConnectReason | null): string {
-  switch (reason) {
-    case 'no_metadata':
-      return COPY.reasonNoMetadata;
-    case 'no_registration':
-      return COPY.reasonNoRegistration;
-    case 'blocked':
-      return COPY.reasonBlocked;
-    default:
-      return COPY.connectableNo;
+  if (!server.iconUrl || failed) {
+    return (
+      <span
+        aria-hidden="true"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/50 text-sm font-extrabold text-muted-foreground"
+      >
+        {name.charAt(0).toUpperCase()}
+      </span>
+    );
   }
+
+  return (
+    <Image
+      src={`/mcp/icon?name=${encodeURIComponent(server.registryName)}`}
+      alt=""
+      width={40}
+      height={40}
+      unoptimized
+      onError={() => setFailed(true)}
+      className="h-10 w-10 shrink-0 rounded-xl border border-border/50 bg-background object-contain p-1"
+    />
+  );
 }
 
 export function permissionLabel(level: McpPermissionLevel): string {

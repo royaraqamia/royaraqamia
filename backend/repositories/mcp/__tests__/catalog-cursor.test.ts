@@ -8,6 +8,8 @@ import { catalogSearchPattern, decodeCatalogCursor, encodeCatalogCursor } from '
  * Both values end up inside a PostgREST filter, which is comma- and
  * parenthesis-delimited: a cursor we did not write, or a term containing the
  * pattern's own wildcards, must fail closed rather than corrupt the expression.
+ * The store's order adds a second cursor shape (`000003:com.supabase/mcp`), and a
+ * decoder that rejected it would silently restart every page after the first.
  */
 
 describe('the catalogue cursor', () => {
@@ -15,10 +17,17 @@ describe('the catalogue cursor', () => {
     expect(decodeCatalogCursor(encodeCatalogCursor('com.supabase/mcp'))).toBe('com.supabase/mcp');
   });
 
+  it('round-trips a store key', () => {
+    expect(decodeCatalogCursor(encodeCatalogCursor('000003:com.supabase/mcp'))).toBe(
+      '000003:com.supabase/mcp'
+    );
+  });
+
   it('refuses anything it did not write', () => {
     expect(decodeCatalogCursor('not-a-cursor')).toBeNull();
     expect(decodeCatalogCursor(Buffer.from('{"n":"a,b"}').toString('base64url'))).toBeNull();
     expect(decodeCatalogCursor(Buffer.from('{"n":"no-slash"}').toString('base64url'))).toBeNull();
+    expect(decodeCatalogCursor(Buffer.from('{"n":"a/b),or(x"}').toString('base64url'))).toBeNull();
     expect(decodeCatalogCursor(Buffer.from('{"x":1}').toString('base64url'))).toBeNull();
   });
 });

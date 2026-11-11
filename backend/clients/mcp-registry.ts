@@ -29,12 +29,27 @@ const RemoteSchema = z.object({
   url: z.string(),
 });
 
+/**
+ * A brand mark the server publishes in its `server.json`.
+ *
+ * The schema allows one object or an array; the registry's own document is the
+ * array form, and `icons` is optional because most third-party rows publish
+ * none. A missing icon is a row the store draws with a monogram, not a reason to
+ * skip the row.
+ */
+const IconSchema = z.object({
+  src: z.string(),
+  mimeType: z.string().nullish(),
+  sizes: z.array(z.string()).nullish(),
+});
+
 const ServerSchema = z.object({
   name: z.string().min(1),
   title: z.string().nullish(),
   description: z.string().nullish(),
   version: z.string().nullish(),
   remotes: z.array(RemoteSchema).nullish(),
+  icons: z.array(IconSchema).nullish(),
 });
 
 const OfficialMetaSchema = z.object({
@@ -63,6 +78,9 @@ export interface McpRegistryEntry {
   description: string | null;
   version: string | null;
   remotes: Array<{ type: string; url: string }>;
+  /** The brand mark, already reduced to the one the store should draw. */
+  iconUrl: string | null;
+  iconMime: string | null;
   /** `active`, `deprecated` or `deleted`, from the registry's own metadata. */
   status: string;
   publishedAt: string | null;
@@ -94,6 +112,57 @@ export interface McpRegistryClient {
     cursor?: string | null;
     updatedSince?: string | null;
   }): Promise<McpRegistryPage>;
+}
+
+/** The mimes the icon proxy will serve; a mark in another type is no mark. */
+const ICON_MIMES = new Set([
+  'image/png',
+  'image/svg+xml',
+  'image/jpeg',
+  'image/webp',
+  'image/x-icon',
+]);
+
+type RegistryIcon = { src: string; mimeType?: string | null; sizes?: string[] | null };
+
+/**
+ * The one icon worth keeping, or nothing.
+ *
+ * A catalogued row can publish several: a vector mark and a 256px PNG are the
+ * common pair. The store draws a 40px tile with a 2x screen in mind, so a PNG at
+ * 256 or 512 is the best raster; an SVG is next because it scales; the first
+ * usable entry is the fallback. Only `https:` is accepted, because the proxy
+ * fetches it and a mixed-content mark is not worth a special case.
+ */
+function pickRegistryIcon(icons: RegistryIcon[] | null | undefined): {
+  url: string;
+  mime: string | null;
+} | null {
+  const usable = (icons ?? []).flatMap((icon) => {
+    let url: URL;
+    try {
+      url = new URL(icon.src);
+    } catch {
+      return [];
+    }
+    if (url.protocol !== 'https:') return [];
+    // A declared type the proxy will not serve is a mark we cannot use. A
+    // missing type is kept: the proxy checks the response before serving it.
+    if (icon.mimeType && !ICON_MIMES.has(icon.mimeType)) return [];
+    return [{ url: url.toString(), mime: icon.mimeType ?? null, sizes: icon.sizes ?? [] }];
+  });
+
+  if (usable.length === 0) return null;
+
+  const largePng = usable.find(
+    (icon) =>
+      icon.mime === 'image/png' &&
+      icon.sizes.some((size) => size === '256x256' || size === '512x512')
+  );
+  const png = usable.find((icon) => icon.mime === 'image/png');
+  const svg = usable.find((icon) => icon.mime === 'image/svg+xml');
+  const chosen = largePng ?? png ?? svg ?? usable[0];
+  return chosen ? { url: chosen.url, mime: chosen.mime } : null;
 }
 
 interface RegistryDependencies {
@@ -146,6 +215,8 @@ export function createMcpRegistryClient(
         // silent overwrite.
         if (meta?.isLatest === false) continue;
 
+        const icon = pickRegistryIcon(server.icons);
+
         entries.push({
           registryName: server.name,
           title: server.title ?? null,
@@ -155,6 +226,8 @@ export function createMcpRegistryClient(
             type: remote.type,
             url: remote.url,
           })),
+          iconUrl: icon?.url ?? null,
+          iconMime: icon?.mime ?? null,
           status: meta?.status ?? 'active',
           publishedAt: meta?.publishedAt ?? null,
           registryUpdatedAt: meta?.updatedAt ?? null,

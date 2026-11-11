@@ -1,10 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Ban, Loader2, PackageSearch, PencilLine, Search } from 'lucide-react';
+import Image from 'next/image';
+import {
+  BadgeCheck,
+  Ban,
+  Loader2,
+  PackageSearch,
+  PencilLine,
+  RefreshCw,
+  Search,
+  ShieldOff,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
-import { getAdminMcpCatalog, updateAdminMcpCatalogRow } from '@/frontend/api/mcp-catalog';
+import {
+  getAdminMcpCatalog,
+  probeAdminMcpCatalogRow,
+  updateAdminMcpCatalogRow,
+} from '@/frontend/api/mcp-catalog';
 import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
 import { Badge } from '@/frontend/ui/primitives/badge';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -34,7 +48,7 @@ import {
  * replaces the registry's English.
  */
 
-type RowActionMode = 'block' | 'unblock' | 'arabic';
+type RowActionMode = 'block' | 'unblock' | 'arabic' | 'verify';
 
 interface RowAction {
   row: McpCatalogAdminRow;
@@ -50,6 +64,7 @@ export function McpCatalogAdminView() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [action, setAction] = useState<RowAction | null>(null);
+  const [probing, setProbing] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
@@ -77,6 +92,19 @@ export function McpCatalogAdminView() {
   }, [q, revision]);
 
   const reload = useCallback(() => setRevision((current) => current + 1), []);
+
+  async function probe(registryName: string) {
+    setProbing(registryName);
+    try {
+      await probeAdminMcpCatalogRow(registryName);
+      toast.success(COPY.probeDone);
+      reload();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : COPY.probeFailed);
+    } finally {
+      setProbing(null);
+    }
+  }
 
   async function loadMore() {
     if (!cursor || loadingMore) return;
@@ -157,10 +185,49 @@ export function McpCatalogAdminView() {
 
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <Badge variant={connectableVariant(row)}>{connectableLabel(row)}</Badge>
+                  {row.verifiedAt && <Badge variant="success">{COPY.verifiedBadge}</Badge>}
+                  {row.featuredRank !== null && (
+                    <Badge variant="secondary">
+                      {COPY.featuredRankBadge} {row.featuredRank}
+                    </Badge>
+                  )}
                   {row.blocked && <Badge variant="destructive">{COPY.blockedBadge}</Badge>}
                   {row.status === 'deprecated' && (
                     <Badge variant="warning">{COPY.deprecatedBadge}</Badge>
                   )}
+                  {!row.verifiedAt && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void probe(row.registryName)}
+                      disabled={probing !== null}
+                    >
+                      {probing === row.registryName ? (
+                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                      ) : (
+                        <RefreshCw className="size-4" aria-hidden="true" />
+                      )}
+                      {COPY.probeAction}
+                    </Button>
+                  )}
+                  <Button
+                    variant={row.verifiedAt ? 'outline' : 'default'}
+                    size="sm"
+                    disabled={!row.verifiedAt && row.connectable !== true}
+                    title={
+                      !row.verifiedAt && row.connectable !== true
+                        ? COPY.verifyNeedsConnectable
+                        : undefined
+                    }
+                    onClick={() => setAction({ row, mode: 'verify' })}
+                  >
+                    {row.verifiedAt ? (
+                      <ShieldOff className="size-4" aria-hidden="true" />
+                    ) : (
+                      <BadgeCheck className="size-4" aria-hidden="true" />
+                    )}
+                    {row.verifiedAt ? COPY.manageVerifiedAction : COPY.verifyAction}
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -180,23 +247,28 @@ export function McpCatalogAdminView() {
                 </div>
               </div>
 
-              {row.description && (
-                <p className="mt-2 text-sm text-muted-foreground text-pretty">{row.description}</p>
-              )}
+              <div className="mt-2 flex items-start gap-3">
+                <CatalogueMark row={row} />
+                <div className="min-w-0 flex-1">
+                  {row.description && (
+                    <p className="text-sm text-muted-foreground text-pretty">{row.description}</p>
+                  )}
 
-              {row.connectable === false && row.connectableReason && (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {COPY.reasonLabels[row.connectableReason]}
-                </p>
-              )}
+                  {row.connectable === false && row.connectableReason && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {COPY.reasonLabels[row.connectableReason]}
+                    </p>
+                  )}
 
-              {row.blocked && row.blockedReason && (
-                <p className="mt-1 text-xs text-destructive">{row.blockedReason}</p>
-              )}
+                  {row.blocked && row.blockedReason && (
+                    <p className="mt-1 text-xs text-destructive">{row.blockedReason}</p>
+                  )}
 
-              <p className="mt-2 truncate text-xs text-muted-foreground" dir="ltr">
-                {row.remoteUrl}
-              </p>
+                  <p className="mt-2 truncate text-xs text-muted-foreground" dir="ltr">
+                    {row.remoteUrl}
+                  </p>
+                </div>
+              </div>
             </li>
           ))}
         </ul>
@@ -253,9 +325,48 @@ export function McpCatalogAdminView() {
               }}
             />
           )}
+          {action?.mode === 'verify' && (
+            <VerifyForm
+              row={action.row}
+              onCancel={() => setAction(null)}
+              onDone={() => {
+                setAction(null);
+                reload();
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/** The row's mark, proxied by us; a monogram when the registry and the probe both had none. */
+function CatalogueMark({ row }: { row: McpCatalogAdminRow }) {
+  const name = row.title ?? row.registryName;
+  const [failed, setFailed] = useState(false);
+
+  if (!row.iconUrl || failed) {
+    return (
+      <span
+        aria-hidden="true"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/50 text-sm font-extrabold text-muted-foreground"
+      >
+        {name.charAt(0).toUpperCase()}
+      </span>
+    );
+  }
+
+  return (
+    <Image
+      src={`/mcp/icon?name=${encodeURIComponent(row.registryName)}`}
+      alt=""
+      width={40}
+      height={40}
+      unoptimized
+      onError={() => setFailed(true)}
+      className="h-10 w-10 shrink-0 rounded-xl border border-border/50 bg-background object-contain p-1"
+    />
   );
 }
 
@@ -364,6 +475,7 @@ function UnblockForm({ row, onCancel, onDone }: FormProps) {
 }
 
 function ArabicForm({ row, onCancel, onDone }: FormProps) {
+  const [titleOverride, setTitleOverride] = useState(row.titleOverride ?? '');
   const [nameAr, setNameAr] = useState(row.nameAr ?? '');
   const [descriptionAr, setDescriptionAr] = useState(row.descriptionAr ?? '');
   const [saving, setSaving] = useState(false);
@@ -373,6 +485,7 @@ function ArabicForm({ row, onCancel, onDone }: FormProps) {
     try {
       await updateAdminMcpCatalogRow({
         registryName: row.registryName,
+        titleOverride: titleOverride.trim(),
         nameAr: nameAr.trim(),
         descriptionAr: descriptionAr.trim(),
       });
@@ -389,6 +502,17 @@ function ArabicForm({ row, onCancel, onDone }: FormProps) {
     <>
       <DialogTitle className="leading-snug!">{COPY.arabicTitle}</DialogTitle>
       <DialogDescription className="text-pretty">{COPY.arabicDescription}</DialogDescription>
+      <div className="space-y-2">
+        <Label htmlFor="mcp-title-override">{COPY.nameEnLabel}</Label>
+        <Input
+          id="mcp-title-override"
+          value={titleOverride}
+          maxLength={120}
+          dir="ltr"
+          placeholder={row.registryName}
+          onChange={(event) => setTitleOverride(event.target.value)}
+        />
+      </div>
       <div className="space-y-2">
         <Label htmlFor="mcp-name-ar">{COPY.nameArLabel}</Label>
         <Input
@@ -415,6 +539,92 @@ function ArabicForm({ row, onCancel, onDone }: FormProps) {
         <Button size="sm" onClick={() => void save()} disabled={saving}>
           {saving && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
           {COPY.save}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+/**
+ * The store's admission, in one dialog: approve a measured row, adjust its place,
+ * or take the vouch back. The rank is the store's order, not a score, and it is
+ * optional — a row without one follows the featured ones.
+ */
+function VerifyForm({ row, onCancel, onDone }: FormProps) {
+  const verified = row.verifiedAt !== null;
+  const [rank, setRank] = useState(row.featuredRank === null ? '' : String(row.featuredRank));
+  const [saving, setSaving] = useState<'save' | 'unverify' | null>(null);
+
+  function featuredRank(): number | null {
+    if (rank.trim() === '') return null;
+    const parsed = Number(rank);
+    return Number.isInteger(parsed) ? parsed : null;
+  }
+
+  async function submit(nextVerified: boolean) {
+    setSaving(nextVerified ? 'save' : 'unverify');
+    try {
+      await updateAdminMcpCatalogRow({
+        registryName: row.registryName,
+        verified: nextVerified,
+        ...(nextVerified ? { featuredRank: featuredRank() } : {}),
+      });
+      toast.success(COPY.saved);
+      onDone();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : COPY.saveFailed);
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  return (
+    <>
+      <DialogTitle className="leading-snug!">
+        {verified ? COPY.manageVerifiedAction : COPY.verifyTitle}
+      </DialogTitle>
+      <DialogDescription className="text-pretty">
+        {verified ? COPY.manageVerifiedDescription : COPY.verifyDescription}
+      </DialogDescription>
+
+      <div className="space-y-2">
+        <Label htmlFor="mcp-featured-rank">{COPY.featuredRankLabel}</Label>
+        <Input
+          id="mcp-featured-rank"
+          type="number"
+          min={0}
+          max={999999}
+          inputMode="numeric"
+          value={rank}
+          onChange={(event) => setRank(event.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">{COPY.featuredRankHint}</p>
+      </div>
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={onCancel} disabled={saving !== null}>
+          {COPY.cancel}
+        </Button>
+        {verified && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => void submit(false)}
+            disabled={saving !== null}
+          >
+            {saving === 'unverify' && (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            )}
+            {COPY.unverifyAction}
+          </Button>
+        )}
+        <Button
+          size="sm"
+          onClick={() => void submit(true)}
+          disabled={saving !== null || (!verified && row.connectable !== true)}
+        >
+          {saving === 'save' && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+          {verified ? COPY.save : COPY.verifyAction}
         </Button>
       </div>
     </>

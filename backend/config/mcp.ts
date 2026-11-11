@@ -2,6 +2,7 @@ import { createMcpOAuthRepository } from '@/backend/repositories/mcp/mcp-oauth-r
 import { createMcpMarketplaceRepository } from '@/backend/repositories/mcp/marketplace-repository';
 import { createMcpRemoteClient } from '@/backend/clients/mcp-remote';
 import { createMcpRegistryClient } from '@/backend/clients/mcp-registry';
+import { createMcpIconClient } from '@/backend/clients/mcp-icon';
 import {
   createMcpCatalogService,
   type McpCatalogService,
@@ -14,6 +15,10 @@ import {
   createMcpConnectService,
   type McpConnectService,
 } from '@/backend/services/mcp/marketplace/connect-service';
+import {
+  createMcpIconService,
+  type McpIconService,
+} from '@/backend/services/mcp/marketplace/icon-service';
 import {
   createMcpConnectedAppService,
   type McpConnectedAppService,
@@ -62,6 +67,17 @@ export function createDefaultMcpCatalogService(): McpCatalogService {
     repository: createMcpMarketplaceRepository(),
     registry: createMcpRegistryClient(),
     remote: createMcpRemoteClient(),
+  });
+}
+
+/**
+ * The store's brand marks: one stored URL per verified row, fetched through the
+ * same egress policy as every other third party, never by the member's browser.
+ */
+export function createDefaultMcpIconService(): McpIconService {
+  return createMcpIconService({
+    repository: createMcpMarketplaceRepository(),
+    icons: createMcpIconClient(),
   });
 }
 

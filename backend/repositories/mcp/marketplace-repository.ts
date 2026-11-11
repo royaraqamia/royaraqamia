@@ -36,6 +36,9 @@ export interface McpCatalogServerRecord {
   status: string;
   blocked_at: string | null;
   blocked_reason: string | null;
+  icon_url: string | null;
+  /** The admin's vouch; a row without one is not in the store. */
+  verified_at: string | null;
   /** The measured verdict; `null` is "nobody has asked yet". */
   connectable: boolean | null;
   connectable_reason: string | null;
@@ -49,6 +52,8 @@ export interface McpCatalogUpsertRow {
   description: string | null;
   version: string | null;
   remoteUrl: string;
+  iconUrl: string | null;
+  iconMime: string | null;
   status: 'active' | 'deprecated' | 'deleted';
   publishedAt: string | null;
   registryUpdatedAt: string | null;
@@ -59,6 +64,7 @@ export interface McpCatalogUpsertRow {
 export interface McpCatalogListRow {
   registry_name: string;
   title: string | null;
+  title_override: string | null;
   description: string | null;
   name_ar: string | null;
   description_ar: string | null;
@@ -67,6 +73,11 @@ export interface McpCatalogListRow {
   version: string | null;
   published_at: string | null;
   fetched_at: string;
+  icon_url: string | null;
+  icon_mime: string | null;
+  featured_rank: number | null;
+  store_key: string | null;
+  verified_at: string | null;
   blocked_at: string | null;
   blocked_reason: string | null;
   connectable: boolean | null;
@@ -96,7 +107,7 @@ export interface McpCatalogSyncStateRecord {
 
 /** The columns a list selects; one list, two audiences. */
 const CATALOG_LIST_COLUMNS =
-  'registry_name, title, description, name_ar, description_ar, remote_url, status, version, published_at, fetched_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
+  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, status, version, published_at, fetched_at, icon_url, icon_mime, featured_rank, store_key, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
 
 /**
  * PostgREST takes the rows in the body and the names in the URL, so both are
@@ -224,17 +235,35 @@ export interface McpMarketplaceRepository {
     cursor: string | null;
     limit: number;
     includeHidden: boolean;
+    /**
+     * The member's store: verified, connectable, active and unblocked, in store
+     * order. The Admin Console passes `false` and sees everything but deleted.
+     */
+    storeOnly: boolean;
   }): Promise<{ rows: McpCatalogListRow[]; nextCursor: string | null }>;
 
   /** The addresses behind a page's rows, for the on-demand probe. */
   getCatalogAddresses(registryNames: string[]): Promise<McpCatalogAddressRecord[]>;
 
+  /**
+   * Verified rows whose verdict is due again. The store must stop offering a
+   * server that went down even when no member draws it, so the sync re-probes
+   * these rather than waiting for a screen.
+   */
+  listVerifiedAddresses(limit: number): Promise<McpCatalogAddressRecord[]>;
+
   saveCatalogProbe(
     registryName: string,
-    probe: { connectable: boolean; reason: string | null; probedAt: string }
+    probe: {
+      connectable: boolean;
+      reason: string | null;
+      probedAt: string;
+      iconUrl: string | null;
+      iconMime: string | null;
+    }
   ): Promise<void>;
 
-  /** The takedown switch and the two Arabic overrides. */
+  /** The takedown switch, the two Arabic overrides, and the store's admission. */
   updateCatalogServer(
     registryName: string,
     patch: Partial<{
@@ -242,8 +271,22 @@ export interface McpMarketplaceRepository {
       blocked_reason: string | null;
       name_ar: string | null;
       description_ar: string | null;
+      verified_at: string | null;
+      verification_withdrawn_at: string | null;
+      featured_rank: number | null;
+      title_override: string | null;
     }>
   ): Promise<void>;
+
+  /** The launch set's brand names, written only where nobody wrote one first. */
+  setTitleOverrideIfEmpty(registryName: string, title: string): Promise<void>;
+
+  /**
+   * The launch set's bootstrap: verify the named rows unless an admin already
+   * withdrew the vouch. It is a no-op after the first run for every row that
+   * still exists, and it never verifies a blocked or retired row.
+   */
+  verifyLaunchSet(registryNames: string[], verifiedAt: string): Promise<number>;
 
   getCatalogSyncState(): Promise<McpCatalogSyncStateRecord>;
   saveCatalogSyncState(patch: Partial<McpCatalogSyncStateRecord>): Promise<void>;
@@ -346,7 +389,7 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
         .select(
-          'registry_name, title, description, name_ar, description_ar, remote_url, status, blocked_at, blocked_reason, connectable, connectable_reason, probed_at'
+          'registry_name, title, description, name_ar, description_ar, remote_url, status, blocked_at, blocked_reason, icon_url, verified_at, connectable, connectable_reason, probed_at'
         )
         .eq('registry_name', registryName)
         .maybeSingle();
@@ -381,6 +424,11 @@ export function createMcpMarketplaceRepository(
         version: row.version,
         remote_url: row.remoteUrl,
         transport: 'streamable-http',
+        // The registry's mark lives in its own columns: the probe's `logo_uri`
+        // must survive the next sync, and the generated `icon_url` decides which
+        // source wins.
+        registry_icon_url: row.iconUrl,
+        registry_icon_mime: row.iconMime,
         status: row.status,
         published_at: row.publishedAt,
         registry_updated_at: row.registryUpdatedAt,
@@ -440,11 +488,15 @@ export function createMcpMarketplaceRepository(
       return count ?? 0;
     },
 
-    async listCatalogServers({ q, cursor, limit, includeHidden }) {
+    async listCatalogServers({ q, cursor, limit, includeHidden, storeOnly }) {
+      // The store pages in curated order; the Admin Console keeps the registry's
+      // own key, where "everything, alphabetically" is what a takedown list wants.
+      const orderColumn = storeOnly ? 'store_key' : 'registry_name';
+
       let builder = supabase
         .from(CATALOG_TABLE)
         .select(CATALOG_LIST_COLUMNS)
-        .order('registry_name', { ascending: true })
+        .order(orderColumn, { ascending: true })
         // One extra row tells us whether another page exists, without a COUNT.
         .limit(limit + 1);
 
@@ -457,11 +509,18 @@ export function createMcpMarketplaceRepository(
         builder = builder.eq('status', 'active').is('blocked_at', null);
       }
 
+      // The store's admission rule, in the query rather than the render: a row
+      // nobody verified, or one the probe says cannot be connected, is not a row
+      // a member may meet.
+      if (storeOnly) {
+        builder = builder.not('verified_at', 'is', null).eq('connectable', true);
+      }
+
       const term = q.trim();
       if (term) builder = builder.ilike('search_text', `%${catalogSearchPattern(term)}%`);
 
       const after = cursor ? decodeCatalogCursor(cursor) : null;
-      if (after) builder = builder.gt('registry_name', after);
+      if (after) builder = builder.gt(orderColumn, after);
 
       const { data, error } = await builder;
       if (error) throw error;
@@ -470,11 +529,29 @@ export function createMcpMarketplaceRepository(
       const hasMore = rows.length > limit;
       const page = hasMore ? rows.slice(0, limit) : rows;
       const last = page[page.length - 1];
+      const lastKey = last
+        ? orderColumn === 'store_key'
+          ? last.store_key
+          : last.registry_name
+        : null;
 
       return {
         rows: page,
-        nextCursor: hasMore && last ? encodeCatalogCursor(last.registry_name) : null,
+        nextCursor: hasMore && lastKey ? encodeCatalogCursor(lastKey) : null,
       };
+    },
+
+    async listVerifiedAddresses(limit) {
+      const { data, error } = await supabase
+        .from(CATALOG_TABLE)
+        .select('registry_name, remote_url, probed_at, blocked_at, status')
+        .eq('status', 'active')
+        .is('blocked_at', null)
+        .not('verified_at', 'is', null)
+        .order('probed_at', { ascending: true, nullsFirst: true })
+        .limit(limit);
+      if (error) throw error;
+      return (data ?? []) as McpCatalogAddressRecord[];
     },
 
     async getCatalogAddresses(registryNames) {
@@ -499,6 +576,10 @@ export function createMcpMarketplaceRepository(
           connectable: probe.connectable,
           connectable_reason: probe.reason,
           probed_at: probe.probedAt,
+          // Always written, including `null`: a server that stopped publishing
+          // a mark should fall back to the registry's icon, not keep a stale one.
+          probe_icon_url: probe.iconUrl,
+          probe_icon_mime: probe.iconMime,
         })
         .eq('registry_name', registryName);
       if (error) throw error;
@@ -510,6 +591,31 @@ export function createMcpMarketplaceRepository(
         .update(patch)
         .eq('registry_name', registryName);
       if (error) throw error;
+    },
+
+    async setTitleOverrideIfEmpty(registryName, title) {
+      const { error } = await supabase
+        .from(CATALOG_TABLE)
+        .update({ title_override: title })
+        .eq('registry_name', registryName)
+        .is('title_override', null);
+      if (error) throw error;
+    },
+
+    async verifyLaunchSet(registryNames, verifiedAt) {
+      if (registryNames.length === 0) return 0;
+
+      const { data, error } = await supabase
+        .from(CATALOG_TABLE)
+        .update({ verified_at: verifiedAt })
+        .in('registry_name', registryNames)
+        .is('verified_at', null)
+        .is('verification_withdrawn_at', null)
+        .eq('status', 'active')
+        .is('blocked_at', null)
+        .select('registry_name');
+      if (error) throw error;
+      return (data ?? []).length;
     },
 
     async getCatalogSyncState() {

@@ -2,21 +2,26 @@ import { z } from 'zod';
 
 /**
  * The catalogue the marketplace reads: the mirror of
- * `registry.modelcontextprotocol.io` (ADR-0155, `docs/specs/mcp-marketplace.md`).
+ * `registry.modelcontextprotocol.io` (ADR-0155, ADR-0162,
+ * `docs/specs/mcp-marketplace.md`).
+ *
+ * The registry is the source, not the store. Every active remote row is mirrored
+ * so an admin can find it, but the member's store draws only rows that are
+ * **verified** (an admin vouched for them) **and** connectable (the probe
+ * measured OAuth metadata and dynamic registration) **and** active, unblocked,
+ * and marked with a brand. The mirror is the haystack; the store is the curated
+ * list.
  *
  * Two shapes live here, deliberately apart:
  *
  * - **A member's row** is what the screen draws: the server's own name, its
- *   description (ours if an admin wrote one, the registry's until then), and the
- *   verdict about whether it can be connected. It does not carry `remote_url`:
+ *   description (ours if an admin wrote one, the registry's until then), its
+ *   brand mark, and the fact that it is verified. It does not carry `remote_url`:
  *   the address is public data, but a client that knows it can try to reach a
  *   stranger's server directly, and the one module allowed to open that socket
  *   is ours.
- * - **An admin's row** is the takedown list: it adds the registry's own status,
+ * - **An admin's row** is the curation list: it adds the registry's own status,
  *   the address, when the verdict was measured, and the block.
- *
- * The app reads neither yet — phase 6 (#1228) ports the two screens, and their
- * generated contracts join `scripts/generate-contracts.mjs` in that change.
  */
 
 /** One page of the catalogue. Small enough to draw, large enough to browse. */
@@ -39,6 +44,8 @@ export const McpCatalogConnectReasonSchema = z.enum([
   'no_registration',
   /** The egress policy refused the host at probe time. */
   'blocked',
+  /** The server did not answer inside the probe's ceiling. */
+  'unreachable',
 ]);
 
 export type McpCatalogConnectReason = z.infer<typeof McpCatalogConnectReasonSchema>;
@@ -52,10 +59,19 @@ export const McpCatalogRowSchema = z.object({
   description: z.string().nullable(),
   /** The Arabic name an admin may add; the row still shows `title` beside it. */
   nameAr: z.string().nullable(),
+  /** The brand mark, proxied by us; `null` draws a monogram. */
+  iconUrl: z.string().nullable(),
+  /**
+   * The admin's vouch. The store draws only verified rows that are also
+   * connectable, so a member never meets a row we have not stood behind.
+   */
+  verified: z.boolean(),
+  /** Lower sorts earlier; `null` is "not featured". */
+  featuredRank: z.number().int().nullable(),
   /**
    * `null` means nobody has probed this server yet — a third state, not a
-   * "no". The screen says «لم نتحقق بعد» and the tap is still allowed, because
-   * the tap is the definitive check.
+   * "no". The store hides it; the Admin Console says «لم نتحقق بعد» and lets the
+   * admin probe again.
    */
   connectable: z.boolean().nullable(),
   connectableReason: McpCatalogConnectReasonSchema.nullable(),
@@ -91,15 +107,20 @@ export type McpCatalogSearchQuery = z.infer<typeof McpCatalogSearchQuerySchema>;
 /** A catalogue row as the Admin Console draws it, takedown included. */
 export const McpCatalogAdminRowSchema = McpCatalogRowSchema.extend({
   remoteUrl: z.string(),
+  /** The Latin name an admin wrote; `title` already falls back to it. */
+  titleOverride: z.string().nullable(),
   /** The override as stored, so the field can be edited rather than only shown. */
   descriptionAr: z.string().nullable(),
   /** The registry's own status: `active`, `deprecated`, `deleted`. */
   status: z.string(),
   version: z.string().nullable(),
+  iconMime: z.string().nullable(),
   blocked: z.boolean(),
   blockedReason: z.string().nullable(),
   /** When the verdict was measured, or `null` if it never was. */
   probedAt: z.string().nullable(),
+  /** When an admin approved it for the store, or `null` if nobody has. */
+  verifiedAt: z.string().nullable(),
   fetchedAt: z.string(),
 });
 
@@ -126,7 +147,12 @@ export const McpCatalogAdminUpdateSchema = z
     blocked: z.boolean().optional(),
     blockedReason: z.string().trim().max(500).nullable().optional(),
     nameAr: z.string().trim().max(120).nullable().optional(),
+    /** The Latin name the store draws, when the registry has none or a worse one. */
+    titleOverride: z.string().trim().max(120).nullable().optional(),
     descriptionAr: z.string().trim().max(1000).nullable().optional(),
+    /** The store's admission rule; the service refuses a row not measured connectable. */
+    verified: z.boolean().optional(),
+    featuredRank: z.number().int().min(0).max(999999).nullable().optional(),
   })
   .refine((body) => body.blocked !== true || (body.blockedReason ?? '').length > 0, {
     message: 'سبب الإيقاف مطلوب',
@@ -134,6 +160,13 @@ export const McpCatalogAdminUpdateSchema = z
   });
 
 export type McpCatalogAdminUpdate = z.infer<typeof McpCatalogAdminUpdateSchema>;
+
+/** One row to measure now, from the Admin Console. */
+export const McpCatalogProbeSchema = z.object({
+  registryName: z.string().trim().min(1).max(200),
+});
+
+export type McpCatalogProbe = z.infer<typeof McpCatalogProbeSchema>;
 
 /**
  * The Admin Console's words.
@@ -147,7 +180,7 @@ export type McpCatalogAdminUpdate = z.infer<typeof McpCatalogAdminUpdateSchema>;
 export const MCP_CATALOG_ADMIN_COPY = {
   title: 'متجر التطبيقات',
   description:
-    'كل صفّ في السجل العام يظهر في المتجر ما لم توقفه. الإيقاف يحتاج سبباً، ويُرفض به عند بدء الربط.',
+    'اعتمد التطبيقات التي تظهر للعضو: لا يظهر في المتجر إلا تطبيق معتمد، وثبت أن ربطه ممكن، وغير موقوف. الإيقاف يحتاج سبباً، ويُرفض به عند بدء الربط.',
   searchPlaceholder: 'ابحث بالاسم أو الوصف...',
   searchLabel: 'بحث في المتجر',
   searchAction: 'بحث',
@@ -159,18 +192,37 @@ export const MCP_CATALOG_ADMIN_COPY = {
   connectableYes: 'قابل للربط',
   connectableNo: 'لا يمكن ربطه',
   connectableUnknown: 'لم نتحقق بعد',
+  verifiedBadge: 'في المتجر',
+  unverifiedBadge: 'غير معتمد',
+  verifyAction: 'اعتماد',
+  manageVerifiedAction: 'إدارة الاعتماد',
+  unverifyAction: 'إلغاء الاعتماد',
+  verifyTitle: 'اعتماد تطبيق في المتجر',
+  verifyDescription:
+    'لن يظهر التطبيق للعضو قبل اعتماده. الاعتماد يحتاج أن يكون الربط ممكّناً بعد الفحص، وأن يكون اسمه ووصفه وشعاره واضحين.',
+  manageVerifiedDescription:
+    'غيّر ترتيب الظهور، أو ألغِ الاعتماد ليختفي التطبيق من المتجر. لا يتأثر ربط قائم به.',
+  verifyNeedsConnectable: 'لا يمكن اعتماد تطبيق لم يثبت أن ربطه ممكن. افحصه الآن ثم أعد المحاولة.',
+  probeAction: 'فحص الآن',
+  probeDone: 'تم الفحص.',
+  probeFailed: 'تعذّر إكمال الفحص.',
+  featuredRankLabel: 'ترتيب الظهور (اختياري)',
+  featuredRankHint: 'الأصغر يظهر أولاً. اتركه فارغاً ليأتي بعد التطبيقات المميّزة.',
+  featuredRankBadge: 'ترتيب',
   blockedBadge: 'موقوف',
   deprecatedBadge: 'مهجور',
   blockAction: 'إيقاف',
   unblockAction: 'إلغاء الإيقاف',
-  arabicAction: 'تعريب الوصف',
+  arabicAction: 'الاسم والوصف',
   blockTitle: 'إيقاف تطبيق',
   blockDescription: 'لن يظهر التطبيق في المتجر، ولن يبدأ ربطه. اكتب السبب: هو ما يقرأه من يحاول.',
   blockReasonLabel: 'سبب الإيقاف',
   unblockTitle: 'إلغاء إيقاف تطبيق',
   unblockDescription: 'سيعود التطبيق إلى المتجر فوراً. لا يتأثر ربط قائم به.',
-  arabicTitle: 'تعريب الوصف',
-  arabicDescription: 'الاسم يبقى كما يسمّيه صاحبه. الوصف العربي يظهر بدل الإنجليزي حين تكتبه.',
+  arabicTitle: 'اسم التطبيق ووصفه',
+  arabicDescription:
+    'الاسم اللاتيني هو ما يقرأه العضو؛ اكتب العلامة كما تكتبها الشركة. الوصف العربي يظهر بدل الإنجليزي حين تكتبه.',
+  nameEnLabel: 'الاسم باللاتينية',
   nameArLabel: 'الاسم بالعربية (اختياري)',
   descriptionArLabel: 'الوصف بالعربية',
   save: 'حفظ',
@@ -181,5 +233,6 @@ export const MCP_CATALOG_ADMIN_COPY = {
     no_metadata: 'لا ينشر إعدادات مصادقة',
     no_registration: 'لا يسمح بتسجيل عملاء جدد',
     blocked: 'أوقفته سياسة الخروج عند الفحص',
+    unreachable: 'لم يستجب للفحص في الوقت المحدد',
   },
 } as const;
