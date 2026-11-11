@@ -203,26 +203,31 @@ default: its reviewed entry names the scopes its app was created for, and they a
 Eleven popular remote servers, probed for RFC 9728 resource metadata, an authorization server and
 dynamic registration:
 
-| Server                                              | Connectable                  | Why not                                                                                 |
-| --------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------- |
-| Linear, Sentry, Vercel, Supabase, Canva, Cloudflare | yes                          | DCR + PKCE S256 published                                                               |
-| Atlassian                                           | yes                          | root 404, but the `401` names the path-aware document; tenant AS publishes DCR          |
-| Stripe                                              | yes                          | `mcp.stripe.com` publishes RFC 9728 + AS metadata + DCR (it did not on 2026-11-10)      |
-| GitHub                                              | pre-registered               | resource metadata exists; `github.com/login/oauth` publishes no `registration_endpoint` |
-| Notion, Figma                                       | unmeasured from this network | 403 / 451 to a non-deployment egress; measured on production                            |
+| Server                                              | Connectable    | Why not                                                                                                                                     |
+| --------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linear, Sentry, Vercel, Supabase, Canva, Cloudflare | yes            | DCR + PKCE S256 published                                                                                                                   |
+| Atlassian                                           | yes            | root 404, but the `401` names the path-aware document; tenant AS publishes DCR                                                              |
+| Stripe                                              | yes            | `mcp.stripe.com` publishes RFC 9728 + AS metadata + DCR (it did not on 2026-11-10); its catalogue row probe was still pending on 2026-11-11 |
+| GitHub                                              | pre-registered | resource metadata exists; `github.com/login/oauth` publishes no `registration_endpoint`                                                     |
+| Notion, Figma                                       | yes            | measured from the deployment's egress; both publish metadata and DCR — the earlier `403`/`451` were this network, not the provider          |
 
-Three of the most requested apps in the market are therefore not connectable by this flow, and
-that is not a bug to paper over: a pre-registered client per provider is a separate piece of work
-(one client id and secret each, in env), and a server with no resource metadata would have to be
-guessed at. Phase 2's catalogue says which rows can be connected before a member taps one
-(«The connectable verdict», below), rather than explaining it after a refusal.
+The 2026-11-10 table read as "four of the most requested apps cannot be connected". Measured again
+from the deployment on 2026-11-11, that was true of **one**: GitHub. Atlassian and Stripe publish
+what the flow needs (Atlassian behind the `401` challenge the probe already follows), and Notion and
+Figma publish it too once the request comes from a datacenter that is not geo-blocked. A
+pre-registered client is still the right mechanism for the providers that genuinely refuse DCR, but
+it is no longer the reason the other four were missing.
+
+A server that publishes no resource metadata at all is still refused, and phase 2's catalogue says
+which rows can be connected before a member taps one («The connectable verdict», below), rather than
+explaining it after a refusal.
 
 ### Pre-registered clients (#1229)
 
-Two providers cannot be reached by the flow above: one publishes no RFC 9728 resource metadata at
-all, and one publishes everything except `registration_endpoint`. Guessing their endpoints is the
-refusal the client exists for, so the alternative is a **reviewed entry**: the endpoints a person
-measured, and a client a person created in that provider's console.
+A provider that publishes everything except `registration_endpoint` — GitHub is the measured case —
+cannot be reached by the flow above. Guessing its endpoints is the refusal the client exists for, so
+the alternative is a **reviewed entry**: the endpoints a person measured, and a client a person
+created in that provider's console.
 
 - **The table is code, the secret is environment.** `backend/config/mcp-static-clients.ts` names,
   per catalogue row, the authorization server, both endpoints, the scopes and the token-endpoint
@@ -253,7 +258,7 @@ Which path each provider takes today:
 | Atlassian                                           | DCR (path-aware resource document, tenant authorization server) | none                                      | provider default                                  |
 | Stripe                                              | DCR (`access.stripe.com/mcp`)                                   | none                                      | provider default                                  |
 | GitHub                                              | static                                                          | `MCP_STATIC_CLIENT_GITHUB_ID` / `_SECRET` | `repo read:org read:user user:email read:project` |
-| Notion, Figma                                       | measured on production before a decision                        | —                                         | —                                                 |
+| Notion, Figma                                       | DCR                                                             | none                                      | provider default                                  |
 
 ## The catalogue mirror (phase 2, #1223)
 
