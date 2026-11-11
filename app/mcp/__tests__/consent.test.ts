@@ -5,6 +5,8 @@ const mockGetClient = vi.fn();
 const mockGetUser = vi.fn();
 const mockMint = vi.fn();
 const mockCreateAuthorizationCode = vi.fn();
+const mockListConnected = vi.fn();
+const mockCap = vi.fn();
 
 vi.mock('@/backend/config/env', () => ({
   env: {
@@ -19,7 +21,7 @@ vi.mock('@/backend/config/mcp', () => ({
     getClient: mockGetClient,
     createAuthorizationCode: mockCreateAuthorizationCode,
   }),
-  createDefaultMcpConnectedAppService: () => ({ list: async () => [] }),
+  createDefaultMcpConnectedAppService: () => ({ list: mockListConnected }),
 }));
 
 vi.mock('@/backend/services/mcp/bridge-session', () => ({
@@ -29,10 +31,10 @@ vi.mock('@/backend/services/mcp/bridge-session', () => ({
 vi.mock('@/backend/config/plans', () => ({
   // The cap is one pool shared by both directions (ADR-0155), so the consent
   // route asks the gate rather than the plan's numbers: `incoming` is 0 for a
-  // client that is already connected, 1 for a new one.
-  createPlanGate: () => ({
-    cap: vi.fn(async () => undefined),
-  }),
+  // client that is already connected, 1 for a new one. The gate mock enforces a
+  // real Free plan cap of 1 so a route that asks for the wrong `incoming` is
+  // refused exactly as it would be in production.
+  createPlanGate: () => ({ cap: mockCap }),
   createUsageService: () => ({
     caps: async () => ({ plan: 'free', unlimited: false, caps: { mcp_connected_apps: 1 } }),
   }),
@@ -56,9 +58,15 @@ vi.mock('next/headers', () => ({
 
 import { readBridgeSession } from '@/backend/shared/mcp-token-crypto';
 import { POST } from '@/app/mcp/connect/consent/route';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
 
+// The registration's row id and the public `client_id` are two different
+// strings for the same client, exactly as they are in the table: token rows
+// carry `id`, while the consent form submits `client_id`. A fixture that made
+// them equal would hide a comparison against the wrong one.
 const client = {
-  id: 'client-1',
+  id: 'df9691ae-5fd3-45bc-9662-e0a0e37616c4',
+  client_id: 'SHLPL40sK8oXhwjxu9uptw',
   client_name: 'Client 1',
   redirect_uris: ['https://client.example/callback'],
   scopes: ['tools/read'],
@@ -67,11 +75,23 @@ const client = {
   created_at: '2026-08-01T00:00:00.000Z',
 };
 
+/** The Free plan's connected-app pool (ADR-0155): one slot, both directions. */
+const FREE_CONNECTED_APP_CAP = 1;
+
+/** A gate that refuses the connection after the cap, as the real one does. */
+function capAt(connectedCount: number) {
+  return async (_userId: string, _item: string, incoming = 1): Promise<void> => {
+    if (connectedCount + incoming > FREE_CONNECTED_APP_CAP) {
+      throw new Error('Reached the plan limit for connected apps');
+    }
+  };
+}
+
 function makeForm(overrides: Record<string, string> = {}): FormData {
   const form = new FormData();
   const base: Record<string, string> = {
     action: 'approve',
-    client_id: 'client-1',
+    client_id: client.client_id,
     redirect_uri: 'https://client.example/callback',
     scope: 'profile.read',
     state: 'state-123',
@@ -104,6 +124,8 @@ beforeEach(() => {
     code: 'auth-code-123',
     redirectUri: 'https://client.example/callback',
   });
+  mockListConnected.mockResolvedValue([]);
+  mockCap.mockImplementation(capAt(0));
 });
 
 describe('POST /mcp/connect/consent', () => {
@@ -168,6 +190,58 @@ describe('POST /mcp/connect/consent', () => {
     });
   });
 
+  it('reuses the slot when an already-connected client re-consents at the cap', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
+    });
+    // A live grant lists the registration's *row id*, the form carries the
+    // public `client_id`: the same client, two different strings.
+    mockListConnected.mockResolvedValue([
+      {
+        clientId: client.id,
+        clientName: client.client_name,
+        connectedAt: '2026-08-01T00:00:00.000Z',
+        lastUsedAt: null,
+      },
+    ]);
+    mockCap.mockImplementation(capAt(FREE_CONNECTED_APP_CAP));
+
+    const res = (await POST(
+      makeReq(makeForm(), new Headers({ origin: 'https://royaraqamia.com' }))
+    )) as NextResponse & { headers: Headers; status: number };
+
+    // The form's public string is what resolves the registration...
+    expect(mockGetClient).toHaveBeenCalledWith(client.client_id);
+    // ...and the grant it is matched against is asked to consume no new slot.
+    expect(mockCap).toHaveBeenCalledWith('u-1', OWNED_ITEMS.mcpConnectedApps, 0);
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location') ?? '').toContain('code=auth-code-123');
+  });
+
+  it('still refuses a genuinely new client when the cap is reached', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
+    });
+    mockListConnected.mockResolvedValue([
+      {
+        clientId: 'a-different-registrations-row-id',
+        clientName: 'Some other client',
+        connectedAt: '2026-08-01T00:00:00.000Z',
+        lastUsedAt: null,
+      },
+    ]);
+    mockCap.mockImplementation(capAt(FREE_CONNECTED_APP_CAP));
+
+    const res = (await POST(
+      makeReq(makeForm(), new Headers({ origin: 'https://royaraqamia.com' }))
+    )) as NextResponse & { headers: Headers; status: number };
+
+    expect(mockCap).toHaveBeenCalledWith('u-1', OWNED_ITEMS.mcpConnectedApps, 1);
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location') ?? '').toContain('error=access_denied');
+    expect(mockCreateAuthorizationCode).not.toHaveBeenCalled();
+  });
+
   it('answers server_error when the bridge session cannot be minted', async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
@@ -195,7 +269,7 @@ describe('POST /mcp/connect/consent', () => {
     const redirectParam = decodeURIComponent(new URL(location).searchParams.get('redirect') ?? '');
     expect(redirectParam).toMatch(/^\/mcp\/connect\?/);
     const consentQuery = new URL('http://localhost' + redirectParam).searchParams;
-    expect(consentQuery.get('client_id')).toBe('client-1');
+    expect(consentQuery.get('client_id')).toBe(client.client_id);
     expect(consentQuery.get('redirect_uri')).toBe('https://client.example/callback');
     expect(consentQuery.get('state')).toBe('state-123');
   });
