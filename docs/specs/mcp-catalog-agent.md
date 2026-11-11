@@ -43,27 +43,59 @@ class becomes publishable without a schema change.
 
 `dry_run` defaults to `true`; the kill switch is the repository variable
 `MCP_CATALOG_AGENT_ENABLED` (off by default). Record each step here **before**
-moving to the next one.
+moving to the next one. The counts are the ones the run's summary printed; a
+run's coverage is measured at `plan` time, so it names the state the run started
+from.
 
-| Step | How it runs                                 | Cap | Recorded |
-| ---- | ------------------------------------------- | --- | -------- |
-| 1    | manual dispatch, `dry_run=false`, cap 3     | 3   | pending  |
-| 2    | manual dispatch, `dry_run=false`, cap 3     | 3   | pending  |
-| 3    | manual dispatch, `dry_run=false`, cap 10    | 10  | pending  |
-| 4    | add the schedule (after step 3 is recorded) | 20  | pending  |
+| Step | How it runs                                 | Cap | Recorded                 |
+| ---- | ------------------------------------------- | --- | ------------------------ |
+| 1    | manual dispatch, `dry_run=false`, cap 3     | 3   | 43070731547, 2026-11-11  |
+| 2    | manual dispatch, `dry_run=false`, cap 3     | 3   | 43071155049, 2026-11-11  |
+| 3    | manual dispatch, `dry_run=false`, cap 10    | 10  | 43072048941, 2026-11-11  |
+| 4    | add the schedule (after step 3 is recorded) | 20  | `45 4 * * *`, 2026-11-11 |
 
-The workflow is dispatch-only until step 3 is recorded: the issue's requirement
-is that the cron never exists before the ladder has been walked, so adding it is
-the step-4 change and not part of the first delivery.
+**Step 1 — [run 43070731547](https://github.com/royaraqamia/royaraqamia/actions/runs/43070731547), cap 3.**
+Started `eligible 0 / published 10 / waiting 3`, measured 3, one publishable.
+Published `ai.0si/disclosures`, skipped `agency.thirdhemisphere/ai-authority-index`
+and `agency.zoll/ausfuhr`. First run after the cooldown fix (#1304): the page
+moved past the three rows that had pinned it. An earlier dispatch of the same
+step, `43070218834`, failed with `the catalogue agent answered 500` while the
+deployment was still propagating; the endpoint answered normally a minute later
+and the step was re-dispatched.
 
-As each step finishes, replace `pending` with the run id and the date, and say
-whether the counts (`eligible` / `published` / `waiting`) moved as expected.
+**Step 2 — [run 43071155049](https://github.com/royaraqamia/royaraqamia/actions/runs/43071155049), cap 3.**
+Started `eligible 1 / published 11 / waiting 5`, measured 3, one publishable.
+Published `ai.1clickwebsite/mcp`, skipped `ai.1court.state/court-directory` and
+`ai.4ai/domains`.
+
+**Step 3 — [run 43072048941](https://github.com/royaraqamia/royaraqamia/actions/runs/43072048941), cap 10.**
+Started `eligible 2 / published 12 / waiting 7`, measured 10, six publishable.
+Published `ai.aard/aard`, `ai.abmeter/abmeter` and `ai.adkix/adkix`; two rows got
+their copy and were then skipped for want of a mark (`ai.adadvisor/mcp-server`,
+`ai.adplane/google-ads`), which is the rule working: copy is not a publish.
+Seven rows skipped.
+
+After step 3: `eligible 5 / published 15 / waiting 14` — published 10 → 15 across
+the ladder, and the five publishes each carry `agent:mcp-catalog`, the mark
+source and the copy source.
+
+Step 4 is this change: the schedule is `45 4 * * *`, three quarters of an hour
+after the catalogue sync at `0 4 * * *` (`vercel.json`), with the caps in
+repository variables. The workflow now defaults `dry_run` to `false` for a
+scheduled run: the runner's own fallback is `true`, so without that a cron would
+have measured and written nothing while reporting success.
 
 ## Variables and secrets
 
 Repository **variables**: `MCP_CATALOG_AGENT_ENABLED`, `MCP_CATALOG_AGENT_URL`,
 `MCP_CATALOG_AGENT_CAP`, `MCP_CATALOG_AGENT_PUBLISH_CAP`,
 `MCP_CATALOG_AGENT_EGRESS_BUDGET`.
+
+In use since step 4: `ENABLED=true`, `CAP=20`, `PUBLISH_CAP=20`,
+`EGRESS_BUDGET=20`, `URL` unset (the default is production). A scheduled run
+takes its caps from those variables; a dispatch may override the cap for one run
+with the `cap` input. Turning `ENABLED` off stops the writes without touching the
+workflow.
 
 Repository **secrets**: `MCP_CATALOG_AGENT_TOKEN` (the endpoint's only
 credential; empty refuses every request), `OPENCODE_API_KEY`,
