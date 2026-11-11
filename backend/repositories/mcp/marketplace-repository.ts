@@ -85,6 +85,8 @@ export interface McpCatalogListRow {
   registry_icon_mime: string | null;
   probe_icon_url: string | null;
   probe_icon_mime: string | null;
+  /** A mark we ship ourselves, same-origin; wins over both captured sources. */
+  icon_override: string | null;
   featured_rank: number | null;
   verified_at: string | null;
   blocked_at: string | null;
@@ -120,7 +122,7 @@ export interface McpCatalogSyncStateRecord {
 
 /** The columns a list selects; one list, two audiences. */
 const CATALOG_LIST_COLUMNS =
-  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
+  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
 
 /**
  * The Admin Console also picks a remote out of the registry document, so it is
@@ -128,7 +130,7 @@ const CATALOG_LIST_COLUMNS =
  * it draws and does not need a second copy of the registry's own JSON.
  */
 const CATALOG_ADMIN_LIST_COLUMNS =
-  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at, raw';
+  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at, raw';
 
 /**
  * PostgREST takes the rows in the body and the names in the URL, so both are
@@ -316,6 +318,13 @@ export interface McpMarketplaceRepository {
 
   /** The launch set's brand names, written only where nobody wrote one first. */
   setTitleOverrideIfEmpty(registryName: string, title: string): Promise<void>;
+
+  /**
+   * The curated brand mark, written only where nobody has one: the same seam as
+   * the title, so a later admin edit or a code change is not overwritten by the
+   * sync that runs every day.
+   */
+  setIconOverrideIfEmpty(registryName: string, icon: string): Promise<void>;
 
   /**
    * The launch set's bootstrap: verify the named rows unless an admin already
@@ -698,6 +707,15 @@ export function createMcpMarketplaceRepository(
         .update({ title_override: title })
         .eq('registry_name', registryName)
         .is('title_override', null);
+      if (error) throw error;
+    },
+
+    async setIconOverrideIfEmpty(registryName, icon) {
+      const { error } = await supabase
+        .from(CATALOG_TABLE)
+        .update({ icon_override: icon })
+        .eq('registry_name', registryName)
+        .is('icon_override', null);
       if (error) throw error;
     },
 

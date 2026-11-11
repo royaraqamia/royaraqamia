@@ -121,6 +121,7 @@ function fakeRepository(
     updateCatalogServer: async () => undefined,
     verifyLaunchSet: async () => 0,
     setTitleOverrideIfEmpty: async () => undefined,
+    setIconOverrideIfEmpty: async () => undefined,
     getCatalogSyncState: async () => ({
       cursor: null,
       pass_started_at: null,
@@ -150,7 +151,7 @@ function fakeRemote(overrides: Partial<McpRemoteClient> = {}): McpRemoteClient {
   } as McpRemoteClient;
 }
 
-describe('the member’s connections', () => {
+describe('the memberâ€™s connections', () => {
   beforeEach(() => {
     process.env.MCP_TOKEN_ENCRYPTION_KEY = 'a'.repeat(64);
   });

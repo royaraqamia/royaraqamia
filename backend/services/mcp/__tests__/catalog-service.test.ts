@@ -51,6 +51,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
   }> = [];
   const updates: Array<{ registryName: string; patch: unknown }> = [];
   const seeded: string[][] = [];
+  const marks: Array<{ registryName: string; icon: string }> = [];
   const marked: string[] = [];
   const retired: string[] = [];
 
@@ -101,6 +102,9 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
       return 0;
     },
     setTitleOverrideIfEmpty: async () => undefined,
+    setIconOverrideIfEmpty: async (registryName, icon) => {
+      marks.push({ registryName, icon });
+    },
     getCatalogSyncState: async () => ({ ...state }),
     saveCatalogSyncState: async (patch) => {
       Object.assign(state, patch);
@@ -108,7 +112,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     ...overrides,
   };
 
-  return { repository, state, upserts, probes, updates, seeded, marked, retired };
+  return { repository, state, upserts, probes, updates, seeded, marked, retired, marks };
 }
 
 function fakeRegistry(pages: McpRegistryPage[]): McpRegistryClient {
@@ -359,7 +363,7 @@ describe('the search', () => {
       title_override: null,
       description: 'Pages and databases',
       name_ar: null,
-      description_ar: 'صفحات وقواعد بيانات',
+      description_ar: 'ØµÙØ­Ø§Øª ÙˆÙ‚ÙˆØ§Ø¹Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª',
       remote_url: 'https://mcp.notion.example/mcp',
       remote_override: null,
       status: 'active',
@@ -370,6 +374,7 @@ describe('the search', () => {
       registry_icon_mime: 'image/png',
       probe_icon_url: null,
       probe_icon_mime: null,
+      icon_override: null,
       featured_rank: 3,
       verified_at: '2026-11-14T00:00:00.000Z',
       blocked_at: null,
@@ -391,7 +396,7 @@ describe('the search', () => {
     expect(page.nextCursor).toBe('next');
     expect(page.servers[0]).toMatchObject({
       title: 'Notion',
-      description: 'صفحات وقواعد بيانات',
+      description: 'ØµÙØ­Ø§Øª ÙˆÙ‚ÙˆØ§Ø¹Ø¯ Ø¨ÙŠØ§Ù†Ø§Øª',
       iconUrl: 'https://cdn.example/notion.png',
       verified: true,
       featuredRank: 3,
@@ -409,11 +414,11 @@ describe('the takedown and the overrides', () => {
     await service.adminUpdate({
       registryName: 'com.notion/mcp',
       blocked: true,
-      blockedReason: 'يخالف الشروط',
+      blockedReason: 'ÙŠØ®Ø§Ù„Ù Ø§Ù„Ø´Ø±ÙˆØ·',
     });
     expect(repository.updates[0]?.patch).toEqual({
       blocked_at: NOW.toISOString(),
-      blocked_reason: 'يخالف الشروط',
+      blocked_reason: 'ÙŠØ®Ø§Ù„Ù Ø§Ù„Ø´Ø±ÙˆØ·',
     });
 
     await service.adminUpdate({ registryName: 'com.notion/mcp', blocked: false });
@@ -430,12 +435,12 @@ describe('the takedown and the overrides', () => {
     await service.adminUpdate({
       registryName: 'com.notion/mcp',
       nameAr: '  ',
-      descriptionAr: 'وصف',
+      descriptionAr: 'ÙˆØµÙ',
     });
 
     expect(repository.updates[0]?.patch).toEqual({
       name_ar: null,
-      description_ar: 'وصف',
+      description_ar: 'ÙˆØµÙ',
     });
   });
 });
@@ -681,7 +686,7 @@ describe('the store admission', () => {
 describe('the remote choice', () => {
   const ACCOUNT = 'https://observability.mcp.cloudflare.com/mcp';
 
-  it('stores the admin’s address and clears the verdict that measured the old one', async () => {
+  it('stores the adminâ€™s address and clears the verdict that measured the old one', async () => {
     const repository = fakeRepository({ getCatalogServer: async () => serverRow() });
     const service = build({ repository, pages: [] });
 
@@ -729,7 +734,7 @@ describe('the remote choice', () => {
     expect(repository.updates[0]?.patch).toEqual({ remote_override: ACCOUNT });
   });
 
-  it('clears the override so the registry’s own address is followed again', async () => {
+  it('clears the override so the registryâ€™s own address is followed again', async () => {
     const repository = fakeRepository({
       getCatalogServer: async () => serverRow({ remote_override: ACCOUNT }),
     });
@@ -773,7 +778,7 @@ describe('the remote choice', () => {
     expect(repository.updates).toEqual([]);
   });
 
-  it('offers the registry’s own addresses beside the one it keeps', async () => {
+  it('offers the registryâ€™s own addresses beside the one it keeps', async () => {
     const repository = fakeRepository({
       listCatalogServers: async () => ({
         rows: [
@@ -891,6 +896,7 @@ describe('a pre-registered client (issue #1229)', () => {
             registry_icon_mime: null,
             probe_icon_url: null,
             probe_icon_mime: null,
+            icon_override: null,
             featured_rank: null,
             verified_at: NOW.toISOString(),
             blocked_at: null,
@@ -910,5 +916,64 @@ describe('a pre-registered client (issue #1229)', () => {
 
     expect(repository.seeded[0]).toContain(GITHUB);
     expect(page.servers[0]?.registrationKind).toBe('static');
+  });
+});
+
+describe('brand marks (the eleven letters)', () => {
+  it('seeds the shipped mark for every row that has one, on every sync', async () => {
+    const repository = fakeRepository();
+    const service = build({ repository, pages: [rows(120, null)] });
+
+    await service.sync();
+
+    const github = repository.marks.find((mark) => mark.registryName === 'com.github/mcp');
+    expect(github).toEqual({
+      registryName: 'com.github/mcp',
+      icon: '/brand/mcp/github.svg',
+    });
+    // Not gated on the launch seed: an already-verified store is exactly where
+    // the monograms were, and `verifyLaunchSet` returns 0 there.
+    expect(repository.seeded[0]).toBeDefined();
+  });
+
+  it("prefers the mark we ship over the registry's and the probe's", async () => {
+    const repository = fakeRepository({
+      listCatalogServers: async () => ({
+        rows: [
+          {
+            registry_name: 'com.vercel/vercel-mcp',
+            title: 'Vercel',
+            title_override: 'Vercel',
+            description: 'An MCP server for Vercel',
+            name_ar: null,
+            description_ar: null,
+            remote_url: 'https://mcp.vercel.com',
+            remote_override: null,
+            status: 'active',
+            version: null,
+            published_at: null,
+            fetched_at: NOW.toISOString(),
+            registry_icon_url: 'https://registry.example/vercel.png',
+            registry_icon_mime: 'image/png',
+            probe_icon_url: 'https://mcp.vercel.com/logo.svg',
+            probe_icon_mime: 'image/svg+xml',
+            icon_override: '/brand/mcp/vercel.svg',
+            featured_rank: null,
+            verified_at: NOW.toISOString(),
+            blocked_at: null,
+            blocked_reason: null,
+            connectable: true,
+            connectable_reason: null,
+            probed_at: NOW.toISOString(),
+          },
+        ],
+        nextCursor: null,
+      }),
+    });
+    const service = build({ repository, pages: [] });
+
+    const page = await service.search({ q: '', cursor: null });
+
+    expect(page.servers[0]?.iconUrl).toBe('/brand/mcp/vercel.svg');
   });
 });

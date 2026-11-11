@@ -129,6 +129,33 @@ const CURATED_TITLES: Record<string, string> = Object.fromEntries(
   CURATED_SERVERS.map((row) => [row.registryName, row.title ?? row.registryName])
 );
 
+/**
+ * The marks we ship, per catalogue row, as same-origin paths.
+ *
+ * The registry's `icons` and the provider's `logo_uri` are empty for the rows
+ * members ask for most, so eleven cards fell back to eleven letters. These are
+ * the publishers' own marks, taken from Simple Icons (CC0) and served from
+ * `public/brand/mcp`, which keeps the rule the icon proxy exists for: a
+ * member's browser never fetches a third party. The mark stays the owner's
+ * trademark, used to identify the app it belongs to.
+ *
+ * `icon_override` is written only where it is null, so a mark an admin changes
+ * later survives the daily sync. Canva is absent: Simple Icons has no mark for
+ * it, and a wrong logo is worse than a monogram.
+ */
+const BRAND_MARKS: Record<string, string> = {
+  'com.github/mcp': '/brand/mcp/github.svg',
+  'com.notion/mcp': '/brand/mcp/notion.svg',
+  'com.figma.mcp/mcp': '/brand/mcp/figma.svg',
+  'com.atlassian/atlassian-mcp-server': '/brand/mcp/atlassian.svg',
+  'com.stripe/mcp': '/brand/mcp/stripe.svg',
+  'com.vercel/vercel-mcp': '/brand/mcp/vercel.svg',
+  'com.supabase/mcp': '/brand/mcp/supabase.svg',
+  'app.linear/linear': '/brand/mcp/linear.svg',
+  'io.github.getsentry/sentry-mcp': '/brand/mcp/sentry.svg',
+  'com.cloudflare.mcp/mcp': '/brand/mcp/cloudflare.svg',
+};
+
 const REGISTRY_STATUSES = new Set(['active', 'deprecated', 'deleted']);
 
 export type McpCatalogSyncMode = 'pass' | 'incremental';
@@ -193,7 +220,7 @@ function toMemberRow(row: McpCatalogListRow): McpCatalogRow {
     title: row.title_override ?? row.title,
     description: row.description_ar ?? row.description,
     nameAr: row.name_ar,
-    iconUrl: row.probe_icon_url ?? row.registry_icon_url,
+    iconUrl: row.icon_override ?? row.probe_icon_url ?? row.registry_icon_url,
     verified: row.verified_at !== null,
     featuredRank: row.featured_rank,
     connectable: row.connectable,
@@ -569,6 +596,16 @@ export function createMcpCatalogService({
           await repository.setTitleOverrideIfEmpty(registryName, title);
         }
         await probeAddresses(await repository.getCatalogAddresses(seedNames), seedNames.length);
+      }
+
+      /*
+        The brand marks run on every sync, not only on the run that seeds the
+        store: a store that is already verified is exactly where the eleven
+        letters were. The write is a no-op wherever a mark already exists, so a
+        daily run costs one skipped update per row.
+      */
+      for (const [registryName, icon] of Object.entries(BRAND_MARKS)) {
+        await repository.setIconOverrideIfEmpty(registryName, icon);
       }
     } catch (caught) {
       logger.warn('MCP catalogue: launch set seed failed', {

@@ -501,7 +501,14 @@ function CatalogueMark({ server }: { server: McpCatalogRow }) {
 
   return (
     <Image
-      src={`/mcp/icon?name=${encodeURIComponent(server.registryName)}`}
+      // A mark we ship (`/brand/mcp/...`) is same-origin and served as it is;
+      // anything else is a third party's URL, and the member's browser only ever
+      // talks to our proxy for it.
+      src={
+        server.iconUrl.startsWith('/')
+          ? server.iconUrl
+          : `/mcp/icon?name=${encodeURIComponent(server.registryName)}`
+      }
       alt=""
       width={40}
       height={40}

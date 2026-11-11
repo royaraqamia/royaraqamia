@@ -365,10 +365,15 @@ Sentry, Canva and Cloudflare — are verified by the sync. `verification_withdra
 admin's withdrawal, so the seed is a bootstrap and never overrules the person. The probe still
 decides whether each one appears, because the store's query asks for `connectable = true`.
 
-A brand mark is captured from two sources and kept apart: the registry's `icons` are rewritten on
-every sync, the server's RFC 9728 `logo_uri` is written by the probe, and the service prefers the
-probe's URL. The member's browser never fetches a third party: `/mcp/icon?name=<registry>` proxies
-the stored URL through the same egress policy, and a row with no mark draws a monogram.
+A brand mark comes from three sources, in this order: **`icon_override`** (a mark we ship
+ourselves), the server's RFC 9728 `logo_uri` (written by the probe), and the registry's `icons`
+(rewritten on every sync). Measured on 2026-11-11, the first two were empty for every row members
+ask for most, so the store drew eleven monograms; the marks now ship as white SVGs in
+`public/brand/mcp` and `icon_override` holds their same-origin path, written by the sync only where
+it is null so a later change survives. The member's browser still never fetches a third party: a
+shipped path is served as it is, any other URL goes through `/mcp/icon?name=<registry>` and the same
+egress policy, and a row with neither draws a monogram. Canva has no mark in the source set, so it
+keeps its monogram rather than a made-up logo.
 
 The Latin name is the same seam: `title_override` is written by an admin and survives the sync, so
 `com.vercel/vercel-mcp` draws as **Vercel**. The registry's own `title` stays beside it for the
