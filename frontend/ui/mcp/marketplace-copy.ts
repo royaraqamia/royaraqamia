@@ -30,6 +30,11 @@ export const MCP_MARKETPLACE_COPY = {
   connect: 'ربط',
   connecting: 'جاري الربط...',
   connectFailed: 'تعذّر بدء الربط. حاول من جديد.',
+  consentTitle: 'صلاحيات «{name}»',
+  consentAsk: 'سيطلب نور هذه الصلاحيات من التطبيق عند الربط:',
+  consentDefault: 'لا نطلب صلاحيات محدّدة: التطبيق يمنح ما يراه مناسبًا عند الموافقة.',
+  consentNote: 'يمكنك توسيعها لاحقًا من صفحة التطبيق.',
+  consentContinue: 'متابعة',
 
   connectionsTitle: 'التطبيقات المرتبطة',
   connectionsEmptyTitle: 'لا يوجد تطبيق مرتبط بعد',

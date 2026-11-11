@@ -1,11 +1,16 @@
 import type { McpMarketplaceRepository } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
-import { McpRemoteError, type McpOAuthClient } from '@/backend/shared/domain/mcp-remote';
+import {
+  McpRemoteError,
+  type McpDiscovery,
+  type McpOAuthClient,
+} from '@/backend/shared/domain/mcp-remote';
 import {
   staticClientDiscovery,
   type McpStaticClientMap,
 } from '@/backend/shared/domain/mcp-static-clients';
 import { createPlanGate } from '@/backend/config/plans';
+import { requestedScopesFor } from '@/backend/config/mcp-scopes';
 import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
   decryptSecret,
@@ -153,12 +158,35 @@ export function createMcpConnectService({
   }
 
   /**
+   * The permissions to ask for: the row's measured set, kept to what the provider
+   * says it supports (#1230).
+   *
+   * A provider that publishes no `scopes_supported` is not filtered against an
+   * empty list — we have nothing to check it with, and the row's set is still the
+   * measured one. A provider that publishes them gets only the overlap, so a
+   * scope it retired is dropped here rather than sent and refused at consent.
+   */
+  function scopesToRequest(registryName: string, discovery: McpDiscovery): string[] {
+    const requested = requestedScopesFor(registryName);
+    if (!requested) return [];
+    if (discovery.scopes.length === 0) return [...requested];
+    const advertised = new Set(discovery.scopes);
+    return requested.filter((scope) => advertised.has(scope));
+  }
+
+  /**
    * Who we are at the provider, and the discovery that goes with it.
    *
    * Three answers, in this order: a client a person registered (the reviewed
    * table), one we registered earlier and cached, or — only during `start` — a
    * fresh dynamic registration. `complete` may not register: a callback is a
    * consent coming back, not a place to create a client.
+   *
+   * The cached registration is reused only when the scope set it was created for
+   * is the set the row asks for now. A provider can bind the grant to the client
+   * (measured: Supabase, 2026-11-11), so a narrower cached client would keep
+   * refusing the tools the set was widened for — the member would approve a
+   * wider consent and get the old grant back.
    */
   async function resolveClient({
     registryName,
@@ -191,9 +219,12 @@ export function createMcpConnectService({
     }
 
     const discovery = await remote.discover(serverUrl);
+    const scopes = scopesToRequest(registryName, discovery);
+    const scopeKey = scopes.join(' ');
+
     let registration = await repository.getRegistration(discovery.authorizationServer, redirectUri);
 
-    if (!registration) {
+    if (!registration || registration.scope !== scopeKey) {
       if (!mayRegister) {
         throw new McpConnectError(
           'registration',
@@ -213,6 +244,7 @@ export function createMcpConnectService({
           discovery,
           redirectUri,
           clientName,
+          scopes,
         });
         registration = {
           authorization_server: discovery.authorizationServer,
@@ -222,6 +254,7 @@ export function createMcpConnectService({
             ? encryptSecret(registered.clientSecret)
             : null,
           registration_kind: 'dcr',
+          scope: scopeKey,
         };
         await repository.saveRegistration(registration);
       } catch (error) {
@@ -243,7 +276,7 @@ export function createMcpConnectService({
       } satisfies McpOAuthClient,
       clientSecretEnc: registration.client_secret_enc,
       registrationKind: registration.registration_kind,
-      scopes: [] as string[],
+      scopes,
     };
   }
 

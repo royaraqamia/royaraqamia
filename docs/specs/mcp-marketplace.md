@@ -208,12 +208,31 @@ That set is the only honest answer to "what may this app do": `tools/list` is no
 Supabase advertised all 36 tools under a two-scope grant — so a tool list alone says which tools
 exist, not which ones will run.
 
-**No scope is requested**, at registration or at authorization. Declaring every scope a server
-publishes would ask the member for the widest consent the provider offers, on the strength of a
-guess about which tools need what; the provider's own default is the starting grant, and widening
-it is a choice someone makes on purpose. What that default actually is gets recorded here once a
-real connection is measured. The one exception is a pre-registered client, which has no provider
-default: its reviewed entry names the scopes its app was created for, and they are sent.
+**The set comes from the row, not from a guess** (#1230, ADR-0164). A catalogue row may carry a
+measured scope set (`backend/config/mcp-scopes.ts`), and it is sent in **two** places — the RFC 7591
+registration body and the RFC 6749 authorization URL — because providers disagree about which one
+they read, and sending both costs nothing. Measured on Supabase, 2026-11-11, with isolated clients on
+a loopback redirect: the authorization URL's `scope` is **ignored** (asking for `database:read`
+returned all 13 published scopes, and a made-up scope was forwarded to the consent page
+unvalidated), while a client **registered** with `database:read projects:read` receives exactly those
+two and keeps them on refresh. A row absent from the table asks for nothing: the provider's own
+default is the grant, which is what every row did before the table existed.
+
+Supabase's entry asks for the eight its tools use — `organizations:read`, `projects:read`,
+`projects:write`, `database:read`, `database:write`, `analytics:read`, `edge_functions:read`,
+`edge_functions:write` — and leaves out `secrets:read`, `environment:read`, `environment:write`,
+`storage:read` and `storage:write`, which no tool of its 36 calls. The writes stay in because the
+`ask` level already cards every write: a carded write refused for scope would be worse than the card.
+`get_publishable_keys` is the one tool this costs — it asks for `secrets:read`, refuses with that
+name, and the wider consent grants it.
+
+The registration remembers the set it was created for
+(`mcp_oauth_client_registrations.scope`), because a provider can bind the grant to the client
+(measured: Supabase): a cached client made for `database:read` keeps returning `database:read`
+however the member re-consents, so a changed set re-registers on the next connect and a callback
+whose client no longer matches refuses to complete. The one exception is a pre-registered client,
+which has no provider default and no registration of ours: its reviewed entry names the scopes its
+app was created for, and they are sent at authorization.
 
 ### Measured against real servers (2026-11-10, re-measured 2026-11-11)
 
@@ -238,6 +257,11 @@ it is no longer the reason the other four were missing.
 A server that publishes no resource metadata at all is still refused, and phase 2's catalogue says
 which rows can be connected before a member taps one («The connectable verdict», below), rather than
 explaining it after a refusal.
+
+Only one row has a measured scope set so far — Supabase's eight, in
+`backend/config/mcp-scopes.ts` — because only that connection has been observed. Adding a provider
+to the table is the same kind of act as adding a pre-registered client: measure what it grants when
+asked, record the day, and let the row say nothing (and take the provider's default) until then.
 
 ### Pre-registered clients (#1229)
 
@@ -537,8 +561,10 @@ release note rides the same pull request (`npm run android:note`), in Arabic, fo
 7. **Curation** — verification, the store query, featured order, brand marks, the icon proxy, and the
    Admin Console's approval. **ADR-0162.**
 
-The two questions the plan could not settle in code are filed with their measurements: the
-providers that refuse DCR (**#1229**) and the scopes a connection asks for (**#1230**).
+The two questions the plan could not settle in code were filed with their measurements: the
+providers that refuse DCR (**#1229**) and the scopes a connection asks for (**#1230**). Both are
+settled: a provider that refuses registration takes a reviewed client (ADR-0163), and a row's scope
+set is asked at registration as well as at consent (ADR-0164).
 
 ## Risks
 

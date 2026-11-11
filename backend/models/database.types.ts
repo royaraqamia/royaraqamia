@@ -1425,6 +1425,7 @@ export type Database = {
           redirect_uri: string;
           registered_at: string;
           registration_kind: string;
+          scope: string;
         };
         Insert: {
           authorization_server: string;
@@ -1434,6 +1435,7 @@ export type Database = {
           redirect_uri: string;
           registered_at?: string;
           registration_kind?: string;
+          scope?: string;
         };
         Update: {
           authorization_server?: string;
@@ -1443,6 +1445,7 @@ export type Database = {
           redirect_uri?: string;
           registered_at?: string;
           registration_kind?: string;
+          scope?: string;
         };
         Relationships: [];
       };

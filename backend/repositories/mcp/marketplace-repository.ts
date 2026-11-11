@@ -227,6 +227,13 @@ export interface McpClientRegistrationRecord {
   client_id: string;
   client_secret_enc: string | null;
   registration_kind: 'dcr' | 'static';
+  /**
+   * The scope set the client was registered for, space-delimited and `''` when
+   * it named none. It is part of the identity of the registration, not a note:
+   * a provider that fixes the grant at registration (measured: Supabase) cannot
+   * be widened by a second consent through the same client (#1230).
+   */
+  scope: string;
 }
 
 export interface McpMarketplaceRepository {
@@ -973,7 +980,7 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await supabase
         .from(REGISTRATIONS_TABLE)
         .select(
-          'authorization_server, redirect_uri, client_id, client_secret_enc, registration_kind'
+          'authorization_server, redirect_uri, client_id, client_secret_enc, registration_kind, scope'
         )
         .eq('authorization_server', authorizationServer)
         .eq('redirect_uri', redirectUri)
@@ -990,6 +997,7 @@ export function createMcpMarketplaceRepository(
           client_id: input.client_id,
           client_secret_enc: input.client_secret_enc,
           registration_kind: input.registration_kind,
+          scope: input.scope,
         },
         { onConflict: 'authorization_server,redirect_uri' }
       );

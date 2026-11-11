@@ -40,6 +40,7 @@ const CATALOGUE = {
       connectable: true,
       connectableReason: null,
       publishedAt: null,
+      requestedScopes: [],
     },
     {
       registryName: 'ac.snag/snag',
@@ -49,6 +50,7 @@ const CATALOGUE = {
       connectable: null,
       connectableReason: null,
       publishedAt: null,
+      requestedScopes: ['database:read', 'projects:read'],
     },
   ],
   nextCursor: null,
@@ -84,6 +86,41 @@ describe('McpMarketplaceView — the catalogue row', () => {
     expect(screen.getAllByText('متصل')).toHaveLength(2);
     expect(screen.queryByText('قابل للربط')).not.toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'ربط' })).toHaveLength(1);
+  });
+});
+
+describe('McpMarketplaceView — the ask before the consent (#1230)', () => {
+  it('names the permissions we will request, in the member’s language', async () => {
+    mocks.startMcpConnection.mockResolvedValue({ authorizeUrl: 'https://auth.example/go' });
+
+    render(<McpMarketplaceView tab="external" connect={null} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'ربط' }));
+
+    expect(
+      await screen.findByText('سيطلب نور هذه الصلاحيات من التطبيق عند الربط:')
+    ).toBeInTheDocument();
+    expect(screen.getByText('database:read · projects:read')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'متابعة' }));
+
+    await waitFor(() => expect(mocks.startMcpConnection).toHaveBeenCalledWith('ac.snag/snag'));
+  });
+
+  it('says the app decides when the row asks for nothing', async () => {
+    const row = CATALOGUE.servers[1];
+    mocks.searchMcpCatalog.mockResolvedValue({
+      servers: [{ ...row, requestedScopes: [] }],
+      nextCursor: null,
+    });
+
+    render(<McpMarketplaceView tab="external" connect={null} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'ربط' }));
+
+    expect(
+      await screen.findByText('لا نطلب صلاحيات محدّدة: التطبيق يمنح ما يراه مناسبًا عند الموافقة.')
+    ).toBeInTheDocument();
   });
 });
 
