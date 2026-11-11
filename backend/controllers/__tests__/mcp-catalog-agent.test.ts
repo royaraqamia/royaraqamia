@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const candidates = vi.fn(async () => []);
+const candidates = vi.fn(async () => ({
+  candidates: [],
+  coverage: { eligible: 0, published: 0, waiting: 0 },
+}));
 const act = vi.fn(async () => undefined);
 
 vi.mock('@/backend/config/mcp', () => ({

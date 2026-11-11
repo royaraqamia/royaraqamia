@@ -3,7 +3,10 @@ import type {
   McpMarketplaceRepository,
 } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpStaticClientMap } from '@/backend/shared/domain/mcp-static-clients';
-import { McpCatalogConnectReasonSchema } from '@/shared/contracts/mcp-catalog';
+import {
+  McpCatalogConnectReasonSchema,
+  type McpCatalogCoverage,
+} from '@/shared/contracts/mcp-catalog';
 import {
   MCP_CATALOG_AGENT_ACTOR,
   MCP_CATALOG_AGENT_REQUIRED_CHECKS,
@@ -54,7 +57,10 @@ interface CatalogAgentDependencies {
 }
 
 export interface McpCatalogAgentService {
-  candidates(limit: number): Promise<McpCatalogAgentCandidate[]>;
+  candidates(limit: number): Promise<{
+    candidates: McpCatalogAgentCandidate[];
+    coverage: McpCatalogCoverage;
+  }>;
   act(action: McpCatalogAgentAction): Promise<void>;
 }
 
@@ -109,8 +115,14 @@ export function createMcpCatalogAgentService({
 
   return {
     async candidates(limit) {
-      const rows = await repository.listAgentCandidates(limit);
-      return rows.map((row) => toCandidate(row, staticClients, redirectUri));
+      const [rows, coverage] = await Promise.all([
+        repository.listAgentCandidates(limit),
+        repository.catalogCoverage(),
+      ]);
+      return {
+        candidates: rows.map((row) => toCandidate(row, staticClients, redirectUri)),
+        coverage,
+      };
     },
 
     async act(action) {

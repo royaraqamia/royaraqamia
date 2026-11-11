@@ -32,6 +32,7 @@ import {
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const DEFAULT_PLAN_PATH = '/tmp/mcp-catalog-agent-plan.json';
 const DEFAULT_DECISIONS_PATH = '/tmp/mcp-catalog-agent-decisions.json';
+const DEFAULT_RESULT_PATH = '/tmp/mcp-catalog-agent-result.json';
 
 type PublishClass = 'dcr' | 'pre_registered' | 'none';
 
@@ -66,7 +67,9 @@ interface Plan {
   /** Where measurement stopped when the egress budget ran out. */
   stoppedAt: string | null;
   entries: PlanEntry[];
-  counts: { measured: number; publishable: number; published: number; waiting: number };
+  /** Store-wide counts, the same numbers the console header draws. */
+  coverage: { eligible: number; published: number; waiting: number };
+  counts: { measured: number; publishable: number; onPagePublished: number };
 }
 
 const MarkDecisionSchema = z.object({
@@ -363,11 +366,11 @@ async function plan(): Promise<Plan> {
     publishCap,
     stoppedAt,
     entries,
+    coverage: page.coverage,
     counts: {
       measured: entries.length,
       publishable: entries.filter((entry) => entry.publishable && !entry.published).length,
-      published: entries.filter((entry) => entry.published && !entry.withdraw).length,
-      waiting: entries.filter((entry) => entry.skip !== null).length,
+      onPagePublished: entries.filter((entry) => entry.published && !entry.withdraw).length,
     },
   };
 }
@@ -427,10 +430,11 @@ function summary(plan: Plan, lines: string[]): string {
   return [
     '## MCP catalogue agent',
     '',
-    `- measured: ${plan.counts.measured}`,
-    `- publishable: ${plan.counts.publishable}`,
-    `- published: ${plan.counts.published}`,
-    `- waiting on a human: ${plan.counts.waiting}`,
+    `- eligible: ${plan.coverage.eligible}`,
+    `- published: ${plan.coverage.published}`,
+    `- waiting on a human: ${plan.coverage.waiting}`,
+    `- measured this run: ${plan.counts.measured}`,
+    `- publishable this run: ${plan.counts.publishable}`,
     ...(plan.stoppedAt ? [`- stopped at the egress budget: \`${plan.stoppedAt}\``] : []),
     '',
     ...lines,
@@ -464,6 +468,7 @@ async function apply(): Promise<void> {
 
   const marks = new Map(decisions.marks.map((mark) => [mark.registryName, mark] as const));
   const copies = new Map(decisions.copies.map((copy) => [copy.registryName, copy] as const));
+  const withdrawals: Array<{ registryName: string; detail: string | null }> = [];
   let published = 0;
 
   for (const entry of plan.entries) {
@@ -564,6 +569,12 @@ async function apply(): Promise<void> {
       try {
         await callAgent(action);
         lines.push(`- ${name} \`${registryName}\``);
+        if (name === 'withdraw') {
+          withdrawals.push({
+            registryName,
+            detail: (action as { detail?: string | null }).detail ?? null,
+          });
+        }
       } catch (error) {
         // One refused row must not cost the run the rest of the page; the row
         // stays for the next run and the summary names it.
@@ -581,6 +592,28 @@ async function apply(): Promise<void> {
   if (process.env.GITHUB_STEP_SUMMARY) {
     writeFileSync(process.env.GITHUB_STEP_SUMMARY, report, { flag: 'a' });
   }
+
+  /*
+    The workflow reads this, not the summary text: a withdrawal a member can meet
+    has to be traceable to the check that failed, and one tracking issue (opened
+    or commented by the workflow) is where it lands.
+  */
+  const resultPath = process.env.MCP_CATALOG_AGENT_RESULT_PATH?.trim() || DEFAULT_RESULT_PATH;
+  writeFileSync(
+    resultPath,
+    JSON.stringify(
+      {
+        generatedAt: plan.generatedAt,
+        dryRun,
+        enabled,
+        coverage: plan.coverage,
+        measured: plan.counts.measured,
+        withdrawals,
+      },
+      null,
+      2
+    )
+  );
 }
 
 export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {

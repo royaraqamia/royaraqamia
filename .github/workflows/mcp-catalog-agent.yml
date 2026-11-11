@@ -39,6 +39,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: mcp-catalog-agent
@@ -153,3 +154,59 @@ jobs:
           MCP_CATALOG_AGENT_ENABLED: ${{ vars.MCP_CATALOG_AGENT_ENABLED || 'false' }}
           MCP_CATALOG_AGENT_DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: node scripts/mcp-catalog-agent.mjs apply
+
+      - name: Record withdrawals where a person can see them
+        # A published row leaving the store is something a member can meet. One
+        # tracking issue, deduped by title, never one issue per row (#1293).
+        if: always() && steps.apply.outcome != 'skipped'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          RESULT_PATH: /tmp/mcp-catalog-agent-result.json
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync(process.env.RESULT_PATH)) {
+              core.notice('No result file: the apply step wrote nothing, so there is nothing to record.');
+              return;
+            }
+            const result = JSON.parse(fs.readFileSync(process.env.RESULT_PATH, 'utf8'));
+            const withdrawals = result.withdrawals || [];
+            if (withdrawals.length === 0) {
+              core.notice('No withdrawal this run.');
+              return;
+            }
+
+            const title = 'MCP catalogue agent: runs and withdrawals';
+            const listing = withdrawals
+              .map((row) => '- `' + row.registryName + '` — ' + (row.detail || 'check failed'))
+              .join('\n');
+            const body =
+              'The catalogue agent withdrew ' + withdrawals.length + ' published row(s) because a later check failed:\n\n' +
+              listing + '\n\n' +
+              'The run summary names the class and the checks it measured.';
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = open.find((issue) => !issue.pull_request && issue.title === title);
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body: 'Run [' + context.runId + '](' + context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId + '):\n\n' + listing,
+              });
+              core.info('Commented on #' + existing.number);
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+              core.info('Opened the withdrawal tracking issue.');
+            }

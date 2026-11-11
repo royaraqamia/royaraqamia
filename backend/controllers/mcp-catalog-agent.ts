@@ -63,8 +63,12 @@ export async function runMcpCatalogAgent(headers: Headers, body: string): Promis
 
   try {
     if (parsed.data.action === 'list') {
-      const candidates = await service.candidates(parsed.data.limit);
-      return jsonResult(200, { success: true, data: { candidates } }, { headers: NO_STORE });
+      const page = await service.candidates(parsed.data.limit);
+      return jsonResult(
+        200,
+        { success: true, data: { candidates: page.candidates, coverage: page.coverage } },
+        { headers: NO_STORE }
+      );
     }
 
     await service.act(parsed.data);
