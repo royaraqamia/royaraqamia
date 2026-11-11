@@ -5,13 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitiv
 import { formatMoney } from '@/shared/currency';
 import { SPENDTRACK_TOTAL_COPY } from './spendtrack-total-copy';
 
+/**
+ * A range endpoint as the Hijri day it names.
+ *
+ * Both values are calendar days (`yyyy-MM-dd`), never instants. `new Date` reads
+ * a bare day as UTC midnight, so formatting that instant in the reader's own
+ * zone prints the day before everywhere west of UTC — the current month would
+ * start on the previous month's last day. A date-only value is pinned back to
+ * UTC, as `rate-format.tsx` already does; anything that is genuinely an instant
+ * keeps the reader's zone.
+ */
 function formatRangeDate(date: string): string {
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(date);
   return new Intl.DateTimeFormat('ar-SA', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     calendar: 'islamic-umalqura',
     numberingSystem: 'latn',
+    ...(isDateOnly ? { timeZone: 'UTC' } : {}),
   }).format(new Date(date));
 }
 
