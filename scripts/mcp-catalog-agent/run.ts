@@ -265,7 +265,19 @@ async function measure(candidate: McpCatalogAgentCandidate): Promise<PlanEntry> 
     if (!verdict.connectable) {
       return { ...base, withdraw: true, detail: verdict.reason ?? 'unreachable' };
     }
-    return { ...base, class: preRegistered ? 'pre_registered' : 'dcr' };
+    /*
+      A published row is measured for the same two gaps a publish would have
+      asked about. Publishing vouched for a row, not for its mark: the seeded
+      rows shipped with a letter tile because the registry published nothing and
+      Canva has no Simple Icons mark, and no run could ever fix one (#1302). The
+      answer is written as an edit, never as a second vouch.
+    */
+    return {
+      ...base,
+      class: preRegistered ? 'pre_registered' : 'dcr',
+      needsMark: !candidate.iconUrl && !verdict.logoUrl,
+      needsCopy: !candidate.titleOverride || !candidate.descriptionAr,
+    };
   }
 
   if (!verdict.connectable) {
@@ -529,7 +541,13 @@ async function apply(): Promise<void> {
       });
     }
 
-    if (entry.publishable && !entry.skip) {
+    /*
+      A mark and a copy are edits, so a row already in the store is offered them
+      too — that is the only way a published row's letter tile is ever replaced
+      (#1302). Only a first publish re-verifies, and a published row is never
+      withdrawn by this path: its `verified_at` does not move.
+    */
+    if ((entry.publishable || entry.published) && !entry.withdraw && !entry.skip) {
       let hasMark = entry.iconUrl !== null;
 
       if (!hasMark && entry.measuredMark) {
@@ -603,6 +621,9 @@ async function apply(): Promise<void> {
           reason: 'no_mark',
           detail: 'no mark from any allowed source',
         });
+      } else if (entry.published) {
+        // Nothing left to send: the mark and the copy were the actions, and a
+        // second vouch is the one thing a published row must not get.
       } else if (!waitingForPr && hasMark && published < plan.publishCap) {
         actions.push({
           action: 'verify',
@@ -721,7 +742,7 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
               : entry.skip
                 ? `waiting: ${entry.skip}`
                 : entry.published
-                  ? 'already published'
+                  ? `already published${entry.needsMark ? ', needs a mark' : ''}${entry.needsCopy ? ', needs copy' : ''}`
                   : `${entry.class}${entry.needsMark ? ', needs a mark' : ''}${entry.needsCopy ? ', needs copy' : ''}`
           }`
       )

@@ -110,7 +110,9 @@ jobs:
             `needsMark: true` and no `measuredMark` needs a brand mark. Every entry
             with `needsCopy: true` needs its Arabic copy. Entries with neither are
             not your work, and a row you cannot source is left out — the runner
-            records it as waiting for a person.
+            records it as waiting for a person. A row that is already published is
+            still your work when it needs one of the two: the runner writes a mark
+            or a copy as an edit, and the row's `verified_at` does not move.
 
             A mark may come from exactly three sources, in this order of
             preference, and the source you name must be the one you used:
