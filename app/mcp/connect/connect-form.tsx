@@ -12,6 +12,8 @@ interface ConnectFormProps {
   state: string;
   codeChallenge: string;
   codeChallengeMethod: string;
+  /** False when the page computed an empty grant, which the consent route refuses. */
+  canApprove: boolean;
 }
 
 /**
@@ -29,6 +31,7 @@ export function ConnectForm({
   state,
   codeChallenge,
   codeChallengeMethod,
+  canApprove,
 }: ConnectFormProps) {
   const { isOnline } = usePWAContext();
 
@@ -49,9 +52,11 @@ export function ConnectForm({
       <input type="hidden" name="state" value={state} />
       <input type="hidden" name="code_challenge" value={codeChallenge} />
       <input type="hidden" name="code_challenge_method" value={codeChallengeMethod} />
-      <HeroCtaButton type="submit" name="action" value="approve" className="w-full">
-        السَّماح
-      </HeroCtaButton>
+      {canApprove ? (
+        <HeroCtaButton type="submit" name="action" value="approve" className="w-full">
+          السَّماح
+        </HeroCtaButton>
+      ) : null}
       <Button type="submit" name="action" value="deny" className="w-full" variant="outline">
         رفض
       </Button>
