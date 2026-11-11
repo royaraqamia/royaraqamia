@@ -387,9 +387,17 @@ gives it a rank.
 ### Search
 
 `GET /api/mcp/marketplace/servers?q=&cursor=` reads the mirror, never the registry. The searched
-text is one generated column (`search_text`: title, description, both Arabic overrides, and the
-registry name) with a trigram index, so a member who types «نوشن» finds a row an admin translated
-and one who types `notion` finds it before anyone did. A blank `q` is the whole catalogue.
+text is one column (`search_text`: the drawn title — `title_override` over the registry's `title` —
+the description, both Arabic overrides, and the registry name) maintained by a trigger, with a
+trigram index, so a member who types «نوشن» finds a row an admin translated, one who types
+`notion` finds it before anyone did, and one who types the name an admin gave a row finds it
+without knowing its registry key. A blank `q` is the whole catalogue.
+
+The trigger rather than a generated column is the migration's constraint: recreating a generated
+expression rewrites the table, and `mcp_catalog_servers` holds every row the registry publishes
+(#1260, #1262). `drop expression` converts the column without touching a row, and the trigger keeps
+it true on every write. An `or()` over the two titles was the alternative; it is the filter-syntax
+hazard above and it cannot use one trigram index.
 
 The Admin Console's list is ordered `registry_name ASC` and its cursor is that key: a title ordering
 would read nicer and cost a two-key cursor interpolated into a PostgREST `or()`, which is the filter
