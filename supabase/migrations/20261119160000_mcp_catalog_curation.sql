@@ -8,11 +8,18 @@
 -- `app.*`) rather than useful. A member cannot tell Vercel from a stranger's
 -- weekend project, and a row nobody has probed yet reads as untrustworthy.
 --
--- This file gives the table what a curated store needs:
+-- Why this file adds only **plain** columns: the first attempt at this
+-- migration added stored generated columns for `icon_url` and `store_key`, and
+-- the stored rewrite of a catalogue with tens of thousands of `jsonb` rows blew
+-- the migration's statement timeout. A generated column that is never needed at
+-- query time is not worth a table rewrite: the two icon sources are selected
+-- and resolved in the service, and the store's order is two ordinary columns.
 --
---   * `icon_url` / `icon_mime` — the brand mark, captured from the registry's
---     `icons` or the server's RFC 9728 `logo_uri`. The browser never fetches a
---     third party directly; `/mcp/icon` proxies it from this column.
+-- The store needs:
+--
+--   * `registry_icon_*` / `probe_icon_*` — the brand mark, from the registry's
+--     `icons` and the server's RFC 9728 `logo_uri`. The browser never fetches a
+--     third party directly; `/mcp/icon` proxies the chosen URL.
 --   * `title_override` — the Latin name the store draws when the registry's own
 --     `title` is empty (`com.vercel/vercel-mcp`) or worse than the brand.
 --   * `verified_at` — the admin's vouch. A row is in the store only when this is
@@ -21,19 +28,22 @@
 --     server answers, this says we stand behind it.
 --   * `verification_withdrawn_at` — the record that stops the launch set from
 --     re-verifying a row an admin deliberately took out.
---   * `featured_rank` — the order the store draws. Lower first, null last.
---   * `store_key` — featured rank and registry name in one sortable key, so the
---     existing single-column cursor keeps working. A two-key cursor interpolated
---     into a PostgREST `or()` is the filter-syntax hazard
---     `backend/shared/postgrest-or-filter.ts` exists for.
+--   * `featured_rank` — the order the store draws, with `registry_name` as the
+--     tie-breaker. Two ordinary columns are one `order=` pair, and a curated
+--     store is small enough to draw without a keyset cursor.
 --
 -- `connectable_reason` also gains `unreachable`: a server that timed out is not
 -- a server that publishes no metadata, and saying so is what the admin needs to
 -- decide whether to try again.
 --
--- Rollback: drop the two indexes and the three generated columns, drop the added
--- columns, restore the old `connectable_reason` constraint.
+-- Rollback: drop the two indexes, the added columns and the three constraints;
+-- restore the old `connectable_reason` constraint.
 -- ============================================================
+
+-- The previous attempt was cancelled mid-migration because the whole file is
+-- one statement batch. The columns below are metadata-only; the timeout is
+-- headroom for the review, not for a rewrite.
+set statement_timeout = '10min';
 
 -- ------------------------------------------------------------
 -- The brand mark
@@ -43,8 +53,7 @@
 -- on every sync, and the RFC 9728 `logo_uri` is written by the probe. A single
 -- `icon_url` column would let a daily sync erase the mark the probe found (Vercel
 -- publishes one and its registry row publishes none), so the two live apart and
--- the read column is generated from them. The probe wins because it is the
--- server's own machine-readable statement about itself.
+-- the service prefers the probe when it selects the row.
 
 alter table public.mcp_catalog_servers
   add column if not exists registry_icon_url text,
@@ -58,14 +67,6 @@ alter table public.mcp_catalog_servers
 -- other.
 alter table public.mcp_catalog_servers
   add column if not exists title_override text;
-
-alter table public.mcp_catalog_servers
-  add column if not exists icon_url text
-  generated always as (coalesce(probe_icon_url, registry_icon_url)) stored;
-
-alter table public.mcp_catalog_servers
-  add column if not exists icon_mime text
-  generated always as (coalesce(probe_icon_mime, registry_icon_mime)) stored;
 
 -- The proxy only ever answers an image, so a row whose stored mime is not one is
 -- a row with no usable mark rather than a file served with our origin.
@@ -109,18 +110,10 @@ alter table public.mcp_catalog_servers
   add constraint mcp_catalog_servers_featured_rank_check
   check (featured_rank is null or featured_rank between 0 and 999999);
 
--- One sortable key, so the cursor stays one column. `featured_rank` first, a
--- sentinel for "not featured", then the registry's own key as the tie-breaker.
-alter table public.mcp_catalog_servers
-  add column if not exists store_key text
-  generated always as (
-    lpad(coalesce(featured_rank, 999999)::text, 6, '0') || ':' || registry_name
-  ) stored;
-
 -- The store's one query: verified, connectable, active, unblocked, in store
 -- order. Partial, because a row outside that predicate is not on the screen.
 create index if not exists idx_mcp_catalog_servers_store
-  on public.mcp_catalog_servers (store_key asc)
+  on public.mcp_catalog_servers (featured_rank asc nulls last, registry_name asc)
   where status = 'active'
     and blocked_at is null
     and verified_at is not null

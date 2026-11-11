@@ -1143,8 +1143,6 @@ export type Database = {
           description_ar: string | null;
           featured_rank: number | null;
           fetched_at: string;
-          icon_mime: string | null;
-          icon_url: string | null;
           name_ar: string | null;
           probe_icon_mime: string | null;
           probe_icon_url: string | null;
@@ -1158,7 +1156,6 @@ export type Database = {
           remote_url: string;
           search_text: string | null;
           status: string;
-          store_key: string | null;
           title: string | null;
           title_override: string | null;
           transport: string;

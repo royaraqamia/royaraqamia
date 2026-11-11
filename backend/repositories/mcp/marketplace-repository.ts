@@ -36,7 +36,11 @@ export interface McpCatalogServerRecord {
   status: string;
   blocked_at: string | null;
   blocked_reason: string | null;
-  icon_url: string | null;
+  /** The two measured sources; the service prefers the probe's. */
+  registry_icon_url: string | null;
+  registry_icon_mime: string | null;
+  probe_icon_url: string | null;
+  probe_icon_mime: string | null;
   /** The admin's vouch; a row without one is not in the store. */
   verified_at: string | null;
   /** The measured verdict; `null` is "nobody has asked yet". */
@@ -73,10 +77,11 @@ export interface McpCatalogListRow {
   version: string | null;
   published_at: string | null;
   fetched_at: string;
-  icon_url: string | null;
-  icon_mime: string | null;
+  registry_icon_url: string | null;
+  registry_icon_mime: string | null;
+  probe_icon_url: string | null;
+  probe_icon_mime: string | null;
   featured_rank: number | null;
-  store_key: string | null;
   verified_at: string | null;
   blocked_at: string | null;
   blocked_reason: string | null;
@@ -107,7 +112,7 @@ export interface McpCatalogSyncStateRecord {
 
 /** The columns a list selects; one list, two audiences. */
 const CATALOG_LIST_COLUMNS =
-  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, status, version, published_at, fetched_at, icon_url, icon_mime, featured_rank, store_key, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
+  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
 
 /**
  * PostgREST takes the rows in the body and the names in the URL, so both are
@@ -116,6 +121,13 @@ const CATALOG_LIST_COLUMNS =
  */
 const CATALOG_UPSERT_BATCH = 200;
 const CATALOG_LOOKUP_BATCH = 150;
+
+/**
+ * A curated store is small. Drawing it in one query keeps the order pair
+ * (`featured_rank`, `registry_name`) honest without a two-key cursor; a
+ * directory that outgrows this needs pagination, not a bigger number.
+ */
+const STORE_MAX_ROWS = 200;
 
 /** The mirror's insert shape, so a payload typo is a type error rather than a 400. */
 type CatalogInsert = Database['public']['Tables']['mcp_catalog_servers']['Insert'];
@@ -389,7 +401,7 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
         .select(
-          'registry_name, title, description, name_ar, description_ar, remote_url, status, blocked_at, blocked_reason, icon_url, verified_at, connectable, connectable_reason, probed_at'
+          'registry_name, title, description, name_ar, description_ar, remote_url, status, blocked_at, blocked_reason, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, verified_at, connectable, connectable_reason, probed_at'
         )
         .eq('registry_name', registryName)
         .maybeSingle();
@@ -425,8 +437,7 @@ export function createMcpMarketplaceRepository(
         remote_url: row.remoteUrl,
         transport: 'streamable-http',
         // The registry's mark lives in its own columns: the probe's `logo_uri`
-        // must survive the next sync, and the generated `icon_url` decides which
-        // source wins.
+        // must survive the next sync, and the service prefers the probe's.
         registry_icon_url: row.iconUrl,
         registry_icon_mime: row.iconMime,
         status: row.status,
@@ -489,16 +500,24 @@ export function createMcpMarketplaceRepository(
     },
 
     async listCatalogServers({ q, cursor, limit, includeHidden, storeOnly }) {
-      // The store pages in curated order; the Admin Console keeps the registry's
-      // own key, where "everything, alphabetically" is what a takedown list wants.
-      const orderColumn = storeOnly ? 'store_key' : 'registry_name';
-
+      /*
+        The store is a curated directory, not a paginated catalogue: at most a
+        couple of hundred rows, ordered by the admin's rank and then the registry
+        key. That is one `order=` pair and no keyset cursor, which is why the
+        table no longer needs a generated sort key.
+      */
       let builder = supabase
         .from(CATALOG_TABLE)
         .select(CATALOG_LIST_COLUMNS)
-        .order(orderColumn, { ascending: true })
-        // One extra row tells us whether another page exists, without a COUNT.
-        .limit(limit + 1);
+        .limit(storeOnly ? STORE_MAX_ROWS : limit + 1);
+
+      if (storeOnly) {
+        builder = builder
+          .order('featured_rank', { ascending: true, nullsFirst: false })
+          .order('registry_name', { ascending: true });
+      } else {
+        builder = builder.order('registry_name', { ascending: true });
+      }
 
       if (includeHidden) {
         // The takedown list shows the rows a member could meet — blocked and
@@ -519,25 +538,24 @@ export function createMcpMarketplaceRepository(
       const term = q.trim();
       if (term) builder = builder.ilike('search_text', `%${catalogSearchPattern(term)}%`);
 
-      const after = cursor ? decodeCatalogCursor(cursor) : null;
-      if (after) builder = builder.gt(orderColumn, after);
+      if (!storeOnly) {
+        const after = cursor ? decodeCatalogCursor(cursor) : null;
+        if (after) builder = builder.gt('registry_name', after);
+      }
 
       const { data, error } = await builder;
       if (error) throw error;
 
       const rows = (data ?? []) as McpCatalogListRow[];
+      if (storeOnly) return { rows, nextCursor: null };
+
       const hasMore = rows.length > limit;
       const page = hasMore ? rows.slice(0, limit) : rows;
       const last = page[page.length - 1];
-      const lastKey = last
-        ? orderColumn === 'store_key'
-          ? last.store_key
-          : last.registry_name
-        : null;
 
       return {
         rows: page,
-        nextCursor: hasMore && lastKey ? encodeCatalogCursor(lastKey) : null,
+        nextCursor: hasMore && last ? encodeCatalogCursor(last.registry_name) : null,
       };
     },
 

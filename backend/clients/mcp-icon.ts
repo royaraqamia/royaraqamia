@@ -14,7 +14,7 @@ import { logger } from '@/backend/shared/logger';
  * somebody else's document.
  */
 
-/** Mimes the proxy will serve. Mirrors the database's `icon_mime` constraint. */
+/** Mimes the proxy will serve. Mirrors the database's icon-mime constraint. */
 const ICON_MIMES = new Set([
   'image/png',
   'image/svg+xml',
