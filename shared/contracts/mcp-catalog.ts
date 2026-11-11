@@ -119,6 +119,13 @@ export const McpCatalogAdminRowSchema = McpCatalogRowSchema.extend({
   /** The address the mirror keeps: the first remote the policy accepted. */
   remoteUrl: z.string(),
   /**
+   * Who we are at this provider: `static` when the row carries a client we
+   * registered by hand (#1229), `dcr` when the flow registers itself. The admin
+   * needs it because a static row can be connectable without publishing a
+   * `registration_endpoint`, and verification asks about connectability.
+   */
+  registrationKind: z.enum(['dcr', 'static']),
+  /**
    * The admin's choice of remote, when it differs from the registry's first
    * accepted one. `null` means "follow the registry", which is the sync's job.
    */
@@ -222,6 +229,7 @@ export const MCP_CATALOG_ADMIN_COPY = {
   connectableUnknown: 'لم نتحقق بعد',
   verifiedBadge: 'في المتجر',
   unverifiedBadge: 'غير معتمد',
+  staticClientBadge: 'عميل مسجّل مسبقاً',
   verifyAction: 'اعتماد',
   manageVerifiedAction: 'إدارة الاعتماد',
   unverifyAction: 'إلغاء الاعتماد',

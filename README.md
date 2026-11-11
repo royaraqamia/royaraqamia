@@ -256,6 +256,8 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `SENTRY_AUTH_TOKEN`                    | **Secret.** Sentry auth token (build plugin, sourcemap upload)         | `sntrys_...`                                   | ✅ (for CI build)               |
 | `ADMIN_EMAILS`                         | Comma-separated emails granted admin access                            | `admin@royaraqamia.com,ops@royaraqamia.com`    | ✅                              |
 | `MCP_TOKEN_ENCRYPTION_KEY`             | **Secret.** 32-byte key (hex) encrypting MCP OAuth refresh tokens      | `a1b2...` (64 hex chars)                       | for `/mcp` OAuth only           |
+| `MCP_STATIC_CLIENT_GITHUB_ID`          | Pre-registered GitHub OAuth App client id (ADR-0163)                   | `Ov23li...`                                    | for the GitHub app in the store |
+| `MCP_STATIC_CLIENT_GITHUB_SECRET`      | **Secret.** That app's client secret; empty leaves GitHub on DCR       | `github-secret`                                | for the GitHub app in the store |
 | `ANONYMOUS_IP_SALT`                    | **Secret.** Salt hashing a visitor's IP for the anonymous allowance    | `change-me` (random 32+ bytes)                 | falls back to the MCP key       |
 | `UPSTASH_REDIS_REST_URL`               | Upstash Redis REST endpoint (rate limiting)                            | `https://<db>.upstash.io`                      | ✅                              |
 | `UPSTASH_REDIS_REST_TOKEN`             | **Secret.** Upstash Redis REST token                                   | `AVNS_...`                                     | ✅                              |

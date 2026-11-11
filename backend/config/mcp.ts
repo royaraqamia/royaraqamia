@@ -3,6 +3,7 @@ import { createMcpMarketplaceRepository } from '@/backend/repositories/mcp/marke
 import { createMcpRemoteClient } from '@/backend/clients/mcp-remote';
 import { createMcpRegistryClient } from '@/backend/clients/mcp-registry';
 import { createMcpIconClient } from '@/backend/clients/mcp-icon';
+import { readMcpStaticClients } from '@/backend/config/mcp-static-clients';
 import {
   createMcpCatalogService,
   type McpCatalogService,
@@ -61,6 +62,7 @@ export function createDefaultMcpConnectService(): McpConnectService {
   return createMcpConnectService({
     repository: createMcpMarketplaceRepository(),
     remote: createMcpRemoteClient(),
+    staticClients: readMcpStaticClients(),
   });
 }
 
@@ -75,6 +77,7 @@ export function createDefaultMcpCatalogService(): McpCatalogService {
     repository: createMcpMarketplaceRepository(),
     registry: createMcpRegistryClient(),
     remote: createMcpRemoteClient(),
+    staticClients: readMcpStaticClients(),
   });
 }
 

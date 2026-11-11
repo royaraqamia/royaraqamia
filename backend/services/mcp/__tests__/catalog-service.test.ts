@@ -6,6 +6,7 @@ import type {
   McpRegistryPage,
 } from '@/backend/clients/mcp-registry';
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
+import type { McpStaticClientMap } from '@/backend/shared/domain/mcp-static-clients';
 import type {
   McpCatalogAddressRecord,
   McpCatalogListRow,
@@ -167,13 +168,24 @@ function build(options: {
   repository: ReturnType<typeof fakeRepository>;
   pages: McpRegistryPage[];
   remote?: McpRemoteClient;
+  staticClients?: McpStaticClientMap;
 }) {
   return createMcpCatalogService({
     repository: options.repository.repository,
     registry: fakeRegistry(options.pages),
     remote: options.remote ?? fakeRemote(),
+    ...(options.staticClients ? { staticClients: options.staticClients } : {}),
     now: () => NOW,
   });
+}
+
+/**
+ * The rows the registry pass wrote. The sync also writes the curated rows the
+ * registry does not carry (#1229) on every run, so a test about the mirror
+ * filters those out rather than counting them as registry entries.
+ */
+function mirrored(upserts: McpCatalogUpsertRow[]): McpCatalogUpsertRow[] {
+  return upserts.filter((row) => row.registryName !== 'com.github/mcp');
 }
 
 describe('the registry pass', () => {
@@ -184,7 +196,7 @@ describe('the registry pass', () => {
     const result = await service.sync();
 
     expect(result).toMatchObject({ mode: 'pass', pages: 2, rows: 120, completed: true });
-    expect(repository.upserts).toHaveLength(120);
+    expect(mirrored(repository.upserts)).toHaveLength(120);
     expect(repository.marked).toEqual([NOW.toISOString()]);
     expect(repository.state.pass_completed_at).toBe(NOW.toISOString());
     expect(repository.state.cursor).toBeNull();
@@ -314,7 +326,9 @@ describe('what enters the mirror', () => {
 
     await service.sync();
 
-    expect(repository.upserts.map((row) => row.registryName)).toEqual(['com.example/public']);
+    expect(mirrored(repository.upserts).map((row) => row.registryName)).toEqual([
+      'com.example/public',
+    ]);
   });
 
   it('retires a deleted row the registry no longer gives an address for', async () => {
@@ -333,7 +347,7 @@ describe('what enters the mirror', () => {
     await service.sync();
 
     expect(repository.retired).toEqual(['com.example/gone']);
-    expect(repository.upserts).toEqual([]);
+    expect(mirrored(repository.upserts)).toEqual([]);
   });
 });
 
@@ -701,7 +715,7 @@ describe('the remote choice', () => {
 
     await service.probe(['com.cloudflare.mcp/mcp'], { force: true });
 
-    expect(remote.probeConnectable).toHaveBeenCalledWith(ACCOUNT);
+    expect(remote.probeConnectable).toHaveBeenCalledWith(ACCOUNT, { preRegistered: false });
   });
 
   it('keeps a verdict when the same address is saved again', async () => {
@@ -794,5 +808,107 @@ describe('the remote choice', () => {
       { type: 'streamable-http', url: ACCOUNT },
       { type: 'sse', url: 'https://sse.mcp.cloudflare.com/sse' },
     ]);
+  });
+});
+
+describe('a pre-registered client (issue #1229)', () => {
+  const GITHUB = 'com.github/mcp';
+
+  function staticClient() {
+    return new Map([
+      [
+        GITHUB,
+        {
+          registryName: GITHUB,
+          clientId: 'client-id',
+          clientSecret: 'client-secret',
+          authorizationServer: 'https://github.com/login/oauth',
+          authorizationEndpoint: 'https://github.com/login/oauth/authorize',
+          tokenEndpoint: 'https://github.com/login/oauth/access_token',
+          revocationEndpoint: null,
+          scopes: ['repo'],
+          tokenEndpointAuthMethod: 'client_secret_post' as const,
+        },
+      ],
+    ]);
+  }
+
+  it('probes its row as pre-registered, so the missing endpoint is not a refusal', async () => {
+    const address: McpCatalogAddressRecord = {
+      registry_name: GITHUB,
+      remote_url: 'https://api.githubcopilot.com/mcp/',
+      remote_override: null,
+      probed_at: null,
+      blocked_at: null,
+      status: 'active',
+    };
+    const repository = fakeRepository({ getCatalogAddresses: async () => [address] });
+    const remote = fakeRemote();
+    const service = build({ repository, pages: [], remote, staticClients: staticClient() });
+
+    await service.probe([GITHUB]);
+
+    expect(remote.probeConnectable).toHaveBeenCalledWith('https://api.githubcopilot.com/mcp/', {
+      preRegistered: true,
+    });
+    expect(repository.probes[0]?.probe.connectable).toBe(true);
+  });
+
+  it('writes the curated row the registry does not carry', async () => {
+    const repository = fakeRepository();
+    const service = build({ repository, pages: [rows(120, null)] });
+
+    await service.sync();
+
+    const curated = repository.upserts.find((row) => row.registryName === GITHUB);
+    expect(curated).toMatchObject({
+      title: 'GitHub',
+      remoteUrl: 'https://api.githubcopilot.com/mcp/',
+      status: 'active',
+    });
+    // Written before the sweep, so a pass never retires it as a vanished row.
+    expect(repository.upserts.indexOf(curated!)).toBeGreaterThanOrEqual(120);
+  });
+
+  it('seeds it with the launch set and names it in the admin list', async () => {
+    const repository = fakeRepository({
+      listCatalogServers: async () => ({
+        rows: [
+          {
+            registry_name: GITHUB,
+            title: 'GitHub',
+            title_override: 'GitHub',
+            description: "GitHub's remote MCP server",
+            name_ar: null,
+            description_ar: null,
+            remote_url: 'https://api.githubcopilot.com/mcp/',
+            remote_override: null,
+            status: 'active',
+            version: null,
+            published_at: null,
+            fetched_at: NOW.toISOString(),
+            registry_icon_url: null,
+            registry_icon_mime: null,
+            probe_icon_url: null,
+            probe_icon_mime: null,
+            featured_rank: null,
+            verified_at: NOW.toISOString(),
+            blocked_at: null,
+            blocked_reason: null,
+            connectable: true,
+            connectable_reason: null,
+            probed_at: NOW.toISOString(),
+          },
+        ],
+        nextCursor: null,
+      }),
+    });
+    const service = build({ repository, pages: [rows(120, null)], staticClients: staticClient() });
+
+    await service.sync();
+    const page = await service.adminList({ q: '', cursor: null });
+
+    expect(repository.seeded[0]).toContain(GITHUB);
+    expect(page.servers[0]?.registrationKind).toBe('static');
   });
 });
