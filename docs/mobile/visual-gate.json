@@ -429,14 +429,14 @@
         {
           "name": "analytics",
           "tolerance": {
-            "pixels": 0.1,
-            "length": 1.5
+            "pixels": 0.04,
+            "length": 2.0
           },
           "baseline": {
-            "recorded": "2026-11-10",
-            "measured": 0.0954,
+            "recorded": "2026-11-11",
+            "measured": 0.037,
             "alignment": {
-              "dx": 0,
+              "dx": -3,
               "dy": 2
             }
           }

@@ -9,11 +9,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalytics
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalyticsClicksByDateItem
 import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalyticsDevice
 import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalyticsDeviceBrowsersItem
 import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalyticsDeviceDevicesItem
@@ -380,21 +382,32 @@ class LinksnapAccountScreenVisualTest {
     }
 
     /**
-     * The analytics drawer under the row (#962).
+     * The analytics drawer under the row (#962) and its chart (#963).
      *
      * The drawer's content is drawn in its filled face on the same fixture row;
-     * the contract measures the three range presets and the capture is the group,
-     * because the rest of the drawer is a list of server-owned numbers whose
-     * boxes are not a design decision. The chart (#963) and the CSV export (#964)
-     * are the next slices and are not drawn.
+     * the contract measures the three range presets and now the chart's card, its
+     * title, the first and last day's marker and the y axis' first tick. The chart
+     * is the capture: its raster is what proves the line, the grid and the day
+     * labels the page draws. The fixture is the page's own shape - a week of
+     * days with the gate's three clicks on the last one - so the plot is drawn
+     * rather than the empty sentence.
      */
     @Test
     fun `the analytics drawer records the same numbers as the page`() {
+        val today = java.time.LocalDate.now()
+        val clicksByDate =
+            (7 downTo 0).map { offset ->
+                val day = today.minusDays(offset.toLong())
+                LinksnapAnalyticsResponseAnalyticsClicksByDateItem(
+                    date = day.toString(),
+                    clicks = if (offset == 0) 3L else 0L,
+                )
+            }
         val summary =
             LinksnapAnalyticsResponseAnalytics(
                 totalClicks = 3,
                 recentClicks = emptyList(),
-                clicksByDate = emptyList(),
+                clicksByDate = clicksByDate,
                 topReferrers =
                     listOf(
                         LinksnapAnalyticsResponseAnalyticsTopReferrersItem(
@@ -449,6 +462,10 @@ class LinksnapAccountScreenVisualTest {
             }
         }
 
+        val scale =
+            width(LinksnapAnalyticsChartMetrics.PLOT) / LinksnapChartGeometry.WIDTH
+        val marker = LinksnapAnalyticsChartMetrics.markerSize(scale).value
+
         val json =
             """
             {
@@ -486,15 +503,43 @@ class LinksnapAccountScreenVisualTest {
                   "radius": ${LinksnapAnalyticsMetrics.presetRadius.value},
                   "paddingTop": ${LinksnapAnalyticsMetrics.presetPaddingY.value},
                   "paddingLeft": ${LinksnapAnalyticsMetrics.presetPaddingX.value}
+                },
+                "chart": {
+                  "width": ${width(LinksnapAnalyticsChartMetrics.CHART)},
+                  "height": ${height(LinksnapAnalyticsChartMetrics.CHART)},
+                  "radius": ${LinksnapAnalyticsChartMetrics.cardRadius.value},
+                  "paddingTop": ${LinksnapAnalyticsChartMetrics.cardPadding.value},
+                  "paddingLeft": ${LinksnapAnalyticsChartMetrics.cardPadding.value}
+                },
+                "chart-title": {
+                  "height": ${height(LinksnapAnalyticsChartMetrics.TITLE)},
+                  "fontSize": ${LinksnapAnalyticsChartMetrics.titleFontSize},
+                  "fontWeight": ${FontWeight.Medium.weight},
+                  "lineHeight": ${LinksnapAnalyticsChartMetrics.titleLineHeightUnits}
+                },
+                "first-point": {
+                  "width": $marker,
+                  "height": $marker
+                },
+                "last-point": {
+                  "width": $marker,
+                  "height": $marker
+                },
+                "axis-label": {
+                  "fontSize": ${LinksnapAnalyticsChartMetrics.axisFontSize},
+                  "fontWeight": ${FontWeight.Normal.weight}
                 }
               }
             }
             """.trimIndent()
 
+        compose.onNodeWithTag(LinksnapAnalyticsChartMetrics.CHART, useUnmergedTree = true)
+            .performScrollTo()
+
         val dir = File("../../e2e/__visual__/account-links/analytics").apply { mkdirs() }
         File(dir, "app.json").writeText("$json\n")
         compose
-            .onNodeWithTag(LinksnapAnalyticsMetrics.PRESETS, useUnmergedTree = true)
+            .onNodeWithTag(LinksnapAnalyticsChartMetrics.CHART, useUnmergedTree = true)
             .captureRoboImage(File(dir, "app.png").path)
     }
 

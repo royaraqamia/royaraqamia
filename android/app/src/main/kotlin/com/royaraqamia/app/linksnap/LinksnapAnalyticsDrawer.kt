@@ -252,6 +252,17 @@ private fun LinksnapAnalyticsReady(
             ReferrersCard(summary.topReferrers.map { it.name to it.count })
             ActivityCard(summary.recentClicks.map { it.userAgent to it.clickedAt })
         }
+
+        // The click chart (#963), the page's last block in the drawer. An empty
+        // period keeps the page's dashed sentence rather than an empty box.
+        LinksnapAnalyticsChart(
+            state =
+                if (summary.clicksByDate.isEmpty()) {
+                    LinksnapAnalyticsChartUiState.Empty
+                } else {
+                    LinksnapAnalyticsChartUiState.Ready(summary.clicksByDate)
+                }
+        )
     }
 }
 

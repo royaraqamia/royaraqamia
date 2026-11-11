@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { DailyClickStat } from '@/shared/contracts/linksnap';
 import { m, useReducedMotion } from 'motion/react';
+import { LINK_ANALYTICS_CHART_COPY } from './analytics-chart-copy';
 
 interface AnalyticsChartProps {
   stats: DailyClickStat[];
@@ -41,9 +42,10 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: [0.33, 1, 0.68, 1] }}
+        data-visual="link-analytics-chart-empty"
         className="h-64 flex items-center justify-center bg-muted/30 rounded-xl border border-dashed border-border"
       >
-        <p className="text-sm text-muted-foreground">لا توجد بيانات متاحة لهذه الفترة</p>
+        <p className="text-sm text-muted-foreground">{LINK_ANALYTICS_CHART_COPY.empty}</p>
       </m.div>
     );
   }
@@ -80,17 +82,22 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={reducedMotion ? { duration: 0 } : { duration: 0.25, ease: [0.33, 1, 0.68, 1] }}
+      data-visual="link-analytics-chart"
       className="w-full bg-card p-6 rounded-xl border border-border shadow-sm card-lift"
     >
-      <p className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">
-        أداء النقرات (آخر 7 أيام)
+      <p
+        data-visual="link-analytics-chart-title"
+        className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider"
+      >
+        {LINK_ANALYTICS_CHART_COPY.title}
       </p>
       <div className="relative w-full overflow-x-auto">
         <svg
+          data-visual="link-analytics-chart-plot"
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-auto overflow-visible"
           role="img"
-          aria-label="رسم بياني لأداء النقرات خلال آخر 7 أيام"
+          aria-label={LINK_ANALYTICS_CHART_COPY.ariaLabel}
         >
           <defs>
             <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
@@ -119,6 +126,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                   x={paddingLeft - 10}
                   y={y + 4}
                   textAnchor="end"
+                  data-visual={i === 0 ? 'link-analytics-chart-axis' : undefined}
                   className="text-[10px] font-mono fill-muted-foreground"
                 >
                   {label}
@@ -165,6 +173,13 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                 fill="hsl(var(--primary))"
                 stroke="hsl(var(--background))"
                 strokeWidth="2"
+                data-visual={
+                  i === 0
+                    ? 'link-analytics-chart-first'
+                    : i === points.length - 1
+                      ? 'link-analytics-chart-last'
+                      : undefined
+                }
                 className="transition-safe duration-200"
               />
               {/* Invisible touch target */}
@@ -186,7 +201,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                   fill="white"
                   className="text-[10px] font-mono font-medium"
                 >
-                  {p.stat.clicks} نقرة
+                  {LINK_ANALYTICS_CHART_COPY.clicks.replace('{count}', String(p.stat.clicks))}
                 </text>
               </g>
             </g>
