@@ -129,3 +129,23 @@ describe('useBulkLinks — Local Store path', () => {
     expect(bulkLinkAction).not.toHaveBeenCalled();
   });
 });
+
+describe('useBulkLinks — legacy bulk endpoint', () => {
+  beforeEach(() => {
+    vi.mocked(bulkLinkAction).mockClear();
+  });
+
+  it('sends the instant it was given to the bulk endpoint', async () => {
+    // No provider on the page: the admin console and legacy callers take this
+    // branch, and it has to carry the same instant the Local Store path writes.
+    const { result } = renderHook(() => useBulkLinks(['abc'], 'token'));
+    act(() => result.current.toggle('abc'));
+
+    const expiresAt = '2026-11-07T20:59:59.000Z';
+    await act(async () => {
+      expect(await result.current.runSetExpiry(expiresAt)).toBe(true);
+    });
+
+    expect(bulkLinkAction).toHaveBeenCalledWith('token', 'setExpiry', ['abc'], expiresAt);
+  });
+});

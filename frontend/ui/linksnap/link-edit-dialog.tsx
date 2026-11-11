@@ -48,6 +48,7 @@ import {
   type LinkEditBaseline,
 } from './link-edit-dialog.reducer';
 import { LINK_EDIT_DIALOG_COPY } from './link-edit-dialog-copy';
+import { expiryInstant } from '@/frontend/shared/linksnap/expiry';
 
 interface LinkEditDialogProps {
   open: boolean;
@@ -194,12 +195,11 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
       return;
     }
 
-    // Expiry payload logic
-    let expiresAt: string | null = null;
-    if (form.enableExpiry && form.expiresDate) {
-      const timePart = form.expiresTime || '23:59:59';
-      expiresAt = new Date(`${form.expiresDate}T${timePart}`).toISOString();
-    }
+    // Expiry payload logic — the same end-of-day rule the bulk bar uses.
+    const expiresAt =
+      form.enableExpiry && form.expiresDate
+        ? expiryInstant(form.expiresDate, form.expiresTime)
+        : null;
 
     try {
       const updated = await updateLink(clientId, {

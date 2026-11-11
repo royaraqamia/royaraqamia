@@ -13,6 +13,7 @@ import { useBulkLinks } from '@/frontend/state/linksnap/use-bulk-links';
 import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
 import { LinksnapSyncStatus } from '@/frontend/ui/linksnap/linksnap-sync-status';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
+import { expiryInstant } from '@/frontend/shared/linksnap/expiry';
 import { toast } from 'sonner';
 
 interface LinkDashboardProps {
@@ -49,7 +50,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
       toast.error('اختر تاريخ انتهاء الصلاحية');
       return;
     }
-    const ok = await bulk.runSetExpiry(new Date(expiryDate).toISOString());
+    const ok = await bulk.runSetExpiry(expiryInstant(expiryDate));
     if (ok) {
       toast.success('تم تعيين تاريخ الانتهاء');
       setExpiryOpen(false);
