@@ -1,26 +1,21 @@
 import { z } from 'zod';
 
 /**
- * Keyset cursor for the MCP catalogue (phase 2, #1223; store order in ADR-0162).
+ * Keyset cursor for the MCP catalogue (phase 2, #1223).
  *
- * The Admin Console orders by `registry_name` — the registry's own key, unique by
- * definition. The store orders by `store_key` (`featured_rank` padded, then the
- * registry name), so both are one string and one cursor; a two-key cursor
- * interpolated into a PostgREST `or()` is the filter-syntax hazard
- * `backend/shared/postgrest-or-filter.ts` exists for.
+ * The list is ordered `registry_name ASC` — the registry's own key, unique by
+ * definition — so a cursor is just the last row's key. Ordering by title would
+ * read nicer and cost a two-key cursor interpolated into a PostgREST `or()`,
+ * which is the filter-syntax hazard `backend/shared/postgrest-or-filter.ts`
+ * exists for; the catalogue is searched, not ranked, so the safe order wins.
  *
  * The encoded value is opaque to clients and re-validated on decode: it becomes
- * a filter value, and a key that carries `,`, `(` or `)` would corrupt the
+ * a filter value, and a name that carries `,`, `(` or `)` would corrupt the
  * expression rather than fail.
  */
 
-/**
- * `ac.inference.sh/mcp`, `com.supabase/mcp`, or a store key
- * (`000003:com.notion/mcp`): a reverse-DNS name and a path, optionally behind the
- * rank prefix. The colon is part of `store_key`; the dangerous characters are the
- * ones PostgREST's filter syntax uses.
- */
-const REGISTRY_NAME = /^[A-Za-z0-9][A-Za-z0-9._:-]*(?:\/[A-Za-z0-9._-]+)+$/;
+/** `ac.inference.sh/mcp`, `com.supabase/mcp`: a reverse-DNS name and a path. */
+const REGISTRY_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*(?:\/[A-Za-z0-9._-]+)+$/;
 
 const CatalogCursorSchema = z.object({
   n: z.string().regex(REGISTRY_NAME),

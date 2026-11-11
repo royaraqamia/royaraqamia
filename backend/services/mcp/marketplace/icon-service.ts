@@ -28,17 +28,18 @@ export function createMcpIconService({
       if (registryName.length === 0 || registryName.length > 200) return null;
 
       const server = await repository.getCatalogServer(registryName);
+      const iconUrl = server ? (server.probe_icon_url ?? server.registry_icon_url) : null;
       if (
         !server ||
         server.status !== 'active' ||
         server.blocked_at !== null ||
         server.verified_at === null ||
-        !server.icon_url
+        !iconUrl
       ) {
         return null;
       }
 
-      return icons.fetch(server.icon_url);
+      return icons.fetch(iconUrl);
     },
   };
 }

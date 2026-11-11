@@ -283,17 +283,18 @@ admin's withdrawal, so the seed is a bootstrap and never overrules the person. T
 decides whether each one appears, because the store's query asks for `connectable = true`.
 
 A brand mark is captured from two sources and kept apart: the registry's `icons` are rewritten on
-every sync, the server's RFC 9728 `logo_uri` is written by the probe, and the generated `icon_url`
-prefers the probe. The member's browser never fetches a third party: `/mcp/icon?name=<registry>`
-proxies the stored URL through the same egress policy, and a row with no mark draws a monogram.
+every sync, the server's RFC 9728 `logo_uri` is written by the probe, and the service prefers the
+probe's URL. The member's browser never fetches a third party: `/mcp/icon?name=<registry>` proxies
+the stored URL through the same egress policy, and a row with no mark draws a monogram.
 
 The Latin name is the same seam: `title_override` is written by an admin and survives the sync, so
 `com.vercel/vercel-mcp` draws as **Vercel**. The registry's own `title` stays beside it for the
 Admin Console and for a future upstream correction.
 
-The store's order is `store_key`: `featured_rank` (lower first, null last) then `registry_name`, in
-one sortable key so the cursor stays one column. A newly verified row appears after the featured
-ones until an admin gives it a rank.
+The store is drawn in one query, ordered by `featured_rank` (lower first, null last) then
+`registry_name`. A curated directory is small enough that it needs no keyset cursor, so the table
+needs no generated sort key; a newly verified row appears after the featured ones until an admin
+gives it a rank.
 
 ### Search
 
@@ -302,9 +303,10 @@ text is one generated column (`search_text`: title, description, both Arabic ove
 registry name) with a trigram index, so a member who types «نوشن» finds a row an admin translated
 and one who types `notion` finds it before anyone did. A blank `q` is the whole catalogue.
 
-Rows are ordered `registry_name ASC` and the cursor is that key: a title ordering would read nicer
-and cost a two-key cursor interpolated into a PostgREST `or()`, which is the filter-syntax hazard
-`backend/shared/postgrest-or-filter.ts` exists for. The catalogue is searched, not ranked.
+The Admin Console's list is ordered `registry_name ASC` and its cursor is that key: a title ordering
+would read nicer and cost a two-key cursor interpolated into a PostgREST `or()`, which is the filter
+syntax hazard `backend/shared/postgrest-or-filter.ts` exists for. The member's store uses the
+curated order above and one bounded query. The catalogue is searched, not ranked.
 
 ### Takedown and the Arabic overrides
 

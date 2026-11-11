@@ -23,7 +23,10 @@ const VERIFIED: McpCatalogServerRecord = {
   status: 'active',
   blocked_at: null,
   blocked_reason: null,
-  icon_url: 'https://mcp.vercel.com/icons/vercel-light.svg',
+  registry_icon_url: 'https://mcp.vercel.com/icons/vercel-light.svg',
+  registry_icon_mime: 'image/svg+xml',
+  probe_icon_url: null,
+  probe_icon_mime: null,
   verified_at: '2026-11-14T00:00:00.000Z',
   connectable: true,
   connectable_reason: null,
@@ -58,7 +61,7 @@ describe('the icon service', () => {
     ['an unverified row', { verified_at: null }],
     ['a blocked row', { blocked_at: '2026-11-14T00:00:00.000Z' }],
     ['a retired row', { status: 'deleted' }],
-    ['a row with no mark', { icon_url: null }],
+    ['a row with no mark', { registry_icon_url: null, probe_icon_url: null }],
   ])('answers nothing for %s', async (_label, overrides) => {
     const icons = fakeIcons();
     const service = createMcpIconService({

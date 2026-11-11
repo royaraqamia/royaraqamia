@@ -41,13 +41,14 @@ true`, `status = 'active'` and `blocked_at is null`.
    a server that comes back returns the same way. The batch is small because the registry pass has
    already spent the run's budget.
 
-6. **The order is curated, not alphabetical.** `featured_rank` then `registry_name`, stored as one
-   generated `store_key` so the list keeps its single-column cursor. Rank is a position, not a score;
-   null sorts last. Without this the first page is `ac.*`, `ai.*`, `app.*` — the registry's noise.
+6. **The order is curated, not alphabetical.** `featured_rank` then `registry_name`, two ordinary
+   columns and one `order=` pair. Rank is a position, not a score; null sorts last. A curated store
+   is small enough to draw in one query, so there is no keyset cursor that needs a second sort key.
+   Without the order the first page is `ac.*`, `ai.*`, `app.*` — the registry's noise.
 
 7. **Brand marks are ours to serve.** The registry's `icons` and the server's RFC 9728 `logo_uri`
    are captured into separate columns, so a daily sync cannot erase the mark the probe found, and
-   the generated `icon_url` prefers the probe. The member's browser fetches `/mcp/icon?name=<row>`,
+   the service prefers the probe's mark. The member's browser fetches `/mcp/icon?name=<row>`,
    never a third party: the proxy reads the stored URL through `backend/shared/egress`, serves only
    image types under half a megabyte, and answers a monogram fallback when there is nothing to
    serve. Hotlinking would leak the member's address and break when a provider blocks it.
@@ -66,8 +67,10 @@ true`, `status = 'active'` and `blocked_at is null`.
   reason is read.
 - **A row with no mark is still offered.** The monogram is a fallback, not an admission rule: a
   verified server with no published icon is better than a hidden one.
-- **`icon_url` and `icon_mime` are generated.** The repository writes only the source columns;
-  a hand-written update to the generated column is a database error rather than a silent override.
+- **The icon is resolved in the service, not the database.** The two sources are plain columns, so a
+  sync and a probe never overwrite each other and neither costs a table rewrite. A stored generated
+  column was the first shape of this change and the catalogue's statement timeout cancelled it; the
+  service's `probe ?? registry` choice is the cheaper answer.
 - **The app is a client of the same rule.** The native marketplace port reads the same contract and
   draws the same verified rows; it is switched on by `check:visual` like every other port.
 
