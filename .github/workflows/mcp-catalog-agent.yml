@@ -1,0 +1,155 @@
+# The MCP catalogue agent (#1293, half 2).
+#
+# One run measures a capped page of catalogue rows, sources a mark and the
+# Arabic copy from sources it is allowed to use, and writes through a scoped
+# endpoint. The deterministic checks decide; the model never publishes.
+#
+# Rollout (issue #1293, half 3): this workflow is dispatch-only until the
+# ladder's first three manual runs are recorded. The schedule is added after
+# that, not before. `dry_run` defaults to `true`, and `MCP_CATALOG_AGENT_ENABLED`
+# (a repository variable) is the kill switch: with it off, `apply` writes
+# nothing and says so.
+#
+# Secrets:
+#   MCP_CATALOG_AGENT_TOKEN - a revocable token the endpoint compares in constant
+#                             time; the job holds no service-role key.
+#   OPENCODE_API_KEY        - the model step's credential.
+#   SUPABASE_PROJECT_REF    - only so the shared runner config can be written.
+#
+# Variables:
+#   MCP_CATALOG_AGENT_URL      - default https://royaraqamia.com
+#   MCP_CATALOG_AGENT_ENABLED  - 'true' opens the kill switch
+#   MCP_CATALOG_AGENT_CAP      - candidates measured per run (default 3 until the ladder)
+#   MCP_CATALOG_AGENT_PUBLISH_CAP - publishes per run (default 3)
+#   MCP_CATALOG_AGENT_EGRESS_BUDGET - rows measured per run (defaults to the cap)
+
+name: 'MCP Catalogue Agent'
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Measure and report, write nothing. Uncheck only for a ladder run.'
+        type: boolean
+        default: true
+      cap:
+        description: 'Candidates to measure this run (1-20). Empty uses the variable.'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcp-catalog-agent
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    name: Measure, source and apply
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Checkout
+        # Read-only on purpose: the agent writes to the store through the
+        # endpoint, never to this branch.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          cache-next: 'false'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: OpenCode Runner Setup
+        uses: ./.github/actions/opencode-runner
+        with:
+          supabase-project-ref: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      - name: Measure a capped page
+        id: plan
+        env:
+          MCP_CATALOG_AGENT_TOKEN: ${{ secrets.MCP_CATALOG_AGENT_TOKEN }}
+          MCP_CATALOG_AGENT_URL: ${{ vars.MCP_CATALOG_AGENT_URL || 'https://royaraqamia.com' }}
+          MCP_CATALOG_AGENT_CAP: ${{ github.event.inputs.cap || vars.MCP_CATALOG_AGENT_CAP || '3' }}
+          MCP_CATALOG_AGENT_PUBLISH_CAP: ${{ vars.MCP_CATALOG_AGENT_PUBLISH_CAP || '3' }}
+          MCP_CATALOG_AGENT_EGRESS_BUDGET: ${{ github.event.inputs.cap || vars.MCP_CATALOG_AGENT_CAP || '3' }}
+        run: node scripts/mcp-catalog-agent.mjs plan
+
+      - name: Source marks and copy — DeepSeek 4.1 Flash
+        id: source
+        timeout-minutes: 15
+        uses: anomalyco/opencode/github@1c63fe9afeff4ead2623e9bbb2e2bc40e6205c0b # v1.18.21
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 120000
+        with:
+          model: opencode-go/deepseek-v4.1-flash
+          share: 'false'
+          prompt: |
+            You are the sourcing step of the MCP catalogue agent. A deterministic
+            runner has already measured the rows; you do not decide whether a row
+            may be published.
+
+            Read /tmp/mcp-catalog-agent-plan.json. Every entry with
+            `needsMark: true` and no `measuredMark` needs a brand mark. Every entry
+            with `needsCopy: true` needs its Arabic copy. Entries with neither are
+            not your work, and a row you cannot source is left out — the runner
+            records it as waiting for a person.
+
+            A mark may come from exactly three sources, in this order of
+            preference, and the source you name must be the one you used:
+
+            1. `logo_uri` — the RFC 9728 mark the probe measured. It is already in
+               the entry as `measuredMark`; if that is null, this source has
+               nothing, and you must not guess a URL.
+            2. `brand` — the brand's own SVG on the brand's own domain. Open the
+               brand's site and take the asset URL it serves; do not use a
+               third-party logo site for this source.
+            3. `simple_icons` — the official Simple Icons mark (CC0), as
+               `https://cdn.simpleicons.org/<slug>` where `<slug>` is the Simple
+               Icons slug. Never use a slug you have not confirmed exists.
+
+            A mark is the real mark or nothing. Do not approximate a logo, do not
+            build one from the name, and do not reuse a different product's mark.
+
+            The copy is a transform, never an author. For each entry with
+            `needsCopy`:
+
+            - `titleOverride`: the registry's own title normalised to the brand
+              without the vendor's descriptor (`Vercel MCP Server` → `Vercel`).
+            - `nameAr`: that brand name in Arabic script.
+            - `descriptionAr`: a faithful Arabic translation of the entry's
+              `description`. Keep every claim the publisher made and add none.
+              Never rewrite the English, and never write marketing.
+
+            Your only deliverable is /tmp/mcp-catalog-agent-decisions.json, and it
+            must be exactly this shape:
+
+            {
+              "marks": [
+                { "registryName": "...", "mark": "https://...", "source": "brand" }
+              ],
+              "copies": [
+                { "registryName": "...", "titleOverride": "...", "nameAr": "...", "descriptionAr": "..." }
+              ]
+            }
+
+            Write the file with the Write tool, then stop. Do not modify the
+            repository, do not run git, and do not call any API.
+
+      - name: Apply what the checks allow
+        id: apply
+        env:
+          MCP_CATALOG_AGENT_TOKEN: ${{ secrets.MCP_CATALOG_AGENT_TOKEN }}
+          MCP_CATALOG_AGENT_URL: ${{ vars.MCP_CATALOG_AGENT_URL || 'https://royaraqamia.com' }}
+          MCP_CATALOG_AGENT_ENABLED: ${{ vars.MCP_CATALOG_AGENT_ENABLED || 'false' }}
+          MCP_CATALOG_AGENT_DRY_RUN: ${{ github.event.inputs.dry_run }}
+        run: node scripts/mcp-catalog-agent.mjs apply
