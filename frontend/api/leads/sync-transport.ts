@@ -76,9 +76,7 @@ export function createLeadHttpSyncTransport(
         }
         const submittedBy = (entry.payload as { user_id?: unknown } | null)?.user_id;
         if (submittedBy !== accountId) {
-          throw new PermanentSyncError(
-            'هذا الطلب أرسله حساب آخر. سجّل الدخول بالحساب الذي أرسله.'
-          );
+          throw new PermanentSyncError('هذا الطلب أرسله حساب آخر. سجّل الدخول بالحساب الذي أرسله.');
         }
       }
 
