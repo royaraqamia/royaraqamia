@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import {
   calculateHabitStats,
   calculateAggregateStats,
@@ -228,6 +228,47 @@ describe('get30DayCalendarGrid', () => {
       expect(g.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(g.dayLabel.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('get30DayCalendarGrid west of UTC', () => {
+  const ORIGINAL_TZ = process.env.TZ;
+
+  afterEach(() => {
+    if (ORIGINAL_TZ === undefined) delete process.env.TZ;
+    else process.env.TZ = ORIGINAL_TZ;
+  });
+
+  /** The weekday a `YYYY-MM-DD` day really falls on, read without the browser's offset. */
+  function weekdayOf(date: string): string {
+    return new Date(`${date}T00:00:00.000Z`).toLocaleDateString('ar-SA-u-nu-latn', {
+      weekday: 'short',
+      timeZone: 'UTC',
+    });
+  }
+
+  it('labels every cell with the weekday of its own date', () => {
+    process.env.TZ = 'America/New_York'; // UTC-4: UTC midnight is still the previous day there.
+    const grid = get30DayCalendarGrid(TODAY);
+    expect(grid.filter((cell) => cell.dayLabel !== weekdayOf(cell.date))).toEqual([]);
+  });
+
+  it('labels the window end Sunday, not the Saturday before it', () => {
+    process.env.TZ = 'America/New_York';
+    const grid = get30DayCalendarGrid(TODAY);
+    expect(grid.slice(-2)).toEqual([
+      { date: '2026-08-01', dayLabel: 'السبت', isToday: false },
+      { date: '2026-08-02', dayLabel: 'الأحد', isToday: true },
+    ]);
+  });
+
+  it('still returns 30 unique ascending days and marks today', () => {
+    process.env.TZ = 'America/New_York';
+    const grid = get30DayCalendarGrid(TODAY);
+    expect(grid).toHaveLength(30);
+    expect(new Set(grid.map((cell) => cell.date)).size).toBe(30);
+    expect(grid.every((cell, i) => i === 0 || grid[i - 1]!.date < cell.date)).toBe(true);
+    expect(grid.filter((cell) => cell.isToday).map((cell) => cell.date)).toEqual([TODAY]);
   });
 });
 
