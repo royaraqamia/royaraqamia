@@ -251,6 +251,12 @@ export function McpConnectionView({
       {connection.status === 'error' && (
         <Notice tone="danger">{connection.lastError ?? COPY.detailUnreachable}</Notice>
       )}
+      {/* A refusal the provider answered with a scope, not a dead grant: the
+          sentence names the permission and the widen control below is the
+          repair. The connection stays usable for everything the grant covers. */}
+      {connection.status === 'active' && connection.lastError && (
+        <Notice tone="warning">{connection.lastError}</Notice>
+      )}
       {staleTools && <Notice tone="warning">{COPY.detailStale}</Notice>}
 
       {actionError && <Notice tone="danger">{actionError}</Notice>}
@@ -309,6 +315,55 @@ export function McpConnectionView({
             );
           })}
         </div>
+      </section>
+
+      <section aria-labelledby="mcp-scopes-title" className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="mcp-scopes-title" className="text-base font-extrabold text-foreground">
+            {COPY.detailScopesTitle}
+          </h2>
+
+          {/* One repair, one control: a dead grant already has its own button in
+              the banner, and two of them for the same flow would read as two
+              different actions. */}
+          {connection.status !== 'needs_reauth' && (
+            <button
+              type="button"
+              onClick={() => void reconnect()}
+              disabled={reconnecting}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-bold text-muted-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:text-foreground disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              {reconnecting ? (
+                <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+              )}
+              {reconnecting ? COPY.reconnecting : COPY.widen}
+            </button>
+          )}
+        </div>
+
+        <p className="text-xs leading-relaxed text-muted-foreground">{COPY.detailScopesBody}</p>
+
+        {connection.scopes.length === 0 ? (
+          <p className="rounded-2xl border border-border/50 bg-card/60 px-4 py-3 text-xs text-muted-foreground">
+            {COPY.detailScopesEmpty}
+          </p>
+        ) : (
+          <ul className="flex flex-wrap gap-1.5" aria-label={COPY.detailScopesTitle}>
+            {connection.scopes.map((scope) => (
+              <li
+                key={scope}
+                dir="ltr"
+                className="rounded-lg border border-border/60 bg-muted/40 px-2 py-1 font-mono text-[11px] text-muted-foreground"
+              >
+                {scope}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{COPY.detailScopesAsk}</p>
       </section>
 
       <section aria-labelledby="mcp-tools-title" className="space-y-3">

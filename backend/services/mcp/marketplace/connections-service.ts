@@ -157,13 +157,20 @@ export function createMcpConnectionService({
       const connection = await repository.getConnection(userId, connectionId);
       if (!connection) return null;
 
-      const tools = await repository.listTools(connection.id);
+      const [tools, credentials] = await Promise.all([
+        repository.listTools(connection.id),
+        repository.getCredentials(connection.id),
+      ]);
       const syncedAt = tools.reduce(
         (latest, tool) => (tool.last_seen_at > latest ? tool.last_seen_at : latest),
         ''
       );
       return {
         ...toConnection(connection),
+        // The provider's own words, split on the separator RFC 6749 uses. Read
+        // from the credential row rather than the connection: the grant belongs
+        // to the token that was issued, and a reconnect replaces both.
+        scopes: (credentials?.scope ?? '').split(/\s+/).filter(Boolean),
         tools: tools.map((tool) => toTool(tool, syncedAt, connection.tool_count === 0)),
       };
     },

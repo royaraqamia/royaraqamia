@@ -70,8 +70,16 @@ export const McpConnectionToolSchema = z.object({
 
 export type McpConnectionTool = z.infer<typeof McpConnectionToolSchema>;
 
-/** The post-connect screen: the connection and every tool it advertised. */
+/**
+ * The post-connect screen: the connection and every tool it advertised.
+ *
+ * `scopes` is the grant the provider's token response named, as it named it —
+ * the one fact that says what the connection may actually do. It is empty for a
+ * row whose tokens predate the record, and a provider that publishes no scopes
+ * is not the same as one that published none: the screen says which.
+ */
 export const McpConnectionDetailSchema = McpConnectionSchema.extend({
+  scopes: z.array(z.string()),
   tools: z.array(McpConnectionToolSchema),
 });
 

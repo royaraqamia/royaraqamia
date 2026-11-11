@@ -191,6 +191,23 @@ redirect becomes credentials.
    `invalid_grant` marks the connection `needs_reauth` and the row says «أعد الربط» rather than
    failing a turn with a provider error.
 
+### A refusal is not always a dead grant (#1230)
+
+A provider can refuse a call the connection is otherwise allowed to make, because the token it
+issued lacks the permission that tool needs. That answer is `403` with RFC 6750's
+`error="insufficient_scope"` and the permission in `scope="…"` — measured on Supabase, 2026-11-11,
+where `execute_sql` asks for `database:write` and `get_publishable_keys` for `secrets:read`. It is
+**not** an expired grant: refreshing returns the same scope set, so the flow records the sentence
+naming the permission and keeps the connection `active`, and the post-connect screen offers the
+wider consent (`توسيع الصلاحيات`), which is the same flow again on the connection the member
+already holds. A `401`, or a `403` carrying `invalid_token`, still means what it meant: refresh once,
+then `needs_reauth`.
+
+The post-connect screen also draws the grant the token response named, as the provider named it.
+That set is the only honest answer to "what may this app do": `tools/list` is not filtered by it —
+Supabase advertised all 36 tools under a two-scope grant — so a tool list alone says which tools
+exist, not which ones will run.
+
 **No scope is requested**, at registration or at authorization. Declaring every scope a server
 publishes would ask the member for the widest consent the provider offers, on the strength of a
 guess about which tools need what; the provider's own default is the starting grant, and widening

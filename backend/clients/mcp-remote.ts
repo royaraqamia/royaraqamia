@@ -19,6 +19,8 @@ import { MCP_SERVER_VERSION } from '@/backend/services/mcp/constants';
 import { EgressBlockedError, createGuardedFetch, readCappedText } from '@/backend/shared/egress';
 import {
   McpRemoteError,
+  readAuthChallenge,
+  scopeRequirementSentence,
   type McpConnectProbe,
   type McpDiscovery,
   type McpOAuthClient,
@@ -670,8 +672,23 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
         { name: 'royaraqamia', version: MCP_SERVER_VERSION },
         { capabilities: {} }
       );
+      // A refusal's reason rides on the response the transport turns into an
+      // error, and the error keeps only the status. So the challenge is read
+      // here, at the one place that still holds it: `insufficient_scope` and
+      // `invalid_token` are two different repairs, and a 403 cannot be told
+      // apart from an expired grant without it (measured, Supabase
+      // 2026-11-11).
+      let challenge = '';
+      const readingFetch: typeof fetch = async (input, init) => {
+        const response = await guardedFetch(input, init);
+        if (response.status === 401 || response.status === 403) {
+          challenge = response.headers.get('www-authenticate') ?? '';
+        }
+        return response;
+      };
+
       const transport = new StreamableHTTPClientTransport(new URL(serverUrl), {
-        fetch: guardedFetch,
+        fetch: readingFetch,
         requestInit: { headers: { Authorization: `Bearer ${accessToken}` } },
       });
 
@@ -686,6 +703,18 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
           structured: result.structuredContent ?? null,
         };
       } catch (error) {
+        // A scope the grant never had is not a dead token: refreshing returns
+        // the same grant, so retrying it would only spend a refresh and then
+        // tell the member to reconnect a connection that still works.
+        const refusal = readAuthChallenge(challenge);
+        if (refusal.error === 'insufficient_scope') {
+          throw new McpRemoteError(
+            'scope',
+            scopeRequirementSentence(refusal.scope),
+            error,
+            refusal.scope
+          );
+        }
         // A refused token is its own answer: the caller refreshes once and asks
         // again, and only a second refusal means the grant is gone.
         if (refusedToken(error)) {

@@ -54,6 +54,12 @@ export const MCP_MARKETPLACE_COPY = {
 
   detailReach: 'يستطيع نور أن يستدعي أدوات هذا التطبيق عندما تطلب ذلك، ضمن الصلاحية أدناه.',
   detailPermissionTitle: 'الصلاحية',
+  detailScopesTitle: 'الصلاحيات الممنوحة',
+  detailScopesBody: 'ما منحه التطبيق لنور في حسابك، بأسماء الصلاحيات كما يسمّيها هو.',
+  detailScopesEmpty: 'لم نسجّل صلاحيات هذا الربط. أعد الربط لتُقرأ من التطبيق.',
+  detailScopesAsk: 'طلب أوسع للصلاحيات يمرّ على شاشة موافقة التطبيق من جديد.',
+  widen: 'توسيع الصلاحيات',
+  detailScopeRefused: 'رفض التطبيق آخر عملية لأن الصلاحية الممنوحة لا تشملها.',
   detailToolsTitle: 'أدوات التطبيق',
   detailToolsEmpty: 'لم يعلن التطبيق أي أداة.',
   toolWrites: 'كتابة',
