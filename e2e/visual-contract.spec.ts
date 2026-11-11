@@ -408,8 +408,8 @@ const PREPARE: Record<
   },
   // The analytics drawer the row's analytics action opens (#962). The fixture
   // link is the same settled row, and its three clicks are what the drawer
-  // reads: the capture is the presets group, which is server-independent once
-  // the drawer has answered.
+  // reads: the presets are the ready signal, and the capture is the click chart
+  // (#963), which is server-independent once the drawer has answered.
   'account-links/analytics': async (page) => {
     const baseURL = projectBaseURL();
     await signInAsVisualAccount(page.context(), baseURL);

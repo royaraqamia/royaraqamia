@@ -1,0 +1,22 @@
+{
+  "surface": "account-links",
+  "component": "account-links-analytics-chart",
+  "web": {
+    "file": "frontend/ui/linksnap/analytics-chart-copy.ts",
+    "export": "LINK_ANALYTICS_CHART_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapAnalyticsChartCopy.kt",
+    "object": "LinksnapAnalyticsChartCopy"
+  },
+  "notes": {
+    "source": "The owned-link analytics chart's words, in both clients (#963). The page's `frontend/ui/linksnap/analytics-chart.tsx` is the reference: the card's title, the sentence a period with no days gets instead of a plot, and the accessible name of the plot itself. The `clicks` sentence is the marker's tooltip. The axis values and the day labels are the server's data and are formatted rather than retyped, with ASCII digits.",
+    "gate": "`npm run check:copy` fails a stale output; `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
+  },
+  "strings": {
+    "title": "أداء النقرات (آخر 7 أيام)",
+    "empty": "لا توجد بيانات متاحة لهذه الفترة",
+    "ariaLabel": "رسم بياني لأداء النقرات خلال آخر 7 أيام",
+    "clicks": "{count} نقرة"
+  }
+}

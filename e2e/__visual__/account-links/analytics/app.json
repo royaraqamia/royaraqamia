@@ -33,6 +33,31 @@
       "radius": 6.0,
       "paddingTop": 6.0,
       "paddingLeft": 12.0
+    },
+    "chart": {
+      "width": 312.72726,
+      "height": 179.2727,
+      "radius": 12.0,
+      "paddingTop": 24.0,
+      "paddingLeft": 24.0
+    },
+    "chart-title": {
+      "height": 20.0,
+      "fontSize": 14.0,
+      "fontWeight": 500,
+      "lineHeight": 20.0
+    },
+    "first-point": {
+      "width": 4.235636,
+      "height": 4.235636
+    },
+    "last-point": {
+      "width": 4.235636,
+      "height": 4.235636
+    },
+    "axis-label": {
+      "fontSize": 10.0,
+      "fontWeight": 400
     }
   }
 }
