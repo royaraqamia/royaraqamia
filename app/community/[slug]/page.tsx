@@ -1,8 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { isValidElement } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type ExtraProps } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import type { LanguageFn } from 'lowlight';
@@ -30,6 +29,7 @@ import {
 } from '@/backend/loaders/community';
 import { getCanonicalOrigin } from '@/frontend/shared/constants';
 import { postExcerpt } from '@/shared/reading-time';
+import { markdownHeadings, remarkHeadingIds } from '@/shared/markdown/heading-ids';
 import type { Metadata } from 'next';
 
 const highlightLanguages: Record<string, LanguageFn> = {
@@ -61,37 +61,10 @@ export async function generateStaticParams(): Promise<{ slug: string }[]> {
   return slugs.map((slug) => ({ slug }));
 }
 
-function extractHeadings(content: string): { level: number; text: string; id: string }[] {
-  const headingRegex = /^(#{1,3})\s+(.+)$/gm;
-  const headings: { level: number; text: string; id: string }[] = [];
-  let match;
-  while ((match = headingRegex.exec(content)) !== null) {
-    const text = (match[2] ?? '').trim();
-    const id = text
-      .toLowerCase()
-      .replace(/[^\w\s\u0600-\u06FF-]/g, '')
-      .replace(/[\u060C\u061B\u061F\u0640\u066A\u066B\u066C\u066D\u06D4]/g, '')
-      .replace(/\s+/g, '-');
-    headings.push({ level: (match[1] ?? '').length, text, id });
-  }
-  return headings;
-}
-
-function flattenText(node: React.ReactNode): string {
-  if (typeof node === 'string') return node;
-  if (typeof node === 'number') return String(node);
-  if (Array.isArray(node)) return node.map(flattenText).join('');
-  if (isValidElement(node)) {
-    return flattenText((node.props as { children?: React.ReactNode }).children);
-  }
-  return '';
-}
-
-function getHeadingId(children: React.ReactNode): string {
-  return flattenText(children)
-    .toLowerCase()
-    .replace(/[^\w\s\u0600-\u06FF-]/g, '')
-    .replace(/\s+/g, '-');
+/** The id `remarkHeadingIds` put on the heading the body is about to draw. */
+function headingElementId(node: ExtraProps['node']): string | undefined {
+  const id = node?.properties?.id;
+  return typeof id === 'string' ? id : undefined;
 }
 
 export async function generateMetadata(props: {
@@ -128,17 +101,17 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
 
   const { post: p, author, postTags } = loaded;
 
-  const headings = extractHeadings(p.content ?? '');
+  const headings = markdownHeadings(p.content ?? '');
   const postUrl = `${getCanonicalOrigin()}/community/${slug}`;
   const hasHeadings = headings.length > 0;
   const excerpt = postExcerpt(p.content, p.meta_desc ?? '');
 
   const markdownComponents = {
-    h2: (props: React.ComponentPropsWithoutRef<'h2'>) => {
+    h2: (props: React.ComponentPropsWithoutRef<'h2'> & ExtraProps) => {
       const children: React.ReactNode = props.children;
       return (
         <h2
-          id={getHeadingId(children)}
+          id={headingElementId(props.node)}
           className="scroll-mt-28 text-2xl sm:text-3xl font-bold tracking-tight text-foreground mt-12 mb-6 pb-3 border-b border-border/40 flex items-center gap-2.5 group"
         >
           <span
@@ -151,11 +124,11 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
         </h2>
       );
     },
-    h3: (props: React.ComponentPropsWithoutRef<'h3'>) => {
+    h3: (props: React.ComponentPropsWithoutRef<'h3'> & ExtraProps) => {
       const children: React.ReactNode = props.children;
       return (
         <h3
-          id={getHeadingId(children)}
+          id={headingElementId(props.node)}
           className="scroll-mt-28 text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-8 mb-4 flex items-center gap-2 group"
         >
           <span
@@ -274,7 +247,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                 className="cv-auto prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-p:leading-relaxed prose-p:text-foreground/90 prose-p:mb-6 prose-a:text-primary prose-a:font-bold prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-xl prose-img:border prose-img:border-border/50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-border/40 prose-pre:relative prose-pre:bg-muted/90 prose-pre:border prose-pre:border-border/60 prose-pre:rounded-2xl prose-pre:shadow-md prose-blockquote:border-s-primary prose-blockquote:border-s-4 prose-blockquote:bg-muted/30 prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:rounded-e-2xl prose-blockquote:not-italic prose-blockquote:text-foreground/90 prose-hr:border-border/50"
               >
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
+                  remarkPlugins={[remarkGfm, remarkHeadingIds]}
                   rehypePlugins={[[rehypeHighlight, highlightOptions]]}
                   components={markdownComponents}
                 >

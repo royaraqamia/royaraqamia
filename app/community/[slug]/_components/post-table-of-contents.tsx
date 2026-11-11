@@ -27,9 +27,9 @@ export function PostTableOfContents({ headings }: { headings: PostHeading[] }) {
           </h4>
         </div>
         <nav className="space-y-1 max-h-[calc(100vh_-_200px)] overflow-y-auto pr-1 scrollbar-thin">
-          {headings.map((h, i) => (
+          {headings.map((h) => (
             <a
-              key={i}
+              key={h.id}
               href={`#${h.id}`}
               className={`group flex items-center gap-2 text-xs leading-relaxed rounded-lg px-2.5 py-2 transition-safe duration-200 hover:bg-primary/10 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary ${
                 h.level === 2
