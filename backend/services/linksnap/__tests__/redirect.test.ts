@@ -1,5 +1,9 @@
+import { readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { describe, it, expect, vi } from 'vitest';
 import {
+  APP_ROUTE_SEGMENTS,
   RedirectUrlService,
   isReservedShortCode,
   ShortLinkRedirectError,
@@ -61,9 +65,40 @@ describe('isReservedShortCode', () => {
     expect(isReservedShortCode('unlock')).toBe(true);
   });
 
+  it('rejects every route the app serves statically', () => {
+    expect(isReservedShortCode('account')).toBe(true);
+    expect(isReservedShortCode('pricing')).toBe(true);
+    expect(isReservedShortCode('news')).toBe(true);
+    expect(isReservedShortCode('verify')).toBe(true);
+    expect(isReservedShortCode('quran')).toBe(true);
+  });
+
   it('allows normal short codes', () => {
     expect(isReservedShortCode('abc123')).toBe(false);
     expect(isReservedShortCode('xyZ')).toBe(false);
+  });
+});
+
+describe('the reserved routes match `app/`', () => {
+  /** Every first segment Next serves from a static directory in `app/`. */
+  const staticSegments = readdirSync(resolve(process.cwd(), 'app'), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    // `[code]` is the redirect itself; route groups and dotted folders
+    // (`.well-known`) are never a code.
+    .filter((name) => !name.startsWith('[') && !name.startsWith('(') && !name.startsWith('.'));
+
+  it('walks the top-level routes', () => {
+    expect(staticSegments).toContain('account');
+    expect(staticSegments.length).toBeGreaterThan(10);
+  });
+
+  it.each(staticSegments)('reserves the static /%s route', (segment) => {
+    expect(isReservedShortCode(segment)).toBe(true);
+  });
+
+  it('lists no segment the app does not serve', () => {
+    expect([...staticSegments].sort()).toEqual([...APP_ROUTE_SEGMENTS].sort());
   });
 });
 
@@ -134,6 +169,9 @@ describe('RedirectUrlService.execute', () => {
     ).rejects.toThrow('Short link not found.');
     await expect(
       service.execute('unlock', { referrer: null, userAgent: null, ipCountry: null })
+    ).rejects.toThrow(ShortLinkRedirectError);
+    await expect(
+      service.execute('account', { referrer: null, userAgent: null, ipCountry: null })
     ).rejects.toThrow(ShortLinkRedirectError);
     expect(shortLinkRepository.findByCode).not.toHaveBeenCalled();
     expect(analyticsRepository.recordClick).not.toHaveBeenCalled();

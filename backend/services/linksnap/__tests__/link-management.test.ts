@@ -180,12 +180,12 @@ describe('UpdateLinkService', () => {
     expect(repository.update).not.toHaveBeenCalled();
   });
 
-  it('rejects a reserved new slug', async () => {
+  it.each(['api', 'account'])('rejects a reserved new slug: %s', async (reserved) => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
     (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
 
-    await expect(service.execute('abc123', 'u-1', { code: 'api' })).rejects.toThrow(
+    await expect(service.execute('abc123', 'u-1', { code: reserved })).rejects.toThrow(
       'This custom short code is reserved. Please try another one.'
     );
     expect(repository.update).not.toHaveBeenCalled();

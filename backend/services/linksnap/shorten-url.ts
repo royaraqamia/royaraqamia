@@ -5,6 +5,7 @@ import {
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 import { CodeGenerator } from '@/backend/services/linksnap/code-generator';
+import { isReservedShortCode } from '@/backend/services/linksnap/redirect-url';
 import { AppError } from '@/backend/shared/errors';
 import { hashPassword } from '@/backend/shared/password-hash';
 
@@ -75,6 +76,10 @@ export class ShortenUrlService {
       clientId && userId ? await this.shortLinkRepository.findByClientId(userId, clientId) : null;
 
     if (customCode && !replayed) {
+      if (isReservedShortCode(code)) {
+        throw new AppError('This custom short code is reserved. Please try another one.', 400);
+      }
+
       const isTaken = await this.shortLinkRepository.exists(code);
       if (isTaken) {
         throw new AppError('This custom short code is already taken. Please try another one.', 400);

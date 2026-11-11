@@ -80,6 +80,19 @@ describe('CheckCodeAvailabilityService.execute', () => {
     expect(repository.exists).not.toHaveBeenCalled();
   });
 
+  it('rejects a code that shadows an app route without querying the DB', async () => {
+    const { repository, service } = makeRepo();
+
+    const result = await service.execute('account');
+
+    expect(result).toEqual({
+      code: 'account',
+      available: false,
+      error: expect.stringContaining('محجوز'),
+    });
+    expect(repository.exists).not.toHaveBeenCalled();
+  });
+
   it('sanitizes dots out of a slug before checking availability', async () => {
     const { repository, service } = makeRepo();
     (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(false);
