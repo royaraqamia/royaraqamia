@@ -13,6 +13,7 @@ export const SERVICES_SHEET_COPY = {
   title: 'التَّطبيقات',
   add: 'إضافة',
   remove: 'إزالة',
+  searchEmptyInternal: 'لا يوجد تطبيق بهذا الاسم.',
   failed: 'تعذَّر تحديث تطبيقاتك.',
 } as const;
 

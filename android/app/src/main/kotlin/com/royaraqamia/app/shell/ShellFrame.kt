@@ -142,6 +142,12 @@ fun ShellFrame(
                     servicesOpen = false
                     onOpenRoute("/mcp/apps")
                 },
+                // The connected-apps tab is the door the retired account row used
+                // to be (#1256): the screen is native, so the sheet routes to it.
+                onOpenConnectedApps = {
+                    servicesOpen = false
+                    onOpenRoute(Routes.CONNECTED_APPS_ROUTE)
+                },
             )
         } else {
             Box(Modifier.fillMaxSize()) {
