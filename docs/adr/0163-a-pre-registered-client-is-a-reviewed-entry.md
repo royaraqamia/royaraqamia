@@ -64,5 +64,6 @@ client we registered by hand without turning "we know this one" into "guess anyt
   never in the repository and never in the database as plaintext.
 - `docs/specs/mcp-marketplace.md` carries the provider table: which path each one takes, which
   client it uses, and which scopes it asks for. It is updated in the same change that adds an entry.
-- Notion and Figma are not in the table yet: both refuse this network (`403` and `451`), so their
-  verdict comes from the deployment's egress before anyone decides they need a client at all.
+- Notion and Figma were measured from the deployment on 2026-11-11 and both publish metadata and
+  DCR, so neither needs an entry: the `403` and `451` that made them look unreachable were this
+  network's egress, not the providers'. GitHub remains the only measured provider that does.
