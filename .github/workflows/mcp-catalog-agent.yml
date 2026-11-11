@@ -4,11 +4,11 @@
 # Arabic copy from sources it is allowed to use, and writes through a scoped
 # endpoint. The deterministic checks decide; the model never publishes.
 #
-# Rollout (issue #1293, half 3): this workflow is dispatch-only until the
-# ladder's first three manual runs are recorded. The schedule is added after
-# that, not before. `dry_run` defaults to `true`, and `MCP_CATALOG_AGENT_ENABLED`
-# (a repository variable) is the kill switch: with it off, `apply` writes
-# nothing and says so.
+# Rollout (issue #1293, half 3): the ladder is walked and recorded in
+# docs/specs/mcp-catalog-agent.md (runs 43070731547, 43071155049, 43072048941 on
+# 2026-11-11), so this workflow now runs on a schedule as well as on dispatch.
+# `MCP_CATALOG_AGENT_ENABLED` (a repository variable) is the kill switch: with it
+# off, `apply` writes nothing and says so.
 #
 # Secrets:
 #   MCP_CATALOG_AGENT_TOKEN - a revocable token the endpoint compares in constant
@@ -19,17 +19,21 @@
 # Variables:
 #   MCP_CATALOG_AGENT_URL      - default https://royaraqamia.com
 #   MCP_CATALOG_AGENT_ENABLED  - 'true' opens the kill switch
-#   MCP_CATALOG_AGENT_CAP      - candidates measured per run (default 3 until the ladder)
-#   MCP_CATALOG_AGENT_PUBLISH_CAP - publishes per run (default 3)
+#   MCP_CATALOG_AGENT_CAP      - candidates measured per run (ladder: 3, steady: 20)
+#   MCP_CATALOG_AGENT_PUBLISH_CAP - publishes per run (steady: 20)
 #   MCP_CATALOG_AGENT_EGRESS_BUDGET - rows measured per run (defaults to the cap)
 
 name: 'MCP Catalogue Agent'
 
 on:
+  # Three quarters of an hour after the catalogue sync (`vercel.json`:
+  # 0 4 * * *), so a run works on the mirror that was just refreshed.
+  schedule:
+    - cron: '45 4 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Measure and report, write nothing. Uncheck only for a ladder run.'
+        description: 'Measure and report, write nothing. Leave checked to rehearse.'
         type: boolean
         default: true
       cap:
@@ -158,7 +162,11 @@ jobs:
           MCP_CATALOG_AGENT_TOKEN: ${{ secrets.MCP_CATALOG_AGENT_TOKEN }}
           MCP_CATALOG_AGENT_URL: ${{ vars.MCP_CATALOG_AGENT_URL || 'https://royaraqamia.com' }}
           MCP_CATALOG_AGENT_ENABLED: ${{ vars.MCP_CATALOG_AGENT_ENABLED || 'false' }}
-          MCP_CATALOG_AGENT_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          # A scheduled run has no input, and the runner's own fallback is a dry
+          # run: without this the cron would measure and write nothing while
+          # reporting success. A dispatch keeps its own answer ("false" checked
+          # off is a truthy string, so `||` leaves it alone).
+          MCP_CATALOG_AGENT_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: node scripts/mcp-catalog-agent.mjs apply
 
       - name: Open the batched mark pull request
