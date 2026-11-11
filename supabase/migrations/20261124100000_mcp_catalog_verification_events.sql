@@ -10,7 +10,7 @@
 -- The log is append-only in the database, not by convention: a trigger refuses
 -- `update` and `delete`, so a later run cannot rewrite what an earlier one
 -- claimed. `service_role` inserts and reads; an admin reads through
--- `public.is_admin()`, the same predicate every other console table uses.
+-- `private.is_admin()`, the same predicate every other console table uses.
 --
 -- `mcp_catalog_latest_verifications` is the Admin Console's read: one row per
 -- catalogue row, the most recent verify or withdraw. The console draws that
@@ -67,7 +67,7 @@ grant all on public.mcp_catalog_verification_events to service_role;
 create policy "Admins read the catalogue's verification events"
   on public.mcp_catalog_verification_events for select
   to authenticated
-  using (public.is_admin());
+  using ((select private.is_admin()));
 
 -- Append-only, enforced: a correction is a new event, never an edit.
 create or replace function private.mcp_catalog_events_append_only()
