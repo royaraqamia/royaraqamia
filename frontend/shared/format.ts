@@ -40,6 +40,9 @@ export function formatCount(value: number): string {
   return value.toLocaleString('en-US');
 }
 
+/** A bare calendar day (`2026-08-02`), carrying no time and no zone. */
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
 export function formatHijriDate(
   date: Date | string | number,
   options: Intl.DateTimeFormatOptions = {}
@@ -54,6 +57,13 @@ export function formatHijriDate(
     numberingSystem: 'latn',
     ...options,
   };
+  // `new Date('2026-08-02')` is UTC midnight, and formatting it with no `timeZone`
+  // reads that instant on the reader's clock — one day earlier west of UTC. A
+  // calendar day has no zone, so it is read in the one it was parsed in. An instant
+  // keeps the reader's own zone, which is the only thing that instant means to them.
+  if (typeof date === 'string' && DATE_ONLY.test(date) && !baseOptions.timeZone) {
+    baseOptions.timeZone = 'UTC';
+  }
   return new Intl.DateTimeFormat('ar-SA', baseOptions).format(parsed);
 }
 
