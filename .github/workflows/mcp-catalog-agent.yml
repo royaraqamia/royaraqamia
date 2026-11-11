@@ -38,7 +38,9 @@ on:
         default: ''
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
+  issues: write
 
 concurrency:
   group: mcp-catalog-agent
@@ -115,7 +117,10 @@ jobs:
                third-party logo site for this source.
             3. `simple_icons` — the official Simple Icons mark (CC0), as
                `https://cdn.simpleicons.org/<slug>` where `<slug>` is the Simple
-               Icons slug. Never use a slug you have not confirmed exists.
+               Icons slug. Never use a slug you have not confirmed exists. Add
+               `"vendor": true` when the mark should ship with the site: the
+               runner fetches the SVG, opens one batched pull request, and the
+               row waits as `repo_pr_pending` until a person merges it.
 
             A mark is the real mark or nothing. Do not approximate a logo, do not
             build one from the name, and do not reuse a different product's mark.
@@ -153,3 +158,90 @@ jobs:
           MCP_CATALOG_AGENT_ENABLED: ${{ vars.MCP_CATALOG_AGENT_ENABLED || 'false' }}
           MCP_CATALOG_AGENT_DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: node scripts/mcp-catalog-agent.mjs apply
+
+      - name: Open the batched mark pull request
+        # The one human step left in the loop: at most one pull request per run,
+        # listing each row, its source URL and the mark. The rows wait as
+        # `repo_pr_pending` until it merges.
+        if: always() && steps.apply.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MARKS_BODY: /tmp/mcp-catalog-agent-marks.md
+        run: |
+          set -euo pipefail
+          if [ ! -s "$MARKS_BODY" ]; then
+            echo "No vendored marks this run."
+            exit 0
+          fi
+
+          gh auth setup-git
+          branch="mcp-catalog-marks-${GITHUB_RUN_ID}"
+          git checkout -b "$branch"
+          git add public/brand/mcp
+          if git diff --cached --quiet; then
+            echo "No new mark files to ship."
+            exit 0
+          fi
+          git -c user.name='MCP catalogue agent' \
+              -c user.email='actions@users.noreply.github.com' \
+              commit -m "feat(mcp): add brand marks for the catalogue"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "feat(mcp): add brand marks for the catalogue" \
+            --body-file "$MARKS_BODY"
+
+      - name: Record withdrawals where a person can see them
+        # A published row leaving the store is something a member can meet. One
+        # tracking issue, deduped by title, never one issue per row (#1293).
+        if: always() && steps.apply.outcome != 'skipped'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          RESULT_PATH: /tmp/mcp-catalog-agent-result.json
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync(process.env.RESULT_PATH)) {
+              core.notice('No result file: the apply step wrote nothing, so there is nothing to record.');
+              return;
+            }
+            const result = JSON.parse(fs.readFileSync(process.env.RESULT_PATH, 'utf8'));
+            const withdrawals = result.withdrawals || [];
+            if (withdrawals.length === 0) {
+              core.notice('No withdrawal this run.');
+              return;
+            }
+
+            const title = 'MCP catalogue agent: runs and withdrawals';
+            const listing = withdrawals
+              .map((row) => '- `' + row.registryName + '` — ' + (row.detail || 'check failed'))
+              .join('\n');
+            const body =
+              'The catalogue agent withdrew ' + withdrawals.length + ' published row(s) because a later check failed:\n\n' +
+              listing + '\n\n' +
+              'The run summary names the class and the checks it measured.';
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = open.find((issue) => !issue.pull_request && issue.title === title);
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body: 'Run [' + context.runId + '](' + context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId + '):\n\n' + listing,
+              });
+              core.info('Commented on #' + existing.number);
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+              core.info('Opened the withdrawal tracking issue.');
+            }

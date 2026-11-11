@@ -1,6 +1,10 @@
 import { z } from 'zod';
 
-import { McpCatalogConnectReasonSchema } from '@/shared/contracts/mcp-catalog';
+import {
+  McpCatalogConnectReasonSchema,
+  McpCatalogCoverageSchema,
+  McpCatalogWaitReasonSchema,
+} from '@/shared/contracts/mcp-catalog';
 
 /**
  * The scoped door an unattended run writes the catalogue through (#1293).
@@ -18,21 +22,7 @@ export const MCP_CATALOG_AGENT_ACTOR = 'agent:mcp-catalog';
 export const MCP_CATALOG_AGENT_MAX_CANDIDATES = 20;
 
 /** Why a row waits for a person. A category, so the console can count it. */
-export const McpCatalogAgentSkipReasonSchema = z.enum([
-  /** No mark from any of the three allowed sources. */
-  'no_mark',
-  /** No dynamic registration, and no reviewed client for this provider. */
-  'no_registration',
-  /** A measured check failed for a reason the next run may clear. */
-  'check_failed',
-  /** A shipped SVG is waiting for its batched pull request to merge. */
-  'repo_pr_pending',
-  /**
-   * The server needs no OAuth at all. The store's connect flow is OAuth-only
-   * until #1269, so publishing it now would offer a row a member cannot link.
-   */
-  'no_auth_pending',
-]);
+export const McpCatalogAgentSkipReasonSchema = McpCatalogWaitReasonSchema;
 
 export type McpCatalogAgentSkipReason = z.infer<typeof McpCatalogAgentSkipReasonSchema>;
 
@@ -98,6 +88,8 @@ export type McpCatalogAgentCandidate = z.infer<typeof McpCatalogAgentCandidateSc
 
 export const McpCatalogAgentPageSchema = z.object({
   candidates: z.array(McpCatalogAgentCandidateSchema),
+  /** Store-wide counts, so the run summary and the console say the same thing. */
+  coverage: McpCatalogCoverageSchema,
 });
 
 export type McpCatalogAgentPage = z.infer<typeof McpCatalogAgentPageSchema>;

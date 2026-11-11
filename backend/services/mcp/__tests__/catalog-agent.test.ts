@@ -78,6 +78,7 @@ function build(
   const saveCatalogProbe = vi.fn(async () => undefined);
   const repository = {
     listAgentCandidates: async () => overrides.rows ?? [row()],
+    catalogCoverage: async () => ({ eligible: 1, published: 0, waiting: 0 }),
     getCatalogServer: async () => (overrides.server === undefined ? row() : overrides.server),
     recordCatalogEvent,
     saveCatalogProbe,
@@ -98,7 +99,8 @@ describe('the candidates', () => {
   it('hands out the reviewed client’s public half and the callback it is registered with', async () => {
     const { service } = build();
 
-    const [candidate] = await service.candidates(5);
+    const { candidates } = await service.candidates(5);
+    const candidate = candidates[0];
 
     expect(candidate).toMatchObject({
       registryName: 'com.github/mcp',

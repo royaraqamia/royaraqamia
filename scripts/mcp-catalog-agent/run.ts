@@ -1,10 +1,15 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
 import { z } from 'zod';
 
 import { createMcpRemoteClient } from '@/backend/clients/mcp-remote';
-import { assertEgressUrl, EgressBlockedError } from '@/backend/shared/egress';
+import {
+  assertEgressUrl,
+  createGuardedFetch,
+  EgressBlockedError,
+  readCappedText,
+} from '@/backend/shared/egress';
 import {
   McpCatalogAgentPageSchema,
   type McpCatalogAgentCandidate,
@@ -32,6 +37,9 @@ import {
 const ROOT = resolve(import.meta.dirname, '..', '..');
 const DEFAULT_PLAN_PATH = '/tmp/mcp-catalog-agent-plan.json';
 const DEFAULT_DECISIONS_PATH = '/tmp/mcp-catalog-agent-decisions.json';
+const DEFAULT_RESULT_PATH = '/tmp/mcp-catalog-agent-result.json';
+const DEFAULT_MARKS_PATH = '/tmp/mcp-catalog-agent-marks.json';
+const DEFAULT_MARKS_BODY_PATH = '/tmp/mcp-catalog-agent-marks.md';
 
 type PublishClass = 'dcr' | 'pre_registered' | 'none';
 
@@ -66,13 +74,17 @@ interface Plan {
   /** Where measurement stopped when the egress budget ran out. */
   stoppedAt: string | null;
   entries: PlanEntry[];
-  counts: { measured: number; publishable: number; published: number; waiting: number };
+  /** Store-wide counts, the same numbers the console header draws. */
+  coverage: { eligible: number; published: number; waiting: number };
+  counts: { measured: number; publishable: number; onPagePublished: number };
 }
 
 const MarkDecisionSchema = z.object({
   registryName: z.string().min(1),
   mark: z.string().min(1),
   source: z.enum(['logo_uri', 'brand', 'simple_icons', 'repo']),
+  /** Ship a Simple Icons mark under public/brand/mcp in the run's batched PR. */
+  vendor: z.boolean().optional(),
 });
 
 const CopyDecisionSchema = z.object({
@@ -363,11 +375,11 @@ async function plan(): Promise<Plan> {
     publishCap,
     stoppedAt,
     entries,
+    coverage: page.coverage,
     counts: {
       measured: entries.length,
       publishable: entries.filter((entry) => entry.publishable && !entry.published).length,
-      published: entries.filter((entry) => entry.published && !entry.withdraw).length,
-      waiting: entries.filter((entry) => entry.skip !== null).length,
+      onPagePublished: entries.filter((entry) => entry.published && !entry.withdraw).length,
     },
   };
 }
@@ -423,14 +435,42 @@ function markActionFor(
   };
 }
 
+/**
+ * Ship a Simple Icons mark in the run's batched pull request: fetch it through
+ * the egress policy, refuse anything that is not an SVG, and return the path the
+ * site will serve it from. The row waits as `repo_pr_pending` until that merges.
+ */
+async function vendorMark(url: string): Promise<string | null> {
+  const parsed = new URL(url);
+  const slug = parsed.pathname.replace(/^\/+/, '').replace(/\.svg$/i, '');
+  if (!/^[a-z0-9][a-z0-9-]*$/i.test(slug)) return null;
+
+  const publicPath = `/brand/mcp/${slug}.svg`;
+  const target = join(ROOT, 'public', publicPath);
+  if (existsSync(target)) return publicPath;
+
+  try {
+    const response = await createGuardedFetch()(url);
+    if (!response.ok) return null;
+    const svg = await readCappedText(response);
+    if (!svg.trimStart().startsWith('<svg')) return null;
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, svg);
+    return publicPath;
+  } catch {
+    return null;
+  }
+}
+
 function summary(plan: Plan, lines: string[]): string {
   return [
     '## MCP catalogue agent',
     '',
-    `- measured: ${plan.counts.measured}`,
-    `- publishable: ${plan.counts.publishable}`,
-    `- published: ${plan.counts.published}`,
-    `- waiting on a human: ${plan.counts.waiting}`,
+    `- eligible: ${plan.coverage.eligible}`,
+    `- published: ${plan.coverage.published}`,
+    `- waiting on a human: ${plan.coverage.waiting}`,
+    `- measured this run: ${plan.counts.measured}`,
+    `- publishable this run: ${plan.counts.publishable}`,
     ...(plan.stoppedAt ? [`- stopped at the egress budget: \`${plan.stoppedAt}\``] : []),
     '',
     ...lines,
@@ -464,6 +504,8 @@ async function apply(): Promise<void> {
 
   const marks = new Map(decisions.marks.map((mark) => [mark.registryName, mark] as const));
   const copies = new Map(decisions.copies.map((copy) => [copy.registryName, copy] as const));
+  const withdrawals: Array<{ registryName: string; detail: string | null }> = [];
+  const vendored: Array<{ registryName: string; path: string; source: string }> = [];
   let published = 0;
 
   for (const entry of plan.entries) {
@@ -501,7 +543,32 @@ async function apply(): Promise<void> {
       }
 
       const mark = marks.get(entry.registryName);
-      if (!hasMark && mark) {
+      let waitingForPr = false;
+      if (!hasMark && mark && mark.vendor && mark.source === 'simple_icons') {
+        if (writes === 0) {
+          actions.push({
+            action: 'skip',
+            registryName: entry.registryName,
+            reason: 'repo_pr_pending',
+            detail: 'would vendor',
+          });
+          waitingForPr = true;
+        } else {
+          const path = await vendorMark(mark.mark).catch(() => null);
+          if (path) {
+            vendored.push({ registryName: entry.registryName, path, source: mark.mark });
+            actions.push({
+              action: 'skip',
+              registryName: entry.registryName,
+              reason: 'repo_pr_pending',
+              detail: path,
+            });
+            waitingForPr = true;
+          }
+        }
+      }
+
+      if (!hasMark && !waitingForPr && mark) {
         const markAction = markActionFor(entry, mark);
         if ('skip' in markAction) {
           actions.push({
@@ -536,7 +603,7 @@ async function apply(): Promise<void> {
           reason: 'no_mark',
           detail: 'no mark from any allowed source',
         });
-      } else if (hasMark && published < plan.publishCap) {
+      } else if (!waitingForPr && hasMark && published < plan.publishCap) {
         actions.push({
           action: 'verify',
           registryName: entry.registryName,
@@ -564,6 +631,12 @@ async function apply(): Promise<void> {
       try {
         await callAgent(action);
         lines.push(`- ${name} \`${registryName}\``);
+        if (name === 'withdraw') {
+          withdrawals.push({
+            registryName,
+            detail: (action as { detail?: string | null }).detail ?? null,
+          });
+        }
       } catch (error) {
         // One refused row must not cost the run the rest of the page; the row
         // stays for the next run and the summary names it.
@@ -580,6 +653,53 @@ async function apply(): Promise<void> {
   process.stdout.write(report);
   if (process.env.GITHUB_STEP_SUMMARY) {
     writeFileSync(process.env.GITHUB_STEP_SUMMARY, report, { flag: 'a' });
+  }
+
+  /*
+    The workflow reads this, not the summary text: a withdrawal a member can meet
+    has to be traceable to the check that failed, and one tracking issue (opened
+    or commented by the workflow) is where it lands.
+  */
+  const resultPath = process.env.MCP_CATALOG_AGENT_RESULT_PATH?.trim() || DEFAULT_RESULT_PATH;
+  writeFileSync(
+    resultPath,
+    JSON.stringify(
+      {
+        generatedAt: plan.generatedAt,
+        dryRun,
+        enabled,
+        coverage: plan.coverage,
+        measured: plan.counts.measured,
+        withdrawals,
+        vendored,
+      },
+      null,
+      2
+    )
+  );
+
+  if (vendored.length > 0) {
+    const marksPath = process.env.MCP_CATALOG_AGENT_MARKS_PATH?.trim() || DEFAULT_MARKS_PATH;
+    const bodyPath =
+      process.env.MCP_CATALOG_AGENT_MARKS_BODY_PATH?.trim() || DEFAULT_MARKS_BODY_PATH;
+    writeFileSync(marksPath, JSON.stringify(vendored, null, 2));
+    writeFileSync(
+      bodyPath,
+      [
+        'One batched pull request of brand marks the catalogue agent sourced and shipped.',
+        '',
+        '| Row | Mark | Source |',
+        '| --- | ---- | ------ |',
+        ...vendored.map(
+          (mark) => `| \`${mark.registryName}\` | \`${mark.path}\` | ${mark.source} |`
+        ),
+        '',
+        'Each row waits as `repo_pr_pending`; the first run after this merges publishes it.',
+        '',
+        'Part of #1293.',
+        '',
+      ].join('\n')
+    );
   }
 }
 

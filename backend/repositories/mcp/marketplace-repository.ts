@@ -328,6 +328,19 @@ export interface McpMarketplaceRepository {
   listAgentCandidates(limit: number): Promise<McpCatalogListRow[]>;
 
   /**
+   * The three counts the console and the run summary share (#1293, half 3):
+   * eligible (a row the store could publish), published (the admission rule
+   * holds), and waiting on a human (the newest event for the row is a skip).
+   */
+  catalogCoverage(): Promise<{ eligible: number; published: number; waiting: number }>;
+
+  /** The newest skip per row: who is waiting, why, and since when. */
+  listLatestSkips(limit: number): Promise<McpCatalogEventRecord[]>;
+
+  /** Catalogue rows by name, for the wait list's titles and marks. */
+  getCatalogRows(registryNames: string[]): Promise<McpCatalogListRow[]>;
+
+  /**
    * Verified rows whose verdict is due again. The store must stop offering a
    * server that went down even when no member draws it, so the sync re-probes
    * these rather than waiting for a screen.
@@ -523,6 +536,23 @@ export interface McpMarketplaceRepository {
 export function createMcpMarketplaceRepository(
   supabase = getAdminSupabase()
 ): McpMarketplaceRepository {
+  /** The newest skip per row: one event, not every run's repeat. */
+  async function latestSkips(limit: number): Promise<McpCatalogEventRecord[]> {
+    const { data, error } = await supabase
+      .from(CATALOG_EVENTS_TABLE)
+      .select('registry_name, actor, action, source, evidence, created_at')
+      .eq('action', 'skip')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+
+    const newest = new Map<string, McpCatalogEventRecord>();
+    for (const event of (data ?? []) as McpCatalogEventRecord[]) {
+      if (!newest.has(event.registry_name)) newest.set(event.registry_name, event);
+    }
+    return [...newest.values()];
+  }
+
   return {
     async getCatalogServer(registryName) {
       const { data, error } = await supabase
@@ -755,6 +785,49 @@ export function createMcpMarketplaceRepository(
         .limit(limit);
       if (error) throw error;
       return (data ?? []) as unknown as McpCatalogListRow[];
+    },
+
+    async catalogCoverage() {
+      const admitted = () =>
+        supabase
+          .from(CATALOG_TABLE)
+          .select('registry_name', { count: 'exact', head: true })
+          .eq('status', 'active')
+          .is('blocked_at', null)
+          .eq('connectable', true);
+
+      // A row is eligible when it has a mark from one of the three stored
+      // sources and can be connected: the store's own admission plus a mark.
+      const eligible = await admitted().or(
+        'icon_override.not.is.null,probe_icon_url.not.is.null,registry_icon_url.not.is.null'
+      );
+      if (eligible.error) throw eligible.error;
+
+      const published = await admitted().not('verified_at', 'is', null);
+      if (published.error) throw published.error;
+
+      return {
+        eligible: eligible.count ?? 0,
+        published: published.count ?? 0,
+        waiting: (await latestSkips(1000)).length,
+      };
+    },
+
+    listLatestSkips: latestSkips,
+
+    async getCatalogRows(registryNames) {
+      if (registryNames.length === 0) return [];
+
+      const found: McpCatalogListRow[] = [];
+      for (const batch of chunk(registryNames, CATALOG_LOOKUP_BATCH)) {
+        const { data, error } = await supabase
+          .from(CATALOG_TABLE)
+          .select(CATALOG_LIST_COLUMNS)
+          .in('registry_name', batch);
+        if (error) throw error;
+        found.push(...((data ?? []) as unknown as McpCatalogListRow[]));
+      }
+      return found;
     },
 
     async saveCatalogProbe(registryName, probe) {
