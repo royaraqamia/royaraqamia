@@ -3,6 +3,8 @@ package com.royaraqamia.app.store.linksnap
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsExportResponse
+import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsExportResponseRowsItem
 import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponse
 import com.royaraqamia.app.contracts.generated.LinksnapAnalyticsResponseAnalytics
 import com.royaraqamia.app.contracts.generated.LinksnapAvailabilityResponse
@@ -446,19 +448,46 @@ class LinksnapRepository(
         from: String? = null,
         to: String? = null,
     ): ApiResult<LinksnapAnalyticsResponseAnalytics> = withContext(Dispatchers.IO) {
+        val path = "$ANALYTICS_PATH/${URLEncoder.encode(code, "UTF-8")}${rangeQuery(from, to)}"
+        when (val answer = client.get<LinksnapAnalyticsResponse>(path)) {
+            is ApiResult.Success -> ApiResult.Success(answer.value.analytics)
+            is ApiResult.Failure -> answer
+        }
+    }
+
+    /**
+     * The owned link's CSV rows (#964), read live from the page's own export
+     * route.
+     *
+     * This is the same read the page makes before it writes its download, so the
+     * app holds the page's rows and columns rather than a narrower shape of its
+     * own. The file is built from this answer by [LinksnapAnalyticsCsv], and it
+     * is not an Outbox intent: an export answers a member who is still there.
+     * Offline, the failure is returned so the control names it rather than
+     * sharing an empty file.
+     */
+    suspend fun analyticsExport(
+        code: String,
+        from: String? = null,
+        to: String? = null,
+    ): ApiResult<List<LinksnapAnalyticsExportResponseRowsItem>> = withContext(Dispatchers.IO) {
+        val path =
+            "$ANALYTICS_PATH/${URLEncoder.encode(code, "UTF-8")}/export${rangeQuery(from, to)}"
+        when (val answer = client.get<LinksnapAnalyticsExportResponse>(path)) {
+            is ApiResult.Success -> ApiResult.Success(answer.value.rows)
+            is ApiResult.Failure -> answer
+        }
+    }
+
+    /** The preset's ISO instants, as the page sends them to both analytics routes. */
+    private fun rangeQuery(from: String?, to: String?): String {
         val query =
             buildList {
                     if (from != null) add("from=${URLEncoder.encode(from, "UTF-8")}")
                     if (to != null) add("to=${URLEncoder.encode(to, "UTF-8")}")
                 }
                 .joinToString("&")
-        val path =
-            "$ANALYTICS_PATH/${URLEncoder.encode(code, "UTF-8")}" +
-                if (query.isEmpty()) "" else "?$query"
-        when (val answer = client.get<LinksnapAnalyticsResponse>(path)) {
-            is ApiResult.Success -> ApiResult.Success(answer.value.analytics)
-            is ApiResult.Failure -> answer
-        }
+        return if (query.isEmpty()) "" else "?$query"
     }
 
     /** One intent, replayed, classified the way the web classifies it. */

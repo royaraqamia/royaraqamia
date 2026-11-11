@@ -10,8 +10,8 @@ import type { AnalyticsRangeFilter } from '@/frontend/api/linksnap';
 /**
  * The analytics drawer's content (#962), split from its page-only shell.
  *
- * `link-analytics-drawer.tsx` owns the CSV export (#964) and the chart (#963),
- * which are the next slices. This component is the half both clients draw: the
+ * `link-analytics-drawer.tsx` owns the CSV export (#964) and the chart (#963).
+ * This component is the half both clients draw: the
  * range presets, the click total, the top referrer, the link status, the device,
  * OS and browser breakdowns, the top referrers and the recent activity - plus
  * the three faces the drawer has while it loads, while the radio is off and when

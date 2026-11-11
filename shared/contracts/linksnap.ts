@@ -206,3 +206,23 @@ export const LinksnapAnalyticsResponseSchema = z.object({
     }),
   }),
 });
+
+/** One click in the export's CSV row, as the route serialises it. */
+export const LinksnapAnalyticsExportRowSchema = z.object({
+  clickedAt: z.string(),
+  referrer: z.string().nullable(),
+  ipCountry: z.string().nullable(),
+  device: z.string(),
+  os: z.string(),
+  browser: z.string(),
+});
+
+/**
+ * `GET /linksnap/api/analytics/[code]/export` (#964): one row per click, the
+ * columns the page writes into its CSV. The app decodes this body and builds
+ * the file with the page's header and escaping, so the two clients hand over
+ * the same rows and columns from the same route.
+ */
+export const LinksnapAnalyticsExportResponseSchema = z.object({
+  rows: z.array(LinksnapAnalyticsExportRowSchema),
+});

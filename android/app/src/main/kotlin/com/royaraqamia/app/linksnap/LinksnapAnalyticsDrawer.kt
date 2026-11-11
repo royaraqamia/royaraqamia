@@ -43,10 +43,10 @@ import java.time.format.DateTimeFormatter
  *
  * The page draws the drawer under a row: three range presets, the click total,
  * the top referrer, the link status, the device, OS and browser breakdowns with
- * their empty sentences, the top referrers and the recent-activity rows. The
- * chart (#963) and the CSV export (#964) are the next slices and are not drawn
- * here; every visible word is [LinksnapAnalyticsCopy], generated from the same
- * source the page reads (ADR-0098).
+ * their empty sentences, the top referrers and the recent-activity rows, beside
+ * the CSV action (#964). The chart (#963) is the last block. Every visible word
+ * is [LinksnapAnalyticsCopy] or [LinksnapAnalyticsExportCopy], generated from
+ * the same sources the page reads (ADR-0098).
  *
  * The four faces are [LinksnapAnalyticsUiState]: the skeleton while the read
  * runs, the sentence a device with the radio off gets instead of zeroes, the
@@ -59,6 +59,8 @@ internal fun LinksnapAnalyticsDrawer(
     range: LinksnapAnalyticsRange,
     onRange: (LinksnapAnalyticsRange) -> Unit,
     modifier: Modifier = Modifier,
+    exportState: LinksnapAnalyticsExportUiState = LinksnapAnalyticsExportUiState.Idle,
+    onExport: () -> Unit = {},
 ) {
     Column(
         modifier =
@@ -68,7 +70,14 @@ internal fun LinksnapAnalyticsDrawer(
                 .padding(LinksnapAnalyticsMetrics.drawerPadding),
         verticalArrangement = Arrangement.spacedBy(LinksnapAnalyticsMetrics.sectionGap),
     ) {
-        LinksnapAnalyticsContent(state = state, status = status, range = range, onRange = onRange)
+        LinksnapAnalyticsContent(
+            state = state,
+            status = status,
+            range = range,
+            onRange = onRange,
+            exportState = exportState,
+            onExport = onExport,
+        )
     }
 }
 
@@ -101,6 +110,8 @@ internal fun LinksnapAnalyticsContent(
     range: LinksnapAnalyticsRange,
     onRange: (LinksnapAnalyticsRange) -> Unit,
     modifier: Modifier = Modifier,
+    exportState: LinksnapAnalyticsExportUiState = LinksnapAnalyticsExportUiState.Idle,
+    onExport: () -> Unit = {},
 ) {
     when (state) {
         LinksnapAnalyticsUiState.Loading ->
@@ -141,6 +152,8 @@ internal fun LinksnapAnalyticsContent(
                 status = status,
                 range = range,
                 onRange = onRange,
+                exportState = exportState,
+                onExport = onExport,
                 modifier = modifier,
             )
     }
@@ -187,13 +200,26 @@ private fun LinksnapAnalyticsReady(
     status: String,
     range: LinksnapAnalyticsRange,
     onRange: (LinksnapAnalyticsRange) -> Unit,
+    exportState: LinksnapAnalyticsExportUiState,
+    onExport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(LinksnapAnalyticsMetrics.sectionGap),
     ) {
-        RangePresets(range = range, onRange = onRange)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RangePresets(range = range, onRange = onRange)
+            LinksnapAnalyticsExportControl(
+                state = exportState,
+                enabled = summary.totalClicks > 0,
+                onExport = onExport,
+            )
+        }
 
         Column(verticalArrangement = Arrangement.spacedBy(LinksnapAnalyticsMetrics.cardGap)) {
             Row(horizontalArrangement = Arrangement.spacedBy(LinksnapAnalyticsMetrics.cardGap)) {

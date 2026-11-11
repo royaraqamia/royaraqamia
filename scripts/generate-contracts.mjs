@@ -139,6 +139,10 @@ export const CONTRACTS = [
       // `GET /linksnap/api/analytics/[code]`, decoded from one schema so the app
       // cannot read a narrower shape than the drawer draws.
       'LinksnapAnalyticsResponseSchema',
+      // The CSV export (#964): the rows the page turns into its download, so the
+      // app shares the same columns from the same route rather than rebuilding
+      // them from a narrower read.
+      'LinksnapAnalyticsExportResponseSchema',
     ],
   },
   // The app's own failure report (#667): the body an installed APK sends when it
