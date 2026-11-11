@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
 import { z } from 'zod';
@@ -35,11 +43,67 @@ import {
  */
 
 const ROOT = resolve(import.meta.dirname, '..', '..');
-const DEFAULT_PLAN_PATH = '/tmp/mcp-catalog-agent-plan.json';
-const DEFAULT_DECISIONS_PATH = '/tmp/mcp-catalog-agent-decisions.json';
-const DEFAULT_RESULT_PATH = '/tmp/mcp-catalog-agent-result.json';
-const DEFAULT_MARKS_PATH = '/tmp/mcp-catalog-agent-marks.json';
-const DEFAULT_MARKS_BODY_PATH = '/tmp/mcp-catalog-agent-marks.md';
+
+/**
+ * The files the two commands hand each other — the plan, the model's decisions,
+ * the result and the mark request — live in one directory made for this run,
+ * never at a fixed name in a shared `/tmp` (`js/insecure-temporary-file`:
+ * a predictable path lets another local process plant a symlink first).
+ *
+ * `plan` and `apply` are separate processes with a model step between them, so
+ * the directory has to be agreed rather than rediscovered: `plan` publishes it
+ * on `$GITHUB_OUTPUT` (`dir=…`), and the job passes it back as
+ * `MCP_CATALOG_AGENT_RUNTIME_DIR`. A hand run sets that variable itself.
+ */
+const RUNTIME_DIR_ENV = 'MCP_CATALOG_AGENT_RUNTIME_DIR';
+
+const FILE_NAMES = {
+  plan: 'plan.json',
+  decisions: 'decisions.json',
+  result: 'result.json',
+  marks: 'marks.json',
+  marksBody: 'marks.md',
+} as const;
+
+type RuntimeFile = keyof typeof FILE_NAMES;
+
+let runtimeDirCache: string | null = null;
+
+function runtimeDir(): string {
+  if (runtimeDirCache) return runtimeDirCache;
+  const configured = process.env[RUNTIME_DIR_ENV]?.trim();
+  if (configured) {
+    mkdirSync(configured, { recursive: true, mode: 0o700 });
+    runtimeDirCache = configured;
+    return configured;
+  }
+  // `mkdtemp` makes the name unpredictable and the directory private (0700),
+  // which is what closes the symlink race a fixed name leaves open.
+  const base = process.env.RUNNER_TEMP?.trim() || tmpdir();
+  runtimeDirCache = mkdtempSync(join(base, 'mcp-catalog-agent-'));
+  return runtimeDirCache;
+}
+
+/** A per-file `MCP_CATALOG_AGENT_*_PATH` still wins, so one file can be pinned. */
+function runtimeFile(file: RuntimeFile, overrideName: string): string {
+  const configured = process.env[overrideName]?.trim();
+  return configured || join(runtimeDir(), FILE_NAMES[file]);
+}
+
+function planPath(): string {
+  return runtimeFile('plan', 'MCP_CATALOG_AGENT_PLAN_PATH');
+}
+
+function decisionsPath(): string {
+  return runtimeFile('decisions', 'MCP_CATALOG_AGENT_DECISIONS_PATH');
+}
+
+/** Later steps of the job read the directory from here; a hand run has no output file. */
+function announceRuntimeDir(): void {
+  const output = process.env.GITHUB_OUTPUT?.trim();
+  if (!output) return;
+  appendFileSync(output, `dir=${runtimeDir()}\n`);
+}
 
 type PublishClass = 'dcr' | 'pre_registered' | 'none';
 
@@ -459,7 +523,6 @@ async function vendorMark(url: string): Promise<string | null> {
 
   const publicPath = `/brand/mcp/${slug}.svg`;
   const target = join(ROOT, 'public', publicPath);
-  if (existsSync(target)) return publicPath;
 
   try {
     const response = await createGuardedFetch()(url);
@@ -467,7 +530,16 @@ async function vendorMark(url: string): Promise<string | null> {
     const svg = await readCappedText(response);
     if (!svg.trimStart().startsWith('<svg')) return null;
     mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, svg);
+    try {
+      // `wx` creates the file or fails, so there is no check-then-write window
+      // for a link planted in between (`js/file-system-race`).
+      writeFileSync(target, svg, { flag: 'wx' });
+    } catch (error) {
+      // The mark is already shipped by an earlier run, which is the same
+      // outcome for this row: the path is returned, and the pull request that
+      // carries it is the one somebody merges.
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') return null;
+    }
     return publicPath;
   } catch {
     return null;
@@ -491,14 +563,13 @@ function summary(plan: Plan, lines: string[]): string {
 }
 
 async function apply(): Promise<void> {
-  const planPath = process.env.MCP_CATALOG_AGENT_PLAN_PATH?.trim() || DEFAULT_PLAN_PATH;
-  const decisionsPath =
-    process.env.MCP_CATALOG_AGENT_DECISIONS_PATH?.trim() || DEFAULT_DECISIONS_PATH;
+  const planFile = planPath();
+  const decisionsFile = decisionsPath();
 
-  if (!existsSync(planPath)) throw new Error(`no plan at ${planPath}`);
-  const plan = JSON.parse(readFileSync(planPath, 'utf8')) as Plan;
-  const decisions: Decisions = existsSync(decisionsPath)
-    ? DecisionsSchema.parse(readJson(decisionsPath))
+  if (!existsSync(planFile)) throw new Error(`no plan at ${planFile}`);
+  const plan = JSON.parse(readFileSync(planFile, 'utf8')) as Plan;
+  const decisions: Decisions = existsSync(decisionsFile)
+    ? DecisionsSchema.parse(readJson(decisionsFile))
     : { marks: [], copies: [] };
 
   const dryRun = flag('MCP_CATALOG_AGENT_DRY_RUN', true);
@@ -681,7 +752,7 @@ async function apply(): Promise<void> {
     has to be traceable to the check that failed, and one tracking issue (opened
     or commented by the workflow) is where it lands.
   */
-  const resultPath = process.env.MCP_CATALOG_AGENT_RESULT_PATH?.trim() || DEFAULT_RESULT_PATH;
+  const resultPath = runtimeFile('result', 'MCP_CATALOG_AGENT_RESULT_PATH');
   writeFileSync(
     resultPath,
     JSON.stringify(
@@ -700,9 +771,8 @@ async function apply(): Promise<void> {
   );
 
   if (vendored.length > 0) {
-    const marksPath = process.env.MCP_CATALOG_AGENT_MARKS_PATH?.trim() || DEFAULT_MARKS_PATH;
-    const bodyPath =
-      process.env.MCP_CATALOG_AGENT_MARKS_BODY_PATH?.trim() || DEFAULT_MARKS_BODY_PATH;
+    const marksPath = runtimeFile('marks', 'MCP_CATALOG_AGENT_MARKS_PATH');
+    const bodyPath = runtimeFile('marksBody', 'MCP_CATALOG_AGENT_MARKS_BODY_PATH');
     writeFileSync(marksPath, JSON.stringify(vendored, null, 2));
     writeFileSync(
       bodyPath,
@@ -727,10 +797,13 @@ async function apply(): Promise<void> {
 export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {
   const command = argv[0] ?? 'plan';
 
+  // The job's later steps — the model step included — find these files through
+  // the directory this run made, so it is published before anything is written.
+  if (command === 'plan' || command === 'apply') announceRuntimeDir();
+
   if (command === 'plan') {
     const result = await plan();
-    const planPath = process.env.MCP_CATALOG_AGENT_PLAN_PATH?.trim() || DEFAULT_PLAN_PATH;
-    writeFileSync(planPath, JSON.stringify(result, null, 2));
+    writeFileSync(planPath(), JSON.stringify(result, null, 2));
 
     const report = summary(
       result,

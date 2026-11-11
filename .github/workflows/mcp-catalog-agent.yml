@@ -106,7 +106,7 @@ jobs:
             runner has already measured the rows; you do not decide whether a row
             may be published.
 
-            Read /tmp/mcp-catalog-agent-plan.json. Every entry with
+            Read ${{ steps.plan.outputs.dir }}/plan.json. Every entry with
             `needsMark: true` and no `measuredMark` needs a brand mark. Every entry
             with `needsCopy: true` needs its Arabic copy. Entries with neither are
             not your work, and a row you cannot source is left out — the runner
@@ -143,7 +143,7 @@ jobs:
               `description`. Keep every claim the publisher made and add none.
               Never rewrite the English, and never write marketing.
 
-            Your only deliverable is /tmp/mcp-catalog-agent-decisions.json, and it
+            Your only deliverable is ${{ steps.plan.outputs.dir }}/decisions.json, and it
             must be exactly this shape:
 
             {
@@ -164,6 +164,9 @@ jobs:
           MCP_CATALOG_AGENT_TOKEN: ${{ secrets.MCP_CATALOG_AGENT_TOKEN }}
           MCP_CATALOG_AGENT_URL: ${{ vars.MCP_CATALOG_AGENT_URL || 'https://royaraqamia.com' }}
           MCP_CATALOG_AGENT_ENABLED: ${{ vars.MCP_CATALOG_AGENT_ENABLED || 'false' }}
+          # The plan file lives in the directory the measure step made; it is not
+          # a fixed `/tmp` name (`js/insecure-temporary-file`).
+          MCP_CATALOG_AGENT_RUNTIME_DIR: ${{ steps.plan.outputs.dir }}
           # A scheduled run has no input, and the runner's own fallback is a dry
           # run: without this the cron would measure and write nothing while
           # reporting success. A dispatch keeps its own answer ("false" checked
@@ -178,7 +181,7 @@ jobs:
         if: always() && steps.apply.outcome != 'skipped'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MARKS_BODY: /tmp/mcp-catalog-agent-marks.md
+          MARKS_BODY: ${{ steps.plan.outputs.dir }}/marks.md
         run: |
           set -euo pipefail
           if [ ! -s "$MARKS_BODY" ]; then
@@ -208,7 +211,7 @@ jobs:
         if: always() && steps.apply.outcome != 'skipped'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
-          RESULT_PATH: /tmp/mcp-catalog-agent-result.json
+          RESULT_PATH: ${{ steps.plan.outputs.dir }}/result.json
         with:
           script: |
             const fs = require('fs');
