@@ -228,7 +228,7 @@ fun rememberVoiceNoteRecorder(onRecorded: (ChatComposeFile) -> Unit): VoiceNoteR
 }
 
 /** 16-bit mono PCM, little-endian, as WAV's data chunk stores it. */
-private fun pcmBytes(samples: ShortArray, count: Int): ByteArray {
+internal fun pcmBytes(samples: ShortArray, count: Int): ByteArray {
     val bytes = ByteArray(count * 2)
     for (index in 0 until count) {
         val value = samples[index].toInt()
@@ -250,7 +250,7 @@ private fun rms(samples: ShortArray, count: Int): Float {
 }
 
 /** A mono 16-bit PCM WAV: the 44-byte header the site also writes. */
-private fun wav(pcm: ByteArray): ByteArray {
+internal fun wav(pcm: ByteArray): ByteArray {
     val out = ByteArray(44 + pcm.size)
     val view = ByteBuffer.wrap(out).order(ByteOrder.LITTLE_ENDIAN)
     view.put("RIFF".toByteArray())
