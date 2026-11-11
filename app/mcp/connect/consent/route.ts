@@ -122,8 +122,15 @@ export async function POST(req: NextRequest) {
   // re-consenting for a client that is already connected reuses its slot. The
   // cap is one pool shared with the outbound connections نور makes (ADR-0155),
   // and `assertOwnedItemCap` is the one place that counts it.
+  //
+  // Both sides of this comparison are the registration's *row id*: a grant's
+  // `clientId` is the token rows' `client_id`, which `issueTokenPair` writes as
+  // `client.id`, while the form's `client_id` is the public registration string
+  // `getClient` resolved into that same record. Comparing the grant against the
+  // public string never matched, so a reinstall, a second machine, or a client
+  // that lost its token was refused at the cap instead of reusing its slot.
   const connected = await createDefaultMcpConnectedAppService().list(user.id);
-  const alreadyConnected = connected.some((app) => app.clientId === clientId);
+  const alreadyConnected = connected.some((app) => app.clientId === client.id);
   try {
     await createPlanGate().cap(user.id, OWNED_ITEMS.mcpConnectedApps, alreadyConnected ? 0 : 1);
   } catch {
