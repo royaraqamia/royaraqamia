@@ -50,3 +50,16 @@ export async function fetchFollowStates(ids: string[]): Promise<Record<string, F
   const body = (await response.json().catch(() => null)) as FollowStatesResponse | null;
   return body?.states ?? {};
 }
+
+/**
+ * Lift a block, so a blocked profile can offer the only action it has.
+ *
+ * The write belongs to the chat routes (`DELETE /api/chats/blocks/[userId]`),
+ * because blocking is the chat's own table and this change only renamed it. It
+ * is written here rather than imported from `frontend/api/chats` so the
+ * community route does not pull the whole chat client into its bundle for one
+ * fetch.
+ */
+export async function unblockMember(userId: string): Promise<void> {
+  await fetch(`/api/chats/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+}

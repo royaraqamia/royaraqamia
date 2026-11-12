@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { followMember, unfollowMember } from '@/frontend/api/follows';
+import { followMember, unblockMember, unfollowMember } from '@/frontend/api/follows';
 import { useSession } from '@/frontend/state/session-provider';
-import { unblockChatUser } from '@/frontend/api/chats';
 import { Button } from '@/frontend/ui/primitives/button';
 import {
   Dialog,
@@ -92,7 +91,7 @@ export function FollowButton({
       if (action === 'unblock') {
         // Blocking is the site's own row (`blocks`, one table for chat and the
         // feed), so lifting it goes through the route that already owns that write.
-        if (memberId) await unblockChatUser(memberId);
+        if (memberId) await unblockMember(memberId);
         nextState('not_following');
         return;
       }

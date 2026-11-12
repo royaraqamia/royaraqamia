@@ -10,8 +10,8 @@
   },
   "routes": {
     "/community/explore": {
-      "comment": "The public hub, measured where `/community` used to be: same shell, same assistant door (ADR-0143), same pinned own row (ADR-0172). The personal feed next to it is rendered per request (ADR-0173) and so has no prerendered document to measure; what it adds - the follow control and its one shared state read - rides the route's client bundle.",
-      "jsGzipKb": 264
+      "comment": "The public hub, measured where `/community` used to be: same shell, same assistant door (ADR-0143), same pinned own row (ADR-0172). The follow control adds ~35 KB gzip on this route: a button per roster row, the unfollow dialogue and the batch state read that feeds them (ADR-0173). That is the feature rather than a leak, and the ceiling sits just above today's measurement so the next growth is a decision.",
+      "jsGzipKb": 305
     },
     "/scan": {
       "comment": "The Scanner owns no server surface, so its budget is the initial bundle alone: the decoder and the result card are lazy, and the ~1 MB WASM engine is a static asset fetched only once a visitor actually scans.",
