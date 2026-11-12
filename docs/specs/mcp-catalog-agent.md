@@ -9,10 +9,11 @@ standing between the probe and the publish.
 
 1. **`plan`** (`node scripts/mcp-catalog-agent.mjs plan`) asks the scoped
    endpoint for a capped page of candidates, measures each through the same probe
-   and egress code a member's connect flow uses, and writes
-   `/tmp/mcp-catalog-agent-plan.json`. It writes nothing to the store.
-2. **The sourcing step** is one DeepSeek 4.1 Flash run. It reads the plan and
-   writes `/tmp/mcp-catalog-agent-decisions.json`: marks from the three allowed
+   and egress code a member's connect flow uses, and writes `plan.json` in a
+   directory it makes for the run (`mkdtemp`, published as the step's `dir`
+   output). It writes nothing to the store.
+2. **The sourcing step** is one DeepSeek 4.1 Flash run. It reads that `plan.json`
+   and writes `decisions.json` beside it: marks from the three allowed
    sources, and `title_override` / `name_ar` / `description_ar` as transforms of
    the registry's own text. It decides nothing about publishing.
 3. **`apply`** validates every decision (source host, `/brand/` file present, the
@@ -23,6 +24,10 @@ standing between the probe and the publish.
    them as an edit: no second vouch, no cap, and its `verified_at` does not move
    (#1302). That is the only way a seeded row's letter tile is ever replaced — a
    row published before it had a mark is otherwise re-checked and nothing more.
+
+A hand run keeps the two processes agreeing by setting
+`MCP_CATALOG_AGENT_RUNTIME_DIR` to one directory it controls; each file can also
+be pinned with its own `MCP_CATALOG_AGENT_*_PATH` variable.
 
 The checks decide. A row that fails waits as a skip event with a category
 (`no_mark`, `no_registration`, `check_failed`, `repo_pr_pending`,
