@@ -6,9 +6,9 @@ import { Lock } from 'lucide-react';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { loadPlanCatalog } from '@/backend/loaders/plans';
 import { createDefaultSubscriptionRequestService } from '@/backend/config/subscriptions';
-import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { SubscribeFlow } from '@/frontend/ui/subscriptions/subscribe-flow';
+import { SubscribePageHeading } from '@/frontend/ui/subscriptions/subscribe-page-heading';
 import { SubscribePlanSummary } from '@/frontend/ui/subscriptions/subscribe-plan-summary';
 import { itemCapOf, planPriceLabel } from '@/frontend/ui/plans/pricing-view';
 import { SUBSCRIPTION_PLAN } from '@/shared/contracts/subscriptions';
@@ -36,12 +36,6 @@ export default async function SubscribePage() {
 
   return (
     <main id="main-content" dir="rtl" className="mx-auto max-w-2xl px-4 pt-6 pb-16 md:pb-24">
-      <header className="mb-8 text-center">
-        <SectionTitle as="h1" size="card">
-          <SectionTitleHighlight>الاشتراك في الخطَّة المدفوعة</SectionTitleHighlight>
-        </SectionTitle>
-      </header>
-
       {user ? <MemberSubscribeForm userId={user.id} /> : <GuestPanel />}
     </main>
   );
@@ -60,7 +54,8 @@ async function MemberSubscribeForm({ userId }: { userId: string }) {
   if (open) {
     return (
       <section className="rounded-3xl border border-border/60 bg-card/70 p-6 text-center sm:p-8">
-        <p className="text-sm text-muted-foreground">
+        <SubscribePageHeading />
+        <p className="mt-2 text-sm text-muted-foreground">
           طلبك قيد المراجعة — سنتواصل معك لتفعيل الخطَّة.
         </p>
         <p dir="ltr" className="mt-3 font-mono text-lg font-bold tracking-wide text-foreground">
@@ -83,11 +78,7 @@ async function MemberSubscribeForm({ userId }: { userId: string }) {
       defaultName=""
       accountId={userId}
       summary={
-        <SubscribePlanSummary
-          price={price}
-          durationDays={catalog.settings.durationDays}
-          itemCap={itemCapOf(catalog, SUBSCRIPTION_PLAN)}
-        />
+        <SubscribePlanSummary price={price} itemCap={itemCapOf(catalog, SUBSCRIPTION_PLAN)} />
       }
     />
   );
@@ -96,6 +87,7 @@ async function MemberSubscribeForm({ userId }: { userId: string }) {
 function GuestPanel() {
   return (
     <section className="flex flex-col items-center gap-3 rounded-3xl border border-border/60 bg-card/70 p-6 text-center sm:p-8">
+      <SubscribePageHeading />
       <div className="flex size-12 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
         <Lock size={20} aria-hidden="true" />
       </div>
