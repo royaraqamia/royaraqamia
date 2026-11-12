@@ -473,13 +473,13 @@ test('a repeat client navigation is answered from the cache with the radio off',
  * The public snapshot store (#555): a surface's last-seen rows paint with the
  * radio off instead of a skeleton or a different screen.
  *
- * `/news` is the case the store was built for. Its document used to read
- * `searchParams` on the server, which is exactly what kept it out of the
- * precache, so an offline open answered from `/` — a different screen. The page
- * is a data-free shell now, its digest is a client read, and the rows it rendered
- * are in the public scope of the snapshot store. The assertions below are the
- * two halves of that: `/news` is on the device after install-and-refresh, and the
- * reload with the radio off paints rows rather than the pulse skeleton.
+ * `/news` is the case the store was built for, and it is a tab of the door now
+ * (ADR-0168). The page is a data-free shell, its digest is a client read, and the
+ * rows it rendered are in the public scope of the snapshot store — the document
+ * offline is the door, which is the one the worker pins. The assertions below are
+ * the two halves of that: the door is on the device after install-and-refresh, and
+ * the reload with the radio off paints the digest's own rows rather than the pulse
+ * skeleton.
  */
 test('the news digest paints from its snapshot with the radio off', async ({
   browser,
@@ -495,7 +495,7 @@ test('the news digest paints from its snapshot with the radio off', async ({
   await signIn(context, baseURL!);
   const page = await context.newPage();
 
-  await gotoUnderWorkerControl(page, `${baseURL}/news`);
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/news`);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   // The board settles once, from the API read; the recorder writes after the
@@ -518,16 +518,16 @@ test('the news digest paints from its snapshot with the radio off', async ({
   const onlineCards = await page.locator('#main-content article').count();
   expect(onlineCards).toBeGreaterThan(0);
 
-  // The shell is in the build's precache (ADR-0071): this is what makes an
-  // offline open paint News' own chrome instead of falling through to `/`.
-  await waitForCachedRoutes(page, ['/news']);
+  // The door is in the build's precache (ADR-0071), and the digest is a tab of
+  // it (ADR-0168), so this is what makes an offline open paint its rows.
+  await waitForCachedRoutes(page, ['/']);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await waitForAppHydrated(page);
 
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
 
-  await expect(page).toHaveURL(/\/news$/);
+  await expect(page).toHaveURL(/\?tab=\/news$/);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
   // Rows, not a skeleton and not the offline page's retry link.

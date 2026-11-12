@@ -112,7 +112,7 @@
     },
     {
       "id": "athkar",
-      "routes": ["/athkar", "/athkar/evening"],
+      "routes": ["/?tab=/athkar", "/athkar", "/athkar/evening"],
       "owner": "static",
       "read": "swr",
       "write": "none",
@@ -252,21 +252,21 @@
     },
     {
       "id": "news",
-      "routes": ["/news"],
+      "routes": ["/?tab=/news", "/news"],
       "owner": "server",
       "read": "snapshot",
       "write": "none",
-      "shell": "precached",
+      "shell": "none",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
     {
       "id": "rates",
-      "routes": ["/rates"],
+      "routes": ["/?tab=/rates", "/rates"],
       "owner": "server",
       "read": "snapshot",
       "write": "none",
-      "shell": "precached",
+      "shell": "none",
       "specs": ["e2e/public-offline.spec.ts"],
       "issue": "#555"
     },
@@ -302,11 +302,11 @@
     },
     {
       "id": "scan",
-      "routes": ["/scan"],
+      "routes": ["/?tab=/scan", "/scan"],
       "owner": "device",
       "read": "store",
       "write": "none",
-      "shell": "precached",
+      "shell": "none",
       "specs": ["e2e/scan.spec.ts"]
     },
     {
