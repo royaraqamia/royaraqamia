@@ -79,18 +79,19 @@
       "surface": "profile",
       "phase": "public-content",
       "state": "todo",
-      "issue": "#927"
+      "issue": "#1343"
     },
     {
       "surface": "news",
       "phase": "public-content",
-      "state": "todo"
+      "state": "todo",
+      "issue": "#1345"
     },
     {
       "surface": "scan",
       "phase": "public-content",
       "state": "todo",
-      "issue": "#932"
+      "issue": "#1344"
     },
     {
       "surface": "linksnap-unlock",
@@ -111,13 +112,13 @@
       "surface": "mcp-apps",
       "phase": "public-content",
       "state": "todo",
-      "issue": "#1228"
+      "issue": "#1256"
     },
     {
       "surface": "mcp-app-detail",
       "phase": "public-content",
       "state": "todo",
-      "issue": "#1228"
+      "issue": "#1256"
     },
     {
       "surface": "athkar",
@@ -138,7 +139,7 @@
       "surface": "account",
       "phase": "core",
       "state": "todo",
-      "issue": "#948"
+      "issue": "#1063"
     },
     {
       "surface": "account-links",
@@ -154,8 +155,8 @@
     {
       "surface": "account-submissions",
       "phase": "core",
-      "state": "todo",
-      "issue": "#931"
+      "state": "blocked",
+      "blockedBy": "no door on the web: the page is the request, booking and training forms, which left the UI in ADR-0148; leads and consultation are blocked for the same reason"
     },
     {
       "surface": "account-plan",
@@ -173,7 +174,7 @@
       "surface": "account-blocked",
       "phase": "core",
       "state": "todo",
-      "issue": "#977"
+      "issue": "#1346"
     },
     {
       "surface": "account-faq",
@@ -184,7 +185,7 @@
       "surface": "account-news",
       "phase": "core",
       "state": "todo",
-      "issue": "#950"
+      "issue": "#1347"
     },
     {
       "surface": "notifications",

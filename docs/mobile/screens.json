@@ -82,7 +82,7 @@
     {
       "surface": "account-submissions",
       "native": null,
-      "reason": "The submissions page is the request, booking and training forms, which land with #659."
+      "reason": "No door on the web: the submissions page is the request, booking and training forms, and none of them has an entry point since ADR-0148. The row is `blocked` in `parity-plan.json` for the same reason `leads` and `consultation` are."
     },
     {
       "surface": "account-plan",

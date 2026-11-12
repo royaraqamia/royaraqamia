@@ -23,14 +23,14 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [ ] **downloader** `/downloader` — blocked · blocked by hidden from the UI; the page stays reachable by direct URL but is not a port target
 - [x] **community** `/community` — native
 - [ ] **community-post** `/community/[slug]` — todo
-- [ ] **profile** `/u/[username]` — todo · #927
-- [ ] **news** `/?tab=/news` `/news` — todo
-- [ ] **scan** `/?tab=/scan` `/scan` — todo · #932
+- [ ] **profile** `/u/[username]` — todo · #1343
+- [ ] **news** `/?tab=/news` `/news` — todo · #1345
+- [ ] **scan** `/?tab=/scan` `/scan` — todo · #1344
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [ ] **mcp-guide** `/mcp/guide` — todo
 - [ ] **mcp-connect** `/mcp/connect` — todo
-- [ ] **mcp-apps** `/mcp/apps` — todo · #1228
-- [ ] **mcp-app-detail** `/mcp/apps/[id]` — todo · #1228
+- [ ] **mcp-apps** `/mcp/apps` — todo · #1256
+- [ ] **mcp-app-detail** `/mcp/apps/[id]` — todo · #1256
 - [ ] **athkar** `/?tab=/athkar` `/athkar` `/athkar/evening` — todo
 
 ## Sign-in
@@ -44,15 +44,15 @@ _The site is what signs in since #873, and the native card is the one screen a g
 _Home, the account area, notifications and chats: the screens a member opens daily._
 
 - [ ] **home** `/` — todo
-- [ ] **account** `/account` — todo · #948
+- [ ] **account** `/account` — todo · #1063
 - [x] **account-links** `/account/links` — native · #944
 - [ ] **account-posts** `/account/posts` — todo
-- [ ] **account-submissions** `/account/submissions` — todo · #931
+- [ ] **account-submissions** `/account/submissions` — blocked · blocked by no door on the web: the page is the request, booking and training forms, which left the UI in ADR-0148; leads and consultation are blocked for the same reason
 - [x] **account-plan** `/account/plan` — native · #900
 - [x] **account-connected-apps** `/account/connected-apps` — native · #900
-- [ ] **account-blocked** `/account/blocked` — todo · #977
+- [ ] **account-blocked** `/account/blocked` — todo · #1346
 - [x] **account-faq** `/account/faq` — native
-- [ ] **account-news** `/account/news` — todo · #950
+- [ ] **account-news** `/account/news` — todo · #1347
 - [ ] **notifications** `/notifications` — todo
 - [ ] **chats** `/chats/[id]` `/chats/new` — todo · #937
 
@@ -164,4 +164,4 @@ A component is finished when the surface that draws it is native: 76 ported comp
 
 ## Where this stands
 
-15 native · 20 to do · 4 blocked of 39 surfaces.
+15 native · 19 to do · 5 blocked of 39 surfaces.

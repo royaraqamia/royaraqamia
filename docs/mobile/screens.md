@@ -24,7 +24,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948), the profile card with its two dialogs is drawn (#946) and the allowance card is drawn (#947); the public handle editor is still the page's, so the surface stays off until it is the whole page. |
 | `account-links` | `/account/links` | `LinksnapScreen.kt` |  |
 | `account-posts` | `/account/posts` | _web only_ | The account's post management page is web-only in this phase; it arrives with the native account surface (#658). |
-| `account-submissions` | `/account/submissions` | _web only_ | The submissions page is the request, booking and training forms, which land with #659. |
+| `account-submissions` | `/account/submissions` | _web only_ | No door on the web: the submissions page is the request, booking and training forms, and none of them has an entry point since ADR-0148. The row is `blocked` in `parity-plan.json` for the same reason `leads` and `consultation` are. |
 | `account-plan` | `/account/plan` | `PlanScreen.kt` |  |
 | `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` |  |
 | `account-faq` | `/account/faq` | `AccountFaqScreen.kt` |  |
