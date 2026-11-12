@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { joinChatPresenceChannel, type ChatPresenceChannel } from '@/frontend/api/chats';
+import { acquireChatPresence } from '@/frontend/state/chats/presence-channels';
 import {
   CHAT_RECORDING_TIMEOUT_MS,
   CHAT_TYPING_TIMEOUT_MS,
@@ -17,12 +17,14 @@ export type ChatPresenceMap = Readonly<Record<string, ChatPresenceState>>;
 /**
  * The chats list's presence (ADR-0167): one subscription per row it can hear.
  *
- * Presence lives on the conversation's own topic, so the list joins a channel
- * per direct, active thread and drops the channel with the row. That is the
- * price of the platform's rule — Realtime authorises a join against the `select`
- * policy, so the peer's state cannot be heard on a stream the sender writes into
- * without reading. Each event is drawn only when its sender is the direct
- * thread's own counterpart, so a member cannot make another appear to be
+ * Presence lives on the conversation's own topic, so the list wants a channel
+ * per direct, active thread. The channel itself belongs to the conversation
+ * rather than to this screen (ADR-0171), so a row it stops drawing releases its
+ * claim and the thread the member opens next reclaims the same join. That is
+ * the price of the platform's rule — Realtime authorises a join against the
+ * `select` policy, so the peer's state cannot be heard on a stream the sender
+ * writes into without reading. Each event is drawn only when its sender is the
+ * direct thread's own counterpart, so a member cannot make another appear to be
  * writing, and a conversation the list no longer holds is dropped.
  */
 export function useChatPresenceList(
@@ -31,7 +33,7 @@ export function useChatPresenceList(
 ): ChatPresenceMap {
   const [presence, setPresence] = useState<ChatPresenceMap>({});
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
-  const channels = useRef(new Map<string, ChatPresenceChannel>());
+  const releases = useRef(new Map<string, () => void>());
 
   /** The counterpart each direct row is allowed to hear from. */
   const peers = useMemo(() => {
@@ -114,41 +116,43 @@ export function useChatPresenceList(
   const liveKey = live.join('|');
 
   useEffect(() => {
-    const joined = channels.current;
+    const claimed = releases.current;
 
     // Signing out closes what the screen holds, rather than leaving a joined
     // topic behind for the next member.
     if (!selfId) {
-      for (const [conversationId, channel] of joined) {
-        channel.leave();
+      for (const [conversationId, release] of claimed) {
+        release();
         forget(conversationId);
       }
-      joined.clear();
+      claimed.clear();
       return;
     }
 
     const wanted = new Set(liveKey ? liveKey.split('|') : []);
 
-    for (const [conversationId, channel] of joined) {
+    for (const [conversationId, release] of claimed) {
       if (wanted.has(conversationId)) continue;
-      channel.leave();
-      joined.delete(conversationId);
+      release();
+      claimed.delete(conversationId);
       forget(conversationId);
     }
 
     for (const conversationId of wanted) {
-      if (joined.has(conversationId)) continue;
-      joined.set(conversationId, joinChatPresenceChannel(conversationId, selfId, onEvent));
+      if (claimed.has(conversationId)) continue;
+      claimed.set(conversationId, acquireChatPresence(conversationId, selfId, onEvent).release);
     }
   }, [forget, liveKey, onEvent, selfId]);
 
-  // Leaving the screen closes every channel it opened, whatever the list holds.
+  // Leaving the screen releases every claim it made, whatever the list holds.
+  // The topic itself waits out the grace window, because the thread this screen
+  // opens is the next holder (ADR-0171).
   useEffect(() => {
-    const joined = channels.current;
+    const claimed = releases.current;
     const pending = timers.current;
     return () => {
-      for (const channel of joined.values()) channel.leave();
-      joined.clear();
+      for (const release of claimed.values()) release();
+      claimed.clear();
       for (const timer of pending.values()) clearTimeout(timer);
       pending.clear();
       setPresence({});

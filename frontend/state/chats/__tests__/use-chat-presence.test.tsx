@@ -9,6 +9,10 @@ const api = vi.hoisted(() => ({
 vi.mock('@/frontend/api/chats', () => api);
 
 import { useChatPresence, type ChatPresenceHook } from '@/frontend/state/chats/use-chat-presence';
+import {
+  CHAT_PRESENCE_CHANNEL_GRACE_MS,
+  closeAllChatPresence,
+} from '@/frontend/state/chats/presence-channels';
 import type { ChatPresenceEvent } from '@/shared/contracts/chat';
 
 let captured: ChatPresenceHook | null = null;
@@ -36,6 +40,9 @@ describe('useChatPresence', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     captured = null;
+    // The registry is module state: a topic a previous test left waiting must
+    // not be the one this test joins.
+    closeAllChatPresence();
     api.joinChatPresenceChannel.mockReset().mockReturnValue({ announce, stop, leave });
     announce.mockReset();
     stop.mockReset();
@@ -139,10 +146,57 @@ describe('useChatPresence', () => {
     expect(announce).toHaveBeenCalledTimes(2);
   });
 
-  it('leaves the channel when the thread closes', () => {
+  it('holds the topic through the grace window after the thread closes', () => {
     const view = render(<Harness selfId="me" />);
     view.unmount();
 
+    // The list's row and this thread are two screens on one topic (ADR-0171),
+    // so closing one must not close the join the other may still want.
+    expect(leave).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(CHAT_PRESENCE_CHANNEL_GRACE_MS));
+    expect(leave).toHaveBeenCalledTimes(1);
+  });
+
+  it('reclaims a topic another screen joined, instead of joining it twice', () => {
+    const first = render(<Harness selfId="me" />);
+    render(<Harness selfId="me" />);
+
+    expect(api.joinChatPresenceChannel).toHaveBeenCalledTimes(1);
+
+    first.unmount();
+    expect(leave).not.toHaveBeenCalled();
+  });
+
+  it('reclaims a topic the previous screen left inside the window', () => {
+    const first = render(<Harness selfId="me" />);
+    first.unmount();
+    act(() => vi.advanceTimersByTime(CHAT_PRESENCE_CHANNEL_GRACE_MS - 1_000));
+
+    render(<Harness selfId="me" />);
+
+    expect(api.joinChatPresenceChannel).toHaveBeenCalledTimes(1);
+    expect(leave).not.toHaveBeenCalled();
+  });
+
+  it('closes every topic when the session ends, rather than waiting out the window', () => {
+    render(<Harness selfId="me" />);
+
+    act(() => closeAllChatPresence());
+
+    expect(leave).toHaveBeenCalledTimes(1);
+  });
+
+  it('joins a different member a fresh channel instead of sharing one', () => {
+    const view = render(<Harness selfId="me" />);
+    view.rerender(<Harness selfId="other" />);
+
+    expect(api.joinChatPresenceChannel).toHaveBeenCalledTimes(2);
+    expect(api.joinChatPresenceChannel).toHaveBeenLastCalledWith(
+      'c-1',
+      'other',
+      expect.any(Function)
+    );
     expect(leave).toHaveBeenCalledTimes(1);
   });
 });

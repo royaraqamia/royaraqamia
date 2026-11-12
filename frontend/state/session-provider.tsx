@@ -153,6 +153,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           // An expiry is a sign-out the user did not perform: the cached renders
           // may still belong to the account that just lost its session.
           void purgeServiceWorkerCaches();
+          // The presence topics are the tab's, not a screen's (ADR-0171): their
+          // grace window is for a route change, so an identity change closes
+          // them here rather than leaving a joined channel behind.
+          void import('@/frontend/state/chats/presence-channels').then(({ closeAllChatPresence }) =>
+            closeAllChatPresence()
+          );
           if (!AUTH_PATHS.some((p) => pathnameRef.current.startsWith(p))) {
             const currentPath = pathnameRef.current;
             const loginPath =

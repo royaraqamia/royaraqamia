@@ -6,10 +6,15 @@ const api = vi.hoisted(() => ({ joinChatPresenceChannel: vi.fn() }));
 
 vi.mock('@/frontend/api/chats', () => api);
 
+import { useChatPresence } from '@/frontend/state/chats/use-chat-presence';
 import {
   useChatPresenceList,
   type ChatPresenceMap,
 } from '@/frontend/state/chats/use-chat-presence-list';
+import {
+  CHAT_PRESENCE_CHANNEL_GRACE_MS,
+  closeAllChatPresence,
+} from '@/frontend/state/chats/presence-channels';
 import type { ChatConversationSummary, ChatPresenceEvent } from '@/shared/contracts/chat';
 
 function direct(id: string, peerId: string): ChatConversationSummary {
@@ -69,6 +74,12 @@ function Harness({
 
 const leave = vi.fn();
 
+/** The thread's own hook, as `/chats/<id>` mounts it. */
+function ThreadHarness({ selfId }: { selfId: string }) {
+  useChatPresence('c-1', selfId);
+  return null;
+}
+
 /** The callback the conversation's channel was given. */
 function channelEvent(conversationId: string, event: ChatPresenceEvent) {
   const call = api.joinChatPresenceChannel.mock.calls.find((entry) => entry[0] === conversationId);
@@ -80,6 +91,9 @@ describe('useChatPresenceList', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     captured = {};
+    // The registry is module state: a topic a previous test left waiting must
+    // not be the one this test joins.
+    closeAllChatPresence();
     api.joinChatPresenceChannel
       .mockReset()
       .mockReturnValue({ announce: vi.fn(), stop: vi.fn(), leave });
@@ -148,7 +162,7 @@ describe('useChatPresenceList', () => {
     expect(captured).toEqual({});
   });
 
-  it('leaves a row’s channel when the row leaves the list', () => {
+  it('releases a row’s channel when the row leaves the list, and leaves it after the window', () => {
     const view = render(
       <Harness threads={[direct('c-1', 'peer-1'), direct('c-2', 'peer-2')]} selfId="me" />
     );
@@ -156,15 +170,35 @@ describe('useChatPresenceList', () => {
 
     view.rerender(<Harness threads={[direct('c-1', 'peer-1')]} selfId="me" />);
 
+    // Released, not closed: the thread that row opens is the next holder
+    // (ADR-0171), and it reclaims the join inside the window.
+    expect(leave).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(CHAT_PRESENCE_CHANNEL_GRACE_MS));
     expect(leave).toHaveBeenCalledTimes(1);
   });
 
-  it('leaves every channel when the list closes', () => {
+  it('leaves every channel once the list has been gone for the window', () => {
     const view = render(
       <Harness threads={[direct('c-1', 'peer-1'), direct('c-2', 'peer-2')]} selfId="me" />
     );
     view.unmount();
 
+    expect(leave).not.toHaveBeenCalled();
+
+    act(() => vi.advanceTimersByTime(CHAT_PRESENCE_CHANNEL_GRACE_MS));
     expect(leave).toHaveBeenCalledTimes(2);
+  });
+
+  it('lets the thread a row opens reclaim that row’s join', () => {
+    const list = render(<Harness threads={[direct('c-1', 'peer-1')]} selfId="me" />);
+    list.unmount();
+    act(() => vi.advanceTimersByTime(1_000));
+
+    // The thread's own hook wants the same conversation, not a second join.
+    render(<ThreadHarness selfId="me" />);
+
+    expect(api.joinChatPresenceChannel).toHaveBeenCalledTimes(1);
+    expect(leave).not.toHaveBeenCalled();
   });
 });

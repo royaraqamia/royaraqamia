@@ -145,10 +145,14 @@ fun ChatThread(
     var presenceStamp by remember { mutableLongStateOf(0L) }
     var lastTypingSent by remember { mutableLongStateOf(0L) }
 
-    /** Who this thread's live line is about, and who it is drawn for. */
-    val presenceThread = (read as? ChatThreadUiState.Live)?.thread
-    val selfId = presenceThread?.me?.userId
-    val peerId = presenceThread?.counterpart?.id
+    /**
+     * Who the conversation's topic is joined as. The member's own id is the
+     * session's, not the read's, so the join starts with the screen instead of
+     * with the first read — a keystroke that lands before it would otherwise
+     * queue behind the join (#1332). The topic's own policy decides whether the
+     * join is allowed (ADR-0167, amended by ADR-0171).
+     */
+    val selfId = repository.selfId()
 
     /** One read of the thread and its lines, and the read watermark it stamps. */
     suspend fun load() {
@@ -244,13 +248,24 @@ fun ChatThread(
     }
 
     /**
+     * Whether this screen joins the conversation's topic. Unknown before the
+     * read, so the join is speculative then — a keystroke typed in the first
+     * seconds of a thread would otherwise queue behind it (#1332). A thread the
+     * read turns out to be closed in, or not a direct one, releases it again;
+     * the topic's policy is the authority either way (ADR-0167, ADR-0171).
+     */
+    val presenceWanted =
+        (read as? ChatThreadUiState.Live)?.thread?.let {
+            it.kind == ChatThreadResponseThreadKind.DIRECT && it.canWrite
+        } ?: true
+
+    /**
      * The write half (ADR-0167): the conversation's own topic, joined while this
-     * thread is open. A guest, an assistant thread or a group has no peer, so
-     * there is nothing to join.
+     * thread is open.
      */
     val publisher =
-        remember(presence, selfId, peerId, conversationId) {
-            if (presence != null && selfId != null && peerId != null) {
+        remember(presence, selfId, conversationId, presenceWanted) {
+            if (presence != null && selfId != null && presenceWanted) {
                 presence.publisher(conversationId, selfId)
             } else {
                 null
@@ -358,14 +373,16 @@ fun ChatThread(
     }
 
     // The conversation's own topic while this thread is open: one subscription,
-    // and only the counterpart's events for this conversation are believed.
-    LaunchedEffect(presence, selfId, peerId, conversationId) {
+    // and only this conversation's events are believed. The sender is the peer
+    // by construction — `eventOf` drops the member's own broadcasts, and a
+    // direct topic has nobody else on it.
+    LaunchedEffect(presence, selfId, conversationId, presenceWanted) {
         val source = presence ?: return@LaunchedEffect
-        if (selfId == null || peerId == null) return@LaunchedEffect
+        if (selfId == null || !presenceWanted) return@LaunchedEffect
 
         val subscription =
             source.listen(setOf(conversationId), selfId) { event ->
-                if (event.conversationId != conversationId || event.userId != peerId) {
+                if (event.conversationId != conversationId) {
                     return@listen
                 }
                 peerPresence = event.state.takeIf { it != ChatPresence.STOP }
