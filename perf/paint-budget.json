@@ -13,7 +13,7 @@
     },
     {
       "id": "spendtrack",
-      "path": "/spendtrack",
+      "path": "/?tab=/spendtrack",
       "auth": true,
       "ceiling": { "cold": 2200, "warm": 600 },
       "tapNote": "The expense dialog is a lazy chunk warmed by a first interaction, so its tap is a chunk fetch on a cold dialog; not a paint number yet."

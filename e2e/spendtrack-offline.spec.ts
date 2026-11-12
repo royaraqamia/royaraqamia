@@ -29,7 +29,7 @@ test('an offline expense reaches the server after reconnect', async ({ browser, 
   const description = `E2E-${Date.now()}`;
 
   const page = await context.newPage();
-  await gotoUnderWorkerControl(page, `${baseURL}/spendtrack`);
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/spendtrack`);
 
   const addButton = page.getByRole('button', { name: 'إضافة مصروف' }).first();
   await expect(addButton).toBeVisible();

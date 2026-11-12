@@ -459,9 +459,12 @@ const PREPARE: Record<
     const baseURL = projectBaseURL();
     await signInAsVisualAccount(page.context(), baseURL);
     await seedSpendtrack(page.context(), baseURL);
-    await page.goto(new URL(`/spendtrack?categories=${SPENDTRACK_FOOD}`, baseURL).toString(), {
-      waitUntil: 'domcontentloaded',
-    });
+    await page.goto(
+      new URL(`/?tab=/spendtrack&categories=${SPENDTRACK_FOOD}`, baseURL).toString(),
+      {
+        waitUntil: 'domcontentloaded',
+      }
+    );
     await page.locator('[data-visual="spendtrack-row"]').first().waitFor({ timeout: 30_000 });
     await page.waitForTimeout(600);
     await page.evaluate(() => document.fonts.ready);
@@ -489,7 +492,7 @@ const PREPARE: Record<
     const baseURL = projectBaseURL();
     await signInAsVisualAccount(page.context(), baseURL);
     await seedSpendtrack(page.context(), baseURL);
-    await page.goto(new URL('/spendtrack?create=1', baseURL).toString(), {
+    await page.goto(new URL('/?tab=/spendtrack&create=1', baseURL).toString(), {
       waitUntil: 'domcontentloaded',
     });
     await page.locator('[data-visual="spendtrack-expense-dialog"]').waitFor({ timeout: 30_000 });

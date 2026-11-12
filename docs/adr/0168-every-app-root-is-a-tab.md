@@ -32,7 +32,9 @@ costs".
   `/quran/<n>` offline: the door does now. Notes follows the same shape: `/notes`
   redirects, its list is the tab, and `/notes/api/**` is untouched. HabitFlow is
   the third: `/habitflow` redirects, and the day it keeps in `?date=` rides the
-  tab beside it.
+  tab beside it. SpendTrack is the last: `/spendtrack` redirects, its filters and
+  the create dialog ride the tab, and `/spendtrack/categories` stays a page
+  because a category manager is a screen of the product, not a second door.
 - **The app resolves the tab back to the route.** `Routes.appTabOf` turns
   `/?tab=/<app>` into the app's own path before the shell routes it, so a shared
   link and a redirect land on the native screen instead of the document. Without
