@@ -470,6 +470,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         assistant={assistant}
         onDraft={setDraft}
         onTyping={noteTyping}
+        onDraftEmpty={stopTyping}
         onAddFiles={addFiles}
         onRemoveFile={(index) => setFiles((current) => current.filter((_, at) => at !== index))}
         onSend={() => void handleSend()}
@@ -755,6 +756,7 @@ function ThreadFooter({
   assistant,
   onDraft,
   onTyping,
+  onDraftEmpty,
   onAddFiles,
   onRemoveFile,
   onSend,
@@ -777,6 +779,8 @@ function ThreadFooter({
   onDraft: (value: string) => void;
   /** A keystroke: the typing channel throttles, so every change may call this. */
   onTyping: () => void;
+  /** The draft became empty: the peer's line goes now rather than on its window. */
+  onDraftEmpty: () => void;
   onAddFiles: (files: File[]) => void;
   onRemoveFile: (index: number) => void;
   onSend: () => void;
@@ -818,6 +822,7 @@ function ThreadFooter({
           value={draft}
           onValueChange={onDraft}
           onTyping={onTyping}
+          onDraftEmpty={onDraftEmpty}
           onSend={onSend}
           files={files}
           onAddFiles={onAddFiles}

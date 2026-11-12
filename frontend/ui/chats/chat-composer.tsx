@@ -87,6 +87,7 @@ export function ChatComposer({
   value,
   onValueChange,
   onTyping,
+  onDraftEmpty,
   onSend,
   files,
   onAddFiles,
@@ -106,6 +107,8 @@ export function ChatComposer({
   onValueChange: (value: string) => void;
   /** A keystroke, for the member thread's typing channel. */
   onTyping?: () => void;
+  /** The draft became empty: the member stopped rather than pausing. */
+  onDraftEmpty?: () => void;
   onSend: () => void;
   files: File[];
   onAddFiles: (files: File[]) => void;
@@ -196,6 +199,10 @@ export function ChatComposer({
   function onPointerDown(event: React.PointerEvent<HTMLButtonElement>) {
     if (disabled || recorder.isPreparing) return;
     event.preventDefault();
+    // The release is the send-or-cancel decision, and with a mouse the pointer
+    // leaves the button during the slide away. Capturing it keeps the move and
+    // the up on this element; touch is captured implicitly, a mouse is not.
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     cancelling.current = false;
     pendingRelease.current = null;
     origin.current = { x: event.clientX, y: event.clientY };
@@ -230,6 +237,15 @@ export function ChatComposer({
     }
     pendingRelease.current = 'send';
     void finish();
+  }
+
+  /** The browser took the pointer away — an alt-tab, a scroll: throw the clip. */
+  function onPointerCancel() {
+    if (!pressing) return;
+    setPressing(false);
+    origin.current = null;
+    if (locked) return;
+    cancel();
   }
 
   return (
@@ -302,10 +318,14 @@ export function ChatComposer({
                 ref={field}
                 value={value}
                 onChange={(event) => {
-                  onValueChange(event.target.value);
-                  // A draft that is being typed says so; a cleared one says nothing,
-                  // and the reader's own five-second window closes it.
-                  if (onTyping && event.target.value.trim()) onTyping();
+                  const next = event.target.value;
+                  onValueChange(next);
+                  // A draft that is being typed says so; a cleared one says it
+                  // stopped, so the reader does not wait out the five-second
+                  // window for a line the member already deleted.
+                  if (!onTyping) return;
+                  if (next.trim()) onTyping();
+                  else onDraftEmpty?.();
                 }}
                 rows={1}
                 maxLength={4000}
@@ -348,7 +368,7 @@ export function ChatComposer({
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
+                onPointerCancel={onPointerCancel}
                 onPointerLeave={onPointerMove}
               >
                 <Mic size={16} />
