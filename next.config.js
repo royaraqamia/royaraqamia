@@ -173,10 +173,13 @@ const nextConfig = {
         permanent: false,
       },
       {
-        // The reader's index only: a surah and a tafsir are children with their
-        // own addresses, and they keep them.
         source: '/quran',
         destination: '/?tab=/quran',
+        permanent: false,
+      },
+      {
+        source: '/notes',
+        destination: '/?tab=/notes',
         permanent: false,
       },
       {

@@ -8,7 +8,9 @@ import { test, expect } from '@playwright/test';
  */
 
 test('a guest writes, searches, reloads and undoes a note', async ({ page }) => {
-  await page.goto('/notes');
+  // The notes list is a tab of the door (ADR-0168), so the address is the door's
+  // own; the surface under the strip is the same component the route draws.
+  await page.goto('/?tab=/notes');
   await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
 
   // The FAB opens the composer, and the note it creates opens in the editor.

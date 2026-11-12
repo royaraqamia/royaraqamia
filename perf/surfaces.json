@@ -88,11 +88,11 @@
     },
     {
       "id": "notes",
-      "routes": ["/notes"],
+      "routes": ["/?tab=/notes", "/notes"],
       "owner": "local-store",
       "read": "store",
       "write": "outbox",
-      "shell": "precached",
+      "shell": "none",
       "specs": [
         "e2e/product-offline-render.spec.ts",
         "e2e/notes-offline.spec.ts",

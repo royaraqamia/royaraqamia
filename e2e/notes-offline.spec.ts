@@ -35,7 +35,7 @@ test('an offline note reaches the server after reconnect', async ({ browser, bas
   // so the marker the sync is polled for is written as that line.
   const marker = `E2E-${Date.now()}`;
   const page = await context.newPage();
-  await gotoUnderWorkerControl(page, `${baseURL}/notes`);
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/notes`);
   await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
 
   // Warm the editor chunk while still online: the FAB's composer creates the

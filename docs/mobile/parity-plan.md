@@ -66,7 +66,7 @@ _The local-store products, where the app has a real reason to be native: offline
 - [x] **linksnap** `/?tab=/linksnap` — native
 - [x] **quran** `/?tab=/quran` `/quran` — native · #955
 - [x] **quran-surah** `/quran/[surah]` — native · #955
-- [ ] **notes** `/notes` — todo
+- [ ] **notes** `/?tab=/notes` `/notes` — todo
 
 ## Requests and bookings
 
