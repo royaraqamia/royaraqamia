@@ -10,10 +10,10 @@ costs".
 ## The decision
 
 - **Every app root answers a redirect.** `/news`, `/rates`, `/athkar` and `/scan`
-  join `/linksnap` as 307s to `/?tab=/<app>`, with the request's query passed
-  through. The five local-store roots (habitflow, spendtrack, quran, notes and
-  LinkSnap) follow in the change that accepts the offline cost for them; this
-  ADR is the rule they are held to, not an exemption.
+  joined `/linksnap` as 307s to `/?tab=/<app>`, with the request's query passed
+  through; then `/quran`, `/notes`, `/habitflow` and `/spendtrack` followed, each
+  with its own precache row and its own offline spec. All nine now answer a tab
+  address; the page files stay on disk behind the redirects.
 - **The page files stay.** The routes stop being served; the components, layouts,
   contracts and tests behind them are not deleted. Deletion is a later change
   that takes each route's files, its API surface and its specs together.

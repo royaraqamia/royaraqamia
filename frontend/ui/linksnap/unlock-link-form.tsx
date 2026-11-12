@@ -5,6 +5,7 @@ import { Lock, LoaderCircle, CircleAlert } from 'lucide-react';
 import { unlockLink } from '@/frontend/api/linksnap';
 import { ApiError } from '@/frontend/transport/http';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { homeTabHref } from '@/shared/contracts/home-services-catalog';
 import { LINKSNAP_UNLOCK_COPY } from './linksnap-unlock-copy';
 
 /** The status the server answered with, in the sentence both clients draw (#919). */
@@ -154,7 +155,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
           <footer className="mt-6 text-center text-xs text-slate-400 dark:text-slate-600">
             <a
               data-visual="unlock-back"
-              href="/linksnap"
+              href={homeTabHref('/linksnap')}
               className="font-medium hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded"
             >
               {LINKSNAP_UNLOCK_COPY.back}

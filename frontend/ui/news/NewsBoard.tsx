@@ -12,6 +12,7 @@ import {
 } from '@/frontend/shared/local-store/snapshot';
 import { requestWithMeta } from '@/frontend/transport/http';
 import { formatCount } from '@/frontend/shared/format';
+import { homeTabHref } from '@/shared/contracts/home-services-catalog';
 import { NEWS_DIGEST_COPY } from './news-digest-copy';
 import { NewsFilters } from '@/frontend/ui/news/NewsFilters';
 import { NewsSearch } from '@/frontend/ui/news/NewsSearch';
@@ -321,7 +322,7 @@ export function NewsBoard() {
             </p>
             {view.hasAnyDigest ? (
               <Link
-                href="/news"
+                href={homeTabHref('/news')}
                 className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 {NEWS_DIGEST_COPY.latestDigest}
