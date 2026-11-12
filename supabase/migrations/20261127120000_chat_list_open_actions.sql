@@ -13,7 +13,15 @@
 -- The function stays `security invoker`: the action table's own select policy
 -- decides which proposals the caller may count (ADR-0173).
 --
+-- `create or replace` cannot do this: adding an OUT column changes the row type,
+-- and Postgres refuses that with 42P13 rather than silently redefining the
+-- contract. The function is therefore dropped and recreated. Nothing else in
+-- the database depends on it — the repository reaches it through the Data API's
+-- RPC grant, which is restored at the end of this file — and it has not been
+-- applied anywhere, so the drop costs no history.
+--
 -- Rollback:
+--   drop function if exists public.list_chat_threads();
 --   re-run the `create or replace` from
 --     20261113240000_chat_list_pins_agent_first.sql;
 --   drop index if exists public.idx_chat_agent_actions_open;
@@ -25,7 +33,9 @@ create index if not exists idx_chat_agent_actions_open
   on public.chat_agent_actions (conversation_id)
   where status = 'proposed';
 
-create or replace function public.list_chat_threads()
+drop function if exists public.list_chat_threads();
+
+create function public.list_chat_threads()
 returns table (
   id uuid,
   kind text,
