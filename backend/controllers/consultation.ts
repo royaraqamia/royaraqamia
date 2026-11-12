@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { normalizePage, normalizePageSize } from '@/backend/controllers/admin-list';
 import {
   BookingActionSchema,
   ConsultationSettingsSchema,
@@ -208,6 +209,9 @@ export async function getConsultationSettings(): Promise<HttpResult> {
 
 const BOOKING_STATUSES = new Set(['pending', 'confirmed', 'rejected', 'cancelled']);
 
+/** The bookings list pages at 50, unlike the 20 every other Admin list defaults to. */
+const BOOKINGS_PAGE_SIZE = 50;
+
 export async function adminListBookings(
   page: number,
   pageSize: number,
@@ -218,8 +222,9 @@ export async function adminListBookings(
       const validStatus =
         status && BOOKING_STATUSES.has(status) ? (status as ConsultationBookingStatus) : undefined;
       const result = await createAdminConsultationService().adminListBookings(
-        page,
-        pageSize,
+        normalizePage(page),
+        // An unusable size reads as "not supplied", and this list's default is 50.
+        pageSize > 0 ? normalizePageSize(pageSize) : BOOKINGS_PAGE_SIZE,
         validStatus
       );
       return jsonResult(200, result);

@@ -138,6 +138,19 @@ describe('listCertificates', () => {
     expect(mockSyncAdminAllowlistMirror).toHaveBeenCalledWith(['admin@example.com']);
   });
 
+  it('turns a negative page and page size into the first page at the default size', async () => {
+    const result = await listCertificates(-5, -6, '');
+
+    expect(result.status).toBe(200);
+    expect(mockList).toHaveBeenCalledWith(1, 20, '');
+  });
+
+  it('clamps an oversized page size to the shared maximum', async () => {
+    await listCertificates(1, 1_000_000, '');
+
+    expect(mockList).toHaveBeenCalledWith(1, 100, '');
+  });
+
   it('returns a readable 500 on a genuine failure', async () => {
     mockList.mockRejectedValue(new Error('db down'));
 
