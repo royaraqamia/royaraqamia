@@ -62,7 +62,25 @@
     }
   ],
   "motion": {
-    "notes": "The search card children stagger in 100ms apart, each fading and rising 20px over 0.5s on load; a result enters from 24px below and leaves 20px upward in 0.15s. The same means the same order, travel and easing, and the app composes the same states without the network.",
-    "entries": []
+    "notes": "The search card children stagger in 100ms apart, each fading and rising 20px over 0.5s on load; the submit control lifts 2px on hover and settles on press, and a result enters from 24px below over 0.45s and leaves 20px upward over 0.15s. The same means the same order, travel and easing, and the app composes the same states without the network.",
+    "entries": [
+      {
+        "element": "card",
+        "gesture": "the page loads",
+        "moves": "the search card children stagger in 100ms apart, each fading and rising 20px over 0.5s",
+        "same": "the same order, 100ms stagger, 20px travel and 0.5s easing; reduced motion shows the settled card"
+      },
+      {
+        "element": "submit",
+        "gesture": "hover over and then press the submit button",
+        "moves": "the button lifts 2px on hover, settles back, and shrinks 2% on press",
+        "same": "the same 2px lift, 2% press scale and focus ring; reduced motion keeps the colour change only"
+      },
+      {
+        "gesture": "a lookup returns a certificate",
+        "moves": "the result enters from 24px below over 0.45s and leaves 20px upward over 0.15s",
+        "same": "the same 24px entrance, 0.15s exit and final state; reduced motion shows the result without the entrance"
+      }
+    ]
   }
 }

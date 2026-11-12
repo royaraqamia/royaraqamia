@@ -33,6 +33,18 @@
   ],
   "motion": {
     "notes": "The connected-apps list is still. The destructive revoke control brightens on hover and shrinks 2% on press; the same means the same 150ms ease-out and the same press travel, with the colour change kept under reduced motion. Loading is a pulse skeleton.",
-    "entries": []
+    "entries": [
+      {
+        "element": "cta",
+        "gesture": "hover over, focus or press the revoke control",
+        "moves": "it brightens on hover and focus and shrinks 2% on press over 150ms",
+        "same": "the same 150ms ease-out, focus ring and 2% press travel; reduced motion keeps the colour change and drops the travel"
+      },
+      {
+        "gesture": "the list loads",
+        "moves": "a pulse skeleton holds the list height until the rows arrive",
+        "same": "the same pulse skeleton; reduced motion shows the settled list without the pulse"
+      }
+    ]
   }
 }

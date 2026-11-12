@@ -73,6 +73,19 @@
   ],
   "motion": {
     "notes": "The plan card is still. Loading is a two-block pulse skeleton; the only other motion is the page route transition and the browser focus ring.",
-    "entries": []
+    "entries": [
+      {
+        "element": "card",
+        "gesture": "the plan loads",
+        "moves": "two skeleton blocks pulse until the plan arrives",
+        "same": "the same two-block pulse; reduced motion shows the settled card without the pulse"
+      },
+      {
+        "element": "cta",
+        "gesture": "keyboard focus moves through the page",
+        "moves": "the browser focus ring appears on the focused control",
+        "same": "the same focus order and an equivalent focus indication; nothing travels"
+      }
+    ]
   }
 }

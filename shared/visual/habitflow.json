@@ -130,6 +130,30 @@
   ],
   "motion": {
     "notes": "The dashboard enters in three staged pieces: the header springs in, the list fades and rises over 0.6s, and the footer rises over 0.5s; counts and calendar fills animate to their values. The same means the same order and timing, and reduced motion keeps the final states without the spring or travel.",
-    "entries": []
+    "entries": [
+      {
+        "element": "header",
+        "gesture": "the dashboard opens",
+        "moves": "the header springs into place first",
+        "same": "the same order and spring; reduced motion shows the final position without the spring"
+      },
+      {
+        "element": "list",
+        "gesture": "the dashboard opens after the header",
+        "moves": "the list fades in and rises over 0.6s",
+        "same": "the same delay, fade and 0.6s rise; reduced motion shows the final list without the travel"
+      },
+      {
+        "gesture": "the dashboard opens after the list",
+        "moves": "the footer rises over 0.5s",
+        "same": "the same 0.5s rise and order; reduced motion shows the final footer without the travel"
+      },
+      {
+        "element": "count",
+        "gesture": "a habit is added, completed or removed",
+        "moves": "the count animates to its new value and the calendar fills animate to theirs",
+        "same": "the same count change and calendar fill; reduced motion jumps straight to the new value"
+      }
+    ]
   }
 }

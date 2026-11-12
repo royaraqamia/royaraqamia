@@ -63,6 +63,18 @@
   ],
   "motion": {
     "notes": "Ayah cards fade their border and background on hover or focus, and the player bar progress fills over 300ms. The same means the same colour transition and the same progress width, with reduced motion jumping to the new width.",
-    "entries": []
+    "entries": [
+      {
+        "element": "first-card",
+        "gesture": "hover over or keyboard-focus an ayah card",
+        "moves": "the card fades its border and background",
+        "same": "the same colour transition and focus ring; the cards do not travel"
+      },
+      {
+        "gesture": "play a recitation",
+        "moves": "the player bar progress fills to the new width over 300ms",
+        "same": "the same progress width and 300ms fill; reduced motion jumps to the new width"
+      }
+    ]
   }
 }

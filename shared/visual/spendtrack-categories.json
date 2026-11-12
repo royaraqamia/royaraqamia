@@ -42,6 +42,19 @@
   ],
   "motion": {
     "notes": "Category rows lift and scale their colour dot on hover, and their actions fade in; the create dialog fades and zooms in. The same means the same 200-300ms lift, dot scale and entrance, with reduced motion dropping the travel.",
-    "entries": []
+    "entries": [
+      {
+        "element": "row",
+        "gesture": "hover over a category row",
+        "moves": "the row lifts, its colour dot scales over 200-300ms, and its actions fade in",
+        "same": "the same lift, dot scale, action fade and 200-300ms easing; reduced motion drops the travel"
+      },
+      {
+        "element": "create",
+        "gesture": "open the create-category dialog",
+        "moves": "the dialog fades and zooms into place",
+        "same": "the same fade and zoom entrance; reduced motion drops the zoom and shows the dialog in place"
+      }
+    ]
   }
 }

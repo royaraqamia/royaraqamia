@@ -372,7 +372,30 @@
     }
   ],
   "motion": {
-    "notes": "Link cards lift 0.5px and grow their shadow on hover, the bulk bar appears when a row is selected, the analytics drawer expands from zero height, and the QR modal fades and zooms from 95%; the same means the same travel, height and 200-300ms easing, with reduced motion dropping the travel and the drawer expansion.",
-    "entries": []
+    "notes": "Link cards lift 2px and grow their shadow on hover, the bulk bar appears when a row is selected, the analytics drawer expands from zero height, and the QR modal fades and zooms from 95%; the same means the same travel, height and 200-300ms easing, with reduced motion dropping the travel and the drawer expansion.",
+    "entries": [
+      {
+        "gesture": "hover over a link card",
+        "moves": "the card lifts 2px and grows its shadow over 200-300ms",
+        "same": "the same 2px lift, shadow and 200-300ms easing; reduced motion drops the travel"
+      },
+      {
+        "element": "bar",
+        "gesture": "select a row",
+        "moves": "the bulk bar appears at the top of the list",
+        "same": "the same bar, controls and final height; it does not travel, and reduced motion keeps the same appearance"
+      },
+      {
+        "element": "chart",
+        "gesture": "open the analytics drawer",
+        "moves": "the drawer expands from zero height",
+        "same": "the same height expansion and easing; reduced motion shows the drawer open without the expansion"
+      },
+      {
+        "gesture": "open the QR modal",
+        "moves": "the modal fades and zooms from 95%",
+        "same": "the same fade and 95%-to-100% zoom entrance; reduced motion drops the zoom"
+      }
+    ]
   }
 }

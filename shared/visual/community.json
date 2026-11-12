@@ -52,7 +52,20 @@
     }
   ],
   "motion": {
-    "notes": "Feed cards lift 1.5px, shift their border and background, and scale their cover to 1.05 on hover or keyboard focus over 500-700ms; the same means the same travel and easing, with reduced motion dropping the travel and scale. The load-more glyph spins while the next page is in flight.",
-    "entries": []
+    "notes": "Feed cards lift 6px, shift their border and background, and scale their cover to 1.05 on hover or keyboard focus over 500-700ms; the same means the same travel and easing, with reduced motion dropping the travel and scale. The load-more glyph spins while the next page is in flight.",
+    "entries": [
+      {
+        "element": "card",
+        "gesture": "hover over or keyboard-focus a feed card",
+        "moves": "the card lifts 6px, shifts its border and background, and scales its cover to 1.05 over 500-700ms",
+        "same": "the same lift, border and background shift, cover scale and 500-700ms easing; reduced motion drops the travel and scale"
+      },
+      {
+        "element": "load-more",
+        "gesture": "press load more",
+        "moves": "the glyph spins while the next page is in flight",
+        "same": "the same spinner and in-flight state; it reports progress so it stays under reduced motion"
+      }
+    ]
   }
 }
