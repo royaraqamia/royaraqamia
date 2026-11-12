@@ -188,6 +188,11 @@ const nextConfig = {
         permanent: false,
       },
       {
+        source: '/spendtrack',
+        destination: '/?tab=/spendtrack',
+        permanent: false,
+      },
+      {
         source: '/blog',
         destination: '/community',
         permanent: true,

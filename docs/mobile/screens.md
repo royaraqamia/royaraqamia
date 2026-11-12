@@ -13,7 +13,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `home` | `/` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `habitflow` | `/?tab=/habitflow`<br>`/habitflow` | `HabitflowScreen.kt` |  |
-| `spendtrack` | `/spendtrack` | `SpendtrackScreen.kt` |  |
+| `spendtrack` | `/?tab=/spendtrack`<br>`/spendtrack` | `SpendtrackScreen.kt` |  |
 | `spendtrack-categories` | `/spendtrack/categories` | `SpendtrackCategoriesScreen.kt` |  |
 | `linksnap` | `/?tab=/linksnap` | `LinksnapShortenerScreen.kt` |  |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` |  |

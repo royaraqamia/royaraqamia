@@ -31,7 +31,7 @@ async function signIn(context: BrowserContext, baseURL: string | undefined) {
 }
 
 async function openSpendtrack(page: Page, baseURL: string | undefined) {
-  await page.goto(`${baseURL}/spendtrack`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${baseURL}/?tab=/spendtrack`, { waitUntil: 'domcontentloaded' });
   // The Local Store is open and reconciling once this marker is attached.
   await expect(page.locator('[data-spendtrack-ready="true"]')).toBeAttached({ timeout: 30_000 });
 }

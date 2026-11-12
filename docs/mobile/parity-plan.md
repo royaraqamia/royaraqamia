@@ -61,7 +61,7 @@ _Home, the account area, notifications and chats: the screens a member opens dai
 _The local-store products, where the app has a real reason to be native: offline writes and a device store behind the same screen._
 
 - [x] **habitflow** `/?tab=/habitflow` `/habitflow` — native · #898
-- [x] **spendtrack** `/spendtrack` — native
+- [x] **spendtrack** `/?tab=/spendtrack` `/spendtrack` — native
 - [x] **spendtrack-categories** `/spendtrack/categories` — native · #959
 - [x] **linksnap** `/?tab=/linksnap` — native
 - [x] **quran** `/?tab=/quran` `/quran` — native · #955
