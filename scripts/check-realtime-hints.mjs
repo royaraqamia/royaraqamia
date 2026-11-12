@@ -92,7 +92,10 @@ const PROBES = [
     product: 'Notes',
     table: 'notes',
     idColumn: 'id',
-    row: () => ({ title: `realtime hint check ${Date.now()}`, body: '' }),
+    // A note is its body: `title` was dropped by 20261102090000 (ADR-0110), and
+    // the probe holds no column the table has left behind — it writes exactly
+    // what the composer writes now.
+    row: () => ({ body: `realtime hint check ${Date.now()}` }),
   },
 ];
 
