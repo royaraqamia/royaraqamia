@@ -38,13 +38,14 @@ class ConnectedAppsRepositoryTest {
         """.trimIndent()
 
     private fun repository(transport: RecordingTransport): ConnectedAppsRepository {
-        val session =
-            runBlocking {
-                Session(MemoryTokenStore("refresh-1"), TokenRefresher { RefreshOutcome.Refused }, MemoryIdentityStorage())
-                    .also { it.signIn(TokenPair("access-1", "refresh-1", "user-1")) }
-            }
-        return ConnectedAppsRepository(ApiClient("https://app.test", session, transport))
+        return ConnectedAppsRepository(ApiClient("https://app.test", runBlocking { session() }, transport))
     }
+
+    private fun session(): Session =
+        runBlocking {
+            Session(MemoryTokenStore("refresh-1"), TokenRefresher { RefreshOutcome.Refused }, MemoryIdentityStorage())
+                .also { it.signIn(TokenPair("access-1", "refresh-1", "user-1")) }
+        }
 
     @Test
     fun `the list maps every client the page would list`() {
@@ -113,6 +114,23 @@ class ConnectedAppsRepositoryTest {
         assertTrue(result is ApiResult.Success)
         assertEquals("DELETE", transport.requests.single().method)
         assertEquals("https://app.test/api/me/mcp/connected-apps", transport.requests.single().url)
+    }
+
+    @Test
+    fun `the session cache follows the member, not the sheet`() {
+        var identity = "user-1"
+        val repository =
+            ConnectedAppsRepository(
+                ApiClient("https://app.test", runBlocking { session() }, RecordingTransport { HttpResponse(200, listBody) }),
+                identityKey = { identity },
+            )
+
+        assertEquals(null, repository.cached())
+        runBlocking { repository.list() }
+        assertEquals(listOf("client-1", "client-2"), repository.cached()?.map { it.clientId })
+
+        identity = "user-2"
+        assertEquals(null, repository.cached())
     }
 
     @Test

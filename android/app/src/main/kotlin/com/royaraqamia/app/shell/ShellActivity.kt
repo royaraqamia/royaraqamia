@@ -293,6 +293,8 @@ class ShellActivity : ComponentActivity() {
                         onOpenConnection = { id -> openRoute("/mcp/apps/$id") },
                         onOpenExternal = ::openExternal,
                         brandMark = graph.brandMark,
+                        connectedApps = graph.connectedApps,
+                        onConnectNew = { openRoute("/mcp/guide") },
                         onBack = ::goBack,
                     ) {
                         // The launch and every sign-in/sign-out run the same load:

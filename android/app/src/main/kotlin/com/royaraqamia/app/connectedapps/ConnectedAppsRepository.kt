@@ -22,15 +22,33 @@ data class ConnectedApp(
  * is the record of what is still live: a revocation that half-succeeded must not
  * look complete because the client removed the row optimistically.
  */
-class ConnectedAppsRepository(private val client: ApiClient) {
-    suspend fun list(): ApiResult<List<ConnectedApp>> =
-        when (val result = client.get<McpConnectedAppListResult>(LIST_PATH)) {
+class ConnectedAppsRepository(
+    private val client: ApiClient,
+    /**
+     * The member the cached rows belong to (#1256). The apps sheet closes and
+     * unmounts its content, so the list it just read has to survive the sheet —
+     * and must never survive a change of member.
+     */
+    private val identityKey: () -> String = { "" },
+) {
+    private var owner: String? = null
+    private var cache: List<ConnectedApp>? = null
+
+    /** The list the last read answered, or `null` when nothing was read yet. */
+    fun cached(): List<ConnectedApp>? {
+        syncOwner()
+        return cache
+    }
+
+    suspend fun list(): ApiResult<List<ConnectedApp>> {
+        syncOwner()
+        return when (val result = client.get<McpConnectedAppListResult>(LIST_PATH)) {
             is ApiResult.Success -> {
                 val body = result.value
                 if (!body.success) {
                     ApiResult.Failure(ApiError.Server(200, body.error ?: "the list was refused"))
                 } else {
-                    ApiResult.Success(
+                    val rows =
                         body.data.orEmpty().map { app ->
                             ConnectedApp(
                                 clientId = app.clientId,
@@ -39,11 +57,13 @@ class ConnectedAppsRepository(private val client: ApiClient) {
                                 lastUsedAt = app.lastUsedAt,
                             )
                         }
-                    )
+                    cache = rows
+                    ApiResult.Success(rows)
                 }
             }
             is ApiResult.Failure -> result
         }
+    }
 
     /** Cuts one grant loose; the client is refused on its next request, server-side. */
     suspend fun disconnect(clientId: String): ApiResult<Unit> = revoke(clientPath(clientId))
@@ -65,6 +85,15 @@ class ConnectedAppsRepository(private val client: ApiClient) {
                 }
             is ApiResult.Failure -> result
         }
+
+    /** A different member is a different list: the cache never crosses an identity. */
+    private fun syncOwner() {
+        val key = identityKey()
+        if (key != owner) {
+            owner = key
+            cache = null
+        }
+    }
 
     companion object {
         const val LIST_PATH = "/api/me/mcp/connected-apps"

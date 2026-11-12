@@ -381,7 +381,11 @@ class AppGraph private constructor(
             return AppGraph(
                 session = session,
                 usage = UsageRepository(client),
-                connectedApps = ConnectedAppsRepository(client),
+                connectedApps =
+                    ConnectedAppsRepository(
+                        client = client,
+                        identityKey = { session.storeIdentity.key },
+                    ),
                 blockedMembers = BlockedMembersRepository(client),
                 accountProfile = AccountProfileRepository(client, TransportAvatarLoader()),
                 accountUsage = AccountUsageRepository(client),

@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.mcp.McpStoreRepository
 import com.royaraqamia.app.net.HttpResponse
 import com.royaraqamia.app.session.MemoryTokenStore
@@ -75,10 +76,31 @@ class AppsSheetTest {
         )
     }
 
+    /** The connected list's read: an empty list, so the tab draws its empty card. */
+    private fun connectedApps(): ConnectedAppsRepository {
+        val session =
+            runBlocking {
+                Session(
+                        MemoryTokenStore("refresh-1"),
+                        TokenRefresher { RefreshOutcome.Refused },
+                        MemoryIdentityStorage(),
+                    )
+                    .also { it.signIn(TokenPair("access-1", "refresh-1", "user-1")) }
+            }
+        return ConnectedAppsRepository(
+            client =
+                ApiClient(
+                    "https://app.test",
+                    session,
+                    RecordingTransport { HttpResponse(200, """{"success":true,"data":[]}""") },
+                ),
+            identityKey = { "user-1" },
+        )
+    }
+
     private fun sheet(
         busy: String? = null,
         onToggle: (String) -> Unit = {},
-        onOpenConnectedApps: () -> Unit = {},
     ) {
         compose.setContent {
             RoyaraqamiaTheme {
@@ -91,8 +113,8 @@ class AppsSheetTest {
                         onToggle = onToggle,
                         onDismiss = {},
                         marketplace = store(),
+                        connectedApps = connectedApps(),
                         signedIn = true,
-                        onOpenConnectedApps = onOpenConnectedApps,
                     )
                 }
             }
@@ -159,11 +181,12 @@ class AppsSheetTest {
     }
 
     @Test
-    fun `the connected tab is still a door`() {
-        var connected = false
-        sheet(onOpenConnectedApps = { connected = true })
+    fun `the connected tab draws the list in the sheet`() {
+        sheet()
 
         compose.onNodeWithText(AppsSheetCopy.TAB_INBOUND).performClick()
-        assertTrue(connected)
+
+        compose.onNodeWithTag("inbound-panel").assertIsDisplayed()
+        assertEquals(0, compose.onAllNodesWithTag("services-row").fetchSemanticsNodes().size)
     }
 }
