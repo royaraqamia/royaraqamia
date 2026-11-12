@@ -10,8 +10,8 @@
   },
   "routes": {
     "/community/explore": {
-      "comment": "The public hub, measured where `/community` used to be: same shell, same assistant door (ADR-0143), same pinned own row (ADR-0172). It draws no per-viewer control: the roster's follow buttons live on the member's own feed, where the states arrive with the document (ADR-0173). Its weight is therefore the page the community section has always been.",
-      "jsGzipKb": 264
+      "comment": "The public hub, measured where `/community` used to be: same shell, same assistant door (ADR-0143), same pinned own row (ADR-0172). It draws no per-viewer control, and the client read that fed one is gone (ADR-0173): measured 265.2 KB after the fix, against 299.1 KB while the roster fetched its states in the browser. The ceiling sits just above today's measurement, as before.",
+      "jsGzipKb": 266
     },
     "/scan": {
       "comment": "The Scanner owns no server surface, so its budget is the initial bundle alone: the decoder and the result card are lazy, and the ~1 MB WASM engine is a static asset fetched only once a visitor actually scans.",
