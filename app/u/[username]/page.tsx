@@ -2,7 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { loadCommunityMember, loadCommunityMembers } from '@/backend/loaders/community';
+import { loadFollowCounts } from '@/backend/loaders/follows';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { FollowButton } from '@/frontend/ui/shared/follow-button';
+import { FollowCountsBar } from '@/frontend/ui/shared/follow-counts';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { PostCard } from '@/app/community/_components/post-card';
 import { MemberChatCta } from '@/app/community/_components/member-chat-cta';
@@ -72,6 +75,7 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
 
   const { member, posts } = page;
   const name = displayName(member);
+  const counts = await loadFollowCounts(member.id);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -101,12 +105,19 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
             <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
               @{member.username}
             </p>
+            <FollowCountsBar username={member.username} counts={counts} />
             {member.bio?.trim() && (
               <p className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground">
                 {member.bio}
               </p>
             )}
-            <MemberChatCta username={member.username} />
+            {/* The button and the chat door sit on one line: both are "what you
+                can do about this member", and the follower counts above them are
+                the same relationship counted. */}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              <FollowButton username={member.username} name={member.name} />
+              <MemberChatCta username={member.username} />
+            </div>
           </div>
         </div>
       </header>

@@ -7,6 +7,7 @@ const nav = vi.hoisted(() => ({ params: new URLSearchParams() }));
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => nav.params,
+  usePathname: () => '/community/explore',
 }));
 
 vi.mock('../post-card', () => ({

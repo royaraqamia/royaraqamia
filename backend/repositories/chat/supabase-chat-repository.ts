@@ -517,7 +517,7 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
 
     async blockUser(blockerId, blockedId) {
       const { error } = await supabase
-        .from('chat_blocks')
+        .from('blocks')
         .insert({ blocker_id: blockerId, blocked_id: blockedId });
 
       // Re-blocking is idempotent from the member's point of view.
@@ -528,7 +528,7 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
 
     async unblockUser(blockerId, blockedId) {
       const { error } = await supabase
-        .from('chat_blocks')
+        .from('blocks')
         .delete()
         .eq('blocker_id', blockerId)
         .eq('blocked_id', blockedId);
@@ -538,7 +538,7 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
 
     async findBlockedIds(blockerId) {
       const { data, error } = await supabase
-        .from('chat_blocks')
+        .from('blocks')
         .select('blocked_id')
         .eq('blocker_id', blockerId);
 

@@ -25,6 +25,7 @@ function makeRepo(overrides: Partial<PostsRepository> = {}) {
   const repository: PostsRepository = {
     getPublishedPosts: vi.fn(),
     getPublishedFeed: vi.fn(),
+    getFollowingFeed: vi.fn(),
     getFeaturedPublishedByAuthor: vi.fn(),
     getPublishedPostSlugs: vi.fn(),
     getPublishedPostSitemapEntries: vi.fn(),

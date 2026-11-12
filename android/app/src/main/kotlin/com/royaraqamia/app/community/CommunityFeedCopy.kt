@@ -14,6 +14,12 @@ package com.royaraqamia.app.community
 object CommunityFeedCopy {
     const val EMPTY_TITLE = "لا توجد منشورات بعد"
     const val EMPTY_BODY = "لا توجد منشورات حاليًّا. عد لاحقًا لقراءة أحدث المحتوى والمنشورات."
+    const val FOLLOWING_EMPTY_TITLE = "لم تتابع أحدًا بعد"
+    const val FOLLOWING_EMPTY_BODY = "تابع أعضاء المجتمع لتظهر منشوراتهم هنا."
+    const val FOLLOWING_EMPTY_ACTION = "اكتشف الأعضاء"
+    const val GUEST_EMPTY_TITLE = "سجّل الدخول لترى متابعاتك"
+    const val GUEST_EMPTY_BODY = "سجّل الدخول لتتابع الأعضاء وتظهر منشوراتهم في هذا القسم."
+    const val GUEST_SIGN_IN = "تسجيل الدخول"
     const val STALE_MESSAGE = "هذه آخر مشاركات ظهرت لك في هذا القسم. لا يمكن تحديثها أو البحث بلا اتصال."
     const val PAGE_ERROR = "تعذَّر تحميل المنشورات. أعد المحاولة."
     const val LOAD_MORE_ERROR = "تعذَّر تحميل المزيد من المنشورات. أعد المحاولة."

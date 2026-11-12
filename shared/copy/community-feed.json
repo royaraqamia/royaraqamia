@@ -11,11 +11,18 @@
   },
   "notes": {
     "source": "The feed's own words, in both clients (#658): what an empty feed says, what a feed this device kept says when it cannot refresh, what a failed read says, and the load-more control's label. The site renders them in `community-results.tsx`, which is why that component, and not the island above it, is the app's reference: the island fetches, the results draw.",
+    "empty": "`followingEmpty*` is the feed's normal first day - the member follows nobody yet - and `guestEmpty*` is the same page before signing in. They are separate sentences from `emptyTitle`/`emptyBody`, which describe a feed that is genuinely empty rather than a feed waiting on a follow.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `community-results.tsx` does not render."
   },
   "strings": {
     "emptyTitle": "لا توجد منشورات بعد",
     "emptyBody": "لا توجد منشورات حاليًّا. عد لاحقًا لقراءة أحدث المحتوى والمنشورات.",
+    "followingEmptyTitle": "لم تتابع أحدًا بعد",
+    "followingEmptyBody": "تابع أعضاء المجتمع لتظهر منشوراتهم هنا.",
+    "followingEmptyAction": "اكتشف الأعضاء",
+    "guestEmptyTitle": "سجّل الدخول لترى متابعاتك",
+    "guestEmptyBody": "سجّل الدخول لتتابع الأعضاء وتظهر منشوراتهم في هذا القسم.",
+    "guestSignIn": "تسجيل الدخول",
     "staleMessage": "هذه آخر مشاركات ظهرت لك في هذا القسم. لا يمكن تحديثها أو البحث بلا اتصال.",
     "pageError": "تعذَّر تحميل المنشورات. أعد المحاولة.",
     "loadMoreError": "تعذَّر تحميل المزيد من المنشورات. أعد المحاولة.",

@@ -15,6 +15,7 @@ import {
   Link2,
   Megaphone,
   MessagesSquare,
+  UserPlus,
   X,
 } from 'lucide-react';
 
@@ -39,6 +40,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   training_application: <GraduationCap size={18} />,
   consultation_booking: <CalendarCheck2 size={18} />,
   chat_request: <MessagesSquare size={18} />,
+  new_follower: <UserPlus size={18} />,
 };
 
 const TABS = [

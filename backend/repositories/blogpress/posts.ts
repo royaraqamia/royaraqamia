@@ -226,6 +226,54 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       };
     },
 
+    async getFollowingFeed(
+      cursor: string | null,
+      query: string,
+      pageSize: number
+    ): Promise<PublishedFeedResult> {
+      // `following_feed` is the personal view: my posts plus my followees',
+      // minus either side of a block. It is read as the caller (RLS), which is
+      // why the same filters below are the only ones it needs - the view cannot
+      // answer for a viewer who is not signed in.
+      const decoded = cursor ? decodeFeedCursor(cursor) : null;
+
+      let queryBuilder = supabase
+        .from('following_feed')
+        .select(POST_SUMMARY_COLUMNS)
+        .or(PUBLISHED_POSTS_FILTER)
+        .eq('community_visible', true)
+        .is('deleted_at', null);
+
+      const search = sanitizeOrFilterTerm(query);
+      if (search) {
+        queryBuilder = queryBuilder.or(`content.ilike.%${search}%,meta_desc.ilike.%${search}%`);
+      }
+
+      if (decoded) {
+        queryBuilder = queryBuilder.or(feedCursorFilter(decoded));
+      }
+
+      const { data, error } = await queryBuilder
+        .order('published_at', { ascending: false, nullsFirst: true })
+        .order('id', { ascending: false })
+        .limit(pageSize + 1);
+
+      if (error) throw repositoryFailure('blogpress.getFollowingFeed', error);
+
+      const rows = (data as PostSummary[]) ?? [];
+      const hasMore = rows.length > pageSize;
+      const posts = hasMore ? rows.slice(0, pageSize) : rows;
+      const last = posts[posts.length - 1];
+
+      return {
+        posts,
+        nextCursor:
+          hasMore && last
+            ? encodeFeedCursor({ publishedAt: last.published_at, id: last.id })
+            : null,
+      };
+    },
+
     async getFeaturedPublishedByAuthor(authorId: string): Promise<PostSummary | null> {
       const { data, error } = await supabase
         .from('posts')

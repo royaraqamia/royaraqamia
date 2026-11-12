@@ -70,10 +70,19 @@ export const PUSH_URL_BY_TYPE: Record<NotificationType, string> = {
   retainer_request: '/admin/clients/retainers',
   subscription_request: '/admin/plans/requests',
   chat_request: '/notifications?tab=chats',
+  new_follower: '/notifications?tab=alerts',
 };
 
 export function toPushUrl(type: NotificationType, metadata?: Record<string, unknown>): string {
   const base = PUSH_URL_BY_TYPE[type];
+  if (type === 'new_follower') {
+    // Tapping "someone followed you" opens the follower's own profile, which is
+    // the only place with a button to follow them back.
+    const username = metadata?.username;
+    if (typeof username === 'string' && username.length > 0) {
+      return `/u/${encodeURIComponent(username)}`;
+    }
+  }
   if (type === 'chat_request') {
     // The request is answered in the thread, so the push opens it directly.
     const conversationId = metadata?.conversationId;
