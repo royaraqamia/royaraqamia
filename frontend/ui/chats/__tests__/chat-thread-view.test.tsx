@@ -55,15 +55,22 @@ vi.mock('@/frontend/transport/supabase/chat-attachments', () => ({
 }));
 
 /** Presence is a broadcast under test elsewhere; here it is a seam. */
-const presence = vi.hoisted(() => ({ peer: null as 'typing' | 'recording' | null }));
+const presence = vi.hoisted(() => ({
+  peer: null as 'typing' | 'recording' | null,
+  /** What the view asked the hook to join, in the order it asked (#1332). */
+  calls: [] as Array<[string, string | null]>,
+}));
 
 vi.mock('@/frontend/state/chats/use-chat-presence', () => ({
-  useChatPresence: () => ({
-    peer: presence.peer,
-    noteTyping: vi.fn(),
-    noteRecording: vi.fn(),
-    stopTyping: vi.fn(),
-  }),
+  useChatPresence: (conversationId: string, selfId: string | null) => {
+    presence.calls.push([conversationId, selfId]);
+    return {
+      peer: presence.peer,
+      noteTyping: vi.fn(),
+      noteRecording: vi.fn(),
+      stopTyping: vi.fn(),
+    };
+  },
 }));
 
 const thread = vi.hoisted(() => ({ current: null as ChatThread | null }));
@@ -72,6 +79,8 @@ const thread = vi.hoisted(() => ({ current: null as ChatThread | null }));
 const hook = vi.hoisted(() => ({
   messages: { current: [] as ChatMessage[] },
   actions: { current: [] as ChatAgentAction[] },
+  /** The thread's read, still in flight when a test says so (#1332). */
+  loading: { current: false },
   send: vi.fn(),
   edit: vi.fn(),
   remove: vi.fn(),
@@ -84,7 +93,7 @@ vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
     thread: thread.current,
     messages: hook.messages.current,
     actions: hook.actions.current,
-    isLoading: false,
+    isLoading: hook.loading.current,
     isSending: false,
     error: null,
     hasOlder: false,
@@ -285,10 +294,47 @@ describe('ChatThreadView presence', () => {
   beforeEach(() => {
     thread.current = makeThread('direct');
     presence.peer = null;
+    presence.calls.length = 0;
+    hook.loading.current = false;
   });
 
   afterEach(() => {
     presence.peer = null;
+    hook.loading.current = false;
+  });
+
+  /**
+   * The topic is joined from the route and the session, not from the read: a
+   * keystroke that lands while the read is still in flight would otherwise
+   * queue behind the join and reach the peer seconds late (#1332).
+   */
+  it('asks for presence before the thread’s read answers', () => {
+    thread.current = null;
+    hook.loading.current = true;
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(presence.calls.at(-1)).toEqual(['c-1', 'peer-1']);
+  });
+
+  it('stops asking once the read says the member cannot write in it', () => {
+    thread.current = { ...makeThread('direct'), status: 'archived' };
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    // The join is speculative only while the read is unknown; a closed thread
+    // releases it rather than holding a topic the policy refuses (ADR-0167).
+    expect(presence.calls.at(-1)).toEqual(['c-1', null]);
+  });
+
+  it('releases the join on a thread that is not a direct one', () => {
+    thread.current = { ...makeThread('agent'), counterpart: null };
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    // The topic is the pair's: the assistant's thread has no peer on it, so the
+    // read's answer is what stops the speculative join.
+    expect(presence.calls.at(-1)).toEqual(['c-1', null]);
   });
 
   it('takes the handle’s place while the peer writes', () => {

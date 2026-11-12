@@ -63,3 +63,28 @@ correct all along: a service-role broadcast into the recipient's topic drew «ي
 - **Keep the per-member stream and change the platform.** Not ours to change.
 - **One channel per list row, kept forever.** Rejected: channels are joined and dropped with the rows,
   so a long list that is scrolled away does not keep a socket per conversation alive.
+
+## Amendment (2026-11-12, #1332): the join starts with the route, not with the read
+
+Decision 1, read as "nothing is joined where the member cannot write", made the client wait for the
+thread's own read before joining `presence:<conversation id>`. That read is also what renders the
+composer, so the join always began in the tick the composer appeared, and a keystroke typed in the
+first couple of seconds queued behind it: measured on production, 2.3 s to 3.3 s to the peer's line
+against 0.4–0.9 s on a topic already joined.
+
+The rule is now: **the client joins as soon as it knows the conversation and the member**, and the
+policy decides. Decision 2's predicate is unchanged and remains the only authority; the client gate
+was never one. Two consequences:
+
+- A thread the read turns out to be closed in — archived, declined, a group, the assistant's own
+  thread — releases the join when the read answers. While the read is in flight the join is
+  speculative, and a refusal there is **expected** rather than a regression. The consequence above
+  still holds, but it is carried by the test that a _writable_ thread reaches `SUBSCRIBED`, not by the
+  absence of a refused join.
+- The app moves with it. `ChatThread.kt` takes the member's id from the session
+  (`repository.selfId()`) rather than from the read, and stops narrowing events to the counterpart:
+  `ChatPresence.eventOf` already drops the member's own broadcasts, and a direct topic has nobody
+  else on it.
+
+The topic's lifetime moved with the change: it belongs to the conversation rather than to the screen
+([ADR-0171](0171-the-topic-belongs-to-the-conversation.md)).

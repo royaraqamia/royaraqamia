@@ -178,10 +178,13 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     return byMessage;
   }, [actions]);
 
-  // Presence is joined only where someone can actually write: a thread this
-  // member cannot post in has nothing to hear and nothing to broadcast.
-  const presencePeerId = thread?.kind === 'direct' ? (counterpartOf(thread)?.id ?? null) : null;
-  const presenceEnabled = state === 'write' && presencePeerId !== null;
+  // Presence is joined for the conversation as soon as the member is known, not
+  // once the read answers: the topic's own policy is the authority on whether
+  // they may hear the peer (ADR-0167, amended by ADR-0171), and waiting for
+  // `state === 'write'` only made the first keystroke queue behind the join
+  // (#1332). While the read is in flight the join is speculative; a thread it
+  // turns out to be closed in, or not a direct one, releases it again.
+  const presenceEnabled = thread === null || (state === 'write' && thread.kind === 'direct');
   const { peer, noteTyping, noteRecording, stopTyping } = useChatPresence(
     conversationId,
     presenceEnabled ? (user?.id ?? null) : null

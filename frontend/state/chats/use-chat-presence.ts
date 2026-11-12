@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { joinChatPresenceChannel, type ChatPresenceChannel } from '@/frontend/api/chats';
+import {
+  acquireChatPresence,
+  type ChatPresenceHandle,
+} from '@/frontend/state/chats/presence-channels';
 import {
   CHAT_RECORDING_HEARTBEAT_MS,
   CHAT_RECORDING_TIMEOUT_MS,
@@ -30,6 +33,10 @@ export interface ChatPresenceHook {
  * same join, because Realtime authorises a channel join against the `select`
  * policy and a write-only channel is not a shape it admits.
  *
+ * The channel belongs to the conversation rather than to this screen (ADR-0171),
+ * so opening a thread from the list reclaims the join the list already paid for
+ * instead of paying a second one on the first keystroke (#1332).
+ *
  * Nothing is stored: the reader forgets each state on its window (five seconds
  * for typing, six for a recording, whose heartbeats are four apart), so a
  * closed tab or a dropped stop cannot pin an indicator on screen. A recording
@@ -37,7 +44,7 @@ export interface ChatPresenceHook {
  */
 export function useChatPresence(conversationId: string, selfId: string | null): ChatPresenceHook {
   const [peer, setPeer] = useState<ChatPresenceState | null>(null);
-  const channelRef = useRef<ChatPresenceChannel | null>(null);
+  const handleRef = useRef<ChatPresenceHandle | null>(null);
   const lastSentRef = useRef(0);
   const recordingRef = useRef(false);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -57,15 +64,16 @@ export function useChatPresence(conversationId: string, selfId: string | null): 
     }
   }, []);
 
-  // The conversation's own stream. A thread the member cannot write in has no
-  // peer to hear from, so nothing is joined.
+  // The conversation's own stream. The route joins it as soon as the member is
+  // known and releases it if the read says they cannot write here (ADR-0167,
+  // amended by ADR-0171), so the first keystroke never queues behind the join.
   useEffect(() => {
     if (!selfId) return;
 
     lastSentRef.current = 0;
     recordingRef.current = false;
 
-    const channel = joinChatPresenceChannel(conversationId, selfId, (event) => {
+    const handle = acquireChatPresence(conversationId, selfId, (event) => {
       clearExpiry();
       if (event.state === 'stop') {
         setPeer(null);
@@ -81,11 +89,11 @@ export function useChatPresence(conversationId: string, selfId: string | null): 
         event.state === 'recording' ? CHAT_RECORDING_TIMEOUT_MS : CHAT_TYPING_TIMEOUT_MS
       );
     });
-    channelRef.current = channel;
+    handleRef.current = handle;
 
     return () => {
-      channel.leave();
-      channelRef.current = null;
+      handle.release();
+      handleRef.current = null;
       recordingRef.current = false;
       clearExpiry();
       stopHeartbeat();
@@ -98,7 +106,7 @@ export function useChatPresence(conversationId: string, selfId: string | null): 
     const now = Date.now();
     if (now - lastSentRef.current < CHAT_TYPING_THROTTLE_MS) return;
     lastSentRef.current = now;
-    channelRef.current?.announce('typing');
+    handleRef.current?.announce('typing');
   }, []);
 
   const stopTyping = useCallback(() => {
@@ -106,7 +114,7 @@ export function useChatPresence(conversationId: string, selfId: string | null): 
     // cut the recording announcement short.
     if (recordingRef.current) return;
     lastSentRef.current = 0;
-    channelRef.current?.stop();
+    handleRef.current?.stop();
   }, []);
 
   const noteRecording = useCallback(
@@ -116,15 +124,15 @@ export function useChatPresence(conversationId: string, selfId: string | null): 
       if (!recording) {
         stopHeartbeat();
         lastSentRef.current = 0;
-        channelRef.current?.stop();
+        handleRef.current?.stop();
         return;
       }
 
       lastSentRef.current = Date.now();
-      channelRef.current?.announce('recording');
+      handleRef.current?.announce('recording');
       if (heartbeatRef.current === null) {
         heartbeatRef.current = setInterval(() => {
-          channelRef.current?.announce('recording');
+          handleRef.current?.announce('recording');
         }, CHAT_RECORDING_HEARTBEAT_MS);
       }
     },
