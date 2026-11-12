@@ -1,13 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import type { FollowCounts } from '@/shared/contracts/follows';
 import { useSession } from '@/frontend/state/session-provider';
+import { useFollowSnapshot } from '@/frontend/shared/follow-state-store';
 import { followCountLabel } from './follow-copy';
 
 interface FollowCountsBarProps {
   username: string;
-  counts: FollowCounts;
 }
 
 /**
@@ -18,22 +17,38 @@ interface FollowCountsBarProps {
  * the two lists - which is the whole of "public counts, private lists" in one
  * component.
  *
- * Ownership is decided here, from the session, because the page is a cached
- * document shared by every visitor: the server cannot bake "you" into it.
+ * Ownership is decided here, from the session, because the page is a prerendered
+ * document shared by every visitor: the server cannot bake "you" into it. The
+ * figures themselves come from the same read the follow button uses, so the
+ * header costs one request rather than one per control.
  */
-export function FollowCountsBar({ username, counts }: FollowCountsBarProps) {
+export function FollowCountsBar({ username }: FollowCountsBarProps) {
   const { user, profileUsername } = useSession();
+  const snapshot = useFollowSnapshot(username);
+
   const isOwner = Boolean(user && profileUsername && profileUsername === username);
+
+  if (!snapshot) {
+    return (
+      <p
+        data-visual="profile-follow-counts"
+        className="mt-2 flex items-center justify-center gap-2"
+        aria-hidden="true"
+      >
+        <span className="h-4 w-24 animate-pulse rounded-full bg-muted/40" />
+      </p>
+    );
+  }
 
   const stats: Array<{ key: 'follower' | 'following'; label: string; href: string }> = [
     {
       key: 'follower',
-      label: followCountLabel(counts.followers, 'follower'),
+      label: followCountLabel(snapshot.counts.followers, 'follower'),
       href: `/u/${encodeURIComponent(username)}/followers`,
     },
     {
       key: 'following',
-      label: followCountLabel(counts.following, 'following'),
+      label: followCountLabel(snapshot.counts.following, 'following'),
       href: `/u/${encodeURIComponent(username)}/following`,
     },
   ];

@@ -31,7 +31,9 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `account-news` | `/account/news` | server | needs-connection | none | precached | _ungated_ |  | #493 |
 | `notifications` | `/notifications` | server | needs-connection | none | swr | _ungated_ |  |  |
 | `chats` | `/chats/[id]`<br>`/chats/new` | server | needs-connection | none | swr | _ungated_ |  |  |
-| `community` | `/community` | server | snapshot | none | precached | `public-offline.spec.ts` |  | #555 |
+| `community` | `/community/explore` | server | snapshot | none | precached | `public-offline.spec.ts` |  | #555 |
+| `community-following` | `/community` | server | needs-connection | none | swr | _ungated_ |  |  |
+| `follow-lists` | `/u/[username]/followers`<br>`/u/[username]/following` | server | needs-connection | none | swr | _ungated_ |  |  |
 | `community-post` | `/community/[slug]` | server | snapshot | none | swr | `public-offline.spec.ts` |  | #555 |
 | `news` | `/?tab=/news`<br>`/news` | server | snapshot | none | none | `public-offline.spec.ts` |  | #555 |
 | `rates` | `/?tab=/rates`<br>`/rates` | server | snapshot | none | none | `public-offline.spec.ts` |  | #555 |

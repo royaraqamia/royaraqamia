@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { loadCommunityMember, loadCommunityMembers } from '@/backend/loaders/community';
-import { loadFollowCounts } from '@/backend/loaders/follows';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { FollowButton } from '@/frontend/ui/shared/follow-button';
 import { FollowCountsBar } from '@/frontend/ui/shared/follow-counts';
@@ -75,7 +74,6 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
 
   const { member, posts } = page;
   const name = displayName(member);
-  const counts = await loadFollowCounts(member.id);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -105,7 +103,7 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
             <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
               @{member.username}
             </p>
-            <FollowCountsBar username={member.username} counts={counts} />
+            <FollowCountsBar username={member.username} />
             {member.bio?.trim() && (
               <p className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground">
                 {member.bio}
