@@ -21,9 +21,9 @@ _Read with no session, so the page can be recorded without the fixture account a
 
 - [ ] **marketing** `/pricing` `/privacy` `/security` `/terms` `/app-info` — todo
 - [ ] **downloader** `/downloader` — blocked · blocked by hidden from the UI; the page stays reachable by direct URL but is not a port target
-- [x] **community** `/community` — native
+- [x] **community** `/community` `/community/explore` — native
 - [ ] **community-post** `/community/[slug]` — todo · #1351
-- [ ] **profile** `/u/[username]` — todo · #1343
+- [ ] **profile** `/u/[username]` `/u/[username]/followers` `/u/[username]/following` — todo · #1343
 - [ ] **news** `/?tab=/news` `/news` — todo · #1345
 - [ ] **scan** `/?tab=/scan` `/scan` — todo · #1344
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native

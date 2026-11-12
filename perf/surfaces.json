@@ -232,33 +232,14 @@
     },
     {
       "id": "community",
-      "routes": ["/community/explore"],
+      "routes": ["/community", "/community/explore"],
       "owner": "server",
       "read": "snapshot",
       "write": "none",
-      "shell": "precached",
+      "shell": "swr",
       "specs": ["e2e/public-offline.spec.ts"],
-      "issue": "#555"
-    },
-    {
-      "id": "community-following",
-      "routes": ["/community"],
-      "owner": "server",
-      "read": "needs-connection",
-      "write": "none",
-      "shell": "swr",
-      "specs": [],
-      "ungated": "The member's own feed (ADR-0173). Rendered per request because its answer depends on who is asking, and read with no snapshot on purpose: the local snapshot store is public and one device can be signed in as more than one member, so keeping another member's feed on disk would leak it. With the radio off the island reports the missing connection; the public hub at /community/explore keeps the snapshot."
-    },
-    {
-      "id": "follow-lists",
-      "routes": ["/u/[username]/followers", "/u/[username]/following"],
-      "owner": "server",
-      "read": "needs-connection",
-      "write": "none",
-      "shell": "swr",
-      "specs": [],
-      "ungated": "A member's own follower and following lists (ADR-0173). Private: the read is for the session's own member and the handle in the address is a check, not a key, so there is nothing cacheable and nothing worth keeping offline - the lists are only ever drawn for their owner."
+      "issue": "#555",
+      "ungated": "Two documents on one surface (ADR-0173). `/community/explore` is the cached hub every visitor reads, and the one the feed's snapshot belongs to; `/community` is the member's own feed, rendered per request because its answer depends on who is asking, and read live - it keeps no snapshot, since the local store is shared by a device that can be signed in as more than one member."
     },
     {
       "id": "community-post",
@@ -312,7 +293,7 @@
     },
     {
       "id": "profile",
-      "routes": ["/u/[username]"],
+      "routes": ["/u/[username]", "/u/[username]/followers", "/u/[username]/following"],
       "owner": "server",
       "read": "snapshot",
       "write": "none",
