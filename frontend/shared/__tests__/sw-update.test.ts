@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   applyWorkerUpdate,
+  holdUnrequestedReload,
   takeWaitingUpdateAtLoad,
   watchWorkerUpdates,
   UPDATE_APPLY_DEADLINE_MS,
@@ -350,6 +351,41 @@ describe('watchWorkerUpdates', () => {
     dispose();
   });
 
+  it('holds a swap while the document has work, and reloads when the work ends', () => {
+    // The reload nobody chose is the one that can land on a recording or a
+    // draft (#1320, ADR-0170): the work ends the wait, and no timer does.
+    const sw = createServiceWorkerFake({});
+    const reload = vi.fn();
+    const dispose = watchWorkerUpdates(sw.container, { reload });
+
+    const release = holdUnrequestedReload();
+    sw.swapTo({});
+    expect(reload).not.toHaveBeenCalled();
+
+    release();
+    expect(reload).toHaveBeenCalledTimes(1);
+
+    dispose();
+  });
+
+  it('waits for the last hold, not the first release', () => {
+    const sw = createServiceWorkerFake({});
+    const reload = vi.fn();
+    const dispose = watchWorkerUpdates(sw.container, { reload });
+
+    const draft = holdUnrequestedReload();
+    const clip = holdUnrequestedReload();
+    sw.swapTo({});
+
+    draft();
+    expect(reload).not.toHaveBeenCalled();
+
+    clip();
+    expect(reload).toHaveBeenCalledTimes(1);
+
+    dispose();
+  });
+
   it('installs no timer and no check of its own', async () => {
     // A document that is only sitting there is never moved (ADR-0134): the
     // watcher exists for swaps it did not start, and watching costs no requests.
@@ -444,6 +480,26 @@ describe('applyWorkerUpdate', () => {
 
     expect(reload).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]?.[0]).toContain('never landed');
+    warn.mockRestore();
+  });
+
+  it('waits out the work in the document before the deadline reload', async () => {
+    // A take starts at load and can be owed its reload seconds later, by which
+    // time the person may be typing. The deadline is the same debt a swap is, so
+    // it waits the same way (ADR-0170) instead of landing on the first letters.
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+    const reload = vi.fn();
+    const release = holdUnrequestedReload();
+
+    await applyWorkerUpdate(sw.container, reload);
+    await vi.advanceTimersByTimeAsync(UPDATE_APPLY_DEADLINE_MS);
+    expect(reload).not.toHaveBeenCalled();
+
+    release();
+    expect(reload).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
 

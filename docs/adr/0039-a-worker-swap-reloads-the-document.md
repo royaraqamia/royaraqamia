@@ -16,6 +16,12 @@ the document is visible the app re-checks for a new worker on `visibilitychange`
 > does not: a document load now takes a waiting build, and an open document is never asked or moved.
 > The measurement below is unchanged — a reload does not release a waiting worker, which is exactly
 > why the load has to ask for the build instead of waiting for the browser.
+>
+> **Amended 2026-11-12 - see ADR-0170.** The swap half still stands, and the reload it causes is now
+> deferred while the document holds work of its own (a recording, an unsent draft, a staged file). The
+> reason is measured: the swap landed on a five-minute voice note at its own stop and took it with it
+> (#1320). The caches this ADR assumed `activate` had deleted by name have outlived a release since
+> #488, so a document that stays is a bet on the byte budget rather than a certainty of a broken page.
 
 **What a swap waits for, measured 2026-10-14** (Chromium through Playwright, and the same behaviour
 seen on the production deployment): a deploy installs the new worker while the tab is open, and the
