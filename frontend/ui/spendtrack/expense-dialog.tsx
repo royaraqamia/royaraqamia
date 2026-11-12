@@ -80,6 +80,26 @@ function emptyExpenseForm(): ExpenseFormValues {
   };
 }
 
+type EditableExpense = Expense & { categories?: Pick<Category, 'name' | 'colorHex'> };
+
+/**
+ * The edit form for one expense, read from the row as it stands now. Derived on
+ * every open rather than kept as a mount-time object: the list keys a row by
+ * `expense.id`, so the dialog outlives a save and its refresh, and a mount-time
+ * form would reopen showing the values the row had before the edit (#1075).
+ */
+function expenseFormValues(expense: EditableExpense): ExpenseFormValues {
+  return {
+    amount: expense.amount.toString(),
+    category_id: expense.category_id,
+    date: expense.date,
+    description: expense.description || '',
+    currency: expense.currency ?? '',
+    splits:
+      expense.splits?.map((s) => ({ category_id: s.category_id, amount: String(s.amount) })) ?? [],
+  };
+}
+
 export const CreateExpenseDialog = memo(function CreateExpenseDialog({
   categories,
   currency,
@@ -178,7 +198,7 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
   categories,
   currency,
 }: {
-  expense: Expense & { categories?: Pick<Category, 'name' | 'colorHex'> };
+  expense: EditableExpense;
   categories: Category[];
   currency?: string;
 }) {
@@ -194,16 +214,7 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
   } = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     mode: 'onBlur',
-    defaultValues: {
-      amount: expense.amount.toString(),
-      category_id: expense.category_id,
-      date: expense.date,
-      description: expense.description || '',
-      currency: expense.currency ?? '',
-      splits:
-        expense.splits?.map((s) => ({ category_id: s.category_id, amount: String(s.amount) })) ??
-        [],
-    },
+    defaultValues: expenseFormValues(expense),
   });
 
   async function onSubmit(data: ExpenseFormValues) {
@@ -216,12 +227,21 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
     });
     if (ok) {
       setIsOpen(false);
-      reset();
+      reset(expenseFormValues(expense));
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        // The row may have been rewritten by a save since this instance
+        // mounted, so each open re-reads the expense instead of trusting
+        // whatever the form was left holding.
+        if (open) reset(expenseFormValues(expense));
+      }}
+    >
       <DialogTrigger asChild>
         <Button
           variant="ghost"
@@ -242,7 +262,7 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
             onSubmit={handleSubmit(onSubmit)}
             onCancel={() => {
               setIsOpen(false);
-              reset();
+              reset(expenseFormValues(expense));
             }}
             register={register}
             control={control}
