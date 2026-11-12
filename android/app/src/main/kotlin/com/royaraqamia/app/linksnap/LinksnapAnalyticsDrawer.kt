@@ -287,7 +287,8 @@ private fun LinksnapAnalyticsReady(
                     LinksnapAnalyticsChartUiState.Empty
                 } else {
                     LinksnapAnalyticsChartUiState.Ready(summary.clicksByDate)
-                }
+                },
+            rangeLabel = range.label,
         )
     }
 }

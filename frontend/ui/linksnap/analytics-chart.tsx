@@ -7,9 +7,11 @@ import { LINK_ANALYTICS_CHART_COPY } from './analytics-chart-copy';
 
 interface AnalyticsChartProps {
   stats: DailyClickStat[];
+  /** The selected preset's own label, such as `30 يوم`, so the card names its period (#1085). */
+  rangeLabel: string;
 }
 
-export function AnalyticsChart({ stats }: AnalyticsChartProps) {
+export function AnalyticsChart({ stats, rangeLabel }: AnalyticsChartProps) {
   const reducedMotion = useReducedMotion();
   const [animate, setAnimate] = useState(false);
   const [tooltipBg, setTooltipBg] = useState('240 8% 11%');
@@ -51,6 +53,9 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
   }
 
   const maxClicks = Math.max(...stats.map((s) => s.clicks), 5);
+  // The card names the period it is painting, not a fixed week (#1085).
+  const title = LINK_ANALYTICS_CHART_COPY.title.replace('{range}', rangeLabel);
+  const ariaLabel = LINK_ANALYTICS_CHART_COPY.ariaLabel.replace('{range}', rangeLabel);
   const height = 180;
   const width = 500;
   const paddingLeft = 40;
@@ -89,7 +94,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
         data-visual="link-analytics-chart-title"
         className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider"
       >
-        {LINK_ANALYTICS_CHART_COPY.title}
+        {title}
       </p>
       <div className="relative w-full overflow-x-auto">
         <svg
@@ -97,7 +102,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-auto overflow-visible"
           role="img"
-          aria-label={LINK_ANALYTICS_CHART_COPY.ariaLabel}
+          aria-label={ariaLabel}
         >
           <defs>
             <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">

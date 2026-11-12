@@ -10,9 +10,9 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const LINK_ANALYTICS_CHART_COPY = {
-  title: 'أداء النقرات (آخر 7 أيام)',
+  title: 'أداء النقرات (آخر {range})',
   empty: 'لا توجد بيانات متاحة لهذه الفترة',
-  ariaLabel: 'رسم بياني لأداء النقرات خلال آخر 7 أيام',
+  ariaLabel: 'رسم بياني لأداء النقرات خلال آخر {range}',
   clicks: '{count} نقرة',
 } as const;
 

@@ -63,17 +63,21 @@ import kotlin.math.roundToInt
  * draws the dashed sentence.
  *
  * Every visible word is [LinksnapAnalyticsChartCopy], generated from the same
- * source the page reads (ADR-0098). The axis values and the day labels are the
- * server's data and are formatted rather than retyped, with ASCII digits.
+ * source the page reads (ADR-0098). The title and the plot's accessible name
+ * take the selected period's label in the generated `{range}` placeholder, so a
+ * ninety-day plot cannot read as a week (#1085). The axis values and the day
+ * labels are the server's data and are formatted rather than retyped, with
+ * ASCII digits.
  */
 @Composable
 internal fun LinksnapAnalyticsChart(
     state: LinksnapAnalyticsChartUiState,
+    rangeLabel: String,
     modifier: Modifier = Modifier,
 ) {
     when (state) {
         LinksnapAnalyticsChartUiState.Empty -> EmptyChart(modifier)
-        is LinksnapAnalyticsChartUiState.Ready -> PaintedChart(state.stats, modifier)
+        is LinksnapAnalyticsChartUiState.Ready -> PaintedChart(state.stats, rangeLabel, modifier)
     }
 }
 
@@ -102,7 +106,11 @@ private fun EmptyChart(modifier: Modifier) {
 }
 
 @Composable
-private fun PaintedChart(stats: List<LinksnapAnalyticsResponseAnalyticsClicksByDateItem>, modifier: Modifier) {
+private fun PaintedChart(
+    stats: List<LinksnapAnalyticsResponseAnalyticsClicksByDateItem>,
+    rangeLabel: String,
+    modifier: Modifier,
+) {
     Column(
         modifier =
             modifier
@@ -125,7 +133,7 @@ private fun PaintedChart(stats: List<LinksnapAnalyticsResponseAnalyticsClicksByD
             contentAlignment = Alignment.CenterStart,
         ) {
             Text(
-                text = LinksnapAnalyticsChartCopy.TITLE,
+                text = LinksnapAnalyticsChartCopy.TITLE.replace("{range}", rangeLabel),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = LinksnapAnalyticsChartMetrics.titleStyle,
@@ -134,12 +142,15 @@ private fun PaintedChart(stats: List<LinksnapAnalyticsResponseAnalyticsClicksByD
 
         Spacer(Modifier.height(LinksnapAnalyticsChartMetrics.titleGap))
 
-        Plot(stats)
+        Plot(stats, rangeLabel)
     }
 }
 
 @Composable
-private fun Plot(stats: List<LinksnapAnalyticsResponseAnalyticsClicksByDateItem>) {
+private fun Plot(
+    stats: List<LinksnapAnalyticsResponseAnalyticsClicksByDateItem>,
+    rangeLabel: String,
+) {
     val textMeasurer = rememberTextMeasurer()
     val points = LinksnapChartGeometry.points(stats)
     val maxClicks = LinksnapChartGeometry.maxClicks(stats)
@@ -150,7 +161,9 @@ private fun Plot(stats: List<LinksnapAnalyticsResponseAnalyticsClicksByDateItem>
             Modifier.testTag(LinksnapAnalyticsChartMetrics.PLOT)
                 .fillMaxWidth()
                 .aspectRatio(LinksnapChartGeometry.WIDTH / LinksnapChartGeometry.HEIGHT)
-                .semantics { contentDescription = LinksnapAnalyticsChartCopy.ARIA_LABEL },
+                .semantics {
+                    contentDescription = LinksnapAnalyticsChartCopy.ARIA_LABEL.replace("{range}", rangeLabel)
+                },
     ) {
         // One SVG user unit, in the app's own pixels: the page's viewBox is
         // 500 x 180 and its svg is as wide as the card's content box.

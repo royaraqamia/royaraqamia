@@ -7,6 +7,7 @@ import { AnalyticsChart } from './analytics-chart';
 import { LINK_ANALYTICS_EXPORT_COPY } from './analytics-export-copy';
 import { shareOrDownloadCsv } from './csv-export';
 import {
+  analyticsRangeLabel,
   analyticsRangeToFilter,
   LinkAnalyticsContent,
   type AnalyticsData,
@@ -106,7 +107,10 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
             ) : null}
 
             {!analyticsLoading && !analyticsError && analytics ? (
-              <AnalyticsChart stats={analytics.clicksByDate} />
+              <AnalyticsChart
+                stats={analytics.clicksByDate}
+                rangeLabel={analyticsRangeLabel(range)}
+              />
             ) : null}
           </div>
         </m.div>

@@ -4,6 +4,7 @@ import {
 } from '@/backend/repositories/linksnap/analytics-repository';
 import { AnalyticsEvent, LinkAnalyticsSummary, DailyClickStat } from '@/shared/contracts/linksnap';
 import { aggregateDeviceBreakdown } from '@/backend/services/linksnap/device-breakdown';
+import { damascusDateKey } from '@/shared/time';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 
@@ -23,6 +24,16 @@ interface ReferrerEntry {
 
 const MAX_EXPORT_ROWS = 10_000;
 const MAX_CHART_DAYS = 366;
+const DAY_MS = 86_400_000;
+
+/** A `YYYY-MM-DD` day key as UTC midnight, so walking days never reads a local clock. */
+function dayKeyToUtcMs(key: string): number {
+  return Date.parse(`${key}T00:00:00.000Z`);
+}
+
+function addDays(key: string, days: number): string {
+  return new Date(dayKeyToUtcMs(key) + days * DAY_MS).toISOString().slice(0, 10);
+}
 
 export class SupabaseAnalyticsRepository implements AnalyticsRepository {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
@@ -138,25 +149,25 @@ export class SupabaseAnalyticsRepository implements AnalyticsRepository {
     range?: AnalyticsDateRange
   ): DailyClickStat[] {
     const now = new Date();
-    const from = range?.from ?? new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const from = range?.from ?? new Date(now.getTime() - 6 * DAY_MS);
     const to = range?.to ?? now;
 
-    const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-    const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
-    const spanDays = Math.floor((end.getTime() - start.getTime()) / 86_400_000);
-    if (spanDays > MAX_CHART_DAYS) {
-      end.setDate(start.getDate() + MAX_CHART_DAYS);
-    }
+    // Both halves read the app's day, which flips at Damascus midnight (ADR-0093).
+    // The skeleton walks date-only keys in UTC, because a local midnight
+    // re-serialised through `toISOString()` is the previous UTC day, and that is
+    // how a 01:00 Damascus click was counted the day before (#1085).
+    const startKey = damascusDateKey(from);
+    const endKey = damascusDateKey(to);
+    const span = Math.floor((dayKeyToUtcMs(endKey) - dayKeyToUtcMs(startKey)) / DAY_MS);
+    const days = Math.min(span, MAX_CHART_DAYS);
 
     const dailyMap = new Map<string, number>();
-    const cursor = new Date(start);
-    while (cursor.getTime() <= end.getTime()) {
-      dailyMap.set(cursor.toISOString().split('T')[0]!, 0);
-      cursor.setDate(cursor.getDate() + 1);
+    for (let offset = 0; offset <= days; offset += 1) {
+      dailyMap.set(addDays(startKey, offset), 0);
     }
 
     events.forEach((ev) => {
-      const key = ev.clickedAt.toISOString().split('T')[0]!;
+      const key = damascusDateKey(ev.clickedAt);
       if (dailyMap.has(key)) {
         dailyMap.set(key, (dailyMap.get(key) || 0) + 1);
       }
