@@ -70,7 +70,11 @@ true`, `status = 'active'` and `blocked_at is null`.
 - **The icon is resolved in the service, not the database.** The two sources are plain columns, so a
   sync and a probe never overwrite each other and neither costs a table rewrite. A stored generated
   column was the first shape of this change and the catalogue's statement timeout cancelled it; the
-  service's `probe ?? registry` choice is the cheaper answer.
+  service's `probe ?? registry` choice is the cheaper answer. The cancelled attempt's columns
+  (`icon_url`, `icon_mime`, `store_key` and the index on it) stayed on the linked project afterwards,
+  and `20261126100000_mcp_catalog_drop_generated.sql` removes them — by hand, because the safety gate
+  refuses a `drop column` unattended. That file is their rollback note: each value is derived from
+  columns this change already reads, so there is nothing to restore.
 - **The app is a client of the same rule.** The native marketplace port reads the same contract and
   draws the same verified rows; it is switched on by `check:visual` like every other port.
 
