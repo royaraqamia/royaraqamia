@@ -23,6 +23,13 @@ vi.mock('@/frontend/state/chats/use-voice-recorder', () => ({
 
 import { ChatComposer } from '@/frontend/ui/chats/chat-composer';
 
+/** A pointer event as the press tracker sees it: dispatched on `window`. */
+function windowPointer(type: 'pointermove' | 'pointerup' | 'pointercancel', clientX: number) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.assign(event, { clientX, clientY: 10, pointerId: 7 });
+  window.dispatchEvent(event);
+}
+
 function renderComposer(onRecorded = vi.fn()) {
   render(
     <ChatComposer
@@ -43,52 +50,66 @@ function renderComposer(onRecorded = vi.fn()) {
   return { mic: screen.getByRole('button', { name: 'تسجيل رسالة صوتية' }), onRecorded };
 }
 
+function press(mic: HTMLElement) {
+  fireEvent.pointerDown(mic, { pointerId: 7, clientX: 10, clientY: 10 });
+}
+
 describe('ChatComposer recording gesture', () => {
   beforeEach(() => {
     recorder.start.mockReset().mockResolvedValue(true);
+    recorder.stop.mockReset().mockResolvedValue(null);
     recorder.cancel.mockReset();
   });
 
-  it('captures the pointer, so a slide away still reaches this element', () => {
-    const { mic } = renderComposer();
-    const capture = vi.fn();
-    // jsdom has no pointer capture; the handler only has to ask for it.
-    (mic as unknown as { setPointerCapture: (id: number) => void }).setPointerCapture = capture;
+  it('sends when the release stays on the press', () => {
+    const { mic, onRecorded } = renderComposer();
 
-    fireEvent.pointerDown(mic, { pointerId: 7, clientX: 10, clientY: 10 });
+    press(mic);
+    windowPointer('pointerup', 12);
 
-    expect(capture).toHaveBeenCalledWith(7);
+    expect(recorder.stop).toHaveBeenCalledTimes(1);
+    expect(recorder.cancel).not.toHaveBeenCalled();
+    expect(onRecorded).not.toHaveBeenCalled();
   });
 
-  it('throws the clip away when the release comes after the slide', () => {
+  it('throws the clip away when the release comes after a slide', () => {
     const { mic } = renderComposer();
 
-    fireEvent.pointerDown(mic, { pointerId: 7, clientX: 10, clientY: 10 });
-    fireEvent.pointerMove(mic, { pointerId: 7, clientX: 300, clientY: 10 });
-    fireEvent.pointerUp(mic, { pointerId: 7, clientX: 300, clientY: 10 });
+    press(mic);
+    windowPointer('pointermove', 200);
+    windowPointer('pointerup', 200);
 
     expect(recorder.cancel).toHaveBeenCalledTimes(1);
     expect(recorder.stop).not.toHaveBeenCalled();
   });
 
-  it('sends when the release stays on the button', () => {
-    const { mic, onRecorded } = renderComposer();
+  it('measures the slide even when the release is the first event to move', () => {
+    const { mic } = renderComposer();
 
-    fireEvent.pointerDown(mic, { pointerId: 7, clientX: 10, clientY: 10 });
-    fireEvent.pointerUp(mic, { pointerId: 7, clientX: 12, clientY: 12 });
+    press(mic);
+    windowPointer('pointerup', 200);
 
-    expect(recorder.cancel).not.toHaveBeenCalled();
-    expect(recorder.stop).toHaveBeenCalledTimes(1);
-    expect(onRecorded).not.toHaveBeenCalled();
+    expect(recorder.cancel).toHaveBeenCalledTimes(1);
+    expect(recorder.stop).not.toHaveBeenCalled();
   });
 
   it('throws the clip away when the browser cancels the pointer', () => {
     const { mic } = renderComposer();
 
-    fireEvent.pointerDown(mic, { pointerId: 7, clientX: 10, clientY: 10 });
-    fireEvent.pointerCancel(mic, { pointerId: 7 });
+    press(mic);
+    windowPointer('pointercancel', 10);
 
     expect(recorder.cancel).toHaveBeenCalledTimes(1);
     expect(recorder.stop).not.toHaveBeenCalled();
+  });
+
+  it('stops listening once the gesture has ended', () => {
+    const { mic } = renderComposer();
+
+    press(mic);
+    windowPointer('pointerup', 12);
+    windowPointer('pointerup', 12);
+
+    expect(recorder.stop).toHaveBeenCalledTimes(1);
   });
 });
