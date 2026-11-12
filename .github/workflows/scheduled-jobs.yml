@@ -1,0 +1,102 @@
+# The three daily jobs that used to be Vercel Cron entries (`vercel.json`).
+#
+# The routes did not change: each one authorises itself from
+# `Authorization: Bearer <CRON_SECRET>`, which is exactly the header Vercel Cron
+# sent. What changed is only the clock — Render's free plan has no cron service,
+# and this repository already runs scheduled work here (`mcp-catalog-agent.yml`,
+# `news-source-requests.yml`), so the trigger joins them instead of adding a
+# third-party scheduler (ADR-0174).
+#
+# Two properties of GitHub's scheduler are load-bearing:
+#   - A schedule runs in the default branch only, and can drift 5-15 minutes when
+#     the queue is busy. None of these three is time-critical; the only ordering
+#     that matters is `catalog` before `mcp-catalog-agent.yml` at 04:45, and an
+#     hour of headroom absorbs the drift.
+#   - GitHub disables a schedule after 60 days without repository activity. This
+#     repository is active daily, so that only matters for a forgotten fork.
+#
+# Secrets:
+#   CRON_SECRET - the same value the Render service holds; without it every call
+#                 is refused by the route itself.
+#
+# Variables:
+#   SITE_BASE_URL - the origin to call. Defaults to https://royaraqamia.com, so a
+#                   preview deployment can be targeted without editing this file.
+
+name: 'Scheduled Jobs'
+
+on:
+  schedule:
+    # 03:30 — prune chat attachments past their retention.
+    - cron: '30 3 * * *'
+    # 04:00 — refresh the MCP catalogue mirror, so the agent at 04:45 reads a
+    # fresh page (its own schedule lives in `mcp-catalog-agent.yml`).
+    - cron: '0 4 * * *'
+    # 06:00 — refresh the market rates before the day's readers arrive.
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which job to run now.'
+        type: choice
+        options: ['all', 'rates', 'chat-attachments', 'mcp-catalog']
+        default: 'all'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-jobs
+  cancel-in-progress: false
+
+env:
+  BASE_URL: ${{ vars.SITE_BASE_URL || 'https://royaraqamia.com' }}
+
+jobs:
+  rates:
+    name: Market rates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: >-
+      (github.event_name == 'workflow_dispatch' && contains(fromJSON('["all","rates"]'), inputs.job))
+      || (github.event_name == 'schedule' && github.event.schedule == '0 6 * * *')
+    steps:
+      - name: GET /api/rates/refresh
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sS --fail-with-body --max-time 300 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BASE_URL}/api/rates/refresh"
+
+  chat-attachments:
+    name: Chat attachments
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: >-
+      (github.event_name == 'workflow_dispatch' && contains(fromJSON('["all","chat-attachments"]'), inputs.job))
+      || (github.event_name == 'schedule' && github.event.schedule == '30 3 * * *')
+    steps:
+      - name: GET /api/cron/chat-attachments
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sS --fail-with-body --max-time 300 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BASE_URL}/api/cron/chat-attachments"
+
+  mcp-catalog:
+    name: MCP catalogue mirror
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: >-
+      (github.event_name == 'workflow_dispatch' && contains(fromJSON('["all","mcp-catalog"]'), inputs.job))
+      || (github.event_name == 'schedule' && github.event.schedule == '0 4 * * *')
+    steps:
+      - name: GET /api/cron/mcp-catalog
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sS --fail-with-body --max-time 300 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BASE_URL}/api/cron/mcp-catalog"

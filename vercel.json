@@ -6,20 +6,6 @@
       "**": false
     }
   },
-  "crons": [
-    {
-      "path": "/api/rates/refresh",
-      "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/chat-attachments",
-      "schedule": "30 3 * * *"
-    },
-    {
-      "path": "/api/cron/mcp-catalog",
-      "schedule": "0 4 * * *"
-    }
-  ],
   "headers": [
     {
       "source": "/_next/static/(.*)",
@@ -27,46 +13,6 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/sw.js",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        },
-        {
-          "key": "Service-Worker-Allowed",
-          "value": "/"
-        }
-      ]
-    },
-    {
-      "source": "/sw-version.js",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/sw-push-config.js",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
-        }
-      ]
-    },
-    {
-      "source": "/sw-precache.js",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
         }
       ]
     }

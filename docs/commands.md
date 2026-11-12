@@ -103,17 +103,34 @@ Four `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
 
 ## Deployment
 
-**Primary path:** Push to `main` → CI runs code-quality checks → Vercel's Git integration deploys it. There is no release workflow, tag or GitHub Release for the web (ADR-0090); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
+**Primary path:** Push to `main` → CI runs code-quality checks → Render's Git integration deploys it. There is no release workflow, tag or GitHub Release for the web (ADR-0090); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
+
+**Render is the origin** ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md)).
+`render.yaml` is the blueprint: a free native-Node service, built with `npm ci && npm run build` and
+started with `npm start`, health-checked on `/manifest.json`. Native rather than Docker because the
+assistant's roster is read from `.opencode/skills/agency/` at request time. Cloudflare proxies the
+custom domain and caches `/_next/static/*`, fonts and images: that caching is what keeps the origin
+inside the 5 GB monthly bandwidth allowance, after which a workspace with no payment method is
+suspended for the rest of the month.
+
+**Crons are GitHub Actions, not the platform.** `.github/workflows/scheduled-jobs.yml` calls the
+three routes on their old schedules; each route authorises itself from
+`Authorization: Bearer $CRON_SECRET`, so a manual run needs no CLI:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://royaraqamia.com/api/rates/refresh
+```
+
+**Vercel is configured but paused** — Fluid Active CPU, 5h 06m against a 4h allowance, until
+2026-12-12. `vercel.json` still carries the project's region and `_next/static` header so the
+deployment can be resumed without a revert, but it no longer owns the crons: running both would
+double every job. Manual override if resumed: `vercel deploy --prod`.
 
 **The Android cut is manual, and unwatched:** nothing opens an issue about releases. The owner
 dispatches `Android Release` when the batch should ship; a dispatch with no native change publishes
 nothing, and a failed run is re-runnable from the Actions page (ADR-0090 amendment).
 
-**Manual override:** `vercel deploy --prod` (production). There are no preview deployments to produce, so a bare `vercel deploy` is not part of the flow.
-
-**Linked project:** Use `vercel create_git_project` for repo-linked auto-deploys.
-
-**Retained deployments:** Hobby charges Deployment Storage and Functions Storage
+**Retained Vercel deployments:** Hobby charges Deployment Storage and Functions Storage
 across _all_ retained deployments and never prunes them, so
 `.github/workflows/prune-deployments.yml` deletes everything but the newest 25
 weekly. Budget, measurements and levers: `docs/vercel-usage.md`.
