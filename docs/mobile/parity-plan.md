@@ -13,7 +13,7 @@ _The three surfaces that already have a Kotlin screen. Recording both sides here
 
 - [x] **verify** `/verify` — native
 - [x] **verify-code** `/verify/[code]` — native
-- [x] **rates** `/rates` — native
+- [x] **rates** `/?tab=/rates` `/rates` — native
 
 ## Public content
 
@@ -24,14 +24,14 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [x] **community** `/community` — native
 - [ ] **community-post** `/community/[slug]` — todo
 - [ ] **profile** `/u/[username]` — todo · #927
-- [ ] **news** `/news` — todo
-- [ ] **scan** `/scan` — todo · #932
+- [ ] **news** `/?tab=/news` `/news` — todo
+- [ ] **scan** `/?tab=/scan` `/scan` — todo · #932
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [ ] **mcp-guide** `/mcp/guide` — todo
 - [ ] **mcp-connect** `/mcp/connect` — todo
 - [ ] **mcp-apps** `/mcp/apps` — todo · #1228
 - [ ] **mcp-app-detail** `/mcp/apps/[id]` — todo · #1228
-- [ ] **athkar** `/athkar` `/athkar/evening` — todo
+- [ ] **athkar** `/?tab=/athkar` `/athkar` `/athkar/evening` — todo
 
 ## Sign-in
 

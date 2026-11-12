@@ -31,7 +31,7 @@ const DATA_CACHE = 'royaraqamia-data-v1';
 const BUILD_HEADER = 'x-sw-build';
 
 /** The build that produced the cached copy of `path`, or '' when none is there. */
-function cachedBuild(page: Page, path = '/rates'): Promise<string> {
+function cachedBuild(page: Page, path = '/'): Promise<string> {
   return page.evaluate(
     async ({ cacheName, header, path }) => {
       const cache = await caches.open(cacheName);
@@ -79,7 +79,7 @@ function deploy(): void {
 
 /** Opens the app and lets the registration and its own check settle. */
 async function open(page: Page): Promise<void> {
-  await page.goto('/rates', { waitUntil: 'domcontentloaded' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
     timeout: 30_000,
   });

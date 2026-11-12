@@ -38,9 +38,11 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.9,
   },
   {
-    // Regenerated every morning by the digest workflow; the cron time is the
-    // only thing that changes the page's date, so `daily` is literal.
-    path: '/news',
+    // `/community` above and the products' tabs below: an app root is a tab of
+    // the door (ADR-0168), so `/news` is not a document a crawler can rank any
+    // more. Its digest is drawn by the door after a client-side tab read, and
+    // `/` is the entry that carries it.
+    path: '/?tab=/news',
     changeFrequency: 'daily',
     priority: 0.9,
   },

@@ -20,7 +20,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `quran` | `/quran` | `QuranIndexScreen.kt` |  |
 | `notes` | `/notes` | _web only_ | The app shows the page as the document; the product's native screens land in phase 3 (#646). |
 | `quran-surah` | `/quran/[surah]` | `QuranSurahScreen.kt` |  |
-| `athkar` | `/athkar`<br>`/athkar/evening` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `athkar` | `/?tab=/athkar`<br>`/athkar`<br>`/athkar/evening` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948), the profile card with its two dialogs is drawn (#946) and the allowance card is drawn (#947); the public handle editor is still the page's, so the surface stays off until it is the whole page. |
 | `account-links` | `/account/links` | `LinksnapScreen.kt` |  |
 | `account-posts` | `/account/posts` | _web only_ | The account's post management page is web-only in this phase; it arrives with the native account surface (#658). |
@@ -33,12 +33,12 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `community` | `/community` | `CommunityFeedScreen.kt` |  |
 | `community-post` | `/community/[slug]` | `CommunityPostScreen.kt` (off) | The post, its publisher and its Markdown body are drawn (#922), and switched off until the visual gate passes for it: the shell hands `/community/<slug>` to the document in the meantime (#872, ADR-0117). |
-| `news` | `/news` | `NewsDigestScreen.kt` (off) | The public digest, its day strip and the personal switch are ported (#926), and switched off until they are the page pixel for pixel: the shell hands `/news` to the document in the meantime (#872, ADR-0117). |
-| `rates` | `/rates` | `RatesScreen.kt` |  |
+| `news` | `/?tab=/news`<br>`/news` | `NewsDigestScreen.kt` (off) | The public digest, its day strip and the personal switch are ported (#926), and switched off until they are the page pixel for pixel: the shell hands `/news` to the document in the meantime (#872, ADR-0117). |
+| `rates` | `/?tab=/rates`<br>`/rates` | `RatesScreen.kt` |  |
 | `verify` | `/verify` | `VerifyScreen.kt` |  |
 | `verify-code` | `/verify/[code]` | `VerifyCodeScreen.kt` |  |
 | `profile` | `/u/[username]` | `ProfileScreen.kt` (off) | The header and the member's public posts are drawn (#927), and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
-| `scan` | `/scan` | `ScanScreen.kt` (off) | The camera, its permission and the on-device decoder are drawn (#932), and switched off until the page is pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
+| `scan` | `/?tab=/scan`<br>`/scan` | `ScanScreen.kt` (off) | The camera, its permission and the on-device decoder are drawn (#932), and switched off until the page is pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `leads` | `/training/apply`<br>`/request-project`<br>`/hire`<br>`/pricing/subscribe` | `LeadsScreen.kt` (off) | The three lead forms never get a port: the site links them nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The Kotlin screen stays declared, unreached by the shell, until a change deletes it with its store and tests. |
 | `consultation` | `/consultation/book` | `ConsultationScreen.kt` (off) | Booking never gets a port: the site links `consultation/book` nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The Kotlin screen stays declared, unreached by the shell, until a change deletes it with its store and tests. |
 | `downloader` | `/downloader` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

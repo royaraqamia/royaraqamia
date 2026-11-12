@@ -140,13 +140,36 @@ const nextConfig = {
     ]);
 
     return [
-      // The apps are tabs of the door now (ADR-0156): LinkSnap's own page is
-      // gone, and an old bookmark, a push or a failed short link lands on the
-      // tab instead. The query is passed through, so `?error=` and `?code=`
-      // still reach the banner that explains them.
+      // The apps are tabs of the door now (ADR-0156, ADR-0168): an app's own
+      // page is no longer served, and an old bookmark, a push target and a shared
+      // link land on the tab instead. The request's query is passed through, so
+      // `?error=` and `?code=` still reach the surface that explains them.
       {
         source: '/linksnap',
         destination: '/?tab=/linksnap',
+        permanent: false,
+      },
+      {
+        source: '/news',
+        destination: '/?tab=/news',
+        permanent: false,
+      },
+      {
+        source: '/rates',
+        destination: '/?tab=/rates',
+        permanent: false,
+      },
+      {
+        // The root only: `/athkar/evening` is a mode of the surface, not a
+        // second door, and it keeps its own address until the surface draws the
+        // mode from the tab.
+        source: '/athkar',
+        destination: '/?tab=/athkar',
+        permanent: false,
+      },
+      {
+        source: '/scan',
+        destination: '/?tab=/scan',
         permanent: false,
       },
       {

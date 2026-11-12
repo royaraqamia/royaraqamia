@@ -19,7 +19,7 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `quran` | `/quran` | local-store | store | outbox | precached | `quran-reader.spec.ts`<br>`quran-marks.spec.ts`<br>`quran-sync.spec.ts` | `paint:quran` | #493 |
 | `notes` | `/notes` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`notes-offline.spec.ts`<br>`notes.spec.ts` | `paint:notes` |  |
 | `quran-surah` | `/quran/[surah]` | local-store | store | outbox | swr | `quran-reader.spec.ts` |  | #559 |
-| `athkar` | `/athkar`<br>`/athkar/evening` | static | swr | none | precached | `athkar.spec.ts` |  |  |
+| `athkar` | `/?tab=/athkar`<br>`/athkar`<br>`/athkar/evening` | static | swr | none | precached | `athkar.spec.ts` |  |  |
 | `account` | `/account` | local-store | store | outbox | precached | _ungated_ |  | #493 |
 | `account-links` | `/account/links` | local-store | store | outbox | precached | _ungated_ |  | #493 |
 | `account-posts` | `/account/posts` | local-store | store | outbox | precached | _ungated_ |  | #493 |
@@ -33,12 +33,12 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `chats` | `/chats/[id]`<br>`/chats/new` | server | needs-connection | none | swr | _ungated_ |  |  |
 | `community` | `/community` | server | snapshot | none | precached | `public-offline.spec.ts` |  | #555 |
 | `community-post` | `/community/[slug]` | server | snapshot | none | swr | `public-offline.spec.ts` |  | #555 |
-| `news` | `/news` | server | snapshot | none | precached | `public-offline.spec.ts` |  | #555 |
-| `rates` | `/rates` | server | snapshot | none | precached | `public-offline.spec.ts` |  | #555 |
+| `news` | `/?tab=/news`<br>`/news` | server | snapshot | none | none | `public-offline.spec.ts` |  | #555 |
+| `rates` | `/?tab=/rates`<br>`/rates` | server | snapshot | none | none | `public-offline.spec.ts` |  | #555 |
 | `verify` | `/verify` | server | snapshot | none | precached | `public-offline.spec.ts` |  | #555 |
 | `verify-code` | `/verify/[code]` | server | snapshot | none | swr | `public-offline.spec.ts` |  | #555 |
 | `profile` | `/u/[username]` | server | snapshot | none | swr | `public-offline.spec.ts` |  | #555 |
-| `scan` | `/scan` | device | store | none | precached | `scan.spec.ts` |  |  |
+| `scan` | `/?tab=/scan`<br>`/scan` | device | store | none | none | `scan.spec.ts` |  |  |
 | `leads` | `/training/apply`<br>`/request-project`<br>`/hire`<br>`/pricing/subscribe` | server | needs-connection | outbox | swr | `lead-offline.spec.ts` |  |  |
 | `consultation` | `/consultation/book` | server | needs-connection | none | precached | `lead-offline.spec.ts` |  |  |
 | `downloader` | `/downloader` | server | needs-connection | none | precached | `downloader.spec.ts` |  |  |
