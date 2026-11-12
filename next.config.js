@@ -305,11 +305,18 @@ const nextConfig = {
           },
         ],
       },
+      // The feed is the member's own rows (`app/community/page.tsx` is
+      // `force-dynamic`), so it must never reach a shared cache. The old rule
+      // here was `public, s-maxage=300` over all of `/community/:path*`, which
+      // matched the feed itself: harmless only while nothing cached HTML at the
+      // edge, and a cross-member leak the moment something did (ADR-0175).
+      //
+      // `/community/explore` and `/community/[slug]` are public and keep the
+      // cache headers their own pages declare, so they are deliberately absent
+      // here — a config rule would only override them.
       {
-        source: '/community/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=1800' },
-        ],
+        source: '/community',
+        headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
       },
       // The homepage is fully static (prerendered at build); let the CDN serve
       // it without re-validating while SWR keeps it fresh in the background.
