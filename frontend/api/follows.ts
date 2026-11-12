@@ -1,4 +1,8 @@
-import type { FollowToggleResponse } from '@/shared/contracts/follows';
+import type {
+  FollowState,
+  FollowStatesResponse,
+  FollowToggleResponse,
+} from '@/shared/contracts/follows';
 
 /**
  * The follow routes, as the profile curves draw them.
@@ -34,4 +38,15 @@ export async function followMember(username: string): Promise<FollowToggleRespon
 export async function unfollowMember(username: string): Promise<FollowToggleResponse> {
   const response = await fetch(handlePath(username), { method: 'DELETE' });
   return readBody(response);
+}
+
+/** The states of a list of members, in one read. */
+export async function fetchFollowStates(ids: string[]): Promise<Record<string, FollowState>> {
+  if (ids.length === 0) return {};
+
+  const response = await fetch(`/api/users/follow-state?ids=${encodeURIComponent(ids.join(','))}`, {
+    cache: 'no-store',
+  });
+  const body = (await response.json().catch(() => null)) as FollowStatesResponse | null;
+  return body?.states ?? {};
 }

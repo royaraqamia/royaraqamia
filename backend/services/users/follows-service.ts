@@ -155,6 +155,40 @@ export class FollowsService {
   }
 
   /**
+   * Every viewer/state pair a list of members needs, in two reads.
+   *
+   * These rows are drawn as controls, so a read per row would make the roster
+   * rail cost more than the feed beside it. `self` wins over `blocked`, and a
+   * block in either direction wins over a follow that the trigger has already
+   * severed - the states are ordered, not merged.
+   */
+  async statesFor(viewerId: string, ids: string[]): Promise<Record<string, FollowState>> {
+    const unique = [...new Set(ids)];
+    if (unique.length === 0) return {};
+
+    const [following, blocks] = await Promise.all([
+      this.deps.follows.followingAmong(viewerId, unique),
+      this.deps.follows.blockedAmong(viewerId, unique),
+    ]);
+
+    const followingSet = new Set(following);
+    const blockedSet = new Set([...blocks.blockedByViewer, ...blocks.blockedViewer]);
+
+    const states: Record<string, FollowState> = {};
+    for (const id of unique) {
+      states[id] =
+        id === viewerId
+          ? 'self'
+          : blockedSet.has(id)
+            ? 'blocked'
+            : followingSet.has(id)
+              ? 'following'
+              : 'not_following';
+    }
+    return states;
+  }
+
+  /**
    * The caller's own follower or following list.
    *
    * `ownerId` is the member who owns the list, and it is compared, not trusted:

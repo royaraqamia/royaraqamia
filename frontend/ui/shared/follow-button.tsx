@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
 import { setFollowSnapshot, useFollowSnapshot } from '@/frontend/shared/follow-state-store';
+import type { FollowState } from '@/shared/contracts/follows';
 import { FOLLOW_COPY } from './follow-copy';
 
 interface FollowButtonProps {
@@ -21,6 +22,16 @@ interface FollowButtonProps {
   /** The name the unfollow dialogue says out loud; the handle when there is none. */
   name?: string | null;
   className?: string;
+  /**
+   * A controlled state, for a row whose list read every state in one request.
+   *
+   * `null` means "this list has not read it yet" and draws the resting face; the
+   * property being absent means nobody controls this button and it reads the
+   * member's state itself (the profile header's case).
+   */
+  state?: FollowState | null;
+  memberId?: string | null;
+  onChange?: (state: FollowState) => void;
 }
 
 function displayName(name: string | null | undefined, username: string): string {
@@ -32,9 +43,9 @@ function displayName(name: string | null | undefined, username: string): string 
  *
  * It starts from the server's answer rather than from the page: the profile is
  * prerendered for every visitor, so the document cannot know whether this viewer
- * already follows the member. One shared read resolves it (the same one the
- * header's numbers use), and from then on the button's state is whatever the
- * write answered - never an assumption.
+ * already follows the member. One read resolves it - shared with the header's
+ * numbers - and from then on the button's state is whatever the write answered,
+ * never an assumption.
  *
  * Four states, four faces:
  *
@@ -46,15 +57,34 @@ function displayName(name: string | null | undefined, username: string): string 
  * - `not_following`: follow. A guest gets the same button; pressing it goes to
  *   the sign-in page rather than answering 401 in a corner.
  */
-export function FollowButton({ username, name, className }: FollowButtonProps) {
+export function FollowButton({
+  username,
+  name,
+  className,
+  state: controlledState,
+  memberId: controlledMemberId,
+  onChange,
+}: FollowButtonProps) {
   const { user } = useSession();
-  const snapshot = useFollowSnapshot(username);
+  const isControlled = controlledState !== undefined;
+  const snapshot = useFollowSnapshot(username, !isControlled);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
-  async function run(action: 'follow' | 'unfollow' | 'unblock') {
+  const state: FollowState | null = isControlled ? controlledState : (snapshot?.state ?? null);
+  const memberId = isControlled ? (controlledMemberId ?? null) : (snapshot?.memberId ?? null);
+
+  function nextState(next: FollowState) {
+    if (isControlled) {
+      onChange?.(next);
+      return;
+    }
     if (!snapshot) return;
+    setFollowSnapshot(username, { ...snapshot, state: next });
+  }
+
+  async function run(action: 'follow' | 'unfollow' | 'unblock') {
     setBusy(true);
     setError(null);
 
@@ -62,19 +92,23 @@ export function FollowButton({ username, name, className }: FollowButtonProps) {
       if (action === 'unblock') {
         // Blocking is the site's own row (`blocks`, one table for chat and the
         // feed), so lifting it goes through the route that already owns that write.
-        if (snapshot.memberId) await unblockChatUser(snapshot.memberId);
-        setFollowSnapshot(username, { ...snapshot, state: 'not_following' });
+        if (memberId) await unblockChatUser(memberId);
+        nextState('not_following');
         return;
       }
 
       const body =
         action === 'follow' ? await followMember(username) : await unfollowMember(username);
 
-      setFollowSnapshot(username, {
-        state: body.state,
-        counts: body.counts ?? snapshot.counts,
-        memberId: snapshot.memberId,
-      });
+      if (!isControlled && snapshot) {
+        setFollowSnapshot(username, {
+          state: body.state,
+          counts: body.counts ?? snapshot.counts,
+          memberId: snapshot.memberId,
+        });
+      } else {
+        nextState(body.state);
+      }
 
       if (!body.success) setError(body.error ?? FOLLOW_COPY.followFailed);
     } catch {
@@ -90,9 +124,9 @@ export function FollowButton({ username, name, className }: FollowButtonProps) {
     }
   }
 
-  // Nothing is drawn until the one read answers: a button that guesses would
-  // flash «متابعة» at a member who already follows.
-  if (!snapshot) {
+  // Nothing is drawn until the state is known: a button that guesses would flash
+  // «متابعة» at a member who already follows.
+  if (state === null) {
     return (
       <div
         className={`h-9 w-28 animate-pulse rounded-full bg-muted/40 ${className ?? ''}`}
@@ -101,7 +135,7 @@ export function FollowButton({ username, name, className }: FollowButtonProps) {
     );
   }
 
-  if (snapshot.state === 'self') {
+  if (state === 'self') {
     return (
       <span
         className={`inline-flex shrink-0 items-center rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[11px] font-bold leading-4 text-primary ${className ?? ''}`}
@@ -123,7 +157,7 @@ export function FollowButton({ username, name, className }: FollowButtonProps) {
 
   return (
     <div className={`flex flex-col items-center gap-1.5 ${className ?? ''}`}>
-      {snapshot.state === 'blocked' ? (
+      {state === 'blocked' ? (
         <Button
           size="sm"
           variant="outline"
@@ -133,7 +167,7 @@ export function FollowButton({ username, name, className }: FollowButtonProps) {
         >
           {busy ? FOLLOW_COPY.busy : FOLLOW_COPY.unblock}
         </Button>
-      ) : snapshot.state === 'following' ? (
+      ) : state === 'following' ? (
         <Button
           size="sm"
           variant="outline"

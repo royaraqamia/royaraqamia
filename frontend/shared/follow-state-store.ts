@@ -83,7 +83,7 @@ function load(username: string): Promise<FollowSnapshot | null> {
  * resting face for it rather than a guess, so a member who already follows
  * someone never sees «متابعة» flash first.
  */
-export function useFollowSnapshot(username: string): FollowSnapshot | null {
+export function useFollowSnapshot(username: string, enabled = true): FollowSnapshot | null {
   const getSnapshot = useCallback(() => values.get(username) ?? null, [username]);
   const snapshot = useSyncExternalStore(
     (listener) => subscribe(username, listener),
@@ -92,9 +92,9 @@ export function useFollowSnapshot(username: string): FollowSnapshot | null {
   );
 
   useEffect(() => {
-    if (values.has(username)) return;
+    if (!enabled || values.has(username)) return;
     void load(username);
-  }, [username]);
+  }, [username, enabled]);
 
   return snapshot;
 }

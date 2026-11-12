@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Users } from 'lucide-react';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { FollowButton } from '@/frontend/ui/shared/follow-button';
+import { useFollowStates } from '@/frontend/ui/shared/use-follow-states';
 import { useSession } from '@/frontend/state/session-provider';
 import type { PublicUser } from '@/shared/contracts/users';
 import { withPinnedSelf, type PinnedRoster, type ViewerMember } from './member-pin';
@@ -59,6 +61,7 @@ function YouBadge() {
  */
 export function CommunityMembersPanel({ members }: CommunityMembersProps) {
   const roster = usePinnedRoster(members);
+  const [states, setState] = useFollowStates(roster.members);
   if (roster.members.length === 0) return null;
 
   return (
@@ -70,10 +73,10 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
 
       <ul className="dialog-scrollbar flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto px-2 pb-3">
         {roster.members.map((member) => (
-          <li key={member.id}>
+          <li key={member.id} className="flex items-center gap-1">
             <Link
               href={`/u/${encodeURIComponent(member.username)}`}
-              className="group flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-safe duration-200 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
+              className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl px-3 py-2.5 transition-safe duration-200 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
             >
               <MemberAvatar
                 name={member.name}
@@ -97,6 +100,16 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
                 aria-hidden="true"
               />
             </Link>
+            {/* One control per row, fed by the list's single state read: following
+                the people you can see is the empty feed's whole way out. */}
+            <FollowButton
+              username={member.username}
+              name={member.name}
+              state={states[member.id] ?? null}
+              memberId={member.id}
+              onChange={(next) => setState(member.id, next)}
+              className="shrink-0 pe-2"
+            />
           </li>
         ))}
       </ul>
@@ -107,6 +120,7 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
 /** Mobile counterpart: a snap-scrolling row of member chips above the feed. */
 export function CommunityMembersStrip({ members }: CommunityMembersProps) {
   const roster = usePinnedRoster(members);
+  const [states, setState] = useFollowStates(roster.members);
   const listRef = useRef<HTMLUListElement>(null);
 
   // The pin lands after paint, on a scroller that was already laid out without
@@ -131,26 +145,35 @@ export function CommunityMembersStrip({ members }: CommunityMembersProps) {
       >
         {roster.members.map((member) => (
           <li key={member.id} className="snap-start">
-            <Link
-              href={`/u/${encodeURIComponent(member.username)}`}
-              className="group flex w-24 flex-col items-center gap-2 rounded-2xl border border-transparent p-2.5 text-center transition-safe duration-200 hover:border-border/60 hover:bg-muted/30 focus-visible:border-border/60 focus-visible:outline-none"
-            >
-              <MemberAvatar
-                name={member.name}
-                avatarUrl={member.avatar_url}
-                size="lg"
-                sizes="56px"
-              />
-              <span className="flex w-full min-w-0 items-center justify-center gap-1">
-                <span className="truncate text-xs font-bold text-foreground">
-                  {displayName(member)}
+            <div className="flex w-24 flex-col items-center gap-1.5">
+              <Link
+                href={`/u/${encodeURIComponent(member.username)}`}
+                className="group flex w-full flex-col items-center gap-2 rounded-2xl border border-transparent p-2.5 text-center transition-safe duration-200 hover:border-border/60 hover:bg-muted/30 focus-visible:border-border/60 focus-visible:outline-none"
+              >
+                <MemberAvatar
+                  name={member.name}
+                  avatarUrl={member.avatar_url}
+                  size="lg"
+                  sizes="56px"
+                />
+                <span className="flex w-full min-w-0 items-center justify-center gap-1">
+                  <span className="truncate text-xs font-bold text-foreground">
+                    {displayName(member)}
+                  </span>
+                  {member.id === roster.selfId && <YouBadge />}
                 </span>
-                {member.id === roster.selfId && <YouBadge />}
-              </span>
-              <span className="w-full truncate text-[10px] text-muted-foreground" dir="ltr">
-                @{member.username}
-              </span>
-            </Link>
+                <span className="w-full truncate text-[10px] text-muted-foreground" dir="ltr">
+                  @{member.username}
+                </span>
+              </Link>
+              <FollowButton
+                username={member.username}
+                name={member.name}
+                state={states[member.id] ?? null}
+                memberId={member.id}
+                onChange={(next) => setState(member.id, next)}
+              />
+            </div>
           </li>
         ))}
       </ul>

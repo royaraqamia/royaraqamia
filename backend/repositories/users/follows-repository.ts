@@ -41,6 +41,19 @@ export interface FollowsRepository {
   ): Promise<{ ids: string[]; total: number }>;
   /** True when either member has blocked the other. */
   isBlockedEitherWay(a: string, b: string): Promise<boolean>;
+  /**
+   * Which of `ids` the follower already follows, in one read.
+   *
+   * A list of fifty members is one query, not fifty: the roster draws a control
+   * per row and a state read per row is what makes a rail cost more than the
+   * feed it sits beside.
+   */
+  followingAmong(followerId: string, ids: string[]): Promise<string[]>;
+  /** The blocks between the viewer and `ids`, in both directions, in one read. */
+  blockedAmong(
+    viewerId: string,
+    ids: string[]
+  ): Promise<{ blockedByViewer: string[]; blockedViewer: string[] }>;
 }
 
 export function createFollowsRepository(supabase: SupabaseClient<Database>): FollowsRepository {
@@ -123,26 +136,52 @@ export function createFollowsRepository(supabase: SupabaseClient<Database>): Fol
     },
 
     async isBlockedEitherWay(a, b): Promise<boolean> {
-      // Two reads rather than one `or()`: each half is a primary-key lookup, and
-      // neither needs a filter string built from two ids.
-      const [blockedByViewer, blockedViewer] = await Promise.all([
-        supabase
-          .from('blocks')
-          .select('blocker_id', { count: 'exact', head: true })
-          .eq('blocker_id', a)
-          .eq('blocked_id', b),
-        supabase
-          .from('blocks')
-          .select('blocker_id', { count: 'exact', head: true })
-          .eq('blocker_id', b)
-          .eq('blocked_id', a),
-      ]);
+      const { blockedByViewer, blockedViewer } = await this.blockedAmong(a, [b]);
+      return blockedByViewer.includes(b) || blockedViewer.includes(b);
+    },
 
-      if (blockedByViewer.error && !isNotFoundError(blockedByViewer.error))
-        throw blockedByViewer.error;
-      if (blockedViewer.error && !isNotFoundError(blockedViewer.error)) throw blockedViewer.error;
+    async followingAmong(followerId, ids): Promise<string[]> {
+      const unique = [...new Set(ids)].filter((id) => id !== followerId);
+      if (unique.length === 0) return [];
 
-      return (blockedByViewer.count ?? 0) > 0 || (blockedViewer.count ?? 0) > 0;
+      const { data, error } = await supabase
+        .from('follows')
+        .select('followee_id')
+        .eq('follower_id', followerId)
+        .in('followee_id', unique);
+
+      if (error) throw error;
+      return (data ?? []).map((row) => row.followee_id);
+    },
+
+    async blockedAmong(viewerId, ids) {
+      const unique = [...new Set(ids)].filter((id) => id !== viewerId);
+      if (unique.length === 0) return { blockedByViewer: [], blockedViewer: [] };
+
+      // One read of the viewer's own block rows, split into the two directions.
+      // Both halves are visible to the service role; a policy would only ever
+      // show the caller the rows they wrote, which is why the judgement lives
+      // here and not in RLS.
+      const { data, error } = await supabase
+        .from('blocks')
+        .select('blocker_id, blocked_id')
+        .or(`blocker_id.eq.${viewerId},blocked_id.eq.${viewerId}`);
+
+      if (error) throw error;
+
+      const requested = new Set(unique);
+      const blockedByViewer: string[] = [];
+      const blockedViewer: string[] = [];
+
+      for (const row of data ?? []) {
+        if (row.blocker_id === viewerId && requested.has(row.blocked_id)) {
+          blockedByViewer.push(row.blocked_id);
+        } else if (row.blocked_id === viewerId && requested.has(row.blocker_id)) {
+          blockedViewer.push(row.blocker_id);
+        }
+      }
+
+      return { blockedByViewer, blockedViewer };
     },
   });
 }
