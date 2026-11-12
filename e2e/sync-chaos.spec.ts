@@ -60,7 +60,7 @@ test('a create whose acknowledgement was lost replays without duplicating the ro
   });
 
   const page = await context.newPage();
-  await page.goto(`${baseURL}/habitflow`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${baseURL}/?tab=/habitflow`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#btn-create-habit')).toBeVisible();
 
   // Radio off: the write lands in the Local Store and stays in the Outbox.

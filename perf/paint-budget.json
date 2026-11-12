@@ -6,7 +6,7 @@
   "surfaces": [
     {
       "id": "habitflow",
-      "path": "/habitflow",
+      "path": "/?tab=/habitflow",
       "auth": true,
       "ceiling": { "cold": 2200, "warm": 450 },
       "tapNote": "The check-in toggle that calls beginTap() needs a habit the run creates first; LinkSnap's create gates the same mark until the suite has that fixture."
