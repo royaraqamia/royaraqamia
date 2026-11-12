@@ -93,11 +93,16 @@ function NotesContent({ embedded }: { embedded: boolean }) {
   const select = useCallback(
     (id: string | null) => {
       setSelectedId(id);
-      // The homepage host keeps the note in state and the address on `/`, so a
-      // tab never turns into a visit to `/notes` (ADR-0151). The route keeps the
-      // shareable `?note=`.
-      if (embedded || typeof window === 'undefined') return;
-      const url = id ? `/notes?note=${encodeURIComponent(id)}` : '/notes';
+      if (typeof window === 'undefined') return;
+      // The open note is view state in the address (ADR-0110), so a reload, a
+      // shared link and a back step all reopen the same note. The homepage host
+      // keeps the address on the door and names the note beside the tab
+      // (ADR-0168): `/?tab=/notes&note=<id>`, never a visit to `/notes`, which is
+      // a redirect now.
+      const note = id ? `note=${encodeURIComponent(id)}` : '';
+      const url = embedded
+        ? `/?tab=/notes${note ? `&${note}` : ''}`
+        : `/notes${note ? `?${note}` : ''}`;
       // `replaceState` rather than the router: the document is a static shell, so a
       // navigation would ask the network for a page it already has — and fail
       // offline, which is the one state this surface is built for.

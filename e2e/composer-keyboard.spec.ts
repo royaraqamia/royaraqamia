@@ -22,7 +22,7 @@ async function box(locator: Locator) {
 
 test('a phone composer gives the keyboard the screen', async ({ page }) => {
   await page.setViewportSize(PHONE);
-  await page.goto('/notes');
+  await page.goto('/?tab=/notes');
   await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
 
   // Dispatched rather than clicked: in `next dev` the framework's own indicator

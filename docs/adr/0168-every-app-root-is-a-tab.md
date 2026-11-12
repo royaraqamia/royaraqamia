@@ -29,7 +29,8 @@ costs".
   `/quran/tafsir` keep their own addresses — a surah is a child of the reader,
   not a second door to it. Its precache row drops to `none` in the same change,
   and `e2e/public-offline.spec.ts` stops expecting a reader shell to answer
-  `/quran/<n>` offline: the door does now.
+  `/quran/<n>` offline: the door does now. Notes follows the same shape: `/notes`
+  redirects, its list is the tab, and `/notes/api/**` is untouched.
 - **The app resolves the tab back to the route.** `Routes.appTabOf` turns
   `/?tab=/<app>` into the app's own path before the shell routes it, so a shared
   link and a redirect land on the native screen instead of the document. Without

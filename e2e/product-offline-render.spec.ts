@@ -296,7 +296,7 @@ test('Notes reloads offline and keeps the note written with the radio off', asyn
   // is the text itself.
   const marker = `E2E-${Date.now()}`;
   const page = await context.newPage();
-  await gotoUnderWorkerControl(page, `${baseURL}/notes`);
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/notes`);
   await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
 
   // Warm the editor's chunk while online, then write with the radio off.
@@ -311,7 +311,7 @@ test('Notes reloads offline and keeps the note written with the radio off', asyn
 
   // The reload is the drill: the cached document paints the same note.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(/\/notes\?note=/);
+  await expect(page).toHaveURL(/\?tab=\/notes&note=/);
   await expect(page.getByRole('heading', { name: 'الملاحظات' })).toBeVisible();
   await expect(page.locator('#note-body')).toContainText(marker);
   await expectNoStoreSkeleton(page);
