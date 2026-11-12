@@ -12,7 +12,18 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.mcp.McpStoreRepository
+import com.royaraqamia.app.net.HttpResponse
+import com.royaraqamia.app.session.MemoryTokenStore
+import com.royaraqamia.app.session.RefreshOutcome
+import com.royaraqamia.app.session.Session
+import com.royaraqamia.app.session.TokenPair
+import com.royaraqamia.app.session.TokenRefresher
+import com.royaraqamia.app.store.MemoryIdentityStorage
+import com.royaraqamia.app.support.RecordingTransport
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -28,7 +39,9 @@ import org.robolectric.annotation.GraphicsMode
  * The sheet is the site's apps surface, so what is worth a test is what the
  * surface promises: three tabs that are all visible, a field that filters the
  * picker rather than the network, and a row action that asks for exactly one
- * write and stays inert while that write is in flight.
+ * write and stays inert while that write is in flight. The store tab is a panel
+ * since #1256, so the field follows the tab and the panel is drawn in the body;
+ * the connected list is still the door that screen already is.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -36,10 +49,35 @@ import org.robolectric.annotation.GraphicsMode
 class AppsSheetTest {
     @get:Rule val compose = createComposeRule()
 
+    private fun store(): McpStoreRepository {
+        val session =
+            runBlocking {
+                Session(
+                        MemoryTokenStore("refresh-1"),
+                        TokenRefresher { RefreshOutcome.Refused },
+                        MemoryIdentityStorage(),
+                    )
+                    .also { it.signIn(TokenPair("access-1", "refresh-1", "user-1")) }
+            }
+        val transport =
+            RecordingTransport { request ->
+                when {
+                    request.url.endsWith("/api/me/mcp/connections") ->
+                        HttpResponse(200, """{"success":true,"data":[]}""")
+                    else ->
+                        HttpResponse(200, """{"success":true,"data":{"servers":[],"nextCursor":null}}""")
+                }
+            }
+        return McpStoreRepository(
+            client = ApiClient("https://app.test", session, transport),
+            siteUrl = "https://app.test",
+            identityKey = { "user-1" },
+        )
+    }
+
     private fun sheet(
         busy: String? = null,
         onToggle: (String) -> Unit = {},
-        onOpenMarketplace: () -> Unit = {},
         onOpenConnectedApps: () -> Unit = {},
     ) {
         compose.setContent {
@@ -52,7 +90,8 @@ class AppsSheetTest {
                         error = null,
                         onToggle = onToggle,
                         onDismiss = {},
-                        onOpenMarketplace = onOpenMarketplace,
+                        marketplace = store(),
+                        signedIn = true,
                         onOpenConnectedApps = onOpenConnectedApps,
                     )
                 }
@@ -109,13 +148,21 @@ class AppsSheetTest {
     }
 
     @Test
-    fun `the two MCP tabs are doors`() {
-        var store = false
-        var connected = false
-        sheet(onOpenMarketplace = { store = true }, onOpenConnectedApps = { connected = true })
+    fun `the store tab draws the panel in the sheet`() {
+        sheet()
 
         compose.onNodeWithText(AppsSheetCopy.TAB_EXTERNAL).performClick()
-        assertTrue(store)
+
+        compose.onNodeWithTag("marketplace-panel").assertIsDisplayed()
+        // The picker's rows are gone: one surface, one body (#1256).
+        assertEquals(0, compose.onAllNodesWithTag("services-row").fetchSemanticsNodes().size)
+    }
+
+    @Test
+    fun `the connected tab is still a door`() {
+        var connected = false
+        sheet(onOpenConnectedApps = { connected = true })
+
         compose.onNodeWithText(AppsSheetCopy.TAB_INBOUND).performClick()
         assertTrue(connected)
     }

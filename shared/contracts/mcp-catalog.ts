@@ -175,6 +175,21 @@ export const McpCatalogPageSchema = z.object({
 export type McpCatalogPage = z.infer<typeof McpCatalogPageSchema>;
 
 /**
+ * The envelope `GET /api/mcp/marketplace/servers` answers (#1256).
+ *
+ * It is here because the app decodes this route (#1256): the page's own API
+ * module reads `result.data` from a hand-written type, and a generated one is
+ * what keeps the app from reading a field the route stopped sending.
+ */
+export const McpCatalogPageResultSchema = z.object({
+  success: z.boolean(),
+  data: McpCatalogPageSchema,
+  error: z.string().optional(),
+});
+
+export type McpCatalogPageResult = z.infer<typeof McpCatalogPageResultSchema>;
+
+/**
  * The search query. A blank term is the whole catalogue in registry order, which
  * is what a member browsing without a word should see.
  */

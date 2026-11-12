@@ -10,7 +10,7 @@
     "object": "AppsSheetCopy"
   },
   "notes": {
-    "source": "The one apps surface's words (ADR-0146, ADR-0155, ADR-0159): the three tabs it offers and the search field each of them owns. `frontend/ui/apps/apps-surface.tsx` is the reference — it draws the tabs and the field for both its hosts (the page and the shell's sheet) — so the app's sheet reads these constants instead of retyping them (ADR-0098). The marketplace's own placeholder stays with its own source (`shared/copy/mcp-marketplace.json`), because the store tab owns that sentence, not the surface.",
+    "source": "The one apps surface's words (ADR-0146, ADR-0155, ADR-0159): the three tabs it offers and the search field each of them owns. `frontend/ui/apps/apps-surface.tsx` is the reference — it draws the tabs and the field for both its hosts (the page and the shell's sheet) — so the app's sheet reads these constants instead of retyping them (ADR-0098). The store tab's placeholder is here rather than in `shared/copy/mcp-store.json` because the surface is what draws it: `check:parity` refuses a key its own row's component does not render (#1256).",
     "placeholders": "None: every string here is a whole label. A `{name}` would be the caller's to substitute.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component does not render, or a state the app declares but does not draw."
   },
@@ -21,6 +21,7 @@
     "tabInbound": "الـ MCP الخاص بنا",
     "searchLabel": "البحث في التطبيقات",
     "searchInternal": "ابحث في تطبيقاتنا...",
-    "searchInbound": "ابحث في التطبيقات المتصلة..."
+    "searchInbound": "ابحث في التطبيقات المتصلة...",
+    "searchStore": "ابحث باسم التطبيق أو وصفه..."
   }
 }

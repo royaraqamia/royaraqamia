@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -42,6 +43,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.royaraqamia.app.account.AvatarLoader
+import com.royaraqamia.app.mcp.MarketplaceTab
+import com.royaraqamia.app.mcp.McpStoreRepository
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.ui.vectors.LucideVectors
 import androidx.compose.foundation.horizontalScroll
@@ -135,8 +139,16 @@ fun ServicesSheet(
     error: String?,
     onToggle: (String) -> Unit,
     onDismiss: () -> Unit,
-    /** The store tab's door: a destination until the store is drawn here. */
-    onOpenMarketplace: () -> Unit = onDismiss,
+    /** The store tab's panel: its data side, drawn here rather than routed to (#1256). */
+    marketplace: McpStoreRepository? = null,
+    signedIn: Boolean = false,
+    onSignIn: () -> Unit = {},
+    /** The connection a store row opens (`/mcp/apps/<id>`), still the document. */
+    onOpenConnection: (String) -> Unit = {},
+    /** The provider's consent page: a third-party origin the browser visits. */
+    onOpenExternal: (String) -> Unit = {},
+    /** Reads a catalogue row's brand mark; null draws the monogram alone. */
+    brandMark: AvatarLoader? = null,
     /** The connected-apps tab's door: the screen the account row used to open. */
     onOpenConnectedApps: () -> Unit = onDismiss,
 ) {
@@ -185,16 +197,23 @@ fun ServicesSheet(
                         onSelect = { chosen ->
                             when (chosen) {
                                 AppsSheetTab.Internal -> tab = AppsSheetTab.Internal
-                                AppsSheetTab.External -> onOpenMarketplace()
+                                AppsSheetTab.External -> tab = AppsSheetTab.External
                                 AppsSheetTab.Inbound -> onOpenConnectedApps()
                             }
                         },
                     )
-                    // Only the picker searches here: the other two tabs are doors,
-                    // and a field over a tab that leaves is a control that cannot work.
-                    if (tab == AppsSheetTab.Internal) {
-                        SearchField(query = query, onQueryChange = { query = it })
-                    }
+                    // The surface owns the field and asks the active tab for its
+                    // placeholder, as the page does (#1256).
+                    SearchField(
+                        query = query,
+                        onQueryChange = { query = it },
+                        placeholder =
+                            when (tab) {
+                                AppsSheetTab.Internal -> AppsSheetCopy.SEARCH_INTERNAL
+                                AppsSheetTab.External -> AppsSheetCopy.SEARCH_STORE
+                                AppsSheetTab.Inbound -> AppsSheetCopy.SEARCH_INBOUND
+                            },
+                    )
                 }
 
                 Box(
@@ -203,79 +222,94 @@ fun ServicesSheet(
                         .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 )
 
-                Column(
-                    Modifier.fillMaxWidth()
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .navigationBarsPadding()
-                        .padding(
-                            start = PickerMetrics.listPaddingHorizontal,
-                            end = PickerMetrics.listPaddingHorizontal,
-                            top = PickerMetrics.listPaddingBottom,
-                            bottom = AppsSheetMetrics.bodyPaddingBottom,
-                        )
-                ) {
-                    val term = query.trim()
-                    val rows =
-                        ServicesEntry.rows.filter { entry ->
-                            term.isEmpty() || labelOf(entry).contains(term)
+                if (tab == AppsSheetTab.Internal || marketplace == null) {
+                    Column(
+                        Modifier.fillMaxWidth()
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .navigationBarsPadding()
+                            .padding(
+                                start = PickerMetrics.listPaddingHorizontal,
+                                end = PickerMetrics.listPaddingHorizontal,
+                                top = PickerMetrics.listPaddingBottom,
+                                bottom = AppsSheetMetrics.bodyPaddingBottom,
+                            )
+                    ) {
+                        val term = query.trim()
+                        val rows =
+                            ServicesEntry.rows.filter { entry ->
+                                term.isEmpty() || labelOf(entry).contains(term)
+                            }
+
+                        rows.forEachIndexed { index, entry ->
+                            PickerRow(
+                                entry = entry,
+                                added = entry.route in order,
+                                pending = busy == entry.route,
+                                enabled = busy == null,
+                                last = index == rows.lastIndex,
+                                onToggle = { onToggle(entry.route) },
+                            )
                         }
 
-                    rows.forEachIndexed { index, entry ->
-                        PickerRow(
-                            entry = entry,
-                            added = entry.route in order,
-                            pending = busy == entry.route,
-                            enabled = busy == null,
-                            last = index == rows.lastIndex,
-                            onToggle = { onToggle(entry.route) },
-                        )
-                    }
-
-                    if (rows.isEmpty()) {
-                        Text(
-                            text = ServicesSheetCopy.SEARCH_EMPTY_INTERNAL,
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = PickerMetrics.errorTextSize,
-                                    lineHeight = 16.sp,
-                                ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier =
-                                Modifier.fillMaxWidth()
-                                    .padding(
-                                        top = AppsSheetMetrics.emptyTopPadding,
-                                        start = PickerMetrics.rowHorizontalPadding,
-                                        end = PickerMetrics.rowHorizontalPadding,
+                        if (rows.isEmpty()) {
+                            Text(
+                                text = ServicesSheetCopy.SEARCH_EMPTY_INTERNAL,
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = PickerMetrics.errorTextSize,
+                                        lineHeight = 16.sp,
                                     ),
-                            maxLines = 2,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .padding(
+                                            top = AppsSheetMetrics.emptyTopPadding,
+                                            start = PickerMetrics.rowHorizontalPadding,
+                                            end = PickerMetrics.rowHorizontalPadding,
+                                        ),
+                                maxLines = 2,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
 
-                    // The page's line is a block that only has its top padding when
-                    // there is nothing to say (whitespace collapses), so a quiet
-                    // sheet stays shorter than one drawing a refusal.
-                    if (error != null) {
-                        Text(
-                            text = error,
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = PickerMetrics.errorTextSize,
-                                    lineHeight = 16.sp,
-                                ),
-                            color = PickerColors.Red300,
-                            modifier =
-                                Modifier.fillMaxWidth()
-                                    .padding(
-                                        top = PickerMetrics.errorTopPadding,
-                                        start = PickerMetrics.rowHorizontalPadding,
-                                        end = PickerMetrics.rowHorizontalPadding,
+                        // The page's line is a block that only has its top padding when
+                        // there is nothing to say (whitespace collapses), so a quiet
+                        // sheet stays shorter than one drawing a refusal.
+                        if (error != null) {
+                            Text(
+                                text = error,
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = PickerMetrics.errorTextSize,
+                                        lineHeight = 16.sp,
                                     ),
-                            maxLines = 2,
-                            textAlign = TextAlign.Center,
-                        )
+                                color = PickerColors.Red300,
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .padding(
+                                            top = PickerMetrics.errorTopPadding,
+                                            start = PickerMetrics.rowHorizontalPadding,
+                                            end = PickerMetrics.rowHorizontalPadding,
+                                        ),
+                                maxLines = 2,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
+                } else {
+                    // The store is a panel, not a door (#1256): the surface's field
+                    // is its search, and the body scrolls inside the tab.
+                    MarketplaceTab(
+                        repository = marketplace,
+                        query = query,
+                        signedIn = signedIn,
+                        onSignIn = onSignIn,
+                        onOpenConnection = onOpenConnection,
+                        onOpenExternal = onOpenExternal,
+                        brandMark = brandMark,
+                        modifier = Modifier.fillMaxSize().weight(1f),
+                    )
                 }
             }
         }
@@ -399,7 +433,7 @@ private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
 
 /** The one search field, in the tab's own words. */
 @Composable
-private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+private fun SearchField(query: String, onQueryChange: (String) -> Unit, placeholder: String) {
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
@@ -410,7 +444,7 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
                 .semantics { contentDescription = AppsSheetCopy.SEARCH_LABEL },
         placeholder = {
             Text(
-                text = AppsSheetCopy.SEARCH_INTERNAL,
+                text = placeholder,
                 style =
                     MaterialTheme.typography.bodySmall.copy(
                         fontSize = AppsSheetMetrics.searchTextSize,

@@ -5,7 +5,6 @@ import { Search } from 'lucide-react';
 
 import { APPS_TABS, type AppsTab } from '@/shared/contracts/mcp-marketplace';
 import { TabChips, TabChipsNav } from '@/frontend/ui/primitives/tab-chips';
-import { MCP_MARKETPLACE_COPY } from '@/frontend/ui/mcp/marketplace-copy';
 import { ServicesMenuItems } from '@/frontend/ui/navbar/ServicesMenuItems';
 import { useSession } from '@/frontend/state/session-provider';
 
@@ -42,7 +41,7 @@ const TAB_LABELS: Record<AppsTab, string> = {
 // for the field, and the tab that the field searches names itself.
 const TAB_PLACEHOLDERS: Record<AppsTab, string> = {
   internal: APPS_SURFACE_COPY.searchInternal,
-  external: MCP_MARKETPLACE_COPY.searchPlaceholder,
+  external: APPS_SURFACE_COPY.searchStore,
   inbound: APPS_SURFACE_COPY.searchInbound,
 };
 

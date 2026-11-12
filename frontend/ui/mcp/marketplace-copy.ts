@@ -1,79 +1,23 @@
 /**
- * The marketplace's words, in the site's voice (ADR-0155, phase 3 / #1224).
+ * The connection screen's words (#1224, #1256).
  *
- * They live here rather than in `shared/copy/` for now, and for a recorded
- * reason: `scripts/check-parity.mjs` refuses a copy source that no ported
- * component claims, and the two screens are ported in phase 6 (#1228). A
- * `shared/copy/mcp-marketplace.json` today would be a file with one side —
- * exactly the shape the admin catalogue's words avoided
- * (`shared/contracts/mcp-catalog.ts`). #1228 moves this module to the shared
- * source, generates the Kotlin object from it, and lists the pair in
- * `docs/mobile/parity.json`.
+ * The store tab's labels moved to `shared/copy/mcp-store.json` (#1256): that tab
+ * is a ported panel, so its words are generated for both clients instead of
+ * living in a module only the site reads. What is left here is the screen the
+ * store's rows open — `frontend/ui/mcp/connection-view.tsx` — which is ported in
+ * the same issue's third slice; until then its words stay in one module rather
+ * than in a `shared/copy` file with one side (the rule
+ * `scripts/check-parity.mjs` enforces).
  *
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const MCP_MARKETPLACE_COPY = {
-  searchLabel: 'البحث في المتجر',
   searchPlaceholder: 'ابحث باسم التطبيق أو وصفه...',
-  searchAction: 'بحث',
-  searchLoading: 'جاري البحث...',
-  searchRefreshing: 'جاري تحديث القائمة...',
-  searchFailed: 'تعذّر تحميل المتجر.',
-  searchOffline: 'تعذّر تحميل المتجر: لم يصل الطلب إلى الخادم. تحقّق من اتصالك ثم أعد المحاولة.',
-  searchEmptyTitle: 'لا يوجد تطبيق بهذا الاسم',
-  searchEmptyBody: 'جرّب كلمة أخرى، أو ابحث بالاسم الإنجليزي.',
-  storeEmptyTitle: 'لا يوجد تطبيق معتمد بعد',
-  storeEmptyBody: 'يعتمد فريق نور كل تطبيق قبل ظهوره هنا. عُد قريباً.',
-  more: 'تحميل المزيد',
-
-  verifiedBadge: 'موثّق',
-  connect: 'ربط',
-  connecting: 'جاري الربط...',
-  connectFailed: 'تعذّر بدء الربط. حاول من جديد.',
-  consentTitle: 'صلاحيات «{name}»',
-  consentAsk: 'سيطلب نور هذه الصلاحيات من التطبيق عند الربط:',
-  consentDefault: 'لا نطلب صلاحيات محدّدة: التطبيق يمنح ما يراه مناسبًا عند الموافقة.',
-  consentNote: 'يمكنك توسيعها لاحقًا من صفحة التطبيق.',
-  consentContinue: 'متابعة',
-
-  /** How a row is linked (#1269): its own words before the tap. */
-  authBadgeOauth: 'حساب',
-  authBadgeNone: 'بلا حساب',
-  authBadgeApiKey: 'يتطلب مفتاحاً',
-  keyTitle: 'مفتاح «{name}»',
-  keyBody:
-    'هذا التطبيق يحتاج مفتاحاً من حسابك عنده. يُخزَّن مشفّراً، ولا يظهر بعد الحفظ، ولا يُكتب في السجلات.',
-  keyLabel: 'المفتاح',
-  keyPlaceholder: 'الصق المفتاح هنا',
-  keyRequired: 'أدخل المفتاح أولاً.',
-  noAuthTitle: 'ربط «{name}»',
-  noAuthBody: 'هذا التطبيق لا يحتاج حساباً ولا مفتاحاً: نور يستدعي أدواته مباشرة.',
-  directConnectFailed: 'تعذّر ربط التطبيق. تحقّق من المفتاح وحاول من جديد.',
-
-  connectionsTitle: 'التطبيقات المرتبطة',
-  connectionsEmptyTitle: 'لا يوجد تطبيق مرتبط بعد',
-  connectionsEmptyBody: 'اختر تطبيقًا من المتجر ليعمل مع نور.',
-  connectionsFailed: 'تعذّر تحميل التطبيقات المرتبطة.',
-  connectionsOffline:
-    'تعذّر تحميل التطبيقات المرتبطة: لم يصل الطلب إلى الخادم. تحقّق من اتصالك ثم أعد المحاولة.',
-  statusActive: 'متصل',
-  statusNeedsReauth: 'أعد الربط',
-  statusError: 'تعذّر الوصول إلى التطبيق',
   connectionNeedsReauth: 'انتهت صلاحية الوصول إلى هذا التطبيق. افصله ثم أعد ربطه.',
   connectionUnreachable: 'تعذّرت الاستجابة من هذا التطبيق. أعد المحاولة لاحقًا أو افصله.',
-  connectionDisabled: 'مُتوقِّف',
   connectionEnabled: 'مُفعَّل',
-  toolCount: '{count} أداة',
-  lastUsed: 'آخر استخدام:',
-  neverUsed: 'لم يُستخدم بعد',
-  manage: 'إدارة',
-  permissionAsk: 'يسألني قبل كل كتابة',
-  permissionReads: 'قراءة فقط',
-  permissionAll: 'قراءة وكتابة',
-
   detailReach: 'يستطيع نور أن يستدعي أدوات هذا التطبيق عندما تطلب ذلك، ضمن الصلاحية أدناه.',
   detailPermissionTitle: 'الصلاحية',
-  /** How this connection authenticates (#1269): OAuth, a key, or nothing. */
   detailAuthTitle: 'طريقة الربط',
   detailAuthOauth: 'حساب لدى التطبيق، بموافقتك عند الربط.',
   detailAuthNone: 'بلا حساب ولا مفتاح: التطبيق يستجيب دون بيانات اعتماد.',
@@ -109,25 +53,12 @@ export const MCP_MARKETPLACE_COPY = {
   detailDisconnectTitle: 'فصل التطبيق',
   detailDisconnectMessage: 'هل تريد فصل «{name}»؟ لن يستطيع نور استدعاء أدواته بعد الآن.',
   confirmDisconnect: 'فصل',
-  cancel: 'إلغاء',
   saveFailed: 'تعذّر حفظ التغيير.',
   toolFailed: 'تعذّر حفظ حالة الأداة.',
   detailNotFound: 'هذا التطبيق غير مرتبط بحسابك.',
   detailFailed: 'تعذّر تحميل التطبيق.',
   detailOffline: 'تعذّر تحميل التطبيق: لم يصل الطلب إلى الخادم. تحقّق من اتصالك ثم أعد المحاولة.',
-
-  signIn: 'تسجيل الدخول',
-  signInBody: 'سجّل الدخول لترى التطبيقات التي يستطيع نور الوصول إليها، وتربط غيرها.',
-  loadingLabel: 'جاري التحميل...',
-  retry: 'إعادة المحاولة',
-
   connectedBanner: 'تم ربط التطبيق، وهو مُفعَّل الآن.',
-  connectDenied: 'لم تمنح التطبيق الصلاحية، ولم يُربط.',
-  connectInvalid: 'انتهت صلاحية طلب الربط. ابدأ الربط من جديد.',
-  connectSignin: 'سجّل الدخول ثم أعد المحاولة لربط التطبيق.',
-  connectBlocked: 'هذا التطبيق موقوف ولا يمكن ربطه.',
-  connectPlanLimit: 'وصلت إلى حدّ التطبيقات في خطتك. افصل تطبيقًا أو ارتقِ بالخطة.',
-  connectError: 'تعذّر إتمام الربط. حاول من جديد.',
 } as const;
 
 export type McpMarketplaceCopy = typeof MCP_MARKETPLACE_COPY;

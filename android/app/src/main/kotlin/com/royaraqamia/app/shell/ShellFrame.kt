@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.assistant.AssistantFab
+import com.royaraqamia.app.account.AvatarLoader
+import com.royaraqamia.app.mcp.McpStoreRepository
 import com.royaraqamia.app.theme.LocalRoySpacing
 
 /**
@@ -100,6 +102,18 @@ fun ShellFrame(
     homeError: String? = null,
     /** Adds or removes a homepage app; the picker never navigates. */
     onToggleHomeService: (String) -> Unit = {},
+    /** The apps sheet's store tab (#1256): its reads, its cache and its one write. */
+    marketplace: McpStoreRepository? = null,
+    /** Whether a session can make the store's reads and its connect write. */
+    signedIn: Boolean = false,
+    /** The sign-in door the store's guest prompt opens. */
+    onSignIn: () -> Unit = {},
+    /** The store's connection screen (`/mcp/apps/<id>`), still the document. */
+    onOpenConnection: (String) -> Unit = {},
+    /** The provider's consent page: a third-party origin the browser visits. */
+    onOpenExternal: (String) -> Unit = {},
+    /** Reads a catalogue row's mark. */
+    brandMark: AvatarLoader? = null,
     /** What the secondary frame's floating control does; the page's own back. */
     onBack: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit = {},
@@ -137,11 +151,13 @@ fun ShellFrame(
                 error = homeError,
                 onToggle = onToggleHomeService,
                 onDismiss = { servicesOpen = false },
-                // The marketplace is a destination, not a homepage app (#1224).
-                onOpenMarketplace = {
-                    servicesOpen = false
-                    onOpenRoute("/mcp/apps")
-                },
+                // The store tab is a panel now (#1256): the sheet owns its data.
+                marketplace = marketplace,
+                signedIn = signedIn,
+                onSignIn = onSignIn,
+                onOpenConnection = onOpenConnection,
+                onOpenExternal = onOpenExternal,
+                brandMark = brandMark,
                 // The connected-apps tab is the door the retired account row used
                 // to be (#1256): the screen is native, so the sheet routes to it.
                 onOpenConnectedApps = {
