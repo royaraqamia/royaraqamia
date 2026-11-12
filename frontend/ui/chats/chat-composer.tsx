@@ -6,6 +6,7 @@ import { Lock, Mic, Square, X } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
+import { holdUnrequestedReload } from '@/frontend/shared/sw-update';
 import { useVoiceRecorder, VOICE_NOTE_MAX_MS } from '@/frontend/state/chats/use-voice-recorder';
 import { formatVoiceDuration, VOICE_COPY } from './voice-copy';
 import { ChatAttachButton, ChatStagedFiles } from './chat-attach-control';
@@ -152,6 +153,23 @@ export function ChatComposer({
     !disabled && !recorder.isPreparing && (value.trim().length > 0 || files.length > 0);
   /** The slot at the row's end: send once there is something to send, else the microphone. */
   const showSend = value.trim().length > 0 || files.length > 0;
+
+  /**
+   * The row's own work is the work an unrequested reload would destroy
+   * (ADR-0170): the words not sent yet, the clip staged behind them, and the
+   * capture itself — the last one being exactly what a five-minute note lost
+   * when a swap replaced the page at its own stop (#1320). The hold lives as
+   * long as one of them does, and its release is what lets a swap reload.
+   *
+   * It is one boolean rather than the draft itself so a keystroke is not a
+   * release-and-re-take: a gap between the two is a gap a swap could land in.
+   */
+  const holdsReload =
+    value.trim().length > 0 || files.length > 0 || recorder.isRecording || recorder.isPreparing;
+  useEffect(() => {
+    if (!holdsReload) return;
+    return holdUnrequestedReload();
+  }, [holdsReload]);
 
   // A refusal is a toast, not a sentence parked under the field. WhatsApp and
   // Telegram keep the row itself clean: a tap that was too short, a refused

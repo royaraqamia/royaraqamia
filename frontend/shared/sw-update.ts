@@ -1,7 +1,7 @@
 import { logger } from './logger';
 
 /**
- * The service worker's update channel (ADR-0039, ADR-0134).
+ * The service worker's update channel (ADR-0039, ADR-0134, ADR-0170).
  *
  * A new worker installs as *waiting* rather than calling `skipWaiting`
  * (ADR-0030), so it only takes control once the document that blocked it is
@@ -13,16 +13,23 @@ import { logger } from './logger';
  *    page checks for a deploy as it loads, and when one is downloaded and
  *    waiting it gives it control and reloads once. That is the whole update
  *    surface: no prompt, no banner, nothing to decline.
- * 2. **A swap replaces the document** (ADR-0039). `activate` deletes the
- *    previous build's caches (`public/sw.js`), leaving a running document
- *    referencing chunks whose cache entries are gone, so the document reloads
- *    once when a *swapped* worker takes control — a case the page does not
- *    choose, e.g. another tab took the deploy first.
+ * 2. **A swap replaces the document** (ADR-0039, ADR-0170). A swapped worker
+ *    may be the last one holding this build's chunks — the caches outlive a
+ *    release since #488, and the byte budget evicts the previous build's
+ *    entries first — so the document reloads once when a *swapped* worker takes
+ *    control: a case the page does not choose, e.g. another tab took the
+ *    deploy first.
  *
  * The line between them is what a live document is allowed to do: it is never
  * reloaded for its own sake. There is no timer, no focus check and no
  * visibility check that looks for a deploy (ADR-0134); a document that is only
  * sitting there stays on the build it was served, and moves at its next load.
+ * The one reload the page does not choose is the one that can land under
+ * someone's work, so it waits while the document holds work of its own
+ * (`holdUnrequestedReload`, ADR-0170): a recording, an unsent draft, a staged
+ * file. The work ends the wait; a hold that is never released means the
+ * document simply stays on the build it was served, which is its owner's next
+ * load to change.
  *
  * The take is bounded in two directions. It only runs while the document is
  * still the thing the user just opened — nothing is reloaded under someone who
@@ -75,6 +82,66 @@ const UPDATE_TAKE_GUARD_KEY = 'rr:sw-update-taken-at:v1';
 const USER_EVENTS = ['pointerdown', 'keydown', 'touchstart', 'input', 'wheel'] as const;
 
 export type Reload = () => void;
+
+/** Every hold the document currently has, by nothing but its token. */
+const reloadHolds = new Set<symbol>();
+
+/**
+ * The reloads waiting on those holds. A swap remembers itself and re-checks, so
+ * a listener here only has to run the reload the work was blocking.
+ */
+const holdReleaseListeners = new Set<() => void>();
+
+/**
+ * The work a reload would destroy, held by the surfaces that own it.
+ *
+ * ADR-0039 lets a swapped worker replace the document without asking, because
+ * the document may be left referencing chunks the new worker evicted. That
+ * reload is the only one nobody chose, and it used to land on whatever was
+ * happening at that second — measured 2026-11-12 (#1320): a five-minute voice
+ * note died at its own stop, on a page that navigated itself.
+ *
+ * So the swap waits while a surface says it has work in hand. A held document
+ * is not stuck: it keeps running on the build it was served, and the deploy
+ * still reaches the tab at its next load — the swap is only this document's
+ * replacement, never the update itself.
+ *
+ * Callers get a release function back and are expected to release it on the
+ * work's own end: sent, discarded, stopped, or the surface unmounting. A hold
+ * that outlives its work is a leak, and its only cost is a document that stays
+ * on its build until the next navigation.
+ */
+export function holdUnrequestedReload(): () => void {
+  const token = Symbol('unrequested-reload-hold');
+  reloadHolds.add(token);
+  return () => {
+    if (!reloadHolds.delete(token)) return;
+    if (reloadHolds.size > 0) return;
+    for (const listener of [...holdReleaseListeners]) listener();
+  };
+}
+
+function heldForWork(): boolean {
+  return reloadHolds.size > 0;
+}
+
+/**
+ * Runs the reload once the document has no work left to lose — now, or when the
+ * last hold is released. This is what a swap and a take that landed nowhere
+ * both owe the document; both go through it so neither can outrun a recording.
+ */
+function reloadWhenFree(reload: Reload): void {
+  if (!heldForWork()) {
+    reload();
+    return;
+  }
+  const pending = () => {
+    if (heldForWork()) return;
+    holdReleaseListeners.delete(pending);
+    reload();
+  };
+  holdReleaseListeners.add(pending);
+}
 
 function isVisible(): boolean {
   return document.visibilityState === 'visible';
@@ -203,7 +270,10 @@ export async function applyWorkerUpdate(
     window.setTimeout(() => {
       if (serviceWorker.controller !== controller) return;
       logger.warn('Service worker update take never landed', { deadlineMs });
-      reload();
+      // The take is owed, not urgent: it waits out work in the same way the
+      // swap does (ADR-0170), so a message that lands nowhere cannot reload the
+      // document under a draft either.
+      reloadWhenFree(reload);
     }, deadlineMs);
     waiting.postMessage({ type: 'SKIP_WAITING' });
   } catch (error) {
@@ -290,10 +360,16 @@ export interface WorkerUpdateOptions {
 }
 
 /**
- * Replaces the document when a *swapped* worker takes control, and holds that
- * reload until the document is visible. A swap this page did not start — another
- * tab took the deploy — has already had the previous build's caches purged, so
- * staying is not an option; the only question is when.
+ * Replaces the document when a *swapped* worker takes control, once the document
+ * is visible and has no work left to lose. A swap this page did not start —
+ * another tab took the deploy — may have left this build's chunks only in a
+ * cache the budget is willing to drop, so staying is a bet; the question the
+ * page answers is only *when*, and the answer is "not under a recording or a
+ * draft" (ADR-0170).
+ *
+ * The swap is remembered rather than acted on: while a hold is up the document
+ * keeps running, and the release re-runs this, so the reload happens at the end
+ * of the work instead of at the wrong end of it.
  *
  * The controller is compared by identity, not presence: `controllerchange` also
  * fires on the very first install (`clients.claim` in `public/sw.js`), where a
@@ -310,7 +386,7 @@ export function watchWorkerUpdates(
   let swapPending = false;
 
   const applySwap = () => {
-    if (!swapPending || !isVisible()) return;
+    if (!swapPending || !isVisible() || heldForWork()) return;
     swapPending = false;
     reload();
   };
@@ -326,9 +402,11 @@ export function watchWorkerUpdates(
 
   serviceWorker.addEventListener('controllerchange', onControllerChange);
   document.addEventListener('visibilitychange', applySwap);
+  holdReleaseListeners.add(applySwap);
 
   return () => {
     serviceWorker.removeEventListener('controllerchange', onControllerChange);
     document.removeEventListener('visibilitychange', applySwap);
+    holdReleaseListeners.delete(applySwap);
   };
 }
