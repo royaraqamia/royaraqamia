@@ -78,8 +78,9 @@ const socialLinks = [
 
 /**
  * The site's footer, at the foot of `/account` only: the brand line and the
- * social icons. The account rows carry the legal pages again as rows, so they
- * do not belong here twice.
+ * social icons. The account rows no longer carry the legal pages (ADR-0153's
+ * amendment), so `/privacy`, `/terms` and `/security` live by direct URL and the
+ * sitemap, and this footer stays two centred lines rather than a link list.
  *
  * `data-flat-footer` opts this element out of the `@layer base` rule that fills
  * an unmarked `<footer>` with `hsl(var(--card) / 0.5)` (`app/global.css`),
