@@ -38,6 +38,14 @@ export function analyticsRangeToFilter(preset: AnalyticsRangePreset): AnalyticsR
   return { from: from.toISOString() };
 }
 
+/** The preset's own label, so the chart's title names the period it paints (#1085). */
+export function analyticsRangeLabel(preset: AnalyticsRangePreset): string {
+  return (
+    ANALYTICS_RANGE_PRESETS.find((candidate) => candidate.value === preset)?.label ??
+    LINK_ANALYTICS_COPY.range7
+  );
+}
+
 const STATUS_META: Record<LinkStatus, { label: string; className: string }> = {
   active: {
     label: LINK_ANALYTICS_COPY.statusActive,

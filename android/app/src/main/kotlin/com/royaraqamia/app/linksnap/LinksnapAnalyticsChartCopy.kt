@@ -12,8 +12,8 @@ package com.royaraqamia.app.linksnap
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object LinksnapAnalyticsChartCopy {
-    const val TITLE = "أداء النقرات (آخر 7 أيام)"
+    const val TITLE = "أداء النقرات (آخر {range})"
     const val EMPTY = "لا توجد بيانات متاحة لهذه الفترة"
-    const val ARIA_LABEL = "رسم بياني لأداء النقرات خلال آخر 7 أيام"
+    const val ARIA_LABEL = "رسم بياني لأداء النقرات خلال آخر {range}"
     const val CLICKS = "{count} نقرة"
 }
