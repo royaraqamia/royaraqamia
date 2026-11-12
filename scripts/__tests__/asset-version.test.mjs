@@ -47,10 +47,18 @@ describe('PWA asset cache-busting', () => {
   });
 
   it('forces revalidation of the manifest and the service-worker config scripts', () => {
-    expect(read('next.config.js')).toContain("source: '/manifest.json'");
+    // Declared where the server that sends them reads them. They lived in
+    // `vercel.json` until the origin moved (ADR-0174); a host that is not
+    // Vercel never read that file, and a second definition of the same header
+    // produced conflicting `Cache-Control` values once already.
+    const nextConfig = read('next.config.js');
+    expect(nextConfig).toContain("source: '/manifest.json'");
+    for (const file of ['/sw.js', '/sw-version.js', '/sw-push-config.js', '/sw-precache.js']) {
+      expect(nextConfig).toContain(`source: '${file}'`);
+    }
+
     const vercel = read('vercel.json');
-    expect(vercel).toContain('/sw-version.js');
-    expect(vercel).toContain('/sw-push-config.js');
-    expect(vercel).toContain('/sw-precache.js');
+    expect(vercel).not.toContain('/sw.js');
+    expect(vercel).not.toContain('/sw-version.js');
   });
 });

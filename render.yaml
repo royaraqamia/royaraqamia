@@ -1,0 +1,127 @@
+# Render blueprint — the site's origin while the Vercel Hobby caps are paused
+# (ADR-0174). `sync: false` means "this key is required, but its value is set in
+# the Render dashboard and never committed" — the blueprint lists the contract,
+# the dashboard holds the secret.
+#
+# Native Node, not Docker, on purpose: the assistant's specialist roster is read
+# from `.opencode/skills/agency/` at request time
+# (`backend/services/chat/agency-skills.ts`). A Node service is built inside the
+# cloned repository, so that directory is present and the roster works without a
+# single extra copy step — an image would have to reproduce it by hand and would
+# fail silently if it did not.
+services:
+  - type: web
+    name: royaraqamia
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    # `npm run build` runs the whole prebuild chain (service worker, icons,
+    # version) plus `tsc --noEmit`, exactly as CI does. `npm ci` honours the
+    # repository's `.npmrc` (`legacy-peer-deps`).
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    # A static file: a health check that touches the app would count against the
+    # 0.1 CPU the free instance has, and would report unhealthy while a page is
+    # being rendered rather than when the process is actually down.
+    healthCheckPath: /manifest.json
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.2
+      # The first deploy died on "Ran out of memory (used over 8GB)" while
+      # collecting page data; `next.config.js` cuts the worker pool when
+      # `RENDER` is set, and this caps the heap so a future regression fails
+      # with a clear JavaScript error instead of an OOM kill.
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=6144
+
+      # Inlined at build time by Next, so they have to exist before
+      # `next build` runs, not only at boot.
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://royaraqamia.com
+      - key: NEXT_PUBLIC_WHATSAPP_PHONE
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        sync: false
+      - key: NEXT_PUBLIC_TURNSTILE_SITE_KEY
+        sync: false
+      - key: NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        sync: false
+
+      # Runtime configuration and secrets.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: RESEND_FROM_NAME
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_ORG
+        sync: false
+      - key: SENTRY_PROJECT
+        sync: false
+      - key: SENTRY_AUTH_TOKEN
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: MCP_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+      - key: PENDING_LOGIN_SECRET
+        sync: false
+      - key: PASSWORD_BREACH_CHECK_ENABLED
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      - key: PUSH_WEBHOOK_TOKEN
+        sync: false
+      - key: PUSH_ENDPOINT_ALLOWLIST
+        sync: false
+      # The three scheduled jobs authenticate with this (`Authorization: Bearer
+      # <CRON_SECRET>`); the workflow that calls them reads the same value from
+      # the repository's Actions secrets.
+      - key: CRON_SECRET
+        sync: false
+      - key: DOWNLOADER_PROVIDER_URL
+        sync: false
+      - key: DOWNLOADER_PROVIDER_TOKEN
+        sync: false
+      - key: DOWNLOADER_CALLBACK_SECRET
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_ENDPOINT
+        sync: false
+      - key: ANONYMOUS_IP_SALT
+        sync: false
+      - key: OPENCODE_API_KEY
+        sync: false
+      - key: MCP_STATIC_CLIENT_GITHUB_ID
+        sync: false
+      - key: MCP_STATIC_CLIENT_GITHUB_SECRET
+        sync: false
+      - key: MCP_CATALOG_AGENT_TOKEN
+        sync: false

@@ -76,6 +76,13 @@ const nextConfig = {
       dynamic: 120,
       static: 1800,
     },
+    // Next sizes its build worker pool from the machine's core count. Render's
+    // build machines report many cores, so the first deploy ran
+    // "Collecting page data using 47 workers" and died on
+    // "Ran out of memory (used over 8GB)". Two workers build the same pages,
+    // just not simultaneously; the flag stays off everywhere else so a local
+    // build keeps the parallelism it can afford.
+    cpus: process.env.RENDER ? 2 : undefined,
     // Expand lucide-react named imports to per-icon modules so only used
     // glyphs are bundled instead of the barrel's icon map.
     optimizePackageImports: ['lucide-react'],
@@ -327,9 +334,32 @@ const nextConfig = {
         source: '/quran/tafsir/:path*',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
-      // NOTE: /sw.js caching lives in vercel.json (stricter no-store variant).
-      // Keep it there only — a second definition here produced conflicting
-      // Cache-Control values.
+      // The service worker and the three files it imports must never be served
+      // stale: a browser holding an old `/sw.js` keeps running the old worker
+      // until every tab closes. These lived in `vercel.json` while Vercel was
+      // the only host; they are here now because a header has to be declared
+      // where the server that sends it reads it, and this file is what every
+      // host we run on reads (ADR-0174). One definition, never two: a duplicate
+      // in `vercel.json` produced conflicting `Cache-Control` values.
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Service-Worker-Allowed', value: '/' },
+        ],
+      },
+      {
+        source: '/sw-version.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
+      {
+        source: '/sw-push-config.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
+      {
+        source: '/sw-precache.js',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' }],
+      },
       // A version's bytes never change, and the filename carries the version, so a
       // repeat download can be served from the edge without revalidating and
       // without ever handing out the wrong file. Same pattern as the rewrite in
