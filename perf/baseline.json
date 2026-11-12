@@ -34,7 +34,7 @@
         "count": 22
       }
     },
-    "/community": {
+    "/community/explore": {
       "html": {
         "raw": 238485,
         "gzip": 27033,
