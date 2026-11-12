@@ -159,6 +159,49 @@ export const McpConnectionUpdateSchema = z
 
 export type McpConnectionUpdate = z.infer<typeof McpConnectionUpdateSchema>;
 
+/**
+ * What `POST /api/mcp/marketplace/connections/start` answers (#1256).
+ *
+ * The flow has two ends: a provider's consent page to visit (`authorize`), or a
+ * connection the server already made because the row needs no consent at all, or
+ * a key the member typed (`connected`). Both shapes ride one object with the
+ * unused end absent, which is what the service returns and what the app decodes;
+ * `kind` decides which end is real.
+ */
+export const McpStartResultSchema = z.object({
+  kind: z.enum(['authorize', 'connected']),
+  /** The provider's consent URL, on the `authorize` end. */
+  authorizeUrl: z.string().optional(),
+  /** The connection the server made, on the `connected` end. */
+  connectionId: z.string().optional(),
+});
+
+export type McpStartResult = z.infer<typeof McpStartResultSchema>;
+
+/** The envelope around [McpStartResultSchema], with the refusal's sentence. */
+export const McpStartResultEnvelopeSchema = z.object({
+  success: z.boolean(),
+  data: McpStartResultSchema.optional(),
+  error: z.string().optional(),
+});
+
+export type McpStartResultEnvelope = z.infer<typeof McpStartResultEnvelopeSchema>;
+
+/**
+ * What the start route is asked: the row, and the key when the row's mode needs
+ * one (#1269).
+ *
+ * It is a schema rather than a hand-built body because the app sends it: a field
+ * name the route stops accepting becomes a compile error in the app instead of a
+ * write answered `400` on a phone. The key is write-only and never echoed.
+ */
+export const McpStartRequestSchema = z.object({
+  registryName: z.string().trim().min(1).max(200),
+  apiKey: McpApiKeySchema.optional(),
+});
+
+export type McpStartRequest = z.infer<typeof McpStartRequestSchema>;
+
 /** One tool's switch, addressed by the name the server gave it. */
 export const McpConnectionToolUpdateSchema = z.object({
   toolName: z.string().trim().min(1).max(200),

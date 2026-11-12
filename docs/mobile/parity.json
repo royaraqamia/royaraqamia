@@ -339,6 +339,50 @@
       ]
     },
     {
+      "id": "apps-store",
+      "surface": "mcp-apps",
+      "issue": "#1256",
+      "web": {
+        "route": "app/mcp/apps/page.tsx",
+        "component": "frontend/ui/apps/store-tab.tsx",
+        "copyModule": "frontend/ui/apps/store-copy.ts",
+        "copyExport": "MCP_STORE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/mcp/MarketplaceTab.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/mcp/MarketplaceUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/mcp/McpStoreCopy.kt",
+        "copyObject": "McpStoreCopy"
+      },
+      "copySource": "shared/copy/mcp-store.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "Failed",
+          "copy": "searchFailed"
+        },
+        {
+          "name": "Offline",
+          "copy": "searchOffline"
+        },
+        {
+          "name": "Empty",
+          "copy": "storeEmptyTitle"
+        },
+        {
+          "name": "NoMatch",
+          "copy": "searchEmptyTitle"
+        },
+        {
+          "name": "Ready",
+          "copy": "verifiedBadge"
+        }
+      ]
+    },
+    {
       "id": "home-strip",
       "surface": "home",
       "issue": "#1194",

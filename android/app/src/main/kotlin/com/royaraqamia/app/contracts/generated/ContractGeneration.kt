@@ -6,5 +6,5 @@ package com.royaraqamia.app.contracts.generated
 
 /** The contract generation this build carries. */
 object ContractGeneration {
-    const val STAMP = "e43708325cc5"
+    const val STAMP = "d2a2483317c0"
 }

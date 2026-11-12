@@ -3,6 +3,7 @@ package com.royaraqamia.app
 import android.content.Context
 import com.royaraqamia.app.account.AccountProfileRepository
 import com.royaraqamia.app.account.AccountUsageRepository
+import com.royaraqamia.app.account.AvatarLoader
 import com.royaraqamia.app.account.BlockedMembersRepository
 import com.royaraqamia.app.account.TransportAvatarLoader
 import com.royaraqamia.app.accountnews.NewsRepository
@@ -21,6 +22,7 @@ import com.royaraqamia.app.community.CommunityPostRepository
 import com.royaraqamia.app.consultation.ConsultationRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.home.HomeServicesRepository
+import com.royaraqamia.app.mcp.McpStoreRepository
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.news.NewsDigestRepository
 import com.royaraqamia.app.notifications.NotificationsRepository
@@ -140,6 +142,10 @@ class AppGraph private constructor(
     val quran: QuranRepository,
     /** The homepage's app set (#1194): the picker's read and replace. */
     val homeServices: HomeServicesRepository,
+    /** The apps sheet's store tab (#1256): the member's connections and the curated store. */
+    val marketplace: McpStoreRepository,
+    /** The app's one image seam: a catalogue mark reads through it, like an avatar. */
+    val brandMark: AvatarLoader,
     private val databases: IdentityScopedStore<HabitStores>,
     private val spendtrackDatabases: IdentityScopedStore<SpendtrackStores>,
     private val linksnapDatabases: IdentityScopedStore<LinksnapStores>,
@@ -382,6 +388,13 @@ class AppGraph private constructor(
                 news = NewsRepository(client),
                 newsDigest = NewsDigestRepository(client, publicSnapshots),
                 notifications = NotificationsRepository(client),
+                marketplace =
+                    McpStoreRepository(
+                        client = client,
+                        siteUrl = siteUrl,
+                        identityKey = { session.storeIdentity.key },
+                    ),
+                brandMark = TransportAvatarLoader(),
                 homeServices = HomeServicesRepository(client),
                 verify = VerifyRepository(client),
                 rates = RatesRepository(client, publicSnapshots),

@@ -15,10 +15,10 @@ import {
   Unplug,
 } from 'lucide-react';
 
-import { MCP_MARKETPLACE_COPY as COPY } from '@/frontend/ui/mcp/marketplace-copy';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 import { appsCacheKey, readAppsCache, writeAppsCache } from './apps-cache';
+import { MCP_STORE_COPY } from './store-copy';
 
 import type { McpCatalogRow } from '@/shared/contracts/mcp-catalog';
 import type { McpConnection, McpPermissionLevel } from '@/shared/contracts/mcp-marketplace';
@@ -180,7 +180,7 @@ export function StoreTab({ query, connect }: StoreTabProps) {
       // The consent page is a third party's origin; the whole document leaves.
       window.location.assign(started.authorizeUrl);
     } catch (error) {
-      const sentence = error instanceof Error ? error.message : COPY.connectFailed;
+      const sentence = error instanceof Error ? error.message : MCP_STORE_COPY.connectFailed;
       if (key) setKeyError(sentence);
       else setActionError(sentence);
       setConnectingTo(null);
@@ -193,10 +193,10 @@ export function StoreTab({ query, connect }: StoreTabProps) {
     return (
       <div className="flex flex-col items-center gap-4 px-4 py-6 text-center">
         <p className="max-w-sm text-sm leading-relaxed text-balance text-muted-foreground">
-          {COPY.signInBody}
+          {MCP_STORE_COPY.signInBody}
         </p>
         <SignInCta href="/auth/login?redirect=/mcp/apps" visual="marketplace-cta">
-          {COPY.signIn}
+          {MCP_STORE_COPY.signIn}
         </SignInCta>
       </div>
     );
@@ -228,22 +228,28 @@ export function StoreTab({ query, connect }: StoreTabProps) {
           id="mcp-connections-title"
           className="max-sm:text-base font-extrabold text-foreground sm:text-lg"
         >
-          {COPY.connectionsTitle}
+          {MCP_STORE_COPY.connectionsTitle}
         </h2>
 
         {connectionsFailed ? (
           connectionsOffline ? (
             <NeedsConnection
-              message={COPY.connectionsOffline}
+              message={MCP_STORE_COPY.connectionsOffline}
               onRetry={() => void loadConnections()}
             />
           ) : (
-            <FailureRow message={COPY.connectionsFailed} onRetry={() => void loadConnections()} />
+            <FailureRow
+              message={MCP_STORE_COPY.connectionsFailed}
+              onRetry={() => void loadConnections()}
+            />
           )
         ) : connections === null ? (
           <LoadingBlocks rows={1} />
         ) : connections.length === 0 ? (
-          <EmptyCard title={COPY.connectionsEmptyTitle} body={COPY.connectionsEmptyBody} />
+          <EmptyCard
+            title={MCP_STORE_COPY.connectionsEmptyTitle}
+            body={MCP_STORE_COPY.connectionsEmptyBody}
+          />
         ) : (
           <ul className="space-y-2.5">
             {connections.map((connection) => (
@@ -255,16 +261,16 @@ export function StoreTab({ query, connect }: StoreTabProps) {
         )}
       </section>
 
-      <section aria-label={COPY.searchLabel} className="space-y-3">
+      <section aria-label={MCP_STORE_COPY.searchLabel} className="space-y-3">
         {searchFailed ? (
           searchOffline ? (
             <NeedsConnection
-              message={COPY.searchOffline}
+              message={MCP_STORE_COPY.searchOffline}
               onRetry={() => void runSearch(query.trim(), null, false)}
             />
           ) : (
             <FailureRow
-              message={COPY.searchFailed}
+              message={MCP_STORE_COPY.searchFailed}
               onRetry={() => void runSearch(query.trim(), null, false)}
             />
           )
@@ -272,8 +278,8 @@ export function StoreTab({ query, connect }: StoreTabProps) {
           <LoadingBlocks rows={2} />
         ) : servers.length === 0 ? (
           <EmptyCard
-            title={query.trim() ? COPY.searchEmptyTitle : COPY.storeEmptyTitle}
-            body={query.trim() ? COPY.searchEmptyBody : COPY.storeEmptyBody}
+            title={query.trim() ? MCP_STORE_COPY.searchEmptyTitle : MCP_STORE_COPY.storeEmptyTitle}
+            body={query.trim() ? MCP_STORE_COPY.searchEmptyBody : MCP_STORE_COPY.storeEmptyBody}
           />
         ) : (
           <div aria-busy={searching} className="space-y-2.5">
@@ -311,7 +317,7 @@ export function StoreTab({ query, connect }: StoreTabProps) {
                 ) : (
                   <Plus aria-hidden="true" className="h-4 w-4" />
                 )}
-                <span>{COPY.more}</span>
+                <span>{MCP_STORE_COPY.more}</span>
               </button>
             )}
           </div>
@@ -319,7 +325,7 @@ export function StoreTab({ query, connect }: StoreTabProps) {
 
         {searching && servers !== null && (
           <p role="status" aria-live="polite" className="text-center text-xs text-muted-foreground">
-            {query.trim() ? COPY.searchLoading : COPY.searchRefreshing}
+            {query.trim() ? MCP_STORE_COPY.searchLoading : MCP_STORE_COPY.searchRefreshing}
           </p>
         )}
       </section>
@@ -337,10 +343,13 @@ export function StoreTab({ query, connect }: StoreTabProps) {
         open={consentFor !== null}
         title={
           consentFor?.authMode === 'api_key'
-            ? COPY.keyTitle.replace('{name}', consentFor.title ?? consentFor.registryName)
+            ? MCP_STORE_COPY.keyTitle.replace('{name}', consentFor.title ?? consentFor.registryName)
             : consentFor?.authMode === 'none'
-              ? COPY.noAuthTitle.replace('{name}', consentFor.title ?? consentFor.registryName)
-              : COPY.consentTitle.replace(
+              ? MCP_STORE_COPY.noAuthTitle.replace(
+                  '{name}',
+                  consentFor.title ?? consentFor.registryName
+                )
+              : MCP_STORE_COPY.consentTitle.replace(
                   '{name}',
                   consentFor?.title ?? consentFor?.registryName ?? ''
                 )
@@ -348,16 +357,18 @@ export function StoreTab({ query, connect }: StoreTabProps) {
         message={
           consentFor?.authMode === 'api_key' ? (
             <span className="block space-y-2 text-start">
-              <span className="block">{COPY.keyBody}</span>
+              <span className="block">{MCP_STORE_COPY.keyBody}</span>
               <label className="mt-3 block space-y-1">
-                <span className="block text-xs font-bold text-foreground">{COPY.keyLabel}</span>
+                <span className="block text-xs font-bold text-foreground">
+                  {MCP_STORE_COPY.keyLabel}
+                </span>
                 <input
                   type="password"
                   dir="ltr"
                   autoComplete="off"
                   spellCheck={false}
                   value={apiKey}
-                  placeholder={COPY.keyPlaceholder}
+                  placeholder={MCP_STORE_COPY.keyPlaceholder}
                   onChange={(event) => {
                     setApiKey(event.target.value);
                     setKeyError(null);
@@ -372,21 +383,23 @@ export function StoreTab({ query, connect }: StoreTabProps) {
               )}
             </span>
           ) : consentFor?.authMode === 'none' ? (
-            <span className="block">{COPY.noAuthBody}</span>
+            <span className="block">{MCP_STORE_COPY.noAuthBody}</span>
           ) : consentFor && consentFor.requestedScopes.length > 0 ? (
             <>
-              <span className="block">{COPY.consentAsk}</span>
+              <span className="block">{MCP_STORE_COPY.consentAsk}</span>
               <span dir="ltr" className="mt-2 block font-mono text-xs leading-relaxed">
                 {consentFor.requestedScopes.join(' · ')}
               </span>
-              <span className="mt-2 block">{COPY.consentNote}</span>
+              <span className="mt-2 block">{MCP_STORE_COPY.consentNote}</span>
             </>
           ) : (
-            <span className="block">{COPY.consentDefault}</span>
+            <span className="block">{MCP_STORE_COPY.consentDefault}</span>
           )
         }
-        confirmLabel={consentFor?.authMode === 'oauth' ? COPY.consentContinue : COPY.connect}
-        cancelLabel={COPY.cancel}
+        confirmLabel={
+          consentFor?.authMode === 'oauth' ? MCP_STORE_COPY.consentContinue : MCP_STORE_COPY.connect
+        }
+        cancelLabel={MCP_STORE_COPY.cancel}
         icon={Plug}
         variant="default"
         isConfirming={connectingTo !== null}
@@ -395,7 +408,7 @@ export function StoreTab({ query, connect }: StoreTabProps) {
           if (consentFor.authMode === 'api_key') {
             const key = apiKey.trim();
             if (key.length === 0) {
-              setKeyError(COPY.keyRequired);
+              setKeyError(MCP_STORE_COPY.keyRequired);
               return;
             }
             void onConnect(consentFor, key);
@@ -424,13 +437,13 @@ function ConnectOutcome({ connect }: { connect: string | null }) {
   if (!connect) return null;
 
   const sentences: Record<string, string> = {
-    denied: COPY.connectDenied,
-    invalid: COPY.connectInvalid,
-    signin: COPY.connectSignin,
-    blocked: COPY.connectBlocked,
-    plan_limit: COPY.connectPlanLimit,
+    denied: MCP_STORE_COPY.connectDenied,
+    invalid: MCP_STORE_COPY.connectInvalid,
+    signin: MCP_STORE_COPY.connectSignin,
+    blocked: MCP_STORE_COPY.connectBlocked,
+    plan_limit: MCP_STORE_COPY.connectPlanLimit,
   };
-  const sentence = sentences[connect] ?? COPY.connectError;
+  const sentence = sentences[connect] ?? MCP_STORE_COPY.connectError;
 
   return (
     <p
@@ -457,11 +470,13 @@ function ConnectionCard({ connection }: { connection: McpConnection }) {
         <div className="min-w-0 space-y-1">
           <p className="truncate max-sm:text-sm font-bold text-foreground sm:text-base">{name}</p>
           <p className="text-xs text-muted-foreground">
-            <span>{COPY.toolCount.replace('{count}', String(connection.toolCount))}</span>
+            <span>{MCP_STORE_COPY.toolCount.replace('{count}', String(connection.toolCount))}</span>
             <span aria-hidden="true"> · </span>
             <span>
-              {COPY.lastUsed}{' '}
-              {connection.lastUsedAt ? formatHijriDate(connection.lastUsedAt) : COPY.neverUsed}
+              {MCP_STORE_COPY.lastUsed}{' '}
+              {connection.lastUsedAt
+                ? formatHijriDate(connection.lastUsedAt)
+                : MCP_STORE_COPY.neverUsed}
             </span>
           </p>
           <ConnectionBadges connection={connection} />
@@ -469,7 +484,7 @@ function ConnectionCard({ connection }: { connection: McpConnection }) {
       </div>
 
       <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-2 max-sm:text-xs font-bold text-foreground sm:text-sm">
-        {COPY.manage}
+        {MCP_STORE_COPY.manage}
       </span>
     </Link>
   );
@@ -485,7 +500,7 @@ function ConnectionBadges({ connection }: { connection: McpConnection }) {
       </span>
       {!connection.enabled && (
         <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-bold text-amber-600 dark:text-amber-300">
-          {COPY.connectionDisabled}
+          {MCP_STORE_COPY.connectionDisabled}
         </span>
       )}
     </p>
@@ -496,20 +511,20 @@ function ConnectionStatusBadge({ status }: { status: McpConnection['status'] }) 
   if (status === 'needs_reauth') {
     return (
       <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-bold text-amber-600 dark:text-amber-300">
-        {COPY.statusNeedsReauth}
+        {MCP_STORE_COPY.statusNeedsReauth}
       </span>
     );
   }
   if (status === 'error') {
     return (
       <span className="rounded-full border border-destructive/30 bg-destructive/5 px-2 py-0.5 font-bold text-destructive">
-        {COPY.statusError}
+        {MCP_STORE_COPY.statusError}
       </span>
     );
   }
   return (
     <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-bold text-primary">
-      {COPY.statusActive}
+      {MCP_STORE_COPY.statusActive}
     </span>
   );
 }
@@ -551,7 +566,7 @@ function CatalogueRow({
             <span className="truncate">{name}</span>
             <BadgeCheck
               role="img"
-              aria-label={COPY.verifiedBadge}
+              aria-label={MCP_STORE_COPY.verifiedBadge}
               className="h-4 w-4 shrink-0 text-primary"
             />
             {server.nameAr && (
@@ -569,7 +584,9 @@ function CatalogueRow({
                     : 'shrink-0 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-bold text-muted-foreground'
                 }
               >
-                {server.authMode === 'api_key' ? COPY.authBadgeApiKey : COPY.authBadgeNone}
+                {server.authMode === 'api_key'
+                  ? MCP_STORE_COPY.authBadgeApiKey
+                  : MCP_STORE_COPY.authBadgeNone}
               </span>
             )}
           </p>
@@ -585,10 +602,10 @@ function CatalogueRow({
       {connection ? (
         <Link
           href={`/mcp/apps/${encodeURIComponent(connection.id)}`}
-          aria-label={`${COPY.manage} ${name}`}
+          aria-label={`${MCP_STORE_COPY.manage} ${name}`}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-2 max-sm:text-xs font-bold text-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm"
         >
-          {COPY.manage}
+          {MCP_STORE_COPY.manage}
         </Link>
       ) : (
         <button
@@ -602,7 +619,7 @@ function CatalogueRow({
           ) : (
             <Plus aria-hidden="true" className="h-4 w-4" />
           )}
-          <span>{connecting ? COPY.connecting : COPY.connect}</span>
+          <span>{connecting ? MCP_STORE_COPY.connecting : MCP_STORE_COPY.connect}</span>
         </button>
       )}
     </div>
@@ -648,11 +665,11 @@ function CatalogueMark({ server }: { server: McpCatalogRow }) {
 export function permissionLabel(level: McpPermissionLevel): string {
   switch (level) {
     case 'reads':
-      return COPY.permissionReads;
+      return MCP_STORE_COPY.permissionReads;
     case 'all':
-      return COPY.permissionAll;
+      return MCP_STORE_COPY.permissionAll;
     case 'ask':
-      return COPY.permissionAsk;
+      return MCP_STORE_COPY.permissionAsk;
   }
 }
 
@@ -660,7 +677,7 @@ function LoadingBlocks({ rows = 2 }: { rows?: number }) {
   const blocks = useMemo(() => Array.from({ length: rows }, (_, index) => index), [rows]);
 
   return (
-    <div className="space-y-2.5" aria-busy="true" aria-label={COPY.loadingLabel}>
+    <div className="space-y-2.5" aria-busy="true" aria-label={MCP_STORE_COPY.loadingLabel}>
       {blocks.map((block) => (
         <div
           key={block}
@@ -684,7 +701,7 @@ function FailureRow({ message, onRetry }: { message: string; onRetry: () => void
         className="mx-auto inline-flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-sm font-bold text-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
       >
         <RefreshCw aria-hidden="true" className="h-4 w-4" />
-        <span>{COPY.retry}</span>
+        <span>{MCP_STORE_COPY.retry}</span>
       </button>
     </div>
   );

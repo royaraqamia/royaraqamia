@@ -19,4 +19,5 @@ object AppsSheetCopy {
     const val SEARCH_LABEL = "البحث في التطبيقات"
     const val SEARCH_INTERNAL = "ابحث في تطبيقاتنا..."
     const val SEARCH_INBOUND = "ابحث في التطبيقات المتصلة..."
+    const val SEARCH_STORE = "ابحث باسم التطبيق أو وصفه..."
 }

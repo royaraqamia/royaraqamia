@@ -59,6 +59,26 @@ export const CONTRACTS = [
     file: 'McpConnectedAppsContracts.kt',
     schemas: ['McpConnectedAppListResultSchema', 'McpConnectedAppActionResultSchema'],
   },
+  // The apps sheet's two MCP panels (#1256, ADR-0159). The store tab reads the
+  // member's connections and one page of the curated catalogue — one bounded
+  // query (ADR-0162), so no cursor is drawn — and the start route answers either
+  // the provider's consent URL or the connection it made. All three are the
+  // routes the page's own API modules call, so the app decodes the same bodies
+  // instead of retyping their fields (ADR-0098).
+  {
+    module: 'shared/contracts/mcp-catalog',
+    file: 'McpCatalogContracts.kt',
+    schemas: ['McpCatalogPageResultSchema'],
+  },
+  {
+    module: 'shared/contracts/mcp-marketplace',
+    file: 'McpMarketplaceContracts.kt',
+    schemas: [
+      'McpConnectionListResultSchema',
+      'McpStartRequestSchema',
+      'McpStartResultEnvelopeSchema',
+    ],
+  },
   // `GET /habitflow/api/sync` joined with the store (#768): the app paints
   // HabitFlow from rows it holds, so the body it holds them from is a contract
   // the generator has to emit. It is the web pull's route, tombstones included

@@ -17,6 +17,7 @@ export const APPS_SURFACE_COPY = {
   searchLabel: 'البحث في التطبيقات',
   searchInternal: 'ابحث في تطبيقاتنا...',
   searchInbound: 'ابحث في التطبيقات المتصلة...',
+  searchStore: 'ابحث باسم التطبيق أو وصفه...',
 } as const;
 
 export type AppsSurfaceCopyStrings = typeof APPS_SURFACE_COPY;

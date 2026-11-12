@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertTriangle, Check, Loader2, RefreshCw, Unplug } from 'lucide-react';
 
+import { MCP_STORE_COPY } from '@/frontend/ui/apps/store-copy';
 import { MCP_MARKETPLACE_COPY as COPY } from './marketplace-copy';
 
 import {
@@ -195,13 +196,13 @@ export function McpConnectionView({
     return (
       <div className="flex flex-col items-center gap-4 px-4 py-6 text-center">
         <p className="max-w-sm text-sm leading-relaxed text-balance text-muted-foreground">
-          {COPY.signInBody}
+          {MCP_STORE_COPY.signInBody}
         </p>
         <SignInCta
           href={`/auth/login?redirect=${encodeURIComponent(`/mcp/apps/${connectionId}`)}`}
           visual="connection-cta"
         >
-          {COPY.signIn}
+          {MCP_STORE_COPY.signIn}
         </SignInCta>
       </div>
     );
@@ -228,7 +229,7 @@ export function McpConnectionView({
           className="mx-auto inline-flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-sm font-bold text-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         >
           <RefreshCw aria-hidden="true" className="h-4 w-4" />
-          <span>{COPY.retry}</span>
+          <span>{MCP_STORE_COPY.retry}</span>
         </button>
       </div>
     );
@@ -312,7 +313,9 @@ export function McpConnectionView({
             type="button"
             role="switch"
             aria-checked={connection.enabled}
-            aria-label={connection.enabled ? COPY.connectionEnabled : COPY.connectionDisabled}
+            aria-label={
+              connection.enabled ? COPY.connectionEnabled : MCP_STORE_COPY.connectionDisabled
+            }
             onClick={() => void toggleEnabled()}
             disabled={savingEnabled}
             className={
@@ -326,7 +329,7 @@ export function McpConnectionView({
             ) : (
               <Check aria-hidden="true" className="h-3.5 w-3.5" />
             )}
-            {connection.enabled ? COPY.connectionEnabled : COPY.connectionDisabled}
+            {connection.enabled ? COPY.connectionEnabled : MCP_STORE_COPY.connectionDisabled}
           </button>
         </div>
 
@@ -561,7 +564,7 @@ export function McpConnectionView({
         title={COPY.detailDisconnectTitle}
         message={COPY.detailDisconnectMessage.replace('{name}', name)}
         confirmLabel={COPY.confirmDisconnect}
-        cancelLabel={COPY.cancel}
+        cancelLabel={MCP_STORE_COPY.cancel}
         onConfirm={() => void disconnect()}
         onCancel={() => {
           if (!disconnecting) setConfirmOpen(false);
@@ -576,11 +579,11 @@ export function McpConnectionView({
 function permissionCopy(level: McpPermissionLevel): string {
   switch (level) {
     case 'reads':
-      return COPY.permissionReads;
+      return MCP_STORE_COPY.permissionReads;
     case 'all':
-      return COPY.permissionAll;
+      return MCP_STORE_COPY.permissionAll;
     case 'ask':
-      return COPY.permissionAsk;
+      return MCP_STORE_COPY.permissionAsk;
   }
 }
 
@@ -602,7 +605,7 @@ function Notice({ tone, children }: { tone: 'warning' | 'danger'; children: Reac
 
 function LoadingBlocks() {
   return (
-    <div className="space-y-2.5" aria-busy="true" aria-label={COPY.loadingLabel}>
+    <div className="space-y-2.5" aria-busy="true" aria-label={MCP_STORE_COPY.loadingLabel}>
       <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
       <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
     </div>

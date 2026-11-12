@@ -287,6 +287,12 @@ class ShellActivity : ComponentActivity() {
                         onToggleHomeService = { route ->
                             lifecycleScope.launch { homeServices.toggle(route) }
                         },
+                        marketplace = graph.marketplace,
+                        signedIn = signedIn,
+                        onSignIn = ::showSignIn,
+                        onOpenConnection = { id -> openRoute("/mcp/apps/$id") },
+                        onOpenExternal = ::openExternal,
+                        brandMark = graph.brandMark,
                         onBack = ::goBack,
                     ) {
                         // The launch and every sign-in/sign-out run the same load:
