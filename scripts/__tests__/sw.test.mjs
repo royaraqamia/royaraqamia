@@ -66,6 +66,10 @@ function createSandbox({
   routeRefreshBatch,
   routeRefreshWindows,
   routeRefreshAssetBatch,
+  // The documents the browser reports as open (#1334). A navigation records its
+  // build against a client in this list, and eviction pins a build only while
+  // one of its clients is still here.
+  liveClients = [],
   // A second worker over the same Cache Storage, i.e. what a release does.
   storage,
 } = {}) {
@@ -145,9 +149,13 @@ function createSandbox({
     Notification: { permission: 'granted' },
     clients: {
       claim: async () => undefined,
-      matchAll: async () => [],
+      matchAll: async () => liveClients,
       openWindow: async () => undefined,
-      get: async (id) => ({ id, url: 'https://site.example/' }),
+      get: async (id) => ({
+        id,
+        url: 'https://site.example/',
+        postMessage: vi.fn(),
+      }),
     },
     fetch: vi.fn(async (url, init) => {
       state.fetchCalls.push({ url: String(url), init });
@@ -249,7 +257,7 @@ function createSandbox({
     };
   }
 
-  return { sandbox, state, caches, dispatch, listeners, holdWrites };
+  return { sandbox, state, caches, dispatch, listeners, holdWrites, storage: cacheStores };
 }
 
 async function boot({ keepFetchCalls = false, ...options } = {}) {
@@ -964,6 +972,173 @@ describe('service worker cache budget and eviction', () => {
     expect(entries['/a']).toBeUndefined();
     expect(entries['/b']).toBe(300);
     expect(entries['/c']).toBe(300);
+  });
+
+  it("keeps a live document's build chunks through a release", async () => {
+    // #1334: the previous build's static entries used to be the first thing the
+    // budget dropped after a deploy, which is why a swap had to reload every
+    // document. A client still running build A pins A's chunks.
+    const liveClients = [{ id: 'client-a', url: 'https://site.example/' }];
+    const a = await boot({
+      budgetBytes: 1000,
+      fetchImpl: async () => emptyResponse(),
+      liveClients,
+    });
+
+    await fetchInto(
+      a,
+      request('/_next/static/chunks/a.js', 'cors'),
+      sized(300, 'application/javascript')
+    );
+    // The document that names the chunk is served by build A and remembered
+    // against its client.
+    const navigation = fetchEvent(request('/community'));
+    navigation.resultingClientId = 'client-a';
+    a.sandbox.fetch = vi.fn(async () => sized(300));
+    a.dispatch('fetch', navigation);
+    expect((await navigation.response).status).toBe(200);
+    await Promise.all(navigation.waitUntilCalls);
+
+    // The release: build B activates over the same storage and sees the client
+    // A left open.
+    const b = await boot({
+      cacheVersion: BUILD_B,
+      budgetBytes: 1000,
+      fetchImpl: async () => emptyResponse(),
+      liveClients,
+      storage: a.storage,
+    });
+
+    await fetchInto(
+      b,
+      request('/_next/static/chunks/b.js', 'cors'),
+      sized(300, 'application/javascript')
+    );
+    // Over budget by 200: the only unpinned entry is A's document, and it goes.
+    await fetchInto(b, request('/community?page=2'), sized(300));
+
+    const staticEntries = await runtimeEntries(b, STATIC_CACHE);
+    expect(staticEntries['/_next/static/chunks/a.js']).toBe(300);
+    expect(staticEntries['/_next/static/chunks/b.js']).toBe(300);
+    expect((await runtimeEntries(b))['/community']).toBeUndefined();
+  });
+
+  it("keeps a live build's chunks while the next worker is only installing", async () => {
+    // Install runs before activate, and its first cache write can trigger the
+    // eviction. The registry therefore has to be read in `install`, not only in
+    // `activate`, or the new worker reclaims a live document's chunks before it
+    // ever controls a client (#1334).
+    const liveClients = [{ id: 'client-a', url: 'https://site.example/' }];
+    const a = await boot({
+      budgetBytes: 1000,
+      fetchImpl: async () => emptyResponse(),
+      liveClients,
+    });
+    await fetchInto(
+      a,
+      request('/_next/static/chunks/a.js', 'cors'),
+      sized(300, 'application/javascript')
+    );
+    const navigation = fetchEvent(request('/community'));
+    navigation.resultingClientId = 'client-a';
+    a.sandbox.fetch = vi.fn(async () => sized(300));
+    a.dispatch('fetch', navigation);
+    await navigation.response;
+    await Promise.all(navigation.waitUntilCalls);
+
+    const b = installOnly({
+      cacheVersion: BUILD_B,
+      budgetBytes: 400,
+      fetchImpl: async () => emptyResponse(),
+      liveClients,
+      storage: a.storage,
+    });
+    await Promise.all(b.dispatch('install').waitUntilCalls);
+
+    // The install's own write is what takes the store over the smaller budget;
+    // the page that is not build A's anymore goes, the chunk does not.
+    expect((await runtimeEntries(b, STATIC_CACHE))['/_next/static/chunks/a.js']).toBe(300);
+    expect((await runtimeEntries(b))['/community']).toBeUndefined();
+  });
+
+  it("lets a closed document's build go once no client is running it", async () => {
+    const liveClients = [{ id: 'client-a', url: 'https://site.example/' }];
+    const a = await boot({
+      budgetBytes: 1000,
+      fetchImpl: async () => emptyResponse(),
+      liveClients,
+    });
+
+    await fetchInto(
+      a,
+      request('/_next/static/chunks/a.js', 'cors'),
+      sized(300, 'application/javascript')
+    );
+    const navigation = fetchEvent(request('/community'));
+    navigation.resultingClientId = 'client-a';
+    a.sandbox.fetch = vi.fn(async () => sized(300));
+    a.dispatch('fetch', navigation);
+    await navigation.response;
+    await Promise.all(navigation.waitUntilCalls);
+
+    // The document closed; the next release is free to reclaim its build's
+    // chunks, and a stale build goes before the running one.
+    liveClients.length = 0;
+    const b = await boot({
+      cacheVersion: BUILD_B,
+      budgetBytes: 1000,
+      fetchImpl: async () => emptyResponse(),
+      liveClients,
+      storage: a.storage,
+    });
+    await fetchInto(
+      b,
+      request('/_next/static/chunks/b.js', 'cors'),
+      sized(300, 'application/javascript')
+    );
+    await fetchInto(b, request('/community?page=2'), sized(300));
+
+    const staticEntries = await runtimeEntries(b, STATIC_CACHE);
+    expect(staticEntries['/_next/static/chunks/a.js']).toBeUndefined();
+    expect(staticEntries['/_next/static/chunks/b.js']).toBe(300);
+  });
+
+  it("tells the client that asked when a chunk's build is genuinely gone", async () => {
+    const ctx = await boot({ budgetBytes: 10_000, fetchImpl: async () => emptyResponse() });
+    const posted = [];
+    ctx.sandbox.clients.get = vi.fn(async (id) => ({
+      id,
+      postMessage: (message) => posted.push(message),
+    }));
+    ctx.sandbox.fetch = vi.fn(async () => new Response('', { status: 404 }));
+
+    const event = fetchEvent(request('/_next/static/chunks/gone.js', 'cors'));
+    event.clientId = 'client-a';
+    ctx.dispatch('fetch', event);
+
+    expect((await event.response).status).toBe(404);
+    await Promise.all(event.waitUntilCalls);
+    expect(posted).toEqual([{ type: 'STALE_BUILD' }]);
+  });
+
+  it('does not report a build gone when the chunk is only unreachable', async () => {
+    const ctx = await boot({ budgetBytes: 10_000, fetchImpl: async () => emptyResponse() });
+    const posted = [];
+    ctx.sandbox.clients.get = vi.fn(async (id) => ({
+      id,
+      postMessage: (message) => posted.push(message),
+    }));
+    ctx.sandbox.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    });
+
+    const event = fetchEvent(request('/_next/static/chunks/offline.js', 'cors'));
+    event.clientId = 'client-a';
+    ctx.dispatch('fetch', event);
+
+    expect((await event.response).status).toBe(503);
+    await Promise.all(event.waitUntilCalls);
+    expect(posted).toEqual([]);
   });
 
   it('purges account-bearing entries on sign-out and keeps the shell', async () => {

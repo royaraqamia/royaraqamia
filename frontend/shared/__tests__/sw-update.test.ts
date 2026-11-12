@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   applyWorkerUpdate,
   holdUnrequestedReload,
   takeWaitingUpdateAtLoad,
   watchWorkerUpdates,
   UPDATE_APPLY_DEADLINE_MS,
+  UPDATE_IDLE_WINDOW_MS,
   UPDATE_TAKE_GUARD_MS,
 } from '@/frontend/shared/sw-update';
 
@@ -77,6 +78,8 @@ function createServiceWorkerFake(initialController: object | null = null) {
       listeners.forEach((listener) => listener());
     },
     emitControllerChange: () => listeners.forEach((listener) => listener()),
+    emitMessage: (data: unknown) =>
+      listeners.forEach((listener) => (listener as (event: { data: unknown }) => void)({ data })),
     listenerCount: () => listeners.size,
   };
 }
@@ -121,7 +124,7 @@ describe('takeWaitingUpdateAtLoad', () => {
   it('asks the browser for a deploy before it decides', async () => {
     // The case the whole mechanism exists for: the deploy landed after this
     // document was cached, so the waiting worker appears *because* of the check
-    // a load makes — the navigation's own check finishes too late to be seen.
+    // a load makes â€” the navigation's own check finishes too late to be seen.
     const { worker } = createWorker();
     const sw = createServiceWorkerFake({});
     sw.update.mockImplementation(async () => {
@@ -170,9 +173,11 @@ describe('takeWaitingUpdateAtLoad', () => {
     expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
   });
 
-  it('leaves the document alone once the person has started using it', async () => {
-    // A reload under someone mid-form is the thing this channel exists to avoid;
-    // the build waits for the next load instead.
+  it('defers the take under an interaction, and lands it in the next pause', async () => {
+    // The measured failure (#1320): a reload followed by four seconds of
+    // scrolling refused the whole load, and the deploy only landed on a later
+    // load. A window is the question instead â€” the scroll defers the reload by
+    // seconds, not forever.
     const { worker, installed } = createWorker();
     const sw = createServiceWorkerFake({});
     sw.install(worker);
@@ -186,17 +191,82 @@ describe('takeWaitingUpdateAtLoad', () => {
 
     expect(await taking).toBe(false);
     expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+
+    // The pause: the window passes with no further touch.
+    await vi.advanceTimersByTimeAsync(UPDATE_IDLE_WINDOW_MS + 100);
+
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+      type: 'SKIP_WAITING',
+    });
   });
 
-  it('never takes anything in a document nobody is looking at', async () => {
+  it('keeps deferring while the document is still being used', async () => {
+    const { worker, installed } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.install(worker);
+
+    const taking = takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() });
+    await flush();
+    window.dispatchEvent(new Event('keydown'));
+
+    sw.registration.waiting = worker;
+    installed();
+    expect(await taking).toBe(false);
+
+    // A touch inside the window arms another one instead of taking.
+    await vi.advanceTimersByTimeAsync(UPDATE_IDLE_WINDOW_MS / 2);
+    window.dispatchEvent(new Event('keydown'));
+    await vi.advanceTimersByTimeAsync(UPDATE_IDLE_WINDOW_MS / 2 + 100);
+
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(UPDATE_IDLE_WINDOW_MS + 100);
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes a document nobody has touched at once', async () => {
+    // The boundary that keeps the idle window from becoming a refusal: an
+    // untouched load is still the cheapest moment to move the document.
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+
+    const taken = await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() });
+
+    expect(taken).toBe(true);
+  });
+
+  it('takes a load in a background tab when the tab becomes visible', async () => {
+    // A hidden load had no retry at all: the take refused and nothing asked
+    // again, so the load did not count. The visibility listener is the retry.
     const { worker } = createWorker();
     const sw = createServiceWorkerFake({});
     sw.setWaiting(worker);
     visibility = 'hidden';
 
     const taken = await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() });
-
     expect(taken).toBe(false);
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+
+    visibility = 'visible';
+    document.dispatchEvent(new Event('visibilitychange'));
+    await flush();
+
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
+      type: 'SKIP_WAITING',
+    });
+  });
+
+  it('does not take a background load until the tab comes back', async () => {
+    const { worker } = createWorker();
+    const sw = createServiceWorkerFake({});
+    sw.setWaiting(worker);
+    visibility = 'hidden';
+
+    await takeWaitingUpdateAtLoad({ serviceWorker: sw.container, reload: vi.fn() });
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
   });
 
   it('does nothing on a first install, which is not an update', async () => {
@@ -285,6 +355,7 @@ describe('watchWorkerUpdates', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     visibility = 'visible';
+    window.sessionStorage.clear();
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
       get: () => visibility,
@@ -295,53 +366,68 @@ describe('watchWorkerUpdates', () => {
     vi.useRealTimers();
   });
 
-  it('reloads once when a swapped worker takes control', () => {
+  it('does not reload when a swapped worker takes control', () => {
+    // ADR-0171: the worker keeps each live client's build, so a swap is not a
+    // reason to replace a document any more.
     const sw = createServiceWorkerFake({});
     const reload = vi.fn();
     const dispose = watchWorkerUpdates(sw.container, { reload });
 
-    sw.swapTo({});
-    expect(reload).toHaveBeenCalledTimes(1);
-
-    // The reload already happened; a repeated event for the same worker is not
-    // a second swap.
-    sw.emitControllerChange();
-    expect(reload).toHaveBeenCalledTimes(1);
-
-    dispose();
-  });
-
-  it('does not reload on the first install, when there was no controller', () => {
-    const sw = createServiceWorkerFake(null);
-    const reload = vi.fn();
-    const dispose = watchWorkerUpdates(sw.container, { reload });
-
-    // `activate` calls `clients.claim()`, so the first worker also fires this.
     sw.swapTo({});
     expect(reload).not.toHaveBeenCalled();
 
     dispose();
   });
 
-  it('does not reload when the controller goes away', () => {
+  it('reloads when the worker reports that the build is gone', () => {
     const sw = createServiceWorkerFake({});
     const reload = vi.fn();
     const dispose = watchWorkerUpdates(sw.container, { reload });
 
-    sw.setController(null);
-    sw.emitControllerChange();
+    sw.emitMessage({ type: 'STALE_BUILD' });
+    expect(reload).toHaveBeenCalledTimes(1);
+
+    // The document that comes back to the same broken build does not loop.
+    sw.emitMessage({ type: 'STALE_BUILD' });
+    expect(reload).toHaveBeenCalledTimes(1);
+
+    dispose();
+  });
+
+  it('ignores every other message', () => {
+    const sw = createServiceWorkerFake({});
+    const reload = vi.fn();
+    const dispose = watchWorkerUpdates(sw.container, { reload });
+
+    sw.emitMessage({ type: 'ACCOUNT_CACHES_PURGED' });
     expect(reload).not.toHaveBeenCalled();
 
     dispose();
   });
 
-  it('holds a swap made in the background until the document is visible', () => {
+  it('may replace the document again once the guard window has passed', async () => {
+    const sw = createServiceWorkerFake({});
+    const reload = vi.fn();
+    const dispose = watchWorkerUpdates(sw.container, { reload });
+
+    sw.emitMessage({ type: 'STALE_BUILD' });
+    expect(reload).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(UPDATE_TAKE_GUARD_MS + 1);
+
+    sw.emitMessage({ type: 'STALE_BUILD' });
+    expect(reload).toHaveBeenCalledTimes(2);
+
+    dispose();
+  });
+
+  it('holds a stale build reported in the background until the document is visible', () => {
     const sw = createServiceWorkerFake({});
     const reload = vi.fn();
     const dispose = watchWorkerUpdates(sw.container, { reload });
 
     visibility = 'hidden';
-    sw.swapTo({});
+    sw.emitMessage({ type: 'STALE_BUILD' });
     expect(reload).not.toHaveBeenCalled();
 
     visibility = 'visible';
@@ -351,7 +437,7 @@ describe('watchWorkerUpdates', () => {
     dispose();
   });
 
-  it('holds a swap while the document has work, and reloads when the work ends', () => {
+  it('holds a stale build while the document has work, and reloads when the work ends', () => {
     // The reload nobody chose is the one that can land on a recording or a
     // draft (#1320, ADR-0170): the work ends the wait, and no timer does.
     const sw = createServiceWorkerFake({});
@@ -359,7 +445,7 @@ describe('watchWorkerUpdates', () => {
     const dispose = watchWorkerUpdates(sw.container, { reload });
 
     const release = holdUnrequestedReload();
-    sw.swapTo({});
+    sw.emitMessage({ type: 'STALE_BUILD' });
     expect(reload).not.toHaveBeenCalled();
 
     release();
@@ -375,7 +461,7 @@ describe('watchWorkerUpdates', () => {
 
     const draft = holdUnrequestedReload();
     const clip = holdUnrequestedReload();
-    sw.swapTo({});
+    sw.emitMessage({ type: 'STALE_BUILD' });
 
     draft();
     expect(reload).not.toHaveBeenCalled();
@@ -388,7 +474,8 @@ describe('watchWorkerUpdates', () => {
 
   it('installs no timer and no check of its own', async () => {
     // A document that is only sitting there is never moved (ADR-0134): the
-    // watcher exists for swaps it did not start, and watching costs no requests.
+    // watcher only answers a report from the worker, and watching costs no
+    // requests.
     const sw = createServiceWorkerFake({});
     const reload = vi.fn();
     const dispose = watchWorkerUpdates(sw.container, { reload });
@@ -403,7 +490,7 @@ describe('watchWorkerUpdates', () => {
     dispose();
   });
 
-  it('stops watching once disposed', async () => {
+  it('stops watching once disposed', () => {
     const sw = createServiceWorkerFake({});
     const reload = vi.fn();
     const dispose = watchWorkerUpdates(sw.container, { reload });
@@ -411,8 +498,7 @@ describe('watchWorkerUpdates', () => {
     dispose();
     expect(sw.listenerCount()).toBe(0);
 
-    sw.swapTo({});
-    await vi.advanceTimersByTimeAsync(0);
+    sw.emitMessage({ type: 'STALE_BUILD' });
     expect(reload).not.toHaveBeenCalled();
   });
 });
@@ -426,7 +512,7 @@ describe('applyWorkerUpdate', () => {
     vi.useRealTimers();
   });
 
-  it('asks the waiting worker to take over, and leaves the reload to the swap', async () => {
+  it('asks the waiting worker to take over, and reloads once the swap lands', async () => {
     const { worker } = createWorker();
     const sw = createServiceWorkerFake({});
     sw.setWaiting(worker);
@@ -437,7 +523,12 @@ describe('applyWorkerUpdate', () => {
     expect(worker.postMessage as unknown as ReturnType<typeof vi.fn>).toHaveBeenCalledWith({
       type: 'SKIP_WAITING',
     });
+    // The take is a chosen reload: it is owed one, but only after the worker
+    // really landed.
     expect(reload).not.toHaveBeenCalled();
+
+    sw.swapTo({});
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 
   it('reloads when there is nothing to skip to', async () => {
@@ -503,7 +594,7 @@ describe('applyWorkerUpdate', () => {
     warn.mockRestore();
   });
 
-  it('leaves a landed swap to do its own reloading', async () => {
+  it('does not reload a second time when the swap landed inside the deadline', async () => {
     const { worker } = createWorker();
     const sw = createServiceWorkerFake({});
     sw.setWaiting(worker);
@@ -512,8 +603,10 @@ describe('applyWorkerUpdate', () => {
     await applyWorkerUpdate(sw.container, reload);
     // The swap: the controller this document is served by has changed.
     sw.swapTo({});
-    await vi.advanceTimersByTimeAsync(UPDATE_APPLY_DEADLINE_MS);
+    expect(reload).toHaveBeenCalledTimes(1);
 
-    expect(reload).not.toHaveBeenCalled();
+    // The deadline belonged to that take, so it does not add another reload.
+    await vi.advanceTimersByTimeAsync(UPDATE_APPLY_DEADLINE_MS);
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 });

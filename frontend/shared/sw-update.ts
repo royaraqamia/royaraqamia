@@ -12,30 +12,31 @@ import { logger } from './logger';
  * 1. **A document load takes a waiting build** (`takeWaitingUpdateAtLoad`). The
  *    page checks for a deploy as it loads, and when one is downloaded and
  *    waiting it gives it control and reloads once. That is the whole update
- *    surface: no prompt, no banner, nothing to decline.
- * 2. **A swap replaces the document** (ADR-0039, ADR-0170). A swapped worker
- *    may be the last one holding this build's chunks — the caches outlive a
- *    release since #488, and the byte budget evicts the previous build's
- *    entries first — so the document reloads once when a *swapped* worker takes
- *    control: a case the page does not choose, e.g. another tab took the
- *    deploy first.
+ *    surface: no prompt, no banner, nothing to decline. The take is bounded by
+ *    idleness rather than history (#1334): a document touched in the last few
+ *    seconds (`UPDATE_IDLE_WINDOW_MS`) waits for that window to pass instead of
+ *    refusing the load, and a load in a background tab takes the update when
+ *    the tab becomes visible.
+ * 2. **A swap does not replace the document** (ADR-0171). The worker records
+ *    the build each client was served and keeps that build's chunks while the
+ *    client is alive, so a swapped worker is no longer a reason to reload. The
+ *    one reload left is the fallback for a chunk that genuinely 404s, which the
+ *    worker reports to the document that asked for it.
  *
  * The line between them is what a live document is allowed to do: it is never
  * reloaded for its own sake. There is no timer, no focus check and no
  * visibility check that looks for a deploy (ADR-0134); a document that is only
  * sitting there stays on the build it was served, and moves at its next load.
- * The one reload the page does not choose is the one that can land under
- * someone's work, so it waits while the document holds work of its own
- * (`holdUnrequestedReload`, ADR-0170): a recording, an unsent draft, a staged
- * file. The work ends the wait; a hold that is never released means the
- * document simply stays on the build it was served, which is its owner's next
- * load to change.
+ * The one reload the page does not choose is a document whose build is gone, so
+ * it waits while the document holds work of its own (`holdUnrequestedReload`,
+ * ADR-0170): a recording, an unsent draft, a staged file. The work ends the
+ * wait; a hold that is never released means the document simply stays on the
+ * build it was served, which is its owner's next load to change.
  *
- * The take is bounded in two directions. It only runs while the document is
- * still the thing the user just opened — nothing is reloaded under someone who
- * has started reading or typing (`userHasActed`) — and it is remembered per
- * tab (`UPDATE_TAKE_GUARD_MS`), so a worker that fails to activate cannot put
- * the page in a reload loop.
+ * The take is bounded in two directions. It only reloads a document that is not
+ * being used right now (`UPDATE_IDLE_WINDOW_MS`) and is remembered per tab
+ * (`UPDATE_TAKE_GUARD_MS`), so a worker that fails to activate cannot put the
+ * page in a reload loop.
  *
  * Both halves depend on `CACHE_VERSION` changing per deployment —
  * `scripts/generate-icons.mjs` bakes the deployment id into `sw-version.js`,
@@ -48,11 +49,11 @@ import { logger } from './logger';
  * How long a posted `SKIP_WAITING` is given to replace this document's controller
  * before the take gives up on it and reloads instead.
  *
- * It only has to outlast the swap, which is a frame's work; the reload the swap
- * causes is not this timer's business, because the document it replaces goes away
- * with the timer still in it. A take that lands nowhere cannot be recognised any
- * other way: the browser reports nothing at all for a worker that has already
- * been superseded, so silence has to be given a deadline.
+ * It only has to outlast the swap, which is a frame's work; a landed swap clears
+ * the timer, and the reload that follows takes the document (and the timer) away.
+ * A take that lands nowhere cannot be recognised any other way: the browser
+ * reports nothing at all for a worker that has already been superseded, so
+ * silence has to be given a deadline.
  */
 export const UPDATE_APPLY_DEADLINE_MS = 5_000;
 
@@ -76,7 +77,23 @@ export const UPDATE_TAKE_INSTALL_DEADLINE_MS = 20_000;
  */
 export const UPDATE_TAKE_GUARD_MS = 60_000;
 
+/**
+ * How long after the last interaction a document still counts as in use.
+ *
+ * The take used to refuse a load forever once anything had been touched in it
+ * (`userHasActed`, ADR-0134). That made a reload plus four seconds of scrolling
+ * refuse the whole load, and the deploy only landed on a later load — measured
+ * on 2026-11-12 (#1320, #1334). A window is the honest question instead: a
+ * scroll defers the reload by seconds, and the document takes the build as soon
+ * as the person pauses.
+ */
+export const UPDATE_IDLE_WINDOW_MS = 3_000;
+
+/** Slack on the re-check, so the timer fires after the window rather than inside it. */
+const UPDATE_IDLE_RECHECK_MS = 50;
+
 const UPDATE_TAKE_GUARD_KEY = 'rr:sw-update-taken-at:v1';
+const STALE_RELOAD_GUARD_KEY = 'rr:sw-stale-reloaded-at:v1';
 
 /** Events that mean the person is using the page, not merely that it loaded. */
 const USER_EVENTS = ['pointerdown', 'keydown', 'touchstart', 'input', 'wheel'] as const;
@@ -87,23 +104,24 @@ export type Reload = () => void;
 const reloadHolds = new Set<symbol>();
 
 /**
- * The reloads waiting on those holds. A swap remembers itself and re-checks, so
- * a listener here only has to run the reload the work was blocking.
+ * The reloads waiting on those holds. A stale-build report remembers itself and
+ * re-checks, so a listener here only has to run the reload the work was blocking.
  */
 const holdReleaseListeners = new Set<() => void>();
 
 /**
  * The work a reload would destroy, held by the surfaces that own it.
  *
- * ADR-0039 lets a swapped worker replace the document without asking, because
- * the document may be left referencing chunks the new worker evicted. That
- * reload is the only one nobody chose, and it used to land on whatever was
- * happening at that second — measured 2026-11-12 (#1320): a five-minute voice
- * note died at its own stop, on a page that navigated itself.
+ * Two reloads remain that the person did not ask for: the take's deadline when a
+ * `SKIP_WAITING` lands on a worker that has already been superseded (ADR-0055),
+ * and the fallback for a chunk whose build is genuinely gone (ADR-0171). Both
+ * used to be able to land on whatever was happening at that second — measured
+ * 2026-11-12 (#1320): a five-minute voice note died at its own stop, on a page
+ * that navigated itself.
  *
- * So the swap waits while a surface says it has work in hand. A held document
- * is not stuck: it keeps running on the build it was served, and the deploy
- * still reaches the tab at its next load — the swap is only this document's
+ * So both wait while a surface says it has work in hand. A held document is not
+ * stuck: it keeps running on the build it was served, and the deploy still
+ * reaches the tab at its next load — the reload is only this document's
  * replacement, never the update itself.
  *
  * Callers get a release function back and are expected to release it on the
@@ -127,8 +145,9 @@ function heldForWork(): boolean {
 
 /**
  * Runs the reload once the document has no work left to lose — now, or when the
- * last hold is released. This is what a swap and a take that landed nowhere
- * both owe the document; both go through it so neither can outrun a recording.
+ * last hold is released. This is what a take that landed nowhere and a stale
+ * build both owe the document; both go through it so neither can outrun a
+ * recording.
  */
 function reloadWhenFree(reload: Reload): void {
   if (!heldForWork()) {
@@ -161,38 +180,51 @@ function safeStorage(): Storage | null {
 }
 
 /**
- * Whether a take already ran in this tab recently. A successful take leaves
- * nothing waiting, so the next load is quiet on its own; this only catches the
- * failure that would otherwise repeat forever.
+ * Whether a marker was written recently. A successful take leaves nothing
+ * waiting, so the next load is quiet on its own; this only catches the failure
+ * that would otherwise repeat forever. The stale-build reload uses the same
+ * bound for the same reason: a document that comes back to a chunk that is still
+ * 404 must not reload again and again.
  */
-function takenRecently(storage: Storage | null = safeStorage()): boolean {
+function recently(key: string, storage: Storage | null = safeStorage()): boolean {
   try {
-    const at = Number(storage?.getItem(UPDATE_TAKE_GUARD_KEY) ?? 0);
+    const at = Number(storage?.getItem(key) ?? 0);
     return Number.isFinite(at) && at > 0 && Date.now() - at < UPDATE_TAKE_GUARD_MS;
   } catch {
     return false;
   }
 }
 
-function rememberTake(storage: Storage | null = safeStorage()): void {
+function remember(key: string, storage: Storage | null = safeStorage()): void {
   try {
-    storage?.setItem(UPDATE_TAKE_GUARD_KEY, String(Date.now()));
+    storage?.setItem(key, String(Date.now()));
   } catch {
     // A tab without storage simply loses the loop guard, not the update.
   }
 }
 
-/** Watches for the page being used, so a take never lands under a reader. */
+function takenRecently(): boolean {
+  return recently(UPDATE_TAKE_GUARD_KEY);
+}
+
+function rememberTake(): void {
+  remember(UPDATE_TAKE_GUARD_KEY);
+}
+
+/** Watches when the page was last used, so a take lands in a pause, not under a reader. */
 function watchUserInput() {
-  let acted = false;
+  let lastAt = 0;
   const mark = () => {
-    acted = true;
+    lastAt = Date.now();
   };
   for (const type of USER_EVENTS) {
     window.addEventListener(type, mark, { capture: true, passive: true });
   }
   return {
-    acted: () => acted,
+    /** Touched recently enough that a reload would land under the person. */
+    busy: () => lastAt > 0 && Date.now() - lastAt < UPDATE_IDLE_WINDOW_MS,
+    /** How long since the last touch, or `Infinity` when there was none. */
+    idleFor: () => (lastAt === 0 ? Infinity : Date.now() - lastAt),
     dispose: () => {
       for (const type of USER_EVENTS) {
         window.removeEventListener(type, mark, { capture: true });
@@ -200,6 +232,8 @@ function watchUserInput() {
     },
   };
 }
+
+type InputWatch = ReturnType<typeof watchUserInput>;
 
 /**
  * Waits for the install the check just started to reach `installed`, which is
@@ -239,11 +273,12 @@ function waitForInstall(
  *
  * `SKIP_WAITING` is the one case where the worker is told to activate early: the
  * document is loading or the person asked for it, so the swap it causes is not
- * the destructive one ADR-0030 rules out. The swap then goes through
- * `controllerchange` in `watchWorkerUpdates`, so the reload is the same single
- * guarded reload as any other swap. With nothing waiting there is nothing to
- * skip to, so the call falls back to a plain reload — a take that did nothing
- * would be worse than a redundant load.
+ * the destructive one ADR-0030 rules out. A take is a chosen reload, so this
+ * function owns it: the controller changing is the signal that the new worker
+ * landed, and the document replaces itself once, here, rather than in the swap
+ * watcher (which no longer reloads, ADR-0171). With nothing waiting there is
+ * nothing to skip to, so the call falls back to a plain reload — a take that did
+ * nothing would be worse than a redundant load.
  *
  * That fallback is a deadline, not just a branch for the missing worker, because
  * the take names a worker that was waiting when it was probed: by the time it
@@ -267,14 +302,31 @@ export async function applyWorkerUpdate(
     // A landed swap replaces the controller, so the controller's identity is the
     // one honest answer to "did the take do anything?".
     const controller = serviceWorker.controller;
-    window.setTimeout(() => {
-      if (serviceWorker.controller !== controller) return;
-      logger.warn('Service worker update take never landed', { deadlineMs });
-      // The take is owed, not urgent: it waits out work in the same way the
-      // swap does (ADR-0170), so a message that lands nowhere cannot reload the
-      // document under a draft either.
-      reloadWhenFree(reload);
+    let settled = false;
+    let timer: number | null = null;
+
+    function finish(action: () => void) {
+      if (settled) return;
+      settled = true;
+      if (timer !== null) window.clearTimeout(timer);
+      serviceWorker.removeEventListener('controllerchange', onChange);
+      action();
+    }
+
+    function onChange() {
+      if (serviceWorker.controller !== controller) finish(reload);
+    }
+
+    timer = window.setTimeout(() => {
+      finish(() => {
+        logger.warn('Service worker update take never landed', { deadlineMs });
+        // The take is owed, not urgent: it waits out work in the same way the
+        // swap does (ADR-0170), so a message that lands nowhere cannot reload the
+        // document under a draft either.
+        reloadWhenFree(reload);
+      });
     }, deadlineMs);
+    serviceWorker.addEventListener('controllerchange', onChange);
     waiting.postMessage({ type: 'SKIP_WAITING' });
   } catch (error) {
     logger.warn('Service worker update take failed', { error: String(error) });
@@ -296,6 +348,101 @@ export interface TakeUpdateOptions {
 }
 
 /**
+ * Arms a take for a document that is busy or hidden right now (#1334).
+ *
+ * Called once, when the load's probe finds a waiting build but the moment is
+ * wrong. Three things end the wait, and all of them are the document's own
+ * state rather than a timer that guesses:
+ *
+ * - **Idle.** A timer fires `UPDATE_IDLE_WINDOW_MS` after the last touch, and
+ *   the take runs if the person has not touched the page again. A scroll
+ *   therefore defers the deploy by seconds instead of deferring it to a later
+ *   load, which is the case #1320 measured.
+ * - **Visible.** A hidden document installs no timer — reloading a background
+ *   tab saves nothing (ADR-0039) — and the `visibilitychange` listener is what
+ *   makes a load in a background tab count as a load at all.
+ * - **Gone.** A newer install supersedes the waiting one, or the tab takes a
+ *   build elsewhere and the guard is set; either way there is nothing left to
+ *   take, and the watcher stops.
+ *
+ * `UPDATE_TAKE_GUARD_MS` still bounds the loop: a take that failed to activate
+ * would otherwise come back on the next idle window forever.
+ */
+function deferTake({
+  serviceWorker,
+  registration,
+  reload,
+  isSuppressed,
+  input,
+}: {
+  serviceWorker: ServiceWorkerContainer;
+  registration: ServiceWorkerRegistration;
+  reload: Reload;
+  isSuppressed: () => boolean | Promise<boolean>;
+  input: InputWatch;
+}): void {
+  let timer: number | null = null;
+  let stopped = false;
+
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    if (timer !== null) window.clearTimeout(timer);
+    timer = null;
+    document.removeEventListener('visibilitychange', onVisibility);
+    input.dispose();
+  };
+
+  const run = async () => {
+    if (stopped) return;
+    if (timer !== null) {
+      window.clearTimeout(timer);
+      timer = null;
+    }
+    if (!registration.waiting || takenRecently()) {
+      stop();
+      return;
+    }
+    // Hidden: the visibility listener is the only thing that resumes this.
+    if (!isVisible()) return;
+    if (input.busy()) {
+      schedule();
+      return;
+    }
+    if (await isSuppressed()) {
+      stop();
+      return;
+    }
+    if (stopped) return;
+    // The suppression answer is a round trip; the person may have started typing
+    // while it was in flight.
+    if (!isVisible() || input.busy()) {
+      schedule();
+      return;
+    }
+    rememberTake();
+    stop();
+    void applyWorkerUpdate(serviceWorker, reload);
+  };
+
+  const schedule = () => {
+    if (stopped || timer !== null || !isVisible()) return;
+    const wait = Math.max(0, UPDATE_IDLE_WINDOW_MS - input.idleFor()) + UPDATE_IDLE_RECHECK_MS;
+    timer = window.setTimeout(() => {
+      timer = null;
+      void run();
+    }, wait);
+  };
+
+  function onVisibility() {
+    if (isVisible()) void run();
+  }
+
+  document.addEventListener('visibilitychange', onVisibility);
+  schedule();
+}
+
+/**
  * The update surface: a document load takes the waiting build, silently.
  *
  * Runs once per document, at load, and answers whether it took anything. The
@@ -303,11 +450,12 @@ export interface TakeUpdateOptions {
  * and only then decide — because the browser's own check is part of the
  * navigation and finishes after this function would otherwise have looked.
  *
- * It refuses in four cases, all of which mean "leave this document alone":
- * nothing was ever served by a worker (a first install is not an update), no
- * build is waiting, the person has already started using the page, or the shell
- * is announcing its own update. The guard against a repeated take is what makes
- * the single reload safe (ADR-0134).
+ * It refuses when nothing was ever served by a worker (a first install is not
+ * an update), when no build is waiting, or while the shell is announcing its
+ * own update. A document that is being used or is in the background does not
+ * refuse the load: the take is armed to run in the next pause, or when the tab
+ * comes back (`deferTake`). The guard against a repeated take is what makes the
+ * single reload safe (ADR-0134).
  */
 export async function takeWaitingUpdateAtLoad({
   serviceWorker = typeof navigator === 'undefined' ? null : navigator.serviceWorker,
@@ -321,6 +469,7 @@ export async function takeWaitingUpdateAtLoad({
   if (takenRecently()) return false;
 
   const input = watchUserInput();
+  let handedOff = false;
   try {
     const registration = (await serviceWorker.getRegistration()) ?? (await serviceWorker.ready);
 
@@ -337,11 +486,15 @@ export async function takeWaitingUpdateAtLoad({
     // `waiting` is the honest signal: downloaded, verified, ready, and costs one
     // reload that works offline.
     if (!registration.waiting) return false;
-    if (!isVisible() || input.acted()) return false;
     if (await isSuppressed()) return false;
-    // The suppression answer is a network round trip; the person may have started
-    // typing while it was in flight.
-    if (!isVisible() || input.acted()) return false;
+
+    if (!isVisible() || input.busy()) {
+      // The watcher owns `input` from here; disposing it in `finally` would
+      // leave the deferred take unable to tell a pause from a busy page.
+      handedOff = true;
+      deferTake({ serviceWorker, registration, reload, isSuppressed, input });
+      return false;
+    }
 
     rememberTake();
     void applyWorkerUpdate(serviceWorker, reload);
@@ -350,31 +503,30 @@ export async function takeWaitingUpdateAtLoad({
     logger.warn('Service worker update probe failed', { error: String(error) });
     return false;
   } finally {
-    input.dispose();
+    if (!handedOff) input.dispose();
   }
 }
 
 export interface WorkerUpdateOptions {
-  /** How the document is replaced after a swap. */
+  /** How the document is replaced when its build is gone. */
   reload?: Reload;
 }
 
 /**
- * Replaces the document when a *swapped* worker takes control, once the document
- * is visible and has no work left to lose. A swap this page did not start —
- * another tab took the deploy — may have left this build's chunks only in a
- * cache the budget is willing to drop, so staying is a bet; the question the
- * page answers is only *when*, and the answer is "not under a recording or a
- * draft" (ADR-0170).
+ * Replaces the document only when the worker says its build is genuinely gone.
  *
- * The swap is remembered rather than acted on: while a hold is up the document
+ * A swap no longer reloads (ADR-0171): the worker records the build each client
+ * was served and keeps that build's chunks while the client is alive, so a
+ * swapped worker is not the last holder of anything. What is left is the true
+ * failure — a `_next/static` request that neither the cache nor the network can
+ * answer, which the worker reports as `STALE_BUILD` for the client that asked.
+ * Only that document can be replaced, and only when it is visible and has no
+ * work left to lose: a recording or a draft waits out the end of its work
+ * (ADR-0170), and a background tab waits for its next visible moment.
+ *
+ * The reload is remembered rather than acted on: while a hold is up the document
  * keeps running, and the release re-runs this, so the reload happens at the end
  * of the work instead of at the wrong end of it.
- *
- * The controller is compared by identity, not presence: `controllerchange` also
- * fires on the very first install (`clients.claim` in `public/sw.js`), where a
- * reload would be a pointless double load, and a repeated event for the worker
- * already in control is not a swap either.
  *
  * Returns a disposer that removes the listeners installed here.
  */
@@ -382,31 +534,32 @@ export function watchWorkerUpdates(
   serviceWorker: ServiceWorkerContainer,
   { reload = () => window.location.reload() }: WorkerUpdateOptions = {}
 ): () => void {
-  let controller = serviceWorker.controller;
-  let swapPending = false;
+  let stalePending = false;
 
-  const applySwap = () => {
-    if (!swapPending || !isVisible() || heldForWork()) return;
-    swapPending = false;
+  const applyReload = () => {
+    if (!stalePending || !isVisible() || heldForWork()) return;
+    stalePending = false;
+    // The document that comes back may still 404 on the same chunk if the build
+    // is not really replaceable (a bad URL, a deploy that broke mid-flight). The
+    // guard makes that a page on a broken build, never a reload loop.
+    if (recently(STALE_RELOAD_GUARD_KEY)) return;
+    remember(STALE_RELOAD_GUARD_KEY);
     reload();
   };
 
-  const onControllerChange = () => {
-    const next = serviceWorker.controller;
-    if (controller !== null && next !== null && next !== controller) {
-      swapPending = true;
-    }
-    controller = next;
-    applySwap();
+  const onMessage = (event: MessageEvent) => {
+    if (event?.data?.type !== 'STALE_BUILD') return;
+    stalePending = true;
+    applyReload();
   };
 
-  serviceWorker.addEventListener('controllerchange', onControllerChange);
-  document.addEventListener('visibilitychange', applySwap);
-  holdReleaseListeners.add(applySwap);
+  serviceWorker.addEventListener('message', onMessage);
+  document.addEventListener('visibilitychange', applyReload);
+  holdReleaseListeners.add(applyReload);
 
   return () => {
-    serviceWorker.removeEventListener('controllerchange', onControllerChange);
-    document.removeEventListener('visibilitychange', applySwap);
-    holdReleaseListeners.delete(applySwap);
+    serviceWorker.removeEventListener('message', onMessage);
+    document.removeEventListener('visibilitychange', applyReload);
+    holdReleaseListeners.delete(applyReload);
   };
 }

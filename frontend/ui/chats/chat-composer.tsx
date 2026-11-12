@@ -159,7 +159,7 @@ export function ChatComposer({
    * (ADR-0170): the words not sent yet, the clip staged behind them, and the
    * capture itself — the last one being exactly what a five-minute note lost
    * when a swap replaced the page at its own stop (#1320). The hold lives as
-   * long as one of them does, and its release is what lets a swap reload.
+   * long as one of them does, and its release is what lets a held reload land.
    *
    * It is one boolean rather than the draft itself so a keystroke is not a
    * release-and-re-take: a gap between the two is a gap a swap could land in.

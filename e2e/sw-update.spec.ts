@@ -4,13 +4,17 @@ import { resolve } from 'node:path';
 
 /**
  * A deploy reaches a client with no prompt and no gesture, and never moves a
- * document that is only open (ADR-0134).
+ * document that is only open (ADR-0134, ADR-0171).
  *
  * The update surface is a document load: the page checks for a deploy as it
  * loads, and when one is downloaded and waiting it takes control and reloads
- * once. A document that is merely sitting there is never reloaded — there is no
- * timer, no focus check and no prompt — so nothing here dispatches a focus event
- * and waits for the app to notice.
+ * once — in the next pause if the person is using the page, and when the tab
+ * becomes visible if it loaded in the background. A document that is merely
+ * sitting there is never reloaded — there is no timer, no focus check and no
+ * prompt — so nothing here dispatches a focus event and waits for the app to
+ * notice. A *swap* is not a reason to reload either: the worker serves each
+ * client the build it was given, and only a chunk that genuinely 404s reports
+ * its document as stale.
  *
  * Runs against a production build, because the worker is only registered outside
  * development:
@@ -128,12 +132,66 @@ test('a refresh takes the deploy, once, and lands the new build', async ({ brows
 });
 
 /**
- * ADR-0039: the other half of the channel. A document whose build was replaced by
- * *another* client has already had the previous build's chunks purged from the
- * cache, so it reloads once when it becomes visible — it cannot stay, and it is
- * not the page choosing to interrupt anyone.
+ * ADR-0171: a load in a background tab takes the waiting build when the tab
+ * becomes visible. The take used to refuse while hidden and nothing asked again,
+ * so a background load did not count as a load at all.
  */
-test('a document reloads when another client takes the deploy first', async ({ browser }) => {
+test('a load in a background tab takes the deploy when the tab becomes visible', async ({
+  browser,
+}) => {
+  test.setTimeout(240_000);
+
+  const context = await browser.newContext({ serviceWorkers: 'allow' });
+  await instrument(context);
+  // A Playwright page reports itself visible, so the hidden state is the part
+  // this spec has to model: the page starts hidden and is brought forward on
+  // demand, exactly as `visibilitychange` would.
+  await context.addInitScript(() => {
+    const probe = window as Window & { __visible?: boolean; __makeVisible?: () => void };
+    probe.__visible = false;
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => (probe.__visible ? 'visible' : 'hidden'),
+    });
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      get: () => !probe.__visible,
+    });
+    probe.__makeVisible = () => {
+      probe.__visible = true;
+      document.dispatchEvent(new Event('visibilitychange'));
+    };
+  });
+
+  writeFileSync(VERSION_SCRIPT, original ?? '');
+  const page = await context.newPage();
+  await open(page);
+  const settled = await countLoads(page);
+
+  deploy();
+  await page.reload({ waitUntil: 'domcontentloaded' });
+
+  // The take is armed but stays put: a hidden document installs no timer, and
+  // the reload itself is the only load.
+  await page.waitForTimeout(12_000);
+  expect(await countLoads(page)).toBe(settled + 1);
+
+  await page.evaluate(() => (window as Window & { __makeVisible?: () => void }).__makeVisible?.());
+  await expect.poll(() => countLoads(page), { timeout: 90_000 }).toBe(settled + 2);
+
+  await context.close();
+});
+
+/**
+ * ADR-0171: a swapped worker does not replace a document. The first document is
+ * served from the build before the deploy; when another client takes the deploy
+ * and the new worker claims every client, the first document keeps running on the
+ * build it was served — its identity does not change, and its own chunks are
+ * still answered, because the worker pins the build a live client is running.
+ */
+test('a document served from an older build survives another client taking the deploy', async ({
+  browser,
+}) => {
   test.setTimeout(240_000);
 
   const context = await browser.newContext({ serviceWorkers: 'allow' });
@@ -142,7 +200,20 @@ test('a document reloads when another client takes the deploy first', async ({ b
   writeFileSync(VERSION_SCRIPT, original ?? '');
   const first = await context.newPage();
   await open(first);
-  expect(await countLoads(first)).toBe(1);
+  // Load once more so this document is *served by* the worker: the registry that
+  // pins a build records navigations the worker answered, and the first-ever
+  // load installed it rather than being answered by it.
+  await first.reload({ waitUntil: 'domcontentloaded' });
+  await expect.poll(() => countLoads(first), { timeout: 30_000 }).toBe(2);
+  await first.waitForTimeout(7_000);
+  const settled = await countLoads(first);
+  const origin = await first.evaluate(() => performance.timeOrigin);
+  // A chunk this document's build actually names, so the assertion is about the
+  // document's own files rather than a URL that happens to exist in both builds.
+  const chunk = await first.evaluate(
+    () => document.querySelector('script[src^="/_next/static/"]')?.getAttribute('src') ?? ''
+  );
+  expect(chunk).not.toBe('');
 
   deploy();
 
@@ -152,11 +223,14 @@ test('a document reloads when another client takes the deploy first', async ({ b
   await open(second);
   await expect.poll(() => countLoads(second), { timeout: 90_000 }).toBe(2);
 
-  // The first document was open the whole time; the swap replaced it once.
-  await expect.poll(() => countLoads(first), { timeout: 30_000 }).toBe(2);
-  await expect.poll(() => cachedBuild(first), { timeout: 30_000 }).toBe(DEPLOY_MARKER);
+  // The first document was open the whole time, and a swap is no longer a
+  // reason to replace it: identity and load count stay put.
   await first.waitForTimeout(5_000);
-  expect(await countLoads(first)).toBe(2);
+  expect(await countLoads(first)).toBe(settled);
+  expect(await first.evaluate(() => performance.timeOrigin)).toBe(origin);
+
+  // And it can still fetch its own build's chunk from the worker's cache.
+  expect(await first.evaluate(async (url) => (await fetch(url)).ok, chunk)).toBe(true);
 
   await context.close();
 });

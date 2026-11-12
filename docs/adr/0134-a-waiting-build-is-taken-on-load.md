@@ -92,3 +92,10 @@ reloads on visibility; a take whose message lands nowhere still moves the docume
 and the shell's own update card keeps the page on its build. The unit tests in
 `frontend/shared/__tests__/sw-update.test.ts` pin the refusals — first install, hidden document, user
 input, shell suppression, guard window — and that the watcher installs no timer.
+
+> **Amended 2026-11-12 - see ADR-0171.** The reload in step 4 is now the take's own, because the swap
+> no longer reloads at all: the worker records the build each client was served and keeps that build's
+> chunks while the client is alive. The take also no longer refuses a load that was ever touched - it
+> waits out `UPDATE_IDLE_WINDOW_MS` instead - and a load in a background tab retries when the tab
+> becomes visible. The paragraph above about `activate` deleting this build's caches is superseded by
+> #488 and ADR-0171; the only reload that remains is a chunk that genuinely 404s.

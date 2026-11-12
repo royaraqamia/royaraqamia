@@ -85,3 +85,8 @@ is measured with the owner's own browser through the `browse` server, as recorde
 ([docs/agents/browser.md](../agents/browser.md)). The production measurement and this change's own
 local run used the same instrument: a controlled `sw-version.js` deploy, `performance.timeOrigin` for
 document identity, and the take guard key for whether a take ran.
+
+> **Amended 2026-11-12 - see ADR-0171.** The swap described here no longer reloads: the worker keeps the
+> build each live client was served, so there is nothing for a swap to destroy. The hold still guards the
+> two reloads that remain - the take's deadline when a message lands nowhere, and the `STALE_BUILD`
+> fallback for a chunk whose build is genuinely gone.
