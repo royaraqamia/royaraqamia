@@ -4,6 +4,10 @@
 > per-member `presence:<user id>` private topic rather than `chat:<conversation id>`, so the chats
 > list can draw it once for every row; the refusal of "presence beyond the open thread" is narrowed
 > to the list, and still forbids a table, an online dot and a delivered receipt.
+>
+> **Further amended by [ADR 0167](0167-presence-is-a-conversation-topic.md).** The topic is the
+> conversation again, `presence:<conversation id>`, because Realtime refuses a join the `select`
+> policy does not admit; both members join it, and the list opens one channel per row.
 
 [#816](https://github.com/royaraqamia/royaraqamia/issues/816) gives a chat thread the two facts a
 conversation has that a message log cannot hold: someone is writing right now, and someone has read

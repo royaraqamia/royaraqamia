@@ -183,8 +183,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const presenceEnabled = state === 'write' && presencePeerId !== null;
   const { peer, noteTyping, noteRecording, stopTyping } = useChatPresence(
     conversationId,
-    presenceEnabled ? (user?.id ?? null) : null,
-    presenceEnabled ? presencePeerId : null
+    presenceEnabled ? (user?.id ?? null) : null
   );
 
   if (isLoading) {

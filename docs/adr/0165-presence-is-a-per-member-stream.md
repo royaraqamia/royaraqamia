@@ -1,5 +1,10 @@
 # Presence is a per-member stream
 
+> **Superseded by [ADR 0167](0167-presence-is-a-conversation-topic.md).** Realtime authorises a
+> private channel's **join** against the `select` policy alone, so a sender could never join the
+> peer's stream write-only: the topic is now the conversation, `presence:<conversation id>`, which
+> both members join. The payload, the windows and the two slots are unchanged.
+
 [#816](https://github.com/royaraqamia/royaraqamia/issues/816) gave a thread "someone is writing
 right now". ADR-0116 put it on a private topic named after the conversation, and deliberately refused
 **presence beyond the open thread** — no line on a list row, no online dot. The chats list now has to

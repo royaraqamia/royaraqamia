@@ -244,14 +244,14 @@ fun ChatThread(
     }
 
     /**
-     * The write-only half (ADR-0165): one channel into the peer's stream while
-     * this thread is open. A guest, an assistant thread or a group has no peer,
-     * so there is nothing to join.
+     * The write half (ADR-0167): the conversation's own topic, joined while this
+     * thread is open. A guest, an assistant thread or a group has no peer, so
+     * there is nothing to join.
      */
     val publisher =
-        remember(presence, selfId, peerId) {
+        remember(presence, selfId, peerId, conversationId) {
             if (presence != null && selfId != null && peerId != null) {
-                presence.publisher(peerId, selfId)
+                presence.publisher(conversationId, selfId)
             } else {
                 null
             }
@@ -357,14 +357,14 @@ fun ChatThread(
         publisher?.announce(conversationId, ChatPresenceState.Typing.wire)
     }
 
-    // The member's own stream while this thread is open: one subscription, and
-    // only the counterpart's events for this conversation are believed.
+    // The conversation's own topic while this thread is open: one subscription,
+    // and only the counterpart's events for this conversation are believed.
     LaunchedEffect(presence, selfId, peerId, conversationId) {
         val source = presence ?: return@LaunchedEffect
         if (selfId == null || peerId == null) return@LaunchedEffect
 
         val subscription =
-            source.listen(selfId) { event ->
+            source.listen(setOf(conversationId), selfId) { event ->
                 if (event.conversationId != conversationId || event.userId != peerId) {
                     return@listen
                 }

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useEffect } from 'react';
 
-const api = vi.hoisted(() => ({ joinChatPresenceReader: vi.fn() }));
+const api = vi.hoisted(() => ({ joinChatPresenceChannel: vi.fn() }));
 
 vi.mock('@/frontend/api/chats', () => api);
 
@@ -46,6 +46,11 @@ const GROUP: ChatConversationSummary = {
   createdAt: '2026-11-01T00:00:00.000Z',
 };
 
+const REQUESTED: ChatConversationSummary = {
+  ...direct('c-9', 'peer-9'),
+  status: 'requested',
+};
+
 let captured: ChatPresenceMap = {};
 
 function Harness({
@@ -64,10 +69,10 @@ function Harness({
 
 const leave = vi.fn();
 
-/** The callback the member's own stream was given. */
-function readerEvent(event: ChatPresenceEvent) {
-  const onEvent = api.joinChatPresenceReader.mock.calls[0]?.[1] as
-    ((event: ChatPresenceEvent) => void) | undefined;
+/** The callback the conversation's channel was given. */
+function channelEvent(conversationId: string, event: ChatPresenceEvent) {
+  const call = api.joinChatPresenceChannel.mock.calls.find((entry) => entry[0] === conversationId);
+  const onEvent = call?.[2] as ((event: ChatPresenceEvent) => void) | undefined;
   act(() => onEvent?.(event));
 }
 
@@ -75,7 +80,9 @@ describe('useChatPresenceList', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     captured = {};
-    api.joinChatPresenceReader.mockReset().mockReturnValue({ leave });
+    api.joinChatPresenceChannel
+      .mockReset()
+      .mockReturnValue({ announce: vi.fn(), stop: vi.fn(), leave });
     leave.mockReset();
   });
 
@@ -83,23 +90,30 @@ describe('useChatPresenceList', () => {
     vi.useRealTimers();
   });
 
-  it('joins the member’s own stream once, whatever the list holds', () => {
+  it('joins one channel per direct, active row', () => {
     render(<Harness threads={[direct('c-1', 'peer-1'), direct('c-2', 'peer-2')]} selfId="me" />);
 
-    expect(api.joinChatPresenceReader).toHaveBeenCalledTimes(1);
-    expect(api.joinChatPresenceReader).toHaveBeenCalledWith('me', expect.any(Function));
+    expect(api.joinChatPresenceChannel).toHaveBeenCalledTimes(2);
+    expect(api.joinChatPresenceChannel).toHaveBeenCalledWith('c-1', 'me', expect.any(Function));
+    expect(api.joinChatPresenceChannel).toHaveBeenCalledWith('c-2', 'me', expect.any(Function));
   });
 
   it('joins nothing while nobody is signed in', () => {
     render(<Harness threads={[direct('c-1', 'peer-1')]} selfId={null} />);
 
-    expect(api.joinChatPresenceReader).not.toHaveBeenCalled();
+    expect(api.joinChatPresenceChannel).not.toHaveBeenCalled();
+  });
+
+  it('does not join a group or a request that is not active', () => {
+    render(<Harness threads={[GROUP, REQUESTED]} selfId="me" />);
+
+    expect(api.joinChatPresenceChannel).not.toHaveBeenCalled();
   });
 
   it('draws the thread a peer event names, and expires it', () => {
     render(<Harness threads={[direct('c-1', 'peer-1')]} selfId="me" />);
 
-    readerEvent({ conversationId: 'c-1', userId: 'peer-1', state: 'typing' });
+    channelEvent('c-1', { conversationId: 'c-1', userId: 'peer-1', state: 'typing' });
     expect(captured).toEqual({ 'c-1': 'typing' });
 
     act(() => vi.advanceTimersByTime(5_000));
@@ -109,7 +123,7 @@ describe('useChatPresenceList', () => {
   it('keeps a recording for its wider window', () => {
     render(<Harness threads={[direct('c-1', 'peer-1')]} selfId="me" />);
 
-    readerEvent({ conversationId: 'c-1', userId: 'peer-1', state: 'recording' });
+    channelEvent('c-1', { conversationId: 'c-1', userId: 'peer-1', state: 'recording' });
     act(() => vi.advanceTimersByTime(5_000));
     expect(captured).toEqual({ 'c-1': 'recording' });
 
@@ -117,12 +131,10 @@ describe('useChatPresenceList', () => {
     expect(captured).toEqual({});
   });
 
-  it('ignores a group, a thread it does not hold, and the wrong member', () => {
-    render(<Harness threads={[direct('c-1', 'peer-1'), GROUP]} selfId="me" />);
+  it('ignores the wrong member’s claim', () => {
+    render(<Harness threads={[direct('c-1', 'peer-1')]} selfId="me" />);
 
-    readerEvent({ conversationId: 'g-1', userId: 'peer-1', state: 'typing' });
-    readerEvent({ conversationId: 'c-9', userId: 'peer-1', state: 'typing' });
-    readerEvent({ conversationId: 'c-1', userId: 'peer-3', state: 'typing' });
+    channelEvent('c-1', { conversationId: 'c-1', userId: 'peer-3', state: 'typing' });
 
     expect(captured).toEqual({});
   });
@@ -130,16 +142,29 @@ describe('useChatPresenceList', () => {
   it('clears a row at once when the peer stops', () => {
     render(<Harness threads={[direct('c-1', 'peer-1')]} selfId="me" />);
 
-    readerEvent({ conversationId: 'c-1', userId: 'peer-1', state: 'typing' });
-    readerEvent({ conversationId: 'c-1', userId: 'peer-1', state: 'stop' });
+    channelEvent('c-1', { conversationId: 'c-1', userId: 'peer-1', state: 'typing' });
+    channelEvent('c-1', { conversationId: 'c-1', userId: 'peer-1', state: 'stop' });
 
     expect(captured).toEqual({});
   });
 
-  it('leaves the stream when the list closes', () => {
-    const view = render(<Harness threads={[direct('c-1', 'peer-1')]} selfId="me" />);
-    view.unmount();
+  it('leaves a row’s channel when the row leaves the list', () => {
+    const view = render(
+      <Harness threads={[direct('c-1', 'peer-1'), direct('c-2', 'peer-2')]} selfId="me" />
+    );
+    leave.mockReset();
+
+    view.rerender(<Harness threads={[direct('c-1', 'peer-1')]} selfId="me" />);
 
     expect(leave).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves every channel when the list closes', () => {
+    const view = render(
+      <Harness threads={[direct('c-1', 'peer-1'), direct('c-2', 'peer-2')]} selfId="me" />
+    );
+    view.unmount();
+
+    expect(leave).toHaveBeenCalledTimes(2);
   });
 });

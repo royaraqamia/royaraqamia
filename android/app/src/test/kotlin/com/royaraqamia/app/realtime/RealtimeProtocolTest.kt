@@ -51,7 +51,7 @@ class RealtimeProtocolTest {
     fun `the presence topic joins private so realtime messages rls decides who may listen`() {
         val wire =
             RealtimeProtocol.join(
-                ChatRealtime.presenceSpec("peer-1"),
+                ChatRealtime.presenceSpec("c-1"),
                 accessToken = "access-1",
                 ref = "2",
             )
@@ -62,7 +62,7 @@ class RealtimeProtocolTest {
                 .jsonObject
 
         assertEquals(
-            "realtime:presence:peer-1",
+            "realtime:presence:c-1",
             json.parseToJsonElement(wire).jsonObject["topic"]!!.jsonPrimitive.content,
         )
         assertEquals(true, config["private"]!!.jsonPrimitive.content.toBoolean())
@@ -84,7 +84,7 @@ class RealtimeProtocolTest {
             )
         val frame = json.parseToJsonElement(wire).jsonObject
 
-        assertEquals("realtime:presence:peer-1", frame["topic"]!!.jsonPrimitive.content)
+        assertEquals("realtime:presence:c-1", frame["topic"]!!.jsonPrimitive.content)
         assertEquals("presence", frame["event"]!!.jsonPrimitive.content)
         assertEquals("7", frame["ref"]!!.jsonPrimitive.content)
         assertEquals("2", frame["join_ref"]!!.jsonPrimitive.content)

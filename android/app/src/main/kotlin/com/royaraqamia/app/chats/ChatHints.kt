@@ -76,14 +76,14 @@ object ChatRealtime {
         )
 
     /**
-     * A member's private presence stream (ADR-0165). The reader joins their own
-     * topic; a peer joins it **write-only**, which the insert policy admits. It
-     * is one subscription for the whole list and the open thread, rather than one
-     * per conversation.
+     * A conversation's private presence topic (ADR-0167). Both members join it:
+     * the same subscription hears the peer and announces the member, because
+     * Realtime authorises a join against the read policy and a write-only
+     * channel is not a shape it admits.
      */
-    fun presenceSpec(userId: String): RealtimeChannelSpec =
+    fun presenceSpec(conversationId: String): RealtimeChannelSpec =
         RealtimeChannelSpec(
-            topic = "presence:$userId",
+            topic = "presence:$conversationId",
             broadcasts = setOf(PRESENCE),
             isPrivate = true,
         )

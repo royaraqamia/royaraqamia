@@ -418,56 +418,43 @@ export function subscribeToChatRoster(conversationId: string, onChange: () => vo
   });
 }
 
-export interface ChatPresenceWriter {
+export interface ChatPresenceChannel {
   /** Say the caller is writing or recording. The throttle is the caller's. */
-  announce: (conversationId: string, state: ChatPresenceState) => void;
+  announce: (state: ChatPresenceState) => void;
   /** Say the state ended, so the indicator goes now rather than on expiry. */
-  stop: (conversationId: string) => void;
+  stop: () => void;
   leave: () => void;
 }
 
 /**
- * The member's own presence stream (ADR-0165).
+ * One conversation's presence, read and written on the same topic (ADR-0167).
  *
- * The reader joins **their own** topic and receives what their peers publish
- * into it; the payload names the conversation, which is what lets one
- * subscription serve the open thread and every row of the list. Nothing here is
- * stored: the topic is private (the policy names the owner for reads and the
- * conversation's other member for writes), and the payload is an identity and a
- * state — never a message (ADR-0113).
+ * Both members join `presence:<conversation id>`: the policy admits an active
+ * member of an active direct thread, and Realtime authorises the join against
+ * the `select` policy, so a write-only subscription is not available. One
+ * channel therefore serves both halves — the member hears the peer and says
+ * what they are doing through the same join.
+ *
+ * Nothing here is stored: the topic carries an identity and a state, never a
+ * message (ADR-0113), and the payload is filtered against the thread the caller
+ * already holds.
  */
-export function joinChatPresenceReader(
+export function joinChatPresenceChannel(
+  conversationId: string,
   selfId: string,
   onEvent: (event: ChatPresenceEvent) => void
-): { leave: () => void } {
+): ChatPresenceChannel {
   const channel = joinBroadcastChannel({
-    topic: chatPresenceTopic(selfId),
+    topic: chatPresenceTopic(conversationId),
     handlers: {
       [CHAT_PRESENCE_EVENTS.presence]: (payload) => {
         const event = chatPresenceEventOf(payload, selfId);
-        if (event) onEvent(event);
+        if (event && event.conversationId === conversationId) onEvent(event);
       },
     },
   });
 
-  return { leave: channel.leave };
-}
-
-/**
- * The peer's presence stream, joined for **writing only**.
- *
- * Realtime admits a private channel with at least one read or write permission,
- * and the insert policy is what admits this join; the peer's select policy does
- * not name the caller, so nothing written here is echoed back. A peer id is a
- * counterpart the thread already knows — never a value typed by the caller.
- */
-export function joinChatPresenceWriter(peerId: string, selfId: string): ChatPresenceWriter {
-  const channel = joinBroadcastChannel({
-    topic: chatPresenceTopic(peerId),
-    handlers: {},
-  });
-
-  const publish = (conversationId: string, state: ChatPresenceEvent['state']) => {
+  const publish = (state: ChatPresenceEvent['state']) => {
     channel.send(CHAT_PRESENCE_EVENTS.presence, {
       conversationId,
       userId: selfId,
@@ -476,8 +463,8 @@ export function joinChatPresenceWriter(peerId: string, selfId: string): ChatPres
   };
 
   return {
-    announce: (conversationId, state) => publish(conversationId, state),
-    stop: (conversationId) => publish(conversationId, 'stop'),
+    announce: (state) => publish(state),
+    stop: () => publish('stop'),
     leave: channel.leave,
   };
 }
