@@ -23,8 +23,23 @@ export function createFollowsService(supabase?: SupabaseClient<Database>): Follo
   return new FollowsService({
     follows: createFollowsRepository(client),
     users: createPublicUsersRepository(client),
-    notify: createAdminNotificationProducer(),
+    notify: getNotificationProducer(),
     checkRateLimit: (key, limit, windowMs) =>
       checkRateLimit(key, limit, windowMs, { failClosed: true }),
   });
+}
+
+/**
+ * The fail-safe producer, built once per process.
+ *
+ * `createAdminNotificationProducer()` builds the web-push and FCM services, and
+ * this factory runs on every feed render (the following count) as well as on
+ * every follow. Constructing a notifier per request was pure overhead on a
+ * surface that usually sends nothing.
+ */
+let producer: ReturnType<typeof createAdminNotificationProducer> | null = null;
+
+function getNotificationProducer(): ReturnType<typeof createAdminNotificationProducer> {
+  producer ??= createAdminNotificationProducer();
+  return producer;
 }

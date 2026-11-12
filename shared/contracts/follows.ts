@@ -83,24 +83,6 @@ export const FollowListQuerySchema = z.object({
 });
 
 /**
- * One read for a list of members' states: the roster rail draws a control per
- * row, and a state read per row is what makes the rail cost more than the feed.
- * Fifty is the roster's own cap, so the ceiling is the surface's size rather
- * than an arbitrary limit.
- */
-export const FollowStateIdsSchema = z
-  .string()
-  .transform((value) => value.split(',').filter(Boolean))
-  .pipe(z.array(z.string().uuid()).min(1).max(50));
-
-export const FollowStatesResponseSchema = z.object({
-  success: z.boolean(),
-  states: z.record(z.string(), FollowStateSchema),
-});
-
-export type FollowStatesResponse = z.infer<typeof FollowStatesResponseSchema>;
-
-/**
  * How many follows one member may write in a minute.
  *
  * Not a product cap: this directory is small, and a total ceiling would either

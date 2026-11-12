@@ -1,54 +1,40 @@
 'use client';
 
 import Link from 'next/link';
-import { useSession } from '@/frontend/state/session-provider';
-import { useFollowSnapshot } from '@/frontend/shared/follow-state-store';
+import type { FollowCounts } from '@/shared/contracts/follows';
+import { useFollowCounts } from '@/frontend/shared/follow-live';
 import { followCountLabel } from './follow-copy';
 
 interface FollowCountsBarProps {
   username: string;
+  /** The server's numbers: this line is part of the document, not a later read. */
+  counts: FollowCounts;
+  /** Only the owner's numbers are links; everyone else reads the same figures. */
+  isOwner: boolean;
 }
 
 /**
  * The two numbers under a profile's handle: «3 متابعين · متابَع واحد».
  *
- * The numbers are public; the lists are not. So a visitor sees the same figures
- * as the owner and nothing to press, while the owner's own numbers are links to
- * the two lists - which is the whole of "public counts, private lists" in one
- * component.
+ * Public counts, private lists: a visitor sees the figures and nothing to press,
+ * the owner's own numbers open the lists. Which of the two this is decided on the
+ * server, because the page is rendered for the viewer who asked.
  *
- * Ownership is decided here, from the session, because the page is a prerendered
- * document shared by every visitor: the server cannot bake "you" into it. The
- * figures themselves come from the same read the follow button uses, so the
- * header costs one request rather than one per control.
+ * After a press the number comes from the write's own answer
+ * (`follow-live.ts`), so following someone updates the line without a refresh.
  */
-export function FollowCountsBar({ username }: FollowCountsBarProps) {
-  const { user, profileUsername } = useSession();
-  const snapshot = useFollowSnapshot(username);
-
-  const isOwner = Boolean(user && profileUsername && profileUsername === username);
-
-  if (!snapshot) {
-    return (
-      <p
-        data-visual="profile-follow-counts"
-        className="mt-2 flex items-center justify-center gap-2"
-        aria-hidden="true"
-      >
-        <span className="h-4 w-24 animate-pulse rounded-full bg-muted/40" />
-      </p>
-    );
-  }
+export function FollowCountsBar({ username, counts, isOwner }: FollowCountsBarProps) {
+  const live = useFollowCounts(username, counts);
 
   const stats: Array<{ key: 'follower' | 'following'; label: string; href: string }> = [
     {
       key: 'follower',
-      label: followCountLabel(snapshot.counts.followers, 'follower'),
+      label: followCountLabel(live.followers, 'follower'),
       href: `/u/${encodeURIComponent(username)}/followers`,
     },
     {
       key: 'following',
-      label: followCountLabel(snapshot.counts.following, 'following'),
+      label: followCountLabel(live.following, 'following'),
       href: `/u/${encodeURIComponent(username)}/following`,
     },
   ];
@@ -73,8 +59,6 @@ export function FollowCountsBar({ username }: FollowCountsBarProps) {
               {stat.label}
             </Link>
           ) : (
-            // Not a link for anyone else: the list is private, so a control that
-            // cannot open anything would be a lie.
             <span>{stat.label}</span>
           )}
         </span>

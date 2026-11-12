@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { loadFollowingFeed } from '@/backend/loaders/following-feed';
+import { loadFollowingFeed, resolveFollowingSession } from '@/backend/loaders/following-feed';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { communitySearchRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { getClientIp } from '@/backend/transport/http';
@@ -43,7 +43,9 @@ export async function GET(request: NextRequest) {
   });
   if (rateLimited) return toNextResponse(rateLimited);
 
+  const session = await resolveFollowingSession();
   const { posts, nextCursor, signedIn } = await loadFollowingFeed(
+    session,
     parsed.data.cursor,
     parsed.data.q,
     COMMUNITY_PAGE_SIZE
