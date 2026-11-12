@@ -78,5 +78,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Strip pills fade their border and background over 200ms and settle 5% smaller on press; the service sheet opens over the page and its rows fade their colour on hover. The same means the same colour transitions and the same open sheet position; loading the sheet is a pulse skeleton.",
+    "entries": []
+  }
 }

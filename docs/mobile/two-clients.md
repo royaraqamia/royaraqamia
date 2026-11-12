@@ -147,8 +147,12 @@ narrower route to read.
   captures. A port outside the gate is not compared at all — which is the state of
   every port today, because they are switched off ([ADR-0117](../adr/0117-the-document-is-the-app-until-a-port-is-the-same-screen.md)).
   What the gate still cannot see is motion: a transition, a scroll behaviour or a
-  gesture that differs between the two clients is invisible to a still frame, and
-  the contract names boxes, not timelines.
+  gesture that differs between the two clients is invisible to a still frame.
+  Each contract now carries a `motion` section beside its states — `notes` saying
+  what the surface's motion is, or why it has none, and `entries` naming an
+  optional element, the gesture that starts the movement, what moves, and what
+  "the same" means for it. `check:visual` requires the section and its shape; the
+  entries themselves are compared by hand against the page (#970).
 - **Where the app's chrome is the site's chrome.** The gaps this list used to carry are closed:
   the services sheet lists the same eleven apps as the site, in the site's order (the drag and its
   device key were retired with the homepage strip, ADR-0146), and the top bar draws the site's

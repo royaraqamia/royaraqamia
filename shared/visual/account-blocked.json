@@ -97,5 +97,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The blocked list is still. The Unblock control fades its border and background on hover and dims while disabled; the same means the same 150ms colour transition, with no travel and no layout change. Loading is a spinner.",
+    "entries": []
+  }
 }

@@ -39,5 +39,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Category rows lift and scale their colour dot on hover, and their actions fade in; the create dialog fades and zooms in. The same means the same 200-300ms lift, dot scale and entrance, with reduced motion dropping the travel.",
+    "entries": []
+  }
 }

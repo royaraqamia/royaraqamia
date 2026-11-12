@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inflateSync } from 'node:zlib';
@@ -421,6 +421,51 @@ export function validateContract(contract, surface) {
   return errors;
 }
 
+/**
+ * The motion section (#903): the decision a still frame cannot measure. Every
+ * contract carries one, even when the answer is "nothing moves", and every entry
+ * names the gesture, what moves and what "the same" means; an entry may also name
+ * the element the movement belongs to. The gate checks that decision exists and
+ * has the fields the backfill needs; it cannot check the movement itself, which
+ * is compared by hand against the page (#970).
+ */
+export function validateMotion(contract, file) {
+  const errors = [];
+  const motion = contract?.motion;
+  if (!motion || typeof motion !== 'object' || Array.isArray(motion)) {
+    return [`${file}: no motion section`];
+  }
+
+  const saysSomething = (value) => typeof value === 'string' && value.trim().length > 0;
+
+  if (!saysSomething(motion.notes)) {
+    errors.push(`${file}: motion.notes says what the surface's motion is, or why it has none`);
+  }
+
+  if (!Array.isArray(motion.entries)) {
+    errors.push(`${file}: motion.entries is a list`);
+    return errors;
+  }
+
+  motion.entries.forEach((entry, index) => {
+    const where = `${file}: motion.entries[${index}]`;
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      errors.push(`${where} is an object`);
+      return;
+    }
+    for (const field of ['gesture', 'moves', 'same']) {
+      if (!saysSomething(entry[field])) {
+        errors.push(`${where}.${field} is a non-empty string`);
+      }
+    }
+    if (entry.element !== undefined && !saysSomething(entry.element)) {
+      errors.push(`${where}.element is a non-empty string when it is present`);
+    }
+  });
+
+  return errors;
+}
+
 /** Where one state's evidence lives. */
 export function evidenceFiles(surface, state, root = EVIDENCE) {
   const dir = join(root, surface, state);
@@ -443,10 +488,46 @@ function readContract({ id, entry, errors, repoRoot }) {
   try {
     const contract = JSON.parse(readFileSync(contractPath, 'utf8'));
     for (const problem of validateContract(contract, id)) errors.push(problem);
+    for (const problem of validateMotion(contract, entry.contract)) errors.push(problem);
     return contract;
   } catch (error) {
     errors.push(`"${id}": ${entry.contract} is not JSON (${error.message})`);
     return null;
+  }
+}
+
+/**
+ * Every contract file carries the motion decision, not only the ones the gate
+ * measures yet (#903). A surface can be declared in `shared/visual` before it is
+ * under the gate, and the rule is the same for it: no motion section, no green
+ * check. Files the gate already read are skipped so the failure is reported once.
+ */
+function checkEveryContractMotion({ gate, errors, repoRoot }) {
+  const dir = join(repoRoot, 'shared', 'visual');
+  if (!existsSync(dir)) return;
+
+  const alreadyRead = new Set(
+    [...(gate.surfaces ?? []), ...(gate.frame ? [gate.frame] : [])]
+      .map((entry) => entry?.contract)
+      .filter((contract) => typeof contract === 'string')
+      .map((contract) => resolve(repoRoot, contract))
+  );
+
+  for (const name of readdirSync(dir).sort()) {
+    if (!name.endsWith('.json')) continue;
+    const path = join(dir, name);
+    if (alreadyRead.has(resolve(path))) continue;
+
+    let contract;
+    try {
+      contract = JSON.parse(readFileSync(path, 'utf8'));
+    } catch (error) {
+      errors.push(`${relative(repoRoot, path)} is not JSON (${error.message})`);
+      continue;
+    }
+    for (const problem of validateMotion(contract, relative(repoRoot, path))) {
+      errors.push(problem);
+    }
   }
 }
 
@@ -698,6 +779,8 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
       );
     }
   }
+
+  checkEveryContractMotion({ gate, errors, repoRoot });
 
   return errors;
 }

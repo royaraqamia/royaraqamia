@@ -73,8 +73,10 @@ npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --
 - `npm run check:visual` — the gate a native port passes before it is switched on (ADR-0118): the
   layout contract and the raster of `docs/mobile/visual-gate.json`'s surfaces, compared against the
   evidence in `e2e/__visual__/`. A surface switched on in `docs/mobile/screens.json` without a
-  passing pair fails here. `npm run visual:capture` records the page side of every gated surface at
-  the app's viewport (393 x 852, DPR 2.75, Arabic, dark); the app's own Robolectric test writes the
+  passing pair fails here. Every contract in `shared/visual` must also carry a `motion` section (what
+  moves, on which gesture, and what "the same" means for it, or why nothing moves); a contract without
+  one fails and is named. `npm run visual:capture` records the page side of every gated surface at the
+  app's viewport (393 x 852, DPR 2.75, Arabic, dark); the app's own Robolectric test writes the
   screen side. The capture signs in as the gate's own fixture account (`E2E_VISUAL_EMAIL` /
   `E2E_VISUAL_PASSWORD`), never the offline suite's shared account, and provisions it first with
   `e2e/setup-test-user.ts --visual --reset` (or `npm run visual:account` on its own). Without the

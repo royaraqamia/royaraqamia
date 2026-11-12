@@ -60,5 +60,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Ayah cards fade their border and background on hover or focus, and the player bar progress fills over 300ms. The same means the same colour transition and the same progress width, with reduced motion jumping to the new width.",
+    "entries": []
+  }
 }

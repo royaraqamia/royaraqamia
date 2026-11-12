@@ -11,8 +11,9 @@ drawer is a Compose sheet the page never draws, which is the failure ADR-0117 ex
 
 - **A surface declares states, and each state is measured.** `shared/visual/<surface>.json` carries a
   `states` array; each state names its own elements, its own `origin` and its own `capture` region.
-  `docs/mobile/visual-gate.json` carries the matching list with a tolerance and a recorded baseline per
-  state. Evidence moves to `e2e/__visual__/<surface>/<state>/`.
+  Beside it the contract carries the `motion` section (#903), so what a still frame cannot show is at
+  least written down. `docs/mobile/visual-gate.json` carries the matching list with a tolerance and a
+  recorded baseline per state. Evidence moves to `e2e/__visual__/<surface>/<state>/`.
 - **The two lists must agree, by name.** A state the contract describes and the gate does not measure is
   a screen nobody checked; a state the gate measures with no contract is a number with nothing behind
   it. `check:visual` refuses either direction, so adding a state is one change in two files.

@@ -77,5 +77,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Story cards fade their border and the source link colour on hover; the day strip and the rest of the digest are still. The same means the same colour transition, with no travel.",
+    "entries": []
+  }
 }

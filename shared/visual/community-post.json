@@ -60,5 +60,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The cover image scales to 1.02 over 700ms ease-out on hover; the same means the same scale and duration, and reduced motion drops the scale. The body itself is still.",
+    "entries": []
+  }
 }

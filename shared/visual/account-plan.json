@@ -70,5 +70,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The plan card is still. Loading is a two-block pulse skeleton; the only other motion is the page route transition and the browser focus ring.",
+    "entries": []
+  }
 }

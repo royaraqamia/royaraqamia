@@ -90,5 +90,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The code page header and body sections stagger in, and the seal springs from 90% to 100% scale when the certificate is found. The same means the same stagger and spring, with reduced motion showing the final state.",
+    "entries": []
+  }
 }

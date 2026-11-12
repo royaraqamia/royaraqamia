@@ -75,5 +75,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The fixed top bar slides away and returns and settles between 64px and 80px as the page scrolls, over 300ms with the site cubic-bezier; tabs and their icons scale to 1.05 on hover or selection. The same means the same travel, height and 200-300ms easing, with reduced motion removing the transition.",
+    "entries": []
+  }
 }
