@@ -94,6 +94,7 @@ export function ChatComposer({
   onRemoveFile,
   onRecorded,
   onRecordingChange,
+  maxDurationMs = VOICE_NOTE_MAX_MS,
   disabled,
   placeholder,
   ariaLabel,
@@ -117,6 +118,11 @@ export function ChatComposer({
   onRecorded: (file: File) => void;
   /** The microphone opened or closed, so the thread can announce it. */
   onRecordingChange?: (recording: boolean) => void;
+  /**
+   * The longest note this member's allowance can carry, so the recorder stops
+   * and sends before the composer would refuse the file.
+   */
+  maxDurationMs?: number;
   disabled: boolean;
   placeholder: string;
   ariaLabel: string;
@@ -184,15 +190,15 @@ export function ChatComposer({
   useEffect(() => () => endTracking.current?.(), []);
 
   // The cap ends the capture by itself, and the note is still sent: someone who
-  // kept talking past five minutes gets their words, not a discarded clip.
+  // kept talking past the allowance gets their words, not a discarded clip.
   useEffect(() => {
-    if (!recorder.isRecording || recorder.elapsedMs < VOICE_NOTE_MAX_MS) return;
+    if (!recorder.isRecording || recorder.elapsedMs < maxDurationMs) return;
     toast.info(VOICE_COPY.limitReached, { id: 'chat-composer-limit' });
     void finish();
     // `finish` reads the recorder's current capture; the elapsed guard above is
     // what keeps this from re-running on every tick.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recorder.elapsedMs, recorder.isRecording]);
+  }, [maxDurationMs, recorder.elapsedMs, recorder.isRecording]);
 
   async function finish() {
     const clip = await recorder.stop();
