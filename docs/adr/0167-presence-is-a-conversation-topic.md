@@ -20,7 +20,7 @@ correct all along: a service-role broadcast into the recipient's topic drew «ي
    doing. This is the unit the state belongs to, and it is the shape both WhatsApp and Telegram have —
    a chat's typing line belongs to that chat.
 2. **One policy for both directions: an active member of an active direct thread.**
-   `20261126100000_chat_presence_per_thread.sql` adds `private.chat_presence_thread(topic)` and
+   `20261126120000_chat_presence_per_thread.sql` adds `private.chat_presence_thread(topic)` and
    `private.chat_can_hear_presence(thread, member)`, and grants `select` and `insert` on exactly that
    predicate. A stranger, a refused request, an archived thread or a blocked pair can neither join nor
    send. Nothing beyond the pair is exposed, which is the property the per-member stream was trying to
