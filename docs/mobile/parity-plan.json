@@ -73,7 +73,8 @@
     {
       "surface": "community-post",
       "phase": "public-content",
-      "state": "todo"
+      "state": "todo",
+      "issue": "#1351"
     },
     {
       "surface": "profile",

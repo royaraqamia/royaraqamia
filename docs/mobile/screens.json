@@ -77,7 +77,7 @@
     {
       "surface": "account-posts",
       "native": null,
-      "reason": "The account's post management page is web-only in this phase; it arrives with the native account surface (#658)."
+      "reason": "The account's post management page is web-only in this phase; it arrives with the native account surface, and the plan lists it as `todo` with no ticket of its own (#882)."
     },
     {
       "surface": "account-submissions",
