@@ -1,5 +1,6 @@
 import { getAdminSupabase } from '@/backend/config/supabase';
 import type { Database, Json } from '@/backend/models/database.types';
+import type { McpAuthMode } from '@/backend/shared/domain/mcp-remote';
 import { catalogSearchPattern, decodeCatalogCursor, encodeCatalogCursor } from './catalog-cursor';
 
 /**
@@ -51,6 +52,13 @@ export interface McpCatalogServerRecord {
   icon_override: string | null;
   /** The admin's vouch; a row without one is not in the store. */
   verified_at: string | null;
+  /** How the row is linked (#1269); an admin's decision the sync never writes. */
+  auth_mode: string;
+  /** What the last probe measured, or `null` when it could not tell. */
+  probe_auth_mode: string | null;
+  /** Where an `api_key` row's key goes, and the scheme it is prefixed with. */
+  api_key_header: string | null;
+  api_key_prefix: string | null;
   /** The measured verdict; `null` is "nobody has asked yet". */
   connectable: boolean | null;
   connectable_reason: string | null;
@@ -97,6 +105,11 @@ export interface McpCatalogListRow {
   verified_at: string | null;
   blocked_at: string | null;
   blocked_reason: string | null;
+  /** How the row is linked (#1269), and what the probe measured beside it. */
+  auth_mode: string;
+  probe_auth_mode: string | null;
+  api_key_header: string | null;
+  api_key_prefix: string | null;
   connectable: boolean | null;
   connectable_reason: string | null;
   probed_at: string | null;
@@ -104,12 +117,14 @@ export interface McpCatalogListRow {
   raw?: Json | null;
 }
 
-/** What a probe needs: the address, and whether the verdict is due. */
+/** What a probe needs: the address, the mode it measures in, and whether the verdict is due. */
 export interface McpCatalogAddressRecord {
   registry_name: string;
   remote_url: string;
   /** The address the admin chose, when it differs from the registry's. */
   remote_override: string | null;
+  /** The mode the probe measures in (#1269). */
+  auth_mode: string;
   probed_at: string | null;
   blocked_at: string | null;
   status: string;
@@ -158,15 +173,14 @@ export interface McpCatalogEventRecord {
 
 /** The columns a list selects; one list, two audiences. */
 const CATALOG_LIST_COLUMNS =
-  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at';
+  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, featured_rank, verified_at, blocked_at, blocked_reason, auth_mode, probe_auth_mode, api_key_header, api_key_prefix, connectable, connectable_reason, probed_at';
 
 /**
  * The Admin Console also picks a remote out of the registry document, so it is
  * the only list that selects `raw`; a member's page already pays for the rows
  * it draws and does not need a second copy of the registry's own JSON.
  */
-const CATALOG_ADMIN_LIST_COLUMNS =
-  'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, featured_rank, verified_at, blocked_at, blocked_reason, connectable, connectable_reason, probed_at, raw';
+const CATALOG_ADMIN_LIST_COLUMNS = `${CATALOG_LIST_COLUMNS}, raw`;
 
 /**
  * PostgREST takes the rows in the body and the names in the URL, so both are
@@ -216,6 +230,8 @@ export interface McpConnectionRecord {
   enabled: boolean;
   permission_level: McpPermissionLevel;
   status: McpConnectionStatus;
+  /** How this connection authenticates (#1269), fixed when it was made. */
+  auth_mode: McpAuthMode;
   tool_count: number;
   connected_at: string;
   last_used_at: string | null;
@@ -225,17 +241,22 @@ export interface McpConnectionRecord {
 
 export interface McpConnectionCredentialsRecord {
   connection_id: string;
-  authorization_server: string;
-  token_endpoint: string;
-  registration_kind: 'dcr' | 'static';
-  client_id: string;
+  /** The OAuth half: all `null` on a connection that holds a key instead. */
+  authorization_server: string | null;
+  token_endpoint: string | null;
+  registration_kind: 'dcr' | 'static' | null;
+  client_id: string | null;
   client_secret_enc: string | null;
-  access_token_enc: string;
+  access_token_enc: string | null;
   refresh_token_enc: string | null;
   scope: string | null;
   expires_at: string | null;
   issued_at: string;
   metadata: Json | null;
+  /** The key half (#1269): the ciphertext and the header it belongs in. */
+  api_key_enc: string | null;
+  api_key_header: string | null;
+  api_key_prefix: string | null;
   /** The caller spending the refresh token, or `null` when nobody is. */
   refresh_claimed_at: string | null;
 }
@@ -373,6 +394,8 @@ export interface McpMarketplaceRepository {
     probe: {
       connectable: boolean;
       reason: string | null;
+      /** What the probe measured, beside the mode the row carries (#1269). */
+      authMode: string | null;
       probedAt: string;
       iconUrl: string | null;
       iconMime: string | null;
@@ -393,9 +416,13 @@ export interface McpMarketplaceRepository {
       title_override: string | null;
       icon_override: string | null;
       remote_override: string | null;
+      auth_mode: McpAuthMode;
+      api_key_header: string | null;
+      api_key_prefix: string | null;
       connectable: boolean | null;
       connectable_reason: string | null;
       probed_at: string | null;
+      probe_auth_mode: string | null;
       probe_icon_url: string | null;
       probe_icon_mime: string | null;
     }>
@@ -459,6 +486,8 @@ export interface McpMarketplaceRepository {
     registryName: string;
     serverUrl: string;
     displayName: string | null;
+    /** How the connection authenticates (#1269); it never changes afterwards. */
+    authMode: McpAuthMode;
   }): Promise<McpConnectionRecord>;
   updateConnection(
     connectionId: string,
@@ -466,6 +495,8 @@ export interface McpMarketplaceRepository {
       display_name: string | null;
       enabled: boolean;
       permission_level: McpPermissionLevel;
+      /** Set only when a re-link follows a catalogue row that moved auth mode. */
+      auth_mode: McpAuthMode;
       status: McpConnectionStatus;
       tool_count: number;
       last_used_at: string;
@@ -489,6 +520,21 @@ export interface McpMarketplaceRepository {
     metadata: Json | null;
   }): Promise<void>;
   getCredentials(connectionId: string): Promise<McpConnectionCredentialsRecord | null>;
+
+  /**
+   * Writes the key a member pasted and the header it belongs in (#1269),
+   * replacing whatever the connection held. The row is upserted like a token
+   * write: one credential per connection, and a re-entry is a replacement.
+   */
+  saveApiKey(input: {
+    connectionId: string;
+    apiKeyEnc: string;
+    header: string;
+    prefix: string | null;
+  }): Promise<void>;
+
+  /** Forgets the credential a connection holds; used when a row becomes no-auth. */
+  deleteCredentials(connectionId: string): Promise<void>;
 
   /**
    * Claims the right to spend one refresh token, atomically.
@@ -601,7 +647,7 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
         .select(
-          'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, blocked_at, blocked_reason, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, verified_at, connectable, connectable_reason, probed_at'
+          'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, blocked_at, blocked_reason, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, verified_at, auth_mode, probe_auth_mode, api_key_header, api_key_prefix, connectable, connectable_reason, probed_at'
         )
         .eq('registry_name', registryName)
         .maybeSingle();
@@ -788,7 +834,9 @@ export function createMcpMarketplaceRepository(
     async listVerifiedAddresses(limit) {
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
-        .select('registry_name, remote_url, remote_override, probed_at, blocked_at, status')
+        .select(
+          'registry_name, remote_url, remote_override, auth_mode, probed_at, blocked_at, status'
+        )
         .eq('status', 'active')
         .is('blocked_at', null)
         .not('verified_at', 'is', null)
@@ -805,7 +853,9 @@ export function createMcpMarketplaceRepository(
       for (const batch of chunk(registryNames, CATALOG_LOOKUP_BATCH)) {
         const { data, error } = await supabase
           .from(CATALOG_TABLE)
-          .select('registry_name, remote_url, remote_override, probed_at, blocked_at, status')
+          .select(
+            'registry_name, remote_url, remote_override, auth_mode, probed_at, blocked_at, status'
+          )
           .in('registry_name', batch);
         if (error) throw error;
         found.push(...((data ?? []) as McpCatalogAddressRecord[]));
@@ -821,7 +871,7 @@ export function createMcpMarketplaceRepository(
       const { data, error } = await supabase
         .from(CATALOG_TABLE)
         .select(
-          'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, verified_at, connectable, connectable_reason, probed_at, icon_override, probe_icon_url, registry_icon_url'
+          'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, verified_at, auth_mode, probe_auth_mode, connectable, connectable_reason, probed_at, icon_override, probe_icon_url, registry_icon_url'
         )
         .eq('status', 'active')
         .is('blocked_at', null)
@@ -887,6 +937,7 @@ export function createMcpMarketplaceRepository(
         .update({
           connectable: probe.connectable,
           connectable_reason: probe.reason,
+          probe_auth_mode: probe.authMode,
           probed_at: probe.probedAt,
           // Always written, including `null`: a server that stopped publishing
           // a mark should fall back to the registry's icon, not keep a stale one.
@@ -1050,7 +1101,7 @@ export function createMcpMarketplaceRepository(
       return (data ?? []).length > 0;
     },
 
-    async createConnection({ userId, registryName, serverUrl, displayName }) {
+    async createConnection({ userId, registryName, serverUrl, displayName, authMode }) {
       const { data, error } = await supabase
         .from(CONNECTIONS_TABLE)
         .insert({
@@ -1058,6 +1109,7 @@ export function createMcpMarketplaceRepository(
           registry_name: registryName,
           server_url: serverUrl,
           display_name: displayName,
+          auth_mode: authMode,
         })
         .select()
         .single();
@@ -1084,6 +1136,11 @@ export function createMcpMarketplaceRepository(
           scope: input.scope,
           expires_at: input.expiresAt,
           metadata: input.metadata,
+          // One credential per connection: a consent replaces a key the row may
+          // have held, and vice versa (`saveApiKey` clears the other half).
+          api_key_enc: null,
+          api_key_header: null,
+          api_key_prefix: null,
           issued_at: new Date().toISOString(),
           // The write that replaces the tokens is also the release of the
           // claim: whoever claimed the refresh is done with it either way, and
@@ -1104,6 +1161,40 @@ export function createMcpMarketplaceRepository(
         .maybeSingle();
       if (error) throw error;
       return (data as McpConnectionCredentialsRecord | null) ?? null;
+    },
+
+    async saveApiKey({ connectionId, apiKeyEnc, header, prefix }) {
+      const { error } = await supabase.from(CREDENTIALS_TABLE).upsert(
+        {
+          connection_id: connectionId,
+          api_key_enc: apiKeyEnc,
+          api_key_header: header,
+          api_key_prefix: prefix,
+          // A key replaces any OAuth half the row held, and vice versa: one
+          // credential per connection, never a mixture of two modes.
+          authorization_server: null,
+          token_endpoint: null,
+          registration_kind: null,
+          client_id: null,
+          client_secret_enc: null,
+          access_token_enc: null,
+          refresh_token_enc: null,
+          scope: null,
+          expires_at: null,
+          metadata: null,
+          refresh_claimed_at: null,
+        },
+        { onConflict: 'connection_id' }
+      );
+      if (error) throw error;
+    },
+
+    async deleteCredentials(connectionId) {
+      const { error } = await supabase
+        .from(CREDENTIALS_TABLE)
+        .delete()
+        .eq('connection_id', connectionId);
+      if (error) throw error;
     },
 
     async claimRefresh(connectionId, now, staleBefore) {

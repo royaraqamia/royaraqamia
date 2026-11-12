@@ -41,6 +41,10 @@ function row(overrides: Partial<McpCatalogListRow> = {}): McpCatalogListRow {
     verified_at: null,
     blocked_at: null,
     blocked_reason: null,
+    auth_mode: 'oauth',
+    probe_auth_mode: null,
+    api_key_header: null,
+    api_key_prefix: null,
     connectable: true,
     connectable_reason: null,
     probed_at: NOW.toISOString(),
@@ -210,6 +214,7 @@ describe('a publish', () => {
     expect(saveCatalogProbe).toHaveBeenCalledWith('com.github/mcp', {
       connectable: true,
       reason: null,
+      authMode: null,
       probedAt: NOW.toISOString(),
       iconUrl: 'https://github.com/logo.svg',
       iconMime: 'image/svg+xml',

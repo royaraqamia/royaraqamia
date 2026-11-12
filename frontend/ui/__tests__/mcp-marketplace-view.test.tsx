@@ -10,6 +10,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/frontend/api/mcp-connections', () => mocks);
 vi.mock('@/frontend/api/mcp-catalog', () => mocks);
 
+const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => router,
+}));
+
 const session = vi.hoisted(() => ({ useSession: vi.fn() }));
 
 vi.mock('@/frontend/state/session-provider', () => session);
@@ -23,6 +29,7 @@ const SUPABASE = {
   displayName: 'Supabase',
   enabled: true,
   permissionLevel: 'all',
+  authMode: 'oauth',
   status: 'active',
   toolCount: 36,
   connectedAt: '2026-11-10T10:43:34.000Z',
@@ -37,6 +44,8 @@ const CATALOGUE = {
       title: 'Supabase',
       description: 'MCP server for interacting with the Supabase platform',
       nameAr: null,
+      authMode: 'oauth',
+      probeAuthMode: 'oauth',
       connectable: true,
       connectableReason: null,
       publishedAt: null,
@@ -47,6 +56,8 @@ const CATALOGUE = {
       title: 'Snag',
       description: 'A server the member has not connected',
       nameAr: null,
+      authMode: 'oauth',
+      probeAuthMode: null,
       connectable: null,
       connectableReason: null,
       publishedAt: null,
@@ -91,7 +102,10 @@ describe('McpMarketplaceView — the catalogue row', () => {
 
 describe('McpMarketplaceView — the ask before the consent (#1230)', () => {
   it('names the permissions we will request, in the member’s language', async () => {
-    mocks.startMcpConnection.mockResolvedValue({ authorizeUrl: 'https://auth.example/go' });
+    mocks.startMcpConnection.mockResolvedValue({
+      kind: 'authorize',
+      authorizeUrl: 'https://auth.example/go',
+    });
 
     render(<McpMarketplaceView tab="external" connect={null} />);
 
@@ -163,5 +177,90 @@ describe('McpMarketplaceView — the search state', () => {
 
     expect(await screen.findByText('جاري تحديث القائمة...')).toBeInTheDocument();
     third.release();
+  });
+});
+
+/**
+ * The two modes that never leave the site (#1269): a row that needs no account
+ * links from the same dialog, and a key row asks for the key there rather than
+ * sending the member to a consent screen that does not exist.
+ */
+describe('linking a row that does not use OAuth (#1269)', () => {
+  const NO_AUTH = {
+    ...CATALOGUE.servers[1],
+    registryName: 'com.cloudflare.mcp/docs',
+    title: 'Cloudflare Docs',
+    authMode: 'none',
+    probeAuthMode: 'none',
+    requestedScopes: [],
+  };
+
+  const KEYED = {
+    ...CATALOGUE.servers[1],
+    registryName: 'com.postman/mcp',
+    title: 'Postman',
+    authMode: 'api_key',
+    probeAuthMode: 'oauth',
+    requestedScopes: [],
+  };
+
+  it('links a no-auth row without a consent screen, and opens its screen', async () => {
+    mocks.searchMcpCatalog.mockResolvedValue({ servers: [NO_AUTH], nextCursor: null });
+    mocks.startMcpConnection.mockResolvedValue({
+      kind: 'connected',
+      connectionId: 'connection-9',
+    });
+
+    render(<McpMarketplaceView tab="external" connect={null} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'ربط' }));
+    expect(
+      await screen.findByText('هذا التطبيق لا يحتاج حساباً ولا مفتاحاً: نور يستدعي أدواته مباشرة.')
+    ).toBeInTheDocument();
+
+    const confirms = screen.getAllByRole('button', { name: 'ربط' });
+    fireEvent.click(confirms[confirms.length - 1]!);
+
+    await waitFor(() =>
+      expect(mocks.startMcpConnection).toHaveBeenCalledWith('com.cloudflare.mcp/docs')
+    );
+    expect(router.push).toHaveBeenCalledWith('/mcp/apps/connection-9?connect=done');
+  });
+
+  it('asks for the key before linking an api_key row, and sends it once', async () => {
+    mocks.searchMcpCatalog.mockResolvedValue({ servers: [KEYED], nextCursor: null });
+    mocks.startMcpConnection.mockResolvedValue({
+      kind: 'connected',
+      connectionId: 'connection-8',
+    });
+
+    render(<McpMarketplaceView tab="external" connect={null} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'ربط' }));
+
+    const input = await screen.findByLabelText('المفتاح');
+    fireEvent.change(input, { target: { value: 'pm-live-1' } });
+
+    const confirms = screen.getAllByRole('button', { name: 'ربط' });
+    fireEvent.click(confirms[confirms.length - 1]!);
+
+    await waitFor(() =>
+      expect(mocks.startMcpConnection).toHaveBeenCalledWith('com.postman/mcp', {
+        apiKey: 'pm-live-1',
+      })
+    );
+  });
+
+  it('does not send an empty key', async () => {
+    mocks.searchMcpCatalog.mockResolvedValue({ servers: [KEYED], nextCursor: null });
+
+    render(<McpMarketplaceView tab="external" connect={null} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'ربط' }));
+    const confirms = screen.getAllByRole('button', { name: 'ربط' });
+    fireEvent.click(confirms[confirms.length - 1]!);
+
+    expect(await screen.findByText('أدخل المفتاح أولاً.')).toBeInTheDocument();
+    expect(mocks.startMcpConnection).not.toHaveBeenCalled();
   });
 });

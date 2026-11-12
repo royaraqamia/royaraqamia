@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   updateMcpConnection: vi.fn(),
   disconnectMcpConnection: vi.fn(),
   setMcpConnectionTool: vi.fn(),
+  replaceMcpConnectionKey: vi.fn(),
 }));
 
 vi.mock('@/frontend/api/mcp-connections', () => mocks);
@@ -31,6 +32,7 @@ const DEAD_GRANT = {
   displayName: 'Notion',
   enabled: true,
   permissionLevel: 'ask',
+  authMode: 'oauth',
   status: 'needs_reauth',
   toolCount: 0,
   connectedAt: '2026-11-21T10:00:00.000Z',
@@ -44,6 +46,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.getMcpConnection.mockResolvedValue(DEAD_GRANT);
   mocks.startMcpConnection.mockResolvedValue({
+    kind: 'authorize',
     authorizeUrl: 'https://auth.example/authorize?state=abc',
   });
 });

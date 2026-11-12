@@ -84,6 +84,7 @@ function discoveryOf(
 ): McpDiscovery | null {
   const metadata = credentials.metadata;
   if (metadata === null || typeof metadata !== 'object') return null;
+  if (!credentials.authorization_server || !credentials.token_endpoint) return null;
   return {
     // The resource the grant was scoped to, which a provider may require the
     // refresh to name (RFC 8707). The connection's own URL is that value.
@@ -119,7 +120,7 @@ export function createMcpAccessTokenService({
   return {
     async accessToken(connection, options = {}) {
       const stored = await repository.getCredentials(connection.id);
-      if (!stored) {
+      if (!stored || !stored.access_token_enc) {
         throw new McpRemoteError(
           'reauth',
           'لم يعد لهذا التطبيق وصول محفوظ. أعد ربطه من «تطبيقاتنا».'
@@ -145,7 +146,7 @@ export function createMcpAccessTokenService({
         for (let attempt = 0; attempt < WAIT_ATTEMPTS; attempt += 1) {
           await sleep(WAIT_MS);
           const current = await repository.getCredentials(connection.id);
-          if (current && !isExpiring(current, now())) {
+          if (current?.access_token_enc && !isExpiring(current, now())) {
             return decryptSecret(current.access_token_enc);
           }
         }
@@ -161,6 +162,22 @@ export function createMcpAccessTokenService({
         throw new McpRemoteError(
           'reauth',
           'انتهت صلاحية الوصول إلى التطبيق. أعد ربطه من «تطبيقاتنا».'
+        );
+      }
+
+      // A key connection never reaches this service; a row with no OAuth half is a
+      // credential that was replaced under a live connection (#1269).
+      if (
+        !claim.authorization_server ||
+        !claim.token_endpoint ||
+        !claim.registration_kind ||
+        !claim.client_id
+      ) {
+        await repository.releaseRefresh(connection.id);
+        await markNeedsReauth(connection.id, 'لم نعد نعرف مزوّد المصادقة لهذا التطبيق.');
+        throw new McpRemoteError(
+          'reauth',
+          'لم نعد نعرف مزوّد المصادقة لهذا التطبيق. أعد ربطه من «تطبيقاتنا».'
         );
       }
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   BadgeCheck,
@@ -52,6 +53,7 @@ interface StorePage {
 
 export function StoreTab({ query, connect }: StoreTabProps) {
   const { user, isLoading } = useSession();
+  const router = useRouter();
   const connectionsKey = user ? appsCacheKey(user.id, 'connections') : null;
   const storeKey = user ? appsCacheKey(user.id, 'store') : null;
 
@@ -81,6 +83,9 @@ export function StoreTab({ query, connect }: StoreTabProps) {
   const [actionError, setActionError] = useState<string | null>(null);
   /** The row whose ask is being read before the document leaves for the provider. */
   const [consentFor, setConsentFor] = useState<McpCatalogRow | null>(null);
+  /** The key a member pasted for an `api_key` row (#1269); never rendered back. */
+  const [apiKey, setApiKey] = useState('');
+  const [keyError, setKeyError] = useState<string | null>(null);
 
   /** One connection per server: this is what keeps a linked row from offering to link again. */
   const connectionByRegistry = useMemo(() => {
@@ -156,16 +161,28 @@ export function StoreTab({ query, connect }: StoreTabProps) {
     return () => clearTimeout(timer);
   }, [isLoading, user, query, runSearch]);
 
-  const onConnect = async (registryName: string) => {
-    setConnectingTo(registryName);
+  const onConnect = async (server: McpCatalogRow, key?: string) => {
+    setConnectingTo(server.registryName);
     setActionError(null);
-    setConsentFor(null);
     try {
-      const { authorizeUrl } = await startMcpConnection(registryName);
+      const started = key
+        ? await startMcpConnection(server.registryName, { apiKey: key })
+        : await startMcpConnection(server.registryName);
+      setConsentFor(null);
+      setApiKey('');
+      setKeyError(null);
+      if (started.kind === 'connected') {
+        // No consent screen to visit: the server made the connection, and the
+        // screen that explains it is the one the member lands on (decision 9).
+        router.push(`/mcp/apps/${encodeURIComponent(started.connectionId)}?connect=done`);
+        return;
+      }
       // The consent page is a third party's origin; the whole document leaves.
-      window.location.assign(authorizeUrl);
+      window.location.assign(started.authorizeUrl);
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : COPY.connectFailed);
+      const sentence = error instanceof Error ? error.message : COPY.connectFailed;
+      if (key) setKeyError(sentence);
+      else setActionError(sentence);
       setConnectingTo(null);
     }
   };
@@ -272,7 +289,11 @@ export function StoreTab({ query, connect }: StoreTabProps) {
                     connection={connectionByRegistry.get(server.registryName) ?? null}
                     connecting={connectingTo === server.registryName}
                     disabled={connectingTo !== null}
-                    onConnect={() => setConsentFor(server)}
+                    onConnect={() => {
+                      setApiKey('');
+                      setKeyError(null);
+                      setConsentFor(server);
+                    }}
                   />
                 </li>
               ))}
@@ -308,15 +329,51 @@ export function StoreTab({ query, connect }: StoreTabProps) {
        * the provider's own (English) consent screen. The ask is code, not a
        * guess: it rides the catalogue row (`requestedScopes`), and an empty set
        * is drawn as "the app decides" rather than as a promise we cannot keep.
+       *
+       * A row that needs no account, or a key (#1269), gets the same dialog with
+       * its own body: nothing leaves the site in either case.
        */}
       <ConfirmDialog
         open={consentFor !== null}
-        title={COPY.consentTitle.replace(
-          '{name}',
-          consentFor?.title ?? consentFor?.registryName ?? ''
-        )}
+        title={
+          consentFor?.authMode === 'api_key'
+            ? COPY.keyTitle.replace('{name}', consentFor.title ?? consentFor.registryName)
+            : consentFor?.authMode === 'none'
+              ? COPY.noAuthTitle.replace('{name}', consentFor.title ?? consentFor.registryName)
+              : COPY.consentTitle.replace(
+                  '{name}',
+                  consentFor?.title ?? consentFor?.registryName ?? ''
+                )
+        }
         message={
-          consentFor && consentFor.requestedScopes.length > 0 ? (
+          consentFor?.authMode === 'api_key' ? (
+            <span className="block space-y-2 text-start">
+              <span className="block">{COPY.keyBody}</span>
+              <label className="mt-3 block space-y-1">
+                <span className="block text-xs font-bold text-foreground">{COPY.keyLabel}</span>
+                <input
+                  type="password"
+                  dir="ltr"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={apiKey}
+                  placeholder={COPY.keyPlaceholder}
+                  onChange={(event) => {
+                    setApiKey(event.target.value);
+                    setKeyError(null);
+                  }}
+                  className="w-full rounded-xl border border-border/60 bg-card px-3 py-2 font-mono text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                />
+              </label>
+              {keyError && (
+                <span role="alert" className="block text-xs font-bold text-destructive">
+                  {keyError}
+                </span>
+              )}
+            </span>
+          ) : consentFor?.authMode === 'none' ? (
+            <span className="block">{COPY.noAuthBody}</span>
+          ) : consentFor && consentFor.requestedScopes.length > 0 ? (
             <>
               <span className="block">{COPY.consentAsk}</span>
               <span dir="ltr" className="mt-2 block font-mono text-xs leading-relaxed">
@@ -328,16 +385,30 @@ export function StoreTab({ query, connect }: StoreTabProps) {
             <span className="block">{COPY.consentDefault}</span>
           )
         }
-        confirmLabel={COPY.consentContinue}
+        confirmLabel={consentFor?.authMode === 'oauth' ? COPY.consentContinue : COPY.connect}
         cancelLabel={COPY.cancel}
         icon={Plug}
         variant="default"
         isConfirming={connectingTo !== null}
         onConfirm={() => {
-          if (consentFor) void onConnect(consentFor.registryName);
+          if (!consentFor) return;
+          if (consentFor.authMode === 'api_key') {
+            const key = apiKey.trim();
+            if (key.length === 0) {
+              setKeyError(COPY.keyRequired);
+              return;
+            }
+            void onConnect(consentFor, key);
+            return;
+          }
+          void onConnect(consentFor);
         }}
         onCancel={() => {
-          if (connectingTo === null) setConsentFor(null);
+          if (connectingTo === null) {
+            setConsentFor(null);
+            setApiKey('');
+            setKeyError(null);
+          }
         }}
       />
     </div>
@@ -486,6 +557,19 @@ function CatalogueRow({
             {server.nameAr && (
               <span className="truncate text-xs font-medium text-muted-foreground">
                 {server.nameAr}
+              </span>
+            )}
+            {server.authMode !== 'oauth' && (
+              // What the row needs, before the tap (#1269): a key or nothing at
+              // all is a different decision for the member than a consent page.
+              <span
+                className={
+                  server.authMode === 'api_key'
+                    ? 'shrink-0 rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-300'
+                    : 'shrink-0 rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-bold text-muted-foreground'
+                }
+              >
+                {server.authMode === 'api_key' ? COPY.authBadgeApiKey : COPY.authBadgeNone}
               </span>
             )}
           </p>

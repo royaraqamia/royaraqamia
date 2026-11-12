@@ -20,6 +20,7 @@ import { useSession } from '@/frontend/state/session-provider';
 import {
   disconnectMcpConnection,
   getMcpConnection,
+  replaceMcpConnectionKey,
   setMcpConnectionTool,
   startMcpConnection,
   updateMcpConnection,
@@ -60,6 +61,10 @@ export function McpConnectionView({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
+  const [newKey, setNewKey] = useState('');
+  const [savingKey, setSavingKey] = useState(false);
+  const [keyError, setKeyError] = useState<string | null>(null);
+  const [keySaved, setKeySaved] = useState(false);
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -116,13 +121,41 @@ export function McpConnectionView({
     setReconnecting(true);
     setActionError(null);
     try {
-      const { authorizeUrl } = await startMcpConnection(connection.registryName);
+      const started = await startMcpConnection(connection.registryName);
+      if (started.kind === 'connected') {
+        // A row that moved to no-auth (or a key) has no consent screen to visit.
+        await load();
+        setReconnecting(false);
+        return;
+      }
       // The consent page is a third party's origin; the whole document leaves.
-      window.location.assign(authorizeUrl);
+      window.location.assign(started.authorizeUrl);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : COPY.reconnectFailed);
       setReconnecting(false);
     }
+  };
+
+  /**
+   * Replaces the key a key-mode connection holds (#1269): the one repair that
+   * does not need a disconnect, and the rotation the security review asks for.
+   */
+  const replaceKey = async () => {
+    if (!connection) return;
+    const key = newKey.trim();
+    if (key.length === 0) return;
+    setSavingKey(true);
+    setKeyError(null);
+    setKeySaved(false);
+    const result = await replaceMcpConnectionKey(connection.id, key);
+    setSavingKey(false);
+    if (!result.success) {
+      setKeyError(result.error ?? COPY.detailKeyFailed);
+      return;
+    }
+    setNewKey('');
+    setKeySaved(true);
+    await load();
   };
 
   const toggleTool = async (tool: McpConnectionTool) => {
@@ -231,21 +264,29 @@ export function McpConnectionView({
         <div className="space-y-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3">
           <p className="flex items-start gap-2 text-sm font-bold text-amber-700 dark:text-amber-300">
             <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-            {COPY.detailNeedsReauth}
+            {/* The OAuth sentence is about the grant; the key and no-auth modes
+                carry the service's own sentence, which names their repair. */}
+            {connection.authMode === 'oauth'
+              ? COPY.detailNeedsReauth
+              : (connection.lastError ?? COPY.detailNeedsReauth)}
           </p>
-          <button
-            type="button"
-            onClick={() => void reconnect()}
-            disabled={reconnecting}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          >
-            {reconnecting ? (
-              <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
-            )}
-            {reconnecting ? COPY.reconnecting : COPY.reconnect}
-          </button>
+          {/* The repair is a consent only for an OAuth connection; a key has its
+              own field below, and a no-auth row has nothing left to repair. */}
+          {connection.authMode === 'oauth' && (
+            <button
+              type="button"
+              onClick={() => void reconnect()}
+              disabled={reconnecting}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              {reconnecting ? (
+                <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+              )}
+              {reconnecting ? COPY.reconnecting : COPY.reconnect}
+            </button>
+          )}
         </div>
       )}
       {connection.status === 'error' && (
@@ -318,52 +359,121 @@ export function McpConnectionView({
       </section>
 
       <section aria-labelledby="mcp-scopes-title" className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 id="mcp-scopes-title" className="text-base font-extrabold text-foreground">
-            {COPY.detailScopesTitle}
-          </h2>
+        {connection.authMode === 'oauth' ? (
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="mcp-scopes-title" className="text-base font-extrabold text-foreground">
+                {COPY.detailScopesTitle}
+              </h2>
 
-          {/* One repair, one control: a dead grant already has its own button in
-              the banner, and two of them for the same flow would read as two
-              different actions. */}
-          {connection.status !== 'needs_reauth' && (
-            <button
-              type="button"
-              onClick={() => void reconnect()}
-              disabled={reconnecting}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-bold text-muted-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:text-foreground disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-            >
-              {reconnecting ? (
-                <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+              {/* One repair, one control: a dead grant already has its own button in
+                  the banner, and two of them for the same flow would read as two
+                  different actions. */}
+              {connection.status !== 'needs_reauth' && (
+                <button
+                  type="button"
+                  onClick={() => void reconnect()}
+                  disabled={reconnecting}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-1.5 text-xs font-bold text-muted-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:text-foreground disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                >
+                  {reconnecting ? (
+                    <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
+                  )}
+                  {reconnecting ? COPY.reconnecting : COPY.widen}
+                </button>
               )}
-              {reconnecting ? COPY.reconnecting : COPY.widen}
-            </button>
-          )}
-        </div>
+            </div>
 
-        <p className="text-xs leading-relaxed text-muted-foreground">{COPY.detailScopesBody}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">{COPY.detailScopesBody}</p>
 
-        {connection.scopes.length === 0 ? (
-          <p className="rounded-2xl border border-border/50 bg-card/60 px-4 py-3 text-xs text-muted-foreground">
-            {COPY.detailScopesEmpty}
-          </p>
+            {connection.scopes.length === 0 ? (
+              <p className="rounded-2xl border border-border/50 bg-card/60 px-4 py-3 text-xs text-muted-foreground">
+                {COPY.detailScopesEmpty}
+              </p>
+            ) : (
+              <ul className="flex flex-wrap gap-1.5" aria-label={COPY.detailScopesTitle}>
+                {connection.scopes.map((scope) => (
+                  <li
+                    key={scope}
+                    dir="ltr"
+                    className="rounded-lg border border-border/60 bg-muted/40 px-2 py-1 font-mono text-[11px] text-muted-foreground"
+                  >
+                    {scope}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {COPY.detailScopesAsk}
+            </p>
+          </>
         ) : (
-          <ul className="flex flex-wrap gap-1.5" aria-label={COPY.detailScopesTitle}>
-            {connection.scopes.map((scope) => (
-              <li
-                key={scope}
-                dir="ltr"
-                className="rounded-lg border border-border/60 bg-muted/40 px-2 py-1 font-mono text-[11px] text-muted-foreground"
-              >
-                {scope}
-              </li>
-            ))}
-          </ul>
-        )}
+          <>
+            {/* A key or a no-auth connection has no grant to read and no consent
+                to widen (#1269); what it has is a credential — or nothing — and
+                the one repair is a new key. */}
+            <h2 id="mcp-scopes-title" className="text-base font-extrabold text-foreground">
+              {COPY.detailAuthTitle}
+            </h2>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {connection.authMode === 'api_key' ? COPY.detailAuthApiKey : COPY.detailAuthNone}
+            </p>
 
-        <p className="text-[11px] leading-relaxed text-muted-foreground">{COPY.detailScopesAsk}</p>
+            {connection.authMode === 'api_key' && (
+              <div className="space-y-2 rounded-2xl border border-border/50 bg-card/60 px-4 py-3">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {COPY.detailKeyBody}
+                </p>
+                <label htmlFor="mcp-new-key" className="block text-xs font-bold text-foreground">
+                  {COPY.detailKeyLabel}
+                </label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    id="mcp-new-key"
+                    type="password"
+                    dir="ltr"
+                    autoComplete="off"
+                    spellCheck={false}
+                    value={newKey}
+                    placeholder={COPY.detailKeyPlaceholder}
+                    onChange={(event) => {
+                      setNewKey(event.target.value);
+                      setKeyError(null);
+                      setKeySaved(false);
+                    }}
+                    className="min-w-0 flex-1 rounded-xl border border-border/60 bg-background px-3 py-2 font-mono text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void replaceKey()}
+                    disabled={savingKey || newKey.trim().length === 0}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-border/60 bg-card/60 px-3 py-2 text-xs font-bold text-foreground transition-safe duration-150 ease-out hover:border-primary/30 hover:text-primary disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  >
+                    {savingKey ? (
+                      <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                    )}
+                    {COPY.detailKeyAction}
+                  </button>
+                </div>
+                {keyError && (
+                  <p role="alert" className="text-xs font-bold text-destructive">
+                    {keyError}
+                  </p>
+                )}
+                {keySaved && (
+                  <p role="status" className="text-xs font-bold text-primary">
+                    {COPY.detailKeyDone}
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </section>
 
       <section aria-labelledby="mcp-tools-title" className="space-y-3">

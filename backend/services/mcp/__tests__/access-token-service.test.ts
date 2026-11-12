@@ -43,6 +43,9 @@ function credentials(
       authorization_endpoint: 'https://auth.notion.example/authorize',
       token_endpoint: 'https://auth.notion.example/token',
     },
+    api_key_enc: null,
+    api_key_header: null,
+    api_key_prefix: null,
     refresh_claimed_at: null,
     ...patch,
   };
@@ -167,7 +170,7 @@ describe('a token about to expire', () => {
 
     const stored = row()!;
     expect(stored.access_token_enc).not.toContain('access-2');
-    expect(decryptSecret(stored.access_token_enc)).toBe('access-2');
+    expect(decryptSecret(stored.access_token_enc!)).toBe('access-2');
     expect(decryptSecret(stored.refresh_token_enc!)).toBe('refresh-2');
     expect(Date.parse(stored.expires_at!)).toBe(NOW.getTime() + 3_600_000);
     // The write is the release: a claim left behind would make the next caller

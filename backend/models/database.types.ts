@@ -1135,6 +1135,9 @@ export type Database = {
       };
       mcp_catalog_servers: {
         Row: {
+          api_key_header: string | null;
+          api_key_prefix: string | null;
+          auth_mode: string;
           blocked_at: string | null;
           blocked_reason: string | null;
           connectable: boolean | null;
@@ -1145,6 +1148,7 @@ export type Database = {
           fetched_at: string;
           icon_override: string | null;
           name_ar: string | null;
+          probe_auth_mode: string | null;
           probe_icon_mime: string | null;
           probe_icon_url: string | null;
           probed_at: string | null;
@@ -1166,6 +1170,9 @@ export type Database = {
           version: string | null;
         };
         Insert: {
+          api_key_header?: string | null;
+          api_key_prefix?: string | null;
+          auth_mode?: string;
           blocked_at?: string | null;
           blocked_reason?: string | null;
           connectable?: boolean | null;
@@ -1176,6 +1183,7 @@ export type Database = {
           fetched_at?: string;
           icon_override?: string | null;
           name_ar?: string | null;
+          probe_auth_mode?: string | null;
           probe_icon_mime?: string | null;
           probe_icon_url?: string | null;
           probed_at?: string | null;
@@ -1196,6 +1204,9 @@ export type Database = {
           version?: string | null;
         };
         Update: {
+          api_key_header?: string | null;
+          api_key_prefix?: string | null;
+          auth_mode?: string;
           blocked_at?: string | null;
           blocked_reason?: string | null;
           connectable?: boolean | null;
@@ -1206,6 +1217,7 @@ export type Database = {
           fetched_at?: string;
           icon_override?: string | null;
           name_ar?: string | null;
+          probe_auth_mode?: string | null;
           probe_icon_mime?: string | null;
           probe_icon_url?: string | null;
           probed_at?: string | null;
@@ -1333,9 +1345,12 @@ export type Database = {
       };
       mcp_connection_credentials: {
         Row: {
-          access_token_enc: string;
-          authorization_server: string;
-          client_id: string;
+          access_token_enc: string | null;
+          api_key_enc: string | null;
+          api_key_header: string | null;
+          api_key_prefix: string | null;
+          authorization_server: string | null;
+          client_id: string | null;
           client_secret_enc: string | null;
           connection_id: string;
           expires_at: string | null;
@@ -1343,14 +1358,17 @@ export type Database = {
           metadata: Json | null;
           refresh_claimed_at: string | null;
           refresh_token_enc: string | null;
-          registration_kind: string;
+          registration_kind: string | null;
           scope: string | null;
-          token_endpoint: string;
+          token_endpoint: string | null;
         };
         Insert: {
-          access_token_enc: string;
-          authorization_server: string;
-          client_id: string;
+          access_token_enc?: string | null;
+          api_key_enc?: string | null;
+          api_key_header?: string | null;
+          api_key_prefix?: string | null;
+          authorization_server?: string | null;
+          client_id?: string | null;
           client_secret_enc?: string | null;
           connection_id: string;
           expires_at?: string | null;
@@ -1358,14 +1376,17 @@ export type Database = {
           metadata?: Json | null;
           refresh_claimed_at?: string | null;
           refresh_token_enc?: string | null;
-          registration_kind: string;
+          registration_kind?: string | null;
           scope?: string | null;
-          token_endpoint: string;
+          token_endpoint?: string | null;
         };
         Update: {
-          access_token_enc?: string;
-          authorization_server?: string;
-          client_id?: string;
+          access_token_enc?: string | null;
+          api_key_enc?: string | null;
+          api_key_header?: string | null;
+          api_key_prefix?: string | null;
+          authorization_server?: string | null;
+          client_id?: string | null;
           client_secret_enc?: string | null;
           connection_id?: string;
           expires_at?: string | null;
@@ -1373,9 +1394,9 @@ export type Database = {
           metadata?: Json | null;
           refresh_claimed_at?: string | null;
           refresh_token_enc?: string | null;
-          registration_kind?: string;
+          registration_kind?: string | null;
           scope?: string | null;
-          token_endpoint?: string;
+          token_endpoint?: string | null;
         };
         Relationships: [];
       };
@@ -1411,6 +1432,7 @@ export type Database = {
       };
       mcp_connections: {
         Row: {
+          auth_mode: string;
           connected_at: string;
           display_name: string | null;
           enabled: boolean;
@@ -1426,6 +1448,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          auth_mode?: string;
           connected_at?: string;
           display_name?: string | null;
           enabled?: boolean;
@@ -1441,6 +1464,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          auth_mode?: string;
           connected_at?: string;
           display_name?: string | null;
           enabled?: boolean;

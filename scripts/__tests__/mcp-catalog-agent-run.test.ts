@@ -17,6 +17,7 @@ const probe = vi.hoisted(() => ({
   result: {
     connectable: true,
     reason: null as string | null,
+    authMode: 'oauth' as 'oauth' | 'none' | 'api_key' | null,
     logoUrl: null as string | null,
     logoMime: null as string | null,
   },
@@ -51,6 +52,7 @@ function entry(overrides: Record<string, unknown> = {}): Record<string, unknown>
     descriptionAr: null,
     iconUrl: null,
     measuredMark: null,
+    probeAuthMode: null,
     class: 'dcr',
     checks: [{ name: 'probe', ok: true, detail: null }],
     published: false,
@@ -76,6 +78,7 @@ function candidate(overrides: Record<string, unknown> = {}): Record<string, unkn
     redirectUri: 'https://royaraqamia.com/mcp/callback',
     iconUrl: 'https://cdn.example.com/logo.svg',
     verified: true,
+    authMode: 'oauth',
     connectable: true,
     connectableReason: null,
     probedAt: '2026-11-10T00:00:00.000Z',
@@ -91,7 +94,13 @@ describe('the catalogue agent runner', () => {
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'mcp-catalog-agent-'));
     calls = [];
-    probe.result = { connectable: true, reason: null, logoUrl: null, logoMime: null };
+    probe.result = {
+      connectable: true,
+      reason: null,
+      authMode: 'oauth',
+      logoUrl: null,
+      logoMime: null,
+    };
 
     process.env.MCP_CATALOG_AGENT_TOKEN = 'test-token';
     process.env.MCP_CATALOG_AGENT_URL = 'https://catalogue.test';
@@ -172,6 +181,7 @@ describe('the catalogue agent runner', () => {
       probe.result = {
         connectable: true,
         reason: null,
+        authMode: 'oauth',
         logoUrl: 'https://cdn.example.com/measured.svg',
         logoMime: 'image/svg+xml',
       };
@@ -190,7 +200,13 @@ describe('the catalogue agent runner', () => {
     });
 
     it('still records a withdrawal for a published row the probe cannot reach', async () => {
-      probe.result = { connectable: false, reason: 'unreachable', logoUrl: null, logoMime: null };
+      probe.result = {
+        connectable: false,
+        reason: 'unreachable',
+        authMode: null,
+        logoUrl: null,
+        logoMime: null,
+      };
       const [measured] = await planFor([candidate()]);
 
       expect(measured).toMatchObject({ withdraw: true, published: true });
@@ -200,6 +216,7 @@ describe('the catalogue agent runner', () => {
       probe.result = {
         connectable: false,
         reason: 'no_registration',
+        authMode: 'oauth',
         logoUrl: null,
         logoMime: null,
       };
@@ -349,6 +366,7 @@ describe('the catalogue agent runner', () => {
           action: 'verify',
           registryName: 'com.example/mcp',
           class: 'dcr',
+          probeAuthMode: null,
           checks: [
             { name: 'probe', ok: true, detail: null },
             { name: 'registration', ok: true, detail: null },

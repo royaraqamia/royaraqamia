@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { McpAuthModeSchema } from '@/shared/contracts/mcp-catalog';
+
 /**
  * The marketplace's outbound half: the apps نور reaches, and what one
  * connection may do (ADR-0155, phase 3 / #1224).
@@ -43,6 +45,12 @@ export const McpConnectionSchema = z.object({
   enabled: z.boolean(),
   permissionLevel: McpPermissionLevelSchema,
   status: McpConnectionStatusSchema,
+  /**
+   * How this connection authenticates (#1269): the consent flow, a key the
+   * member pasted, or nothing at all. It is fixed when the connection is made —
+   * the catalogue row's mode can move afterwards and this row keeps working.
+   */
+  authMode: McpAuthModeSchema,
   toolCount: z.number().int().nonnegative(),
   connectedAt: z.string(),
   lastUsedAt: z.string().nullable(),
@@ -110,23 +118,42 @@ export const McpConnectionActionResultSchema = z.object({
 export type McpConnectionActionResult = z.infer<typeof McpConnectionActionResultSchema>;
 
 /**
- * The three edits a member may make on a connection: turn it off without
- * revoking it, move its permission level, or rename it.
+ * A key a member pasted (#1269), before it is encrypted.
+ *
+ * Bounded, and refused when it carries a line break: the value is written into
+ * an HTTP header, and a key with a newline is either a paste accident or an
+ * attempt to add a header of somebody else's choosing.
+ */
+export const McpApiKeySchema = z
+  .string()
+  .min(1)
+  .max(4096)
+  .refine((value) => !/[\r\n]/.test(value), { message: 'المفتاح لا يحتوي أسطراً جديدة' });
+
+/**
+ * The edits a member may make on a connection: turn it off without revoking it,
+ * move its permission level, rename it, or replace the API key it holds (#1269).
  *
  * At least one field is required: an empty body is a bug in the caller, not a
  * no-op the server should pretend to accept.
+ *
+ * `apiKey` is write-only. It is accepted only for a connection whose mode is
+ * `api_key`, it is encrypted before it touches a row, and it never comes back in
+ * a response — the screen says whether a key is held, never which one.
  */
 export const McpConnectionUpdateSchema = z
   .object({
     enabled: z.boolean().optional(),
     permissionLevel: McpPermissionLevelSchema.optional(),
     displayName: z.string().trim().min(1).max(120).nullable().optional(),
+    apiKey: McpApiKeySchema.optional(),
   })
   .refine(
     (body) =>
       body.enabled !== undefined ||
       body.permissionLevel !== undefined ||
-      body.displayName !== undefined,
+      body.displayName !== undefined ||
+      body.apiKey !== undefined,
     { message: 'لا يوجد تغيير' }
   );
 

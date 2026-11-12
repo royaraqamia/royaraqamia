@@ -56,22 +56,45 @@ export async function setMcpConnectionTool(
 }
 
 /**
- * Starts a connection and answers the provider's consent URL.
+ * Starts a connection.
+ *
+ * An OAuth row answers the provider's consent URL; a row that needs no
+ * credential, or a key the member just typed, is connected on the server and
+ * answers the connection (#1269).
  *
  * Throws the server's own sentence when it refuses: a plan at its cap, a blocked
- * row and an unreachable server have three different sentences, written where
+ * row, a missing key and an unreachable server have their sentences written where
  * the decision is made.
  */
-export async function startMcpConnection(registryName: string): Promise<{ authorizeUrl: string }> {
-  const result = await request<{ success: boolean; data?: { authorizeUrl: string } }>(
+export type McpStartResult =
+  { kind: 'authorize'; authorizeUrl: string } | { kind: 'connected'; connectionId: string };
+
+export async function startMcpConnection(
+  registryName: string,
+  options: { apiKey?: string } = {}
+): Promise<McpStartResult> {
+  const result = await request<{ success: boolean; data?: McpStartResult }>(
     '/api/mcp/marketplace/connections/start',
     {
       method: 'POST',
-      body: JSON.stringify({ registryName }),
+      body: JSON.stringify({
+        registryName,
+        ...(options.apiKey ? { apiKey: options.apiKey } : {}),
+      }),
     }
   );
-  if (!result.data?.authorizeUrl) throw new Error('تعذّر بدء الربط. حاول من جديد.');
+  if (!result.data) throw new Error('تعذّر بدء الربط. حاول من جديد.');
   return result.data;
+}
+
+/** Replaces the key a live `api_key` connection holds (#1269). */
+export async function replaceMcpConnectionKey(
+  connectionId: string,
+  apiKey: string
+): Promise<McpConnectionActionResult> {
+  return write(`/api/me/mcp/connections/${encodeURIComponent(connectionId)}`, 'PATCH', {
+    apiKey,
+  });
 }
 
 async function write(

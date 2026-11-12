@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  McpAuthModeSchema,
   McpCatalogConnectReasonSchema,
   McpCatalogCoverageSchema,
   McpCatalogWaitReasonSchema,
@@ -34,7 +35,7 @@ export const McpCatalogAgentCheckNameSchema = z.enum([
   'registration',
   /** A reviewed client's authorize endpoint accepted our id and redirect URI. */
   'authorize',
-  /** The MCP handshake answered without a token (measured; held until #1269). */
+  /** The MCP handshake answered without a token, which is what a no-auth row claims. */
   'tools',
   /** The store's admission still holds: not blocked, not retired. */
   'admission',
@@ -73,6 +74,8 @@ export const McpCatalogAgentCandidateSchema = z.object({
   /** The mark the row draws now, if it has one. */
   iconUrl: z.string().nullable(),
   verified: z.boolean(),
+  /** The mode the row carries, so the run measures it the way the store will (#1269). */
+  authMode: McpAuthModeSchema,
   connectable: z.boolean().nullable(),
   connectableReason: McpCatalogConnectReasonSchema.nullable(),
   probedAt: z.string().nullable(),
@@ -123,8 +126,8 @@ export const McpCatalogAgentCopyActionSchema = z.object({
   }),
 });
 
-/** The class whose checks justify a publish. No-auth is measured, not published. */
-export const McpCatalogAgentPublishClassSchema = z.enum(['dcr', 'pre_registered']);
+/** The class whose checks justify a publish. */
+export const McpCatalogAgentPublishClassSchema = z.enum(['dcr', 'pre_registered', 'no_auth']);
 
 export type McpCatalogAgentPublishClass = z.infer<typeof McpCatalogAgentPublishClassSchema>;
 
@@ -133,6 +136,12 @@ export const McpCatalogAgentVerifyActionSchema = z.object({
   registryName: z.string().trim().min(1).max(200),
   class: McpCatalogAgentPublishClassSchema,
   checks: z.array(McpCatalogAgentCheckSchema).min(1).max(12),
+  /**
+   * What the run's probe measured, written beside the verdict (#1269). Optional
+   * so a run that did not measure a mode leaves the stored one alone instead of
+   * erasing it.
+   */
+  probeAuthMode: McpAuthModeSchema.nullable().optional(),
 });
 
 export const McpCatalogAgentWithdrawActionSchema = z.object({
@@ -181,4 +190,5 @@ export const MCP_CATALOG_AGENT_REQUIRED_CHECKS: Record<
 > = {
   dcr: ['probe', 'registration', 'admission'],
   pre_registered: ['probe', 'authorize', 'admission'],
+  no_auth: ['probe', 'tools', 'admission'],
 };

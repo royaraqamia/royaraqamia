@@ -120,3 +120,59 @@ stranger's tool and a member's data. The build plan is
 - [ADR-0152](0152-two-pages-leave-the-app-picker.md) — why the picker is a promise, not a menu.
 - [ADR-0021](0021-the-mcp-server-is-dual-mode.md) — the inbound MCP surface, whose grants
   become the first tab.
+
+## Amendment (2026-11-12, #1269): a row names how it is authenticated
+
+Decision 6 said OAuth 2.1 with dynamic registration, and nothing else. That was the right default
+and the wrong absolute: it made the store refuse servers that need no credentials and servers that
+take a member's own key, and the store's `connectable = true` query hid every one of them behind a
+probe that could only look for OAuth documents.
+
+Measured 2026-11-12: `POST https://docs.mcp.cloudflare.com/mcp` answers `initialize` and
+`tools/list` with no credential, while every `/.well-known` path answers `404`. Measured the same
+day: `https://mcp.postman.com/mcp` answers `401` with `WWW-Authenticate: Bearer
+resource_metadata="…"` and a body that says `API key required`, and Postman documents its API key
+as a bearer token in `Authorization`. The first is a server decision 6 made unlinkable; the second
+is a credential shape the flow never had.
+
+So a catalogue row now carries one of three modes, and the connect flow has a branch for each:
+
+1. **`oauth`** is decision 6 unchanged — discovery, DCR or a reviewed client, PKCE, refresh.
+2. **`none`** connects without leaving the site: the connection is created, `tools/list` is read
+   with no credential, and the tool list is what proves the link.
+3. **`api_key`** connects from a key the member pastes. The key is encrypted with the same
+   `encryptSecret` path as a token, stored in `mcp_connection_credentials`, sent only in the header
+   the row names, and never written to a URL, a log or a response. It is replaced, not re-consented,
+   from the connection screen — the rotation path this amendment exists to make possible.
+
+The mode is an **admin's decision, not a probe's**. Which header a key belongs in is a documented
+fact the probe cannot read, and a server that publishes nothing must not be inferred into a mode.
+The probe measures beside the decision (`probe_auth_mode`: `oauth` when metadata and registration
+answered, `none` when the handshake answered without a credential, `api_key` when the endpoint
+refused one without naming a bearer token) and its verdict says whether the row's decision opens
+the server. A row whose mode changed loses its verdict in the same write, because the measurement
+was taken against the old flow. The Admin Console draws the decision and the measurement side by
+side, so «this is published as OAuth, but the server answered without credentials» is a sentence
+an admin can act on.
+
+Four things this does not change:
+
+- **The write-card rule.** A key is a credential, not a permission level: a tool that is not
+  `readOnlyHint` still becomes a proposal, whatever the mode.
+- **Metering.** `mcp.call` counts a call from any mode the same way; the 3-per-turn ceiling is
+  unchanged.
+- **The shared pool.** A `none` or `api_key` connection is a connection: it spends one of the 5 /
+  50 slots and is freed by disconnecting. The pool counts connections, not credentials.
+- **The egress policy.** All three modes open the socket through `backend/clients/mcp-remote`, the
+  one module that speaks to a stranger's server.
+
+What the security review of this change covered: the key is entered in a password field and never
+rendered back; the refusal sentences never echo it; the ciphertext is the only stored form and the
+column is service-role only; rotation is authenticated, owner-scoped and available while the
+provider's takedown is in force; and a `none` connection holds no credential row at all, so there
+is nothing to leak if the mode was wrong.
+
+The catalogue agent gains the class the wait-reason enum was reserving: a no-auth row is publishable
+when the probe's handshake passes (`probe` + `tools` + `admission`), and a key row is not — its
+credential does not exist until a member pastes one, so the run refuses to raffle it and leaves the
+vouch to the admin who chose the mode.

@@ -47,9 +47,13 @@ tool names are a compile-time union (`CHAT_AGENT_TOOL_NAMES`).
 5. **Remote-only.** Only `remotes[]` entries of type `streamable-http` are kept. npm, PyPI and
    Docker packages are stdio servers we cannot run, and private-network hosts are dropped at
    ingest and again at connect.
-6. **OAuth 2.1 with DCR.** Dynamic client registration, PKCE S256, discovery through
-   `/.well-known/oauth-protected-resource` then `/.well-known/oauth-authorization-server`. No
-   API-key or no-auth mode in v1.
+6. **OAuth 2.1 with DCR, or a row that says it needs neither.** Dynamic client registration,
+   PKCE S256, discovery through `/.well-known/oauth-protected-resource` then
+   `/.well-known/oauth-authorization-server`, is the flow for a row whose `auth_mode` is `oauth`.
+   v1 made that the only mode; #1269 amended it (ADR-0155, 2026-11-12 amendment): a row may also
+   be `none` — the server answers without credentials — or `api_key` — the member pastes a key the
+   row's documented header carries. The mode is an admin's decision, the probe measures beside it,
+   and a key is a credential, not a permission level.
 7. **Writing is a card by default.** A remote tool runs inside the turn only when the server
    declares `annotations.readOnlyHint: true`. Everything else becomes a proposal the member
    confirms. A per-connection permission level can widen this; it never widens by inference.
@@ -90,30 +94,36 @@ shape as `mcp_oauth_*`:
 
 **`mcp_catalog_servers`** — the registry mirror.
 
-| Column                                              | Why                                                                                                                              |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `registry_name` (pk)                                | `ac.inference.sh/mcp`; the registry's own key                                                                                    |
-| `title`, `description`, `version`                   | Straight from the registry, in its words                                                                                         |
-| `name_ar`, `description_ar`                         | Nullable overrides; the registry is English-only, and a screen that is otherwise Arabic cannot be left to machine translation    |
-| `remote_url`, `transport`                           | The one entry we can actually reach                                                                                              |
-| `remote_override`                                   | The admin's choice of remote; the sync never writes it, and `coalesce(remote_override, remote_url)` is what is probed and opened |
-| `status`                                            | `active`, `deprecated`, `deleted` from `_meta.io.modelcontextprotocol.registry/official`                                         |
-| `published_at`, `registry_updated_at`, `fetched_at` | Freshness, and which rows the cron stopped seeing                                                                                |
-| `blocked_at`, `blocked_reason`                      | The takedown switch                                                                                                              |
-| `raw`                                               | The registry document, for anything a later phase wants                                                                          |
+| Column                                              | Why                                                                                                                                |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `registry_name` (pk)                                | `ac.inference.sh/mcp`; the registry's own key                                                                                      |
+| `title`, `description`, `version`                   | Straight from the registry, in its words                                                                                           |
+| `name_ar`, `description_ar`                         | Nullable overrides; the registry is English-only, and a screen that is otherwise Arabic cannot be left to machine translation      |
+| `remote_url`, `transport`                           | The one entry we can actually reach                                                                                                |
+| `remote_override`                                   | The admin's choice of remote; the sync never writes it, and `coalesce(remote_override, remote_url)` is what is probed and opened   |
+| `auth_mode`                                         | `oauth` \| `none` \| `api_key` (#1269): how the connect flow authenticates. Admin-set; the sync never writes it                    |
+| `probe_auth_mode`                                   | What the last probe measured beside that decision; `null` is "not measured"                                                        |
+| `api_key_header`, `api_key_prefix`                  | For an `api_key` row: the header the key goes in and the scheme in front of it (`Authorization` + `Bearer`, or a bare `X-API-Key`) |
+| `status`                                            | `active`, `deprecated`, `deleted` from `_meta.io.modelcontextprotocol.registry/official`                                           |
+| `published_at`, `registry_updated_at`, `fetched_at` | Freshness, and which rows the cron stopped seeing                                                                                  |
+| `blocked_at`, `blocked_reason`                      | The takedown switch                                                                                                                |
+| `raw`                                               | The registry document, for anything a later phase wants                                                                            |
 
 **`mcp_connections`** — one member's connection to one server.
 
 `id`, `user_id`, `registry_name`, `server_url`, `display_name`, `enabled`,
-`permission_level` (`ask` | `reads` | `all`), `status` (`active` | `needs_reauth` | `error` |
-`revoked`), `tool_count`, `connected_at`, `last_used_at`, `last_error`.
+`permission_level` (`ask` | `reads` | `all`), `auth_mode` (`oauth` | `none` | `api_key`, fixed when
+the connection is made), `status` (`active` | `needs_reauth` | `error` | `revoked`), `tool_count`,
+`connected_at`, `last_used_at`, `last_error`.
 
 **`mcp_connection_credentials`** — one row per connection, encrypted with the existing
 `encryptSecret`.
 
 `connection_id` (pk), `authorization_server`, `token_endpoint`, `registration_kind` (`dcr` |
 `static`), `client_id`, `client_secret_enc`, `access_token_enc`, `refresh_token_enc`,
-`scope`, `expires_at`, `issued_at`, `metadata` (the discovery document).
+`scope`, `expires_at`, `issued_at`, `metadata` (the discovery document) — the OAuth half, all
+nullable since #1269 — and `api_key_enc`, `api_key_header`, `api_key_prefix`, the key half. A
+connection holds one or the other, never both; a `none` connection has no row at all.
 
 **`mcp_connection_tools`** — what we learned from `tools/list`, and the switches.
 
@@ -191,6 +201,29 @@ redirect becomes credentials.
    `invalid_grant` marks the connection `needs_reauth` and the row says «أعد الربط» rather than
    failing a turn with a provider error.
 
+### A row that needs no consent screen (#1269)
+
+Steps 1–6 are the `oauth` branch. A row whose `auth_mode` is `none` or `api_key` has nothing to
+consent to, so `POST .../connections/start` connects it in the same request and answers
+`{ connectionId }` instead of `{ authorizeUrl }`:
+
+- **`none`.** The connection is created with `auth_mode: 'none'`, `tools/list` is read with no
+  credential, and the tool list is the proof of the link. No credential row is written.
+- **`api_key`.** The key arrives in the request body (never a URL), is encrypted with
+  `encryptSecret`, and is written to `mcp_connection_credentials.api_key_enc` with the header and
+  prefix the row documents. `tools/list` is read with it once, so a wrong key lands on the
+  connection screen as a state to repair rather than as a silent failure.
+
+Measured 2026-11-12: `https://docs.mcp.cloudflare.com/mcp` answers `initialize` and `tools/list`
+without a credential and `404`s every `/.well-known` path — the no-auth server the store used to
+hide. `https://mcp.postman.com/mcp` answers `401` with `WWW-Authenticate: Bearer
+resource_metadata="…"` and `API key required`, and Postman documents the key as a bearer token in
+`Authorization` — the `api_key` row the flow was missing.
+
+A key is replaced, never re-pasted into a consent flow: the connection screen offers «استبدال
+المفتاح», which re-encrypts and re-reads the tool list. A `401` from a key or a `none` connection is
+`needs_reauth` with a sentence naming that repair; only an OAuth token is refreshed.
+
 ### A refusal is not always a dead grant (#1230)
 
 A provider can refuse a call the connection is otherwise allowed to make, because the token it
@@ -239,13 +272,15 @@ app was created for, and they are sent at authorization.
 Eleven popular remote servers, probed for RFC 9728 resource metadata, an authorization server and
 dynamic registration:
 
-| Server                                              | Connectable    | Why not                                                                                                                                     |
-| --------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linear, Sentry, Vercel, Supabase, Canva, Cloudflare | yes            | DCR + PKCE S256 published                                                                                                                   |
-| Atlassian                                           | yes            | root 404, but the `401` names the path-aware document; tenant AS publishes DCR                                                              |
-| Stripe                                              | yes            | `mcp.stripe.com` publishes RFC 9728 + AS metadata + DCR (it did not on 2026-11-10); its catalogue row probe was still pending on 2026-11-11 |
-| GitHub                                              | pre-registered | resource metadata exists; `github.com/login/oauth` publishes no `registration_endpoint`                                                     |
-| Notion, Figma                                       | yes            | measured from the deployment's egress; both publish metadata and DCR — the earlier `403`/`451` were this network, not the provider          |
+| Server                                              | Connectable       | Why not                                                                                                                                                  |
+| --------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linear, Sentry, Vercel, Supabase, Canva, Cloudflare | yes               | DCR + PKCE S256 published                                                                                                                                |
+| Atlassian                                           | yes               | root 404, but the `401` names the path-aware document; tenant AS publishes DCR                                                                           |
+| Stripe                                              | yes               | `mcp.stripe.com` publishes RFC 9728 + AS metadata + DCR (it did not on 2026-11-10); its catalogue row probe was still pending on 2026-11-11              |
+| GitHub                                              | pre-registered    | resource metadata exists; `github.com/login/oauth` publishes no `registration_endpoint`                                                                  |
+| Notion, Figma                                       | yes               | measured from the deployment's egress; both publish metadata and DCR — the earlier `403`/`451` were this network, not the provider                       |
+| Cloudflare docs (`docs.mcp.cloudflare.com/mcp`)     | yes, as `none`    | `initialize` answers with no credential; every `/.well-known` path is `404` — measured 2026-11-12 (#1269)                                                |
+| Postman (`mcp.postman.com/mcp`)                     | yes, as `api_key` | `401` + `WWW-Authenticate: Bearer resource_metadata="…"`, body `API key required`; the key is documented as a bearer token — measured 2026-11-12 (#1269) |
 
 The 2026-11-10 table read as "four of the most requested apps cannot be connected". Measured again
 from the deployment on 2026-11-11, that was true of **one**: GitHub. Atlassian and Stripe publish
@@ -332,10 +367,27 @@ in `vercel.json` and nothing else.
 ### The connectable verdict
 
 `connectable`, `connectable_reason` and `probed_at` are columns, because the answer has to reach
-the screen **before** the tap. The probe is the connect flow's own discovery under a 4s ceiling:
-resource metadata, authorization metadata, and a `registration_endpoint`. `connectable` is `true`
-only when all three are there; otherwise the row carries one of three codes —
-`no_metadata`, `no_registration`, `blocked` — and the screen says so in words.
+the screen **before** the tap. The probe is the connect flow's own discovery under a 4s ceiling.
+What it measures depends on the row's `auth_mode` (#1269), because a row's decision is what the
+verdict is about:
+
+- **`oauth`:** resource metadata, authorization metadata and a `registration_endpoint` (or a
+  reviewed pre-registered client). All three present is `connectable`; otherwise the row carries
+  one of `no_metadata`, `no_registration`, `blocked` or `unreachable`. When no document answers,
+  the probe also runs an unauthenticated `initialize` and records what it saw — a Cloudflare docs
+  server is `no_metadata` beside a measured `none`, which is the evidence the admin switches the
+  row with.
+- **`none`:** an unauthenticated `initialize`. It answering is `connectable` and measured `none`;
+  a `401`/`403` is `needs_credentials` with the measured mode beside it, because the decision and
+  the server disagree.
+- **`api_key`:** the endpoint answering a credential challenge is `connectable`, because the key
+  is the thing the member supplies and the probe does not have one. A host that never answers is
+  `unreachable`; a host that answers the handshake without one is `connectable` and measured `none`.
+
+`probe_auth_mode` records the measurement (`oauth`, `none`, `api_key`, or `null` when the server
+answered nothing recognisable), and the Admin Console draws it beside the mode an admin chose.
+Changing the mode clears the verdict in the same write, because the measurement was taken against
+the old flow.
 
 It is filled **on demand**, for the rows a screen actually draws:
 
@@ -356,9 +408,11 @@ The registry publishes several `remotes[]` for one server, and the mirror keeps
 only the first `streamable-http` entry the egress policy accepts. That first entry
 is the publisher's ordering, not a judgement about which server a member needs:
 `com.cloudflare.mcp/mcp` lists `https://docs.mcp.cloudflare.com/mcp` — a no-auth
-docs server that publishes no RFC 9728 document — and the account server at
-`https://observability.mcp.cloudflare.com/mcp` beside it, which does. The mirror
-measured the wrong one and the store hid a server that can be connected.
+docs server — and the account server at
+`https://observability.mcp.cloudflare.com/mcp` beside it, which publishes OAuth.
+The mirror measured the address the probe could not open as OAuth, and the store
+hid a server that can be connected; #1269 gives the row the mode that opens it,
+and the choice below is still the admin's when they want the other address.
 
 So the address is a decision an admin can make:
 
@@ -392,9 +446,10 @@ row so an admin can find a server by name; the store draws only rows that satisf
 
 - `verified_at is not null` — an admin vouched for the publisher, the name, the description and the
   mark. Verification is a decision, not a measurement.
-- `connectable is true` — the probe measured RFC 9728 metadata, an authorization server, and a
-  dynamic registration endpoint. A row whose verdict is `null` or `false` is not offered; the admin
-  screen is where «لم نتحقق بعد» and «لا يمكن ربطه» live.
+- `connectable is true` — the probe measured what the row's mode needs: RFC 9728 metadata and a
+  registration endpoint for `oauth`, an unauthenticated handshake for `none`, a reachable endpoint
+  for `api_key`. A row whose verdict is `null` or `false` is not offered; the admin screen is where
+  «لم نتحقق بعد» and «لا يمكن ربطه» live.
 - `status = 'active'` and `blocked_at is null`.
 
 Verification is refused when the probe has not measured the row connectable, and the sync re-probes
@@ -578,6 +633,11 @@ The two questions the plan could not settle in code were filed with their measur
 providers that refuse DCR (**#1229**) and the scopes a connection asks for (**#1230**). Both are
 settled: a provider that refuses registration takes a reviewed client (ADR-0163), and a row's scope
 set is asked at registration as well as at consent (ADR-0164).
+
+The one gap left after those was the absolute in decision 6: an OAuth-only flow could not open a
+server that needs no credential or a member's key. **#1269** settles it — a row carries an
+`auth_mode`, the probe measures beside it, and the connect flow has a branch for each mode
+(ADR-0155, 2026-11-12 amendment).
 
 ## Risks
 

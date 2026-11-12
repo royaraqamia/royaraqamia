@@ -21,10 +21,12 @@ import {
   McpRemoteError,
   readAuthChallenge,
   scopeRequirementSentence,
+  type McpAuthMode,
   type McpConnectProbe,
   type McpDiscovery,
   type McpOAuthClient,
   type McpRemoteFailure,
+  type McpRequestAuth,
 } from '@/backend/shared/domain/mcp-remote';
 import { logger } from '@/backend/shared/logger';
 
@@ -140,6 +142,25 @@ function iconMimeFromUrl(value: string | null): string | null {
   return null;
 }
 
+/**
+ * The headers one request carries (#1269).
+ *
+ * The three modes meet here, in one place, so a `none` connection is an empty
+ * header set rather than a forgotten branch, and so an API key is only ever
+ * written into the header the catalogue row names — never into a URL, a query
+ * string or a log line.
+ */
+function authHeaders(auth: McpRequestAuth): Record<string, string> {
+  switch (auth.kind) {
+    case 'bearer':
+      return { Authorization: `Bearer ${auth.token}` };
+    case 'api_key':
+      return { [auth.header]: auth.value };
+    case 'none':
+      return {};
+  }
+}
+
 export interface McpRemoteClient {
   discover(serverUrl: string | URL): Promise<McpDiscovery>;
   /**
@@ -153,10 +174,16 @@ export interface McpRemoteClient {
    * provider that hides its metadata from a datacenter IP — is not a refusal.
    * The admin's reviewed entry is the verdict, and the probe still reads the
    * document when it can, for the brand mark.
+   *
+   * `authMode` is the mode the row carries (#1269). The probe measures what the
+   * server actually does and answers whether the row's decision opens it: a
+   * server that answers without credentials but is published as OAuth is a
+   * verdict of "no metadata" beside a measured mode of `none`, which is the
+   * evidence an admin needs and never a mode the probe switched on its own.
    */
   probeConnectable(
     serverUrl: string | URL,
-    options?: { preRegistered?: boolean }
+    options?: { preRegistered?: boolean; authMode?: McpAuthMode }
   ): Promise<McpConnectProbe>;
   register(input: {
     discovery: McpDiscovery;
@@ -205,7 +232,7 @@ export interface McpRemoteClient {
     tokenTypeHint: 'access_token' | 'refresh_token';
   }): Promise<boolean>;
   /** `initialize` + `tools/list`, in one connection that is closed again. */
-  listTools(input: { serverUrl: string | URL; accessToken: string }): Promise<McpRemoteTool[]>;
+  listTools(input: { serverUrl: string | URL; auth: McpRequestAuth }): Promise<McpRemoteTool[]>;
   /**
    * One `tools/call`, in one connection that is closed again (phase 4 / #1225).
    *
@@ -215,7 +242,7 @@ export interface McpRemoteClient {
    */
   callTool(input: {
     serverUrl: string | URL;
-    accessToken: string;
+    auth: McpRequestAuth;
     name: string;
     args: Record<string, unknown>;
     signal?: AbortSignal;
@@ -408,10 +435,154 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
     };
   }
 
+  /**
+   * Whether the server answers an unauthenticated MCP handshake (#1269).
+   *
+   * `initialize` is the first call any client makes, so it is the one honest
+   * measurement of "does this server need a credential": a no-auth server
+   * answers, and a protected one refuses with a challenge. The classification is
+   * deliberately narrow — it names only the shapes it saw, because a probe that
+   * guesses a mode is the thing this issue exists to stop.
+   */
+  async function probeHandshake(
+    serverUrl: string | URL
+  ): Promise<
+    | { kind: 'open' }
+    | { kind: 'refused'; challenge: string | null }
+    | { kind: 'unknown'; reachable: boolean }
+  > {
+    let reachable = false;
+    let challenge: string | null = null;
+    let blocked: EgressBlockedError | null = null;
+
+    const watching: typeof fetch = async (input, init) => {
+      try {
+        const response = await probeFetch(input, init);
+        reachable = true;
+        if (response.status === 401 || response.status === 403) {
+          challenge = response.headers.get('www-authenticate') ?? '';
+        }
+        return response;
+      } catch (error) {
+        if (error instanceof EgressBlockedError) blocked = error;
+        throw error;
+      }
+    };
+
+    const client = new Client(
+      { name: 'royaraqamia', version: MCP_SERVER_VERSION },
+      { capabilities: {} }
+    );
+    // No authorization header: this measures the server as a stranger with no
+    // account, which is exactly the question a `none` row asks.
+    const transport = new StreamableHTTPClientTransport(new URL(String(serverUrl)), {
+      fetch: watching,
+    });
+
+    try {
+      await client.connect(transport);
+      return { kind: 'open' };
+    } catch {
+      if (blocked) throw blocked;
+      return challenge !== null ? { kind: 'refused', challenge } : { kind: 'unknown', reachable };
+    } finally {
+      await client.close().catch(() => undefined);
+    }
+  }
+
+  /**
+   * The mode a refused handshake names: a `Bearer` challenge is an OAuth
+   * endpoint (a key may also be accepted, and only the key proves it), while a
+   * refusal that names no bearer token is a key this server documents itself.
+   */
+  function modeOfChallenge(challenge: string | null): McpAuthMode {
+    return /^Bearer\b/i.test(challenge ?? '') ? 'oauth' : 'api_key';
+  }
+
   return {
     discover,
 
-    async probeConnectable(serverUrl, { preRegistered = false } = {}) {
+    async probeConnectable(serverUrl, { preRegistered = false, authMode = 'oauth' } = {}) {
+      /*
+        A row that says it needs no credential, or a member's own key, is
+        measured by the handshake rather than by the OAuth documents: those two
+        modes are exactly the servers that publish none (#1269). The row's
+        decision is never overruled here — the probe answers whether that
+        decision opens the server, and records what it saw instead.
+      */
+      if (authMode === 'none' || authMode === 'api_key') {
+        let handshake: Awaited<ReturnType<typeof probeHandshake>>;
+        try {
+          handshake = await probeHandshake(serverUrl);
+        } catch (error) {
+          if (error instanceof EgressBlockedError) {
+            return {
+              connectable: false,
+              reason: 'blocked',
+              authMode: null,
+              logoUrl: null,
+              logoMime: null,
+            };
+          }
+          logger.warn('MCP marketplace: credential-mode probe got no answer', {
+            url: String(serverUrl),
+            error: String(error),
+          });
+          return {
+            connectable: false,
+            reason: 'unreachable',
+            authMode: null,
+            logoUrl: null,
+            logoMime: null,
+          };
+        }
+
+        if (handshake.kind === 'open') {
+          // The server needs no credential at all. For an `api_key` row that is
+          // not a refusal — a key it ignores is harmless — but the measurement
+          // is the honest one, and the console draws it beside the decision.
+          return {
+            connectable: true,
+            reason: null,
+            authMode: 'none',
+            logoUrl: null,
+            logoMime: null,
+          };
+        }
+
+        if (handshake.kind === 'refused') {
+          const measured = modeOfChallenge(handshake.challenge);
+          if (authMode === 'none') {
+            return {
+              connectable: false,
+              reason: 'needs_credentials',
+              authMode: measured,
+              logoUrl: null,
+              logoMime: null,
+            };
+          }
+          // An `api_key` row: the endpoint answered, so the host is up and the
+          // credential the member enters is the thing worth testing. A server
+          // that publishes OAuth and takes a bearer key (GitHub PAT, Postman) is
+          // the measured case this must not refuse.
+          return {
+            connectable: true,
+            reason: null,
+            authMode: measured,
+            logoUrl: null,
+            logoMime: null,
+          };
+        }
+
+        return {
+          connectable: false,
+          reason: handshake.reachable ? 'no_metadata' : 'unreachable',
+          authMode: null,
+          logoUrl: null,
+          logoMime: null,
+        };
+      }
+
       /*
         A pre-registered client is the one verdict the probe cannot take away.
         The row carries a client we created by hand, so the two things discovery
@@ -435,11 +606,17 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
           }
         } catch (error) {
           if (error instanceof EgressBlockedError) {
-            return { connectable: false, reason: 'blocked', logoUrl: null, logoMime: null };
+            return {
+              connectable: false,
+              reason: 'blocked',
+              authMode: null,
+              logoUrl: null,
+              logoMime: null,
+            };
           }
           // Measured by a person, not by this probe: keep the verdict.
         }
-        return { connectable: true, reason: null, logoUrl, logoMime };
+        return { connectable: true, reason: null, authMode: 'oauth', logoUrl, logoMime };
       }
 
       /*
@@ -455,21 +632,64 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
         discovery = await discoverResourceMetadata(serverUrl, probeFetch);
       } catch (error) {
         if (error instanceof EgressBlockedError) {
-          return { connectable: false, reason: 'blocked', logoUrl: null, logoMime: null };
+          return {
+            connectable: false,
+            reason: 'blocked',
+            authMode: null,
+            logoUrl: null,
+            logoMime: null,
+          };
         }
         logger.warn('MCP marketplace: connectability probe got no answer', {
           url: String(serverUrl),
           error: String(error),
         });
-        return { connectable: false, reason: 'unreachable', logoUrl: null, logoMime: null };
+        return {
+          connectable: false,
+          reason: 'unreachable',
+          authMode: null,
+          logoUrl: null,
+          logoMime: null,
+        };
       }
 
       if (!discovery.answered) {
         logger.warn('MCP marketplace: connectability probe got no answer', {
           url: String(serverUrl),
         });
-        return { connectable: false, reason: 'unreachable', logoUrl: null, logoMime: null };
+        return {
+          connectable: false,
+          reason: 'unreachable',
+          authMode: null,
+          logoUrl: null,
+          logoMime: null,
+        };
       }
+
+      /*
+        A row published as OAuth whose server publishes no OAuth document is the
+        Cloudflare docs case (#1269): the host answers, the handshake may even
+        succeed, and the row is simply in the wrong mode. The verdict stays
+        "no metadata", and the measured mode is the evidence an admin acts on —
+        the probe does not switch the row itself.
+      */
+      let measuredMode: McpAuthMode | null = null;
+      const measureMode = async () => {
+        if (measuredMode !== null) return measuredMode;
+        try {
+          const handshake = await probeHandshake(serverUrl);
+          measuredMode =
+            handshake.kind === 'open'
+              ? 'none'
+              : handshake.kind === 'refused'
+                ? modeOfChallenge(handshake.challenge)
+                : null;
+        } catch (error) {
+          if (error instanceof EgressBlockedError) throw error;
+          measuredMode = null;
+        }
+        return measuredMode;
+      };
 
       try {
         const info = await discoverOAuthServerInfo(serverUrl, {
@@ -482,18 +702,36 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
         const logoUrl = resourceLogoUrl(info.resourceMetadata);
         const logoMime = iconMimeFromUrl(logoUrl);
         if (!metadata?.authorization_endpoint || !metadata.token_endpoint) {
-          return { connectable: false, reason: 'no_metadata', logoUrl, logoMime };
+          return {
+            connectable: false,
+            reason: 'no_metadata',
+            authMode: await measureMode(),
+            logoUrl,
+            logoMime,
+          };
         }
         // The connect flow needs dynamic registration: a server that publishes
-        // metadata and expects a pre-registered client is one we cannot reach in
-        // v1 (measured: GitHub, in the spec's table).
+        // metadata and expects a pre-registered client is one we cannot reach
+        // without a reviewed entry (measured: GitHub, in the spec's table).
         if (!metadata.registration_endpoint) {
-          return { connectable: false, reason: 'no_registration', logoUrl, logoMime };
+          return {
+            connectable: false,
+            reason: 'no_registration',
+            authMode: 'oauth',
+            logoUrl,
+            logoMime,
+          };
         }
-        return { connectable: true, reason: null, logoUrl, logoMime };
+        return { connectable: true, reason: null, authMode: 'oauth', logoUrl, logoMime };
       } catch (error) {
         if (error instanceof EgressBlockedError) {
-          return { connectable: false, reason: 'blocked', logoUrl: null, logoMime: null };
+          return {
+            connectable: false,
+            reason: 'blocked',
+            authMode: null,
+            logoUrl: null,
+            logoMime: null,
+          };
         }
         // The document exists but cannot be read: that is what "publishes no
         // usable metadata" means, as opposed to the unreachable case above.
@@ -501,7 +739,13 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
           url: String(serverUrl),
           error: String(error),
         });
-        return { connectable: false, reason: 'no_metadata', logoUrl: null, logoMime: null };
+        return {
+          connectable: false,
+          reason: 'no_metadata',
+          authMode: await measureMode(),
+          logoUrl: null,
+          logoMime: null,
+        };
       }
     },
 
@@ -643,14 +887,14 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
       }
     },
 
-    async listTools({ serverUrl, accessToken }) {
+    async listTools({ serverUrl, auth }) {
       const client = new Client(
         { name: 'royaraqamia', version: MCP_SERVER_VERSION },
         { capabilities: {} }
       );
       const transport = new StreamableHTTPClientTransport(new URL(serverUrl), {
         fetch: guardedFetch,
-        requestInit: { headers: { Authorization: `Bearer ${accessToken}` } },
+        requestInit: { headers: authHeaders(auth) },
       });
 
       try {
@@ -670,7 +914,7 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
       }
     },
 
-    async callTool({ serverUrl, accessToken, name, args, signal }) {
+    async callTool({ serverUrl, auth, name, args, signal }) {
       const client = new Client(
         { name: 'royaraqamia', version: MCP_SERVER_VERSION },
         { capabilities: {} }
@@ -692,7 +936,7 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
 
       const transport = new StreamableHTTPClientTransport(new URL(serverUrl), {
         fetch: readingFetch,
-        requestInit: { headers: { Authorization: `Bearer ${accessToken}` } },
+        requestInit: { headers: authHeaders(auth) },
       });
 
       try {

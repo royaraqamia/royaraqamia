@@ -4,7 +4,8 @@ import type {
   McpMarketplaceRepository,
 } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpAccessTokenService } from '@/backend/services/mcp/marketplace/access-token-service';
-import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
+import { McpRemoteError, type McpRequestAuth } from '@/backend/shared/domain/mcp-remote';
+import { decryptSecret } from '@/backend/shared/mcp-token-crypto';
 import { logger } from '@/backend/shared/logger';
 import type { McpPermissionLevel } from '@/shared/contracts/mcp-marketplace';
 
@@ -83,6 +84,13 @@ interface AppToolsDependencies {
 const NOT_CONNECTED = 'هذا التطبيق لم يعد متصلاً. أعد ربطه من «تطبيقاتنا».';
 const TOOL_UNAVAILABLE = 'هذه الأداة غير متاحة في التطبيق الآن.';
 const READ_ONLY_LEVEL = 'هذا التطبيق مضبوط على القراءة فقط، ولا يمكنه تنفيذ هذا الإجراء.';
+/** A key connection whose stored key is gone: the repair is a new key (#1269). */
+const KEY_MISSING = 'لم نعد نحتفظ بمفتاح هذا التطبيق. أدخل مفتاحاً جديداً من «تطبيقاتنا».';
+/** The server refused the key it was given: it was revoked or rotated there. */
+const KEY_REFUSED = 'رفض التطبيق المفتاح المحفوظ. أدخل مفتاحاً جديداً من «تطبيقاتنا».';
+/** A no-auth connection that now asks for a credential: the server changed. */
+const NO_AUTH_REFUSED =
+  'هذا التطبيق صار يطلب بيانات اعتماد، ولم يكن يطلبها عند الربط. أعد ربطه من «تطبيقاتنا».';
 
 /** The name a member reads for a connection. */
 function appNameOf(connection: McpConnectionRecord): string {
@@ -127,6 +135,41 @@ export function createMcpAppToolsService({
     });
   }
 
+  /**
+   * The credential one call carries, resolved from the connection's own mode
+   * (#1269): a refreshed token, the member's key, or nothing at all.
+   *
+   * The key is decrypted for the length of the call and never logged; a key
+   * connection with no stored ciphertext is a re-entry, not a retry.
+   */
+  async function requestAuth(
+    connection: McpConnectionRecord,
+    { forceRefreshed = false }: { forceRefreshed?: boolean } = {}
+  ): Promise<McpRequestAuth> {
+    if (connection.auth_mode === 'none') return { kind: 'none' };
+
+    if (connection.auth_mode === 'api_key') {
+      const credentials = await repository.getCredentials(connection.id);
+      if (!credentials?.api_key_enc) throw new McpRemoteError('reauth', KEY_MISSING);
+      const key = decryptSecret(credentials.api_key_enc);
+      const prefix = credentials.api_key_prefix?.trim();
+      return {
+        kind: 'api_key',
+        header: credentials.api_key_header?.trim() || 'Authorization',
+        value: prefix ? `${prefix} ${key}` : key,
+      };
+    }
+
+    return {
+      kind: 'bearer',
+      // Only a forced refresh passes the option, so a normal call keeps the
+      // shape the token service was always called with.
+      token: forceRefreshed
+        ? await tokens.accessToken(connection, { force: true })
+        : await tokens.accessToken(connection),
+    };
+  }
+
   return {
     async catalog(userId) {
       const rows = await repository.listUsableTools(userId);
@@ -156,12 +199,23 @@ export function createMcpAppToolsService({
         throw new McpRemoteError('protocol', READ_ONLY_LEVEL);
       }
 
-      let token = await tokens.accessToken(connection);
+      let auth: McpRequestAuth;
+      try {
+        auth = await requestAuth(connection);
+      } catch (error) {
+        // A connection whose credential is gone (a key that was never stored, a
+        // token row that vanished) is the same state as a refused grant: the
+        // member has to repair it, and the screen must say so (#1269).
+        if (error instanceof McpRemoteError && error.failure === 'reauth') {
+          await needsReauth(connection.id, error.message);
+        }
+        throw error;
+      }
       let result: Awaited<ReturnType<McpRemoteClient['callTool']>>;
       try {
         result = await remote.callTool({
           serverUrl: connection.server_url,
-          accessToken: token,
+          auth,
           name: tool.tool_name,
           args,
           ...(signal ? { signal } : {}),
@@ -189,11 +243,22 @@ export function createMcpAppToolsService({
         // spend a refresh and ask once more, and only then call it a revocation.
         if (!(error instanceof McpRemoteError) || error.failure !== 'unauthorized') throw error;
 
+        /*
+          Only an OAuth token is refreshable (#1269). A key and a no-auth
+          connection have nothing to spend, so a refusal is the member's repair:
+          a new key in the first case, a re-link in the second.
+        */
+        if (connection.auth_mode !== 'oauth') {
+          const sentence = connection.auth_mode === 'api_key' ? KEY_REFUSED : NO_AUTH_REFUSED;
+          await needsReauth(connection.id, sentence);
+          throw new McpRemoteError('reauth', sentence, error);
+        }
+
         try {
-          token = await tokens.accessToken(connection, { force: true });
+          auth = await requestAuth(connection, { forceRefreshed: true });
           result = await remote.callTool({
             serverUrl: connection.server_url,
-            accessToken: token,
+            auth,
             name: tool.tool_name,
             args,
             ...(signal ? { signal } : {}),

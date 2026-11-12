@@ -10,7 +10,11 @@ import type {
   McpMarketplaceRepository,
   McpToolInput,
 } from '@/backend/repositories/mcp/marketplace-repository';
-import { createMcpConnectService, McpConnectError } from '../marketplace/connect-service';
+import {
+  createMcpConnectService,
+  McpConnectError,
+  type McpConnectService,
+} from '../marketplace/connect-service';
 
 /**
  * The connect flow, driven against an in-memory store and a fake network.
@@ -45,6 +49,10 @@ const CATALOG: McpCatalogServerRecord = {
   probe_icon_mime: null,
   icon_override: null,
   verified_at: '2026-11-14T00:00:00.000Z',
+  auth_mode: 'oauth',
+  probe_auth_mode: 'oauth',
+  api_key_header: null,
+  api_key_prefix: null,
   connectable: true,
   connectable_reason: null,
   probed_at: '2026-11-14T00:00:00.000Z',
@@ -114,7 +122,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
       );
       return true;
     },
-    createConnection: async ({ userId, registryName, serverUrl, displayName }) => {
+    createConnection: async ({ userId, registryName, serverUrl, displayName, authMode }) => {
       const row: McpConnectionRecord = {
         id: `conn-${connections.size + 1}`,
         user_id: userId,
@@ -124,6 +132,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
         enabled: true,
         permission_level: 'ask',
         status: 'active',
+        auth_mode: authMode,
         tool_count: 0,
         connected_at: '2026-11-14T00:00:00.000Z',
         last_used_at: null,
@@ -151,8 +160,34 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
         expires_at: input.expiresAt,
         issued_at: '2026-11-14T00:00:00.000Z',
         metadata: input.metadata,
+        api_key_enc: null,
+        api_key_header: null,
+        api_key_prefix: null,
         refresh_claimed_at: null,
       });
+    },
+    saveApiKey: async ({ connectionId, apiKeyEnc, header, prefix }) => {
+      credentials.set(connectionId, {
+        connection_id: connectionId,
+        authorization_server: null,
+        token_endpoint: null,
+        registration_kind: null,
+        client_id: null,
+        client_secret_enc: null,
+        access_token_enc: null,
+        refresh_token_enc: null,
+        scope: null,
+        expires_at: null,
+        issued_at: '2026-11-14T00:00:00.000Z',
+        metadata: null,
+        api_key_enc: apiKeyEnc,
+        api_key_header: header,
+        api_key_prefix: prefix,
+        refresh_claimed_at: null,
+      });
+    },
+    deleteCredentials: async (connectionId) => {
+      credentials.delete(connectionId);
     },
     getCredentials: async (id) => credentials.get(id) ?? null,
     claimRefresh: async () => null,
@@ -246,6 +281,16 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
 }
 
 const REDIRECT = 'https://royaraqamia.com/mcp/callback';
+
+/**
+ * The consent URL out of a `start` answer, refusing the inline-link case: these
+ * tests are about the OAuth flow, and a connected answer here is a bug in the
+ * fixture rather than a value to thread through.
+ */
+function authorizeUrlOf(result: Awaited<ReturnType<McpConnectService['start']>>): string {
+  if (result.kind !== 'authorize') throw new Error('expected an authorize URL');
+  return result.authorizeUrl;
+}
 
 const TOOLS: McpRemoteTool[] = [
   { name: 'search', description: 'Search pages', inputSchema: { type: 'object' }, readOnly: true },
@@ -360,11 +405,13 @@ describe('start', () => {
     const remote = fakeRemote();
     const service = createMcpConnectService({ repository, remote });
 
-    const { authorizeUrl } = await service.start({
-      userId: 'user-1',
-      registryName: CATALOG.registry_name,
-      redirectUri: REDIRECT,
-    });
+    const authorizeUrl = authorizeUrlOf(
+      await service.start({
+        userId: 'user-1',
+        registryName: CATALOG.registry_name,
+        redirectUri: REDIRECT,
+      })
+    );
 
     const state = new URL(authorizeUrl).searchParams.get('state') ?? '';
     const row = [...attempts.values()][0]!;
@@ -417,11 +464,13 @@ describe('complete', () => {
     const fake = fakeRepository();
     const remote = fakeRemote();
     const service = createMcpConnectService({ repository: fake.repository, remote });
-    const { authorizeUrl } = await service.start({
-      userId: 'user-1',
-      registryName: CATALOG.registry_name,
-      redirectUri: REDIRECT,
-    });
+    const authorizeUrl = authorizeUrlOf(
+      await service.start({
+        userId: 'user-1',
+        registryName: CATALOG.registry_name,
+        redirectUri: REDIRECT,
+      })
+    );
     return {
       ...fake,
       remote,
@@ -474,11 +523,13 @@ describe('complete', () => {
     await first.service.complete({ userId: 'user-1', state: first.state, code: 'code-1' });
 
     // A second handshake for the same member and row.
-    const { authorizeUrl } = await first.service.start({
-      userId: 'user-1',
-      registryName: CATALOG.registry_name,
-      redirectUri: REDIRECT,
-    });
+    const authorizeUrl = authorizeUrlOf(
+      await first.service.start({
+        userId: 'user-1',
+        registryName: CATALOG.registry_name,
+        redirectUri: REDIRECT,
+      })
+    );
     const state = new URL(authorizeUrl).searchParams.get('state') ?? '';
     const { connectionId } = await first.service.complete({
       userId: 'user-1',
@@ -499,11 +550,13 @@ describe('complete', () => {
     });
     const service = createMcpConnectService({ repository: fake.repository, remote });
 
-    const { authorizeUrl } = await service.start({
-      userId: 'user-1',
-      registryName: CATALOG.registry_name,
-      redirectUri: REDIRECT,
-    });
+    const authorizeUrl = authorizeUrlOf(
+      await service.start({
+        userId: 'user-1',
+        registryName: CATALOG.registry_name,
+        redirectUri: REDIRECT,
+      })
+    );
     const state = new URL(authorizeUrl).searchParams.get('state') ?? '';
 
     const { connectionId } = await service.complete({ userId: 'user-1', state, code: 'code-1' });
@@ -540,11 +593,13 @@ describe('the connected-app cap', () => {
       assertConnectionSlot: assertSlot,
     });
     const stateOf = async (registryName: string) => {
-      const { authorizeUrl } = await service.start({
-        userId: 'user-1',
-        registryName,
-        redirectUri: REDIRECT,
-      });
+      const authorizeUrl = authorizeUrlOf(
+        await service.start({
+          userId: 'user-1',
+          registryName,
+          redirectUri: REDIRECT,
+        })
+      );
       return new URL(authorizeUrl).searchParams.get('state') ?? '';
     };
     return { ...fake, remote, assertSlot, service, stateOf };
@@ -666,11 +721,13 @@ describe('pre-registered client', () => {
     const remote = fakeRemote();
     const service = createMcpConnectService({ repository, remote, staticClients: STATIC });
 
-    const { authorizeUrl } = await service.start({
-      userId: 'user-1',
-      registryName: CATALOG.registry_name,
-      redirectUri: REDIRECT,
-    });
+    const authorizeUrl = authorizeUrlOf(
+      await service.start({
+        userId: 'user-1',
+        registryName: CATALOG.registry_name,
+        redirectUri: REDIRECT,
+      })
+    );
     const state = new URL(authorizeUrl).searchParams.get('state') ?? '';
     const { connectionId } = await service.complete({ userId: 'user-1', state, code: 'code-1' });
 
@@ -786,11 +843,13 @@ describe('the scope set a row asks for (#1230)', () => {
     const remote = fakeRemote({ discover: async () => SUPABASE_DISCOVERY });
     const service = createMcpConnectService({ repository: reading, remote });
 
-    const { authorizeUrl } = await service.start({
-      userId: 'user-1',
-      registryName: SUPABASE.registry_name,
-      redirectUri: REDIRECT,
-    });
+    const authorizeUrl = authorizeUrlOf(
+      await service.start({
+        userId: 'user-1',
+        registryName: SUPABASE.registry_name,
+        redirectUri: REDIRECT,
+      })
+    );
     const state = new URL(authorizeUrl).searchParams.get('state') ?? '';
     stale = true;
 
@@ -799,5 +858,208 @@ describe('the scope set a row asks for (#1230)', () => {
     await expect(
       service.complete({ userId: 'user-1', state, code: 'code-1' })
     ).rejects.toMatchObject({ failure: 'registration' });
+  });
+});
+
+/**
+ * The two modes that never leave the site (#1269).
+ *
+ * What these pin is the difference between "there is nothing to consent to" and
+ * "the flow is not guessing": a no-auth row is measured by its own handshake, an
+ * api_key row cannot be linked without the key, and the key is encrypted before
+ * the repository sees it and never appears in the tool read's plaintext header
+ * beyond the one request that proves it.
+ */
+describe('a row that needs no credential, or a key (#1269)', () => {
+  const NONE: McpCatalogServerRecord = {
+    ...CATALOG,
+    registry_name: 'com.cloudflare/docs',
+    title: 'Cloudflare Docs',
+    remote_url: 'https://docs.mcp.example/mcp',
+    auth_mode: 'none',
+    probe_auth_mode: 'none',
+  };
+
+  const KEYED: McpCatalogServerRecord = {
+    ...CATALOG,
+    registry_name: 'com.postman/mcp',
+    title: 'Postman',
+    remote_url: 'https://mcp.postman.example/mcp',
+    auth_mode: 'api_key',
+    probe_auth_mode: 'oauth',
+    api_key_header: 'Authorization',
+    api_key_prefix: 'Bearer',
+  };
+
+  function directRepository(server: McpCatalogServerRecord) {
+    return fakeRepository({ getCatalogServer: async () => server });
+  }
+
+  it('connects a no-auth row without a credential, and lists its tools', async () => {
+    const fake = directRepository(NONE);
+    const remote = fakeRemote();
+    const service = createMcpConnectService({ repository: fake.repository, remote });
+
+    const started = await service.start({
+      userId: 'user-1',
+      registryName: NONE.registry_name,
+      redirectUri: REDIRECT,
+    });
+
+    expect(started).toEqual({ kind: 'connected', connectionId: 'conn-1' });
+    // No discovery, no registration, no attempt row: there is no consent screen.
+    expect(remote.discover).not.toHaveBeenCalled();
+    expect(remote.register).not.toHaveBeenCalled();
+    expect(fake.attempts.size).toBe(0);
+
+    expect(remote.listTools).toHaveBeenCalledWith({
+      serverUrl: NONE.remote_url,
+      auth: { kind: 'none' },
+    });
+    expect(fake.connections.get('conn-1')?.auth_mode).toBe('none');
+    expect(fake.connections.get('conn-1')?.tool_count).toBe(2);
+    expect(fake.credentials.size).toBe(0);
+  });
+
+  it('refuses an api_key row when the member supplied no key, before any request', async () => {
+    const fake = directRepository(KEYED);
+    const remote = fakeRemote();
+    const service = createMcpConnectService({ repository: fake.repository, remote });
+
+    const error = await service
+      .start({ userId: 'user-1', registryName: KEYED.registry_name, redirectUri: REDIRECT })
+      .catch((refusal) => refusal);
+
+    expect(error).toBeInstanceOf(McpConnectError);
+    expect(error.failure).toBe('missing_key');
+    expect(fake.connections.size).toBe(0);
+    expect(remote.listTools).not.toHaveBeenCalled();
+  });
+
+  it('stores the key as ciphertext and sends it in the documented header', async () => {
+    const fake = directRepository(KEYED);
+    const remote = fakeRemote();
+    const service = createMcpConnectService({ repository: fake.repository, remote });
+
+    const started = await service.start({
+      userId: 'user-1',
+      registryName: KEYED.registry_name,
+      redirectUri: REDIRECT,
+      apiKey: 'pm-live-1',
+    });
+
+    expect(started).toEqual({ kind: 'connected', connectionId: 'conn-1' });
+    const stored = fake.credentials.get('conn-1')!;
+    expect(stored.api_key_enc).not.toContain('pm-live-1');
+    expect(stored.api_key_header).toBe('Authorization');
+    expect(stored.api_key_prefix).toBe('Bearer');
+    expect(stored.access_token_enc).toBeNull();
+
+    expect(remote.listTools).toHaveBeenCalledWith({
+      serverUrl: KEYED.remote_url,
+      auth: { kind: 'api_key', header: 'Authorization', value: 'Bearer pm-live-1' },
+    });
+    expect(fake.connections.get('conn-1')?.status).toBe('active');
+  });
+
+  it('keeps the connection when the key is refused, so the screen can ask for another', async () => {
+    const fake = directRepository(KEYED);
+    const remote = fakeRemote({
+      listTools: vi.fn(async () => {
+        throw new Error('401');
+      }),
+    });
+    const service = createMcpConnectService({ repository: fake.repository, remote });
+
+    const { connectionId } = (await service.start({
+      userId: 'user-1',
+      registryName: KEYED.registry_name,
+      redirectUri: REDIRECT,
+      apiKey: 'pm-live-1',
+    })) as { connectionId: string };
+
+    const connection = fake.connections.get(connectionId)!;
+    expect(connection.status).toBe('error');
+    expect(connection.last_error).toBeTruthy();
+  });
+
+  it('reads the header from a row that names none as Authorization, with no scheme invented', async () => {
+    const bare: McpCatalogServerRecord = {
+      ...KEYED,
+      api_key_header: null,
+      api_key_prefix: null,
+    };
+    const fake = directRepository(bare);
+    const remote = fakeRemote();
+    const service = createMcpConnectService({ repository: fake.repository, remote });
+
+    await service.start({
+      userId: 'user-1',
+      registryName: bare.registry_name,
+      redirectUri: REDIRECT,
+      apiKey: 'bare-key',
+    });
+
+    expect(remote.listTools).toHaveBeenCalledWith({
+      serverUrl: bare.remote_url,
+      auth: { kind: 'api_key', header: 'Authorization', value: 'bare-key' },
+    });
+  });
+
+  it('replaces a key without a second consent, and re-reads the tools', async () => {
+    const fake = directRepository(KEYED);
+    const remote = fakeRemote();
+    const service = createMcpConnectService({ repository: fake.repository, remote });
+
+    const { connectionId } = (await service.start({
+      userId: 'user-1',
+      registryName: KEYED.registry_name,
+      redirectUri: REDIRECT,
+      apiKey: 'pm-live-1',
+    })) as { connectionId: string };
+
+    const before = fake.credentials.get(connectionId)!.api_key_enc;
+    await service.replaceApiKey({ userId: 'user-1', connectionId, apiKey: 'pm-live-2' });
+
+    expect(fake.credentials.get(connectionId)!.api_key_enc).not.toBe(before);
+    expect(remote.listTools).toHaveBeenLastCalledWith({
+      serverUrl: KEYED.remote_url,
+      auth: { kind: 'api_key', header: 'Authorization', value: 'Bearer pm-live-2' },
+    });
+  });
+
+  it('refuses a key for a connection that never held one', async () => {
+    const fake = fakeRepository();
+    const remote = fakeRemote();
+    const service = createMcpConnectService({ repository: fake.repository, remote });
+    const authorizeUrl = authorizeUrlOf(
+      await service.start({
+        userId: 'user-1',
+        registryName: CATALOG.registry_name,
+        redirectUri: REDIRECT,
+      })
+    );
+    const state = new URL(authorizeUrl).searchParams.get('state') ?? '';
+    const { connectionId } = await service.complete({ userId: 'user-1', state, code: 'code-1' });
+
+    await expect(
+      service.replaceApiKey({ userId: 'user-1', connectionId, apiKey: 'nope' })
+    ).rejects.toMatchObject({ failure: 'wrong_mode' });
+    expect(remote.listTools).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a key for a connection the member does not own', async () => {
+    const fake = directRepository(KEYED);
+    const service = createMcpConnectService({ repository: fake.repository, remote: fakeRemote() });
+    const { connectionId } = (await service.start({
+      userId: 'user-1',
+      registryName: KEYED.registry_name,
+      redirectUri: REDIRECT,
+      apiKey: 'pm-live-1',
+    })) as { connectionId: string };
+
+    await expect(
+      service.replaceApiKey({ userId: 'user-2', connectionId, apiKey: 'pm-live-2' })
+    ).rejects.toMatchObject({ failure: 'unknown_app' });
   });
 });
