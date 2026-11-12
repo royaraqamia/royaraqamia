@@ -1,7 +1,12 @@
+'use client';
+
+import { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Users } from 'lucide-react';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { useSession } from '@/frontend/state/session-provider';
 import type { PublicUser } from '@/shared/contracts/users';
+import { withPinnedSelf, type PinnedRoster, type ViewerMember } from './member-pin';
 
 interface CommunityMembersProps {
   members: PublicUser[];
@@ -12,11 +17,49 @@ function displayName(member: PublicUser): string {
 }
 
 /**
+ * The roster with the viewer's own row pinned to the head.
+ *
+ * The list arrives from a cached, viewer-agnostic read, so who "you" are can
+ * only be answered here, from the session; a guest gets the roster untouched.
+ */
+function usePinnedRoster(members: PublicUser[]): PinnedRoster {
+  const { user, profileUsername, profileName, profileAvatarUrl } = useSession();
+
+  return useMemo(() => {
+    const viewer: ViewerMember | null =
+      user && profileUsername
+        ? {
+            id: user.id,
+            username: profileUsername,
+            name: profileName,
+            avatarUrl: profileAvatarUrl,
+          }
+        : null;
+
+    return withPinnedSelf(members, viewer);
+  }, [members, user, profileUsername, profileName, profileAvatarUrl]);
+}
+
+/**
+ * The one difference the pinned row carries: a label, not a second card style.
+ * It sits inside the name line so it never pushes the handle it shares a column
+ * with, and it is `shrink-0` so a long name truncates instead of the label.
+ */
+function YouBadge() {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full border border-primary/40 bg-primary/10 px-1.5 text-[10px] font-bold leading-[14px] text-primary">
+      أنت
+    </span>
+  );
+}
+
+/**
  * Desktop rail of members. Reads as part of the feed's right column —
  * deliberately quiet chrome so the gradient avatars carry the identity.
  */
 export function CommunityMembersPanel({ members }: CommunityMembersProps) {
-  if (members.length === 0) return null;
+  const roster = usePinnedRoster(members);
+  if (roster.members.length === 0) return null;
 
   return (
     <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/40 shadow-sm">
@@ -26,7 +69,7 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
       </header>
 
       <ul className="dialog-scrollbar flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto px-2 pb-3">
-        {members.map((member) => (
+        {roster.members.map((member) => (
           <li key={member.id}>
             <Link
               href={`/u/${encodeURIComponent(member.username)}`}
@@ -39,8 +82,11 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
                 sizes="36px"
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-foreground">
-                  {displayName(member)}
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <span className="truncate text-sm font-bold text-foreground">
+                    {displayName(member)}
+                  </span>
+                  {member.id === roster.selfId && <YouBadge />}
                 </span>
                 <span className="block truncate text-end text-xs text-muted-foreground" dir="ltr">
                   @{member.username}
@@ -60,7 +106,18 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
 
 /** Mobile counterpart: a snap-scrolling row of member chips above the feed. */
 export function CommunityMembersStrip({ members }: CommunityMembersProps) {
-  if (members.length === 0) return null;
+  const roster = usePinnedRoster(members);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // The pin lands after paint, on a scroller that was already laid out without
+  // it: a run snapped a strip forward by one chip and left the pinned card off
+  // screen to the right. Re-aim at the writing start (`scrollLeft` 0 is the
+  // right edge in `rtl`) whenever a viewer's row is freshly pinned.
+  useEffect(() => {
+    if (roster.selfId && listRef.current) listRef.current.scrollLeft = 0;
+  }, [roster.selfId]);
+
+  if (roster.members.length === 0) return null;
 
   return (
     <section className="mb-8 lg:hidden" aria-label="أعضاء المجتمع">
@@ -68,8 +125,11 @@ export function CommunityMembersStrip({ members }: CommunityMembersProps) {
         <Users className="size-4 text-primary" aria-hidden="true" />
         <h2 className="text-sm font-bold text-foreground">أعضاء المجتمع</h2>
       </div>
-      <ul className="scrollbar-none flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2">
-        {members.map((member) => (
+      <ul
+        ref={listRef}
+        className="scrollbar-none flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2"
+      >
+        {roster.members.map((member) => (
           <li key={member.id} className="snap-start">
             <Link
               href={`/u/${encodeURIComponent(member.username)}`}
@@ -81,8 +141,11 @@ export function CommunityMembersStrip({ members }: CommunityMembersProps) {
                 size="lg"
                 sizes="56px"
               />
-              <span className="w-full truncate text-xs font-bold text-foreground">
-                {displayName(member)}
+              <span className="flex w-full min-w-0 items-center justify-center gap-1">
+                <span className="truncate text-xs font-bold text-foreground">
+                  {displayName(member)}
+                </span>
+                {member.id === roster.selfId && <YouBadge />}
               </span>
               <span className="w-full truncate text-[10px] text-muted-foreground" dir="ltr">
                 @{member.username}

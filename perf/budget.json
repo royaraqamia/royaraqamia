@@ -10,8 +10,8 @@
   },
   "routes": {
     "/community": {
-      "comment": "The community route wears the shell, so it carries the assistant's door like every other route (ADR-0143). The floating control adds 1.9 KB gzip to the initial bundle; this ceiling sits just above today's measurement so that growth is the feature, not a leak.",
-      "jsGzipKb": 262
+      "comment": "The community route wears the shell, so it carries the assistant's door like every other route (ADR-0143). The floating control adds 1.9 KB gzip to the initial bundle; this ceiling sits just above today's measurement so that growth is the feature, not a leak. The pinned own row adds 0.7 KB (ADR-0172): a reorder read from the session in the browser, not a per-visitor render.",
+      "jsGzipKb": 264
     },
     "/scan": {
       "comment": "The Scanner owns no server surface, so its budget is the initial bundle alone: the decoder and the result card are lazy, and the ~1 MB WASM engine is a static asset fetched only once a visitor actually scans.",

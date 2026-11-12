@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { signIn } from './sign-in';
 
 /**
  * The members rail belongs beside the feed at `lg`, and it has to stay there
@@ -61,5 +62,25 @@ test.describe('the community members rail', () => {
     expect(feedBox).not.toBeNull();
     expect(railBox!.y).toBeLessThan(feedBox!.y + 200);
     expect(railBox!.x).toBeLessThan(feedBox!.x);
+  });
+
+  /**
+   * The roster is one cached read shared by every visitor, so the pin cannot be
+   * decided on the server: it is taken in the browser from the session. This is
+   * that path end to end — signed in, reloaded, the first row is the viewer's
+   * own and carries the label nothing else does.
+   */
+  test('pins the signed-in member to the head of the roster', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await signIn(context, baseURL!);
+    await page.goto('/community');
+
+    const rows = rail(page).getByRole('listitem');
+    await expect(rows.first()).toContainText('أنت');
+    await expect(rows.first().getByRole('link')).toHaveAttribute('href', /^\/u\//);
+    await expect(rail(page).getByText('أنت')).toHaveCount(1);
   });
 });
