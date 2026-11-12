@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { Hash, ScanBarcode, ScanLine, CheckCircle2, AlertCircle, Search } from 'lucide-react';
 import Link from 'next/link';
 import { m } from 'motion/react';
+import { homeTabHref } from '@/shared/contracts/home-services-catalog';
 import { cardVariants } from './verify-variants';
 
 interface VerifySearchCardProps {
@@ -106,7 +107,7 @@ export function VerifySearchCard({
             </button>
 
             <Link
-              href="/scan"
+              href={homeTabHref('/scan')}
               className="group inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-muted hover:text-foreground"
             >
               <ScanBarcode className="size-3.5 text-primary/80 transition-transform group-hover:scale-110" />
