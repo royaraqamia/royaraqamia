@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.chats.AssistantMark
 import com.royaraqamia.app.chats.ChatAttachmentStage
@@ -62,7 +64,6 @@ import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyTypeScale
 import com.royaraqamia.app.ui.vectors.LucideVectors
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 
 /** The handle a UI test finds the sheet by. */
@@ -88,6 +89,8 @@ const val ASSISTANT_SHEET_TAG = "assistant-sheet"
 @Composable
 fun AssistantSheet(
     repository: ChatsRepository,
+    /** The turns that outlive this sheet (ADR-0173). */
+    turns: AssistantTurnStore,
     signedIn: Boolean,
     /** What the shell last painted; null on the first open of this process. */
     snapshot: AssistantSnapshot?,
@@ -122,29 +125,31 @@ fun AssistantSheet(
     var messages by remember { mutableStateOf(snapshot?.messages ?: emptyList()) }
     var available by remember { mutableStateOf(snapshot?.available ?: true) }
     var allowance by remember { mutableStateOf(snapshot?.allowance) }
-    var streaming by remember { mutableStateOf("") }
-    var tools by remember { mutableStateOf<List<String>>(emptyList()) }
+    var openActions by remember { mutableStateOf(0L) }
     var notice by remember { mutableStateOf<String?>(null) }
     var draft by remember { mutableStateOf("") }
     var staged by remember { mutableStateOf<List<ChatComposeFile>>(emptyList()) }
     var attempt by remember { mutableIntStateOf(0) }
 
-    val events = remember { MutableSharedFlow<AssistantEvent>(extraBufferCapacity = 512) }
+    val running by turns.turns.collectAsState()
+    val turn = threadId?.let { running[it] }
+    val asking = turn?.phase != null
+    /** The face to draw: a running turn outranks the last settled state. */
+    val shownState = if (asking) AssistantUiState.Asking else state
 
-    // The stream's frames arrive on the IO thread; this collector is the main
-    // thread's one writer, which is what keeps the sheet's state single-threaded.
-    LaunchedEffect(events) {
-        events.collect { event ->
-            when (event) {
-                is AssistantEvent.Delta ->
-                    if (state == AssistantUiState.Asking) streaming += event.text
-                is AssistantEvent.Tool -> tools = tools + event.label
-                is AssistantEvent.Error -> notice = event.message
-                is AssistantEvent.Proposal -> notice = event.label.ifBlank { null }
-                AssistantEvent.Done -> Unit
-            }
+    /**
+     * The one line under the name (ADR-0173): the turn's phase while it runs,
+     * and "waiting for you" once a proposal is open. The sheet cannot confirm a
+     * proposal yet, so the phase it sees is the stream's own.
+     */
+    val phaseLine =
+        when (turn?.phase) {
+            AssistantPhase.Thinking -> AssistantPanelCopy.THINKING
+            AssistantPhase.Writing -> AssistantPanelCopy.WRITING
+            AssistantPhase.Tool -> turn?.toolLabel
+            AssistantPhase.Proposal -> AssistantPanelCopy.NEEDS_YOU
+            null -> if (openActions > 0) AssistantPanelCopy.NEEDS_YOU else null
         }
-    }
 
     suspend fun refreshAssistant() {
         when (val info = repository.assistant()) {
@@ -161,7 +166,10 @@ fun AssistantSheet(
     suspend fun load(id: String): Boolean {
         var readFailed = false
         when (val header = repository.thread(id)) {
-            is ApiResult.Success -> quota = header.value.attachmentQuota
+            is ApiResult.Success -> {
+                quota = header.value.attachmentQuota
+                openActions = header.value.openActions ?: 0
+            }
             is ApiResult.Failure -> readFailed = true
         }
         when (val page = repository.messages(id)) {
@@ -255,11 +263,27 @@ fun AssistantSheet(
         }
     }
 
-    LaunchedEffect(messages.size, streaming) {
+    // A turn settles in the store, which may be while this sheet is closed. The
+    // stored row is the record, so the thread is read again when it ends.
+    LaunchedEffect(threadId, turn?.settledAt) {
+        val id = threadId ?: return@LaunchedEffect
+        if ((turn?.settledAt ?: 0L) == 0L) return@LaunchedEffect
+        load(id)
+        refreshAssistant()
+        state =
+            when {
+                !available -> AssistantUiState.Unavailable
+                allowance?.member?.cap == 0.0 -> AssistantUiState.Locked
+                else -> AssistantUiState.Ready
+            }
+        publish()
+    }
+
+    LaunchedEffect(messages.size, turn?.streaming) {
         // The last row is the streaming bubble while a turn is in flight, and
         // may be preceded by the tools line; the list itself knows the index.
         val target =
-            if (state == AssistantUiState.Asking) {
+            if (asking) {
                 (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
             } else {
                 messages.lastIndex
@@ -289,35 +313,15 @@ fun AssistantSheet(
 
     fun send() {
         val id = threadId ?: return
-        if (state == AssistantUiState.Asking) return
+        if (asking) return
         val body = draft.trim()
         val files = staged
         if (body.isEmpty() && files.isEmpty()) return
 
         draft = ""
         staged = emptyList()
-        streaming = ""
-        tools = emptyList()
         notice = null
-        state = AssistantUiState.Asking
-
-        scope.launch {
-            val result =
-                repository.streamAssistant(id, body, files) { event -> events.tryEmit(event) }
-            if (result is ApiResult.Failure) {
-                notice = ChatFailure.sentenceOf(result.error) ?: AssistantPanelCopy.FAILED
-            }
-            load(id)
-            refreshAssistant()
-            state =
-                when {
-                    !available -> AssistantUiState.Unavailable
-                    allowance?.member?.cap == 0.0 -> AssistantUiState.Locked
-                    else -> AssistantUiState.Ready
-                }
-            streaming = ""
-            publish()
-        }
+        turns.start(id, body, files)
     }
 
     fun openAttachment(attachmentId: String) {
@@ -356,11 +360,23 @@ fun AssistantSheet(
                         style = type.h6.copy(fontWeight = FontWeight.Bold),
                         color = RoyColors.foreground,
                     )
+                    /*
+                      The slot is always reserved, so the header does not jump when
+                      a turn starts; it is the sheet's one live line (ADR-0173).
+                    */
+                    Text(
+                        text = phaseLine.orEmpty(),
+                        style = type.xs,
+                        color = RoyColors.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.heightIn(min = 16.dp),
+                    )
                 }
             }
 
             Box(Modifier.weight(1f).fillMaxWidth()) {
-                when (state) {
+                when (shownState) {
                     AssistantUiState.Guest ->
                         AssistantStatePanel(
                             title = AssistantPanelCopy.GUEST_TITLE,
@@ -406,9 +422,9 @@ fun AssistantSheet(
                     AssistantUiState.Ready, AssistantUiState.Asking ->
                         AssistantConversation(
                             messages = messages,
-                            streaming = streaming,
-                            tools = tools,
-                            asking = state == AssistantUiState.Asking,
+                            streaming = turn?.streaming.orEmpty(),
+                            tools = turn?.tools.orEmpty(),
+                            asking = asking,
                             listState = listState,
                             type = type,
                             onOpenAttachment = ::openAttachment,
@@ -417,7 +433,7 @@ fun AssistantSheet(
                 }
             }
 
-            notice?.let { sentence ->
+            (turn?.notice ?: notice)?.let { sentence ->
                 Text(
                     text = sentence,
                     style = type.xs,
@@ -426,7 +442,7 @@ fun AssistantSheet(
                 )
             }
 
-            if (state == AssistantUiState.Ready || state == AssistantUiState.Asking) {
+            if (shownState == AssistantUiState.Ready || shownState == AssistantUiState.Asking) {
                 Column(
                     modifier =
                         Modifier.fillMaxWidth()
@@ -437,7 +453,7 @@ fun AssistantSheet(
                     if (quota != null) {
                         ChatComposerAttach(
                             files = staged,
-                            enabled = state != AssistantUiState.Asking,
+                            enabled = !asking,
                             onPicked = ::stage,
                             onRemove = { index ->
                                 staged = staged.filterIndexed { at, _ -> at != index }
@@ -453,7 +469,7 @@ fun AssistantSheet(
                             value = draft,
                             onValueChange = { draft = it },
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp, max = 128.dp),
-                            enabled = state != AssistantUiState.Asking,
+                            enabled = !asking,
                             placeholder = {
                                 Text(
                                     text = AssistantPanelCopy.PLACEHOLDER,
@@ -468,7 +484,7 @@ fun AssistantSheet(
                         IconButton(
                             onClick = ::send,
                             enabled =
-                                state != AssistantUiState.Asking &&
+                                !asking &&
                                     (draft.isNotBlank() || staged.isNotEmpty()),
                             modifier = Modifier.size(48.dp),
                         ) {
@@ -571,29 +587,45 @@ private fun AssistantConversation(
 
         if (tools.isNotEmpty()) {
             item {
-                Text(
-                    text = tools.joinToString(" · "),
-                    style = type.xs,
-                    color = RoyColors.mutedForeground.copy(alpha = 0.7f),
-                )
+                Provenance(tools = tools, type = type)
             }
         }
 
-        if (asking) {
+        if (asking && streaming.isNotEmpty()) {
             item {
                 AssistantBubble {
                     Text(
-                        text = streaming.ifEmpty { AssistantPanelCopy.THINKING },
+                        text = streaming,
                         style = type.small,
-                        color =
-                            if (streaming.isEmpty()) {
-                                RoyColors.mutedForeground
-                            } else {
-                                RoyColors.foreground
-                            },
+                        color = RoyColors.foreground,
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * What the answer read, folded away: provenance explains the answer, it is not
+ * a second live line (ADR-0173). The header carries what is happening now.
+ */
+@Composable
+private fun Provenance(tools: List<String>, type: RoyTypeScale) {
+    var open by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            text = AssistantPanelCopy.PROVENANCE,
+            style = type.xs,
+            color = RoyColors.mutedForeground.copy(alpha = 0.7f),
+            modifier = Modifier.clickable { open = !open },
+        )
+        if (open) {
+            Text(
+                text = tools.joinToString(" · "),
+                style = type.xs,
+                color = RoyColors.mutedForeground.copy(alpha = 0.7f),
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
     }
 }

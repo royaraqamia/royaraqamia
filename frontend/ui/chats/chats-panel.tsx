@@ -7,7 +7,7 @@ import { Check, MessagesSquare, Plus, X } from 'lucide-react';
 
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
 import { useChatPresenceList } from '@/frontend/state/chats/use-chat-presence-list';
-import { useAssistantTurnActive } from '@/frontend/state/chats/assistant-turn';
+import { useAssistantPhase } from '@/frontend/state/chats/assistant-turn';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
 import { identityUserId } from '@/frontend/shared/local-store/identity';
@@ -18,7 +18,8 @@ import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
 import { AssistantMark } from './assistant-mark';
-import { ASSISTANT_COPY } from './assistant-copy';
+import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
+import { assistantPhaseText } from './assistant-phase';
 import { PresenceIndicator } from './presence-indicator';
 import { NewConversationPanel } from './new-conversation-panel';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
@@ -372,9 +373,12 @@ function ThreadIdentity({
    * they backed out of the thread; a real member's arrives on the presence
    * stream. One slot, so a row never grows a second line while it happens.
    */
-  const assistantTyping = useAssistantTurnActive(thread.kind === 'agent' ? thread.id : null);
+  const phase = useAssistantPhase(thread.kind === 'agent' ? thread.id : null);
   const indicator =
-    thread.kind === 'agent' && assistantTyping ? ASSISTANT_COPY.thinking : presenceText(presence);
+    thread.kind === 'agent'
+      ? (assistantPhaseText(phase) ??
+        ((thread.openActions ?? 0) > 0 ? ASSISTANT_PANEL_COPY.needsYou : null))
+      : presenceText(presence);
 
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3">

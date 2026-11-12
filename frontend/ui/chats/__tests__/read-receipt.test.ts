@@ -32,6 +32,7 @@ function makeThread(kind: ChatThread['kind'], participants: ChatParticipant[]): 
     myStatus: 'active',
     lastMessage: null,
     unreadCount: 0,
+    openActions: 0,
     lastMessageAt: null,
     createdAt: '2026-11-01T00:00:00.000Z',
     participants,

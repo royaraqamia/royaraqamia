@@ -20,6 +20,7 @@ import {
   unblockChatUser,
   withdrawChatRequest,
 } from '@/frontend/api/chats';
+import { clearAssistantTurn } from '@/frontend/state/chats/assistant-turn';
 import {
   removeChatAttachmentObjects,
   uploadChatAttachment,
@@ -546,6 +547,9 @@ export function useChatThread(conversationId: string): ChatThreadState {
             : await rejectChatAgentAction(conversationId, actionId);
 
         dispatch({ type: 'actionReplaced', action });
+        // The proposal is answered, so the row's "needs you" line is done
+        // (ADR-0173). A no-op for a thread with no assistant turn.
+        clearAssistantTurn(conversationId);
 
         const reason = action.result?.error;
         return action.status === 'failed' && typeof reason === 'string' ? reason : null;

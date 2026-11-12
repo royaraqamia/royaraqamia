@@ -357,6 +357,14 @@ export interface ChatConversationSummary {
     hasAttachments: boolean;
   } | null;
   unreadCount: number;
+  /**
+   * Proposals waiting for this member in the thread, from the server's own rows
+   * (ADR-0173). The list draws "needs you" from this rather than from a turn the
+   * browser happens to remember, so a reload does not forget a write that is
+   * still waiting. Optional because a row cached before this field existed has
+   * no count, and an absent count is zero.
+   */
+  openActions?: number;
   lastMessageAt: string | null;
   createdAt: string;
 }
@@ -434,15 +442,37 @@ export interface ChatAssistantState {
 }
 
 /** One assistant turn: the question, and nothing else (no tools, no files). */
-/** The frames the turn's stream carries, one JSON object per SSE `data:` line. */
+/**
+ * The frames the turn's stream carries, one JSON object per SSE `data:` line.
+ *
+ * A tool call is a lifecycle, not two unrelated notices: `tool_start` names the
+ * call before it runs, and `tool` closes it with the same `id` and whether it
+ * succeeded (ADR-0173). The id is the model's own `call.id`, so a turn that
+ * calls one tool twice — or runs two in parallel — cannot be confused for one.
+ * `activity` is present tense (what the header says now); `label` is the gerund
+ * the provenance line keeps afterwards.
+ */
 export type ChatAgentEvent =
   | { type: 'delta'; text: string }
-  /** A read tool ran: the member sees which one, in their own language. */
-  | { type: 'tool'; name: string; label: string }
+  | { type: 'tool_start'; id: string; name: string; activity: string }
+  | { type: 'tool'; id: string; name: string; label: string; ok: boolean }
   /** A write tool was proposed; the card is drawn from `action` (#818). */
   | { type: 'proposal'; message: ChatMessage; action: ChatAgentAction }
   | { type: 'done'; message: ChatMessage }
   | { type: 'error'; error: string };
+
+/**
+ * What the assistant is doing, as one line a header can draw (ADR-0173).
+ *
+ * The three live kinds are the turn's own phases; `proposal` outlives the stream
+ * because a write waits for the member, so it is "blocked on you", not activity.
+ * A phase is never stored: the turn is the only thing that can assert it.
+ */
+export type ChatAgentPhase =
+  | { kind: 'thinking' }
+  | { kind: 'writing' }
+  | { kind: 'tool'; label: string }
+  | { kind: 'proposal' };
 
 /** A direct thread starts as a request; acceptance happens in the list. */
 export const StartDirectChatSchema = z.object({
@@ -651,6 +681,7 @@ export const ChatConversationSummarySchema = z.object({
     })
     .nullable(),
   unreadCount: z.number(),
+  openActions: z.number().int().nonnegative().optional(),
   lastMessageAt: z.string().nullable(),
   createdAt: z.string(),
 });

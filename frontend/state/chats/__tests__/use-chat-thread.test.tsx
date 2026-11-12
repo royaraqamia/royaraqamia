@@ -312,6 +312,7 @@ describe('useChatThread cache', () => {
     myStatus: 'active',
     lastMessage: null,
     unreadCount: 0,
+    openActions: 0,
     lastMessageAt: '2026-11-01T10:00:00.000Z',
     createdAt: '2026-11-01T09:00:00.000Z',
     participants: [],

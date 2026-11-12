@@ -13,6 +13,8 @@ export interface ChatThreadRow {
   createdAt: string;
   lastMessageAt: string | null;
   unreadCount: number;
+  /** Proposals still waiting for the member, from the thread's own action rows. */
+  openActions: number;
   lastMessageBody: string | null;
   lastMessageSenderKind: ChatSenderKind | null;
   lastMessageCreatedAt: string | null;

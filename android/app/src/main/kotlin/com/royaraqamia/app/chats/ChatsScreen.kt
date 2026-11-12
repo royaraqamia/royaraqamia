@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +36,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.assistant.AssistantPanelCopy
+import com.royaraqamia.app.assistant.AssistantPhase
+import com.royaraqamia.app.assistant.AssistantTurn
+import com.royaraqamia.app.assistant.AssistantTurnStore
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.ChatThreadsResponseThreadsItem
@@ -79,6 +84,8 @@ fun ChatsScreen(
     modifier: Modifier = Modifier,
     /** The member's presence stream; absent in a test or a tree without Realtime. */
     presence: ChatPresenceSource? = null,
+    /** The assistant's turns, owned above the sheet so a closed panel keeps them. */
+    assistantTurns: AssistantTurnStore? = null,
     onOpenThread: (String) -> Unit = {},
     onOpenAssistant: (String) -> Unit = {},
     onNewChat: () -> Unit = {},
@@ -96,6 +103,15 @@ fun ChatsScreen(
     /** The live state each row is drawing, keyed by conversation id. */
     var presenceByThread by remember { mutableStateOf<Map<String, ChatPresenceEvent>>(emptyMap()) }
     var presenceStamps by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
+
+    // The assistant's live turns, keyed by conversation. The sheet may be closed;
+    // the row still draws what نور is doing (ADR-0173).
+    val runningTurns =
+        if (assistantTurns != null) {
+            assistantTurns.turns.collectAsState().value
+        } else {
+            emptyMap()
+        }
 
     // One subscription per row that can be heard: presence is the conversation's
     // (ADR-0167), and the sender is checked against the row's own counterpart.
@@ -216,6 +232,7 @@ fun ChatsScreen(
                 ChatsList(
                     threads = shown.threads,
                     presence = presenceByThread,
+                    runningTurns = runningTurns,
                     assistantLocked = assistantLocked,
                     assistantBusy = assistantBusy,
                     failure = failure,
@@ -290,6 +307,7 @@ private suspend fun assistantLockedNow(repository: ChatsRepository): Boolean =
 private fun ChatsList(
     threads: List<ChatThreadsResponseThreadsItem>,
     presence: Map<String, ChatPresenceEvent>,
+    runningTurns: Map<String, AssistantTurn>,
     assistantLocked: Boolean,
     assistantBusy: Boolean,
     failure: String?,
@@ -394,7 +412,12 @@ private fun ChatsList(
                                     Recipes.Card.radius,
                                 ),
                     ) {
-                        ThreadRow(thread = assistant, presence = null, onOpen = onOpenThread)
+                        ThreadRow(
+                            thread = assistant,
+                            presence = null,
+                            assistantTurn = runningTurns[assistant.id],
+                            onOpen = onOpenThread,
+                        )
                     }
                 }
             }
@@ -595,6 +618,7 @@ private fun RequestRow(
 private fun ThreadRow(
     thread: ChatThreadsResponseThreadsItem,
     presence: ChatPresenceEvent?,
+    assistantTurn: AssistantTurn? = null,
     onOpen: (String) -> Unit,
 ) {
     val type = LocalRoyTypeScale.current
@@ -604,11 +628,25 @@ private fun ThreadRow(
         presence
             ?.takeIf { it.userId == thread.counterpart?.id }
             ?.presence
+    /**
+     * نور's row draws her turn's phase, or "waiting for you" from the server's
+     * own open-proposal count; a member's draws the presence stream (ADR-0173).
+     */
     val liveText =
-        when (live) {
-            ChatPresenceState.Typing -> ChatsListCopy.TYPING_NOW
-            ChatPresenceState.Recording -> ChatsListCopy.RECORDING_NOW
-            null -> null
+        if (thread.kind == ChatThreadsResponseThreadsItemKind.AGENT) {
+            when (assistantTurn?.phase) {
+                AssistantPhase.Thinking -> AssistantPanelCopy.THINKING
+                AssistantPhase.Writing -> AssistantPanelCopy.WRITING
+                AssistantPhase.Tool -> assistantTurn?.toolLabel
+                AssistantPhase.Proposal -> AssistantPanelCopy.NEEDS_YOU
+                null -> if ((thread.openActions ?: 0) > 0) AssistantPanelCopy.NEEDS_YOU else null
+            }
+        } else {
+            when (live) {
+                ChatPresenceState.Typing -> ChatsListCopy.TYPING_NOW
+                ChatPresenceState.Recording -> ChatsListCopy.RECORDING_NOW
+                null -> null
+            }
         }
 
     Row(

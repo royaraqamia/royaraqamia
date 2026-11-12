@@ -16,7 +16,6 @@ export const ASSISTANT_COPY = {
   intro: 'أهلاً، أنا نور. اسألني عن أي شيء، وسيصلك الرد هنا.',
   placeholder: 'اكتب سؤالك لنور...',
   send: 'إرسال السؤال',
-  thinking: 'نور تكتب...',
   /** The Free plan sees the thread and this, not a composer. */
   locked: 'نور متاحة لمشتركي الخطة المدفوعة.',
   upgrade: 'ترقية الخطة',

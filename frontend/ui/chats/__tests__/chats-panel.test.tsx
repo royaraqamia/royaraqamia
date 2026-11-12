@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-import type { ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
+import type { ChatAgentPhase, ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
 
 const navigation = vi.hoisted(() => ({ push: vi.fn() }));
 
@@ -34,7 +34,7 @@ vi.mock('@/frontend/state/chats/use-chat-threads', () => ({
 /** Presence and the assistant's live turn are streams under test elsewhere. */
 const live = vi.hoisted(() => ({
   presence: {} as Record<string, 'typing' | 'recording'>,
-  assistantTyping: false,
+  assistantPhase: null as ChatAgentPhase | null,
 }));
 
 vi.mock('@/frontend/state/chats/use-chat-presence-list', () => ({
@@ -42,7 +42,7 @@ vi.mock('@/frontend/state/chats/use-chat-presence-list', () => ({
 }));
 
 vi.mock('@/frontend/state/chats/assistant-turn', () => ({
-  useAssistantTurnActive: () => live.assistantTyping,
+  useAssistantPhase: () => live.assistantPhase,
 }));
 
 const api = vi.hoisted(() => ({
@@ -76,6 +76,7 @@ const THREAD: ChatConversationSummary = {
   myStatus: 'active',
   lastMessage: null,
   unreadCount: 0,
+  openActions: 0,
   lastMessageAt: null,
   createdAt: '2026-11-01T00:00:00.000Z',
 };
@@ -89,6 +90,7 @@ const GROUP: ChatConversationSummary = {
   myStatus: 'active',
   lastMessage: null,
   unreadCount: 0,
+  openActions: 0,
   lastMessageAt: null,
   createdAt: '2026-11-01T00:00:00.000Z',
 };
@@ -102,6 +104,7 @@ const ASSISTANT: ChatConversationSummary = {
   myStatus: 'active',
   lastMessage: null,
   unreadCount: 0,
+  openActions: 0,
   lastMessageAt: null,
   createdAt: '2026-11-01T00:00:00.000Z',
 };
@@ -133,7 +136,7 @@ describe('ChatsPanel', () => {
       .mockResolvedValue({ available: true, allowance: PRO_ALLOWANCE });
     navigation.push.mockReset();
     live.presence = {};
-    live.assistantTyping = false;
+    live.assistantPhase = null;
   });
 
   it('draws a thread peer’s picture', () => {
@@ -161,12 +164,23 @@ describe('ChatsPanel', () => {
     expect(screen.getByText('يُسجِّل رسالة صوتيَّة')).toBeInTheDocument();
   });
 
-  it('says نور is writing while its turn is still running', () => {
+  it('says what نور is doing while its turn is still running', () => {
     hooks.threads = [ASSISTANT];
-    live.assistantTyping = true;
+    live.assistantPhase = { kind: 'writing' };
+    const view = render(<ChatsPanel />);
+
+    expect(screen.getByText('تكتب')).toBeInTheDocument();
+
+    live.assistantPhase = { kind: 'tool', label: 'تقرأ شهاداتك' };
+    view.rerender(<ChatsPanel />);
+    expect(screen.getByText('تقرأ شهاداتك')).toBeInTheDocument();
+  });
+
+  it('says a proposal is waiting, from the server’s own count', () => {
+    hooks.threads = [{ ...ASSISTANT, openActions: 1 }];
     render(<ChatsPanel />);
 
-    expect(screen.getByText('نور تكتب')).toBeInTheDocument();
+    expect(screen.getByText('بانتظار موافقتك')).toBeInTheDocument();
   });
 
   it('draws a searched member’s picture', async () => {

@@ -22,6 +22,7 @@ import {
 } from '@/frontend/api/chats/assistant-cache';
 import { rememberAssistantOpened } from './assistant-hint';
 import { useChatAssistant } from '@/frontend/state/chats/use-chat-assistant';
+import { clearAssistantTurn } from '@/frontend/state/chats/assistant-turn';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
@@ -310,6 +311,8 @@ export function AssistantPanel({
             ? await confirmChatAgentAction(threadId, actionId)
             : await rejectChatAgentAction(threadId, actionId);
         setActions((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+        // The proposal is answered, so the row's "needs you" line is done.
+        clearAssistantTurn(threadId);
         return null;
       } catch (error) {
         return error instanceof Error && error.message
@@ -338,6 +341,24 @@ export function AssistantPanel({
   const compact =
     state === 'guest' || state === 'locked' || state === 'unavailable' || state === 'failed';
 
+  /**
+   * The one line under the name (ADR-0173): the turn's own phase while it runs,
+   * and "waiting for you" once a proposal is open — including after the stream
+   * ends, because a write the member must confirm is not activity, it is a block.
+   */
+  const openAction = actions.some((action) => action.status === 'proposed');
+  const phaseLine = assistant.isStreaming
+    ? assistant.phase?.kind === 'tool'
+      ? assistant.phase.label
+      : assistant.phase?.kind === 'writing'
+        ? ASSISTANT_PANEL_COPY.writing
+        : assistant.phase?.kind === 'proposal'
+          ? ASSISTANT_PANEL_COPY.needsYou
+          : ASSISTANT_PANEL_COPY.thinking
+    : openAction
+      ? ASSISTANT_PANEL_COPY.needsYou
+      : null;
+
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onDismiss()}>
       <DialogContent
@@ -353,10 +374,18 @@ export function AssistantPanel({
       >
         <header className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card/40 px-4 py-3 pe-12">
           <AssistantOrb className="size-10" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <DialogTitle className="text-xl leading-none text-foreground">
               {ASSISTANT_PANEL_COPY.title}
             </DialogTitle>
+            {/* The slot is always reserved, so the header does not jump when a
+                turn starts; it is also the only live region in the panel. */}
+            <p
+              aria-live="polite"
+              className="mt-0.5 min-h-4 truncate text-xs font-medium text-primary"
+            >
+              {phaseLine}
+            </p>
           </div>
         </header>
 
@@ -402,9 +431,12 @@ export function AssistantPanel({
               ))}
 
               {assistant.toolsUsed.length > 0 ? (
-                <p className="text-[10px] text-muted-foreground/70">
-                  {assistant.toolsUsed.join(' · ')}
-                </p>
+                <details className="group text-[10px] text-muted-foreground/70">
+                  <summary className="cursor-pointer list-none font-medium">
+                    {ASSISTANT_PANEL_COPY.provenance}
+                  </summary>
+                  <p className="mt-1">{assistant.toolsUsed.join(' · ')}</p>
+                </details>
               ) : null}
 
               {assistant.interrupted ? (
@@ -414,16 +446,12 @@ export function AssistantPanel({
                 </AgentBubble>
               ) : null}
 
-              {assistant.isStreaming ? (
+              {assistant.isStreaming && assistant.streamingText ? (
                 <AgentBubble>
-                  {assistant.streamingText ? (
-                    <p className="whitespace-pre-wrap break-words">
-                      {assistant.streamingText}
-                      <span className="ms-0.5 inline-block h-4 w-[2px] animate-pulse bg-current align-middle" />
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground">{ASSISTANT_PANEL_COPY.thinking}</p>
-                  )}
+                  <p className="whitespace-pre-wrap break-words">
+                    {assistant.streamingText}
+                    <span className="ms-0.5 inline-block h-4 w-[2px] animate-pulse bg-current align-middle" />
+                  </p>
                 </AgentBubble>
               ) : null}
             </div>

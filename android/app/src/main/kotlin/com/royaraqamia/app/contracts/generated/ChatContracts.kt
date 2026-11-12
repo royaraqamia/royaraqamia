@@ -24,6 +24,7 @@ data class ChatThreadsResponseThreadsItem(
     val myStatus: ChatThreadsResponseThreadsItemMyStatus,
     val lastMessage: ChatThreadsResponseThreadsItemLastMessage?,
     val unreadCount: Double,
+    val openActions: Long? = null,
     val lastMessageAt: String?,
     val createdAt: String,
 )
@@ -93,6 +94,7 @@ data class ChatThreadResponseThread(
     val myStatus: ChatThreadResponseThreadMyStatus,
     val lastMessage: ChatThreadResponseThreadLastMessage?,
     val unreadCount: Double,
+    val openActions: Long? = null,
     val lastMessageAt: String?,
     val createdAt: String,
     val participants: List<ChatThreadResponseThreadParticipantsItem>,

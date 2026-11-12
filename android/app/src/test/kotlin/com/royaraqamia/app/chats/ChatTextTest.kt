@@ -71,6 +71,7 @@ class ChatTextTest {
             myStatus = ChatThreadResponseThreadMyStatus.ACTIVE,
             lastMessage = null,
             unreadCount = 0.0,
+            openActions = 0,
             lastMessageAt = null,
             createdAt = line,
             participants = participants,

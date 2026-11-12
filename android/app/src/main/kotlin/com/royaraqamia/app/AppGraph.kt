@@ -7,6 +7,7 @@ import com.royaraqamia.app.account.BlockedMembersRepository
 import com.royaraqamia.app.account.TransportAvatarLoader
 import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.assistant.AssistantTurnStore
 import com.royaraqamia.app.chats.ChatHintSource
 import com.royaraqamia.app.chats.ChatPresenceSource
 import com.royaraqamia.app.chats.ChatsRepository
@@ -116,6 +117,8 @@ class AppGraph private constructor(
     val communityComposer: CommunityComposerRepository,
     /** The chats surface (#819): the tab rows, one thread and its writes. */
     val chats: ChatsRepository,
+    /** The assistant's turns, owned above the sheet so a closed panel keeps them (ADR-0173). */
+    val assistantTurns: AssistantTurnStore,
     /** The app's one Realtime client (ADR-0060, ADR-0141). */
     val realtime: RealtimeClient,
     /** The open thread's hint channels, on that one client. */
@@ -359,6 +362,16 @@ class AppGraph private constructor(
             // route the post screen uses (#924), so it is one instance.
             val communityPost = CommunityPostRepository(client)
 
+            val chats =
+                ChatsRepository(
+                    client = client,
+                    databases = chatsDatabases,
+                    identity = { session.storeIdentity },
+                    signedIn = signedIn,
+                    online = online,
+                    attachmentStorage = chatAttachmentStorage,
+                )
+
             return AppGraph(
                 session = session,
                 usage = UsageRepository(client),
@@ -376,15 +389,8 @@ class AppGraph private constructor(
                 communityPost = communityPost,
                 communityComposer = CommunityComposerRepository(client, communityPost),
                 profile = ProfileRepository(client),
-                chats =
-                    ChatsRepository(
-                        client = client,
-                        databases = chatsDatabases,
-                        identity = { session.storeIdentity },
-                        signedIn = signedIn,
-                        online = online,
-                        attachmentStorage = chatAttachmentStorage,
-                    ),
+                chats = chats,
+                assistantTurns = AssistantTurnStore(chats),
                 realtime = realtime,
                 chatHints = chatHints,
                 chatPresence = chatPresence,

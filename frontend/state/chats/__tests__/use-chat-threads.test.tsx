@@ -38,6 +38,7 @@ function thread(id: string, lastMessageAt: string): ChatConversationSummary {
     myStatus: 'active',
     lastMessage: { body: id, senderKind: 'user', createdAt: lastMessageAt, hasAttachments: false },
     unreadCount: 0,
+    openActions: 0,
     lastMessageAt,
     createdAt: lastMessageAt,
   };

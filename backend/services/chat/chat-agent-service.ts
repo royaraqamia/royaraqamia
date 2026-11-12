@@ -813,6 +813,14 @@ export class ChatAgentService {
             );
 
             try {
+              yield {
+                type: 'tool_start',
+                id: call.id,
+                name: declaration.name,
+                activity: declaration.readOnly
+                  ? `تقرأ من ${declaration.appName}`
+                  : `تنفّذ في ${declaration.appName}`,
+              };
               const result = await apps.call({
                 userId,
                 connectionId: declaration.connectionId,
@@ -823,10 +831,12 @@ export class ChatAgentService {
               });
               yield {
                 type: 'tool',
+                id: call.id,
                 name: declaration.name,
                 label: declaration.readOnly
                   ? `قراءة من ${declaration.appName}`
                   : `تنفيذ في ${declaration.appName}`,
+                ok: true,
               };
               // A remote answer is data, bounded like any other tool's: it may
               // not carry a second round's worth of instructions into the model.
@@ -846,6 +856,15 @@ export class ChatAgentService {
                 tool: declaration.name,
                 error: String(error),
               });
+              yield {
+                type: 'tool',
+                id: call.id,
+                name: declaration.name,
+                label: declaration.readOnly
+                  ? `قراءة من ${declaration.appName}`
+                  : `تنفيذ في ${declaration.appName}`,
+                ok: false,
+              };
               messages.push(
                 toolAnswer(call.id, {
                   error: error instanceof Error ? error.message : 'تعذّر تنفيذ الأداة',
@@ -887,6 +906,12 @@ export class ChatAgentService {
           }
 
           try {
+            yield {
+              type: 'tool_start',
+              id: call.id,
+              name: tool.name,
+              activity: CHAT_AGENT_TOOLS[tool.name].activity,
+            };
             const result = await tool.run(parsed.data, {
               userId,
               supabase: context.supabase,
@@ -911,12 +936,21 @@ export class ChatAgentService {
             });
             yield {
               type: 'tool',
+              id: call.id,
               name: tool.name,
               label: CHAT_AGENT_TOOLS[tool.name].label,
+              ok: true,
             };
             messages.push(toolAnswer(call.id, result, tool.maxResultChars));
           } catch (error) {
             logger.warn('Assistant read tool failed', { tool: tool.name, error: String(error) });
+            yield {
+              type: 'tool',
+              id: call.id,
+              name: tool.name,
+              label: CHAT_AGENT_TOOLS[tool.name].label,
+              ok: false,
+            };
             messages.push(
               toolAnswer(call.id, {
                 error: error instanceof Error ? error.message : 'تعذّر تنفيذ الأداة',

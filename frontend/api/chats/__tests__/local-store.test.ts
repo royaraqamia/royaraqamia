@@ -36,6 +36,7 @@ function thread(id: string, lastMessageAt: string): ChatThread {
     myStatus: 'active',
     lastMessage: null,
     unreadCount: 0,
+    openActions: 0,
     lastMessageAt,
     createdAt: '2026-01-01T00:00:00.000Z',
     participants: [],
