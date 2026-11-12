@@ -319,22 +319,16 @@ test('a never-visited dynamic detail route keeps its parent shell', async ({
   const page = await context.newPage();
 
   // A dynamic segment is a pattern, not a document, so the route precache has
-  // no shell for `/quran/7` (ADR-0071). It does hold every static ancestor, and
-  // since #490 a miss is answered with the longest one the device has.
-  await gotoUnderWorkerControl(page, `${baseURL}/rates`);
+  // no shell for `/verify/ABC-123` (ADR-0071). It does hold every static
+  // ancestor, and since #490 a miss is answered with the longest one the device
+  // has. The Quran's index is a tab of the door now (ADR-0168), so its dynamic
+  // children are answered by `/` rather than by a reader shell; the verify
+  // segment below is the case this test still measures.
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/rates`);
   await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
-  await waitForCachedRoutes(page, ['/quran', '/verify', '/']);
+  await waitForCachedRoutes(page, ['/verify', '/']);
 
   await context.setOffline(true);
-
-  // `/quran/<surah>`: the reader's own chrome answers at the requested URL, and
-  // nothing says the surah itself is missing.
-  await page.goto(`${baseURL}/quran/7`, { waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(/\/quran\/7$/);
-  await expect(page.getByRole('heading', { name: 'القرآن الكريم' })).toBeVisible();
-  await expect(page.getByText(WITHDRAWN_ROUTE_CARD)).toHaveCount(0);
-  // The surah is what the link asked for, and it is not what rendered.
-  await expect(page.getByRole('heading', { name: 'الأعراف' })).toHaveCount(0);
 
   // `/verify/<code>` borrows its segment's shell the same way.
   await page.goto(`${baseURL}/verify/ABC-123`, { waitUntil: 'domcontentloaded' });
