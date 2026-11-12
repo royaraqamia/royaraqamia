@@ -7,9 +7,8 @@ import {
   removeChatAttachmentObjects,
   uploadChatAttachment,
 } from '@/frontend/transport/supabase/chat-attachments';
-import type { ChatAgentAllowance, ChatAgentEvent } from '@/shared/contracts/chat';
-import { chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
-import { beginAssistantTurn, endAssistantTurn } from './assistant-turn';
+import type { ChatAgentAllowance, ChatAgentEvent, ChatAgentPhase } from '@/shared/contracts/chat';
+import { beginAssistantTurn, endAssistantTurn, setAssistantPhase } from './assistant-turn';
 import { chatAssistantInitialState, chatAssistantReducer } from './use-chat-assistant.reducer';
 
 export interface ChatAssistantState {
@@ -19,6 +18,8 @@ export interface ChatAssistantState {
   allowance: ChatAgentAllowance | null;
   /** True while the answer arrives, which is when the composer is a stop button. */
   isStreaming: boolean;
+  /** What the assistant is doing now, or null when no turn is running. */
+  phase: ChatAgentPhase | null;
   /** The answer as it is written, then dropped once the stored message arrives. */
   streamingText: string;
   /**
@@ -28,9 +29,8 @@ export interface ChatAssistantState {
    */
   interrupted: string;
   /**
-   * What this turn read or proposed, in the member's words: a read tool ran, or
-   * a proposal is waiting for its card. It is this turn's own record, dropped
-   * when the next one starts (#818).
+   * What this turn read, in the member's words: provenance under the answer,
+   * folded away. A proposal is its own card, not a read (#818, ADR-0173).
    */
   toolsUsed: string[];
   error: string | null;
@@ -53,7 +53,8 @@ export function useChatAssistant(
   onAnswered: () => void
 ): ChatAssistantState {
   const [state, dispatch] = useReducer(chatAssistantReducer, undefined, chatAssistantInitialState);
-  const { available, allowance, isStreaming, streamingText, interrupted, toolsUsed, error } = state;
+  const { available, allowance, isStreaming, phase, streamingText, interrupted, toolsUsed, error } =
+    state;
 
   const refresh = useCallback(async () => {
     try {
@@ -94,13 +95,20 @@ export function useChatAssistant(
             (event: ChatAgentEvent) => {
               if (event.type === 'delta') {
                 dispatch({ type: 'delta', text: event.text });
+                if (event.text) setAssistantPhase(conversationId, { kind: 'writing' });
               } else if (event.type === 'error') failure = event.error;
-              else if (event.type === 'tool') dispatch({ type: 'toolUsed', label: event.label });
-              else if (event.type === 'proposal')
-                dispatch({
-                  type: 'toolUsed',
-                  label: chatAgentActionSentence(event.action.tool, event.action.args),
-                });
+              else if (event.type === 'tool_start') {
+                dispatch({ type: 'toolStarted', activity: event.activity });
+                setAssistantPhase(conversationId, { kind: 'tool', label: event.activity });
+              } else if (event.type === 'tool') {
+                dispatch({ type: 'toolFinished' });
+                // The row's provenance is what the answer used; a failed read
+                // produced nothing to cite.
+                if (event.ok) dispatch({ type: 'toolUsed', label: event.label });
+              } else if (event.type === 'proposal') {
+                dispatch({ type: 'proposalSeen' });
+                setAssistantPhase(conversationId, { kind: 'proposal' });
+              }
             },
             attachments
           );
@@ -131,6 +139,7 @@ export function useChatAssistant(
     available,
     allowance,
     isStreaming,
+    phase,
     streamingText,
     interrupted,
     toolsUsed,

@@ -206,6 +206,7 @@ export class ChatService {
                 }
               : null,
             unreadCount: row.unreadCount,
+            openActions: row.openActions,
             lastMessageAt: row.lastMessageAt,
             createdAt: row.createdAt,
           };

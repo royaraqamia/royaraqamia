@@ -141,6 +141,7 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
         createdAt: String(row.created_at),
         lastMessageAt: (row.last_message_at as string | null) ?? null,
         unreadCount: Number(row.unread_count ?? 0),
+        openActions: Number(row.open_actions ?? 0),
         lastMessageBody: (row.last_message_body as string | null) ?? null,
         lastMessageSenderKind:
           (row.last_message_sender_kind as ChatThreadRow['lastMessageSenderKind']) ?? null,

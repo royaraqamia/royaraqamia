@@ -817,9 +817,17 @@ describe('the assistant’s tools (#818)', () => {
     );
 
     expect(events).toContainEqual({
+      type: 'tool_start',
+      id: 'call-1',
+      name: 'list_certificates',
+      activity: 'تقرأ شهاداتك',
+    });
+    expect(events).toContainEqual({
       type: 'tool',
+      id: 'call-1',
       name: 'list_certificates',
       label: 'قراءة شهاداتك',
+      ok: true,
     });
     expect(readTool.run).toHaveBeenCalledWith({}, expect.objectContaining({ userId: 'user-1' }));
 
@@ -831,6 +839,47 @@ describe('the assistant’s tools (#818)', () => {
       content: JSON.stringify([{ id: 'cert-1', course_name: 'دورة' }]),
     });
     expect(agent.insertAgentMessage).toHaveBeenCalledWith('conversation-1', 'عندك شهادة واحدة.');
+  });
+
+  it('closes a failed read with ok:false, and never calls it a read', async () => {
+    const failing: ChatAgentTool = {
+      name: 'list_certificates',
+      kind: 'read',
+      description: 'شهاداتك',
+      schema: z.strictObject({}),
+      run: vi.fn(async () => {
+        throw new Error('الخدمة غير متاحة');
+      }),
+    };
+    const client = scriptedClient([
+      [toolCall('list_certificates', {})],
+      textStream('تعذّر قراءة شهاداتك الآن.'),
+    ]);
+
+    const { service } = makeService({
+      client,
+      resolveTool: (name) => (name === 'list_certificates' ? failing : null),
+    });
+
+    const events = await collect(
+      service.turn('user-1', 'conversation-1', 'شهاداتي؟', TURN_CONTEXT)
+    );
+
+    // The lifecycle still closes, with the failure the header must not draw as
+    // a successful read (ADR-0173).
+    expect(events).toContainEqual({
+      type: 'tool_start',
+      id: 'call-1',
+      name: 'list_certificates',
+      activity: 'تقرأ شهاداتك',
+    });
+    expect(events).toContainEqual({
+      type: 'tool',
+      id: 'call-1',
+      name: 'list_certificates',
+      label: 'قراءة شهاداتك',
+      ok: false,
+    });
   });
 
   it('proposes a write and never runs it during the turn', async () => {
@@ -948,9 +997,17 @@ describe('the assistant turn, with a connected app', () => {
     const answer = client.calls[1]?.find((entry) => entry.role === 'tool');
     expect(String(answer?.content)).toContain('وجدت صفحتين');
     expect(events).toContainEqual({
+      type: 'tool_start',
+      id: 'call-1',
+      name: 'app_notion_search',
+      activity: 'تقرأ من Notion',
+    });
+    expect(events).toContainEqual({
       type: 'tool',
+      id: 'call-1',
       name: 'app_notion_search',
       label: 'قراءة من Notion',
+      ok: true,
     });
   });
 

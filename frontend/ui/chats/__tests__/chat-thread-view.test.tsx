@@ -132,6 +132,7 @@ function makeThread(kind: ChatThread['kind']): ChatThread {
     myStatus: 'active',
     lastMessage: null,
     unreadCount: 0,
+    openActions: 0,
     lastMessageAt: null,
     createdAt: '2026-11-01T00:00:00.000Z',
     participants: [
@@ -693,7 +694,7 @@ describe('ChatThreadView assistant', () => {
     await waitFor(() => expect(box).toHaveValue(''));
   });
 
-  it('says نور is writing in the header for the whole turn', async () => {
+  it('says what نور is doing in the header for the whole turn', async () => {
     let release: () => void = () => {};
     api.streamChatAgentTurn.mockReturnValue(
       new Promise<void>((resolve) => {
@@ -708,13 +709,13 @@ describe('ChatThreadView assistant', () => {
     fireEvent.click(screen.getByRole('button', { name: 'إرسال السؤال' }));
 
     // The line is the header's, and the thread draws no placeholder bubble for
-    // a turn that has not produced text yet.
-    expect(await screen.findByText('نور تكتب')).toBeInTheDocument();
+    // a turn that has not produced text yet (ADR-0173).
+    expect(await screen.findByText('تفكّر')).toBeInTheDocument();
 
     await act(async () => {
       release();
     });
-    await waitFor(() => expect(screen.queryByText('نور تكتب')).toBeNull());
+    await waitFor(() => expect(screen.queryByText('تفكّر')).toBeNull());
   });
 });
 

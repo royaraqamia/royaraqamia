@@ -28,6 +28,7 @@ const ASSISTANT = {
     apps: { used: 0, cap: 0, connected: 0 },
   },
   isStreaming: false,
+  phase: null,
   streamingText: '',
   interrupted: '',
   toolsUsed: [],

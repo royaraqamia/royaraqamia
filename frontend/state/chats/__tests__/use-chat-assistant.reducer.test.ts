@@ -18,6 +18,7 @@ describe('chatAssistantInitialState', () => {
       available: true,
       allowance: null,
       isStreaming: false,
+      phase: null,
       streamingText: '',
       interrupted: '',
       toolsUsed: [],
@@ -107,5 +108,44 @@ describe('a turn', () => {
     });
 
     expect(chatAssistantReducer(failed, { type: 'turnStarted' }).interrupted).toBe('');
+  });
+});
+
+describe('the phase line', () => {
+  it('starts at thinking, then follows the frame that arrived', () => {
+    const started = chatAssistantReducer(stateOf(), { type: 'turnStarted' });
+    expect(started.phase).toEqual({ kind: 'thinking' });
+
+    const writing = chatAssistantReducer(started, { type: 'delta', text: 'أهلاً' });
+    expect(writing.phase).toEqual({ kind: 'writing' });
+
+    const tool = chatAssistantReducer(writing, {
+      type: 'toolStarted',
+      activity: 'تقرأ شهاداتك',
+    });
+    expect(tool.phase).toEqual({ kind: 'tool', label: 'تقرأ شهاداتك' });
+
+    const proposal = chatAssistantReducer(tool, { type: 'proposalSeen' });
+    expect(proposal.phase).toEqual({ kind: 'proposal' });
+  });
+
+  it('goes back to thinking when a tool returns and the model decides again', () => {
+    const tool = chatAssistantReducer(stateOf({ phase: { kind: 'tool', label: 'تقرأ' } }), {
+      type: 'toolFinished',
+    });
+
+    expect(tool.phase).toEqual({ kind: 'thinking' });
+
+    const used = chatAssistantReducer(tool, { type: 'toolUsed', label: 'قراءة شهاداتك' });
+    expect(used.toolsUsed).toEqual(['قراءة شهاداتك']);
+  });
+
+  it('is cleared when the turn settles', () => {
+    const state = chatAssistantReducer(stateOf({ phase: { kind: 'writing' } }), {
+      type: 'turnSettled',
+      failure: null,
+    });
+
+    expect(state.phase).toBeNull();
   });
 });

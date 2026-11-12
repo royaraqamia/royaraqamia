@@ -39,6 +39,8 @@ import { useKeyboardInset } from '@/frontend/ui/shared/keyboard-inset';
 import { ReportChatDialog } from './report-chat-dialog';
 import { AssistantMark } from './assistant-mark';
 import { ASSISTANT_COPY } from './assistant-copy';
+import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
+import { assistantPhaseText } from './assistant-phase';
 import { readReceiptOf, type ChatReadReceipt } from './read-receipt';
 import { PresenceIndicator } from './presence-indicator';
 import { formatDaySeparator, isNewDay } from './thread-days';
@@ -232,11 +234,14 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
    * sentence comes from the assistant's words; a peer's comes from the thread's
    * copy source, where the app reads the same two strings.
    */
+  const openAction = actions.some((action) => action.status === 'proposed');
   const presence =
     thread.kind === 'agent'
       ? assistant.isStreaming
-        ? ASSISTANT_COPY.thinking
-        : null
+        ? (assistantPhaseText(assistant.phase) ?? ASSISTANT_PANEL_COPY.thinking)
+        : openAction
+          ? ASSISTANT_PANEL_COPY.needsYou
+          : null
       : presenceText(peer);
 
   async function sendWith(staged: File[]) {
@@ -450,17 +455,19 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             </div>
           )}
 
-          {/* What this turn read or proposed, so the member sees the tool that ran
-            and the card that is waiting for them (#818). */}
+          {/* What this turn read, folded under the answer: provenance is what
+            explains the answer, not a second live line (#818, ADR-0173). */}
           {assistant.toolsUsed.length > 0 && (
-            <ul
-              aria-live="polite"
-              className="flex flex-col gap-0.5 text-[11px] text-muted-foreground"
-            >
-              {assistant.toolsUsed.map((line, at) => (
-                <li key={`${at}-${line}`}>· {line}</li>
-              ))}
-            </ul>
+            <details className="text-[11px] text-muted-foreground">
+              <summary className="cursor-pointer list-none font-medium">
+                {ASSISTANT_PANEL_COPY.provenance}
+              </summary>
+              <ul className="mt-1 flex flex-col gap-0.5">
+                {assistant.toolsUsed.map((line, at) => (
+                  <li key={`${at}-${line}`}>· {line}</li>
+                ))}
+              </ul>
+            </details>
           )}
 
           <div ref={bottomRef} />

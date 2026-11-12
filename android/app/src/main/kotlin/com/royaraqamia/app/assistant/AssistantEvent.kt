@@ -3,8 +3,10 @@ package com.royaraqamia.app.assistant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * One frame of an assistant turn, in the shapes the sheet draws (ADR-0143).
@@ -18,8 +20,15 @@ sealed interface AssistantEvent {
     /** The answer as it is being written. */
     data class Delta(val text: String) : AssistantEvent
 
-    /** A read tool ran, in the member's words. */
-    data class Tool(val label: String) : AssistantEvent
+    /**
+     * A tool is about to run, in the member's words (ADR-0173). It carries the
+     * call's id so the closing frame can be matched to it, and the present-tense
+     * activity the header draws while it runs.
+     */
+    data class ToolStart(val id: String, val activity: String) : AssistantEvent
+
+    /** A tool call closed, with the gerund the provenance line keeps. */
+    data class Tool(val id: String, val label: String, val ok: Boolean) : AssistantEvent
 
     /**
      * A write was proposed. The sheet does not confirm it — the proposal's card
@@ -48,7 +57,17 @@ fun parseAssistantEvent(data: String): AssistantEvent? =
             val frame = frameJson.parseToJsonElement(data).jsonObject
             when (frame["type"].text()) {
                 "delta" -> AssistantEvent.Delta(frame["text"].text().orEmpty())
-                "tool" -> AssistantEvent.Tool(frame["label"].text().orEmpty())
+                "tool_start" ->
+                    AssistantEvent.ToolStart(
+                        id = frame["id"].text().orEmpty(),
+                        activity = frame["activity"].text().orEmpty(),
+                    )
+                "tool" ->
+                    AssistantEvent.Tool(
+                        id = frame["id"].text().orEmpty(),
+                        label = frame["label"].text().orEmpty(),
+                        ok = frame["ok"]?.jsonPrimitive?.booleanOrNull ?: true,
+                    )
                 "proposal" ->
                     AssistantEvent.Proposal(
                         frame["action"]?.jsonObject?.get("tool").text().orEmpty()

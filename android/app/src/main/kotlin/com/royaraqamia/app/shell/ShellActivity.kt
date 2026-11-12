@@ -525,6 +525,7 @@ class ShellActivity : ComponentActivity() {
                                         ChatsScreen(
                                             repository = graph.chats,
                                             presence = graph.chatPresence,
+                                            assistantTurns = graph.assistantTurns,
                                             onOpenThread = { openRoute(ChatRoutes.threadOf(it)) },
                                             onOpenAssistant = { openRoute(ChatRoutes.threadOf(it)) },
                                             onNewChat = { openRoute("/chats/new") },
@@ -632,6 +633,7 @@ class ShellActivity : ComponentActivity() {
                 if (assistantOpen) {
                     AssistantSheet(
                         repository = graph.chats,
+                        turns = graph.assistantTurns,
                         signedIn = signedIn,
                         snapshot = assistantSnapshot,
                         onSnapshot = { assistantSnapshot = it },

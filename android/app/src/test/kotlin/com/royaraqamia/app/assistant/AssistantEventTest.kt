@@ -22,10 +22,28 @@ class AssistantEventTest {
     }
 
     @Test
-    fun `a tool carries its label`() {
+    fun `a tool start names the call and what it is doing`() {
         assertEquals(
-            AssistantEvent.Tool("قرأت شهاداتك"),
-            parseAssistantEvent("""{"type":"tool","name":"list_certificates","label":"قرأت شهاداتك"}"""),
+            AssistantEvent.ToolStart("call-1", "تقرأ شهاداتك"),
+            parseAssistantEvent(
+                """{"type":"tool_start","id":"call-1","name":"list_certificates","activity":"تقرأ شهاداتك"}"""
+            ),
+        )
+    }
+
+    @Test
+    fun `a tool closes with its label and whether it succeeded`() {
+        assertEquals(
+            AssistantEvent.Tool("call-1", "قراءة شهاداتك", true),
+            parseAssistantEvent(
+                """{"type":"tool","id":"call-1","name":"list_certificates","label":"قراءة شهاداتك","ok":true}"""
+            ),
+        )
+        assertEquals(
+            AssistantEvent.Tool("call-1", "قراءة شهاداتك", false),
+            parseAssistantEvent(
+                """{"type":"tool","id":"call-1","name":"list_certificates","label":"قراءة شهاداتك","ok":false}"""
+            ),
         )
     }
 
@@ -58,6 +76,10 @@ class AssistantEventTest {
     @Test
     fun `a missing field leaves an empty sentence rather than throwing`() {
         assertEquals(AssistantEvent.Delta(""), parseAssistantEvent("""{"type":"delta"}"""))
-        assertEquals(AssistantEvent.Tool(""), parseAssistantEvent("""{"type":"tool"}"""))
+        assertEquals(AssistantEvent.Tool("", "", true), parseAssistantEvent("""{"type":"tool"}"""))
+        assertEquals(
+            AssistantEvent.ToolStart("", ""),
+            parseAssistantEvent("""{"type":"tool_start"}"""),
+        )
     }
 }

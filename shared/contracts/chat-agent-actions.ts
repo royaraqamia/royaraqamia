@@ -85,31 +85,85 @@ export interface ChatAgentToolInfo {
   kind: ChatAgentToolKind;
   /** What the card calls the tool, in the member's language. */
   label: string;
+  /**
+   * What the header says while the tool runs (ADR-0173): present tense, because
+   * a phase line describes now. Arabic does not conjugate a gerund mechanically,
+   * so the two forms are two strings, not one derived from the other.
+   */
+  activity: string;
 }
 
 export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
-  list_certificates: { kind: 'read', label: 'قراءة شهاداتك' },
-  get_usage_state: { kind: 'read', label: 'قراءة خطتك واستخدامك' },
-  list_consultation_bookings: { kind: 'read', label: 'قراءة حجوزات الاستشارة' },
-  list_consultation_options: { kind: 'read', label: 'قراءة باقات الاستشارة ومواعيدها' },
-  list_my_posts: { kind: 'read', label: 'قراءة منشوراتك ومسوداتك' },
-  get_post_by_slug: { kind: 'read', label: 'قراءة منشور' },
-  get_habits_summary: { kind: 'read', label: 'قراءة ملخّص عاداتك' },
-  get_expenses_summary: { kind: 'read', label: 'قراءة مصروفات هذا الشهر' },
-  create_post_draft: { kind: 'write', label: 'إنشاء مسودة منشور' },
-  edit_post_draft: { kind: 'write', label: 'تعديل مسودة' },
-  publish_post_draft: { kind: 'write', label: 'نشر مسودة' },
-  record_expense: { kind: 'write', label: 'تسجيل مصروف' },
-  edit_expense: { kind: 'write', label: 'تعديل مصروف' },
-  create_habit: { kind: 'write', label: 'إنشاء عادة' },
-  set_habit_reminder: { kind: 'write', label: 'ضبط تذكير عادة' },
-  book_consultation: { kind: 'write', label: 'حجز استشارة' },
-  apply_training: { kind: 'write', label: 'تقديم طلب تدريب' },
-  submit_project_request: { kind: 'write', label: 'إرسال طلب مشروع' },
-  change_display_name: { kind: 'write', label: 'تغيير اسم العرض' },
-  list_specialists: { kind: 'read', label: 'قراءة دليل المتخصصين' },
-  load_specialist: { kind: 'read', label: 'تحميل متخصص' },
-  find_app_tools: { kind: 'read', label: 'البحث في أدوات التطبيقات' },
+  list_certificates: { kind: 'read', label: 'قراءة شهاداتك', activity: 'تقرأ شهاداتك' },
+  get_usage_state: {
+    kind: 'read',
+    label: 'قراءة خطتك واستخدامك',
+    activity: 'تقرأ خطتك واستخدامك',
+  },
+  list_consultation_bookings: {
+    kind: 'read',
+    label: 'قراءة حجوزات الاستشارة',
+    activity: 'تقرأ حجوزات الاستشارة',
+  },
+  list_consultation_options: {
+    kind: 'read',
+    label: 'قراءة باقات الاستشارة ومواعيدها',
+    activity: 'تقرأ باقات الاستشارة ومواعيدها',
+  },
+  list_my_posts: {
+    kind: 'read',
+    label: 'قراءة منشوراتك ومسوداتك',
+    activity: 'تقرأ منشوراتك ومسوداتك',
+  },
+  get_post_by_slug: { kind: 'read', label: 'قراءة منشور', activity: 'تقرأ منشوراً' },
+  get_habits_summary: {
+    kind: 'read',
+    label: 'قراءة ملخّص عاداتك',
+    activity: 'تقرأ ملخّص عاداتك',
+  },
+  get_expenses_summary: {
+    kind: 'read',
+    label: 'قراءة مصروفات هذا الشهر',
+    activity: 'تقرأ مصروفات هذا الشهر',
+  },
+  create_post_draft: {
+    kind: 'write',
+    label: 'إنشاء مسودة منشور',
+    activity: 'تنشئ مسودة منشور',
+  },
+  edit_post_draft: { kind: 'write', label: 'تعديل مسودة', activity: 'تعدّل مسودة' },
+  publish_post_draft: { kind: 'write', label: 'نشر مسودة', activity: 'تنشر مسودة' },
+  record_expense: { kind: 'write', label: 'تسجيل مصروف', activity: 'تسجّل مصروفاً' },
+  edit_expense: { kind: 'write', label: 'تعديل مصروف', activity: 'تعدّل مصروفاً' },
+  create_habit: { kind: 'write', label: 'إنشاء عادة', activity: 'تنشئ عادة' },
+  set_habit_reminder: {
+    kind: 'write',
+    label: 'ضبط تذكير عادة',
+    activity: 'تضبط تذكير عادة',
+  },
+  book_consultation: { kind: 'write', label: 'حجز استشارة', activity: 'تحجز استشارة' },
+  apply_training: { kind: 'write', label: 'تقديم طلب تدريب', activity: 'تقدّم طلب تدريب' },
+  submit_project_request: {
+    kind: 'write',
+    label: 'إرسال طلب مشروع',
+    activity: 'ترسل طلب مشروع',
+  },
+  change_display_name: {
+    kind: 'write',
+    label: 'تغيير اسم العرض',
+    activity: 'تغيّر اسم العرض',
+  },
+  list_specialists: {
+    kind: 'read',
+    label: 'قراءة دليل المتخصصين',
+    activity: 'تقرأ دليل المتخصصين',
+  },
+  load_specialist: { kind: 'read', label: 'تحميل متخصص', activity: 'تحمّل متخصصاً' },
+  find_app_tools: {
+    kind: 'read',
+    label: 'البحث في أدوات التطبيقات',
+    activity: 'تبحث في أدوات التطبيقات',
+  },
 };
 
 export function isChatAgentToolName(value: string): value is ChatAgentToolName {
