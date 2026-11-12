@@ -100,6 +100,9 @@ export const loadCommunityPost = unstable_cache(
 /**
  * The "who's here" roster shown on `/community`. Shared by every visitor, so
  * it is cached under its own tag — publishing a post must not evict it.
+ *
+ * The viewer's own row is pinned to the head in the browser, from the session,
+ * never here: this read is the same fifty rows for everyone (ADR-0172).
  */
 export const loadCommunityMembers = unstable_cache(
   async (limit: number = COMMUNITY_MEMBERS_LIMIT): Promise<PublicUser[]> =>
