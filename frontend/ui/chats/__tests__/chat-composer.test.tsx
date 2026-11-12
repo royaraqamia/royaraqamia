@@ -8,11 +8,25 @@ import { ChatComposer } from '@/frontend/ui/chats/chat-composer';
 /** The field's ceiling, mirroring `FIELD_MAX_HEIGHT_PX` and Tailwind's `max-h-32`. */
 const FIELD_MAX = 128;
 
-function Composer({ value, onSend }: { value: string; onSend: () => void }) {
+function Composer({
+  value,
+  onSend,
+  onTyping,
+  onDraftEmpty,
+  onValueChange = () => undefined,
+}: {
+  value: string;
+  onSend: () => void;
+  onTyping?: () => void;
+  onDraftEmpty?: () => void;
+  onValueChange?: (value: string) => void;
+}) {
   return (
     <ChatComposer
       value={value}
-      onValueChange={() => undefined}
+      onValueChange={onValueChange}
+      onTyping={onTyping}
+      onDraftEmpty={onDraftEmpty}
       onSend={onSend}
       files={[]}
       onAddFiles={() => undefined}
@@ -60,6 +74,38 @@ describe('ChatComposer keyboard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'إرسال' }));
     expect(onSend).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ChatComposer typing signal', () => {
+  it('tells the peer a keystroke happened', () => {
+    const onTyping = vi.fn();
+    const onDraftEmpty = vi.fn();
+    render(<Composer value="" onSend={vi.fn()} onTyping={onTyping} onDraftEmpty={onDraftEmpty} />);
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'س' } });
+    expect(onTyping).toHaveBeenCalledTimes(1);
+    expect(onDraftEmpty).not.toHaveBeenCalled();
+  });
+
+  it('ends the line at once when the draft is cleared, not on the window', () => {
+    const onTyping = vi.fn();
+    const onDraftEmpty = vi.fn();
+    render(
+      <Composer value="سلام" onSend={vi.fn()} onTyping={onTyping} onDraftEmpty={onDraftEmpty} />
+    );
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } });
+    expect(onDraftEmpty).toHaveBeenCalledTimes(1);
+    expect(onTyping).not.toHaveBeenCalled();
+  });
+
+  it('says nothing when no typing channel is wired', () => {
+    const onDraftEmpty = vi.fn();
+    render(<Composer value="سلام" onSend={vi.fn()} onDraftEmpty={onDraftEmpty} />);
+
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } });
+    expect(onDraftEmpty).not.toHaveBeenCalled();
   });
 });
 
