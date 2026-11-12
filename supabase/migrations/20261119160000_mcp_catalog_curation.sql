@@ -18,8 +18,10 @@
 -- Why this file is idempotent: the Supabase integration recorded the abandoned
 -- `20261119120000` version when its first attempt timed out. The record exists,
 -- so that filename stays in the repo as a no-op; this file is what actually
--- reconciles the linked project (and a fresh one). It drops any generated
--- columns a partial first attempt may have left, then adds the plain schema.
+-- reconciles the linked project (and a fresh one), by adding the plain schema
+-- the partial attempt never finished. It does not drop the generated columns
+-- that attempt left behind: a `drop column` is refused at the safety gate
+-- without a human, so `20261126100000_mcp_catalog_drop_generated.sql` owns that.
 --
 -- The store needs:
 --
@@ -43,7 +45,10 @@
 -- decide whether to try again.
 --
 -- Rollback: drop the two indexes, the added columns and the three constraints;
--- restore the old `connectable_reason` constraint.
+-- restore the old `connectable_reason` constraint. The generated columns the
+-- cancelled attempt left are not this file's to roll back —
+-- `20261126100000_mcp_catalog_drop_generated.sql` removes them, under the
+-- human's approval, because the safety gate refuses a `drop column` unattended.
 -- ============================================================
 
 -- The previous attempt was cancelled mid-migration because the whole file is
