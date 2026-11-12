@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useReducer, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import {
   halveList,
@@ -23,6 +23,15 @@ import {
 interface CommunityIndexResultsProps {
   initialPosts: PostSummary[];
   initialNextCursor: string | null;
+  /**
+   * Which feed this island is showing: the member's own (`following`) or the
+   * public hub's (`index`). The two read different routes - one is per-viewer and
+   * `no-store`, the other is one cached document for every visitor - so the
+   * island cannot pick one for both without becoming the bug it avoids.
+   */
+  source?: 'following' | 'index';
+  /** Why the list is empty when it is not a search that emptied it. */
+  emptyKind?: 'none' | 'no-follows' | 'guest';
 }
 
 /**
@@ -36,6 +45,7 @@ function trimCommunitySnapshot(snapshot: CommunitySnapshot): CommunitySnapshot |
 }
 
 function fetchIndex(
+  path: string,
   cursor: string | null,
   query: string,
   signal?: AbortSignal
@@ -48,8 +58,9 @@ function fetchIndex(
   // Through the transport so a request that never left is distinguishable from a
   // server that answered with a failure (#475): the two get different states. The
   // metadata says whether the answer may be kept at all — a response the server
-  // marked `no-store` is never recorded (#555).
-  return requestWithMeta<IndexData>(`/api/community/index${search ? `?${search}` : ''}`, {
+  // marked `no-store` is never recorded (#555), which is what keeps the personal
+  // feed out of the shared snapshot.
+  return requestWithMeta<IndexData>(`${path}${search ? `?${search}` : ''}`, {
     signal,
   });
 }
@@ -90,12 +101,20 @@ function CommunityFeedSkeleton() {
 export function CommunityIndexResults({
   initialPosts,
   initialNextCursor,
+  source = 'index',
+  emptyKind = 'none',
 }: CommunityIndexResultsProps) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const path = source === 'following' ? '/api/community/following' : '/api/community/index';
   const cursor = searchParams.get('cursor');
   const query = searchParams.get('q')?.trim() ?? '';
   const isDefault = !cursor && !query;
-  const route = normaliseSnapshotRoute('/community', searchParams.toString());
+  // The snapshot is the public store: a device keeps one copy per route, and the
+  // personal feed's rows are one member's follows. Recording them would hand the
+  // next member on this device the previous member's feed, so the personal route
+  // reads and writes no snapshot at all.
+  const route = normaliseSnapshotRoute(pathname, searchParams.toString());
 
   const [feed, dispatch] = useReducer(
     communityFeedReducer,
@@ -123,7 +142,7 @@ export function CommunityIndexResults({
     const controller = new AbortController();
     dispatch({ type: 'pageLoadStarted' });
 
-    fetchIndex(cursor, query, controller.signal)
+    fetchIndex(path, cursor, query, controller.signal)
       .then(({ data, keepable }) => {
         dispatch({
           type: 'pageLoaded',
@@ -138,13 +157,13 @@ export function CommunityIndexResults({
       });
 
     return () => controller.abort();
-  }, [cursor, query, isDefault, initialPosts, initialNextCursor, reloadKey]);
+  }, [path, cursor, query, isDefault, initialPosts, initialNextCursor, reloadKey]);
 
   const handleLoadMore = useCallback(() => {
     if (loadingMore || !nextCursor) return;
     const requestCursor = nextCursor;
     dispatch({ type: 'moreStarted' });
-    fetchIndex(requestCursor, query)
+    fetchIndex(path, requestCursor, query)
       .then(({ data, keepable }) => {
         dispatch({
           type: 'moreLoaded',
@@ -157,11 +176,15 @@ export function CommunityIndexResults({
         dispatch({ type: 'moreFailed', error });
       })
       .finally(() => dispatch({ type: 'moreFinished' }));
-  }, [loadingMore, nextCursor, query]);
+  }, [path, loadingMore, nextCursor, query]);
 
   const handleRetryPage = useCallback(() => setReloadKey((key) => key + 1), []);
 
-  usePublicSnapshotRecorder(route, recordable, { trim: trimCommunitySnapshot });
+  // Nothing is recorded for the personal feed: the snapshot store is public and
+  // one device can be signed in as more than one member.
+  usePublicSnapshotRecorder(route, source === 'following' ? null : recordable, {
+    trim: trimCommunitySnapshot,
+  });
 
   if (!ready) return <CommunityFeedSkeleton />;
 
@@ -182,6 +205,7 @@ export function CommunityIndexResults({
         pageError={snapshot ? null : pageError}
         onRetryPage={handleRetryPage}
         stale={Boolean(snapshot)}
+        emptyKind={emptyKind}
       />
     );
   }
@@ -197,6 +221,7 @@ export function CommunityIndexResults({
         isLoadingMore={loadingMore}
         loadMoreError={loadMoreError}
         onRetryLoadMore={handleLoadMore}
+        emptyKind={emptyKind}
       />
     </>
   );

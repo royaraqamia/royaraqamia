@@ -593,14 +593,14 @@ test('a filtered community page paints its snapshot rows with the radio off', as
   });
   const page = await context.newPage();
 
-  await gotoUnderWorkerControl(page, `${baseURL}/community`);
+  await gotoUnderWorkerControl(page, `${baseURL}/community/explore`);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.locator('#main-content article').first()).toBeVisible();
 
   const onlineCards = await page.locator('#main-content article').count();
   const snapshotPosts = () =>
     page.evaluate(() => {
-      const raw = window.localStorage.getItem('royaraqamia:snapshot:public:/community');
+      const raw = window.localStorage.getItem('royaraqamia:snapshot:public:/community/explore');
       if (!raw) return -1;
       try {
         const envelope = JSON.parse(raw) as { data?: { posts?: unknown[] } };
@@ -612,13 +612,13 @@ test('a filtered community page paints its snapshot rows with the radio off', as
 
   await expect.poll(snapshotPosts, { timeout: 60_000 }).toBeGreaterThan(0);
 
-  await waitForCachedRoutes(page, ['/community']);
+  await waitForCachedRoutes(page, ['/community/explore']);
   await waitForAppHydrated(page);
 
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
 
-  await expect(page).toHaveURL(/\/community$/);
+  await expect(page).toHaveURL(/\/community\/explore$/);
   await expect(page.locator('#main-content article').first()).toBeVisible();
   expect(await page.locator('#main-content article').count()).toBeGreaterThanOrEqual(
     Math.min(onlineCards, 1)

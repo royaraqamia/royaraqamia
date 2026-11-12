@@ -13,7 +13,8 @@ export type NotificationType =
   | 'project_request'
   | 'retainer_request'
   | 'subscription_request'
-  | 'chat_request';
+  | 'chat_request'
+  | 'new_follower';
 
 /**
  * The unread count behind the shell's notification control (#659).

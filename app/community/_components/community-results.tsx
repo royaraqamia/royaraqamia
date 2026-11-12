@@ -29,6 +29,15 @@ interface CommunityResultsProps {
    * so, never passed off as a fresh read (#555).
    */
   stale?: boolean;
+  /**
+   * Why there are no rows, when it is not the search that emptied the list.
+   *
+   * `no-follows` is the personal feed's normal first day, and `guest` is the
+   * same page before signing in. Both are a different sentence from "nothing
+   * was ever published" — the visitor needs to know what to do next, and only
+   * one of the three has nothing to do.
+   */
+  emptyKind?: 'none' | 'no-follows' | 'guest';
 }
 
 /**
@@ -50,6 +59,7 @@ export function CommunityResults({
   pageError,
   onRetryPage,
   stale = false,
+  emptyKind = 'none',
 }: CommunityResultsProps) {
   const pageFailure =
     pageError == null ? null : toReadFailure(pageError, COMMUNITY_FEED_COPY.pageError);
@@ -86,22 +96,44 @@ export function CommunityResults({
             <FileText className="size-8 stroke-[1.5]" />
           </div>
           <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">
-            {query ? 'لا توجد نتائج للبحث' : COMMUNITY_FEED_COPY.emptyTitle}
+            {query
+              ? 'لا توجد نتائج للبحث'
+              : emptyKind === 'guest'
+                ? COMMUNITY_FEED_COPY.guestEmptyTitle
+                : emptyKind === 'no-follows'
+                  ? COMMUNITY_FEED_COPY.followingEmptyTitle
+                  : COMMUNITY_FEED_COPY.emptyTitle}
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-md mb-8 leading-relaxed">
             {query
               ? 'لم نعثر على منشورات تُطابق بحثك. جرِّب كلمات بحث مختلفة.'
-              : COMMUNITY_FEED_COPY.emptyBody}
+              : emptyKind === 'guest'
+                ? COMMUNITY_FEED_COPY.guestEmptyBody
+                : emptyKind === 'no-follows'
+                  ? COMMUNITY_FEED_COPY.followingEmptyBody
+                  : COMMUNITY_FEED_COPY.emptyBody}
           </p>
-          {query && (
-            <Link href="/community">
-              <Button
-                variant="outline"
-                className="rounded-full bg-muted/50 border-border text-foreground hover:bg-muted/70 hover:border-border transition-safe duration-300 px-6"
-              >
-                عرض جميع المنشورات
+          {emptyKind === 'guest' ? (
+            <Link href="/auth/login?redirect=%2Fcommunity">
+              <Button className="rounded-full px-6">{COMMUNITY_FEED_COPY.guestSignIn}</Button>
+            </Link>
+          ) : emptyKind === 'no-follows' ? (
+            <Link href="/community/explore">
+              <Button className="rounded-full px-6">
+                {COMMUNITY_FEED_COPY.followingEmptyAction}
               </Button>
             </Link>
+          ) : (
+            query && (
+              <Link href="/community/explore">
+                <Button
+                  variant="outline"
+                  className="rounded-full bg-muted/50 border-border text-foreground hover:bg-muted/70 hover:border-border transition-safe duration-300 px-6"
+                >
+                  عرض جميع المنشورات
+                </Button>
+              </Link>
+            )
           )}
         </div>
       ) : (

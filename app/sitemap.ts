@@ -33,7 +33,10 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 1,
   },
   {
-    path: '/community',
+    // The public hub. `/community` is the member's own feed now (per-viewer, no
+    // index), so the entry that carries the posts and the roster points here -
+    // the URL a personalized page can never be (ADR-0173).
+    path: '/community/explore',
     changeFrequency: 'daily',
     priority: 0.9,
   },

@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Suspense } from 'react';
-import { loadCommunityIndex, loadCommunityMembers } from '@/backend/loaders/community';
+import { ArrowLeft } from 'lucide-react';
+import { loadCommunityMembers } from '@/backend/loaders/community';
+import { loadFollowingFeed } from '@/backend/loaders/following-feed';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { CommunityIndexResults } from './_components/community-index-results';
 import { CommunitySearch } from './_components/community-search';
@@ -8,27 +11,54 @@ import { CommunityMembersPanel, CommunityMembersStrip } from './_components/comm
 import { ComposeFab } from './_components/compose-fab';
 import { COMMUNITY_PAGE_SIZE } from './_components/constants';
 
-export const revalidate = 300;
+/**
+ * The member's own feed: their posts and the posts of the members they follow,
+ * and nothing else until they follow someone.
+ *
+ * Rendered per request, never cached. The page is one member's answer to "what
+ * did the people I follow publish", so a shared ISR document would be wrong for
+ * everyone but one visitor - and the read runs as the caller (`loadFollowingFeed`
+ * resolves the session and reads through RLS), so there is no viewer id to
+ * forge either.
+ *
+ * `noindex`: the crawler's version of this page is the empty state, and the hub
+ * it should rank instead is `/community/explore`, which stays one cacheable
+ * document for every visitor.
+ */
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'المجتمع',
   description: 'أفكار، دروس، وقصص في العالم الرَّقمي',
+  robots: { index: false, follow: true },
 };
 
 export default async function CommunityPage() {
-  const [{ posts, nextCursor }, members] = await Promise.all([
-    loadCommunityIndex(null, '', COMMUNITY_PAGE_SIZE),
+  const [{ posts, nextCursor, signedIn, followingCount }, members] = await Promise.all([
+    loadFollowingFeed(null, '', COMMUNITY_PAGE_SIZE),
     loadCommunityMembers(),
   ]);
 
+  // Three empty feeds, three sentences: a guest has no follows yet by
+  // definition, a member with none has to be shown where to find people, and a
+  // member who follows people whose posts are not published yet is "nothing new"
+  // rather than "nobody".
+  const emptyKind = !signedIn ? 'guest' : followingCount === 0 ? 'no-follows' : 'none';
+
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 selection:text-white pb-24">
-      {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4 relative z-10">
         <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
           <SectionTitle as="h1">
             <SectionTitleHighlight>المجتمع</SectionTitleHighlight>
           </SectionTitle>
+          <Link
+            href="/community/explore"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/40 px-3.5 py-1.5 text-xs font-bold text-muted-foreground transition-safe duration-200 hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            كل المنشورات
+            <ArrowLeft className="size-3.5" aria-hidden="true" />
+          </Link>
         </div>
 
         {/* Both steps of the two-column pair are variants, never a base utility
@@ -36,7 +66,6 @@ export default async function CommunityPage() {
             a contest on a base class, and one that compiles `grid-cols-1` folds
             the rail under the feed after a client-side navigation (ADR-0132). */}
         <div className="grid items-start max-lg:grid-cols-1 max-lg:gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
-          {/* Feed column */}
           <div className="min-w-0">
             <Suspense
               fallback={
@@ -72,7 +101,12 @@ export default async function CommunityPage() {
                 </div>
               }
             >
-              <CommunityIndexResults initialPosts={posts} initialNextCursor={nextCursor} />
+              <CommunityIndexResults
+                initialPosts={posts}
+                initialNextCursor={nextCursor}
+                source="following"
+                emptyKind={emptyKind}
+              />
             </Suspense>
           </div>
 

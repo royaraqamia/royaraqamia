@@ -232,13 +232,14 @@
     },
     {
       "id": "community",
-      "routes": ["/community"],
+      "routes": ["/community", "/community/explore"],
       "owner": "server",
       "read": "snapshot",
       "write": "none",
-      "shell": "precached",
+      "shell": "swr",
       "specs": ["e2e/public-offline.spec.ts"],
-      "issue": "#555"
+      "issue": "#555",
+      "ungated": "Two documents on one surface (ADR-0173). `/community/explore` is the cached hub every visitor reads, and the one the feed's snapshot belongs to; `/community` is the member's own feed, rendered per request because its answer depends on who is asking, and read live - it keeps no snapshot, since the local store is shared by a device that can be signed in as more than one member."
     },
     {
       "id": "community-post",
@@ -292,7 +293,7 @@
     },
     {
       "id": "profile",
-      "routes": ["/u/[username]"],
+      "routes": ["/u/[username]", "/u/[username]/followers", "/u/[username]/following"],
       "owner": "server",
       "read": "snapshot",
       "write": "none",

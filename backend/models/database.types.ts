@@ -139,6 +139,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      blocks: {
+        Row: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at: string;
+        };
+        Insert: {
+          blocked_id: string;
+          blocker_id: string;
+          created_at?: string;
+        };
+        Update: {
+          blocked_id?: string;
+          blocker_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       budgets: {
         Row: {
           amount: number;
@@ -291,24 +309,6 @@ export type Database = {
           mime_type?: string;
           storage_path?: string;
           uploader_id?: string;
-        };
-        Relationships: [];
-      };
-      chat_blocks: {
-        Row: {
-          blocked_id: string;
-          blocker_id: string;
-          created_at: string;
-        };
-        Insert: {
-          blocked_id: string;
-          blocker_id: string;
-          created_at?: string;
-        };
-        Update: {
-          blocked_id?: string;
-          blocker_id?: string;
-          created_at?: string;
         };
         Relationships: [];
       };
@@ -968,6 +968,39 @@ export type Database = {
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      follows: {
+        Row: {
+          created_at: string;
+          followee_id: string;
+          follower_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          followee_id: string;
+          follower_id: string;
+        };
+        Update: {
+          created_at?: string;
+          followee_id?: string;
+          follower_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'follows_followee_id_fkey';
+            columns: ['followee_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'follows_follower_id_fkey';
+            columns: ['follower_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -3097,6 +3130,28 @@ export type Database = {
       };
     };
     Views: {
+      following_feed: {
+        Row: {
+          author_id: string;
+          community_visible: boolean;
+          content: string | null;
+          cover_image: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          featured: boolean;
+          id: string;
+          meta_desc: string | null;
+          meta_title: string | null;
+          publish_at: string | null;
+          published_at: string | null;
+          reading_time_minutes: number;
+          slug: string;
+          status: Database['public']['Enums']['post_status'];
+          updated_at: string;
+          view_count: number;
+        };
+        Relationships: [];
+      };
       mcp_catalog_latest_verifications: {
         Row: {
           action: string;
@@ -3290,6 +3345,14 @@ export type Database = {
       enroll_application: {
         Args: { p_application_id: string; p_cohort_id: string };
         Returns: string;
+      };
+      follow_counts: {
+        Args: { p_user_ids: string[] };
+        Returns: {
+          followers: number;
+          following: number;
+          user_id: string;
+        }[];
       };
       generate_certificate_code: { Args: never; Returns: string };
       get_auth_user_by_email: {

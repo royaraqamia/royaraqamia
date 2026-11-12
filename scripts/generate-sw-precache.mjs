@@ -105,6 +105,16 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'the plan, the price and the account (guest, already subscribed, or an open request) are all decided per request',
   },
+  // The member's own feed (ADR-0173). Its answer depends on who is asking, so
+  // there is no document to precache: a guest would receive the empty state and
+  // a member the feed, and the shell would be wrong for one of them by design.
+  // The hub beside it (`/community/explore`) is what the precache keeps for the
+  // community surface. Cached at runtime after the first visit.
+  {
+    route: '/community',
+    reason:
+      'the feed is read as the member, so the document is per-viewer; `/community/explore` is the cached hub',
+  },
   // The notification centre. Its document carries nothing: the feed is a client
   // read, so a precached shell would paint an empty frame with the radio off, and
   // the slot it costs evicts `/verify`'s shell from the tail. The page stays a

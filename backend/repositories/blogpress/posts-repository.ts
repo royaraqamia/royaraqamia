@@ -27,6 +27,16 @@ export interface PostsRepository {
     categorySlug?: string,
     authorId?: string
   ): Promise<PublishedFeedResult>;
+  /**
+   * The signed-in member's personal feed: their own posts and their followees',
+   * read from `following_feed` as the caller so RLS decides the rows. A guest
+   * gets nothing, which is why the loader refuses to call this without a user.
+   */
+  getFollowingFeed(
+    cursor: string | null,
+    query: string,
+    pageSize: number
+  ): Promise<PublishedFeedResult>;
   getPublishedPostSlugs(): Promise<string[]>;
   getPublishedPostSitemapEntries(): Promise<PostSitemapEntry[]>;
   getPublishedPostBySlug(slug: string): Promise<Post | null>;
