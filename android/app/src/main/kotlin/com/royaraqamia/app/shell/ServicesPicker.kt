@@ -44,6 +44,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.account.AvatarLoader
+import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
+import com.royaraqamia.app.connectedapps.InboundTab
 import com.royaraqamia.app.mcp.MarketplaceTab
 import com.royaraqamia.app.mcp.McpStoreRepository
 import com.royaraqamia.app.theme.LocalRoySpacing
@@ -126,10 +128,11 @@ internal object PickerMetrics {
  * The app draws the same surface — full height, no grabber, the picker under
  * the tabs — so the two hosts of one surface cannot drift apart.
  *
- * The two MCP tabs are doors in this slice: the store is still the page, and
- * the connected list is the screen that already exists, so choosing either
- * closes the sheet and routes. The picker keeps its rule: one write at a time,
- * and a refused write is the sheet's own line, cleared by the next attempt.
+ * All three tabs are panels since #1256: the picker, the store
+ * (`mcp/MarketplaceTab.kt`) and the connected clients
+ * (`connectedapps/InboundTab.kt`), each filtered by the surface's one field. The
+ * picker keeps its rule: one write at a time, and a refused write is the sheet's
+ * own line, cleared by the next attempt.
  */
 @Composable
 fun ServicesSheet(
@@ -149,8 +152,10 @@ fun ServicesSheet(
     onOpenExternal: (String) -> Unit = {},
     /** Reads a catalogue row's brand mark; null draws the monogram alone. */
     brandMark: AvatarLoader? = null,
-    /** The connected-apps tab's door: the screen the account row used to open. */
-    onOpenConnectedApps: () -> Unit = onDismiss,
+    /** The connected list's data (#1256): the same card the account screen draws. */
+    connectedApps: ConnectedAppsRepository? = null,
+    /** The page's "connect a new client": the MCP guide, still the document. */
+    onConnectNew: () -> Unit = {},
 ) {
     if (!open) return
 
@@ -198,7 +203,7 @@ fun ServicesSheet(
                             when (chosen) {
                                 AppsSheetTab.Internal -> tab = AppsSheetTab.Internal
                                 AppsSheetTab.External -> tab = AppsSheetTab.External
-                                AppsSheetTab.Inbound -> onOpenConnectedApps()
+                                AppsSheetTab.Inbound -> tab = AppsSheetTab.Inbound
                             }
                         },
                     )
@@ -222,7 +227,7 @@ fun ServicesSheet(
                         .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 )
 
-                if (tab == AppsSheetTab.Internal || marketplace == null) {
+                if (tab == AppsSheetTab.Internal || (tab == AppsSheetTab.External && marketplace == null) || (tab == AppsSheetTab.Inbound && connectedApps == null)) {
                     Column(
                         Modifier.fillMaxWidth()
                             .weight(1f)
@@ -297,17 +302,28 @@ fun ServicesSheet(
                             )
                         }
                     }
-                } else {
+                } else if (tab == AppsSheetTab.External) {
                     // The store is a panel, not a door (#1256): the surface's field
                     // is its search, and the body scrolls inside the tab.
                     MarketplaceTab(
-                        repository = marketplace,
+                        repository = marketplace!!,
                         query = query,
                         signedIn = signedIn,
                         onSignIn = onSignIn,
                         onOpenConnection = onOpenConnection,
                         onOpenExternal = onOpenExternal,
                         brandMark = brandMark,
+                        modifier = Modifier.fillMaxSize().weight(1f),
+                    )
+                } else {
+                    // The connected clients are the same card the account screen
+                    // draws, under the same field (#1256).
+                    InboundTab(
+                        repository = connectedApps!!,
+                        signedIn = signedIn,
+                        query = query,
+                        onSignIn = onSignIn,
+                        onConnectNew = onConnectNew,
                         modifier = Modifier.fillMaxSize().weight(1f),
                     )
                 }
