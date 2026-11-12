@@ -92,7 +92,26 @@
     }
   ],
   "motion": {
-    "notes": "The code page header and body sections stagger in, and the seal springs from 90% to 100% scale when the certificate is found. The same means the same stagger and spring, with reduced motion showing the final state.",
-    "entries": []
+    "notes": "The code page header and body sections stagger in 80ms apart, and the seal fades in and scales from 95% to 100% after a 0.35s delay. The same means the same stagger and entrance, with reduced motion showing the final state.",
+    "entries": [
+      {
+        "element": "title",
+        "gesture": "the certificate page loads",
+        "moves": "the header and body sections stagger in 80ms apart, each fading and rising 20px over 0.5s",
+        "same": "the same 80ms stagger, 20px travel and 0.5s easing; reduced motion shows the settled page"
+      },
+      {
+        "element": "seal",
+        "gesture": "the certificate is found",
+        "moves": "the seal fades in and scales from 95% to 100% after a 0.35s delay over 0.4s",
+        "same": "the same delay, fade and 95%-to-100% scale; reduced motion shows the seal at 100%"
+      },
+      {
+        "element": "detail-0",
+        "gesture": "hover over or keyboard-focus a detail row",
+        "moves": "the row fades its border and background and its icon takes the primary colour",
+        "same": "the same colour transition and focus ring; the rows do not travel"
+      }
+    ]
   }
 }

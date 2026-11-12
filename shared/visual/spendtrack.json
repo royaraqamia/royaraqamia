@@ -338,6 +338,25 @@
   ],
   "motion": {
     "notes": "Expense rows lift 0.3% and scale their colour dot on hover over 200-300ms, dialogs fade and zoom in, and charts and progress bars fill or fade into place. The same means the same travel, entrance and 150-500ms transitions, with reduced motion dropping the travel.",
-    "entries": []
+    "entries": [
+      {
+        "element": "row",
+        "gesture": "hover over or keyboard-focus an expense row",
+        "moves": "the row lifts and its colour dot scales over 200-300ms",
+        "same": "the same lift, dot scale and 200-300ms easing; reduced motion drops the travel and keeps the colour change"
+      },
+      {
+        "element": "dialog",
+        "gesture": "open the expense or category dialog",
+        "moves": "the dialog fades and zooms into place",
+        "same": "the same fade and zoom entrance; reduced motion drops the zoom and shows the dialog in place"
+      },
+      {
+        "element": "daily-chart",
+        "gesture": "the report loads or a filter changes",
+        "moves": "the charts and progress bars fill or fade into place over 150-500ms",
+        "same": "the same fill, fade and timing; reduced motion shows the final values without the fill"
+      }
+    ]
   }
 }

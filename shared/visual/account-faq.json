@@ -82,7 +82,14 @@
     }
   ],
   "motion": {
-    "notes": "Each FAQ row opens its answer on tap or click by expanding the grid row from zero to its content height over 300ms while the answer fades and rises 4px; the same means the same duration, easing and final height, and reduced motion keeps the open state without the animation.",
-    "entries": []
+    "notes": "Each FAQ row opens its answer on tap or click by expanding the grid row from zero to its content height over 300ms while the answer fades and rises 8px and the chevron turns over; the same means the same duration, easing and final height, and reduced motion keeps the open state without the animation.",
+    "entries": [
+      {
+        "element": "first-row",
+        "gesture": "tap or click a FAQ row",
+        "moves": "the row expands from zero to its content height over 300ms while the answer fades and rises 8px and the chevron turns over",
+        "same": "the same 300ms duration, easing, final height and chevron turn; reduced motion opens the answer without the animation"
+      }
+    ]
   }
 }

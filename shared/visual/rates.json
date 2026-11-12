@@ -103,6 +103,19 @@
   ],
   "motion": {
     "notes": "The metals board is still. The converter chevron rotates 90 degrees over 200ms when it opens; the same means the same rotation and opened state. Loading is a pulse skeleton.",
-    "entries": []
+    "entries": [
+      {
+        "element": "converter",
+        "gesture": "open the converter",
+        "moves": "the chevron rotates 90 degrees over 200ms",
+        "same": "the same 90-degree rotation and 200ms timing; reduced motion jumps to the open state"
+      },
+      {
+        "element": "metals-card",
+        "gesture": "the board loads",
+        "moves": "a pulse skeleton holds the metals until the rates arrive",
+        "same": "the same pulse skeleton; reduced motion shows the settled board without the pulse"
+      }
+    ]
   }
 }
