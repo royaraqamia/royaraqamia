@@ -79,6 +79,29 @@ unchanged.
   is unaffected: `LinksnapShortenerScreen` draws the control as part of its
   screen either way.
 
+## Amendment: the legal rows follow the settings rows out
+
+The account page lost the same shape a second time. `الخصوصيَّة`, `الشُّروط` and
+`الأمان` were three rows to pages nobody opens from inside the account, and the
+`/account` front page now draws the member's own rows, the app doors and the FAQ
+and nothing else. The rows leave `AccountRows` on both clients, and the copy
+keys leave `shared/copy/account-rows.json` with them.
+
+The pages themselves stay, exactly as ADR-0152 kept `/verify`: they keep their
+metadata, their sitemap entries and their chrome, and they answer a direct or
+printed URL. What the site no longer does is offer a link to them from anywhere;
+a reader arrives by following a policy link in a store listing, a payment
+provider's review or a search result.
+
+- The footer is the brand line and the social icons again. Its comment claimed
+  the account rows carried the legal pages "again", which this change makes
+  false; the comment goes with the claim.
+- No replacement door is added. A future change that needs one - a store
+  reviewer, a jurisdictional requirement - adds a single legal line to the
+  footer rather than three cards to the account page.
+- `account-rows` stays one component in `docs/mobile/parity.json`; the Kotlin
+  screen draws the same shortened list.
+
 ## Related
 
 - [ADR-0146](0146-the-homepage-is-the-app-door.md) — the picker this sheet is.

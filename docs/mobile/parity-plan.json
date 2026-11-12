@@ -239,14 +239,14 @@
     {
       "surface": "leads",
       "phase": "leads",
-      "state": "todo",
-      "issue": "#929"
+      "state": "blocked",
+      "blockedBy": "no door on the web: the four forms left the picker (ADR-0148) and the site links them nowhere, so there is no page a member reaches to compare against"
     },
     {
       "surface": "consultation",
       "phase": "leads",
-      "state": "todo",
-      "issue": "#930"
+      "state": "blocked",
+      "blockedBy": "no door on the web: `consultation/book` left the picker with the other lead forms (ADR-0148) and the site links it nowhere"
     },
     {
       "surface": "admin",

@@ -41,6 +41,9 @@ interface AccountRowsProps {
  *
  * The news and links rows are not here any more (ADR-0153): each app opens its
  * own account screen from its own page's FAB, and the row duplicated that door.
+ * The legal rows (privacy, terms, security) left the same way (ADR-0153's
+ * amendment): the pages keep their own URLs, and the account page stopped
+ * offering a door to them.
  *
  * The shell-only rows (`InstallSection`, `ShellChangelogRow`) arrive as children
  * so they keep the page's order: after the account actions and before the FAQ.

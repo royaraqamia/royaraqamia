@@ -72,8 +72,8 @@ _The local-store products, where the app has a real reason to be native: offline
 
 _Forms that end in a server write, so a port has to bring the same validation and the same confirmation as the page._
 
-- [ ] **leads** `/training/apply` `/request-project` `/hire` `/pricing/subscribe` — todo · #929
-- [ ] **consultation** `/consultation/book` — todo · #930
+- [ ] **leads** `/training/apply` `/request-project` `/hire` `/pricing/subscribe` — blocked · blocked by no door on the web: the four forms left the picker (ADR-0148) and the site links them nowhere, so there is no page a member reaches to compare against
+- [ ] **consultation** `/consultation/book` — blocked · blocked by no door on the web: `consultation/book` left the picker with the other lead forms (ADR-0148) and the site links it nowhere
 
 ## Operator surfaces
 
@@ -164,4 +164,4 @@ A component is finished when the surface that draws it is native: 76 ported comp
 
 ## Where this stands
 
-15 native · 22 to do · 2 blocked of 39 surfaces.
+15 native · 20 to do · 4 blocked of 39 surfaces.

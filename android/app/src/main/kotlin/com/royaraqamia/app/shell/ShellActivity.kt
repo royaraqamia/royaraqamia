@@ -43,7 +43,6 @@ import com.royaraqamia.app.chats.ChatsScreen
 import com.royaraqamia.app.community.CommunityFeedScreen
 import com.royaraqamia.app.community.CommunityPostScreen
 import com.royaraqamia.app.community.CommunityRoutes
-import com.royaraqamia.app.consultation.ConsultationScreen
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
@@ -53,7 +52,6 @@ import com.royaraqamia.app.linksnap.LinksnapAnalyticsExportCopy
 import com.royaraqamia.app.linksnap.LinksnapScreen
 import com.royaraqamia.app.linksnap.LinksnapRoutes
 import com.royaraqamia.app.linksnap.LinksnapShortenerScreen
-import com.royaraqamia.app.leads.LeadsScreen
 import com.royaraqamia.app.linksnap.LinksnapUnlockScreen
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.plans.PlanScreen
@@ -94,12 +92,13 @@ import com.royaraqamia.app.verify.VerifyScreen
  * ([ShellTab]). All three are the site's own grammar, and each is unit-tested
  * rather than asserted here.
  *
- * **Every destination is the document (#872).** [NativeSurfaces] is empty, so the
- * frame is a launch screen rather than a second design: it exists to lift the
- * splash onto the app's own colours, to own the update card, and to hand the route
- * to [WebSurface] - signed in or not, because the site is what signs in. A native
- * screen returns to this frame only with the change that makes it
- * indistinguishable from the page.
+ * **The document is the default, not the only answer (#872).** [NativeSurfaces]
+ * names the routes whose port has passed the gate, and only those stay on this
+ * frame; every other destination is handed to [WebSurface] - signed in or not,
+ * because the site is what signs in. The frame is otherwise a launch screen
+ * rather than a second design: it lifts the splash onto the app's own colours
+ * and owns the update card. A route joins [NativeSurfaces] only with the change
+ * that makes its screen indistinguishable from the page.
  */
 class ShellActivity : ComponentActivity() {
     /** The route the frame is showing. */
@@ -439,27 +438,6 @@ class ShellActivity : ComponentActivity() {
                                     onSignIn = ::showSignIn,
                                     onSeePlans = { openRoute("/pricing") },
                                     onManageSources = { openRoute("/account/news") },
-                                )
-                            // The three public lead forms (#929): the page's own
-                            // steps, validation and confirmations, with an
-                            // anonymous Outbox. Ported and off until the visual
-                            // gate passes (ADR-0117), so the document still
-                            // opens on top of it.
-                            "/training/apply", "/request-project", "/hire" ->
-                                LeadsScreen(
-                                    route = Routes.normalize(current),
-                                    repository = graph.leads,
-                                    onCopy = ::copyToClipboard,
-                                )
-                            // Consultation booking (#930): the page's own live
-                            // reads and its never-queued write. Ported and off
-                            // until the visual gate passes (ADR-0117), so the
-                            // document still opens on top of it.
-                            "/consultation/book" ->
-                                ConsultationScreen(
-                                    repository = graph.consultation,
-                                    online = Connectivity.isOnline(this@ShellActivity),
-                                    onCopy = ::copyToClipboard,
                                 )
                             // The new-conversation panel (#934): the member
                             // directory and the direct picker. Ported and off
