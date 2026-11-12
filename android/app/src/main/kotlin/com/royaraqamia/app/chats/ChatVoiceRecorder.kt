@@ -30,8 +30,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** The gateway transcribes WAV natively, so the clip is WAV on both clients (#933). */
-private const val SAMPLE_RATE = 24_000
+/**
+ * The gateway transcribes WAV natively, so the clip is WAV on both clients
+ * (#933). 16 kHz mono keeps a five-minute note under the default 10 MiB
+ * per-file allowance; 24 kHz made it 14.4 MB, which the composer refused.
+ */
+private const val SAMPLE_RATE = 16_000
 private const val CHANNEL = AudioFormat.CHANNEL_IN_MONO
 private const val ENCODING = AudioFormat.ENCODING_PCM_16BIT
 

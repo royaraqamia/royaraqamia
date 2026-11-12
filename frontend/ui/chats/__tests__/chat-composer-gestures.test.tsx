@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 const recorder = vi.hoisted(() => ({
+  isRecording: false,
+  elapsedMs: 0,
   start: vi.fn(),
   stop: vi.fn(),
   cancel: vi.fn(),
@@ -11,9 +13,7 @@ const recorder = vi.hoisted(() => ({
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), error: vi.fn() } }));
 vi.mock('@/frontend/state/chats/use-voice-recorder', () => ({
   useVoiceRecorder: () => ({
-    isRecording: false,
     isPreparing: false,
-    elapsedMs: 0,
     levels: [],
     error: null,
     ...recorder,
@@ -54,11 +54,59 @@ function press(mic: HTMLElement) {
   fireEvent.pointerDown(mic, { pointerId: 7, clientX: 10, clientY: 10 });
 }
 
+describe('ChatComposer recording allowance', () => {
+  function Composer({ maxDurationMs }: { maxDurationMs: number }) {
+    return (
+      <ChatComposer
+        value=""
+        onValueChange={() => undefined}
+        onSend={() => undefined}
+        files={[]}
+        onAddFiles={() => undefined}
+        onRemoveFile={() => undefined}
+        onRecorded={() => undefined}
+        maxDurationMs={maxDurationMs}
+        disabled={false}
+        placeholder="اكتب رسالة"
+        ariaLabel="نصّ الرسالة"
+        sendLabel="إرسال"
+        sendIcon={<span aria-hidden />}
+      />
+    );
+  }
+
+  beforeEach(() => {
+    recorder.isRecording = false;
+    recorder.elapsedMs = 0;
+    recorder.stop.mockReset().mockResolvedValue(null);
+  });
+
+  it('stops and sends at the allowance the thread passes', () => {
+    recorder.isRecording = true;
+    recorder.elapsedMs = 1_200;
+
+    render(<Composer maxDurationMs={1_000} />);
+
+    expect(recorder.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps recording below the allowance', () => {
+    recorder.isRecording = true;
+    recorder.elapsedMs = 500;
+
+    render(<Composer maxDurationMs={1_000} />);
+
+    expect(recorder.stop).not.toHaveBeenCalled();
+  });
+});
+
 describe('ChatComposer recording gesture', () => {
   beforeEach(() => {
     recorder.start.mockReset().mockResolvedValue(true);
     recorder.stop.mockReset().mockResolvedValue(null);
     recorder.cancel.mockReset();
+    recorder.isRecording = false;
+    recorder.elapsedMs = 0;
   });
 
   it('sends when the release stays on the press', () => {

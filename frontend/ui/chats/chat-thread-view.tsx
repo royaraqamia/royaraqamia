@@ -56,6 +56,7 @@ import {
   canEditChatMessage,
   chatAttachmentIsAudio,
   chatAttachmentIsInlineImage,
+  chatVoiceNoteMaxMs,
   type ChatAttachment,
   type ChatMessage,
   type ChatPresenceState,
@@ -220,6 +221,9 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   }
 
   const counterpart = counterpartOf(thread);
+  // The longest note this member's allowance can carry: the ceiling alone can
+  // produce a WAV the composer refuses (the per-file limit is configurable).
+  const recordLimitMs = chatVoiceNoteMaxMs(thread.attachmentQuota.fileBytes);
   /**
    * The live line under the name. نور's turn is the member's own request, so its
    * sentence comes from the assistant's words; a peer's comes from the thread's
@@ -476,6 +480,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         onSend={() => void handleSend()}
         onRecorded={handleRecorded}
         onRecording={noteRecording}
+        recordLimitMs={recordLimitMs}
         onAsk={(body, staged) => {
           void assistant.ask(body, staged).then((sent) => {
             if (sent) setDraft('');
@@ -762,6 +767,7 @@ function ThreadFooter({
   onSend,
   onRecorded,
   onRecording,
+  recordLimitMs,
   onAsk,
   onAccept,
   onDecline,
@@ -787,6 +793,8 @@ function ThreadFooter({
   onRecorded: (clip: File) => void;
   /** The microphone opened or closed, for the peer's live line. */
   onRecording: (recording: boolean) => void;
+  /** The longest note the member's per-file allowance can carry. */
+  recordLimitMs: number;
   onAsk: (body: string, files: File[]) => void;
   onAccept: () => void;
   onDecline: () => void;
@@ -829,6 +837,7 @@ function ThreadFooter({
           onRemoveFile={onRemoveFile}
           onRecorded={onRecorded}
           onRecordingChange={onRecording}
+          maxDurationMs={recordLimitMs}
           disabled={isSending}
           placeholder={CHAT_THREAD_COPY.placeholder}
           ariaLabel={CHAT_THREAD_COPY.messageLabel}

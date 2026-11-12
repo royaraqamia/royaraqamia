@@ -69,18 +69,35 @@ export const CHAT_IMAGE_MAX_BYTES = 4 * 1024 * 1024;
 /**
  * A voice note's bounds, in one place because both composers draw the same
  * control and must agree about when a clip is a mis-tap and when it is too long
- * (ADR-0127). A hold shorter than a second is discarded; five minutes at 24 kHz
- * mono is about 14 MB, well inside the per-file ceiling.
+ * (ADR-0127). A hold shorter than a second is discarded.
  */
 export const CHAT_VOICE_NOTE_MIN_MS = 1_000;
 export const CHAT_VOICE_NOTE_MAX_MS = 5 * 60 * 1_000;
 /**
- * The clip's sample rate. 24 kHz mono is the best a WAV can be while the same
- * single object is both played by a browser and read by the transcription
- * model: 16 kHz is speech-only and audibly thin in a player, and 48 kHz would
- * spend 29 MB on five minutes.
+ * The clip's sample rate. 16 kHz mono is what speech needs; at 24 kHz a
+ * five-minute note was 14.4 MB and the default per-file allowance (10 MiB) threw
+ * it away with «حجم الملف يتجاوز...» — a full-length note could never be sent.
+ * The same five minutes at 16 kHz is 9.6 MB, inside the default and still
+ * readable by the transcription model.
  */
-export const CHAT_VOICE_NOTE_SAMPLE_RATE = 24_000;
+export const CHAT_VOICE_NOTE_SAMPLE_RATE = 16_000;
+/** What a recorded second costs in the WAV: mono, 16-bit PCM. */
+export const CHAT_VOICE_NOTE_BYTES_PER_SECOND = CHAT_VOICE_NOTE_SAMPLE_RATE * 2;
+
+/**
+ * The longest note the member's allowance can carry, never past the contract's
+ * ceiling.
+ *
+ * A configured per-file limit can be anything above zero
+ * (`chat_attachment_file_bytes`), so the ceiling alone can produce a WAV the
+ * same composer refuses. The recorder stops and sends at this bound instead, and
+ * a second is held back for the header and the encoder's rounding.
+ */
+export function chatVoiceNoteMaxMs(fileBytes: number): number {
+  if (!Number.isFinite(fileBytes) || fileBytes <= 0) return CHAT_VOICE_NOTE_MIN_MS;
+  const seconds = Math.floor(Math.max(0, fileBytes - 44) / CHAT_VOICE_NOTE_BYTES_PER_SECOND);
+  return Math.max(CHAT_VOICE_NOTE_MIN_MS, Math.min(CHAT_VOICE_NOTE_MAX_MS, (seconds - 1) * 1_000));
+}
 export const CHAT_VOICE_NOTE_MIME = 'audio/wav';
 
 /** A recording, whichever container the browser reported. */

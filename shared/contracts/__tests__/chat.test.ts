@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   CHAT_EDIT_WINDOW_MS,
   CHAT_GROUP_MEMBERS_MAX,
+  CHAT_VOICE_NOTE_MAX_MS,
+  CHAT_VOICE_NOTE_SAMPLE_RATE,
   ChatAgentTurnSchema,
   ChatMessageSendSchema,
   ChatReportSchema,
@@ -10,6 +12,7 @@ import {
   canEditChatMessage,
   chatAttachmentIsInlineImage,
   chatTitle,
+  chatVoiceNoteMaxMs,
   normalizeChatBody,
 } from '@/shared/contracts/chat';
 
@@ -303,5 +306,24 @@ describe('ChatMessageSendSchema attachments', () => {
     if (!parsed.success) {
       expect(parsed.error.issues[0]?.message).toContain('25');
     }
+  });
+});
+
+describe('chatVoiceNoteMaxMs', () => {
+  it('keeps the contract ceiling when the allowance is generous', () => {
+    // The default per-file allowance, 10 MiB, carries the whole five minutes at 16 kHz.
+    expect(chatVoiceNoteMaxMs(10 * 1024 * 1024)).toBe(CHAT_VOICE_NOTE_MAX_MS);
+  });
+
+  it('holds a second back for the header and the encoder', () => {
+    // 10 seconds of 16-bit mono at the contract's rate, plus room for the header.
+    const bytes = CHAT_VOICE_NOTE_SAMPLE_RATE * 2 * 10 + 44;
+    expect(chatVoiceNoteMaxMs(bytes)).toBe(9_000);
+  });
+
+  it('never asks for a hold shorter than the minimum', () => {
+    expect(chatVoiceNoteMaxMs(1)).toBe(1_000);
+    expect(chatVoiceNoteMaxMs(0)).toBe(1_000);
+    expect(chatVoiceNoteMaxMs(Number.NaN)).toBe(1_000);
   });
 });
