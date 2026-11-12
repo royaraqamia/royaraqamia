@@ -26,6 +26,18 @@ services:
     # being rendered rather than when the process is actually down.
     healthCheckPath: /manifest.json
     autoDeployTrigger: commit
+    # 500 build minutes a month is roughly 180 builds of this app (one takes
+    # about 2m45s), and the recorded cadence before the move was 291 production
+    # deploys in a month — over the allowance before a single visitor arrived.
+    # A push that cannot change the running app does not spend one. `scripts/**`
+    # and `next.config.js` are deliberately absent: the build runs them.
+    buildFilter:
+      ignoredPaths:
+        - docs/**
+        - android/**
+        - e2e/**
+        - .github/**
+        - '**/*.md'
     envVars:
       - key: NODE_VERSION
         value: 22.22.2

@@ -57,6 +57,23 @@ describe('security configuration', () => {
     expect(config).not.toContain('Access-Control-Allow-Origin');
   });
 
+  it('never lets a shared cache hold the personal feed', () => {
+    // ADR-0175: `/community` renders the member's own rows (ADR-0173), and a
+    // rule for `/community/:path*` was also matching it with
+    // `public, s-maxage=300`. That is invisible while nothing caches HTML at the
+    // edge and a cross-member leak the moment something does, so both halves
+    // are asserted: the page stays dynamic, and the header says private.
+    const config = read('next.config.js');
+    const page = read('app/community/page.tsx');
+    expect(page).toContain("export const dynamic = 'force-dynamic'");
+    expect(config).toMatch(
+      /source: '\/community',\s*headers: \[\{ key: 'Cache-Control', value: 'private, no-store' \}\]/
+    );
+    expect(config, 'a broad /community rule matches the feed itself').not.toContain(
+      "source: '/community/:path*'"
+    );
+  });
+
   it('publishes a machine-readable security.txt (RFC 9116)', () => {
     const securityTxt = read('public/.well-known/security.txt');
     expect(securityTxt).toMatch(/^Contact: mailto:/m);
