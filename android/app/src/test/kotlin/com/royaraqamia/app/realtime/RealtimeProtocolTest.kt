@@ -77,7 +77,7 @@ class RealtimeProtocolTest {
         val wire =
             RealtimeProtocol.push(
                 joinRef = "2",
-                topic = "presence:peer-1",
+                topic = "presence:c-1",
                 event = "presence",
                 payload = buildJsonObject { put("state", "typing") },
                 ref = "7",
