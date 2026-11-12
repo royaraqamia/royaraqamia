@@ -87,3 +87,21 @@ baseline, or it does not pass.
 What this costs: a whole-window capture of a native screen on a _primary_ route still cannot pass,
 because the frame's pixels belong to the page's content; its content-only capture stays. A secondary
 route has no bar at all (#913), and that is where a screen can be captured whole.
+
+## Amendment: motion is a decision in the contract (#903)
+
+A still frame still cannot show a transition, a scroll behaviour or a gesture, so the gate still does
+not measure motion. What it now requires is that the decision is written down: every contract in
+`shared/visual` (a surface, or the frame) carries a `motion` section beside its `states`, and
+`check:visual` refuses a contract whose section is missing, naming the file.
+
+The section is `{ "notes": "...", "entries": [...] }`. `notes` says what the surface's motion is, or
+why it has none. Each entry is `{ "element"?: "...", "gesture": "...", "moves": "...", "same": "..." }`:
+`gesture` is what starts the movement, `moves` is what changes, and `same` is what "the same" means for
+the two clients; `element` names the box the movement belongs to when it has one. The gate checks the
+shape, not the movement itself, so the entries are compared by hand against the page in the backfill
+(#970). The notes carry the surface-level decision now; the backfill adds the per-movement entries.
+
+This is the rule first, deliberately: a rule added after the backfill is a rule nobody can be held
+to. Every surface that already carries a contract carries the section now, and the backfill fills it
+one surface per change.

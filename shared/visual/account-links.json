@@ -370,5 +370,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Link cards lift 0.5px and grow their shadow on hover, the bulk bar appears when a row is selected, the analytics drawer expands from zero height, and the QR modal fades and zooms from 95%; the same means the same travel, height and 200-300ms easing, with reduced motion dropping the travel and the drawer expansion.",
+    "entries": []
+  }
 }

@@ -217,5 +217,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Link cards lift 0.5px and grow their shadow on hover over 300ms, their controls scale on press, and the QR and analytics panels fade, zoom or expand into place. The same means the same travel, entrance and 150-300ms easing, with reduced motion dropping the travel and the expansion.",
+    "entries": []
+  }
 }

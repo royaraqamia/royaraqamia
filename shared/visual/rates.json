@@ -100,5 +100,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The metals board is still. The converter chevron rotates 90 degrees over 200ms when it opens; the same means the same rotation and opened state. Loading is a pulse skeleton.",
+    "entries": []
+  }
 }

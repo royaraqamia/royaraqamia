@@ -95,5 +95,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The settled digest is still; source rows fade their border and background on hover with the same colour transition, and the loading state is a pulse skeleton.",
+    "entries": []
+  }
 }

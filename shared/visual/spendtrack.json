@@ -335,5 +335,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Expense rows lift 0.3% and scale their colour dot on hover over 200-300ms, dialogs fade and zoom in, and charts and progress bars fill or fade into place. The same means the same travel, entrance and 150-500ms transitions, with reduced motion dropping the travel.",
+    "entries": []
+  }
 }

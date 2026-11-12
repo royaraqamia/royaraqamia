@@ -80,5 +80,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Each FAQ row opens its answer on tap or click by expanding the grid row from zero to its content height over 300ms while the answer fades and rises 4px; the same means the same duration, easing and final height, and reduced motion keeps the open state without the animation.",
+    "entries": []
+  }
 }

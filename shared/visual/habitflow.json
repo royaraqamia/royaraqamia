@@ -127,5 +127,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The dashboard enters in three staged pieces: the header springs in, the list fades and rises over 0.6s, and the footer rises over 0.5s; counts and calendar fills animate to their values. The same means the same order and timing, and reduced motion keeps the final states without the spring or travel.",
+    "entries": []
+  }
 }

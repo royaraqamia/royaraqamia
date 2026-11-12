@@ -11,6 +11,7 @@ import {
   pixelDifference,
   validate,
   validateContract,
+  validateMotion,
 } from '../check-visual.mjs';
 
 /** A minimal encoder, so a test can make the two captures it needs. */
@@ -67,6 +68,7 @@ const opaque = (width, height) => {
 };
 
 const CONTRACT = {
+  motion: { notes: 'Nothing moves at rest.', entries: [] },
   states: [
     {
       name: 'at-rest',
@@ -388,6 +390,79 @@ describe('the contract itself', () => {
         'verify'
       )
     ).toEqual(['"verify/at-rest": the contract names the state twice']);
+  });
+});
+
+describe('the motion section', () => {
+  it('accepts a section that says nothing moves', () => {
+    expect(validateMotion(CONTRACT, 'shared/visual/verify.json')).toEqual([]);
+  });
+
+  it('refuses a contract with no motion section, naming the file', () => {
+    expect(validateMotion({ states: CONTRACT.states }, 'shared/visual/verify.json')).toEqual([
+      'shared/visual/verify.json: no motion section',
+    ]);
+  });
+
+  it('refuses a section with no notes and an entry missing what the backfill needs', () => {
+    expect(
+      validateMotion(
+        {
+          states: CONTRACT.states,
+          motion: { entries: [{ element: '', gesture: '', moves: 1 }] },
+        },
+        'shared/visual/verify.json'
+      )
+    ).toEqual([
+      "shared/visual/verify.json: motion.notes says what the surface's motion is, or why it has none",
+      'shared/visual/verify.json: motion.entries[0].gesture is a non-empty string',
+      'shared/visual/verify.json: motion.entries[0].moves is a non-empty string',
+      'shared/visual/verify.json: motion.entries[0].same is a non-empty string',
+      'shared/visual/verify.json: motion.entries[0].element is a non-empty string when it is present',
+    ]);
+  });
+
+  it('accepts an entry with a gesture, what moves and what the same means', () => {
+    expect(
+      validateMotion(
+        {
+          states: CONTRACT.states,
+          motion: {
+            notes: 'The submit control lifts on press.',
+            entries: [
+              {
+                element: 'submit',
+                gesture: 'press',
+                moves: 'the submit control lifts 1px',
+                same: 'the same travel and easing, and no movement under reduced motion',
+              },
+              {
+                gesture: 'scroll',
+                moves: 'the page scrolls',
+                same: 'the same scroll behaviour',
+              },
+            ],
+          },
+        },
+        'shared/visual/verify.json'
+      )
+    ).toEqual([]);
+  });
+
+  it('refuses a contract with no motion section, naming the file, gated or not yet', () => {
+    const gated = repo({ web: RECORD(), app: RECORD() });
+    writeFileSync(
+      join(gated.root, 'shared', 'visual', 'verify.json'),
+      JSON.stringify({ states: CONTRACT.states })
+    );
+    expect(gated.check()).toEqual(['shared/visual/verify.json: no motion section']);
+
+    const ungated = repo({ web: RECORD(), app: RECORD() });
+    writeFileSync(
+      join(ungated.root, 'shared', 'visual', 'extra.json'),
+      JSON.stringify({ surface: 'extra', states: CONTRACT.states })
+    );
+    expect(ungated.check()).toEqual(['shared/visual/extra.json: no motion section']);
   });
 });
 

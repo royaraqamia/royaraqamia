@@ -40,5 +40,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The profile header is still; the post cards below it use the community card motion, lifting 1.5px and scaling their cover to 1.05 on hover over 500-700ms. The same means the same travel and easing, and reduced motion drops both.",
+    "entries": []
+  }
 }

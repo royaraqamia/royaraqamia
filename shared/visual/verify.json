@@ -60,5 +60,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The search card children stagger in 100ms apart, each fading and rising 20px over 0.5s on load; a result enters from 24px below and leaves 20px upward in 0.15s. The same means the same order, travel and easing, and the app composes the same states without the network.",
+    "entries": []
+  }
 }

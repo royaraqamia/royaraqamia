@@ -50,5 +50,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The profile card is still. The avatar scales to 1.03 and its edit badge to 1.10 on hover over 200ms; the same means the same scale, and reduced motion drops it. Loading is a spinner.",
+    "entries": []
+  }
 }

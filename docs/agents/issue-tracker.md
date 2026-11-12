@@ -33,7 +33,8 @@ that is checked, not judged (#882):
 - a row in `docs/mobile/screens.json` — the Kotlin screen, or the reason there is none;
 - a row in `docs/mobile/parity-plan.json` — its phase, and `todo` (the document draws it) or
   `blocked`;
-- a contract in `shared/visual/<surface>.json` — the boxes and styles both clients must agree on.
+- a contract in `shared/visual/<surface>.json` — the boxes and styles both clients must agree on,
+  and the `motion` section saying what moves, on which gesture, and what "the same" means.
 
 A port becomes `native` only in the pull request where `check:visual` passes for it: the layout
 contract exact and the raster inside the surface's tolerance

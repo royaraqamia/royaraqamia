@@ -87,5 +87,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Package and slot cards fade their border and shadow on hover over 200-300ms, and the next control stays disabled until the step is complete; the same means the same colour and shadow transition and the same disabled state. Loading a slot list is a spinner.",
+    "entries": []
+  }
 }

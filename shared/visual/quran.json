@@ -118,5 +118,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "Surah rows fade their border, background and number chip on hover or focus, and the search field fades its border and ring. The same means the same colour transitions; the rows do not travel.",
+    "entries": []
+  }
 }

@@ -90,5 +90,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The unlock form is still. The input fades its focus ring and the submit glyph spins while the request is in flight; the same means the same 150ms focus and colour transition and the same spinner.",
+    "entries": []
+  }
 }

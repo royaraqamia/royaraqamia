@@ -30,5 +30,9 @@
         }
       ]
     }
-  ]
+  ],
+  "motion": {
+    "notes": "The connected-apps list is still. The destructive revoke control brightens on hover and shrinks 2% on press; the same means the same 150ms ease-out and the same press travel, with the colour change kept under reduced motion. Loading is a pulse skeleton.",
+    "entries": []
+  }
 }
