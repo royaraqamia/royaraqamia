@@ -35,10 +35,11 @@ whichever copy the cache held would be wrong for the other caller.
 6. **Counts public, lists private.** `follow_counts` is an aggregate-only security-definer function,
    so a profile header can show two numbers without naming a follower; the lists are ordinary RLS
    reads scoped to the member they belong to, and only the owner's pages render them.
-7. **The follow control is one read, then server truth.** The profile is cached for every visitor, so
-   the document cannot know the viewer's standing: one `GET` answers state and counts, and every later
-   state comes from what the write answered. Guests see the button and are sent to sign in; the
-   member's own profile shows «أنت»; a blocked profile shows only «إلغاء الحظر».
+7. **The follow control is server truth from the first byte.** The profile is rendered for the viewer
+   who asked, so the two numbers and the viewer's standing are in the document: no read after paint,
+   no skeleton, nothing to settle. The controls only write, and a write's own answer updates the
+   number beside it. Guests see the button and are sent to sign in; the member's own profile shows
+   «أنت»; a blocked profile shows only «إلغاء الحظر».
 
 ## Consequences
 
@@ -58,6 +59,17 @@ whichever copy the cache held would be wrong for the other caller.
   `/api/community/index` with no bearer, so the shipped app keeps showing the hub until its half of
   this lands. Nothing in the app breaks in the meantime; the per-viewer read is a parity change, not
   a fix.
-- **The profile page stays cached.** Counts ride its own tag and the follow controller revalidates
-  it; the button hydrates from one read. Making the whole page per-viewer to save that read would
-  cost the ISR the section is built on (ADR 0172 made the same call for the pin).
+- **The roster's control follows its page.** The member's own feed passes the states the server already
+  read, so every row's button is correct in the first paint. The cached hub draws no control at all:
+  a per-viewer button there would have to be fetched in the browser, which is the round trip - and
+  the 35 KB it cost the public route - that this ordering exists to avoid. A row still opens the
+  profile, where the button is one tap away and already correct.
+- **The profile is the per-viewer page; the hub is the cached one.** `loadCommunityMember` still caches
+  the member and their posts under their own tag, so a profile render costs one aggregate and one
+  edge. The first attempt kept the profile static and fetched the state in the browser: two grey
+  skeletons in the middle of the header, a read that waited on `/api/me`, and a layout that settled
+  after paint. That is the cost this ordering refuses to pay - the same call ADR 0172 made for the
+  pin, resolved the other way because a button cannot be reordered into place.
+- **A follow revalidates nothing.** No cached document carries a count or a standing any more, so the
+  write answers its own numbers and leaves the tags alone: one press no longer re-renders the roster
+  and every profile for every visitor.

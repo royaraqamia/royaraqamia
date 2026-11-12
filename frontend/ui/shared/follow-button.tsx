@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { followMember, unblockMember, unfollowMember } from '@/frontend/api/follows';
-import { useSession } from '@/frontend/state/session-provider';
+import { publishFollowCounts } from '@/frontend/shared/follow-live';
 import { Button } from '@/frontend/ui/primitives/button';
 import {
   Dialog,
@@ -12,7 +12,6 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
-import { setFollowSnapshot, useFollowSnapshot } from '@/frontend/shared/follow-state-store';
 import type { FollowState } from '@/shared/contracts/follows';
 import { FOLLOW_COPY } from './follow-copy';
 
@@ -20,17 +19,19 @@ interface FollowButtonProps {
   username: string;
   /** The name the unfollow dialogue says out loud; the handle when there is none. */
   name?: string | null;
-  className?: string;
-  /**
-   * A controlled state, for a row whose list read every state in one request.
-   *
-   * `null` means "this list has not read it yet" and draws the resting face; the
-   * property being absent means nobody controls this button and it reads the
-   * member's state itself (the profile header's case).
-   */
-  state?: FollowState | null;
+  /** The member's id, so a blocked profile can lift the block by id. */
   memberId?: string | null;
-  onChange?: (state: FollowState) => void;
+  /**
+   * The viewer's standing, resolved by the server render.
+   *
+   * There is no read here on purpose: the page is rendered for this viewer, so
+   * the control is correct in the first paint - no skeleton, nothing to settle,
+   * and nothing to fetch before the header is usable.
+   */
+  initialState: FollowState;
+  /** A guest gets the same button; pressing it goes to sign in. */
+  signedIn: boolean;
+  className?: string;
 }
 
 function displayName(name: string | null | undefined, username: string): string {
@@ -40,48 +41,31 @@ function displayName(name: string | null | undefined, username: string): string 
 /**
  * The one control the follow graph puts in a visitor's hands.
  *
- * It starts from the server's answer rather than from the page: the profile is
- * prerendered for every visitor, so the document cannot know whether this viewer
- * already follows the member. One read resolves it - shared with the header's
- * numbers - and from then on the button's state is whatever the write answered,
- * never an assumption.
- *
- * Four states, four faces:
+ * Five faces, all known before the first paint:
  *
  * - `self`: the «أنت» pill, no button (a member cannot follow themselves);
  * - `blocked`: an unblock button and nothing else, because the only way back to
  *   a blocked member is to lift the block;
  * - `following`: unfollow, behind a confirmation dialogue - the one action here
  *   that loses something, so it is the one that asks twice;
- * - `not_following`: follow. A guest gets the same button; pressing it goes to
- *   the sign-in page rather than answering 401 in a corner.
+ * - `not_following`: follow;
+ * - a guest: follow, linked to the sign-in page rather than answering 401 later.
+ *
+ * After a press the state is whatever the write answered, and the numbers above
+ * the header are updated from the same answer.
  */
 export function FollowButton({
   username,
   name,
+  memberId,
+  initialState,
+  signedIn,
   className,
-  state: controlledState,
-  memberId: controlledMemberId,
-  onChange,
 }: FollowButtonProps) {
-  const { user } = useSession();
-  const isControlled = controlledState !== undefined;
-  const snapshot = useFollowSnapshot(username, !isControlled);
+  const [state, setState] = useState<FollowState>(initialState);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
-
-  const state: FollowState | null = isControlled ? controlledState : (snapshot?.state ?? null);
-  const memberId = isControlled ? (controlledMemberId ?? null) : (snapshot?.memberId ?? null);
-
-  function nextState(next: FollowState) {
-    if (isControlled) {
-      onChange?.(next);
-      return;
-    }
-    if (!snapshot) return;
-    setFollowSnapshot(username, { ...snapshot, state: next });
-  }
 
   async function run(action: 'follow' | 'unfollow' | 'unblock') {
     setBusy(true);
@@ -92,23 +76,15 @@ export function FollowButton({
         // Blocking is the site's own row (`blocks`, one table for chat and the
         // feed), so lifting it goes through the route that already owns that write.
         if (memberId) await unblockMember(memberId);
-        nextState('not_following');
+        setState('not_following');
         return;
       }
 
       const body =
         action === 'follow' ? await followMember(username) : await unfollowMember(username);
 
-      if (!isControlled && snapshot) {
-        setFollowSnapshot(username, {
-          state: body.state,
-          counts: body.counts ?? snapshot.counts,
-          memberId: snapshot.memberId,
-        });
-      } else {
-        nextState(body.state);
-      }
-
+      setState(body.state);
+      if (body.counts) publishFollowCounts(username, body.counts);
       if (!body.success) setError(body.error ?? FOLLOW_COPY.followFailed);
     } catch {
       setError(
@@ -123,17 +99,6 @@ export function FollowButton({
     }
   }
 
-  // Nothing is drawn until the state is known: a button that guesses would flash
-  // «متابعة» at a member who already follows.
-  if (state === null) {
-    return (
-      <div
-        className={`h-9 w-28 animate-pulse rounded-full bg-muted/40 ${className ?? ''}`}
-        aria-hidden="true"
-      />
-    );
-  }
-
   if (state === 'self') {
     return (
       <span
@@ -144,7 +109,7 @@ export function FollowButton({
     );
   }
 
-  if (!user) {
+  if (!signedIn) {
     return (
       <Link href={`/auth/login?redirect=${encodeURIComponent(`/u/${username}`)}`}>
         <Button size="sm" className={`rounded-full px-5 ${className ?? ''}`}>

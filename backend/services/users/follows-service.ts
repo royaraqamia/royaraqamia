@@ -109,33 +109,33 @@ export class FollowsService {
   }
 
   /**
-   * What a profile header needs on load: the two public numbers, and the
-   * viewer's own standing (a guest reads `not_following`, which is true of
-   * everyone they are not signed in as).
+   * The viewer's standing with one member, and that member's numbers.
    *
-   * The counts come back for a guest too - they are public - so the header can
-   * paint the same numbers whether or not there is a session.
+   * Three reads, in parallel and in one round trip: the aggregate, the block in
+   * either direction, and the edge. The page already has the member row, so this
+   * takes its id - looking the handle up again would be a fourth read to learn
+   * something the caller already knows.
    */
-  async profile(
-    username: string,
-    viewerId: string | null
-  ): Promise<{ state: FollowState; counts: FollowCounts; memberId: string }> {
-    const target = await this.deps.users.getByUsername(username.toLowerCase());
-    if (!target) throw new FollowRefusedError(404, 'هذا العضو غير موجود.');
-
-    const counts = await this.countsOf(target.id);
-    if (!viewerId) return { state: 'not_following', counts, memberId: target.id };
-    if (target.id === viewerId) return { state: 'self', counts, memberId: target.id };
-    if (await this.deps.follows.isBlockedEitherWay(viewerId, target.id)) {
-      return { state: 'blocked', counts, memberId: target.id };
+  async viewerState(
+    viewerId: string | null,
+    memberId: string
+  ): Promise<{ state: FollowState; counts: FollowCounts }> {
+    if (!viewerId || viewerId === memberId) {
+      return {
+        state: viewerId ? 'self' : 'not_following',
+        counts: await this.countsOf(memberId),
+      };
     }
 
+    const [counts, blocked, following] = await Promise.all([
+      this.countsOf(memberId),
+      this.deps.follows.isBlockedEitherWay(viewerId, memberId),
+      this.deps.follows.isFollowing(viewerId, memberId),
+    ]);
+
     return {
-      state: (await this.deps.follows.isFollowing(viewerId, target.id))
-        ? 'following'
-        : 'not_following',
+      state: blocked ? 'blocked' : following ? 'following' : 'not_following',
       counts,
-      memberId: target.id,
     };
   }
 

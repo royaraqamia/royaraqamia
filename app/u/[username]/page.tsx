@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { FileText } from 'lucide-react';
-import { loadCommunityMember, loadCommunityMembers } from '@/backend/loaders/community';
+import { loadCommunityMember } from '@/backend/loaders/community';
+import { identity } from '@/backend/config/identity';
+import { createFollowsService } from '@/backend/config/follows';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { FollowButton } from '@/frontend/ui/shared/follow-button';
 import { FollowCountsBar } from '@/frontend/ui/shared/follow-counts';
@@ -10,27 +12,19 @@ import { PostCard } from '@/app/community/_components/post-card';
 import { MemberChatCta } from '@/app/community/_components/member-chat-cta';
 import { PROFILE_COPY } from './profile-copy';
 
-export const revalidate = 300;
-
 /**
- * Members the build draws up front: the roster itself, i.e. the profiles
- * `/community` links to and the newest ones a visitor arrives from. It is a cap
- * rather than "everyone" because build time grows with it, and a profile nobody
- * has opened yet is worth one render, not a permanent build cost.
+ * Rendered per request, because one part of this page is about the viewer: the
+ * follow control and the two numbers above it are *your* standing with this
+ * member, and a document cached for everyone can only answer them by guessing
+ * or by asking the browser afterwards.
  *
- * `dynamicParams` stays on (the default, named here so the intent is not a
- * default by accident): a handle outside this set — a member who joined after
- * the build, or one past the roster — renders on its first visit and is cached
- * from then on, so the page is real ISR rather than `ƒ` for the whole directory.
+ * Asking the browser was the first attempt and it felt heavy: two skeletons in
+ * the middle of a profile header, a read that waited on `/api/me`, and a layout
+ * that settled after paint. Here the answer arrives with the HTML, and the reads
+ * behind the page - the member, their posts - are still cached
+ * (`loadCommunityMember`), so what is per request is one aggregate and one edge.
  */
-export const dynamicParams = true;
-
-export async function generateStaticParams(): Promise<Array<{ username: string }>> {
-  const members = await loadCommunityMembers();
-  // Handles may be Arabic: the prerendered key is the percent-encoded path the
-  // site's own links and `sitemap.ts` use, which is the form the request carries.
-  return members.map((member) => ({ username: encodeURIComponent(member.username) }));
-}
+export const dynamic = 'force-dynamic';
 
 function displayName(member: { name: string | null; username: string }): string {
   return member.name?.trim() || `@${member.username}`;
@@ -75,6 +69,13 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
   const { member, posts } = page;
   const name = displayName(member);
 
+  // One read for the two numbers and the viewer's standing. A guest reads the
+  // numbers too - they are public - and `not_following`, which is true of
+  // everyone they are not signed in as.
+  const { user } = await identity.resolveSession();
+  const viewerId = user?.id ?? null;
+  const follow = await createFollowsService().viewerState(viewerId, member.id);
+
   return (
     <div className="mx-auto max-w-4xl">
       <header
@@ -103,7 +104,11 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
             <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
               @{member.username}
             </p>
-            <FollowCountsBar username={member.username} />
+            <FollowCountsBar
+              username={member.username}
+              counts={follow.counts}
+              isOwner={follow.state === 'self'}
+            />
             {member.bio?.trim() && (
               <p className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground">
                 {member.bio}
@@ -113,7 +118,13 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
                 can do about this member", and the follower counts above them are
                 the same relationship counted. */}
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              <FollowButton username={member.username} name={member.name} />
+              <FollowButton
+                username={member.username}
+                name={member.name}
+                memberId={member.id}
+                initialState={follow.state}
+                signedIn={Boolean(viewerId)}
+              />
               <MemberChatCta username={member.username} />
             </div>
           </div>

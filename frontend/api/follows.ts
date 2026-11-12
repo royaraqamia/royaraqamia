@@ -1,15 +1,14 @@
-import type {
-  FollowState,
-  FollowStatesResponse,
-  FollowToggleResponse,
-} from '@/shared/contracts/follows';
+import type { FollowToggleResponse } from '@/shared/contracts/follows';
 
 /**
- * The follow routes, as the profile curves draw them.
+ * The follow routes, as the profile draws them.
  *
  * One handle in the path, one decoded body out: both clients read the same
- * `FollowToggleResponse`, so the button's state and the header's numbers come
- * from the server's answer rather than from what the click assumed.
+ * `FollowToggleResponse`, so the button and the numbers above it come from the
+ * server's answer rather than from what the click assumed.
+ *
+ * There is no read here. The starting state arrives with the page, which is
+ * rendered for the viewer who asked; this module only writes.
  */
 
 async function readBody(response: Response): Promise<FollowToggleResponse> {
@@ -24,12 +23,6 @@ function handlePath(username: string): string {
   return `/api/users/${encodeURIComponent(username)}/follow`;
 }
 
-/** The header's starting state: public counts, and the viewer's own standing. */
-export async function fetchFollowState(username: string): Promise<FollowToggleResponse> {
-  const response = await fetch(handlePath(username), { cache: 'no-store' });
-  return readBody(response);
-}
-
 export async function followMember(username: string): Promise<FollowToggleResponse> {
   const response = await fetch(handlePath(username), { method: 'POST' });
   return readBody(response);
@@ -38,17 +31,6 @@ export async function followMember(username: string): Promise<FollowToggleRespon
 export async function unfollowMember(username: string): Promise<FollowToggleResponse> {
   const response = await fetch(handlePath(username), { method: 'DELETE' });
   return readBody(response);
-}
-
-/** The states of a list of members, in one read. */
-export async function fetchFollowStates(ids: string[]): Promise<Record<string, FollowState>> {
-  if (ids.length === 0) return {};
-
-  const response = await fetch(`/api/users/follow-state?ids=${encodeURIComponent(ids.join(','))}`, {
-    cache: 'no-store',
-  });
-  const body = (await response.json().catch(() => null)) as FollowStatesResponse | null;
-  return body?.states ?? {};
 }
 
 /**

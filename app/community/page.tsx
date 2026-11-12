@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { loadCommunityMembers } from '@/backend/loaders/community';
-import { loadFollowingFeed } from '@/backend/loaders/following-feed';
+import { loadFollowingFeed, resolveFollowingSession } from '@/backend/loaders/following-feed';
+import { createFollowsService } from '@/backend/config/follows';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { CommunityIndexResults } from './_components/community-index-results';
 import { CommunitySearch } from './_components/community-search';
@@ -34,10 +35,30 @@ export const metadata: Metadata = {
 };
 
 export default async function CommunityPage() {
-  const [{ posts, nextCursor, signedIn, followingCount }, members] = await Promise.all([
-    loadFollowingFeed(null, '', COMMUNITY_PAGE_SIZE),
+  // The session is resolved once: the feed, the roster's states and the
+  // following count all need this member, and each resolution is an auth round
+  // trip - three of them would be the heaviest thing on the page.
+  const session = await resolveFollowingSession();
+
+  const [{ posts, nextCursor, signedIn }, members] = await Promise.all([
+    loadFollowingFeed(session, null, '', COMMUNITY_PAGE_SIZE),
     loadCommunityMembers(),
   ]);
+
+  // One service, two reads in parallel: the roster's states (so every row's
+  // control is correct in the first paint) and the following count (so "nobody
+  // followed yet" is a different sentence from "nothing new").
+  const service = session ? createFollowsService() : null;
+  const [rosterStates, followingCount] =
+    session && service
+      ? await Promise.all([
+          service.statesFor(
+            session.userId,
+            members.map((member) => member.id)
+          ),
+          service.countsOf(session.userId).then((counts) => counts.following),
+        ])
+      : [undefined, 0];
 
   // Three empty feeds, three sentences: a guest has no follows yet by
   // definition, a member with none has to be shown where to find people, and a
@@ -80,7 +101,7 @@ export default async function CommunityPage() {
               </div>
             </Suspense>
 
-            <CommunityMembersStrip members={members} />
+            <CommunityMembersStrip members={members} states={rosterStates} />
 
             <Suspense
               fallback={
@@ -116,7 +137,7 @@ export default async function CommunityPage() {
               (ADR-0132). An `aside` is already `display: block` at
               `lg`, so there is nothing to restore. */}
           <aside className="sticky top-24 max-lg:hidden self-start" aria-label="أعضاء المجتمع">
-            <CommunityMembersPanel members={members} />
+            <CommunityMembersPanel members={members} states={rosterStates} />
           </aside>
         </div>
       </div>
