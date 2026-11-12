@@ -52,6 +52,88 @@ enum class McpConnectionListResultDataItemAuthMode {
 }
 
 @Serializable
+data class McpConnectionDetailResult(
+    val success: Boolean,
+    val data: McpConnectionDetailResultData? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class McpConnectionDetailResultData(
+    val id: String,
+    val registryName: String,
+    val displayName: String?,
+    val enabled: Boolean,
+    val permissionLevel: McpConnectionDetailResultDataPermissionLevel,
+    val status: McpConnectionDetailResultDataStatus,
+    val authMode: McpConnectionDetailResultDataAuthMode,
+    val toolCount: Long,
+    val connectedAt: String,
+    val lastUsedAt: String?,
+    val lastError: String?,
+    val scopes: List<String>,
+    val tools: List<McpConnectionDetailResultDataToolsItem>,
+)
+
+@Serializable
+enum class McpConnectionDetailResultDataPermissionLevel {
+    @SerialName("ask") ASK,
+    @SerialName("reads") READS,
+    @SerialName("all") ALL,
+}
+
+@Serializable
+enum class McpConnectionDetailResultDataStatus {
+    @SerialName("active") ACTIVE,
+    @SerialName("needs_reauth") NEEDS_REAUTH,
+    @SerialName("error") ERROR,
+    @SerialName("revoked") REVOKED,
+}
+
+@Serializable
+enum class McpConnectionDetailResultDataAuthMode {
+    @SerialName("oauth") OAUTH,
+    @SerialName("none") NONE,
+    @SerialName("api_key") API_KEY,
+}
+
+@Serializable
+data class McpConnectionDetailResultDataToolsItem(
+    val name: String,
+    val description: String?,
+    val readOnly: Boolean,
+    val enabled: Boolean,
+    val stale: Boolean,
+)
+
+@Serializable
+data class McpConnectionUpdate(
+    val enabled: Boolean? = null,
+    val permissionLevel: McpConnectionUpdatePermissionLevel? = null,
+    val displayName: String? = null,
+    val apiKey: String? = null,
+)
+
+@Serializable
+enum class McpConnectionUpdatePermissionLevel {
+    @SerialName("ask") ASK,
+    @SerialName("reads") READS,
+    @SerialName("all") ALL,
+}
+
+@Serializable
+data class McpConnectionToolUpdate(
+    val toolName: String,
+    val enabled: Boolean,
+)
+
+@Serializable
+data class McpConnectionActionResult(
+    val success: Boolean,
+    val error: String? = null,
+)
+
+@Serializable
 data class McpStartRequest(
     val registryName: String,
     val apiKey: String? = null,

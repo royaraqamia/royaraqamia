@@ -383,6 +383,42 @@
       ]
     },
     {
+      "id": "mcp-connection",
+      "surface": "mcp-app-detail",
+      "issue": "#1256",
+      "web": {
+        "route": "app/mcp/apps/[id]/page.tsx",
+        "component": "frontend/ui/mcp/connection-view.tsx",
+        "copyModule": "frontend/ui/mcp/connection-copy.ts",
+        "copyExport": "MCP_CONNECTION_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/mcp/ConnectionScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/mcp/ConnectionUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/mcp/McpConnectionCopy.kt",
+        "copyObject": "McpConnectionCopy"
+      },
+      "copySource": "shared/copy/mcp-connection.json",
+      "states": [
+        {
+          "name": "NotFound",
+          "copy": "detailNotFound"
+        },
+        {
+          "name": "Offline",
+          "copy": "detailOffline"
+        },
+        {
+          "name": "Failed",
+          "copy": "detailFailed"
+        },
+        {
+          "name": "Ready",
+          "copy": "detailReach"
+        }
+      ]
+    },
+    {
       "id": "home-strip",
       "surface": "home",
       "issue": "#1194",

@@ -199,8 +199,9 @@
     },
     {
       "surface": "mcp-app-detail",
-      "native": null,
-      "reason": "The post-connect screen is the page until phase 6 ports it (#1228, ADR-0155); the app opens `/mcp/apps/<id>` in the document until the visual gate passes."
+      "enabled": false,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/mcp/ConnectionScreen.kt",
+      "reason": "Ported (#1256), and switched off until it is the page pixel for pixel: the shell hands `/mcp/apps/<id>` to the document in the meantime (#872, ADR-0117)."
     },
     {
       "surface": "admin",
