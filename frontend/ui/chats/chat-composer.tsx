@@ -132,11 +132,16 @@ export function ChatComposer({
   const recorder = useVoiceRecorder();
   const field = useFieldHeight(value);
   const [locked, setLocked] = useState(false);
-  const [pressing, setPressing] = useState(false);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const cancelling = useRef(false);
   /** What a release asked for while the microphone was still opening. */
   const pendingRelease = useRef<'send' | 'cancel' | null>(null);
+  /** The listeners a running press owns, so an unmount or a second press ends them. */
+  const endTracking = useRef<(() => void) | null>(null);
+  // The release reads the lock from a ref: the listeners outlive the render that
+  // opened the press, and the bar's lock is a state.
+  const lockedRef = useRef(locked);
+  lockedRef.current = locked;
   const canSend =
     !disabled && !recorder.isPreparing && (value.trim().length > 0 || files.length > 0);
   /** The slot at the row's end: send once there is something to send, else the microphone. */
@@ -174,6 +179,10 @@ export function ChatComposer({
     };
   }, [onRecordingChange, recorder.isRecording]);
 
+  // A press that is interrupted by the composer going away must not leave its
+  // window listeners behind.
+  useEffect(() => () => endTracking.current?.(), []);
+
   // The cap ends the capture by itself, and the note is still sent: someone who
   // kept talking past five minutes gets their words, not a discarded clip.
   useEffect(() => {
@@ -196,17 +205,72 @@ export function ChatComposer({
     setLocked(false);
   }
 
+  /**
+   * The press is tracked on `window`, not on the microphone.
+   *
+   * The recorder replaces the whole row with its bar the moment it opens, so the
+   * button that received the press is unmounted mid-gesture — and an unmounted
+   * element loses its pointer capture and stops receiving the slide and the
+   * release. The hint promised a cancel nobody could reach, and a release over
+   * the bar's own send button sent the clip instead. Window listeners outlive the
+   * element; the geometry is the press origin's, so the gesture is the one the
+   * hint describes.
+   */
   function onPointerDown(event: React.PointerEvent<HTMLButtonElement>) {
     if (disabled || recorder.isPreparing) return;
     event.preventDefault();
-    // The release is the send-or-cancel decision, and with a mouse the pointer
-    // leaves the button during the slide away. Capturing it keeps the move and
-    // the up on this element; touch is captured implicitly, a mouse is not.
-    event.currentTarget.setPointerCapture?.(event.pointerId);
     cancelling.current = false;
     pendingRelease.current = null;
     origin.current = { x: event.clientX, y: event.clientY };
-    setPressing(true);
+
+    const end = () => {
+      window.removeEventListener('pointermove', track, true);
+      window.removeEventListener('pointerup', release, true);
+      window.removeEventListener('pointercancel', abort, true);
+      endTracking.current = null;
+    };
+
+    const track = (moveEvent: PointerEvent) => {
+      if (!origin.current || lockedRef.current) return;
+      const distance = Math.hypot(
+        moveEvent.clientX - origin.current.x,
+        moveEvent.clientY - origin.current.y
+      );
+      cancelling.current = distance > CANCEL_DISTANCE_PX;
+    };
+
+    function release(upEvent: PointerEvent) {
+      if (!origin.current) return;
+      // The release point counts too: a jump with no move event still cancels.
+      track(upEvent);
+      upEvent.preventDefault();
+      end();
+      origin.current = null;
+      if (lockedRef.current) return;
+      if (cancelling.current) {
+        pendingRelease.current = 'cancel';
+        cancel();
+        return;
+      }
+      pendingRelease.current = 'send';
+      void finish();
+    }
+
+    /** The browser took the pointer away — an alt-tab, a scroll: throw the clip. */
+    function abort() {
+      if (!origin.current) return;
+      end();
+      origin.current = null;
+      if (lockedRef.current) return;
+      pendingRelease.current = 'cancel';
+      cancel();
+    }
+
+    endTracking.current?.();
+    endTracking.current = end;
+    window.addEventListener('pointermove', track, true);
+    window.addEventListener('pointerup', release, true);
+    window.addEventListener('pointercancel', abort, true);
 
     // The permission prompt can outlast the press. What the release asked for is
     // remembered and carried out the moment the microphone is actually open.
@@ -217,35 +281,6 @@ export function ChatComposer({
       if (intent === 'cancel') cancel();
       else if (intent === 'send') void finish();
     });
-  }
-
-  function onPointerMove(event: React.PointerEvent<HTMLButtonElement>) {
-    if (!pressing || !origin.current || locked) return;
-    const distance = Math.hypot(event.clientX - origin.current.x, event.clientY - origin.current.y);
-    cancelling.current = distance > CANCEL_DISTANCE_PX;
-  }
-
-  function onPointerUp() {
-    if (!pressing) return;
-    setPressing(false);
-    origin.current = null;
-    if (locked) return;
-    if (cancelling.current) {
-      pendingRelease.current = 'cancel';
-      cancel();
-      return;
-    }
-    pendingRelease.current = 'send';
-    void finish();
-  }
-
-  /** The browser took the pointer away — an alt-tab, a scroll: throw the clip. */
-  function onPointerCancel() {
-    if (!pressing) return;
-    setPressing(false);
-    origin.current = null;
-    if (locked) return;
-    cancel();
   }
 
   return (
@@ -366,10 +401,6 @@ export function ChatComposer({
                 aria-pressed={false}
                 disabled={disabled || recorder.isPreparing}
                 onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerCancel}
-                onPointerLeave={onPointerMove}
               >
                 <Mic size={16} />
               </Button>
