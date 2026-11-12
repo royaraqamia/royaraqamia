@@ -569,6 +569,11 @@ function maybeRefreshRouteShells() {
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
+      // The previous worker's clients are still open while this one installs, and
+      // this worker's first cache write can trigger an eviction. Read which
+      // builds they are running first, or the shell write would be free to
+      // reclaim a live document's chunks before `activate` ever runs (#1334).
+      await restoreClientBuilds();
       const cache = await caches.open(CACHE);
       // The irreducible shell only (#489). The build's route shells follow in
       // idle windows after activation, so the install is a handful of requests
@@ -628,6 +633,10 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+      // The build registry comes back before the index does: `rebuildIndex` ends
+      // in an eviction, and an eviction that does not yet know which clients are
+      // open would drop a live document's chunks (#1334).
+      await restoreClientBuilds();
       // After the stale caches are gone, count what survived (and what the
       // previous worker wrote without bookkeeping) before serving from it.
       await rebuildIndex();
@@ -783,15 +792,17 @@ function withIndex(mutate) {
   return next;
 }
 
-// The build's own static assets are never evicted: a hashed `_next/static`
-// chunk belongs to the build already shipped. Their size is bounded by the
-// build rather than by how much the user browses.
+// The build's own static assets are never evicted while a client of that build
+// is alive: a hashed `_next/static` chunk belongs to the documents that name it,
+// even after a release. Their size is bounded by the build rather than by how
+// much the user browses.
 //
 // Since the caches outlive a release, "the build" has to be read from the entry
 // rather than from the cache name: a chunk stamped with an older build is still
-// content-addressed and still valid for the document that references it, but it
-// is also the only copy of one, so it is evictable and goes first when the store
-// is over budget (`enforceBudget`).
+// content-addressed and still valid for the document that references it. It
+// stays pinned while `liveBuilds` says a client is running that build (#1334);
+// once the last such document closes, the entry is evictable and goes first when
+// the store is over budget (`enforceBudget`).
 function isPinned(key, entry) {
   let url;
   try {
@@ -799,7 +810,9 @@ function isPinned(key, entry) {
   } catch {
     return false;
   }
-  if (url.pathname.startsWith('/_next/static/')) return Boolean(entry) && entry.build === BUILD_ID;
+  if (url.pathname.startsWith('/_next/static/')) {
+    return Boolean(entry) && liveBuilds.has(entry.build);
+  }
   if (isFont(url) || isIcon(url)) return true;
   return PRECACHE_PATHS.has(url.pathname);
 }
@@ -865,12 +878,136 @@ function buildOf(response) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// The build each live client was served (#1334, ADR-0171)
+//
+// A deploy used to replace every document, because a swapped worker looked like
+// the last holder of the document's chunks: the caches outlive a release (#488),
+// but `enforceBudget` evicts a previous build's entries first, and activation
+// used to purge them by name. The measurement (#1320) showed the cost — a
+// document reloaded under whatever was happening at that second.
+//
+// So the worker remembers what it served. A navigation records the stamp of the
+// response (`x-sw-build`, written by `stampBuild`) against `resultingClientId`;
+// a chunk request from that client is answered from the same cache entry it
+// always was, and the budget treats every build a live client is running as
+// pinned. A previous build stops being pinned when the last document of that
+// build goes away, which is exactly when its chunks stop being anybody's
+// dependency.
+//
+// The registry is persisted in the meta cache, because a swap is the case this
+// exists for: the *new* worker has to know the old worker's clients before its
+// first eviction. `activate` restores it and prunes clients the browser no
+// longer has.
+// ---------------------------------------------------------------------------
+
+const CLIENT_BUILDS_KEY = '/__sw_client_builds__';
+const CLIENT_BUILDS_VERSION = 1;
+
+/** Client id -> build, for documents this origin still has open. */
+const clientBuilds = new Map();
+/** The builds a live client is running, plus this worker's own. */
+let liveBuilds = new Set([BUILD_ID]);
+
+async function readClientBuilds() {
+  try {
+    const meta = await caches.open(CACHE_META_NAME);
+    const stored = await meta.match(CLIENT_BUILDS_KEY);
+    if (!stored) return {};
+    const parsed = await stored.json();
+    if (!parsed || parsed.version !== CLIENT_BUILDS_VERSION || !parsed.builds) return {};
+    return parsed.builds;
+  } catch {
+    return {};
+  }
+}
+
+async function writeClientBuilds() {
+  try {
+    const meta = await caches.open(CACHE_META_NAME);
+    if (clientBuilds.size === 0) {
+      await meta.delete(CLIENT_BUILDS_KEY);
+      return;
+    }
+    await meta.put(
+      CLIENT_BUILDS_KEY,
+      new Response(
+        JSON.stringify({
+          version: CLIENT_BUILDS_VERSION,
+          builds: Object.fromEntries(clientBuilds),
+        }),
+        { headers: { 'content-type': 'application/json' } }
+      )
+    );
+  } catch (error) {
+    // Losing the registry costs pinning, not a page: a chunk whose build was
+    // evicted is reported and the document reloads (the fallback this keeps).
+    console.log('[sw] client build registry write failed', String(error));
+  }
+}
+
+/**
+ * Restores the registry a previous worker left, then drops clients the browser
+ * no longer reports. A client id is unique per document, so an id that survived
+ * a worker restart and is no longer listed is a document that closed.
+ */
+async function restoreClientBuilds() {
+  const stored = await readClientBuilds();
+  for (const [clientId, build] of Object.entries(stored)) {
+    if (typeof clientId === 'string' && typeof build === 'string' && build) {
+      clientBuilds.set(clientId, build);
+    }
+  }
+  await refreshLiveBuilds();
+}
+
+/** Recomputes which builds must survive eviction from the clients that are open. */
+async function refreshLiveBuilds() {
+  const clientsApi = self.clients;
+  if (clientsApi && typeof clientsApi.matchAll === 'function') {
+    try {
+      const clients = await clientsApi.matchAll({ includeUncontrolled: true, type: 'window' });
+      const alive = new Set(clients.map((client) => client.id));
+      for (const clientId of [...clientBuilds.keys()]) {
+        if (!alive.has(clientId)) clientBuilds.delete(clientId);
+      }
+    } catch (error) {
+      // Without the list, keep what the registry already knows: pinning too much
+      // is cheaper than evicting a live document's chunks.
+      console.log('[sw] client list failed', String(error));
+    }
+  }
+  const builds = new Set([BUILD_ID]);
+  for (const build of clientBuilds.values()) builds.add(build);
+  liveBuilds = builds;
+  return builds;
+}
+
+/**
+ * Records which build answered a navigation. A cached document carries the stamp
+ * of the build that produced it; a fresh one answered by this worker is
+ * `BUILD_ID`. A miss (503) records nothing, so it cannot pin a build by accident.
+ */
+function rememberServedBuild(event, response) {
+  const clientId = event.resultingClientId;
+  if (!clientId || !response || !response.ok) return;
+  const build = buildOf(response) || BUILD_ID;
+  if (clientBuilds.get(clientId) === build) return;
+  clientBuilds.set(clientId, build);
+  if (typeof event.waitUntil === 'function') {
+    event.waitUntil(writeClientBuilds().catch(() => undefined));
+  }
+}
+
 // Oldest access first; pinned entries are skipped even when they are the oldest.
 // If only pinned entries remain the budget cannot be met, and evicting a
 // pinned shell of the current build would be the worse failure: it is logged.
 async function enforceBudget(index) {
   let total = accountedBytes(index);
   if (total <= CACHE_BUDGET_BYTES) return;
+  // Pinning is only as current as the client list: a document closed since the
+  // last pass is what lets the build it ran leave the store.
+  await refreshLiveBuilds();
 
   const target = Math.floor(CACHE_BUDGET_BYTES * CACHE_EVICT_TO);
   const candidates = Object.keys(index.entries)
@@ -1007,7 +1144,17 @@ async function purgeAccountCaches() {
   });
 }
 
-async function cacheFirst(request) {
+/**
+ * Answers a chunk only when its build is still on the device.
+ *
+ * A 404 or 410 here is the one genuine "your build is gone": the URL is
+ * content-addressed, so the network refusing it means the release is not there
+ * to fetch either, and the document's dynamic import will fail whatever this
+ * returns. The worker says so to the client that asked (`STALE_BUILD`), and the
+ * page replaces itself when it is safe to (#1334, ADR-0171). An offline failure
+ * is not that case, so it stays a plain 503.
+ */
+async function cacheFirst(request, event) {
   const cached = await caches.match(request);
   if (cached) {
     cacheOutcomes.hits += 1;
@@ -1019,6 +1166,8 @@ async function cacheFirst(request) {
     const response = await fetch(request);
     if (response.ok && isCacheable(response)) {
       await store(STATIC_CACHE, request, response.clone());
+    } else if (response.status === 404 || response.status === 410) {
+      notifyStaleBuild(event);
     }
     return response;
   } catch {
@@ -1029,6 +1178,20 @@ async function cacheFirst(request) {
     if (isNavigationRequest(request)) return offlineMiss('static-offline');
     return new Response('Offline', { status: 503 });
   }
+}
+
+/** Tells the document that asked for a chunk that its build cannot be served. */
+function notifyStaleBuild(event) {
+  const clientId = event && event.clientId;
+  if (!clientId) return;
+  const clientsApi = self.clients;
+  if (!clientsApi || typeof clientsApi.get !== 'function') return;
+  const message = Promise.resolve(clientsApi.get(clientId))
+    .then((client) => {
+      if (client) client.postMessage({ type: 'STALE_BUILD' });
+    })
+    .catch(() => undefined);
+  if (typeof event.waitUntil === 'function') event.waitUntil(message);
 }
 
 async function networkFirst(request, timeoutMs = 3000, options = {}) {
@@ -1491,7 +1654,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isNextStaticAsset(url) || isFont(url)) {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(cacheFirst(request, event));
     return;
   }
 
@@ -1511,10 +1674,16 @@ self.addEventListener('fetch', (event) => {
   // to the same page answers from Cache Storage (#492); the key is computed only
   // here, after the never-cache list above has had its say.
   if (isNavigationRequest(request) || isRSCPayload(url)) {
+    const navigation = isNavigationRequest(request);
     event.respondWith(
       staleWhileRevalidate(request, undefined, event, {
         cacheKey: isRSCPayload(url) ? cacheKeyFor(request) : null,
         preload,
+      }).then((response) => {
+        // The build this document was served is what its chunk requests belong
+        // to, and the budget pins it until the document closes (#1334).
+        if (navigation) rememberServedBuild(event, response);
+        return response;
       })
     );
     return;

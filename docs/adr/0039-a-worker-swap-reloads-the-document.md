@@ -22,6 +22,11 @@ the document is visible the app re-checks for a new worker on `visibilitychange`
 > reason is measured: the swap landed on a five-minute voice note at its own stop and took it with it
 > (#1320). The caches this ADR assumed `activate` had deleted by name have outlived a release since
 > #488, so a document that stays is a bet on the byte budget rather than a certainty of a broken page.
+>
+> **Amended 2026-11-12 - see ADR-0171.** The swap half no longer reloads at all. The worker records the
+> build each client was served and keeps that build's chunks while the client is alive, so a swapped
+> worker is not the last holder of anything. What is left is a chunk that genuinely 404s: the worker
+> reports it, and that document replaces itself then. The take (ADR-0134) keeps its own chosen reload.
 
 **What a swap waits for, measured 2026-10-14** (Chromium through Playwright, and the same behaviour
 seen on the production deployment): a deploy installs the new worker while the tab is open, and the

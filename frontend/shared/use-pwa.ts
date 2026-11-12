@@ -103,10 +103,12 @@ export function usePWA() {
   }, []);
 
   /**
-   * The update surface (ADR-0134). A document load is the one moment the page
-   * may move itself: if a build is downloaded and waiting, it takes control and
-   * this document reloads once. A document that is only sitting there is never
-   * reloaded, and the person is never asked.
+   * The update surface (ADR-0134, ADR-0171). A document load is the one moment
+   * the page may move itself: if a build is downloaded and waiting, it takes
+   * control and this document reloads once — in the next pause if the person is
+   * already using the page, and when the tab becomes visible if it loaded in the
+   * background. A document that is only sitting there is never reloaded, and the
+   * person is never asked.
    *
    * It stands down while the shell is announcing its own update (ADR-0043): one
    * update at a time, and the APK install brings a newer web build with it.
@@ -128,9 +130,10 @@ export function usePWA() {
   }, []);
 
   /**
-   * The other half: a swap the page did not start — another document took the
-   * deploy — has already purged the previous build's caches, so this document
-   * reloads once when the new worker takes control (ADR-0039).
+   * The fallback half: the worker reports a chunk that neither the cache nor the
+   * network can answer — the document's build is genuinely gone — and only that
+   * replaces this document, once it is visible and has no work left to lose
+   * (ADR-0171). A swap alone is no longer a reason to reload.
    */
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
