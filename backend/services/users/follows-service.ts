@@ -103,14 +103,9 @@ export class FollowsService {
     return { state: 'not_following', counts: await this.countsOf(target.id) };
   }
 
-  async state(viewerId: string, username: string): Promise<FollowState> {
-    const target = await this.deps.users.getByUsername(username.toLowerCase());
-    if (!target) return 'not_following';
-    if (target.id === viewerId) return 'self';
-    if (await this.deps.follows.isBlockedEitherWay(viewerId, target.id)) return 'blocked';
-    return (await this.deps.follows.isFollowing(viewerId, target.id))
-      ? 'following'
-      : 'not_following';
+  async countsOf(userId: string): Promise<FollowCounts> {
+    const counts = await this.deps.follows.counts([userId]);
+    return counts[userId] ?? { followers: 0, following: 0 };
   }
 
   /**
@@ -142,16 +137,6 @@ export class FollowsService {
       counts,
       memberId: target.id,
     };
-  }
-
-  async countsOf(userId: string): Promise<FollowCounts> {
-    const counts = await this.deps.follows.counts([userId]);
-    return counts[userId] ?? { followers: 0, following: 0 };
-  }
-
-  /** Counts for a set of members, for a page that draws several profiles. */
-  async countsFor(userIds: string[]): Promise<Record<string, FollowCounts>> {
-    return this.deps.follows.counts(userIds);
   }
 
   /**
