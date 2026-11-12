@@ -61,6 +61,7 @@ function toConnection(row: McpConnectionRecord): McpConnection {
     enabled: row.enabled,
     permissionLevel: row.permission_level,
     status: row.status,
+    authMode: row.auth_mode,
     toolCount: row.tool_count,
     connectedAt: row.connected_at,
     lastUsedAt: row.last_used_at,
@@ -108,7 +109,9 @@ export function createMcpConnectionService({
   async function revokeAtProvider(connection: McpConnectionRecord) {
     try {
       const credentials = await repository.getCredentials(connection.id);
-      if (!credentials) return;
+      // A key or a no-auth connection holds no OAuth token to revoke at a
+      // provider: the local delete is the whole disconnect (#1269).
+      if (!credentials || !credentials.access_token_enc || !credentials.client_id) return;
 
       const metadata = authorizationMetadata(credentials.metadata);
       if (!metadata) return;

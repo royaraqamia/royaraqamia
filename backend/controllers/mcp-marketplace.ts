@@ -12,6 +12,7 @@ import { McpConnectError } from '@/backend/services/mcp/marketplace/connect-serv
 import { McpRemoteError } from '@/backend/clients/mcp-remote';
 import { logger } from '@/backend/shared/logger';
 import {
+  McpApiKeySchema,
   McpConnectionToolUpdateSchema,
   McpConnectionUpdateSchema,
   type McpConnectionActionResult,
@@ -30,6 +31,12 @@ import {
 
 const StartBodySchema = z.strictObject({
   registryName: z.string().trim().min(1).max(200),
+  /**
+   * The key the member pasted for an `api_key` row (#1269). It travels in the
+   * request body, never in a URL; it is encrypted before it touches a row and it
+   * is not echoed in the answer.
+   */
+  apiKey: McpApiKeySchema.optional(),
 });
 
 /** `/mcp/apps` is the marketplace; the tab is state, and the screen maps a code. */
@@ -61,14 +68,15 @@ export async function startMcpConnection(headers: Headers, body: string): Promis
       }
 
       try {
-        const { authorizeUrl } = await createDefaultMcpConnectService().start({
+        const started = await createDefaultMcpConnectService().start({
           userId,
           registryName: parsed.registryName,
           redirectUri: mcpCallbackUrl(),
+          ...(parsed.apiKey ? { apiKey: parsed.apiKey } : {}),
         });
         return jsonResult(
           200,
-          { success: true, data: { authorizeUrl } },
+          { success: true, data: started },
           { headers: { 'Cache-Control': 'no-store' } }
         );
       } catch (error) {
@@ -219,16 +227,45 @@ export async function updateMcpConnection(
         return jsonResult(400, { success: false, error: 'طلب غير صالح' });
       }
 
-      const updated = await createDefaultMcpConnectionService().update(
-        userId,
-        connectionId,
-        parsed
-      );
-      if (!updated) {
-        return jsonResult(404, {
-          success: false,
-          error: 'هذا التطبيق غير مرتبط بحسابك.',
-        } satisfies McpConnectionActionResult);
+      const { apiKey, ...patch } = parsed;
+
+      /*
+        The two writes a body can carry are deliberately apart: the patch is the
+        member's own settings and the service that owns them, while the key is a
+        credential the connect service owns (it encrypts, then re-reads the tool
+        list). A body with only a key skips the first entirely, and the key write
+        does its own ownership check.
+      */
+      if (Object.keys(patch).length > 0) {
+        const updated = await createDefaultMcpConnectionService().update(
+          userId,
+          connectionId,
+          patch
+        );
+        if (!updated) {
+          return jsonResult(404, {
+            success: false,
+            error: 'هذا التطبيق غير مرتبط بحسابك.',
+          } satisfies McpConnectionActionResult);
+        }
+      }
+
+      if (apiKey !== undefined) {
+        try {
+          await createDefaultMcpConnectService().replaceApiKey({
+            userId,
+            connectionId,
+            apiKey,
+          });
+        } catch (error) {
+          if (error instanceof McpConnectError) {
+            return jsonResult(error.failure === 'unknown_app' ? 404 : 400, {
+              success: false,
+              error: error.message,
+            } satisfies McpConnectionActionResult);
+          }
+          throw error;
+        }
       }
 
       return jsonResult(200, { success: true } satisfies McpConnectionActionResult, {

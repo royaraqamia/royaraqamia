@@ -36,6 +36,20 @@ export const MCP_MARKETPLACE_COPY = {
   consentNote: 'يمكنك توسيعها لاحقًا من صفحة التطبيق.',
   consentContinue: 'متابعة',
 
+  /** How a row is linked (#1269): its own words before the tap. */
+  authBadgeOauth: 'حساب',
+  authBadgeNone: 'بلا حساب',
+  authBadgeApiKey: 'يتطلب مفتاحاً',
+  keyTitle: 'مفتاح «{name}»',
+  keyBody:
+    'هذا التطبيق يحتاج مفتاحاً من حسابك عنده. يُخزَّن مشفّراً، ولا يظهر بعد الحفظ، ولا يُكتب في السجلات.',
+  keyLabel: 'المفتاح',
+  keyPlaceholder: 'الصق المفتاح هنا',
+  keyRequired: 'أدخل المفتاح أولاً.',
+  noAuthTitle: 'ربط «{name}»',
+  noAuthBody: 'هذا التطبيق لا يحتاج حساباً ولا مفتاحاً: نور يستدعي أدواته مباشرة.',
+  directConnectFailed: 'تعذّر ربط التطبيق. تحقّق من المفتاح وحاول من جديد.',
+
   connectionsTitle: 'التطبيقات المرتبطة',
   connectionsEmptyTitle: 'لا يوجد تطبيق مرتبط بعد',
   connectionsEmptyBody: 'اختر تطبيقًا من المتجر ليعمل مع نور.',
@@ -59,6 +73,19 @@ export const MCP_MARKETPLACE_COPY = {
 
   detailReach: 'يستطيع نور أن يستدعي أدوات هذا التطبيق عندما تطلب ذلك، ضمن الصلاحية أدناه.',
   detailPermissionTitle: 'الصلاحية',
+  /** How this connection authenticates (#1269): OAuth, a key, or nothing. */
+  detailAuthTitle: 'طريقة الربط',
+  detailAuthOauth: 'حساب لدى التطبيق، بموافقتك عند الربط.',
+  detailAuthNone: 'بلا حساب ولا مفتاح: التطبيق يستجيب دون بيانات اعتماد.',
+  detailAuthApiKey: 'مفتاح محفوظ ومشفّر، ولا يظهر بعد حفظه.',
+  detailKeySectionTitle: 'المفتاح',
+  detailKeyBody:
+    'احتفظنا بمفتاحك مشفّراً. إن ألغيته عند التطبيق أو بدّلته، أدخل الجديد هنا ليستمر نور في استدعاء أدواته.',
+  detailKeyLabel: 'المفتاح الجديد',
+  detailKeyPlaceholder: 'الصق المفتاح الجديد',
+  detailKeyAction: 'استبدال المفتاح',
+  detailKeyDone: 'تم تحديث المفتاح.',
+  detailKeyFailed: 'تعذّر حفظ المفتاح.',
   detailScopesTitle: 'الصلاحيات الممنوحة',
   detailScopesBody: 'ما منحه التطبيق لنور في حسابك، بأسماء الصلاحيات كما يسمّيها هو.',
   detailScopesEmpty: 'لم نسجّل صلاحيات هذا الربط. أعد الربط لتُقرأ من التطبيق.',

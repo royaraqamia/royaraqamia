@@ -4,6 +4,7 @@ import type {
 } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpStaticClientMap } from '@/backend/shared/domain/mcp-static-clients';
 import {
+  McpAuthModeSchema,
   McpCatalogConnectReasonSchema,
   type McpCatalogCoverage,
 } from '@/shared/contracts/mcp-catalog';
@@ -69,6 +70,18 @@ function connectReason(value: string | null) {
   return parsed.success ? parsed.data : null;
 }
 
+/** The mode a row carries, read the way the catalogue service reads it. */
+function authModeOf(value: string): 'oauth' | 'none' | 'api_key' {
+  const parsed = McpAuthModeSchema.safeParse(value);
+  return parsed.success ? parsed.data : 'oauth';
+}
+
+/** The stored measurement, or `null` when the probe could not name one. */
+function probeAuthModeOf(value: string | null): 'oauth' | 'none' | 'api_key' | null {
+  const parsed = McpAuthModeSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
 /**
  * How long a skip keeps its row off the candidate page.
  *
@@ -97,6 +110,7 @@ function toCandidate(
     redirectUri,
     iconUrl: row.icon_override ?? row.probe_icon_url ?? row.registry_icon_url,
     verified: row.verified_at !== null,
+    authMode: authModeOf(row.auth_mode),
     connectable: row.connectable,
     connectableReason: connectReason(row.connectable_reason),
     probedAt: row.probed_at,
@@ -204,6 +218,12 @@ export function createMcpCatalogAgentService({
         await repository.saveCatalogProbe(action.registryName, {
           connectable: true,
           reason: null,
+          // The run measured this mode; when it did not say, the stored
+          // measurement is kept rather than erased.
+          authMode:
+            action.probeAuthMode !== undefined
+              ? action.probeAuthMode
+              : probeAuthModeOf(row.probe_auth_mode),
           probedAt: now().toISOString(),
           iconUrl: row.probe_icon_url,
           iconMime: row.probe_icon_mime,

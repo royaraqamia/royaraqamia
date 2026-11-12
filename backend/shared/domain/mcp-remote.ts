@@ -113,12 +113,47 @@ export type McpConnectProbeReason =
   | 'no_registration'
   | 'blocked'
   /** The server never answered, or answered too slowly to measure. */
-  | 'unreachable';
+  | 'unreachable'
+  /**
+   * The row is published as `none`, but the server refused an unauthenticated
+   * call (#1269). The probe cannot pick the right mode for the admin: it can only
+   * say that the decision the row carries does not open the server.
+   */
+  | 'needs_credentials';
+
+/**
+ * How a remote server expects to be authenticated (#1269, ADR-0155 amendment).
+ *
+ * `oauth` is the consent flow this marketplace was built for; `none` means the
+ * server answers without credentials; `api_key` means the member supplies a key,
+ * which is sent in the header the server documents.
+ */
+export type McpAuthMode = 'oauth' | 'none' | 'api_key';
+
+/**
+ * The credential one request carries, resolved from the connection's mode.
+ *
+ * It is a shape rather than a token so the client never has to know where a
+ * secret came from, and so a `none` connection is a value instead of a `null`
+ * header everyone has to remember not to send.
+ */
+export type McpRequestAuth =
+  | { kind: 'bearer'; token: string }
+  | { kind: 'api_key'; header: string; value: string }
+  | { kind: 'none' };
 
 /** The verdict a probe records. `null` reason means the row is connectable. */
 export interface McpConnectProbe {
   connectable: boolean;
   reason: McpConnectProbeReason | null;
+  /**
+   * What the probe measured, beside the mode the row carries: `oauth` when
+   * metadata and dynamic registration answered, `none` when the handshake
+   * succeeded without a credential, `api_key` when the endpoint refused one with
+   * a challenge that is not an OAuth document. `null` is "not measured" — an
+   * unreachable server, or one that answered nothing recognisable.
+   */
+  authMode: McpAuthMode | null;
   /**
    * The brand mark the server publishes in its RFC 9728 metadata, if any. It is
    * a fact about the server, not a decision: the store still shows a row only

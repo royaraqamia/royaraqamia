@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
 import type {
+  McpConnectionCredentialsRecord,
   McpConnectionRecord,
   McpConnectionToolRecord,
   McpMarketplaceRepository,
@@ -9,6 +10,7 @@ import type {
 import type { McpAccessTokenService } from '@/backend/services/mcp/marketplace/access-token-service';
 import { createMcpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
 import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
+import { encryptSecret } from '@/backend/shared/mcp-token-crypto';
 
 /**
  * One call on a stranger's server, as the member (#1225).
@@ -29,6 +31,7 @@ const CONNECTION: McpConnectionRecord = {
   enabled: true,
   permission_level: 'ask',
   status: 'active',
+  auth_mode: 'oauth',
   tool_count: 2,
   connected_at: '2026-11-21T10:00:00.000Z',
   last_used_at: null,
@@ -61,6 +64,7 @@ function fakeRepository(
   overrides: {
     connection?: Partial<McpConnectionRecord>;
     tools?: McpConnectionToolRecord[];
+    credentials?: McpConnectionCredentialsRecord | null;
   } = {}
 ) {
   const connection = { ...CONNECTION, ...overrides.connection };
@@ -70,6 +74,8 @@ function fakeRepository(
   const repository = {
     getConnection: async (userId: string, id: string) =>
       userId === connection.user_id && id === connection.id ? { ...connection } : null,
+    getCredentials: async (id: string) =>
+      id === connection.id ? (overrides.credentials ?? null) : null,
     listTools: async () => tools.map((tool) => ({ ...tool })),
     updateConnection: async (_id: string, patch: Record<string, unknown>) => {
       patches.push(patch);
@@ -140,7 +146,7 @@ describe('one call on a connected app', () => {
     expect(remote.callTool).toHaveBeenCalledWith(
       expect.objectContaining({
         serverUrl: CONNECTION.server_url,
-        accessToken: 'access-1',
+        auth: { kind: 'bearer', token: 'access-1' },
         name: 'search',
         args: { query: 'خطة' },
       })
@@ -216,7 +222,7 @@ describe('a token the server refuses', () => {
 
     expect(tokens.accessToken).toHaveBeenLastCalledWith(expect.anything(), { force: true });
     expect(remote.callTool).toHaveBeenLastCalledWith(
-      expect.objectContaining({ accessToken: 'access-2' })
+      expect.objectContaining({ auth: { kind: 'bearer', token: 'access-2' } })
     );
     expect(patches.some((patch) => patch.status === 'needs_reauth')).toBe(false);
   });
@@ -261,6 +267,117 @@ describe('a tool the grant does not cover (#1230)', () => {
     expect(patches).toContainEqual({
       last_error: 'هذا التطبيق يحتاج صلاحية «database:write» لأداء هذه العملية.',
     });
+  });
+});
+
+describe('a connection that holds a key, or no credential at all (#1269)', () => {
+  const keyCredentials = (): McpConnectionCredentialsRecord => ({
+    connection_id: 'conn-1',
+    authorization_server: null,
+    token_endpoint: null,
+    registration_kind: null,
+    client_id: null,
+    client_secret_enc: null,
+    access_token_enc: null,
+    refresh_token_enc: null,
+    scope: null,
+    expires_at: null,
+    issued_at: '2026-11-21T10:00:00.000Z',
+    metadata: null,
+    api_key_enc: encryptSecret('sk-live-1'),
+    api_key_header: 'X-API-Key',
+    api_key_prefix: null,
+    refresh_claimed_at: null,
+  });
+
+  beforeEach(() => {
+    process.env.MCP_TOKEN_ENCRYPTION_KEY = 'b'.repeat(64);
+  });
+
+  it('sends the stored key in the catalogue’s header, and spends no token', async () => {
+    const { apps, remote, tokens } = service({
+      repository: fakeRepository({
+        connection: { auth_mode: 'api_key' },
+        credentials: keyCredentials(),
+      }),
+    });
+
+    await apps.call(CALL);
+
+    expect(tokens.accessToken).not.toHaveBeenCalled();
+    expect(remote.callTool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        auth: { kind: 'api_key', header: 'X-API-Key', value: 'sk-live-1' },
+      })
+    );
+  });
+
+  it('prefixes the key when the row names a scheme', async () => {
+    const { apps, remote } = service({
+      repository: fakeRepository({
+        connection: { auth_mode: 'api_key' },
+        credentials: {
+          ...keyCredentials(),
+          api_key_header: 'Authorization',
+          api_key_prefix: 'Bearer',
+        },
+      }),
+    });
+
+    await apps.call(CALL);
+
+    expect(remote.callTool).toHaveBeenCalledWith(
+      expect.objectContaining({
+        auth: { kind: 'api_key', header: 'Authorization', value: 'Bearer sk-live-1' },
+      })
+    );
+  });
+
+  it('asks for a new key when the ciphertext is gone, without calling the server', async () => {
+    const { apps, remote, patches } = service({
+      repository: fakeRepository({ connection: { auth_mode: 'api_key' } }),
+    });
+
+    await expect(apps.call(CALL)).rejects.toMatchObject({ failure: 'reauth' });
+    expect(remote.callTool).not.toHaveBeenCalled();
+    expect(patches).toContainEqual(expect.objectContaining({ status: 'needs_reauth' }));
+  });
+
+  it('sends no authorization at all for a no-auth connection', async () => {
+    const { apps, remote, tokens } = service({
+      repository: fakeRepository({ connection: { auth_mode: 'none' } }),
+    });
+
+    await apps.call(CALL);
+
+    expect(tokens.accessToken).not.toHaveBeenCalled();
+    expect(remote.callTool).toHaveBeenCalledWith(
+      expect.objectContaining({ auth: { kind: 'none' } })
+    );
+  });
+
+  it('marks a refused key as a re-entry, not a refresh', async () => {
+    const tokens = fakeTokens();
+    const remote = fakeRemote({
+      callTool: vi.fn(async () => {
+        throw new McpRemoteError('unauthorized', 'رفض التطبيق صلاحية الوصول الحالية.');
+      }),
+    });
+    const { apps, patches } = service({
+      repository: fakeRepository({
+        connection: { auth_mode: 'api_key' },
+        credentials: keyCredentials(),
+      }),
+      remote,
+      tokens,
+    });
+
+    await expect(apps.call(CALL)).rejects.toMatchObject({ failure: 'reauth' });
+
+    // A key has nothing to refresh: one attempt, then the member's repair.
+    expect(remote.callTool).toHaveBeenCalledTimes(1);
+    expect(tokens.accessToken).not.toHaveBeenCalled();
+    expect(patches).toContainEqual(expect.objectContaining({ status: 'needs_reauth' }));
   });
 });
 

@@ -1,9 +1,15 @@
-import type { McpMarketplaceRepository } from '@/backend/repositories/mcp/marketplace-repository';
+import type {
+  McpCatalogServerRecord,
+  McpConnectionRecord,
+  McpMarketplaceRepository,
+} from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
 import {
   McpRemoteError,
+  type McpAuthMode,
   type McpDiscovery,
   type McpOAuthClient,
+  type McpRequestAuth,
 } from '@/backend/shared/domain/mcp-remote';
 import {
   staticClientDiscovery,
@@ -43,7 +49,23 @@ import type { Json } from '@/backend/models/database.types';
  */
 
 export type McpConnectFailure =
-  'unknown_app' | 'blocked' | 'expired_state' | 'plan_limit' | 'registration' | 'remote';
+  | 'unknown_app'
+  | 'blocked'
+  | 'expired_state'
+  | 'plan_limit'
+  | 'registration'
+  | 'remote'
+  /** An `api_key` row was asked to connect without the key (#1269). */
+  | 'missing_key'
+  /** A key was offered to a connection that does not hold one (#1269). */
+  | 'wrong_mode';
+
+/**
+ * What `start` answers: either the provider's consent URL the browser visits, or
+ * a connection that was made without leaving the site (#1269).
+ */
+export type McpConnectStart =
+  { kind: 'authorize'; authorizeUrl: string } | { kind: 'connected'; connectionId: string };
 
 /** A refusal with a sentence the caller may show, and nothing else. */
 export class McpConnectError extends Error {
@@ -76,16 +98,29 @@ function isPlanCapRefusal(error: unknown): boolean {
 }
 
 export interface McpConnectService {
+  /**
+   * Starts a link. An OAuth row answers the consent URL the browser visits
+   * (ADR-0155); a row that needs no credential, or a key the member just typed,
+   * is connected here and answers the connection (#1269).
+   */
   start(input: {
     userId: string;
     registryName: string;
     redirectUri: string;
-  }): Promise<{ authorizeUrl: string }>;
+    /** Required for an `api_key` row, ignored otherwise. Never logged. */
+    apiKey?: string;
+  }): Promise<McpConnectStart>;
   complete(input: {
     userId: string;
     state: string;
     code: string;
   }): Promise<{ connectionId: string }>;
+  /**
+   * Replaces the key a live `api_key` connection holds (#1269). It is the
+   * rotation path the security review asks for: a key is a credential with a
+   * life, and re-entering one must not require disconnecting the app.
+   */
+  replaceApiKey(input: { userId: string; connectionId: string; apiKey: string }): Promise<void>;
 }
 
 interface ConnectServiceDependencies {
@@ -155,6 +190,134 @@ export function createMcpConnectService({
       throw new McpConnectError('unknown_app', 'هذا التطبيق غير معتمد في المتجر');
     }
     return server;
+  }
+
+  /**
+   * How the row authenticates (#1269). A row whose stored value a later version
+   * stops naming is OAuth, which is what every row was before the column.
+   */
+  function authModeOf(server: McpCatalogServerRecord): McpAuthMode {
+    const value: string = server.auth_mode;
+    return value === 'none' || value === 'api_key' ? value : 'oauth';
+  }
+
+  /**
+   * The header a key goes in, and the scheme in front of it.
+   *
+   * Both are the catalogue row's, read from the server's own documentation by an
+   * admin. `null` means the key is the whole header value: we never invent a
+   * `Bearer` prefix, because a server that wants the key bare would refuse it.
+   */
+  function keyHeader(server: McpCatalogServerRecord | null): string {
+    return server?.api_key_header?.trim() || 'Authorization';
+  }
+
+  function keyPrefix(server: McpCatalogServerRecord | null): string | null {
+    return server?.api_key_prefix?.trim() || null;
+  }
+
+  function keyValue(server: McpCatalogServerRecord | null, apiKey: string): string {
+    const prefix = keyPrefix(server);
+    return prefix ? `${prefix} ${apiKey}` : apiKey;
+  }
+
+  /**
+   * Reads the tool list after a credential was stored, and records the outcome on
+   * the row. A failure is a state, not a lost connection: the member lands on the
+   * screen that explains it and, for a key, can paste another one.
+   */
+  async function readTools(connection: McpConnectionRecord, auth: McpRequestAuth): Promise<void> {
+    try {
+      const tools = await remote.listTools({ serverUrl: connection.server_url, auth });
+      await repository.saveTools(connection.id, tools);
+      await repository.updateConnection(connection.id, {
+        status: 'active',
+        tool_count: tools.length,
+        last_synced_at: now().toISOString(),
+        last_error: null,
+      });
+    } catch (error) {
+      logger.warn('MCP marketplace: tool list failed after connecting', {
+        connectionId: connection.id,
+        error: String(error),
+      });
+      await repository.updateConnection(connection.id, {
+        status: 'error',
+        last_error: 'تعذّر قراءة أدوات التطبيق',
+      });
+    }
+  }
+
+  /**
+   * The two modes that never leave the site (#1269): no credential at all, or a
+   * key the member pasted. Neither has a consent screen, so the call that proves
+   * the link is the tool read — and it is the only place the key is used in
+   * plaintext, for the length of one request.
+   */
+  async function connectDirect({
+    userId,
+    registryName,
+    server,
+    apiKey,
+  }: {
+    userId: string;
+    registryName: string;
+    server: McpCatalogServerRecord;
+    apiKey?: string;
+  }): Promise<{ connectionId: string }> {
+    const mode = authModeOf(server);
+    if (mode === 'api_key' && !apiKey) {
+      throw new McpConnectError(
+        'missing_key',
+        'هذا التطبيق يحتاج مفتاحاً من عندك. الصقه ثم أعد المحاولة.'
+      );
+    }
+    const key = apiKey ?? '';
+
+    await requireSlot(userId, registryName);
+
+    const serverUrl = server.remote_override ?? server.remote_url;
+    let connection = await repository.findLiveConnection(userId, registryName);
+    if (!connection) {
+      try {
+        connection = await repository.createConnection({
+          userId,
+          registryName,
+          serverUrl,
+          displayName: server.name_ar ?? server.title ?? registryName,
+          authMode: mode,
+        });
+      } catch (error) {
+        if (!isPlanCapRefusal(error)) throw error;
+        throw new McpConnectError('plan_limit', PLAN_LIMIT_SENTENCE, error);
+      }
+    } else if (connection.auth_mode !== mode) {
+      // The row moved mode since this connection was made; re-linking follows it
+      // and replaces whatever credential the old mode stored.
+      await repository.updateConnection(connection.id, { auth_mode: mode });
+      connection = { ...connection, auth_mode: mode };
+    }
+
+    if (mode === 'api_key') {
+      await repository.saveApiKey({
+        connectionId: connection.id,
+        apiKeyEnc: encryptSecret(key),
+        header: keyHeader(server),
+        prefix: keyPrefix(server),
+      });
+      await readTools(connection, {
+        kind: 'api_key',
+        header: keyHeader(server),
+        value: keyValue(server, key),
+      });
+    } else {
+      // A `none` connection holds no secret; a credential row left from an
+      // earlier mode would be a secret nobody uses.
+      await repository.deleteCredentials(connection.id);
+      await readTools(connection, { kind: 'none' });
+    }
+
+    return { connectionId: connection.id };
   }
 
   /**
@@ -281,8 +444,23 @@ export function createMcpConnectService({
   }
 
   return {
-    async start({ userId, registryName, redirectUri }) {
+    async start({ userId, registryName, redirectUri, apiKey }) {
       const server = await catalogServer(registryName);
+
+      /*
+        The two modes without a consent screen connect here (#1269). They are not
+        a shortcut around OAuth: there is nothing to consent to, and the key — the
+        only secret involved — is stored encrypted and used once to prove it.
+      */
+      if (authModeOf(server) !== 'oauth') {
+        const { connectionId } = await connectDirect({
+          userId,
+          registryName,
+          server,
+          ...(apiKey ? { apiKey } : {}),
+        });
+        return { kind: 'connected', connectionId };
+      }
 
       // Re-consenting for a server the member already connected reuses its slot,
       // so the cap is only asked about a connection that would be new.
@@ -316,7 +494,7 @@ export function createMcpConnectService({
         expiresAt: new Date(now().getTime() + ATTEMPT_TTL_MS).toISOString(),
       });
 
-      return { authorizeUrl: url };
+      return { kind: 'authorize', authorizeUrl: url };
     },
 
     async complete({ userId, state, code }) {
@@ -357,6 +535,7 @@ export function createMcpConnectService({
             registryName: attempt.registry_name,
             serverUrl: attempt.server_url,
             displayName: server.name_ar ?? server.title ?? attempt.registry_name,
+            authMode: 'oauth',
           });
         } catch (error) {
           // The trigger's refusal is this same cap, reached between the check
@@ -386,30 +565,42 @@ export function createMcpConnectService({
       // The grant is real from here even if the tool list is not: the member's
       // consent succeeded, so a failed read is a state on the row, not a lost
       // connection they would have to authorise again.
-      try {
-        const tools = await remote.listTools({
-          serverUrl: connection.server_url,
-          accessToken: tokens.access_token,
-        });
-        await repository.saveTools(connection.id, tools);
-        await repository.updateConnection(connection.id, {
-          status: 'active',
-          tool_count: tools.length,
-          last_synced_at: now().toISOString(),
-          last_error: null,
-        });
-      } catch (error) {
-        logger.warn('MCP marketplace: tool list failed after consent', {
-          connectionId: connection.id,
-          error: String(error),
-        });
-        await repository.updateConnection(connection.id, {
-          status: 'error',
-          last_error: 'تعذّر قراءة أدوات التطبيق',
-        });
-      }
+      await readTools(connection, { kind: 'bearer', token: tokens.access_token });
 
       return { connectionId: connection.id };
+    },
+
+    async replaceApiKey({ userId, connectionId, apiKey }) {
+      const connection = await repository.getConnection(userId, connectionId);
+      if (!connection || connection.status === 'revoked') {
+        throw new McpConnectError('unknown_app', 'هذا التطبيق غير مرتبط بحسابك.');
+      }
+      if (connection.auth_mode !== 'api_key') {
+        throw new McpConnectError(
+          'wrong_mode',
+          'هذا التطبيق لا يستخدم مفتاحاً، ولا يمكن استبداله به.'
+        );
+      }
+
+      /*
+        The row's header is read fresh but the row itself is not required to be
+        verified: a takedown stops new links, and taking away the member's ability
+        to rotate a key they already hold would break a live connection for a
+        reason that has nothing to do with it.
+      */
+      const server = await repository.getCatalogServer(connection.registry_name);
+
+      await repository.saveApiKey({
+        connectionId: connection.id,
+        apiKeyEnc: encryptSecret(apiKey),
+        header: keyHeader(server),
+        prefix: keyPrefix(server),
+      });
+      await readTools(connection, {
+        kind: 'api_key',
+        header: keyHeader(server),
+        value: keyValue(server, apiKey),
+      });
     },
   };
 }

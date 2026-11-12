@@ -175,6 +175,7 @@ describe('probeConnectable', () => {
     await expect(remote.probeConnectable('https://mcp.example.com/mcp')).resolves.toEqual({
       connectable: true,
       reason: null,
+      authMode: 'oauth',
       logoUrl: 'https://cdn.example/linear.svg',
       logoMime: 'image/svg+xml',
     });
@@ -390,5 +391,189 @@ describe('refresh', () => {
 
     expect(tokens.access_token).toBe('access-2');
     expect(tokens.refresh_token).toBe('refresh-1');
+  });
+});
+
+/**
+ * A fake MCP server that speaks just enough of the protocol for the SDK client:
+ * `initialize`, the notification, and `tools/list` (#1269).
+ *
+ * The transport is real, so the header the client sends is the header a server
+ * would receive — which is the only way to test that an API key lands in the
+ * header the catalogue names and that a no-auth call sends none.
+ */
+function fakeMcpServer(expected?: { header: string; value: string }) {
+  const seen: Array<{ path: string; headers: Record<string, string> }> = [];
+  const fetchImpl = vi.fn(async (input: string | URL, init?: RequestInit) => {
+    const url = new URL(String(input));
+    const headers = new Headers(init?.headers);
+    seen.push({ path: url.pathname, headers: Object.fromEntries(headers.entries()) });
+
+    if (url.pathname.startsWith('/.well-known')) {
+      return new Response('not found', { status: 404 });
+    }
+
+    if (expected && headers.get(expected.header) !== expected.value) {
+      return new Response('unauthorized', { status: 401 });
+    }
+
+    const body = init?.body ? String(init.body) : '';
+    if (!body) return new Response(null, { status: 202 });
+    const request = JSON.parse(body) as { id?: number; method?: string };
+
+    if (request.method === 'initialize') {
+      return new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            protocolVersion: '2025-06-18',
+            capabilities: { tools: {} },
+            serverInfo: { name: 'example', version: '1.0.0' },
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json', 'mcp-session-id': 'session-1' },
+        }
+      );
+    }
+
+    if (request.method === 'tools/list') {
+      return new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            tools: [
+              {
+                name: 'search',
+                description: 'Search',
+                inputSchema: { type: 'object' },
+                annotations: { readOnlyHint: true },
+              },
+            ],
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json', 'mcp-session-id': 'session-1' },
+        }
+      );
+    }
+
+    return new Response(null, { status: 202 });
+  });
+
+  return {
+    seen,
+    remote: createMcpRemoteClient({
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      resolveHost: async () => PUBLIC,
+    }),
+  };
+}
+
+describe('the credential one request carries (#1269)', () => {
+  it('sends a bearer token for an OAuth connection', async () => {
+    const { remote, seen } = fakeMcpServer({ header: 'authorization', value: 'Bearer access-1' });
+
+    const tools = await remote.listTools({
+      serverUrl: 'https://mcp.example.com/mcp',
+      auth: { kind: 'bearer', token: 'access-1' },
+    });
+
+    expect(tools.map((tool) => tool.name)).toEqual(['search']);
+    expect(seen.some((call) => call.headers.authorization === 'Bearer access-1')).toBe(true);
+  });
+
+  it('sends a member key in the header the row names, and in no other place', async () => {
+    const { remote, seen } = fakeMcpServer({ header: 'x-api-key', value: 'sk-live-1' });
+
+    await remote.listTools({
+      serverUrl: 'https://mcp.example.com/mcp',
+      auth: { kind: 'api_key', header: 'X-API-Key', value: 'sk-live-1' },
+    });
+
+    expect(seen.every((call) => !call.path.includes('sk-live-1'))).toBe(true);
+    expect(seen.some((call) => call.headers['x-api-key'] === 'sk-live-1')).toBe(true);
+    expect(seen.every((call) => call.headers.authorization === undefined)).toBe(true);
+  });
+
+  it('sends no authorization at all for a no-auth connection', async () => {
+    const { remote, seen } = fakeMcpServer();
+
+    await remote.listTools({
+      serverUrl: 'https://mcp.example.com/mcp',
+      auth: { kind: 'none' },
+    });
+
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((call) => call.headers.authorization === undefined)).toBe(true);
+    expect(seen.every((call) => call.headers['x-api-key'] === undefined)).toBe(true);
+  });
+});
+
+describe('probing a row that carries an auth mode (#1269)', () => {
+  it('measures a no-auth row that answers without a credential', async () => {
+    const { remote } = fakeMcpServer();
+
+    await expect(
+      remote.probeConnectable('https://mcp.example.com/mcp', { authMode: 'none' })
+    ).resolves.toMatchObject({ connectable: true, reason: null, authMode: 'none' });
+  });
+
+  it('refuses a no-auth row whose server answers 401, and names what it measured', async () => {
+    const { remote } = fakeMcpServer({ header: 'x-api-key', value: 'anything' });
+
+    await expect(
+      remote.probeConnectable('https://mcp.example.com/mcp', { authMode: 'none' })
+    ).resolves.toMatchObject({
+      connectable: false,
+      reason: 'needs_credentials',
+      authMode: 'api_key',
+    });
+  });
+
+  it('reads a bearer challenge as an OAuth endpoint, not as a key server', async () => {
+    const remote = createMcpRemoteClient({
+      fetchImpl: vi.fn(async (input: string | URL) => {
+        const url = new URL(String(input));
+        if (url.pathname.startsWith('/.well-known')) return new Response('no', { status: 404 });
+        return new Response('no', {
+          status: 401,
+          headers: { 'www-authenticate': 'Bearer realm="OAuth"' },
+        });
+      }) as unknown as typeof fetch,
+      resolveHost: async () => PUBLIC,
+    });
+
+    await expect(
+      remote.probeConnectable('https://mcp.example.com/mcp', { authMode: 'none' })
+    ).resolves.toMatchObject({
+      connectable: false,
+      reason: 'needs_credentials',
+      authMode: 'oauth',
+    });
+  });
+
+  it('links an api_key row once the endpoint answers a credential challenge', async () => {
+    const { remote } = fakeMcpServer({ header: 'authorization', value: 'Bearer key' });
+
+    await expect(
+      remote.probeConnectable('https://mcp.example.com/mcp', { authMode: 'api_key' })
+    ).resolves.toMatchObject({ connectable: true, reason: null, authMode: 'api_key' });
+  });
+
+  it('names a no-auth server a row still calls OAuth, without switching the row', async () => {
+    // The Cloudflare docs server, measured 2026-11-12: everything under
+    // /.well-known is a 404 and `initialize` answers without a credential.
+    const { remote } = fakeMcpServer();
+
+    await expect(remote.probeConnectable('https://mcp.example.com/mcp')).resolves.toMatchObject({
+      connectable: false,
+      reason: 'no_metadata',
+      authMode: 'none',
+    });
   });
 });

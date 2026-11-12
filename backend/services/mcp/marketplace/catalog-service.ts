@@ -17,6 +17,7 @@ import { assertEgressUrl, EgressBlockedError } from '@/backend/shared/egress';
 import { logger } from '@/backend/shared/logger';
 import {
   MCP_CATALOG_PAGE_SIZE,
+  McpAuthModeSchema,
   McpCatalogConnectReasonSchema,
   McpCatalogWaitReasonSchema,
   type McpCatalogAdminPage,
@@ -27,6 +28,7 @@ import {
   type McpCatalogRow,
   type McpCatalogWaitingRow,
 } from '@/shared/contracts/mcp-catalog';
+import type { McpAuthMode } from '@/backend/shared/domain/mcp-remote';
 
 /**
  * The catalogue: the mirror of the official MCP registry, the search over it, the
@@ -196,7 +198,21 @@ export interface McpCatalogService {
 
 /** A refusal from the Admin Console that has a sentence for the person who asked. */
 export type McpCatalogAdminFailure =
-  'unknown_app' | 'not_connectable' | 'invalid_remote' | 'invalid_icon' | 'no_mark';
+  | 'unknown_app'
+  | 'not_connectable'
+  | 'invalid_remote'
+  | 'invalid_icon'
+  | 'invalid_auth'
+  | 'no_mark';
+
+/**
+ * The header name an `api_key` row may send (#1269).
+ *
+ * It is written by an admin and later concatenated into a request, so it is
+ * held to the HTTP token grammar: anything with a space, a colon or a newline is
+ * refused here rather than becoming a malformed request at a stranger's server.
+ */
+const AUTH_HEADER_NAME = /^[A-Za-z0-9!#$%&'*+.^_`|~-]{1,60}$/;
 
 /**
  * Who is acting, and on what.
@@ -236,6 +252,23 @@ function connectReason(value: string | null): McpCatalogConnectReason | null {
   return parsed.success ? parsed.data : null;
 }
 
+/**
+ * The mode a row carries, and the one the last probe measured (#1269).
+ *
+ * Both are stored as text, so a value a later version stops naming is read as
+ * the default rather than thrown at a screen: `oauth` is what every row was
+ * before the column existed, and `null` is an honest "not measured".
+ */
+function authModeOf(value: string): McpAuthMode {
+  const parsed = McpAuthModeSchema.safeParse(value);
+  return parsed.success ? parsed.data : 'oauth';
+}
+
+function probeAuthModeOf(value: string | null): McpAuthMode | null {
+  const parsed = McpAuthModeSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
+}
+
 /** The member's row: the Arabic description when it exists, the registry's until then. */
 function toMemberRow(row: McpCatalogListRow): McpCatalogRow {
   return {
@@ -248,6 +281,8 @@ function toMemberRow(row: McpCatalogListRow): McpCatalogRow {
     featuredRank: row.featured_rank,
     connectable: row.connectable,
     connectableReason: connectReason(row.connectable_reason),
+    authMode: authModeOf(row.auth_mode),
+    probeAuthMode: probeAuthModeOf(row.probe_auth_mode),
     publishedAt: row.published_at,
     // The sheet names the ask before the member leaves for the provider's own
     // consent screen, which is the only place we can put it in Arabic.
@@ -266,6 +301,8 @@ function toAdminRow(
     titleOverride: row.title_override,
     iconOverride: row.icon_override,
     descriptionAr: row.description_ar,
+    apiKeyHeader: row.api_key_header,
+    apiKeyPrefix: row.api_key_prefix,
     remoteUrl: row.remote_url,
     remoteOverride: row.remote_override,
     remoteOptions: registryRemotes(row.raw),
@@ -486,6 +523,42 @@ export function createMcpCatalogService({
         patch.probe_icon_url = null;
         patch.probe_icon_mime = null;
       }
+    }
+
+    /*
+      The auth mode is the other input to a probe (#1269): a row changed from
+      OAuth to a key was measured against a different flow, so its verdict goes
+      back to "not measured" until «فحص الآن» runs. The header is not measured —
+      the probe never sends the key — so changing it leaves the verdict alone.
+    */
+    if (input.authMode !== undefined) {
+      const existing = await currentRow();
+      patch.auth_mode = input.authMode;
+      if (input.authMode !== authModeOf(existing.auth_mode)) {
+        patch.connectable = null;
+        patch.connectable_reason = null;
+        patch.probed_at = null;
+        patch.probe_auth_mode = null;
+      }
+    }
+
+    if (input.apiKeyHeader !== undefined) {
+      const next = input.apiKeyHeader?.trim() || null;
+      if (next !== null && !AUTH_HEADER_NAME.test(next)) {
+        throw new McpCatalogError(
+          'invalid_auth',
+          'اسم الترويسة غير صالح: حروف لاتينية وأرقام وشرطات فقط.'
+        );
+      }
+      patch.api_key_header = next;
+    }
+
+    if (input.apiKeyPrefix !== undefined) {
+      const next = input.apiKeyPrefix?.trim() || null;
+      if (next !== null && /[\r\n]/.test(next)) {
+        throw new McpCatalogError('invalid_auth', 'البادئة لا تحتوي أسطراً جديدة.');
+      }
+      patch.api_key_prefix = next;
     }
 
     if (input.blocked === true) {
@@ -897,10 +970,12 @@ export function createMcpCatalogService({
         try {
           const verdict = await remote.probeConnectable(row.remote_override ?? row.remote_url, {
             preRegistered: staticClients.has(row.registry_name),
+            authMode: authModeOf(row.auth_mode),
           });
           await repository.saveCatalogProbe(row.registry_name, {
             connectable: verdict.connectable,
             reason: verdict.reason,
+            authMode: verdict.authMode,
             probedAt: now().toISOString(),
             iconUrl: verdict.logoUrl,
             iconMime: verdict.logoMime,

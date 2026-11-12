@@ -46,9 +46,32 @@ export const McpCatalogConnectReasonSchema = z.enum([
   'blocked',
   /** The server did not answer inside the probe's ceiling. */
   'unreachable',
+  /**
+   * The row is published as no-auth, but the server refused an unauthenticated
+   * call (#1269). The repair is an admin's: switch the row to `api_key` (or
+   * `oauth`) once the measurement names what the server wants.
+   */
+  'needs_credentials',
 ]);
 
 export type McpCatalogConnectReason = z.infer<typeof McpCatalogConnectReasonSchema>;
+
+/**
+ * How a catalogue row authenticates (#1269, ADR-0155 amendment).
+ *
+ * The mode is an admin's decision, not a probe's: which header a key belongs in
+ * is a documented fact the probe cannot read, and a server that publishes nothing
+ * must not be inferred into a mode. The probe measures beside it
+ * (`probeAuthMode`) and the verdict says whether the decision opens the server.
+ */
+export const MCP_AUTH_MODES = ['oauth', 'none', 'api_key'] as const;
+
+export const McpAuthModeSchema = z.enum(MCP_AUTH_MODES);
+
+export type McpAuthMode = z.infer<typeof McpAuthModeSchema>;
+
+/** What the last probe observed, or `null` when it could not tell. */
+export const McpProbeAuthModeSchema = McpAuthModeSchema.nullable();
 
 /**
  * Why a catalogue row waits for a person (#1293, half 3). A category rather
@@ -64,11 +87,6 @@ export const McpCatalogWaitReasonSchema = z.enum([
   'check_failed',
   /** A shipped SVG is waiting for its batched pull request to merge. */
   'repo_pr_pending',
-  /**
-   * The server needs no OAuth at all. The store's connect flow is OAuth-only
-   * until #1269, so publishing it now would offer a row a member cannot link.
-   */
-  'no_auth_pending',
 ]);
 
 export type McpCatalogWaitReason = z.infer<typeof McpCatalogWaitReasonSchema>;
@@ -125,6 +143,14 @@ export const McpCatalogRowSchema = z.object({
    */
   connectable: z.boolean().nullable(),
   connectableReason: McpCatalogConnectReasonSchema.nullable(),
+  /**
+   * How the row is linked (#1269): the consent flow, no credentials at all, or a
+   * key the member supplies. An admin's decision; the store says what the row
+   * needs before a tap.
+   */
+  authMode: McpAuthModeSchema,
+  /** What the last probe measured, beside the decision; `null` is "not measured". */
+  probeAuthMode: McpProbeAuthModeSchema,
   publishedAt: z.string().nullable(),
   /**
    * The permissions we will ask this server for, in its own names, so the sheet
@@ -224,6 +250,14 @@ export const McpCatalogAdminRowSchema = McpCatalogRowSchema.extend({
   iconOverride: z.string().nullable(),
   /** The override as stored, so the field can be edited rather than only shown. */
   descriptionAr: z.string().nullable(),
+  /**
+   * Where an `api_key` row's key goes, as the server documents it: the header
+   * name and the scheme it is prefixed with (`Authorization` + `Bearer` for
+   * Postman; `X-API-Key` with no prefix for servers that take it bare). `null`
+   * follows the default, `Authorization` with a `Bearer` prefix.
+   */
+  apiKeyHeader: z.string().nullable(),
+  apiKeyPrefix: z.string().nullable(),
   /** The registry's own status: `active`, `deprecated`, `deleted`. */
   status: z.string(),
   version: z.string().nullable(),
@@ -284,6 +318,15 @@ export const McpCatalogAdminUpdateSchema = z
      * holds it to the egress policy; the schema only bounds the size.
      */
     remoteOverride: z.string().trim().max(2048).nullable().optional(),
+    /**
+     * How the row is linked (#1269). Changing it changes what the probe measures,
+     * so the service clears the verdict in the same write; the row reads
+     * «لم نتحقق بعد» until «فحص الآن» runs.
+     */
+    authMode: McpAuthModeSchema.optional(),
+    /** The header an `api_key` row sends, and the scheme it prefixes the key with. */
+    apiKeyHeader: z.string().trim().max(60).nullable().optional(),
+    apiKeyPrefix: z.string().trim().max(40).nullable().optional(),
   })
   .refine((body) => body.blocked !== true || (body.blockedReason ?? '').length > 0, {
     message: 'سبب الإيقاف مطلوب',
@@ -323,6 +366,33 @@ export const MCP_CATALOG_ADMIN_COPY = {
   connectableYes: 'قابل للربط',
   connectableNo: 'لا يمكن ربطه',
   connectableUnknown: 'لم نتحقق بعد',
+  /** The mode a row needs, said before the tap (#1269). */
+  authBadgeOauth: 'حساب',
+  authBadgeNone: 'بلا تسجيل',
+  authBadgeApiKey: 'يتطلب مفتاحاً',
+  /** The probe's own measurement, beside the admin's decision. */
+  probeAuthLabel: 'قياس الفحص:',
+  probeAuthUnknown: 'لم يتّضح',
+  authAction: 'طريقة الربط',
+  authTitle: 'طريقة ربط التطبيق',
+  authDescription:
+    'الفحص يقرأ ما ينشره التطبيق، ولا يستطيع أن يعرف في أي ترويسة يوضع المفتاح: هذا قرار يُقرأ من توثيق التطبيق. تغيير الطريقة يلغي نتيجة الفحص حتى تفحصه من جديد.',
+  authModeLabels: {
+    oauth: 'حساب لدى التطبيق (OAuth)',
+    none: 'بلا مصادقة',
+    api_key: 'مفتاح API',
+  },
+  authModeHints: {
+    oauth: 'التطبيق يفتح شاشة موافقة، ولا يُطلب من العضو شيء غيرها.',
+    none: 'الخادم يستجيب دون أي بيانات اعتماد.',
+    api_key: 'العضو يلصق مفتاحه، ويُخزَّن مشفّراً ويُرسل في الترويسة أدناه.',
+  },
+  authHeaderLabel: 'ترويسة المفتاح',
+  authHeaderHint:
+    'كما يسمّيها توثيق التطبيق، مثل Authorization أو X-API-Key. الافتراضي Authorization.',
+  authPrefixLabel: 'بادئة المفتاح (اختياري)',
+  authPrefixHint: 'ما يوضع قبل المفتاح، مثل Bearer. اتركها فارغة إن كان المفتاح وحده في الترويسة.',
+  authInvalid: 'اسم الترويسة غير صالح: حروف لاتينية وأرقام وشرطات فقط.',
   verifiedBadge: 'في المتجر',
   unverifiedBadge: 'غير مفحوص',
   staticClientBadge: 'عميل مسجّل مسبقاً',
@@ -374,7 +444,6 @@ export const MCP_CATALOG_ADMIN_COPY = {
     no_registration: 'لا تسجيل عملاء ولا عميل مسجّل',
     check_failed: 'فشل فحص',
     repo_pr_pending: 'شعاره في طلب تغيير',
-    no_auth_pending: 'لا يحتاج مصادقة، والربط لا يدعمه بعد',
   },
   blockTitle: 'إيقاف تطبيق',
   blockDescription: 'لن يظهر التطبيق في المتجر، ولن يبدأ ربطه. اكتب السبب: هو ما يقرأه من يحاول.',
@@ -404,5 +473,6 @@ export const MCP_CATALOG_ADMIN_COPY = {
     no_registration: 'لا يسمح بتسجيل عملاء جدد',
     blocked: 'أوقفته سياسة الخروج عند الفحص',
     unreachable: 'لم يستجب للفحص في الوقت المحدد',
+    needs_credentials: 'يرفض الاستجابة دون بيانات اعتماد، والصفّ لا يطلبها',
   },
 } as const;

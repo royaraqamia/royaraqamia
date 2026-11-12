@@ -82,6 +82,8 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
     },
     updateConnection: async () => undefined,
     saveCredentials: async () => undefined,
+    saveApiKey: async () => undefined,
+    deleteCredentials: async () => undefined,
     getCredentials: async () => null,
     claimRefresh: async () => null,
     releaseRefresh: async () => undefined,
@@ -157,6 +159,7 @@ function fakeRemote(overrides: Partial<McpRemoteClient> = {}): McpRemoteClient {
     probeConnectable: vi.fn(async () => ({
       connectable: true,
       reason: null,
+      authMode: 'oauth' as const,
       logoUrl: null,
       logoMime: null,
     })),
@@ -403,6 +406,10 @@ describe('the search', () => {
       verified_at: '2026-11-14T00:00:00.000Z',
       blocked_at: null,
       blocked_reason: null,
+      auth_mode: 'oauth',
+      probe_auth_mode: null,
+      api_key_header: null,
+      api_key_prefix: null,
       connectable: false,
       connectable_reason: 'no_registration',
       probed_at: '2026-11-14T00:00:00.000Z',
@@ -495,6 +502,7 @@ describe('the connectability probe', () => {
       registry_name: 'com.example/mcp',
       remote_url: 'https://mcp.example.com/mcp',
       remote_override: null,
+      auth_mode: 'oauth',
       probed_at: null,
       blocked_at: null,
       status: 'active',
@@ -516,6 +524,7 @@ describe('the connectability probe', () => {
       probeConnectable: vi.fn(async () => ({
         connectable: false,
         reason: 'no_metadata' as const,
+        authMode: null,
         logoUrl: null,
         logoMime: null,
       })),
@@ -529,6 +538,7 @@ describe('the connectability probe', () => {
     expect(repository.probes[0]?.probe).toEqual({
       connectable: false,
       reason: 'no_metadata',
+      authMode: null,
       probedAt: NOW.toISOString(),
       iconUrl: null,
       iconMime: null,
@@ -543,6 +553,7 @@ describe('the connectability probe', () => {
       probeConnectable: vi.fn(async () => ({
         connectable: true,
         reason: null,
+        authMode: 'oauth' as const,
         logoUrl: 'https://mcp.vercel.com/icons/vercel-light.svg',
         logoMime: 'image/svg+xml',
       })),
@@ -637,6 +648,10 @@ function serverRow(overrides: Partial<McpCatalogServerRecord> = {}): McpCatalogS
     status: 'active',
     blocked_at: null,
     blocked_reason: null,
+    auth_mode: 'oauth',
+    probe_auth_mode: null,
+    api_key_header: null,
+    api_key_prefix: null,
     registry_icon_url: 'https://mcp.vercel.com/icons/vercel-light.svg',
     registry_icon_mime: 'image/svg+xml',
     probe_icon_url: null,
@@ -753,6 +768,7 @@ describe('the remote choice', () => {
       registry_name: 'com.cloudflare.mcp/mcp',
       remote_url: 'https://docs.mcp.cloudflare.com/mcp',
       remote_override: null,
+      auth_mode: 'oauth',
       probed_at: null,
       blocked_at: null,
       status: 'active',
@@ -766,7 +782,10 @@ describe('the remote choice', () => {
 
     await service.probe(['com.cloudflare.mcp/mcp'], { force: true });
 
-    expect(remote.probeConnectable).toHaveBeenCalledWith(ACCOUNT, { preRegistered: false });
+    expect(remote.probeConnectable).toHaveBeenCalledWith(ACCOUNT, {
+      preRegistered: false,
+      authMode: 'oauth',
+    });
   });
 
   it('keeps a verdict when the same address is saved again', async () => {
@@ -889,6 +908,7 @@ describe('a pre-registered client (issue #1229)', () => {
       registry_name: GITHUB,
       remote_url: 'https://api.githubcopilot.com/mcp/',
       remote_override: null,
+      auth_mode: 'oauth',
       probed_at: null,
       blocked_at: null,
       status: 'active',
@@ -901,6 +921,7 @@ describe('a pre-registered client (issue #1229)', () => {
 
     expect(remote.probeConnectable).toHaveBeenCalledWith('https://api.githubcopilot.com/mcp/', {
       preRegistered: true,
+      authMode: 'oauth',
     });
     expect(repository.probes[0]?.probe.connectable).toBe(true);
   });
@@ -947,6 +968,10 @@ describe('a pre-registered client (issue #1229)', () => {
             verified_at: NOW.toISOString(),
             blocked_at: null,
             blocked_reason: null,
+            auth_mode: 'oauth',
+            probe_auth_mode: null,
+            api_key_header: null,
+            api_key_prefix: null,
             connectable: true,
             connectable_reason: null,
             probed_at: NOW.toISOString(),
@@ -1076,6 +1101,10 @@ describe('brand marks (the eleven letters)', () => {
             verified_at: NOW.toISOString(),
             blocked_at: null,
             blocked_reason: null,
+            auth_mode: 'oauth',
+            probe_auth_mode: null,
+            api_key_header: null,
+            api_key_prefix: null,
             connectable: true,
             connectable_reason: null,
             probed_at: NOW.toISOString(),
@@ -1288,5 +1317,162 @@ describe('the wait list and the coverage numbers (#1293)', () => {
     const page = await service.adminList({ q: '', cursor: null });
 
     expect(page.waiting).toEqual([]);
+  });
+});
+
+/**
+ * The auth mode (#1269): an admin's decision, measured beside it.
+ *
+ * What these pin is that the probe measures in the row's mode, that changing the
+ * mode invalidates a verdict measured against the old one, and that the header a
+ * key goes in is held to the HTTP token grammar — it becomes a request header at
+ * a stranger's server, so it is the one admin field that can make a malformed
+ * request.
+ */
+describe('the auth mode (#1269)', () => {
+  it('probes in the mode the row carries, not always as OAuth', async () => {
+    const repository = fakeRepository({
+      getCatalogAddresses: async () => [
+        {
+          registry_name: 'com.cloudflare.mcp/mcp',
+          remote_url: 'https://docs.mcp.cloudflare.com/mcp',
+          remote_override: null,
+          auth_mode: 'none',
+          probed_at: null,
+          blocked_at: null,
+          status: 'active',
+        },
+      ],
+    });
+    const remote = fakeRemote();
+    const service = build({ repository, pages: [], remote });
+
+    await service.probe(['com.cloudflare.mcp/mcp'], { force: true });
+
+    expect(remote.probeConnectable).toHaveBeenCalledWith('https://docs.mcp.cloudflare.com/mcp', {
+      preRegistered: false,
+      authMode: 'none',
+    });
+  });
+
+  it('records the mode the probe measured beside the verdict', async () => {
+    const repository = fakeRepository({
+      getCatalogAddresses: async () => [
+        {
+          registry_name: 'com.cloudflare.mcp/mcp',
+          remote_url: 'https://docs.mcp.cloudflare.com/mcp',
+          remote_override: null,
+          auth_mode: 'none',
+          probed_at: null,
+          blocked_at: null,
+          status: 'active',
+        },
+      ],
+    });
+    const remote = fakeRemote({
+      probeConnectable: vi.fn(async () => ({
+        connectable: true,
+        reason: null,
+        authMode: 'none' as const,
+        logoUrl: null,
+        logoMime: null,
+      })),
+    });
+    const service = build({ repository, pages: [], remote });
+
+    await service.probe(['com.cloudflare.mcp/mcp'], { force: true });
+
+    expect(repository.probes[0]?.probe).toMatchObject({
+      connectable: true,
+      authMode: 'none',
+    });
+  });
+
+  it('clears a verdict measured against the old mode, and leaves a same-mode save alone', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () => serverRow({ auth_mode: 'oauth' }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', authMode: 'oauth' });
+    expect(repository.updates[0]?.patch).toEqual({ auth_mode: 'oauth' });
+
+    await adminUpdate(service, { registryName: 'com.vercel/vercel-mcp', authMode: 'api_key' });
+    expect(repository.updates[1]?.patch).toEqual({
+      auth_mode: 'api_key',
+      connectable: null,
+      connectable_reason: null,
+      probed_at: null,
+      probe_auth_mode: null,
+    });
+  });
+
+  it('keeps the header a key goes in, and refuses one that is not a header', async () => {
+    const repository = fakeRepository({
+      getCatalogServer: async () => serverRow({ auth_mode: 'api_key' }),
+    });
+    const service = build({ repository, pages: [] });
+
+    await adminUpdate(service, {
+      registryName: 'com.vercel/vercel-mcp',
+      apiKeyHeader: 'X-API-Key',
+      apiKeyPrefix: 'Bearer',
+    });
+    expect(repository.updates[0]?.patch).toEqual({
+      api_key_header: 'X-API-Key',
+      api_key_prefix: 'Bearer',
+    });
+
+    await expect(
+      adminUpdate(service, {
+        registryName: 'com.vercel/vercel-mcp',
+        apiKeyHeader: 'Authorization: Bearer',
+      })
+    ).rejects.toMatchObject({ failure: 'invalid_auth' });
+  });
+
+  it('ships the mode and the measurement on the row a screen draws', async () => {
+    const repository = fakeRepository({
+      listCatalogServers: async () => ({
+        rows: [
+          {
+            registry_name: 'com.cloudflare.mcp/mcp',
+            title: 'Cloudflare',
+            title_override: null,
+            description: 'Docs',
+            name_ar: null,
+            description_ar: null,
+            remote_url: 'https://docs.mcp.cloudflare.com/mcp',
+            remote_override: null,
+            status: 'active',
+            version: null,
+            published_at: null,
+            fetched_at: NOW.toISOString(),
+            registry_icon_url: null,
+            registry_icon_mime: null,
+            probe_icon_url: null,
+            probe_icon_mime: null,
+            icon_override: null,
+            featured_rank: null,
+            verified_at: NOW.toISOString(),
+            blocked_at: null,
+            blocked_reason: null,
+            auth_mode: 'none',
+            probe_auth_mode: 'none',
+            api_key_header: null,
+            api_key_prefix: null,
+            connectable: true,
+            connectable_reason: null,
+            probed_at: NOW.toISOString(),
+          },
+        ],
+        nextCursor: null,
+      }),
+    });
+    const service = build({ repository, pages: [] });
+
+    const page = await service.search({ q: '', cursor: null });
+
+    expect(page.servers[0]).toMatchObject({ authMode: 'none', probeAuthMode: 'none' });
   });
 });

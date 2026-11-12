@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   Ban,
   ImageIcon,
+  KeyRound,
   Link2,
   Loader2,
   PackageSearch,
@@ -53,7 +54,7 @@ import {
  * replaces the registry's English.
  */
 
-type RowActionMode = 'block' | 'unblock' | 'arabic' | 'mark' | 'verify' | 'remote';
+type RowActionMode = 'block' | 'unblock' | 'arabic' | 'mark' | 'verify' | 'remote' | 'auth';
 
 /** The log's dates, in Damascus time and Latin digits (ADR-0054). */
 const CHECKED_AT = new Intl.DateTimeFormat('ar-SY-u-nu-latn', {
@@ -239,6 +240,9 @@ export function McpCatalogAdminView() {
 
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
                   <Badge variant={connectableVariant(row)}>{connectableLabel(row)}</Badge>
+                  <Badge variant={row.authMode === 'api_key' ? 'warning' : 'secondary'}>
+                    {COPY.authModeLabels[row.authMode]}
+                  </Badge>
                   {row.verifiedAt && <Badge variant="success">{COPY.verifiedBadge}</Badge>}
                   {row.registrationKind === 'static' && (
                     <Badge variant="secondary">{COPY.staticClientBadge}</Badge>
@@ -291,6 +295,14 @@ export function McpCatalogAdminView() {
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => setAction({ row, mode: 'auth' })}
+                  >
+                    <KeyRound className="size-4" aria-hidden="true" />
+                    {COPY.authAction}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setAction({ row, mode: 'remote' })}
                   >
                     <Link2 className="size-4" aria-hidden="true" />
@@ -335,6 +347,14 @@ export function McpCatalogAdminView() {
                       {COPY.reasonLabels[row.connectableReason]}
                     </p>
                   )}
+
+                  {/* What the probe measured, beside the admin's decision (#1269). */}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {COPY.probeAuthLabel}{' '}
+                    {row.probeAuthMode
+                      ? COPY.authModeLabels[row.probeAuthMode]
+                      : COPY.probeAuthUnknown}
+                  </p>
 
                   {row.blocked && row.blockedReason && (
                     <p className="mt-1 text-xs text-destructive">{row.blockedReason}</p>
@@ -438,6 +458,16 @@ export function McpCatalogAdminView() {
           )}
           {action?.mode === 'remote' && (
             <RemoteForm
+              row={action.row}
+              onCancel={() => setAction(null)}
+              onDone={() => {
+                setAction(null);
+                reload();
+              }}
+            />
+          )}
+          {action?.mode === 'auth' && (
+            <AuthForm
               row={action.row}
               onCancel={() => setAction(null)}
               onDone={() => {
@@ -761,6 +791,112 @@ function RemoteForm({ row, onCancel, onDone }: FormProps) {
           </ul>
           <p className="text-xs text-muted-foreground">{COPY.remoteRegistryHint}</p>
         </div>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={onCancel} disabled={saving}>
+          {COPY.cancel}
+        </Button>
+        <Button size="sm" onClick={() => void save()} disabled={saving}>
+          {saving && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+          {COPY.save}
+        </Button>
+      </div>
+    </>
+  );
+}
+
+/**
+ * How the row is linked (#1269): the consent flow, no credentials at all, or a
+ * key the member supplies.
+ *
+ * The probe cannot decide this — which header a key belongs in is a documented
+ * fact, and a server that publishes nothing must not be inferred into a mode —
+ * so the choice is here, beside the measurement it will be compared against.
+ * Changing it clears the verdict, because the measurement was taken against the
+ * old flow.
+ */
+function AuthForm({ row, onCancel, onDone }: FormProps) {
+  const [mode, setMode] = useState<McpCatalogAdminRow['authMode']>(row.authMode);
+  const [header, setHeader] = useState(row.apiKeyHeader ?? '');
+  const [prefix, setPrefix] = useState(row.apiKeyPrefix ?? '');
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await updateAdminMcpCatalogRow({
+        registryName: row.registryName,
+        authMode: mode,
+        ...(mode === 'api_key' ? { apiKeyHeader: header.trim(), apiKeyPrefix: prefix.trim() } : {}),
+      });
+      toast.success(COPY.saved);
+      onDone();
+    } catch (caught) {
+      toast.error(caught instanceof Error ? caught.message : COPY.saveFailed);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <DialogTitle className="leading-snug!">{COPY.authTitle}</DialogTitle>
+      <DialogDescription className="text-pretty">{COPY.authDescription}</DialogDescription>
+
+      <div role="radiogroup" aria-label={COPY.authTitle} className="space-y-2">
+        {(['oauth', 'none', 'api_key'] as const).map((candidate) => {
+          const chosen = mode === candidate;
+          return (
+            <button
+              key={candidate}
+              type="button"
+              role="radio"
+              aria-checked={chosen}
+              onClick={() => setMode(candidate)}
+              className={cn(
+                'w-full rounded-xl border px-3 py-2 text-start transition-colors',
+                chosen ? 'border-primary/60 bg-primary/10' : 'border-border/60 hover:bg-muted/50'
+              )}
+            >
+              <span className="block text-sm font-bold text-foreground">
+                {COPY.authModeLabels[candidate]}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                {COPY.authModeHints[candidate]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {mode === 'api_key' && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="mcp-auth-header">{COPY.authHeaderLabel}</Label>
+            <Input
+              id="mcp-auth-header"
+              value={header}
+              maxLength={60}
+              dir="ltr"
+              placeholder="Authorization"
+              onChange={(event) => setHeader(event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">{COPY.authHeaderHint}</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="mcp-auth-prefix">{COPY.authPrefixLabel}</Label>
+            <Input
+              id="mcp-auth-prefix"
+              value={prefix}
+              maxLength={40}
+              dir="ltr"
+              placeholder="Bearer"
+              onChange={(event) => setPrefix(event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">{COPY.authPrefixHint}</p>
+          </div>
+        </>
       )}
 
       <div className="flex justify-end gap-2">

@@ -30,9 +30,8 @@ A hand run keeps the two processes agreeing by setting
 be pinned with its own `MCP_CATALOG_AGENT_*_PATH` variable.
 
 The checks decide. A row that fails waits as a skip event with a category
-(`no_mark`, `no_registration`, `check_failed`, `repo_pr_pending`,
-`no_auth_pending`), and the row is measured again after a week without anyone
-clearing a flag.
+(`no_mark`, `no_registration`, `check_failed`, `repo_pr_pending`), and the row is measured again
+after a week without anyone clearing a flag.
 
 That week is the cooldown, and it is what keeps the queue moving. The candidate
 page is ordered unverified-first and then by the oldest measurement, so a row
@@ -44,9 +43,12 @@ days, and `listAgentCandidates` passes them over (a published row is never
 passed over: re-checking it is how a withdrawal is found). A reason that clears
 comes back a week later on its own.
 
-`no_auth_pending` is deliberate: the store's connect flow is OAuth-only until
-#1269, so a no-auth row would be a card a member cannot link. When that lands the
-class becomes publishable without a schema change.
+`no_auth_pending` was deliberate: the store's connect flow was OAuth-only until #1269, so a
+no-auth row would have been a card a member could not link. #1269 landed the mode, so the class is
+publishable now: the runner measures the row in its `auth_mode`, and a `none` row publishes on
+`probe` + `tools` + `admission`, where `tools` is the unauthenticated handshake the probe ran. An
+`api_key` row is not published by the run — its key does not exist until a member pastes one — so
+the admin who chose the mode is the one who vouches.
 
 ## The ladder (do not skip a step)
 

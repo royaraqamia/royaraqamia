@@ -105,7 +105,7 @@ function announceRuntimeDir(): void {
   appendFileSync(output, `dir=${runtimeDir()}\n`);
 }
 
-type PublishClass = 'dcr' | 'pre_registered' | 'none';
+type PublishClass = 'dcr' | 'pre_registered' | 'no_auth' | 'none';
 
 interface PlanEntry {
   registryName: string;
@@ -117,6 +117,8 @@ interface PlanEntry {
   iconUrl: string | null;
   /** The `logo_uri` the probe measured, written automatically when there is no mark. */
   measuredMark: string | null;
+  /** What the probe measured about the row's auth mode (#1269). */
+  probeAuthMode: 'oauth' | 'none' | 'api_key' | null;
   class: PublishClass;
   checks: McpCatalogAgentCheck[];
   /** The row already passes and is in the store. */
@@ -268,6 +270,7 @@ function skipEntry(
     descriptionAr: candidate.descriptionAr,
     iconUrl: candidate.iconUrl,
     measuredMark: null,
+    probeAuthMode: null,
     class: 'none',
     checks: [],
     published: candidate.verified,
@@ -290,7 +293,12 @@ async function measure(candidate: McpCatalogAgentCandidate): Promise<PlanEntry> 
 
   let verdict;
   try {
-    verdict = await remote.probeConnectable(candidate.remoteUrl, { preRegistered });
+    verdict = await remote.probeConnectable(candidate.remoteUrl, {
+      preRegistered,
+      // Measure the way the store will link it (#1269): a no-auth row is measured
+      // by its handshake, a key row by the endpoint answering at all.
+      authMode: candidate.authMode,
+    });
   } catch (error) {
     if (error instanceof EgressBlockedError)
       return skipEntry(candidate, 'check_failed', error.message);
@@ -312,6 +320,7 @@ async function measure(candidate: McpCatalogAgentCandidate): Promise<PlanEntry> 
     descriptionAr: candidate.descriptionAr,
     iconUrl: candidate.iconUrl,
     measuredMark: verdict.logoUrl,
+    probeAuthMode: verdict.authMode,
     class: 'none',
     checks: [probeCheck],
     published: candidate.verified,
@@ -358,10 +367,40 @@ async function measure(candidate: McpCatalogAgentCandidate): Promise<PlanEntry> 
     };
   }
 
+  /*
+    A key row is an admin's publish (#1269). The key does not exist until a
+    member pastes one — the run cannot test the credential path, and publishing
+    it would raffle a row whose only question is unanswered. The console still
+    measures it, and the admin who chose the mode is the one who vouches.
+  */
+  if (candidate.authMode === 'api_key') {
+    return {
+      ...base,
+      skip: 'check_failed',
+      detail: 'the row requires a member key, which the run cannot test',
+    };
+  }
+
   const checks: McpCatalogAgentCheck[] = [
     probeCheck,
     { name: 'admission', ok: true, detail: null },
   ];
+
+  /*
+    A no-auth row's pass is the handshake the probe just ran: `initialize`
+    answered without a credential, which is exactly the `tools` check (#1269).
+    There is no registration to ask for and no authorize endpoint to test.
+  */
+  if (candidate.authMode === 'none') {
+    return {
+      ...base,
+      class: 'no_auth',
+      checks: [...checks, { name: 'tools', ok: true, detail: null }],
+      publishable: true,
+      needsMark: !candidate.iconUrl && !verdict.logoUrl,
+      needsCopy: !candidate.titleOverride || !candidate.descriptionAr,
+    };
+  }
 
   if (candidate.staticClient) {
     const accepted = await authorizeAccepts(
@@ -701,6 +740,7 @@ async function apply(): Promise<void> {
           registryName: entry.registryName,
           class: entry.class,
           checks: entry.checks,
+          probeAuthMode: entry.probeAuthMode,
         });
         published += 1;
       } else if (hasMark) {
