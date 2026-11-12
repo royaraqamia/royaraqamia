@@ -75,6 +75,10 @@ export const CONTRACTS = [
     file: 'McpMarketplaceContracts.kt',
     schemas: [
       'McpConnectionListResultSchema',
+      'McpConnectionDetailResultSchema',
+      'McpConnectionUpdateSchema',
+      'McpConnectionToolUpdateSchema',
+      'McpConnectionActionResultSchema',
       'McpStartRequestSchema',
       'McpStartResultEnvelopeSchema',
     ],

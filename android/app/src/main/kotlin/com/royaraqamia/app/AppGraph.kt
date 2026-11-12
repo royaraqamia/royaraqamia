@@ -22,6 +22,7 @@ import com.royaraqamia.app.community.CommunityPostRepository
 import com.royaraqamia.app.consultation.ConsultationRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.home.HomeServicesRepository
+import com.royaraqamia.app.mcp.McpConnectionRepository
 import com.royaraqamia.app.mcp.McpStoreRepository
 import com.royaraqamia.app.net.Connectivity
 import com.royaraqamia.app.news.NewsDigestRepository
@@ -144,6 +145,8 @@ class AppGraph private constructor(
     val homeServices: HomeServicesRepository,
     /** The apps sheet's store tab (#1256): the member's connections and the curated store. */
     val marketplace: McpStoreRepository,
+    /** One connection's screen (#1256): its detail, its switches and its revoke. */
+    val mcpConnection: McpConnectionRepository,
     /** The app's one image seam: a catalogue mark reads through it, like an avatar. */
     val brandMark: AvatarLoader,
     private val databases: IdentityScopedStore<HabitStores>,
@@ -399,6 +402,7 @@ class AppGraph private constructor(
                         identityKey = { session.storeIdentity.key },
                     ),
                 brandMark = TransportAvatarLoader(),
+                mcpConnection = McpConnectionRepository(client),
                 homeServices = HomeServicesRepository(client),
                 verify = VerifyRepository(client),
                 rates = RatesRepository(client, publicSnapshots),
