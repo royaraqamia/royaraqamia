@@ -1,3 +1,4 @@
+import { normalizePage, normalizePageSize } from '@/backend/controllers/admin-list';
 import {
   createAdminCertificatesService,
   verifyCertificateByCode,
@@ -50,7 +51,14 @@ export async function listCertificates(
   search: string
 ): Promise<HttpResult> {
   return withAdminUser(async () =>
-    jsonResult(200, await createAdminCertificatesService().list(page, pageSize, search))
+    jsonResult(
+      200,
+      await createAdminCertificatesService().list(
+        normalizePage(page),
+        normalizePageSize(pageSize),
+        search
+      )
+    )
   );
 }
 

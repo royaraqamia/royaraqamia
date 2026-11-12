@@ -385,6 +385,19 @@ describe('consultation admin success payloads and domain mapping', () => {
     expect(mockAdminListBookings).toHaveBeenCalledWith(1, 20, undefined);
   });
 
+  it('adminListBookings turns a negative page and page size into the first page at 50', async () => {
+    const result = await adminListBookings(-5, -6);
+
+    expect(result.status).toBe(200);
+    expect(mockAdminListBookings).toHaveBeenCalledWith(1, 50, undefined);
+  });
+
+  it('adminListBookings clamps an oversized page size to the shared maximum', async () => {
+    await adminListBookings(1, 1_000_000);
+
+    expect(mockAdminListBookings).toHaveBeenCalledWith(1, 100, undefined);
+  });
+
   it('adminListBookings answers 500 with a failure body, not an empty-success shape', async () => {
     mockAdminListBookings.mockRejectedValue(new Error('db down'));
 
