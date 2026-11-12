@@ -74,6 +74,36 @@ object Routes {
     /** True while [path] wears the app chrome: top bar and bottom tab bar. */
     fun isPrimary(path: String?): Boolean = path != null && primary.contains(normalize(path))
 
+    /** The nine app roots a tab can name: the catalog the picker offers (ADR-0146). */
+    private val tabRoutes: Set<String> = ServicesEntry.rows.map { it.route }.toSet()
+
+    /**
+     * The app a door address names, or null: `/?tab=/habitflow` means `/habitflow`.
+     *
+     * The door's address is a query (`/?tab=/<app>`, ADR-0156) and the app's port
+     * is a route, so a shared link, a notification and a redirect that arrive as
+     * the query would otherwise draw the document and leave the native screen
+     * unreachable - the bug `/linksnap` had after its root became a tab. Only a
+     * value the catalog holds is accepted: `/notifications?tab=alerts` names a tab
+     * of the notification centre, not an app, and the document keeps it.
+     */
+    fun appTabOf(path: String?): String? {
+        if (path.isNullOrBlank() || normalize(path) != HOME) return null
+
+        val query = path.substringAfter('?', "")
+        if (query.isEmpty()) return null
+
+        val value =
+            query
+                .split('&')
+                .firstOrNull { it.startsWith("tab=") }
+                ?.removePrefix("tab=")
+                ?.let { java.net.URLDecoder.decode(it, "UTF-8") }
+                ?: return null
+
+        return value.takeIf { it in tabRoutes }
+    }
+
     /**
      * True for the three destinations the tab bar's own slots open.
      *

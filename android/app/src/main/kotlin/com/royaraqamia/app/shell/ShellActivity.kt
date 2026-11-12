@@ -231,7 +231,9 @@ class ShellActivity : ComponentActivity() {
             fonts.preload(RoyFonts.digits)
         }
 
-        stack = ShellBackStack(DeepLink.targetOf(intent?.data?.toString()) ?: Routes.HOME)
+        stack = ShellBackStack(
+            DeepLink.targetOf(intent?.data?.toString())?.let { Routes.appTabOf(it) ?: it } ?: Routes.HOME
+        )
         current = stack.route
         graph = AppGraph.create(this, BuildConfig.SITE_URL, BuildConfig.SUPABASE_AUTH_URL, BuildConfig.SUPABASE_ANON_KEY)
         update = ShellUpdateController(this, BuildConfig.SITE_URL, lifecycleScope)
@@ -698,7 +700,7 @@ class ShellActivity : ComponentActivity() {
         // A link can arrive while the document is in front; the session it holds
         // is what the route it names needs (#1194).
         lifecycleScope.launch { refreshSession() }
-        stack.reset(target)
+        stack.reset(Routes.appTabOf(target) ?: target)
         current = stack.route
         handOver()
     }
@@ -769,9 +771,12 @@ class ShellActivity : ComponentActivity() {
     /**
      * Navigate to a route: a tab, a services row, or anything else the frame
      * offers. The route decides whether the shell draws it or hands it over.
+     *
+     * A door address (`/?tab=/<app>`) is the app's own route (ADR-0156): resolving
+     * it here is what keeps a port reachable when the web retires the root.
      */
     private fun openRoute(route: String) {
-        stack.open(route)
+        stack.open(Routes.appTabOf(route) ?: route)
         current = stack.route
         // A tap is a navigation, so a web-backed destination is opened again even
         // when it is the one already showing.

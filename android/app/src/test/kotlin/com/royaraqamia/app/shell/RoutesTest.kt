@@ -79,6 +79,24 @@ class RoutesTest {
     }
 
     @Test
+    fun `a door address names the app it selects`() {
+        // A tab is a query on the door and a port is a route (ADR-0156): the shell
+        // resolves one into the other, so a shared link or a redirect still lands
+        // on the native screen rather than on the document.
+        assertEquals("/habitflow", Routes.appTabOf("/?tab=/habitflow"))
+        assertEquals("/rates", Routes.appTabOf("/?tab=%2Frates"))
+        assertEquals("/news", Routes.appTabOf("/?tab=/news&from=push"))
+
+        // A tab of another surface is not an app, and a value the catalog does not
+        // hold never becomes a route the shell agrees to open.
+        assertNull(Routes.appTabOf("/"))
+        assertNull(Routes.appTabOf("/?tab=alerts"))
+        assertNull(Routes.appTabOf("/?tab=/not-an-app"))
+        assertNull(Routes.appTabOf("/community?tab=/rates"))
+        assertNull(Routes.appTabOf(null))
+    }
+
+    @Test
     fun `up from a sub-route is its nearest real parent`() {
         assertEquals("/community", Routes.parentOf("/community/post"))
         assertEquals("/community/post", Routes.parentOf("/community/post/replies"))

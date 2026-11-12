@@ -92,8 +92,14 @@ tab. LinkSnap is the first root to lose its page.
 - The LinkSnap parity rows now name `app/page.tsx` as the page that draws the
   surface, and the visual gate keeps measuring the same surface through the
   redirect.
-- The Android shell still opens LinkSnap natively at its own route; the web's
-  route decision does not move a port.
+- **Amended.** The app resolves a tab address back to the app's route
+  (`Routes.appTabOf`), so `/?tab=/linksnap` — the address `/linksnap` now
+  redirects to — draws the native screen instead of the document. Without this,
+  the redirect retired the app's own port along with the page.
+- The Android shell still opens LinkSnap natively at its own route, and resolves
+  the tab address back to it (see the amended consequence above); a web route
+  decision does not move a port, but the address the port is reached by is the
+  tab's now.
 
 ## Related
 
