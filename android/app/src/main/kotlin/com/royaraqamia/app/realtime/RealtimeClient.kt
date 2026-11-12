@@ -15,6 +15,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonObject
 
 /** One live subscription: closing it removes exactly one channel. */
@@ -76,10 +77,13 @@ interface RealtimeSession {
  *    [RealtimeEvent.Refused] with the topic (and logged), never dropped, so a
  *    channel that is silently absent cannot look like a quiet conversation.
  *
- * The subscriptions are the screen's: when the open thread leaves, its
- * subscription closes, the channel is removed, and the last close shuts the
- * socket. A process with no open live screen holds no socket; a backgrounded one
- * still has the FCM wake of ADR-0059 for the writes that do not need a socket.
+ * The subscriptions are the screens': when the open thread leaves, its
+ * subscription closes and the channel is removed. The socket outlives the last
+ * one for [idleKeepAliveMs], so moving from the list to a thread joins on the
+ * connection already up instead of paying a handshake (ADR-0169); once that
+ * window passes with nothing to serve, the socket closes. A backgrounded
+ * process still has the FCM wake of ADR-0059 for the writes that do not need a
+ * socket.
  */
 class RealtimeClient(
     private val url: String,
@@ -88,6 +92,8 @@ class RealtimeClient(
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
     private val retryDelayMs: (attempt: Int) -> Long = ::defaultRetryDelay,
     private val heartbeatMs: Long = 20_000L,
+    private val idleKeepAliveMs: Long = 60_000L,
+    private val nowMs: () -> Long = { System.nanoTime() / 1_000_000L },
     private val log: (String) -> Unit = { Log.w(TAG, it) },
 ) {
     private class Subscription(
@@ -128,6 +134,12 @@ class RealtimeClient(
     private var nextId = 0L
     private var running: Job? = null
 
+    /** When the channel set last emptied, in [nowMs]'s units. */
+    private var emptySince = 0L
+
+    /** Wakes the idle watchdog when a screen subscribes again. */
+    private val wake = Channel<Unit>(Channel.CONFLATED)
+
     /**
      * The command channel of the connection that is up, if one is. A subscribe
      * that lands while the socket is live is joined on that socket; one that
@@ -154,12 +166,15 @@ class RealtimeClient(
                 val id = ++nextId
                 val created = Subscription(id, spec, onEvent)
                 subscriptions[id] = created
+                emptySince = 0L
                 // Under the same lock the connection takes its snapshot: either
                 // it has already captured one (join now) or it will capture this
                 // channel (do not join twice).
                 outbound?.trySend(Command.Join(id, spec))
                 created
             }
+        // A socket waiting out its idle window has work again.
+        wake.trySend(Unit)
         ensureRunning()
 
         return object : RealtimeChannel {
@@ -174,12 +189,12 @@ class RealtimeClient(
             }
 
             override fun close() {
-                val empty =
-                    synchronized(lock) {
-                        subscriptions.remove(subscription.id)
-                        subscriptions.isEmpty()
-                    }
-                if (empty) running?.cancel()
+                synchronized(lock) {
+                    subscriptions.remove(subscription.id)
+                    if (subscriptions.isEmpty()) emptySince = nowMs()
+                }
+                // The watchdog decides whether the window is already spent.
+                wake.trySend(Unit)
             }
         }
     }
@@ -338,6 +353,30 @@ class RealtimeClient(
                         }
                     }
 
+                // The socket is the screens', not one of them (ADR-0169): with
+                // no channel on it, it waits out the idle window so the next
+                // screen joins instead of dialling, then closes. Closing the
+                // socket is what ends `serve`.
+                val idle =
+                    launch {
+                        while (currentCoroutineContext().isActive) {
+                            val remaining =
+                                synchronized(lock) {
+                                    if (subscriptions.isNotEmpty()) null
+                                    else idleKeepAliveMs - (nowMs() - emptySince)
+                                }
+                            if (remaining == null) {
+                                wake.receive()
+                                continue
+                            }
+                            if (remaining <= 0) {
+                                socket.close()
+                                return@launch
+                            }
+                            withTimeoutOrNull(remaining) { wake.receive() }
+                        }
+                    }
+
                 try {
                     for (event in events) {
                         when (event) {
@@ -365,6 +404,7 @@ class RealtimeClient(
                 } finally {
                     heartbeat.cancel()
                     writer.cancel()
+                    idle.cancel()
                 }
             } finally {
                 synchronized(lock) { outbound = null }

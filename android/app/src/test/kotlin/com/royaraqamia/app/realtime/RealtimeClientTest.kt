@@ -149,7 +149,52 @@ class RealtimeClientTest {
         client.close()
     }
 
-    private fun client(factory: FakeSocketFactory, session: FakeSession): RealtimeClient =
+    @Test
+    fun `a gap between screens keeps the socket up`() = runBlocking {
+        val factory = FakeSocketFactory()
+        val client = client(factory, FakeSession(RealtimeToken("token-1", 1)))
+
+        val list = client.subscribe(ChatRealtime.presenceSpec("c-1"))
+        val socket = factory.awaitSocket(1)
+        socket.await { it.contains("phx_join") && it.contains("c-1") }
+
+        list.close()
+        val thread = client.open(ChatRealtime.presenceSpec("c-2"))
+        socket.await { it.contains("phx_join") && it.contains("c-2") }
+
+        assertEquals("the next screen joins the socket already up", 1, factory.count())
+
+        thread.close()
+        client.close()
+    }
+
+    @Test
+    fun `the socket closes once an idle window is spent`() = runBlocking {
+        val factory = FakeSocketFactory()
+        val client =
+            client(factory, FakeSession(RealtimeToken("token-1", 1)), idleKeepAliveMs = 60L)
+
+        val subscription = client.subscribe(ChatRealtime.presenceSpec("c-1"))
+        factory.awaitSocket(1).await { it.contains("phx_join") }
+        subscription.close()
+
+        delay(300)
+
+        val next = client.open(ChatRealtime.presenceSpec("c-2"))
+        val second = factory.awaitSocket(2)
+        second.await { it.contains("phx_join") && it.contains("c-2") }
+
+        assertEquals("only the spent window closed the first socket", 2, factory.count())
+
+        next.close()
+        client.close()
+    }
+
+    private fun client(
+        factory: FakeSocketFactory,
+        session: FakeSession,
+        idleKeepAliveMs: Long = 60_000L,
+    ): RealtimeClient =
         RealtimeClient(
             url = "wss://example.test/realtime/v1/websocket?apikey=public&vsn=1.0.0",
             session = session,
@@ -157,6 +202,7 @@ class RealtimeClientTest {
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
             retryDelayMs = { 20L },
             heartbeatMs = 10_000L,
+            idleKeepAliveMs = idleKeepAliveMs,
             log = { },
         )
 
@@ -224,7 +270,9 @@ class RealtimeClientTest {
             synchronized(lock) { sent += text }
         }
 
-        override fun close() = Unit
+        override fun close() {
+            listener?.onClosed("closed")
+        }
 
         fun emit(text: String) {
             listener?.onText(text)

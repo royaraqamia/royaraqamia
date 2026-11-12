@@ -57,7 +57,9 @@ correct all along: a service-role broadcast into the recipient's topic drew «ي
 - **Send presence through the broadcast REST API with the member's token.** It works — `private: true`
   is required — and needs no join; rejected because it turns every keystroke into an HTTPS request,
   puts the access token in the client's hands for a cosmetic fact, and is a workaround around the
-  platform's model rather than a use of it.
+  platform's model rather than a use of it. (Still rejected as the primary path by
+  [ADR-0169](0169-the-socket-belongs-to-the-session.md), which fixes the cold-open cost by giving the
+  socket to the session instead.)
 - **Keep the per-member stream and change the platform.** Not ours to change.
 - **One channel per list row, kept forever.** Rejected: channels are joined and dropped with the rows,
   so a long list that is scrolled away does not keep a socket per conversation alive.
