@@ -64,7 +64,7 @@ _The local-store products, where the app has a real reason to be native: offline
 - [x] **spendtrack** `/spendtrack` — native
 - [x] **spendtrack-categories** `/spendtrack/categories` — native · #959
 - [x] **linksnap** `/?tab=/linksnap` — native
-- [x] **quran** `/quran` — native · #955
+- [x] **quran** `/?tab=/quran` `/quran` — native · #955
 - [x] **quran-surah** `/quran/[surah]` — native · #955
 - [ ] **notes** `/notes` — todo
 

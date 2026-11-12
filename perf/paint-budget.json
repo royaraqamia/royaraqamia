@@ -35,7 +35,7 @@
     },
     {
       "id": "quran",
-      "path": "/quran",
+      "path": "/?tab=/quran",
       "auth": false,
       "ceiling": { "cold": 2200, "warm": 450 },
       "tapNote": "Reading is not a local write: a position is saved off the paint path, so there is no optimistic frame to time."

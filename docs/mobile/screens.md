@@ -17,7 +17,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `spendtrack-categories` | `/spendtrack/categories` | `SpendtrackCategoriesScreen.kt` |  |
 | `linksnap` | `/?tab=/linksnap` | `LinksnapShortenerScreen.kt` |  |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` |  |
-| `quran` | `/quran` | `QuranIndexScreen.kt` |  |
+| `quran` | `/?tab=/quran`<br>`/quran` | `QuranIndexScreen.kt` |  |
 | `notes` | `/notes` | _web only_ | The app shows the page as the document; the product's native screens land in phase 3 (#646). |
 | `quran-surah` | `/quran/[surah]` | `QuranSurahScreen.kt` |  |
 | `athkar` | `/?tab=/athkar`<br>`/athkar`<br>`/athkar/evening` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

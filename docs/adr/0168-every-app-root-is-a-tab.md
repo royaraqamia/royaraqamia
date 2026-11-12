@@ -24,6 +24,12 @@ costs".
 - **`/athkar/evening` stays a page.** It is a mode of the surface, not a second
   door to it, and it keeps its own address until the surface draws the mode from
   the tab.
+- **Amended: the local stores move one at a time.** Quran is the first: `/quran`
+  redirects and its index is the door's tab, while `/quran/[surah]` and
+  `/quran/tafsir` keep their own addresses — a surah is a child of the reader,
+  not a second door to it. Its precache row drops to `none` in the same change,
+  and `e2e/public-offline.spec.ts` stops expecting a reader shell to answer
+  `/quran/<n>` offline: the door does now.
 - **The app resolves the tab back to the route.** `Routes.appTabOf` turns
   `/?tab=/<app>` into the app's own path before the shell routes it, so a shared
   link and a redirect land on the native screen instead of the document. Without
