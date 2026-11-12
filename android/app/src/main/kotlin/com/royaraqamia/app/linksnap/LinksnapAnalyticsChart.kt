@@ -142,12 +142,15 @@ private fun PaintedChart(
 
         Spacer(Modifier.height(LinksnapAnalyticsChartMetrics.titleGap))
 
-        Plot(stats)
+        Plot(stats, rangeLabel)
     }
 }
 
 @Composable
-private fun Plot(stats: List<LinksnapAnalyticsResponseAnalyticsClicksByDateItem>) {
+private fun Plot(
+    stats: List<LinksnapAnalyticsResponseAnalyticsClicksByDateItem>,
+    rangeLabel: String,
+) {
     val textMeasurer = rememberTextMeasurer()
     val points = LinksnapChartGeometry.points(stats)
     val maxClicks = LinksnapChartGeometry.maxClicks(stats)
