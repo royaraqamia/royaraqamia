@@ -112,7 +112,7 @@ class RealtimeClientTest {
         val factory = FakeSocketFactory()
         val client = client(factory, FakeSession(RealtimeToken("token-1", 1)))
 
-        val channel = client.open(ChatRealtime.presenceSpec("peer-1"))
+        val channel = client.open(ChatRealtime.presenceSpec("c-1"))
         val socket = factory.awaitSocket(1)
         val join = socket.await { it.contains("phx_join") }
 
@@ -122,7 +122,7 @@ class RealtimeClientTest {
         socket.emit(reply(refOf(join), "ok"))
 
         val push = socket.await { it.contains("\"event\":\"presence\"") }
-        assertTrue("the push names the peer's topic: $push", push.contains("realtime:presence:peer-1"))
+        assertTrue("the push names the conversation's topic: $push", push.contains("realtime:presence:c-1"))
         assertTrue(
             "the push names the join it belongs to: $push",
             push.contains("\"join_ref\":\"${refOf(join)}\""),

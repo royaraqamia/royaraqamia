@@ -143,15 +143,15 @@ export function chatTurnDocuments(attachments: { mimeType: string }[] | undefine
 }
 
 /**
- * Presence is a private Realtime topic **per member**, `presence:<user id>`.
+ * Presence is a private Realtime topic **per conversation**, `presence:<thread id>`
+ * (ADR-0167).
  *
- * The member being talked *to* is the one who joins their own topic; a peer who
- * is writing or recording publishes into it (`20261125100000_chat_presence_channel.sql`).
- * That is the messenger shape rather than the old per-conversation topic: one
- * subscription serves the open thread and the whole chats list, however many
- * conversations the list holds, and the policy is the boundary — only the
- * owner reads their stream, and only a member who shares an active direct
- * conversation may write into it (#816, ADR-0165).
+ * Both members join the same topic, because Realtime authorises a channel join
+ * against the `select` policy alone: a stream written into without being read is
+ * not a shape the platform admits, which is what the per-member stream of
+ * ADR-0165 assumed and why the indicator never reached a peer. The policy is
+ * still the boundary — only an active member of an active direct thread may join
+ * — and each event names its sender, so a member never draws their own state.
  */
 export const CHAT_PRESENCE_TOPIC_PREFIX = 'presence:';
 
@@ -169,10 +169,10 @@ export type ChatPresenceSignal = ChatPresenceState | 'stop';
 /**
  * One member's presence in one conversation.
  *
- * `conversationId` is what lets a single per-member stream feed every row of
- * the chats list; the reader drops an event for a thread it does not hold, and
- * a sender the thread's roster does not name. The identity is cosmetic, as it
- * always was (ADR-0116): a client could claim another's, which is why the
+ * `conversationId` is carried in the payload as well as the topic, because the
+ * sender builds one payload shape for every subscription and because the reader
+ * refuses an event for a thread it does not hold. The identity is cosmetic, as
+ * it always was (ADR-0116): a client could claim another's, which is why the
  * reader also checks it against the counterpart it already knows.
  */
 export interface ChatPresenceEvent {
@@ -181,8 +181,8 @@ export interface ChatPresenceEvent {
   state: ChatPresenceSignal;
 }
 
-export function chatPresenceTopic(userId: string): string {
-  return `${CHAT_PRESENCE_TOPIC_PREFIX}${userId}`;
+export function chatPresenceTopic(conversationId: string): string {
+  return `${CHAT_PRESENCE_TOPIC_PREFIX}${conversationId}`;
 }
 
 /**

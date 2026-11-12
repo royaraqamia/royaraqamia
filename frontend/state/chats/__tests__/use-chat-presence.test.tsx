@@ -3,8 +3,7 @@ import { act, render } from '@testing-library/react';
 import { useEffect } from 'react';
 
 const api = vi.hoisted(() => ({
-  joinChatPresenceReader: vi.fn(),
-  joinChatPresenceWriter: vi.fn(),
+  joinChatPresenceChannel: vi.fn(),
 }));
 
 vi.mock('@/frontend/api/chats', () => api);
@@ -14,8 +13,8 @@ import type { ChatPresenceEvent } from '@/shared/contracts/chat';
 
 let captured: ChatPresenceHook | null = null;
 
-function Harness({ selfId, peerId }: { selfId: string | null; peerId: string | null }) {
-  const state = useChatPresence('c-1', selfId, peerId);
+function Harness({ selfId }: { selfId: string | null }) {
+  const state = useChatPresence('c-1', selfId);
   useEffect(() => {
     captured = state;
   });
@@ -24,12 +23,11 @@ function Harness({ selfId, peerId }: { selfId: string | null; peerId: string | n
 
 const announce = vi.fn();
 const stop = vi.fn();
-const leaveWriter = vi.fn();
-const leaveReader = vi.fn();
+const leave = vi.fn();
 
-/** The callback the reader channel was given, as the topic would call it. */
-function readerEvent(event: ChatPresenceEvent) {
-  const onEvent = api.joinChatPresenceReader.mock.calls[0]?.[1] as
+/** The callback the conversation's channel was given, as the topic would call it. */
+function channelEvent(event: ChatPresenceEvent) {
+  const onEvent = api.joinChatPresenceChannel.mock.calls[0]?.[2] as
     ((event: ChatPresenceEvent) => void) | undefined;
   act(() => onEvent?.(event));
 }
@@ -38,37 +36,32 @@ describe('useChatPresence', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     captured = null;
-    api.joinChatPresenceReader.mockReset().mockReturnValue({ leave: leaveReader });
-    api.joinChatPresenceWriter.mockReset().mockReturnValue({ announce, stop, leave: leaveWriter });
+    api.joinChatPresenceChannel.mockReset().mockReturnValue({ announce, stop, leave });
     announce.mockReset();
     stop.mockReset();
-    leaveReader.mockReset();
-    leaveWriter.mockReset();
+    leave.mockReset();
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it('joins the member’s stream and the peer’s write-only stream', () => {
-    render(<Harness selfId="me" peerId="peer-2" />);
+  it('joins the conversation’s topic, not a member’s stream', () => {
+    render(<Harness selfId="me" />);
 
-    expect(api.joinChatPresenceReader).toHaveBeenCalledWith('me', expect.any(Function));
-    expect(api.joinChatPresenceWriter).toHaveBeenCalledWith('peer-2', 'me');
+    expect(api.joinChatPresenceChannel).toHaveBeenCalledWith('c-1', 'me', expect.any(Function));
   });
 
-  it('joins nothing while nobody is signed in, or a thread has no peer', () => {
-    render(<Harness selfId={null} peerId="peer-2" />);
-    render(<Harness selfId="me" peerId={null} />);
+  it('joins nothing while nobody is signed in', () => {
+    render(<Harness selfId={null} />);
 
-    expect(api.joinChatPresenceReader).not.toHaveBeenCalled();
-    expect(api.joinChatPresenceWriter).not.toHaveBeenCalled();
+    expect(api.joinChatPresenceChannel).not.toHaveBeenCalled();
   });
 
   it('draws a typist and clears them five seconds after the last event', () => {
-    render(<Harness selfId="me" peerId="peer-2" />);
+    render(<Harness selfId="me" />);
 
-    readerEvent({ conversationId: 'c-1', userId: 'peer-2', state: 'typing' });
+    channelEvent({ conversationId: 'c-1', userId: 'peer-2', state: 'typing' });
     expect(captured!.peer).toBe('typing');
 
     act(() => vi.advanceTimersByTime(5_000));
@@ -76,9 +69,9 @@ describe('useChatPresence', () => {
   });
 
   it('keeps a recording for six seconds, wider than its heartbeat', () => {
-    render(<Harness selfId="me" peerId="peer-2" />);
+    render(<Harness selfId="me" />);
 
-    readerEvent({ conversationId: 'c-1', userId: 'peer-2', state: 'recording' });
+    channelEvent({ conversationId: 'c-1', userId: 'peer-2', state: 'recording' });
     act(() => vi.advanceTimersByTime(5_000));
     expect(captured!.peer).toBe('recording');
 
@@ -87,30 +80,28 @@ describe('useChatPresence', () => {
   });
 
   it('clears at once when the peer stops', () => {
-    render(<Harness selfId="me" peerId="peer-2" />);
+    render(<Harness selfId="me" />);
 
-    readerEvent({ conversationId: 'c-1', userId: 'peer-2', state: 'typing' });
-    readerEvent({ conversationId: 'c-1', userId: 'peer-2', state: 'stop' });
+    channelEvent({ conversationId: 'c-1', userId: 'peer-2', state: 'typing' });
+    channelEvent({ conversationId: 'c-1', userId: 'peer-2', state: 'stop' });
 
     expect(captured!.peer).toBeNull();
   });
 
-  it('ignores another thread’s event and another member’s claim', () => {
-    render(<Harness selfId="me" peerId="peer-2" />);
+  it('draws only the conversation’s own events', () => {
+    render(<Harness selfId="me" />);
 
-    readerEvent({ conversationId: 'c-2', userId: 'peer-2', state: 'typing' });
-    readerEvent({ conversationId: 'c-1', userId: 'peer-3', state: 'recording' });
-
-    expect(captured!.peer).toBeNull();
+    channelEvent({ conversationId: 'c-1', userId: 'peer-2', state: 'typing' });
+    expect(captured!.peer).toBe('typing');
   });
 
   it('broadcasts the first keystroke, then at most once per window', () => {
-    render(<Harness selfId="me" peerId="peer-2" />);
+    render(<Harness selfId="me" />);
 
     act(() => captured!.noteTyping());
     act(() => captured!.noteTyping());
     expect(announce).toHaveBeenCalledTimes(1);
-    expect(announce).toHaveBeenLastCalledWith('c-1', 'typing');
+    expect(announce).toHaveBeenLastCalledWith('typing');
 
     act(() => vi.advanceTimersByTime(4_000));
     act(() => captured!.noteTyping());
@@ -118,41 +109,40 @@ describe('useChatPresence', () => {
   });
 
   it('announces a recording, heartbeats it, and outranks typing', () => {
-    render(<Harness selfId="me" peerId="peer-2" />);
+    render(<Harness selfId="me" />);
 
     act(() => captured!.noteRecording(true));
-    expect(announce).toHaveBeenLastCalledWith('c-1', 'recording');
+    expect(announce).toHaveBeenLastCalledWith('recording');
 
     act(() => captured!.noteTyping());
     expect(announce).toHaveBeenCalledTimes(1);
 
     act(() => vi.advanceTimersByTime(4_000));
     expect(announce).toHaveBeenCalledTimes(2);
-    expect(announce).toHaveBeenLastCalledWith('c-1', 'recording');
+    expect(announce).toHaveBeenLastCalledWith('recording');
 
     act(() => captured!.noteRecording(false));
-    expect(stop).toHaveBeenCalledWith('c-1');
+    expect(stop).toHaveBeenCalledWith();
 
     act(() => vi.advanceTimersByTime(4_000));
     expect(announce).toHaveBeenCalledTimes(2);
   });
 
-  it('says the writer stopped on request, and the next keystroke goes at once', () => {
-    render(<Harness selfId="me" peerId="peer-2" />);
+  it('says the state stopped on request, and the next keystroke goes at once', () => {
+    render(<Harness selfId="me" />);
 
     act(() => captured!.noteTyping());
     act(() => captured!.stopTyping());
-    expect(stop).toHaveBeenCalledWith('c-1');
+    expect(stop).toHaveBeenCalledWith();
 
     act(() => captured!.noteTyping());
     expect(announce).toHaveBeenCalledTimes(2);
   });
 
-  it('leaves both channels when the thread closes', () => {
-    const view = render(<Harness selfId="me" peerId="peer-2" />);
+  it('leaves the channel when the thread closes', () => {
+    const view = render(<Harness selfId="me" />);
     view.unmount();
 
-    expect(leaveReader).toHaveBeenCalledTimes(1);
-    expect(leaveWriter).toHaveBeenCalledTimes(1);
+    expect(leave).toHaveBeenCalledTimes(1);
   });
 });

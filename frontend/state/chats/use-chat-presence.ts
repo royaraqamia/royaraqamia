@@ -2,11 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import {
-  joinChatPresenceReader,
-  joinChatPresenceWriter,
-  type ChatPresenceWriter,
-} from '@/frontend/api/chats';
+import { joinChatPresenceChannel, type ChatPresenceChannel } from '@/frontend/api/chats';
 import {
   CHAT_RECORDING_HEARTBEAT_MS,
   CHAT_RECORDING_TIMEOUT_MS,
@@ -27,27 +23,21 @@ export interface ChatPresenceHook {
 }
 
 /**
- * Who is writing, and who is recording, in one open thread (ADR-0165).
+ * Who is writing, and who is recording, in one open thread (ADR-0167).
  *
- * Two subscriptions, not one per conversation:
- *
- * - the reader joins the member's **own** `presence:` topic and keeps only the
- *   events that name this thread and its counterpart;
- * - the writer joins the **peer's** topic, which the insert policy admits and
- *   the peer's select policy does not, so it publishes without eavesdropping.
+ * One subscription per conversation, carrying both halves: the member hears the
+ * peer on `presence:<conversation id>` and says what they are doing through the
+ * same join, because Realtime authorises a channel join against the `select`
+ * policy and a write-only channel is not a shape it admits.
  *
  * Nothing is stored: the reader forgets each state on its window (five seconds
  * for typing, six for a recording, whose heartbeats are four apart), so a
  * closed tab or a dropped stop cannot pin an indicator on screen. A recording
  * outranks typing because a member holding the microphone is not writing.
  */
-export function useChatPresence(
-  conversationId: string,
-  selfId: string | null,
-  peerId: string | null
-): ChatPresenceHook {
+export function useChatPresence(conversationId: string, selfId: string | null): ChatPresenceHook {
   const [peer, setPeer] = useState<ChatPresenceState | null>(null);
-  const writerRef = useRef<ChatPresenceWriter | null>(null);
+  const channelRef = useRef<ChatPresenceChannel | null>(null);
   const lastSentRef = useRef(0);
   const recordingRef = useRef(false);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -67,14 +57,15 @@ export function useChatPresence(
     }
   }, []);
 
-  // The member's own stream. One subscription per open thread; a thread the
-  // member cannot write in has no peer to hear from, so nothing is joined.
+  // The conversation's own stream. A thread the member cannot write in has no
+  // peer to hear from, so nothing is joined.
   useEffect(() => {
-    if (!selfId || !peerId) return;
+    if (!selfId) return;
 
-    const reader = joinChatPresenceReader(selfId, (event) => {
-      if (event.conversationId !== conversationId || event.userId !== peerId) return;
+    lastSentRef.current = 0;
+    recordingRef.current = false;
 
+    const channel = joinChatPresenceChannel(conversationId, selfId, (event) => {
       clearExpiry();
       if (event.state === 'stop') {
         setPeer(null);
@@ -90,47 +81,33 @@ export function useChatPresence(
         event.state === 'recording' ? CHAT_RECORDING_TIMEOUT_MS : CHAT_TYPING_TIMEOUT_MS
       );
     });
+    channelRef.current = channel;
 
     return () => {
-      reader.leave();
+      channel.leave();
+      channelRef.current = null;
+      recordingRef.current = false;
       clearExpiry();
+      stopHeartbeat();
       setPeer(null);
     };
-  }, [clearExpiry, conversationId, peerId, selfId]);
-
-  // The peer's stream, write-only. Leaving the thread is not a decision to
-  // announce: the reader's window closes it, and the socket may already be gone.
-  useEffect(() => {
-    if (!selfId || !peerId) return;
-
-    const writer = joinChatPresenceWriter(peerId, selfId);
-    writerRef.current = writer;
-    lastSentRef.current = 0;
-    recordingRef.current = false;
-
-    return () => {
-      writer.leave();
-      writerRef.current = null;
-      recordingRef.current = false;
-      stopHeartbeat();
-    };
-  }, [peerId, selfId, stopHeartbeat]);
+  }, [clearExpiry, conversationId, selfId, stopHeartbeat]);
 
   const noteTyping = useCallback(() => {
     if (recordingRef.current) return;
     const now = Date.now();
     if (now - lastSentRef.current < CHAT_TYPING_THROTTLE_MS) return;
     lastSentRef.current = now;
-    writerRef.current?.announce(conversationId, 'typing');
-  }, [conversationId]);
+    channelRef.current?.announce('typing');
+  }, []);
 
   const stopTyping = useCallback(() => {
     // A recording's own stop is what ends it; a sent draft is not a reason to
     // cut the recording announcement short.
     if (recordingRef.current) return;
     lastSentRef.current = 0;
-    writerRef.current?.stop(conversationId);
-  }, [conversationId]);
+    channelRef.current?.stop();
+  }, []);
 
   const noteRecording = useCallback(
     (recording: boolean) => {
@@ -139,19 +116,19 @@ export function useChatPresence(
       if (!recording) {
         stopHeartbeat();
         lastSentRef.current = 0;
-        writerRef.current?.stop(conversationId);
+        channelRef.current?.stop();
         return;
       }
 
       lastSentRef.current = Date.now();
-      writerRef.current?.announce(conversationId, 'recording');
+      channelRef.current?.announce('recording');
       if (heartbeatRef.current === null) {
         heartbeatRef.current = setInterval(() => {
-          writerRef.current?.announce(conversationId, 'recording');
+          channelRef.current?.announce('recording');
         }, CHAT_RECORDING_HEARTBEAT_MS);
       }
     },
-    [conversationId, stopHeartbeat]
+    [stopHeartbeat]
   );
 
   return { peer, noteTyping, noteRecording, stopTyping };

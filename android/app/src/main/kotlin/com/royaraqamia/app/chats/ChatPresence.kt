@@ -33,10 +33,9 @@ data class ChatPresenceEvent(
 /**
  * The presence contract, in the words the site uses.
  *
- * The topic is a member's own stream, `presence:<user id>`: the recipient joins
- * it, a peer writes into it, and the payload names the conversation, which is
- * what lets the list read every row from one subscription. Nothing is stored;
- * the windows below are the whole lifetime of an indicator.
+ * The topic is a conversation's own, `presence:<conversation id>`: both members
+ * join it, hear the other, and announce through the same join (ADR-0167).
+ * Nothing is stored; the windows below are the whole lifetime of an indicator.
  */
 object ChatPresence {
     const val EVENT = ChatRealtime.PRESENCE
@@ -61,38 +60,58 @@ object ChatPresence {
         (get(key) as? JsonPrimitive)?.takeIf { it.isString }?.content
 }
 
-/** A write-only handle into one peer's stream. */
+/** A handle that writes into one conversation's presence topic. */
 interface ChatPresencePublisher : RealtimeSubscription {
     fun announce(conversationId: String, state: String): Boolean
 }
 
 /**
- * Where the app's two screens get presence from (ADR-0165).
+ * Where the app's two screens get presence from (ADR-0167).
  *
- * [listen] is the member's own stream, joined once; [publisher] is the peer's
- * stream, joined for writing only. Both are the site's topics and the site's
- * payload, so a state the app draws is one the web would draw too.
+ * [listen] joins one topic per conversation, because presence is the thread's;
+ * [publisher] joins the same topic to write. Both are the site's topics and the
+ * site's payload, so a state the app draws is one the web would draw too.
  */
 interface ChatPresenceSource {
-    fun listen(selfId: String, onEvent: (ChatPresenceEvent) -> Unit): RealtimeSubscription
+    fun listen(
+        conversationIds: Set<String>,
+        selfId: String,
+        onEvent: (ChatPresenceEvent) -> Unit,
+    ): RealtimeSubscription
 
-    fun publisher(peerId: String, selfId: String): ChatPresencePublisher
+    fun publisher(conversationId: String, selfId: String): ChatPresencePublisher
+}
+
+/** Several conversations' presence, closed together when the screen leaves. */
+private class ChatPresenceSubscriptions(
+    private val subscriptions: List<RealtimeSubscription>,
+) : RealtimeSubscription {
+    override fun close() {
+        subscriptions.forEach { it.close() }
+    }
 }
 
 /** The one Realtime client, carrying presence on the same socket as the hints. */
 class RealtimeChatPresence(private val client: RealtimeClient) : ChatPresenceSource {
     override fun listen(
+        conversationIds: Set<String>,
         selfId: String,
         onEvent: (ChatPresenceEvent) -> Unit,
     ): RealtimeSubscription =
-        client.subscribe(ChatRealtime.presenceSpec(selfId)) { event ->
-            if (event is RealtimeEvent.Broadcast && event.event == ChatPresence.EVENT) {
-                ChatPresence.eventOf(event.payload, selfId)?.let(onEvent)
+        ChatPresenceSubscriptions(
+            conversationIds.map { conversationId ->
+                client.subscribe(ChatRealtime.presenceSpec(conversationId)) { event ->
+                    if (event is RealtimeEvent.Broadcast && event.event == ChatPresence.EVENT) {
+                        ChatPresence.eventOf(event.payload, selfId)?.let { presence ->
+                            if (presence.conversationId == conversationId) onEvent(presence)
+                        }
+                    }
+                }
             }
-        }
+        )
 
-    override fun publisher(peerId: String, selfId: String): ChatPresencePublisher {
-        val channel: RealtimeChannel = client.open(ChatRealtime.presenceSpec(peerId))
+    override fun publisher(conversationId: String, selfId: String): ChatPresencePublisher {
+        val channel: RealtimeChannel = client.open(ChatRealtime.presenceSpec(conversationId))
         return object : ChatPresencePublisher {
             override fun announce(conversationId: String, state: String): Boolean =
                 channel.send(

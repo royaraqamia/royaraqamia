@@ -97,13 +97,26 @@ fun ChatsScreen(
     var presenceByThread by remember { mutableStateOf<Map<String, ChatPresenceEvent>>(emptyMap()) }
     var presenceStamps by remember { mutableStateOf<Map<String, Long>>(emptyMap()) }
 
-    // One subscription for the whole list, and the sender is checked against the
-    // row's own counterpart when it is drawn (ADR-0165).
+    // One subscription per row that can be heard: presence is the conversation's
+    // (ADR-0167), and the sender is checked against the row's own counterpart.
     val selfId = repository.selfId()
-    LaunchedEffect(presence, selfId) {
+    val directThreadIds =
+        remember(state) {
+            (state as? ChatsUiState.Live)
+                ?.threads
+                ?.filter {
+                    it.kind == ChatThreadsResponseThreadsItemKind.DIRECT &&
+                        it.status == ChatThreadsResponseThreadsItemStatus.ACTIVE &&
+                        it.myStatus == ChatThreadsResponseThreadsItemMyStatus.ACTIVE &&
+                        it.counterpart != null
+                }?.map { it.id }
+                ?.toSet()
+                .orEmpty()
+        }
+    LaunchedEffect(presence, selfId, directThreadIds) {
         val source = presence ?: return@LaunchedEffect
-        if (selfId == null) return@LaunchedEffect
-        val subscription = source.listen(selfId) { event ->
+        if (selfId == null || directThreadIds.isEmpty()) return@LaunchedEffect
+        val subscription = source.listen(directThreadIds, selfId) { event ->
             if (event.state == ChatPresence.STOP) {
                 presenceByThread = presenceByThread - event.conversationId
                 presenceStamps = presenceStamps - event.conversationId
