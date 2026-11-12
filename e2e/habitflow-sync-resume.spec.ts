@@ -29,7 +29,7 @@ test('an offline habit reaches the server after reconnect', async ({ browser, ba
   const name = `E2E-${Date.now()}`;
 
   const page = await context.newPage();
-  await gotoUnderWorkerControl(page, `${baseURL}/habitflow`);
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/habitflow`);
   await expect(page.locator('#btn-create-habit')).toBeVisible();
 
   // Radio off: the write must land in the Local Store and render from there.

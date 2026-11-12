@@ -167,7 +167,6 @@ test('a never-visited public route deep-links offline from the background precac
     '/privacy',
     '/auth/login',
     '/account',
-    '/habitflow',
     '/downloader',
     '/consultation/book',
   ]);
@@ -196,12 +195,12 @@ test('a never-visited public route deep-links offline from the background precac
   await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/account$/);
 
-  // The product dashboard roots are data-free shells since #449 (ADR-0073), so
-  // the background precache covers one this context never opened: an offline
-  // deep link paints the product's own heading, and the Local Store (empty for a
-  // guest here) is what the client awaits.
-  await page.goto(`${baseURL}/habitflow`, { waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(/\/habitflow$/);
+  // The product roots are tabs of the door since ADR-0168, and `/` is the one
+  // pinned shell, so an offline deep link to a product this context never opened
+  // paints the door with that tab selected; the Local Store (empty for a guest
+  // here) is what the client awaits.
+  await page.goto(`${baseURL}/?tab=/habitflow`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\?tab=\/habitflow$/);
   await expect(page.getByRole('heading', { name: 'تتبُّع العادات' })).toBeVisible();
 
   // The two Phase 3 shells (#450) are data-free documents too: a deep link to a

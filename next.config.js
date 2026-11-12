@@ -183,6 +183,11 @@ const nextConfig = {
         permanent: false,
       },
       {
+        source: '/habitflow',
+        destination: '/?tab=/habitflow',
+        permanent: false,
+      },
+      {
         source: '/blog',
         destination: '/community',
         permanent: true,

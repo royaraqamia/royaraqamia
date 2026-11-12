@@ -63,7 +63,7 @@ test('HabitFlow reloads offline and keeps the habit written with the radio off',
 
   const name = `E2E-${Date.now()}`;
   const page = await context.newPage();
-  await gotoUnderWorkerControl(page, `${baseURL}/habitflow`);
+  await gotoUnderWorkerControl(page, `${baseURL}/?tab=/habitflow`);
   await expect(page.locator('#btn-create-habit')).toBeVisible();
 
   // Radio off: the write lands in the Local Store and paints from there.

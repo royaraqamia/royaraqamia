@@ -11,7 +11,7 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `home` | `/` | static | swr | none | pinned | `public-offline.spec.ts` |  | #487 |
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | static | swr | none | precached | `public-offline.spec.ts` |  |  |
-| `habitflow` | `/habitflow` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`habitflow-sync-resume.spec.ts` | `paint:habitflow` | #493 |
+| `habitflow` | `/?tab=/habitflow`<br>`/habitflow` | local-store | store | outbox | none | `product-offline-render.spec.ts`<br>`habitflow-sync-resume.spec.ts` | `paint:habitflow` | #493 |
 | `spendtrack` | `/spendtrack` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`spendtrack-offline.spec.ts` | `paint:spendtrack` | #493 |
 | `spendtrack-categories` | `/spendtrack/categories` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`spendtrack-offline.spec.ts` | `paint:spendtrack` | #959 |
 | `linksnap` | `/?tab=/linksnap` | local-store | store | outbox | none | `product-offline-render.spec.ts`<br>`linksnap-offline.spec.ts` | `paint:linksnap` | #493 |

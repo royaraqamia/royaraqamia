@@ -51,7 +51,7 @@ test('the drain page delivers a write queued with the app closed', async ({ brow
 
   try {
     const app = await context.newPage();
-    await gotoUnderWorkerControl(app, `${baseURL}/habitflow`);
+    await gotoUnderWorkerControl(app, `${baseURL}/?tab=/habitflow`);
     await expect(app.locator('#btn-create-habit')).toBeVisible();
 
     // Radio off: the write lands in the Local Store and stays in the Outbox.
