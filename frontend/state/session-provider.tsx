@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { hasBrowserSessionToken } from '@/frontend/transport/supabase/client';
+import { warmRealtimeSocket } from '@/frontend/transport/supabase/warm';
 import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
 import { refreshPlanLimits, clearPlanLimits } from '@/frontend/shared/plans/plan-limits';
 import {
@@ -220,6 +221,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       active = false;
     };
   }, [userId, applyMe, clearProfile]);
+
+  // The Realtime socket is the session's, not a screen's (ADR-0169). Opening it
+  // as soon as the member is known is what makes the first thread they open
+  // join a live socket instead of paying a handshake on a keystroke; a guest
+  // opens nothing. Deferred and idempotent — see `warmRealtimeSocket`.
+  useEffect(() => {
+    if (userId) warmRealtimeSocket();
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
