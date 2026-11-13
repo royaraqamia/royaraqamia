@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -48,6 +51,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.shared.NeedsConnection
@@ -935,36 +939,61 @@ private fun Card(
     }
 }
 
-/** The guest's one card and its way in, as the store tab draws it. */
+/**
+ * The guest's one card and its way in, exactly as the page draws it: the
+ * sentence over the site's gradient pill, a `gap-4` apart.
+ *
+ * The pill is [Recipes.Cta], not a local button, because the page's guest action
+ * is `.roy-cta` (52px tall, 176px minimum, radius 9999). The body keeps the
+ * page's `leading-relaxed` (1.625), so the two clients' paragraph is the same
+ * height and the action lands at the same distance below it.
+ */
 @Composable
 private fun SignedOut(modifier: Modifier, onSignIn: () -> Unit) {
     val type = LocalRoyTypeScale.current
-    val spacing = LocalRoySpacing.current
 
     Column(
-        modifier = modifier.fillMaxWidth().testTag(ConnectionMetrics.SIGNED_OUT),
+        // The page's container is `max-w-3xl px-4`: at a phone width the
+        // sentence is measured against 361px, not 393, and that width is what
+        // decides where it wraps.
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .testTag(ConnectionMetrics.SIGNED_OUT),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
             text = McpStoreCopy.SIGN_IN_BODY,
-            style = type.small,
+            style = type.small.copy(lineHeight = 1.625.em),
             color = RoyColors.mutedForeground,
             textAlign = TextAlign.Center,
+            modifier = Modifier.testTag(ConnectionMetrics.SIGN_IN_BODY),
         )
-        Row(
+        Box(
             modifier =
-                Modifier.clip(Recipes.Cta.radius)
-                    .background(RoyColors.primary)
+                Modifier.height(Recipes.Cta.height)
+                    .widthIn(min = Recipes.Cta.minWidth)
+                    .shadow(
+                        elevation = Recipes.Cta.bloomY,
+                        shape = Recipes.Cta.radius,
+                        ambientColor = Recipes.Cta.bloom,
+                        spotColor = Recipes.Cta.bloom,
+                    )
+                    .clip(Recipes.Cta.radius)
+                    .background(Brush.horizontalGradient(Recipes.Cta.stops))
+                    .border(Recipes.Cta.border, Recipes.Cta.radius)
                     .clickable(onClick = onSignIn)
                     .semantics { role = Role.Button }
                     .testTag(ConnectionMetrics.SIGN_IN_ACTION)
-                    .padding(horizontal = 24.dp, vertical = 10.dp),
+                    .padding(horizontal = Recipes.Cta.paddingX),
+            contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = McpStoreCopy.SIGN_IN,
-                style = type.small.copy(fontWeight = FontWeight.Bold),
-                color = RoyColors.primaryForeground,
+                style = Recipes.Cta.text(type),
+                color = Recipes.Cta.content,
                 maxLines = 1,
             )
         }
@@ -1034,6 +1063,7 @@ internal object ConnectionMetrics {
     const val BANNER = "connection-banner"
     const val NOT_FOUND = "connection-not-found"
     const val SIGNED_OUT = "connection-signed-out"
+    const val SIGN_IN_BODY = "connection-sign-in-body"
     const val SIGN_IN_ACTION = "connection-sign-in"
     const val SKELETON = "connection-skeleton"
     const val RETRY = "connection-retry"

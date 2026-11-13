@@ -118,7 +118,7 @@
     {
       "surface": "mcp-app-detail",
       "phase": "public-content",
-      "state": "todo",
+      "state": "native",
       "issue": "#1256"
     },
     {

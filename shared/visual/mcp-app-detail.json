@@ -1,0 +1,50 @@
+{
+  "surface": "mcp-app-detail",
+  "route": "/mcp/apps/e2e-connection",
+  "notes": "The post-connect screen at rest for a guest (#1256, ADR-0118): the page's sentence and the one action a visitor with no session can take. `origin` is the body, because the page's frame and the app's frame are different heights and the design is the gap between these boxes, not where the first one lands. `capture` is the action, because it is the region both clients draw identically. The signed-in states - the permission levels, the tool switches, «أعد الربط» and «افصل» - read a live connection and are not part of this recording yet; they are drawn from the same copy and the same contract, state for state.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "body",
+      "capture": "cta",
+      "elements": [
+        {
+          "name": "body",
+          "web": {
+            "selector": "[data-visual='connection-sign-in-body']"
+          },
+          "app": {
+            "tag": "connection-sign-in-body"
+          },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "cta",
+          "web": {
+            "selector": "[data-visual='connection-cta']"
+          },
+          "app": {
+            "tag": "connection-sign-in"
+          },
+          "properties": ["top", "width", "height", "radius", "fontSize", "fontWeight"]
+        }
+      ]
+    }
+  ],
+  "motion": {
+    "notes": "The guest screen is still. Its one action is the site's gradient pill: it grows 2% on hover and settles 2% smaller on press, with the sheen crossing it. The same means the same 300ms transform and the same sheen; reduced motion keeps the colour change and drops the travel. The signed-in screen's switches and level chips brighten on hover and use the same 150ms ease-out.",
+    "entries": [
+      {
+        "element": "cta",
+        "gesture": "hover over or press the guest action",
+        "moves": "it grows 2% on hover and shrinks 2% on press, and a light sheen crosses the pill over 1s",
+        "same": "the same 300ms scale and the same sheen; reduced motion keeps the colour change and drops the travel"
+      },
+      {
+        "gesture": "the connection loads",
+        "moves": "a pulse skeleton holds the screen's height until the detail arrives",
+        "same": "the same pulse skeleton; reduced motion shows the settled screen without the pulse"
+      }
+    ]
+  }
+}

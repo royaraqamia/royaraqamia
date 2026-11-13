@@ -387,6 +387,33 @@
       ]
     },
     {
+      "surface": "mcp-app-detail",
+      "web": {
+        "route": "/mcp/apps/e2e-connection"
+      },
+      "contract": "shared/visual/mcp-app-detail.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/mcp/ConnectionScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.13,
+            "length": 2.0
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.1176,
+            "alignment": {
+              "dx": 2,
+              "dy": 2
+            }
+          }
+        }
+      ]
+    },
+    {
       "surface": "community",
       "web": {
         "route": "/community"

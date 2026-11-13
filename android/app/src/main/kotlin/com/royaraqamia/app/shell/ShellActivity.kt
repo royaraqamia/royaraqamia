@@ -568,9 +568,9 @@ class ShellActivity : ComponentActivity() {
                                         )
                                     else ->
                                         McpRoutes.connectionOf(current)?.let { connectionId ->
-                                            // The post-connect screen (#1256): ported and
-                                            // off until its gate passes, so the document
-                                            // still opens on top of it (ADR-0117).
+                                            // The post-connect screen (#1256): it passed the
+                                            // visual gate, so the shell draws it and the
+                                            // document no longer opens on top (ADR-0118).
                                             ConnectionScreen(
                                                 repository = graph.mcpConnection,
                                                 store = graph.marketplace,

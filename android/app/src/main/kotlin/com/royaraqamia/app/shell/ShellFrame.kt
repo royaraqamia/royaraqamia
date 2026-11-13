@@ -109,7 +109,7 @@ fun ShellFrame(
     signedIn: Boolean = false,
     /** The sign-in door the store's guest prompt opens. */
     onSignIn: () -> Unit = {},
-    /** The store's connection screen (`/mcp/apps/<id>`), still the document. */
+    /** The store's connection screen (`/mcp/apps/<id>`), drawn natively (#1256). */
     onOpenConnection: (String) -> Unit = {},
     /** The provider's consent page: a third-party origin the browser visits. */
     onOpenExternal: (String) -> Unit = {},
