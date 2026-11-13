@@ -1,5 +1,12 @@
 # Vercel Usage Budget (Hobby)
 
+> **Historical, since 2026-11-13.** The origin moved to Render
+> ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md)) and the Vercel
+> Git connection was removed. Nothing on this page is an operating instruction any more — the
+> prune workflow and its `npm run prune:deployments` script were deleted with the migration.
+> It is kept because the measurements are why the migration happened, and because a return to
+> Vercel would start from exactly these caps.
+
 On 2026-10-12 the project hit **Exceeded free resources** on Vercel Hobby:
 `Fluid Active CPU 5h 6m / 4h`. Everything else was inside its cap but climbing
 (`Functions Storage 7.06/10 GB`, `Deployment Storage 4.88/10 GB`,
