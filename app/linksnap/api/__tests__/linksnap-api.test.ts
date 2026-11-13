@@ -32,6 +32,9 @@ vi.mock('next/server', () => ({
     status: number;
     url?: string;
     type?: string;
+    // The counted-action route mints the visitor id it counts against
+    // (ADR-0176), so the double has to model a response that can set one.
+    cookies = { set: vi.fn() };
     constructor(body: unknown, init?: { status?: number }) {
       this.body = body;
       this.status = init?.status ?? 200;
