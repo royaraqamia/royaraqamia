@@ -51,7 +51,7 @@ site with no readers.
 - **`rar_visitor` is now minted at the moment it is used.** A visitor who clears cookies mid-session
   gets a new id at their next counted action rather than at their next page view — the same reset
   window as before, moved one event later.
-- **The last per-visitor cookie standing is `rr-country`, and it is a candidate for deletion.** The
-  forms could take the country as a prop from the server component that renders them, since a form
-  page is dynamic anyway. That is a smaller refactor than this one and it would remove the cookie
-  entirely; it is left as a follow-up rather than smuggled in here.
+- **No per-visitor cookie is left.** `rr-country` was the last one, and it is gone: the four form
+  pages read the platform header and hand the value down (`backend/transport/geo.ts` →
+  `GeoCountryProvider`), so a document varies only by URL. A cookie a person writes by hand is still
+  honoured as an override, but nothing emits one.

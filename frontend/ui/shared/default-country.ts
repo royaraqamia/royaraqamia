@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import { DEFAULT_COUNTRY, getCountryByIso, type CountryDialCode } from './country-dial-codes';
 import { readCountryCookie } from './country-cookie';
+import { useGeoCountry } from './geo-country';
 
 /**
  * Best-effort IANA timezone → ISO 3166-1 alpha-2 map. Only zones that map to a
@@ -204,6 +205,8 @@ export function isoFromLanguage(language: string | null | undefined): string | n
 
 export interface DefaultCountrySignals {
   explicitIso?: string | null;
+  /** The platform's IP country, passed down from the page (ADR-0176). */
+  geo?: string | null;
   cookie?: string | null;
   timeZone?: string | null;
   language?: string | null;
@@ -211,11 +214,13 @@ export interface DefaultCountrySignals {
 
 /**
  * Picks the default country from the strongest available signal: an explicit
- * override, then the geo cookie, then timezone, then language, then `SY`.
+ * override, then the platform's geo header, then a hand-written cookie, then
+ * timezone, then language, then `SY`.
  */
 export function resolveDefaultCountry(signals: DefaultCountrySignals): CountryDialCode {
   const candidates = [
     signals.explicitIso,
+    signals.geo,
     signals.cookie,
     isoFromTimezone(signals.timeZone),
     isoFromLanguage(signals.language),
@@ -228,19 +233,23 @@ export function resolveDefaultCountry(signals: DefaultCountrySignals): CountryDi
 }
 
 /**
- * Location-based default country. The first render matches the server (only the
- * explicit override is applied), then a mount effect layers in the cookie and
- * browser signals — keeping static pages prerendered and avoiding hydration
- * mismatches at the cost of one post-hydration update.
+ * Location-based default country. The first render matches the server (the
+ * explicit override and the platform's country are both known before hydration),
+ * then a mount effect layers in the browser's own signals for a page that has
+ * neither — keeping the document free of per-visitor cookies, which is what makes
+ * it cacheable (ADR-0176).
  */
 export function useDefaultCountry(explicitIso?: string | null): CountryDialCode {
+  const geo = useGeoCountry();
+  const strongest = explicitIso ?? geo ?? null;
+
   const [country, setCountry] = React.useState<CountryDialCode>(() =>
-    resolveDefaultCountry({ explicitIso })
+    resolveDefaultCountry({ explicitIso: strongest })
   );
 
   React.useEffect(() => {
-    if (explicitIso) {
-      setCountry(resolveDefaultCountry({ explicitIso }));
+    if (strongest) {
+      setCountry(resolveDefaultCountry({ explicitIso: strongest }));
       return;
     }
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -251,7 +260,7 @@ export function useDefaultCountry(explicitIso?: string | null): CountryDialCode 
         language: navigator.language,
       })
     );
-  }, [explicitIso]);
+  }, [strongest]);
 
   return country;
 }

@@ -1,12 +1,16 @@
+import { COUNTRY_ISO_PATTERN } from '@/shared/contracts/geo';
+
 /**
- * Name of the cookie that carries the visitor's ISO 3166-1 alpha-2 country.
- * Set by `proxy.ts` from the platform geo header so the client can resolve a
- * location-based default without a network round-trip.
+ * Name of the cookie that may carry the visitor's ISO 3166-1 alpha-2 country.
+ *
+ * Nothing sets it any more — the platform's header reaches the form as a server
+ * prop (`frontend/ui/shared/geo-country.tsx`), because a document that sets a
+ * cookie cannot be cached (ADR-0176). It is still read, so a value a person or a
+ * test writes by hand remains an override rather than being ignored.
  */
 export const COUNTRY_COOKIE_NAME = 'rr-country';
 
-/** A strict ISO 3166-1 alpha-2 shape check. */
-export const COUNTRY_ISO_PATTERN = /^[A-Za-z]{2}$/;
+export { COUNTRY_ISO_PATTERN };
 
 /** Reads the country code from a `document.cookie`-style string, or null. */
 export function readCountryCookie(cookieString: string): string | null {
