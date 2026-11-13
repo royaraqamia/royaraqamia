@@ -1,7 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type { FollowCounts } from '@/shared/contracts/follows';
-import { guardRepositoryMethods, isNotFoundError } from '@/backend/shared/repository-error';
+import {
+  guardRepositoryMethods,
+  isNotFoundError,
+  isRangeNotSatisfiableError,
+} from '@/backend/shared/repository-error';
 
 /**
  * The follow graph, as rows.
@@ -92,6 +96,45 @@ export function createFollowsRepository(supabase: SupabaseClient<Database>): Fol
     return { blockedByViewer, blockedViewer };
   }
 
+  /**
+   * One page of the graph, and the total behind it.
+   *
+   * A page past the last row is a real request with an empty answer, not a
+   * failure: PostgREST refuses a range beyond the rows with 416, and that
+   * response carries no count, so the total is read on its own - one extra
+   * query, only on the path that used to answer 500.
+   */
+  async function pageOfIds(
+    matchColumn: 'follower_id' | 'followee_id',
+    idColumn: 'follower_id' | 'followee_id',
+    userId: string,
+    page: number,
+    pageSize: number
+  ): Promise<{ ids: string[]; total: number }> {
+    const from = (page - 1) * pageSize;
+
+    const { data, error, count } = await supabase
+      .from('follows')
+      .select('follower_id, followee_id', { count: 'exact' })
+      .eq(matchColumn, userId)
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1);
+
+    if (!error) {
+      return { ids: (data ?? []).map((row) => row[idColumn]), total: count ?? 0 };
+    }
+
+    if (!isRangeNotSatisfiableError(error)) throw error;
+
+    const counted = await supabase
+      .from('follows')
+      .select('follower_id', { count: 'exact', head: true })
+      .eq(matchColumn, userId);
+
+    if (counted.error) throw counted.error;
+    return { ids: [], total: counted.count ?? 0 };
+  }
+
   return guardRepositoryMethods<FollowsRepository>({
     async follow(followerId, followeeId) {
       const { error } = await supabase
@@ -143,31 +186,11 @@ export function createFollowsRepository(supabase: SupabaseClient<Database>): Fol
     },
 
     async listFollowerIds(userId, page, pageSize) {
-      const from = (page - 1) * pageSize;
-
-      const { data, error, count } = await supabase
-        .from('follows')
-        .select('follower_id', { count: 'exact' })
-        .eq('followee_id', userId)
-        .order('created_at', { ascending: false })
-        .range(from, from + pageSize - 1);
-
-      if (error) throw error;
-      return { ids: (data ?? []).map((row) => row.follower_id), total: count ?? 0 };
+      return pageOfIds('followee_id', 'follower_id', userId, page, pageSize);
     },
 
     async listFollowingIds(userId, page, pageSize) {
-      const from = (page - 1) * pageSize;
-
-      const { data, error, count } = await supabase
-        .from('follows')
-        .select('followee_id', { count: 'exact' })
-        .eq('follower_id', userId)
-        .order('created_at', { ascending: false })
-        .range(from, from + pageSize - 1);
-
-      if (error) throw error;
-      return { ids: (data ?? []).map((row) => row.followee_id), total: count ?? 0 };
+      return pageOfIds('follower_id', 'followee_id', userId, page, pageSize);
     },
 
     async isBlockedEitherWay(a, b): Promise<boolean> {

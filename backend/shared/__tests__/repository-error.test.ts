@@ -6,6 +6,8 @@ vi.mock('@/backend/shared/logger', () => ({ logger: { error: vi.fn() } }));
 import {
   RepositoryError,
   guardRepositoryMethods,
+  isNotFoundError,
+  isRangeNotSatisfiableError,
   isRepositoryError,
 } from '@/backend/shared/repository-error';
 
@@ -43,5 +45,27 @@ describe('guardRepositoryMethods', () => {
     await repository.fail().catch((error) => {
       expect(isRepositoryError(error)).toBe(true);
     });
+  });
+});
+
+describe('isRangeNotSatisfiableError', () => {
+  // #1369: a page past the last row is an empty answer, not a failed read.
+  it('recognises the 416 PostgREST raises for a range past the last row', () => {
+    expect(
+      isRangeNotSatisfiableError({
+        message: 'Requested range not satisfiable',
+        code: 'PGRST103',
+      })
+    ).toBe(true);
+  });
+
+  it('recognises it by its sentence when the body carried no code', () => {
+    expect(isRangeNotSatisfiableError(new Error('Requested range not satisfiable'))).toBe(true);
+  });
+
+  it('leaves every other read failure as a failure', () => {
+    expect(isRangeNotSatisfiableError({ message: 'db down', code: 'PGRST500' })).toBe(false);
+    expect(isRangeNotSatisfiableError(new Error('connection reset'))).toBe(false);
+    expect(isNotFoundError({ message: 'no rows', code: 'PGRST116' })).toBe(true);
   });
 });
