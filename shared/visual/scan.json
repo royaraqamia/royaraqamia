@@ -1,0 +1,271 @@
+{
+  "surface": "scan",
+  "route": "/scan",
+  "notes": "The Scanner at 393 CSS px: the title, the card's viewfinder, the start control, the upload picker's box and its hint. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. The camera itself is a live MediaStream and no client can record it as evidence, so the states are the frame and the cards around it: `at-rest` (the camera not started), `denied` (the permission refused, the page's own sentence) and `result` (a decoded payload, the same fixture symbol both decoders read). The result state is recorded from the upload path: it is the page's real decode of the fixture, not a rendered mock. Widths of the buttons are left out because they are the run of their words; colours are left out because the raster proves them.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='title'] h1"
+          },
+          "app": {
+            "tag": "scan-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "card",
+          "web": {
+            "selector": "[data-visual='card']"
+          },
+          "app": {
+            "tag": "scan-card"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "viewfinder",
+          "web": {
+            "selector": "[data-visual='viewfinder']"
+          },
+          "app": {
+            "tag": "scan-viewfinder"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "start",
+          "web": {
+            "selector": "[data-visual='start']"
+          },
+          "app": {
+            "tag": "scan-start"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "upload",
+          "web": {
+            "selector": "[data-visual='upload']"
+          },
+          "app": {
+            "tag": "scan-upload"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "upload-hint",
+          "web": {
+            "selector": "[data-visual='upload-hint']"
+          },
+          "app": {
+            "tag": "scan-upload-hint"
+          },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "upload-button",
+          "web": {
+            "selector": "[data-visual='upload-button']"
+          },
+          "app": {
+            "tag": "scan-upload-button"
+          },
+          "properties": ["height", "fontSize"]
+        }
+      ]
+    },
+    {
+      "name": "denied",
+      "origin": "title",
+      "capture": "card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='title'] h1"
+          },
+          "app": {
+            "tag": "scan-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "card",
+          "web": {
+            "selector": "[data-visual='card']"
+          },
+          "app": {
+            "tag": "scan-card"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "viewfinder",
+          "web": {
+            "selector": "[data-visual='viewfinder']"
+          },
+          "app": {
+            "tag": "scan-viewfinder"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "start",
+          "web": {
+            "selector": "[data-visual='start']"
+          },
+          "app": {
+            "tag": "scan-start"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "notice",
+          "web": {
+            "selector": "[data-visual='notice']"
+          },
+          "app": {
+            "tag": "scan-notice"
+          },
+          "properties": ["top", "width", "height", "radius", "fontSize"]
+        },
+        {
+          "name": "upload",
+          "web": {
+            "selector": "[data-visual='upload']"
+          },
+          "app": {
+            "tag": "scan-upload"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "upload-hint",
+          "web": {
+            "selector": "[data-visual='upload-hint']"
+          },
+          "app": {
+            "tag": "scan-upload-hint"
+          },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "upload-button",
+          "web": {
+            "selector": "[data-visual='upload-button']"
+          },
+          "app": {
+            "tag": "scan-upload-button"
+          },
+          "properties": ["height", "fontSize"]
+        }
+      ]
+    },
+    {
+      "name": "result",
+      "origin": "title",
+      "capture": "result-card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='title'] h1"
+          },
+          "app": {
+            "tag": "scan-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "result-card",
+          "web": {
+            "selector": "[data-visual='result-card']"
+          },
+          "app": {
+            "tag": "scan-result-card"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "result-badges",
+          "web": {
+            "selector": "[data-visual='result-badges']"
+          },
+          "app": {
+            "tag": "scan-result-badges"
+          },
+          "properties": ["top", "height", "columnGap"]
+        },
+        {
+          "name": "result-payload",
+          "web": {
+            "selector": "[data-visual='result-payload']"
+          },
+          "app": {
+            "tag": "scan-result-payload"
+          },
+          "properties": ["top", "height", "radius"]
+        },
+        {
+          "name": "result-actions",
+          "web": {
+            "selector": "[data-visual='result-actions']"
+          },
+          "app": {
+            "tag": "scan-result-actions"
+          },
+          "properties": ["top", "height", "columnGap"]
+        },
+        {
+          "name": "result-copy",
+          "web": {
+            "selector": "[data-visual='result-copy']"
+          },
+          "app": {
+            "tag": "scan-result-copy"
+          },
+          "properties": ["width", "height", "fontSize"]
+        },
+        {
+          "name": "result-rescan",
+          "web": {
+            "selector": "[data-visual='result-rescan']"
+          },
+          "app": {
+            "tag": "scan-result-rescan"
+          },
+          "properties": ["width", "height", "fontSize"]
+        }
+      ]
+    }
+  ],
+  "motion": {
+    "notes": "The Scanner has no entrance animation of its own: the camera is a live preview and the result card replaces it as soon as a code is read. What moves is the controls' state, not the page - the start control spins while the camera opens, the upload control spins while a picture decodes, and the two buttons lift and settle on hover and press. The same means the same spinner and the same button states, with reduced motion dropping the lift and keeping the progress rings.",
+    "entries": [
+      {
+        "element": "start",
+        "gesture": "press the start-camera control until the permission and the preview answer",
+        "moves": "the glyph is replaced by a spinning progress ring and the label becomes the opening sentence",
+        "same": "the same spinner, label and in-flight state; reduced motion keeps the ring because it reports progress"
+      },
+      {
+        "element": "upload-button",
+        "gesture": "choose a picture and wait for the decoder",
+        "moves": "the glyph is replaced by a spinning progress ring and the label becomes the reading sentence",
+        "same": "the same spinner, label and in-flight state; reduced motion keeps the ring because it reports progress"
+      },
+      {
+        "element": "result-rescan",
+        "gesture": "hover over or press a control in the result card",
+        "moves": "the button lifts 2px on hover and settles 2% smaller on press",
+        "same": "the same 2px lift, 2% press scale and focus ring; reduced motion keeps the colour change only"
+      }
+    ]
+  }
+}

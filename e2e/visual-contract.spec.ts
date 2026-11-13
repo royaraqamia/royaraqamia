@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
+import QRCode from 'qrcode';
 import {
   clearVisualCommunityPosts,
   clearVisualLink,
@@ -572,6 +573,85 @@ const PREPARE: Record<
     await page.locator('[data-visual="services-sheet"]').waitFor({ timeout: 30_000 });
     await hideDevIndicator(page);
     await page.waitForTimeout(600);
+    await page.evaluate(() => document.fonts.ready);
+  },
+  // The Scanner at rest (#1344): the public route, with the camera not started.
+  // Nothing is seeded - the state is the page's own first paint - so the card's
+  // viewfinder, start control and upload box are the recording.
+  'scan/at-rest': async (page, visit) => {
+    await visit();
+    await page.locator('[data-visual="card"]').waitFor({ timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
+  },
+  // The camera refused (#1344): the page asks for the camera and the browser
+  // says no. The user agent names the shell, so the page draws the app's own
+  // system-settings sentence rather than the browser's - the two clients are
+  // then recording the same words. The stub is an init script because
+  // `getUserMedia` is read when the control is pressed, after the page loads.
+  'scan/denied': async (page, visit) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        value:
+          'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Mobile Safari/537.36 RoyaraqamiaShell/1.0.6+20006',
+        configurable: true,
+      });
+      Object.defineProperty(navigator, 'mediaDevices', {
+        value: {
+          getUserMedia: () =>
+            Promise.reject(new DOMException('Permission denied', 'NotAllowedError')),
+        },
+        configurable: true,
+      });
+    });
+    await visit();
+    await page.locator('[data-visual="start"]').click();
+    await page.locator('[data-visual="notice"]').waitFor({ timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
+  },
+  // A decoded payload (#1344). The picture is the Scanner's own fixture symbol,
+  // written with the same `qrcode` encoder its end-to-end spec uses, and the
+  // page's own upload, classification and result rendering run for real. The
+  // browser's detector is pinned to the fixture because this project runs under
+  // device emulation where the WASM fallback does not answer; the decoder itself
+  // is covered by `e2e/scan.spec.ts`. The payload is plain text, so no
+  // certificate lookup is made.
+  'scan/result': async (page) => {
+    const baseURL = projectBaseURL();
+    const buffer = await QRCode.toBuffer('royaraqamia.com/scan-fixture', {
+      type: 'png',
+      width: 320,
+    });
+    await page.addInitScript(() => {
+      class FixtureBarcodeDetector {
+        static async getSupportedFormats() {
+          return ['qr_code'];
+        }
+        async detect() {
+          return [
+            {
+              rawValue: 'royaraqamia.com/scan-fixture',
+              format: 'qr_code',
+              boundingBox: new DOMRectReadOnly(0, 0, 320, 320),
+            },
+          ];
+        }
+      }
+      Object.defineProperty(window, 'BarcodeDetector', {
+        value: FixtureBarcodeDetector,
+        configurable: true,
+      });
+    });
+    // The capture region only exists after the decode, so the shared `visit`
+    // cannot wait for it first: the page is navigated directly and the upload is
+    // what makes the state.
+    await page.goto(new URL('/scan', baseURL).toString(), { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-visual="card"]').waitFor({ timeout: 30_000 });
+    await page.getByLabel('اختيار صورة تحتوي على رمز').setInputFiles({
+      name: 'scan-fixture.png',
+      mimeType: 'image/png',
+      buffer,
+    });
+    await page.locator('[data-visual="result-card"]').waitFor({ timeout: 60_000 });
     await page.evaluate(() => document.fonts.ready);
   },
   // The first-run door: the same account with no apps, which is the state the

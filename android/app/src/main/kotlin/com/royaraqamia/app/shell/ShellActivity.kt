@@ -434,6 +434,7 @@ class ShellActivity : ComponentActivity() {
                                     siteUrl = BuildConfig.SITE_URL,
                                     onOpenRoute = ::openRoute,
                                     onOpenExternal = ::openExternal,
+                                    onCopy = ::copyToClipboard,
                                 )
                             // The public digest and the reader's own (#926): the
                             // page's day strip, cards and personal switch. Ported and

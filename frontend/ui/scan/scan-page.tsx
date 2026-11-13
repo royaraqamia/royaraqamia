@@ -472,7 +472,7 @@ export function ScanPage() {
           : ''}
       </p>
 
-      <header className="flex flex-col items-center gap-3 text-center">
+      <header data-visual="title" className="flex flex-col items-center gap-3 text-center">
         <SectionTitle as="h1">
           <SectionTitleHighlight>ماسح QR و Barcode</SectionTitleHighlight>
         </SectionTitle>
@@ -508,9 +508,12 @@ export function ScanPage() {
       )}
 
       <div className={cn('flex flex-col gap-4', hit && 'hidden')}>
-        <Card>
+        <Card data-visual="card">
           <CardContent className="flex flex-col gap-4">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/60 bg-black/90 sm:aspect-video">
+            <div
+              data-visual="viewfinder"
+              className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border/60 bg-black/90 sm:aspect-video"
+            >
               <video
                 ref={videoRef}
                 playsInline
@@ -531,6 +534,7 @@ export function ScanPage() {
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
                   <ScanBarcode className="size-12 text-white/80" />
                   <HeroCtaButton
+                    data-visual="start"
                     type="button"
                     onClick={() => void startCamera()}
                     isLoading={status === 'starting'}
@@ -570,6 +574,7 @@ export function ScanPage() {
 
             {error && (
               <p
+                data-visual="notice"
                 role="alert"
                 className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
               >
@@ -577,8 +582,13 @@ export function ScanPage() {
               </p>
             )}
 
-            <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border/70 p-4 text-center">
-              <p className="text-xs text-muted-foreground">أو ارفع صورة تحتوي على الرَّمز</p>
+            <div
+              data-visual="upload"
+              className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border/70 p-4 text-center"
+            >
+              <p data-visual="upload-hint" className="text-xs text-muted-foreground">
+                أو ارفع صورة تحتوي على الرَّمز
+              </p>
               <input
                 ref={fileRef}
                 type="file"
@@ -588,6 +598,7 @@ export function ScanPage() {
                 onChange={(event) => void handleFile(event)}
               />
               <Button
+                data-visual="upload-button"
                 type="button"
                 variant="outline"
                 disabled={busy || status === 'starting'}

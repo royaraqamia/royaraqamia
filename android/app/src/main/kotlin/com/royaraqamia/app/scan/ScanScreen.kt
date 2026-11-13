@@ -17,18 +17,25 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -50,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -59,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.royaraqamia.app.theme.LocalRoySpacing
@@ -74,7 +83,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** Where `/scan` has got to. The camera is open only in [Starting] and [Scanning]. */
-private enum class ScanStatus {
+internal enum class ScanStatus {
     Idle,
     Starting,
     Scanning,
@@ -106,10 +115,9 @@ fun ScanScreen(
     modifier: Modifier = Modifier,
     onOpenRoute: (String) -> Unit = {},
     onOpenExternal: (String) -> Unit = {},
+    onCopy: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
-    val spacing = LocalRoySpacing.current
-    val type = LocalRoyTypeScale.current
     val scope = rememberCoroutineScope()
     val main = remember { Handler(Looper.getMainLooper()) }
     val controller = remember { mutableStateOf<ScanCameraController?>(null) }
@@ -217,87 +225,169 @@ fun ScanScreen(
         }
     }
 
+    ScanView(
+        state =
+            ScanViewState(
+                status = status,
+                message = message,
+                hit = hit,
+                busy = busy,
+                hasCamera = hasCamera,
+                torchAvailable = torchAvailable,
+                torchOn = torchOn,
+            ),
+        siteUrl = siteUrl,
+        onStart = ::startScanning,
+        onStop = ::stopCamera,
+        onTorch = {
+            val next = !torchOn
+            controller.value?.setTorch(next)
+            torchOn = next
+        },
+        onUpload = { picture.launch("image/*") },
+        onRescan = ::startScanning,
+        onCopy = onCopy,
+        onOpenRoute = onOpenRoute,
+        onOpenExternal = onOpenExternal,
+        modifier = modifier,
+        cameraPreview = {
+            CameraPreview(
+                controller = controller,
+                generation = generation,
+                onReady = {
+                    main.post {
+                        if (controller.value != null && status == ScanStatus.Starting) {
+                            status = ScanStatus.Scanning
+                        }
+                    }
+                },
+                onFailure = {
+                    main.post {
+                        if (controller.value != null) {
+                            stopCamera()
+                            message = ScanMessages.CAMERA_FAILED
+                        }
+                    }
+                },
+                onTorchAvailable = { available -> main.post { torchAvailable = available } },
+                onFrame = { luma, width, height ->
+                    val found = ScanDecoder.decodeLuminance(luma, width, height)
+                    if (found != null) main.post { accept(found, fromCamera = true) }
+                },
+            )
+        },
+    )
+}
+
+/** What the scanner is drawing, with the camera's own state lifted out of it. */
+internal data class ScanViewState(
+    val status: ScanStatus,
+    val message: String?,
+    val hit: ScanHit?,
+    val busy: Boolean,
+    val hasCamera: Boolean,
+    val torchAvailable: Boolean,
+    val torchOn: Boolean,
+)
+
+/**
+ * The scanner's drawing, without the camera (#1344, ADR-0118).
+ *
+ * The screen holds the permission, the preview and the decode; this takes the
+ * state those produce and draws it, so the visual test can compose `at-rest`,
+ * `denied` and `result` from a fake camera without a device. The live preview is a
+ * slot because neither client can record a MediaStream as evidence: the test
+ * passes nothing, and the shipping screen passes the same [CameraPreview] it
+ * always drew.
+ */
+@Composable
+internal fun ScanView(
+    state: ScanViewState,
+    siteUrl: String,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    onTorch: () -> Unit,
+    onUpload: () -> Unit,
+    onRescan: () -> Unit,
+    onOpenRoute: (String) -> Unit,
+    onOpenExternal: (String) -> Unit,
+    onCopy: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    cameraPreview: @Composable () -> Unit = {},
+) {
+    val spacing = LocalRoySpacing.current
+    val type = LocalRoyTypeScale.current
+    val status = state.status
+    val scanning = status == ScanStatus.Scanning
+
     Column(
         modifier =
             modifier
                 .fillMaxSize()
                 .background(RoyColors.background)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = spacing.containerPadding, vertical = spacing.section),
+                .padding(horizontal = spacing.containerPadding, vertical = ScanMetrics.pageTop),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
+        verticalArrangement = Arrangement.spacedBy(ScanMetrics.titleToCard),
     ) {
         Text(
             text = ScanMessages.TITLE,
-            style = type.h1,
+            style =
+                type.h1.copy(
+                    fontSize = ScanMetrics.titleSize,
+                    lineHeight = ScanMetrics.titleLineHeight,
+                    fontWeight = ScanMetrics.titleWeight,
+                ),
             color = RoyColors.foreground,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().semantics { heading() },
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(ScanMetrics.titleHeight)
+                    .testTag(ScanMetrics.TITLE)
+                    .semantics { heading() },
         )
 
-        val current = hit
+        val current = state.hit
         if (current != null) {
             ScanResultCard(
                 hit = current,
                 siteUrl = siteUrl,
                 onOpenRoute = onOpenRoute,
                 onOpenExternal = onOpenExternal,
-                onRescan = ::startScanning,
+                onCopy = onCopy,
+                onRescan = onRescan,
             )
             return@Column
         }
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag(ScanMetrics.CARD),
             shape = Recipes.Card.radius,
             colors = CardDefaults.cardColors(containerColor = Recipes.Card.container),
             border = Recipes.Card.border,
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(Recipes.Card.padding(spacing)),
-                verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                modifier = Modifier.fillMaxWidth().padding(ScanMetrics.cardPadding),
+                verticalArrangement = Arrangement.spacedBy(ScanMetrics.cardGap),
             ) {
                 Box(
                     modifier =
                         Modifier.fillMaxWidth()
                             .aspectRatio(4f / 3f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.Black),
+                            .clip(RoundedCornerShape(ScanMetrics.viewfinderRadius))
+                            .background(Color.Black.copy(alpha = 0.9f))
+                            .testTag(ScanMetrics.VIEWFINDER),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (status == ScanStatus.Starting || status == ScanStatus.Scanning) {
-                        CameraPreview(
-                            controller = controller,
-                            generation = generation,
-                            onReady = {
-                                main.post {
-                                    if (controller.value != null &&
-                                        status == ScanStatus.Starting
-                                    ) {
-                                        status = ScanStatus.Scanning
-                                    }
-                                }
-                            },
-                            onFailure = {
-                                main.post {
-                                    if (controller.value != null) {
-                                        stopCamera()
-                                        message = ScanMessages.CAMERA_FAILED
-                                    }
-                                }
-                            },
-                            onTorchAvailable = { available -> main.post { torchAvailable = available } },
-                            onFrame = { luma, width, height ->
-                                val found = ScanDecoder.decodeLuminance(luma, width, height)
-                                if (found != null) main.post { accept(found, fromCamera = true) }
-                            },
-                        )
+                        cameraPreview()
                     }
 
                     if (status != ScanStatus.Scanning) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement =
+                                Arrangement.spacedBy(ScanMetrics.glyphToButton),
                         ) {
                             Icon(
                                 imageVector = LucideVectors.ScanBarcode,
@@ -305,8 +395,21 @@ fun ScanScreen(
                                 tint = Color.White.copy(alpha = 0.8f),
                                 modifier = Modifier.size(48.dp),
                             )
-                            if (hasCamera) {
-                                Button(onClick = ::startScanning, enabled = !busy) {
+                            if (state.hasCamera) {
+                                Button(
+                                    onClick = onStart,
+                                    enabled = !state.busy,
+                                    modifier =
+                                        Modifier.height(ScanMetrics.buttonHeight)
+                                            .testTag(ScanMetrics.START),
+                                    shape = RoyShape.pill,
+                                    contentPadding = PaddingValues(horizontal = 24.dp),
+                                    colors =
+                                        ButtonDefaults.buttonColors(
+                                            containerColor = RoyColors.primary,
+                                            contentColor = RoyColors.primaryForeground,
+                                        ),
+                                ) {
                                     if (status == ScanStatus.Starting) {
                                         CircularProgressIndicator(
                                             modifier = Modifier.size(18.dp),
@@ -315,7 +418,7 @@ fun ScanScreen(
                                         )
                                     } else {
                                         Icon(
-                                            imageVector = LucideVectors.ScanLine,
+                                            imageVector = LucideVectors.Camera,
                                             contentDescription = null,
                                             modifier = Modifier.size(Recipes.Glyph.sm),
                                         )
@@ -327,13 +430,15 @@ fun ScanScreen(
                                             } else {
                                                 ScanMessages.START
                                             },
-                                        modifier = Modifier.padding(start = 8.dp),
+                                        style =
+                                            type.body.copy(fontWeight = FontWeight.Bold),
+                                        modifier = Modifier.padding(start = 10.dp),
                                     )
                                 }
                             } else {
                                 Text(
                                     text = ScanMessages.NO_CAMERA,
-                                    style = type.xs,
+                                    style = type.xs.copy(lineHeight = 16.sp),
                                     color = Color.White.copy(alpha = 0.8f),
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -356,24 +461,18 @@ fun ScanScreen(
                         ) {
                             Text(
                                 text = ScanMessages.SCANNING_HINT,
-                                style = type.xs,
+                                style = type.xs.copy(lineHeight = 16.sp),
                                 color = Color.White.copy(alpha = 0.8f),
                             )
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                if (torchAvailable) {
-                                    TextButton(
-                                        onClick = {
-                                            val next = !torchOn
-                                            controller.value?.setTorch(next)
-                                            torchOn = next
-                                        }
-                                    ) {
+                                if (state.torchAvailable) {
+                                    TextButton(onClick = onTorch) {
                                         Text(
                                             text =
-                                                if (torchOn) {
+                                                if (state.torchOn) {
                                                     ScanMessages.TORCH_OFF
                                                 } else {
                                                     ScanMessages.TORCH_ON
@@ -381,7 +480,7 @@ fun ScanScreen(
                                         )
                                     }
                                 }
-                                OutlinedButton(onClick = ::stopCamera) {
+                                OutlinedButton(onClick = onStop) {
                                     Text(ScanMessages.STOP)
                                 }
                             }
@@ -389,31 +488,47 @@ fun ScanScreen(
                     }
                 }
 
-                message?.let { Notice(it, destructive = true) }
+                state.message?.let {
+                    Notice(
+                        it,
+                        destructive = true,
+                        icon = false,
+                        modifier = Modifier.testTag(ScanMetrics.NOTICE),
+                    )
+                }
 
                 Column(
                     modifier =
                         Modifier.fillMaxWidth()
+                            .testTag(ScanMetrics.UPLOAD)
                             .border(
                                 1.dp,
                                 RoyColors.border.copy(alpha = 0.7f),
-                                RoundedCornerShape(16.dp),
+                                RoundedCornerShape(ScanMetrics.uploadRadius),
                             )
-                            .padding(spacing.elementGapSm),
+                            .padding(ScanMetrics.uploadPadding),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(ScanMetrics.uploadGap),
                 ) {
                     Text(
                         text = ScanMessages.UPLOAD_HINT,
-                        style = type.xs,
+                        style = type.xs.copy(lineHeight = 16.sp),
                         color = RoyColors.mutedForeground,
                         textAlign = TextAlign.Center,
+                        modifier =
+                            Modifier.height(ScanMetrics.hintHeight)
+                                .testTag(ScanMetrics.UPLOAD_HINT),
                     )
                     OutlinedButton(
-                        onClick = { picture.launch("image/*") },
-                        enabled = !busy && status != ScanStatus.Starting,
+                        onClick = onUpload,
+                        enabled = !state.busy && status != ScanStatus.Starting,
+                        modifier =
+                            Modifier.height(ScanMetrics.smallButtonHeight)
+                                .testTag(ScanMetrics.UPLOAD_BUTTON),
+                        shape = RoyShape.pill,
+                        contentPadding = PaddingValues(horizontal = 24.dp),
                     ) {
-                        if (busy) {
+                        if (state.busy) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
                                 strokeWidth = 2.dp,
@@ -427,8 +542,9 @@ fun ScanScreen(
                             )
                         }
                         Text(
-                            text = if (busy) ScanMessages.READING else ScanMessages.UPLOAD,
-                            modifier = Modifier.padding(start = 8.dp),
+                            text = if (state.busy) ScanMessages.READING else ScanMessages.UPLOAD,
+                            style = type.body.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(start = 10.dp),
                         )
                     }
                 }
@@ -437,16 +553,75 @@ fun ScanScreen(
     }
 }
 
+/**
+ * The page's boxes at 393 CSS px, as one source the screen and its test share
+ * (#1344, ADR-0118). The title is the page's SectionTitle (30/37.5, extrabold,
+ * 46.5 tall with the gradient's own padding); the card's 1px border is painted
+ * inside Compose's bounds, so 20px of the page's padding plus that border is 21
+ * here, which keeps the 319px viewfinder and every box under it on the page's
+ * rows.
+ */
+internal object ScanMetrics {
+    const val TITLE = "scan-title"
+    const val CARD = "scan-card"
+    const val VIEWFINDER = "scan-viewfinder"
+    const val START = "scan-start"
+    const val NOTICE = "scan-notice"
+    const val UPLOAD = "scan-upload"
+    const val UPLOAD_HINT = "scan-upload-hint"
+    const val UPLOAD_BUTTON = "scan-upload-button"
+    const val RESULT_CARD = "scan-result-card"
+    const val RESULT_BADGES = "scan-result-badges"
+    const val RESULT_PAYLOAD = "scan-result-payload"
+    const val RESULT_ACTIONS = "scan-result-actions"
+    const val RESULT_COPY = "scan-result-copy"
+    const val RESULT_RESCAN = "scan-result-rescan"
+
+    val pageTop = 40.dp
+    val titleToCard = 24.dp
+    val titleSize = 30.sp
+    val titleLineHeight = 37.5.sp
+    val titleHeight = 46.5.dp
+    val titleWeight = FontWeight.ExtraBold
+
+    val cardPadding = 21.dp
+    val cardRadius = 16.dp
+    val cardGap = 16.dp
+    val viewfinderRadius = 16.dp
+    val glyphToButton = 16.dp
+    val buttonHeight = 48.dp
+    val smallButtonHeight = 48.dp
+    val uploadPadding = 17.dp
+    val uploadGap = 12.dp
+    val uploadRadius = 12.dp
+    val hintHeight = 16.dp
+    val noticeRadius = 12.dp
+    val noticePadding = 12.dp
+
+    val resultBadgeHeight = 24.dp
+    val resultPayloadRadius = 12.dp
+    val resultPayloadMinHeight = 45.dp
+    val resultPadding = 12.dp
+    val resultGap = 16.dp
+
+    /** The button and body sizes the page's `text-base` and `text-xs` resolve to. */
+    val buttonTextSize = 16
+    val buttonTextWeight = FontWeight.Bold.weight
+    val hintTextSize = 12
+    val noticeTextSize = 14
+}
+
 /** The result the page draws after a code is read: payload, destination, action. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ScanResultCard(
     hit: ScanHit,
     siteUrl: String,
     onOpenRoute: (String) -> Unit,
     onOpenExternal: (String) -> Unit,
+    onCopy: (String) -> Unit,
     onRescan: () -> Unit,
 ) {
-    val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val classification = remember(hit) { ScanClassifier.classify(hit.rawValue) }
     val certificateCode =
@@ -457,24 +632,29 @@ private fun ScanResultCard(
     val actionLabel = classification.actionLabel
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag(ScanMetrics.RESULT_CARD),
         shape = Recipes.Card.radius,
         colors = CardDefaults.cardColors(containerColor = Recipes.Card.container),
         border = Recipes.Card.border,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(Recipes.Card.padding(spacing)),
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            modifier = Modifier.fillMaxWidth().padding(ScanMetrics.cardPadding),
+            verticalArrangement = Arrangement.spacedBy(ScanMetrics.resultGap),
         ) {
             Row(
+                modifier = Modifier.testTag(ScanMetrics.RESULT_BADGES),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
+                Row(
                     modifier =
-                        Modifier.clip(RoyShape.pill)
-                            .background(RoyColors.primary.copy(alpha = 0.15f))
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        Modifier.height(ScanMetrics.resultBadgeHeight)
+                            .clip(RoyShape.pill)
+                            .background(RoyColors.primary.copy(alpha = 0.1f))
+                            .border(1.dp, RoyColors.primary.copy(alpha = 0.3f), RoyShape.pill)
+                            .padding(horizontal = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = ScanClassifier.kindLabel(classification.kind),
@@ -487,27 +667,32 @@ private fun ScanResultCard(
                     style = type.xs,
                     color = RoyColors.mutedForeground,
                     modifier =
-                        Modifier.border(1.dp, RoyColors.border.copy(alpha = 0.6f), RoyShape.pill)
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        Modifier.height(ScanMetrics.resultBadgeHeight)
+                            .border(1.dp, RoyColors.border.copy(alpha = 0.6f), RoyShape.pill)
+                            .padding(horizontal = 10.dp)
+                            .wrapContentHeight(Alignment.CenterVertically),
                 )
             }
 
             Box(
                 modifier =
                     Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .testTag(ScanMetrics.RESULT_PAYLOAD)
+                        .heightIn(min = ScanMetrics.resultPayloadMinHeight)
+                        .clip(RoundedCornerShape(ScanMetrics.resultPayloadRadius))
                         .background(RoyColors.muted.copy(alpha = 0.4f))
                         .border(
                             1.dp,
                             RoyColors.border.copy(alpha = 0.6f),
-                            RoundedCornerShape(12.dp),
+                            RoundedCornerShape(ScanMetrics.resultPayloadRadius),
                         )
-                        .padding(12.dp),
+                        .padding(ScanMetrics.resultPadding),
             ) {
                 Text(
                     text = ScanClassifier.truncateForDisplay(classification.value),
                     style =
                         type.xs.copy(
+                            lineHeight = 19.5.sp,
                             fontFamily = FontFamily.Monospace,
                             textDirection = TextDirection.Ltr,
                         ),
@@ -518,7 +703,7 @@ private fun ScanResultCard(
             classification.host?.let { host ->
                 Text(
                     text = "${ScanMessages.DESTINATION} $host",
-                    style = type.xs,
+                    style = type.xs.copy(lineHeight = 16.sp),
                     color = RoyColors.mutedForeground,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -545,10 +730,11 @@ private fun ScanResultCard(
                 DetailRow(ScanMessages.OTP_TYPE, otp.type, ltr = true)
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
+            FlowRow(
+                modifier =
+                    Modifier.fillMaxWidth().testTag(ScanMetrics.RESULT_ACTIONS),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (action != null && actionLabel != null) {
                     Button(
@@ -558,24 +744,55 @@ private fun ScanResultCard(
                             } else {
                                 onOpenExternal(action)
                             }
-                        }
+                        },
+                        modifier = Modifier.height(ScanMetrics.smallButtonHeight),
+                        shape = RoyShape.pill,
+                        contentPadding = PaddingValues(horizontal = 24.dp),
                     ) {
-                        Text(actionLabel)
+                        Text(actionLabel, style = type.body.copy(fontWeight = FontWeight.Bold))
                     }
                 }
-                OutlinedButton(onClick = onRescan) {
+                OutlinedButton(
+                    onClick = { onCopy(classification.value) },
+                    modifier =
+                        Modifier.height(ScanMetrics.smallButtonHeight)
+                            .testTag(ScanMetrics.RESULT_COPY),
+                    shape = RoyShape.pill,
+                    contentPadding = PaddingValues(horizontal = 26.dp),
+                ) {
+                    Icon(
+                        imageVector = LucideVectors.Copy,
+                        contentDescription = null,
+                        modifier = Modifier.size(Recipes.Glyph.sm),
+                    )
+                    Text(
+                        text = ScanMessages.COPY,
+                        style = type.body.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(start = 10.dp),
+                    )
+                }
+                TextButton(
+                    onClick = onRescan,
+                    modifier =
+                        Modifier.height(ScanMetrics.smallButtonHeight)
+                            .testTag(ScanMetrics.RESULT_RESCAN),
+                    contentPadding = PaddingValues(horizontal = 26.dp),
+                ) {
                     Icon(
                         imageVector = LucideVectors.RefreshCw,
                         contentDescription = null,
                         modifier = Modifier.size(Recipes.Glyph.sm),
                     )
-                    Text(ScanMessages.RESCAN, modifier = Modifier.padding(start = 8.dp))
+                    Text(
+                        text = ScanMessages.RESCAN,
+                        style = type.body.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(start = 10.dp),
+                    )
                 }
             }
         }
     }
 }
-
 @Composable
 private fun DetailRow(label: String, value: String, ltr: Boolean = false) {
     val type = LocalRoyTypeScale.current
@@ -599,29 +816,42 @@ private fun DetailRow(label: String, value: String, ltr: Boolean = false) {
 }
 
 @Composable
-private fun Notice(text: String, destructive: Boolean) {
+private fun Notice(
+    text: String,
+    destructive: Boolean,
+    modifier: Modifier = Modifier,
+    icon: Boolean = true,
+) {
     val type = LocalRoyTypeScale.current
     val tone = if (destructive) RoyColors.destructive else RoyColors.warning
     Row(
         modifier =
-            Modifier.fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(ScanMetrics.noticeRadius))
                 .background(tone.copy(alpha = 0.1f))
-                .border(1.dp, tone.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                .padding(12.dp)
+                .border(
+                    1.dp,
+                    tone.copy(alpha = 0.3f),
+                    RoundedCornerShape(ScanMetrics.noticeRadius),
+                )
+                .padding(ScanMetrics.noticePadding)
                 .semantics { liveRegion = LiveRegionMode.Polite },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Icon(
-            imageVector = if (destructive) LucideVectors.TriangleAlert else LucideVectors.ShieldAlert,
-            contentDescription = null,
-            tint = tone,
-            modifier = Modifier.size(Recipes.Glyph.sm),
-        )
+        if (icon) {
+            Icon(
+                imageVector =
+                    if (destructive) LucideVectors.TriangleAlert else LucideVectors.ShieldAlert,
+                contentDescription = null,
+                tint = tone,
+                modifier = Modifier.size(Recipes.Glyph.sm),
+            )
+        }
         Text(
             text = text,
-            style = type.xs,
+            style = type.small.copy(lineHeight = 20.sp),
             color = tone,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -755,7 +985,7 @@ private fun displayRotation(context: Context): Int =
         .getOrDefault(Surface.ROTATION_0)
 
 /** The page's words, in one place until the gate slice pairs the screen. */
-private object ScanMessages {
+internal object ScanMessages {
     const val TITLE = "ماسح QR و Barcode"
     const val START = "تشغيل الكاميرا"
     const val STARTING = "جاري تشغيل الكاميرا…"
@@ -767,6 +997,7 @@ private object ScanMessages {
     const val UPLOAD = "اختيار صورة"
     const val READING = "جاري القراءة…"
     const val RESCAN = "مسح رمز آخر"
+    const val COPY = "نسخ المحتوى"
     const val DESTINATION = "الوجهة الحقيقيَّة:"
     const val YES = "نعم"
     const val WIFI_NETWORK = "اسم الشَّبكة"
@@ -776,6 +1007,7 @@ private object ScanMessages {
     const val OTP_ISSUER = "الجهة"
     const val OTP_ACCOUNT = "الحساب"
     const val OTP_TYPE = "النَّوع"
+    const val FIXTURE_PAYLOAD = "royaraqamia.com/scan-fixture"
     const val DECEPTIVE =
         "هذا الرَّابط يخفي وجهته الحقيقيَّة: نطاق مُشابه أو معلومات دخول مضمَّنة. لا تُدخِل عليه أيَّ بيانات."
     const val NO_CAMERA =
