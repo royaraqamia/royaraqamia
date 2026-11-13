@@ -22,7 +22,7 @@ const target: PublicUser = {
 
 function makeService(overrides: Record<string, unknown> = {}) {
   const follows = {
-    follow: vi.fn().mockResolvedValue(undefined),
+    follow: vi.fn().mockResolvedValue(true),
     unfollow: vi.fn().mockResolvedValue(undefined),
     isFollowing: vi.fn().mockResolvedValue(false),
     counts: vi.fn().mockResolvedValue({ target: { followers: 3, following: 5 } }),
@@ -68,6 +68,39 @@ describe('FollowsService.follow', () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: 'target', type: 'new_follower' })
     );
+  });
+
+  // #1371: a repeat follow is the same edge, and the recipient has already been
+  // told. Seven notifications for one edge is what this pins down.
+  it('stays silent when the edge was already there', async () => {
+    const { service, follows, notify, users } = makeService({
+      follow: vi.fn().mockResolvedValue(false),
+    });
+
+    const result = await service.follow('viewer', 'target');
+
+    expect(result.state).toBe('following');
+    expect(follows.follow).toHaveBeenCalledWith('viewer', 'target');
+    expect(notify).not.toHaveBeenCalled();
+    // Nobody was told, so there was nothing to name.
+    expect(users.getById).not.toHaveBeenCalled();
+  });
+
+  // Two requests for the same pair: the database writes one edge and hands the
+  // row to one caller, so exactly one «بدأ متابعتك» goes out.
+  it('tells the member once when two follows of the pair race', async () => {
+    const follow = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    const { service, notify } = makeService({ follow });
+
+    const [first, second] = await Promise.all([
+      service.follow('viewer', 'target'),
+      service.follow('viewer', 'target'),
+    ]);
+
+    expect(first.state).toBe('following');
+    expect(second.state).toBe('following');
+    expect(follow).toHaveBeenCalledTimes(2);
+    expect(notify).toHaveBeenCalledTimes(1);
   });
 
   it('answers self without writing anything', async () => {

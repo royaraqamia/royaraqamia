@@ -181,3 +181,55 @@ describe('createFollowsRepository.listFollowingIds', () => {
     });
   });
 });
+
+/**
+ * A client for one write: `.upsert(values, options)` hands back the builder and
+ * `.select()` is the terminal read. `data` is what PostgREST answers - a row
+ * when this call wrote the edge, nothing when the pair was already there.
+ */
+function createFollowClient(options: {
+  data: Array<{ follower_id: string }> | null;
+  error?: unknown;
+}) {
+  const select = vi.fn(async () => ({ data: options.data, error: options.error ?? null }));
+  const upsert = vi.fn(() => ({ select }));
+
+  const from = vi.fn((table: string) => {
+    if (table !== 'follows') throw new Error(`unexpected table: ${table}`);
+    return { upsert };
+  });
+
+  return { supabase: { from } as unknown as SupabaseClient<Database>, upsert };
+}
+
+describe('createFollowsRepository.follow', () => {
+  it('answers true for the insert that wrote the edge', async () => {
+    const { supabase, upsert } = createFollowClient({ data: [{ follower_id: 'viewer' }] });
+    const repository = createFollowsRepository(supabase);
+
+    await expect(repository.follow('viewer', 'target')).resolves.toBe(true);
+    // The pair is the conflict target, so an unrelated unique violation still
+    // fails instead of being read as a repeat.
+    expect(upsert).toHaveBeenCalledWith(
+      { follower_id: 'viewer', followee_id: 'target' },
+      { onConflict: 'follower_id,followee_id', ignoreDuplicates: true }
+    );
+  });
+
+  // #1371: a repeat used to come back 23505, which the repository swallowed into
+  // `void` - so the service could not tell a new follow from a retried one and
+  // notified again. A conflict is now "no row written", not "success".
+  it('answers false when the pair was already there', async () => {
+    const { supabase } = createFollowClient({ data: [] });
+    const repository = createFollowsRepository(supabase);
+
+    await expect(repository.follow('viewer', 'target')).resolves.toBe(false);
+  });
+
+  it('still fails on a write error that is not a duplicate pair', async () => {
+    const { supabase } = createFollowClient({ data: null, error: DB_ERROR });
+    const repository = createFollowsRepository(supabase);
+
+    await expect(repository.follow('viewer', 'target')).rejects.toBeInstanceOf(RepositoryError);
+  });
+});
