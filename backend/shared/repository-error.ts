@@ -82,11 +82,29 @@ export function guardRepositoryMethods<T extends object>(repository: T): T {
 // absence, not a failure, so callers keep returning `null`.
 const POSTGREST_NO_ROWS = 'PGRST116';
 
-export function isNotFoundError(error: unknown): boolean {
+// PostgREST refuses a range that begins past the last row with 416 and this
+// code. That answer is "this page holds no rows", not "the read failed", so a
+// paged read can turn it into an empty page instead of a 500. The sentence is
+// the fallback for a 416 whose body did not carry a code.
+const POSTGREST_RANGE_NOT_SATISFIABLE = 'PGRST103';
+const RANGE_NOT_SATISFIABLE_MESSAGE = 'Requested range not satisfiable';
+
+function hasCode(error: unknown, code: string): boolean {
   return (
     typeof error === 'object' &&
     error !== null &&
     'code' in error &&
-    (error as { code?: unknown }).code === POSTGREST_NO_ROWS
+    (error as { code?: unknown }).code === code
+  );
+}
+
+export function isNotFoundError(error: unknown): boolean {
+  return hasCode(error, POSTGREST_NO_ROWS);
+}
+
+export function isRangeNotSatisfiableError(error: unknown): boolean {
+  return (
+    hasCode(error, POSTGREST_RANGE_NOT_SATISFIABLE) ||
+    describeCause(error).includes(RANGE_NOT_SATISFIABLE_MESSAGE)
   );
 }

@@ -49,6 +49,14 @@ export default async function FollowersPage(props: {
   }
   if (!data.page || data.username !== handle) notFound();
 
+  // A page past the end is not an empty list - the list has rows, and
+  // «لا يوجد متابِعون بعد.» would be a lie about them. Send the reader to the
+  // last page that exists; a list with no rows has exactly page 1.
+  const lastPage = Math.max(1, Math.ceil(data.page.total / FOLLOW_LIST_PAGE_SIZE));
+  if (requested > lastPage) {
+    redirect(`/u/${encodeURIComponent(handle)}/followers?page=${lastPage}`);
+  }
+
   return (
     <div className="mx-auto max-w-4xl">
       <FollowListView
