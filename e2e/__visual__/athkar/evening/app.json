@@ -1,0 +1,52 @@
+{
+  "surface": "athkar",
+  "elements": {
+    "title": {
+      "top": 24.0,
+      "height": 43.63636,
+      "fontSize": 30.0,
+      "fontWeight": 800,
+      "lineHeight": 34.5
+    },
+    "tabs": {
+      "top": 99.63636,
+      "height": 44.000008,
+      "rowGap": 8.0
+    },
+    "tab-morning": {
+      "height": 40.000008,
+      "fontSize": 14.0,
+      "fontWeight": 700,
+      "paddingLeft": 16.0,
+      "paddingRight": 16.0
+    },
+    "list": {
+      "top": 167.63637,
+      "width": 360.72726,
+      "rowGap": 16.0
+    },
+    "first-card": {
+      "top": 167.63637,
+      "width": 360.72726,
+      "height": 371.27277,
+      "radius": 24.0,
+      "paddingTop": 20.0,
+      "paddingLeft": 20.0
+    },
+    "first-text": {
+      "height": 215.99998,
+      "fontSize": 18.0,
+      "lineHeight": 36.0
+    },
+    "first-count": {
+      "height": 44.0,
+      "fontSize": 14.0,
+      "fontWeight": 700
+    },
+    "first-source": {
+      "height": 16.0,
+      "fontSize": 12.0,
+      "lineHeight": 16.0
+    }
+  }
+}

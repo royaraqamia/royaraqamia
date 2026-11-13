@@ -9,6 +9,8 @@ import com.royaraqamia.app.account.TransportAvatarLoader
 import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.assistant.AssistantTurnStore
+import com.royaraqamia.app.athkar.AssetAthkarRepository
+import com.royaraqamia.app.athkar.AthkarRepository
 import com.royaraqamia.app.chats.ChatHintSource
 import com.royaraqamia.app.chats.ChatPresenceSource
 import com.royaraqamia.app.chats.ChatsRepository
@@ -134,6 +136,8 @@ class AppGraph private constructor(
     val blogpress: BlogpressRepository,
     /** The Quran reader's vendored text and the reader's last place (#955). */
     val quran: QuranRepository,
+    /** The Athkar reader's vendored text and today's device count (#1389). */
+    val athkar: AthkarRepository,
     /** The homepage's app set (#1194): the picker's read and replace. */
     val homeServices: HomeServicesRepository,
     /** The apps sheet's store tab (#1256): the member's connections and the curated store. */
@@ -403,6 +407,7 @@ class AppGraph private constructor(
                         context = context,
                         positions = PreferencesQuranPositionStore(context),
                     ),
+                athkar = AssetAthkarRepository(context),
                 habitflow =
                     HabitflowRepository(
                         databases = databases,

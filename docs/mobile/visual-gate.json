@@ -70,7 +70,7 @@
           "name": "at-rest",
           "tolerance": {
             "pixels": 0.1,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-13",
@@ -85,7 +85,7 @@
           "name": "denied",
           "tolerance": {
             "pixels": 0.115,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-13",
@@ -100,7 +100,7 @@
           "name": "result",
           "tolerance": {
             "pixels": 0.05,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-13",
@@ -154,7 +154,7 @@
           "name": "at-rest",
           "tolerance": {
             "pixels": 0.1,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-13",
@@ -169,7 +169,7 @@
           "name": "empty",
           "tolerance": {
             "pixels": 0.01,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-13",
@@ -238,7 +238,7 @@
           "name": "at-rest",
           "tolerance": {
             "pixels": 0.08,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-05",
@@ -442,7 +442,7 @@
           "name": "at-rest",
           "tolerance": {
             "pixels": 0.13,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-13",
@@ -496,7 +496,7 @@
           "name": "at-rest",
           "tolerance": {
             "pixels": 0.08,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-13",
@@ -523,7 +523,7 @@
           "name": "at-rest",
           "tolerance": {
             "pixels": 0.22,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-08",
@@ -538,7 +538,7 @@
           "name": "bulk-bar",
           "tolerance": {
             "pixels": 0.05,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-08",
@@ -553,7 +553,7 @@
           "name": "qr",
           "tolerance": {
             "pixels": 0.1,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-08",
@@ -568,7 +568,7 @@
           "name": "edit",
           "tolerance": {
             "pixels": 0.09,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-08",
@@ -583,7 +583,7 @@
           "name": "analytics",
           "tolerance": {
             "pixels": 0.04,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-11",
@@ -610,7 +610,7 @@
           "name": "at-rest",
           "tolerance": {
             "pixels": 0.09,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-10",
@@ -625,7 +625,7 @@
           "name": "filtered",
           "tolerance": {
             "pixels": 0.09,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-10",
@@ -640,7 +640,7 @@
           "name": "expense-dialog",
           "tolerance": {
             "pixels": 0.06,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-10",
@@ -655,7 +655,7 @@
           "name": "category-dialog",
           "tolerance": {
             "pixels": 0.04,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-10",
@@ -670,7 +670,7 @@
           "name": "csv",
           "tolerance": {
             "pixels": 0.09,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-10",
@@ -697,7 +697,7 @@
           "name": "at-rest",
           "tolerance": {
             "pixels": 0.07,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-10",
@@ -739,7 +739,7 @@
           "name": "picker",
           "tolerance": {
             "pixels": 0.142,
-            "length": 2.0
+            "length": 2
           },
           "baseline": {
             "recorded": "2026-11-10",
@@ -808,7 +808,7 @@
           "name": "at-rest",
           "tolerance": {
             "pixels": 0.1,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-13",
@@ -823,7 +823,7 @@
           "name": "needs-connection",
           "tolerance": {
             "pixels": 0.04,
-            "length": 1.0
+            "length": 1
           },
           "baseline": {
             "recorded": "2026-11-13",
@@ -831,6 +831,48 @@
             "alignment": {
               "dx": 1,
               "dy": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "surface": "athkar",
+      "web": {
+        "route": "/athkar"
+      },
+      "contract": "shared/visual/athkar.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/athkar/AthkarScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.1,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.0883,
+            "alignment": {
+              "dx": 2,
+              "dy": 3
+            }
+          }
+        },
+        {
+          "name": "evening",
+          "tolerance": {
+            "pixels": 0.1,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.0883,
+            "alignment": {
+              "dx": 2,
+              "dy": 3
             }
           }
         }

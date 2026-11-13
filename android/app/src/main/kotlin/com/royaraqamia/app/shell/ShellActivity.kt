@@ -49,6 +49,8 @@ import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.home.HomeServicesController
 import com.royaraqamia.app.home.PreferencesHomeServicesStore
 import com.royaraqamia.app.linksnap.LinksnapAnalyticsExportCopy
+import com.royaraqamia.app.athkar.AthkarPeriod
+import com.royaraqamia.app.athkar.AthkarRoute
 import com.royaraqamia.app.linksnap.LinksnapScreen
 import com.royaraqamia.app.linksnap.LinksnapRoutes
 import com.royaraqamia.app.linksnap.LinksnapShortenerScreen
@@ -344,6 +346,21 @@ class ShellActivity : ComponentActivity() {
                                     onOpenAyah = { surah, ayah ->
                                         openRoute(QuranRoutes.routeOf(surah, ayah))
                                     },
+                                )
+                            // The Athkar reader (#1389): the two sittings are
+                            // the page's own routes (ADR-0147), so the tab is a
+                            // navigation rather than a second copy of the text.
+                            "/athkar" ->
+                                AthkarRoute(
+                                    repository = graph.athkar,
+                                    period = AthkarPeriod.Morning,
+                                    onSelectPeriod = { option -> openRoute(option.route) },
+                                )
+                            "/athkar/evening" ->
+                                AthkarRoute(
+                                    repository = graph.athkar,
+                                    period = AthkarPeriod.Evening,
+                                    onSelectPeriod = { option -> openRoute(option.route) },
                                 )
                             "/account/plan" ->
                                 PlanScreen(

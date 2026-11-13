@@ -1,0 +1,16 @@
+{
+  "surface": "athkar",
+  "component": "athkar-page",
+  "web": {
+    "file": "frontend/ui/athkar/athkar-page-copy.ts",
+    "export": "ATHKAR_PAGE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/athkar/AthkarPageCopy.kt",
+    "object": "AthkarPageCopy"
+  },
+  "strings": {
+    "pageTitle": "أذكار الصَّباح والمساء",
+    "periodLabel": "وقت الأذكار"
+  }
+}

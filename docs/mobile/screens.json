@@ -60,8 +60,8 @@
     },
     {
       "surface": "athkar",
-      "native": null,
-      "reason": "One of the nine homepage tabs, so it is native before the door can be (ADR-0178); the app opens the page until it is."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/athkar/AthkarScreen.kt",
+      "enabled": true
     },
     {
       "surface": "account",

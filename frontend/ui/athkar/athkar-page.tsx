@@ -1,6 +1,7 @@
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import type { AthkarCollection, AthkarPeriod } from '@/shared/contracts/athkar';
 import { AthkarReader } from './athkar-reader';
+import { ATHKAR_PAGE_COPY } from './athkar-page-copy';
 
 interface AthkarPageProps {
   collections: Record<AthkarPeriod, AthkarCollection>;
@@ -25,13 +26,18 @@ interface AthkarPageProps {
 export function AthkarPage({ collections, period, onSelectPeriod }: AthkarPageProps) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 pt-10 pb-28 sm:pt-14 sm:pb-32">
-      <header className="flex flex-col items-center gap-3 text-center">
+      <header data-visual="athkar-title" className="flex flex-col items-center gap-3 text-center">
         <SectionTitle as="h1" size="display">
-          <SectionTitleHighlight>أذكار الصَّباح والمساء</SectionTitleHighlight>
+          <SectionTitleHighlight>{ATHKAR_PAGE_COPY.pageTitle}</SectionTitleHighlight>
         </SectionTitle>
       </header>
 
-      <AthkarReader collections={collections} period={period} onSelectPeriod={onSelectPeriod} />
+      <AthkarReader
+        collections={collections}
+        period={period}
+        periodLabel={ATHKAR_PAGE_COPY.periodLabel}
+        onSelectPeriod={onSelectPeriod}
+      />
     </div>
   );
 }

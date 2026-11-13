@@ -1,0 +1,59 @@
+{
+  "surface": "athkar",
+  "state": "evening",
+  "route": "/athkar/evening",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 64,
+      "height": 43.5,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 34.5
+    },
+    "tabs": {
+      "top": 139.5,
+      "height": 44,
+      "rowGap": 8
+    },
+    "tab-morning": {
+      "height": 40,
+      "fontSize": 14,
+      "fontWeight": 700,
+      "paddingLeft": 16,
+      "paddingRight": 16
+    },
+    "list": {
+      "top": 207.5,
+      "width": 361,
+      "rowGap": 16
+    },
+    "first-card": {
+      "top": 207.5,
+      "width": 361,
+      "height": 371,
+      "radius": 24,
+      "paddingTop": 20,
+      "paddingLeft": 20
+    },
+    "first-text": {
+      "height": 216,
+      "fontSize": 18,
+      "lineHeight": 36
+    },
+    "first-count": {
+      "height": 44,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "first-source": {
+      "height": 16,
+      "fontSize": 12,
+      "lineHeight": 16
+    }
+  }
+}

@@ -31,7 +31,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [-] **mcp-connect** `/mcp/connect` — document, by design · A one-time setup page whose whole value is the snippet it shows. The page changes with the server, and a port would pin a snippet the server no longer accepts.
 - [-] **mcp-apps** `/mcp/apps` — document, by design · A decision, not a queue item: the sheet is the apps surface, and `/mcp/apps` stays the address a callback, a bookmark and a deep link need (ADR-0159, #1385). The sheet is native; the page is what a link resolves to.
 - [x] **mcp-app-detail** `/mcp/apps/[id]` — native · #1256
-- [ ] **athkar** `/?tab=/athkar` `/athkar` `/athkar/evening` — todo · #1389
+- [x] **athkar** `/?tab=/athkar` `/athkar` `/athkar/evening` — native · #1389
 
 ## Sign-in
 
@@ -102,7 +102,7 @@ The things a surface row cannot hold: the cutover, the screens the app needs to 
 
 ## Components
 
-A component is finished when the surface that draws it is native: 80 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 82 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -184,7 +184,9 @@ A component is finished when the surface that draws it is native: 80 ported comp
 - [x] `news-archive` on **news** · #926
 - [x] `news-story` on **news** · #926
 - [x] `news-page` on **news** · #926
+- [x] `athkar-page` on **athkar** · #1389
+- [x] `athkar-card` on **athkar** · #1389
 
 ## Where this stands
 
-21 native · 6 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.
+22 native · 5 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.

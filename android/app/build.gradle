@@ -163,6 +163,7 @@ android {
     sourceSets {
         main {
             assets.srcDirs += file("$buildDir/generated/quranAssets")
+            assets.srcDirs += file("$buildDir/generated/athkarAssets")
         }
     }
     // The visual gate records its app-side capture with
@@ -217,6 +218,24 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.con
     dependsOn(quranAssets)
 }
 tasks.withType(Test).configureEach { dependsOn(quranAssets) }
+
+// The Athkar text is the site's own vendored asset (#1389), copied from
+// `data/athkar/` rather than retyped: the page and the app read the same two
+// files, so a correction to a dhikr cannot reach one client and not the other.
+def athkarAssets =
+    tasks.register("copyAthkarAssets", Copy) {
+        from(rootProject.file("../data/athkar")) {
+            include "morning.json"
+            include "evening.json"
+            into "athkar"
+        }
+        into layout.buildDirectory.dir("generated/athkarAssets")
+    }
+tasks.named("preBuild").configure { dependsOn(athkarAssets) }
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    dependsOn(athkarAssets)
+}
+tasks.withType(Test).configureEach { dependsOn(athkarAssets) }
 
 // The exported schema is committed (#768): Room writes the shape of version N to
 // disk, so the migration from N-1 is reviewed beside the shape it migrates from,

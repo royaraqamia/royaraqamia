@@ -2491,6 +2491,54 @@
           "copy": "pageTitle"
         }
       ]
+    },
+    {
+      "id": "athkar-page",
+      "surface": "athkar",
+      "issue": "#1389",
+      "web": {
+        "route": "app/athkar/page.tsx",
+        "component": "frontend/ui/athkar/athkar-page.tsx",
+        "copyModule": "frontend/ui/athkar/athkar-page-copy.ts",
+        "copyExport": "ATHKAR_PAGE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/athkar/AthkarScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/athkar/AthkarUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/athkar/AthkarPageCopy.kt",
+        "copyObject": "AthkarPageCopy"
+      },
+      "copySource": "shared/copy/athkar-page.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "pageTitle"
+        }
+      ]
+    },
+    {
+      "id": "athkar-card",
+      "surface": "athkar",
+      "issue": "#1389",
+      "web": {
+        "route": "app/athkar/page.tsx",
+        "component": "frontend/ui/athkar/athkar-card.tsx",
+        "copyModule": "frontend/ui/athkar/athkar-copy.ts",
+        "copyExport": "ATHKAR_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/athkar/AthkarScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/athkar/AthkarUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/athkar/AthkarCopy.kt",
+        "copyObject": "AthkarCopy"
+      },
+      "copySource": "shared/copy/athkar-card.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "countOf"
+        }
+      ]
     }
   ],
   "exempt": [

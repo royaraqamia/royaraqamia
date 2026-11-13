@@ -1,0 +1,21 @@
+{
+  "surface": "athkar",
+  "component": "athkar-card",
+  "web": {
+    "file": "frontend/ui/athkar/athkar-copy.ts",
+    "export": "ATHKAR_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/athkar/AthkarCopy.kt",
+    "object": "AthkarCopy"
+  },
+  "strings": {
+    "countOf": "{count} من {repeat}",
+    "countPending": "— من {repeat}",
+    "countLabel": "عدّ الذكر {index}",
+    "resetCount": "إعادة",
+    "resetLabel": "إعادة عدّ الذكر {index}",
+    "sourceLabel": "المصدر: ",
+    "virtue": "الفضل"
+  }
+}

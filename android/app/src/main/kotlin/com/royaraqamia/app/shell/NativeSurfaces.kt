@@ -50,6 +50,8 @@ object NativeSurfaces {
             "/community",
             "/scan",
             "/news",
+            "/athkar",
+            "/athkar/evening",
         )
 
     /**

@@ -320,6 +320,11 @@ const PREPARE: Record<
   'at-rest': async (_page, visit) => {
     await visit();
   },
+  // The evening sitting is its own route (ADR-0147): the same reader and the
+  // same boxes, with the second collection behind it.
+  'athkar/evening': async (_page, visit) => {
+    await visit();
+  },
   // The gate's own member, made visible with one fixed post (#1343). A hidden
   // member is a 404 through the public loader (ADR-0127), so the fixture changes
   // that flag for the recording and the cleanup puts it back. The account is the
