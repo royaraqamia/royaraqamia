@@ -41,6 +41,12 @@ jobs:
       - name: Digits Are ASCII
         run: npm run check:digits
 
+      # A request is not an origin (ADR-0178): a self-hosted Next server reports
+      # the address it listens on, so request-derived absolute URLs advertised
+      # `https://localhost:10000` in production.
+      - name: Absolute URLs Come From Configuration
+        run: npm run check:origin
+
       - name: The Bot Writes Fusha
         run: npm run check:fusha
 
@@ -165,6 +171,10 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+          # The public origin is read while prerendering (ADR-0178) and would
+          # otherwise throw in a production build. It is public by definition.
+          NEXT_PUBLIC_SITE_URL: 'https://royaraqamia.com'
+          PUBLIC_ORIGIN: 'https://royaraqamia.com'
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

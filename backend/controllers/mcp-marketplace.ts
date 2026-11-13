@@ -43,14 +43,14 @@ const StartBodySchema = z.strictObject({
 const MARKETPLACE_PATH = '/mcp/apps';
 
 function appUrl(path: string, search: Record<string, string> = {}): string {
-  const url = new URL(path, env.siteUrl);
+  const url = new URL(path, env.origin);
   for (const [key, value] of Object.entries(search)) url.searchParams.set(key, value);
   return url.toString();
 }
 
 /** The one redirect URI every provider registers, never the request's Host. */
 export function mcpCallbackUrl(): string {
-  return new URL('/mcp/callback', env.siteUrl).toString();
+  return new URL('/mcp/callback', env.origin).toString();
 }
 
 export async function startMcpConnection(headers: Headers, body: string): Promise<HttpResult> {

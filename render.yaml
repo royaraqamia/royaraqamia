@@ -52,6 +52,11 @@ services:
       # `next build` runs, not only at boot.
       - key: NEXT_PUBLIC_SITE_URL
         value: https://royaraqamia.com
+      # The runtime origin every absolute URL is built from (ADR-0178). The
+      # build-time value above is what the browser inlines; this one is what the
+      # server reads, so a preview environment can differ without a rebuild.
+      - key: PUBLIC_ORIGIN
+        value: https://royaraqamia.com
       - key: NEXT_PUBLIC_WHATSAPP_PHONE
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_URL

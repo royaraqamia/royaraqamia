@@ -6,7 +6,7 @@ vi.mock('next/server', () => ({
 }));
 
 vi.mock('@/backend/config/env', () => ({
-  env: { baseUrl: 'https://royaraqamia.com' },
+  env: { origin: 'https://royaraqamia.com' },
 }));
 
 import { getClientIp, isSameOrigin } from '@/backend/transport/http';

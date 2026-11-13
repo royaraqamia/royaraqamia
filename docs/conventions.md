@@ -29,6 +29,19 @@ accessible name, a copy assertion) silently misses one of them.
   allowlisted at the top of `scripts/check-arabic-order.mjs`.
 - `public/quran/**` is vendored as published and is never normalised.
 
+## Absolute URLs
+
+Every absolute URL the server builds starts from `env.origin` (`backend/config/origin.ts`) — never
+from the request (ADR-0178).
+
+- `PUBLIC_ORIGIN` is the runtime value; `NEXT_PUBLIC_SITE_URL` is the build-time one the browser
+  inlines, and `NEXT_PUBLIC_BASE_URL` is the old spelling. Development falls back to
+  `http://localhost:3000`; production throws rather than guessing.
+- `new URL(req.url).origin`, `.nextUrl.origin` and `Host` header reads are refused by
+  `npm run check:origin`. A self-hosted Next server reports the address it listens on, so behind
+  Render those answered `https://localhost:10000` — which is what `opencode mcp auth` and every
+  completed Google sign-in were being sent to.
+
 ## Digits
 
 Digits are always ASCII (`123`), never Arabic-Indic (`١٢٣`, U+0660–U+0669) or Persian

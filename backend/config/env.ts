@@ -1,6 +1,5 @@
 import { appVersion } from '@/backend/config/generated/app-version';
-
-const FALLBACK_SITE_URL = 'https://royaraqamia.com';
+import { resolveOrigin } from '@/backend/config/origin';
 
 const DEFAULT_PUSH_ENDPOINT_ALLOWLIST =
   '.google.com, fcm.googleapis.com, updates.push.services.mozilla.com, .notify.windows.com, web.push.apple.com';
@@ -51,14 +50,12 @@ export const env = {
   get habitflowSupabaseUrl(): string | undefined {
     return read('SUPABASE_URL') ?? read('NEXT_PUBLIC_SUPABASE_URL');
   },
-  get siteUrl(): string {
-    return read('NEXT_PUBLIC_SITE_URL') ?? FALLBACK_SITE_URL;
-  },
-  get baseUrl(): string {
-    return read('NEXT_PUBLIC_BASE_URL') ?? FALLBACK_SITE_URL;
-  },
-  get appUrl(): string | undefined {
-    return read('APP_URL');
+  /**
+   * The site's public origin — the only source of an absolute URL (ADR-0178).
+   * Precedence and the production requirement live in `resolveOrigin`.
+   */
+  get origin(): string {
+    return resolveOrigin();
   },
   get version(): string {
     return (

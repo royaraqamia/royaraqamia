@@ -8,7 +8,7 @@ vi.mock('@/backend/config/mcp-session', () => ({
 }));
 
 vi.mock('@/backend/config/env', () => ({
-  env: { baseUrl: 'https://royaraqamia.com' },
+  env: { origin: 'https://royaraqamia.com' },
 }));
 
 const validCtx: McpUserContext = {

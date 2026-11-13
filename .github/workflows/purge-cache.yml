@@ -86,6 +86,21 @@ jobs:
           echo "$response"
           printf '%s' "$response" | grep -q '"success":true'
 
+      # Absolute URLs come from configuration, never from the request (ADR-0178).
+      # This is the only place that knows the new build is the one answering, so
+      # it is where the documents a client dials are read back: a discovery
+      # document naming an internal address is a silent failure no unit test can
+      # see, and it is exactly what shipped for months.
+      - name: Discovery documents name the public origin
+        if: steps.wait.outputs.live == 'true'
+        run: |
+          base="${BASE_URL%/}"
+          issuer="$(curl -fsS --max-time 15 "$base/.well-known/oauth-authorization-server" | jq -r .issuer)"
+          resource="$(curl -fsS --max-time 15 "$base/.well-known/oauth-protected-resource" | jq -r .resource)"
+          echo "issuer=$issuer resource=$resource"
+          test "$issuer" = "$base"
+          test "$resource" = "$base/mcp"
+
       - name: The deploy never answered
         if: steps.wait.outputs.live != 'true'
         run: |

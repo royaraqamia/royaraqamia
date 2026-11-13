@@ -14,7 +14,7 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/backend/config/env', () => ({
   env: {
-    baseUrl: 'https://royaraqamia.com',
+    origin: 'https://royaraqamia.com',
     mcpTokenEncryptionKey: '00'.repeat(32),
     adminEmails: mocks.adminEmails,
   },

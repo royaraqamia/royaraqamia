@@ -69,7 +69,7 @@ export function createDefaultMcpCatalogAgentService(): McpCatalogAgentService {
     repository: createMcpMarketplaceRepository(),
     catalog: createDefaultMcpCatalogService(),
     staticClients: readMcpStaticClients(),
-    redirectUri: new URL('/mcp/callback', env.siteUrl).toString(),
+    redirectUri: new URL('/mcp/callback', env.origin).toString(),
   });
 }
 

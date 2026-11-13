@@ -1,5 +1,6 @@
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { NextResponse, type NextRequest } from 'next/server';
+import { env } from '@/backend/config/env';
 import { resolveDefaultMcpContext } from '@/backend/config/mcp-session';
 import type { McpUserContext } from '@/backend/services/mcp/session';
 import { ALL_SCOPES } from '@/backend/services/mcp/scope';
@@ -65,9 +66,8 @@ export async function isPublicMcpRequest(request: NextRequest): Promise<boolean>
   );
 }
 
-function challengeResponse(request: NextRequest): NextResponse {
-  const origin = new URL(request.url).origin;
-  const resourceMetadata = `${origin}/.well-known/oauth-protected-resource`;
+function challengeResponse(): NextResponse {
+  const resourceMetadata = `${env.origin}/.well-known/oauth-protected-resource`;
   return NextResponse.json(
     {
       error: 'unauthorized',
@@ -94,13 +94,13 @@ export async function authenticateMcpRequest(
 
   const ctx = await resolveDefaultMcpContext(bearer);
 
-  if (!ctx) return challengeResponse(request);
+  if (!ctx) return challengeResponse();
 
   if (ctx.userId === null && !(await isPublicMcpRequest(request))) {
-    return challengeResponse(request);
+    return challengeResponse();
   }
 
-  const base = new URL(request.url).origin;
+  const base = env.origin;
   const authInfo: AuthInfo = {
     token: bearer ?? '',
     clientId: ctx.clientId ?? '',
