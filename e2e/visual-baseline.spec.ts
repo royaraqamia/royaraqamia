@@ -278,6 +278,13 @@ test.describe('the tokens, as the browser resolves them', () => {
 
   test('the sura index resolves the values the baseline records', async ({ page }) => {
     await page.goto(SURFACE);
+
+    // `/quran` is a tab of the door now, mounted on the client (ADR-0156,
+    // ADR-0168): the capture has to wait for the list the baseline describes, or
+    // it records `missing-element` for a surface that is still mounting, which
+    // reads as a token regression. Waiting is also the assertion that the
+    // surface still exists at all.
+    await page.locator('nav[data-visual="quran-list"] a').first().waitFor();
     await page.evaluate(() => document.fonts.ready);
 
     const captured = await capture(page);
