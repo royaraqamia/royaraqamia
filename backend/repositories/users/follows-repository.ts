@@ -57,6 +57,41 @@ export interface FollowsRepository {
 }
 
 export function createFollowsRepository(supabase: SupabaseClient<Database>): FollowsRepository {
+  // A closure rather than a method: `guardRepositoryMethods` calls each entry as
+  // a bare function, so `this` inside a repository method is not the object.
+  async function blockedAmong(
+    viewerId: string,
+    ids: string[]
+  ): Promise<{ blockedByViewer: string[]; blockedViewer: string[] }> {
+    const unique = [...new Set(ids)].filter((id) => id !== viewerId);
+    if (unique.length === 0) return { blockedByViewer: [], blockedViewer: [] };
+
+    // One read of the viewer's own block rows, split into the two directions.
+    // Both halves are visible to the service role; a policy would only ever
+    // show the caller the rows they wrote, which is why the judgement lives
+    // here and not in RLS.
+    const { data, error } = await supabase
+      .from('blocks')
+      .select('blocker_id, blocked_id')
+      .or(`blocker_id.eq.${viewerId},blocked_id.eq.${viewerId}`);
+
+    if (error) throw error;
+
+    const requested = new Set(unique);
+    const blockedByViewer: string[] = [];
+    const blockedViewer: string[] = [];
+
+    for (const row of data ?? []) {
+      if (row.blocker_id === viewerId && requested.has(row.blocked_id)) {
+        blockedByViewer.push(row.blocked_id);
+      } else if (row.blocked_id === viewerId && requested.has(row.blocker_id)) {
+        blockedViewer.push(row.blocker_id);
+      }
+    }
+
+    return { blockedByViewer, blockedViewer };
+  }
+
   return guardRepositoryMethods<FollowsRepository>({
     async follow(followerId, followeeId) {
       const { error } = await supabase
@@ -136,7 +171,7 @@ export function createFollowsRepository(supabase: SupabaseClient<Database>): Fol
     },
 
     async isBlockedEitherWay(a, b): Promise<boolean> {
-      const { blockedByViewer, blockedViewer } = await this.blockedAmong(a, [b]);
+      const { blockedByViewer, blockedViewer } = await blockedAmong(a, [b]);
       return blockedByViewer.includes(b) || blockedViewer.includes(b);
     },
 
@@ -154,35 +189,7 @@ export function createFollowsRepository(supabase: SupabaseClient<Database>): Fol
       return (data ?? []).map((row) => row.followee_id);
     },
 
-    async blockedAmong(viewerId, ids) {
-      const unique = [...new Set(ids)].filter((id) => id !== viewerId);
-      if (unique.length === 0) return { blockedByViewer: [], blockedViewer: [] };
-
-      // One read of the viewer's own block rows, split into the two directions.
-      // Both halves are visible to the service role; a policy would only ever
-      // show the caller the rows they wrote, which is why the judgement lives
-      // here and not in RLS.
-      const { data, error } = await supabase
-        .from('blocks')
-        .select('blocker_id, blocked_id')
-        .or(`blocker_id.eq.${viewerId},blocked_id.eq.${viewerId}`);
-
-      if (error) throw error;
-
-      const requested = new Set(unique);
-      const blockedByViewer: string[] = [];
-      const blockedViewer: string[] = [];
-
-      for (const row of data ?? []) {
-        if (row.blocker_id === viewerId && requested.has(row.blocked_id)) {
-          blockedByViewer.push(row.blocked_id);
-        } else if (row.blocked_id === viewerId && requested.has(row.blocker_id)) {
-          blockedViewer.push(row.blocker_id);
-        }
-      }
-
-      return { blockedByViewer, blockedViewer };
-    },
+    blockedAmong,
   });
 }
 
