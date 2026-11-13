@@ -12,6 +12,10 @@ import {
  * The doors worth waking someone for: an ordinary page that could not answer in
  * time. The accepted doors still reach Sentry as `info` (one issue per door, so a
  * trend is visible) but never page.
+ *
+ * `online-only-deadline` is retired (ADR-0031's 2026-11-13 amendment) and stays
+ * here only so a beacon from a worker that predates the change is still
+ * classified; nothing emits it now.
  */
 const OFFLINE_REGRESSION_DOORS = new Set<OfflineServeDoor>([
   'navigation-deadline',

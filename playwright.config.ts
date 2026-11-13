@@ -104,5 +104,13 @@ export default defineConfig({
     port: 3000,
     reuseExistingServer: false,
     timeout: isCI ? 600_000 : 180_000,
+    // A production build reads the public origin while prerendering and refuses
+    // to guess (ADR-0178). The e2e server's own address is the honest value: it
+    // is what the specs navigate to, and it keeps every absolute URL the build
+    // writes inside the test run instead of pointing at production.
+    env: {
+      PUBLIC_ORIGIN: 'http://localhost:3000',
+      NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
+    },
   },
 });

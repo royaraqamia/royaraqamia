@@ -1275,18 +1275,24 @@ describe('service worker navigation deadline (#447)', () => {
     expect(await second.response.then((r) => r.text())).toBe('late-shell');
   });
 
-  it('bounds a never-cache navigation with the same deadline', async () => {
+  it('exempts a never-cache navigation from a deadline it has no fallback for', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
-    ctx.sandbox.fetch = vi.fn(() => new Promise(() => undefined));
+    ctx.sandbox.fetch = vi.fn(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(new Response('admin', { status: 200 })), 120)
+        )
+    );
 
     const event = fetchEvent(request('/admin'));
     ctx.dispatch('fetch', event);
 
-    // `/admin` bypasses the cache entirely (ADR-0031), but a slow network must
-    // still not hang the document: the 503 arrives at the deadline.
+    // `/admin` has no cached shell, so the deadline has nothing better to offer
+    // than a page claiming the network is gone (ADR-0031's 2026-11-13
+    // amendment): it waits for the answer instead.
     const response = await event.response;
-    expect(response.status).toBe(503);
-    expect(await response.text()).toBe('Offline');
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('admin');
   });
 
   it('caches the auth document shell like any other public page (#447)', async () => {
@@ -1662,17 +1668,39 @@ describe('service worker offline-serve telemetry (#474)', () => {
     expect(JSON.parse(beacons()[0].init.body).door).toBe('navigation-deadline');
   });
 
-  it('labels an online-only route as its own door', async () => {
+  it('waits for an online-only navigation instead of answering "Offline" at the deadline', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
-    const beacons = intercept(ctx, () => new Promise(() => undefined));
+    // A slow-but-alive origin: the consent hop answers well past the deadline.
+    const beacons = intercept(
+      ctx,
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(new Response('consent', { status: 200 })), 120)
+        )
+    );
 
-    const event = fetchEvent(request('/admin'));
+    const event = fetchEvent(request('/mcp/connect'));
+    ctx.dispatch('fetch', event);
+    const response = await event.response;
+
+    // The page the server sent, not a synthetic "Offline" (ADR-0031's
+    // 2026-11-13 amendment).
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('consent');
+    expect(beacons()).toHaveLength(0);
+  });
+
+  it('labels a genuinely unreachable online-only navigation as its own door', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const beacons = intercept(ctx, () => Promise.reject(new Error('offline')));
+
+    const event = fetchEvent(request('/mcp/connect'));
     ctx.dispatch('fetch', event);
     const response = await event.response;
     expect(response.status).toBe(503);
 
     expect(beacons()).toHaveLength(1);
-    expect(JSON.parse(beacons()[0].init.body).door).toBe('online-only-deadline');
+    expect(JSON.parse(beacons()[0].init.body).door).toBe('online-only-offline');
   });
 
   it('counts nothing when the cached copy answers', async () => {
@@ -1889,18 +1917,20 @@ describe('service worker prefix fallback (#490)', () => {
     expect(await markerOf(ctx)).toBeUndefined();
   });
 
-  it('answers a plain 503 for the never-cache admin surface', async () => {
+  it('waits for the network on the never-cache admin surface instead of borrowing a shell', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
     // Never-cache paths bypass Cache Storage entirely (ADR-0031); a prefix serve
-    // would put a public page where an admin guard is the whole point.
-    ctx.sandbox.fetch = vi.fn(() => new Promise(() => undefined));
+    // would put a public page where an admin guard is the whole point, and the
+    // deadline must not answer for a server that is merely slow (2026-11-13
+    // amendment).
+    ctx.sandbox.fetch = vi.fn(async () => new Response('admin', { status: 200 }));
 
     const event = fetchEvent(request('/admin/rates'));
     ctx.dispatch('fetch', event);
 
     const response = await event.response;
-    expect(response.status).toBe(503);
-    expect(await response.text()).toBe('Offline');
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('admin');
     expect(await markerOf(ctx)).toBeUndefined();
   });
 });

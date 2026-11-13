@@ -1593,29 +1593,25 @@ async function offlineImage(request) {
 }
 
 // Online-only surfaces (ADR-0031): go straight to the network, never to Cache
-// Storage. A navigation that cannot reach the network is answered with a plain
-// 503 after the navigation deadline (#447), rather than waiting on the browser's
-// own several-minute timeout; there is no local page to paint.
-// Non-navigations (API reads on never-cache prefixes) stay unbounded — those
-// run inside an already-painted page whose failure state is the app's own job.
+// Storage.
+//
+// This path deliberately does not race the network against the navigation
+// deadline. That deadline exists to answer "is the cached shell better than
+// waiting?", and on a never-cache surface there is no shell: the only thing it
+// can choose is a page that says "Offline" while the network is fine. Measured
+// on the free instance on 2026-11-13, `/mcp/authorize` took 3.52s cold against a
+// 3s deadline, and the MCP consent hop disappeared behind that lie twice.
+// Waiting is the honest answer; a request that genuinely fails still gets the
+// floor below, and the browser's own progress and error UI cover the rest.
+//
 // A navigation takes the browser's preload when there is one (#492): this is the
 // surface that gains most from it, because the request it waits on is the only
 // thing between the tap and the guard that decides.
 async function networkOnly(request, preload) {
-  const navigation = isNavigationRequest(request);
   try {
-    if (!navigation) return await fetch(request);
-    const deadlineSunder = new Promise((resolve) =>
-      setTimeout(() => resolve(undefined), NAVIGATION_TIMEOUT_MS)
-    );
-    const winner = await Promise.race([preloadedOrFetch(request, preload), deadlineSunder]);
-    if (winner === undefined) {
-      cacheOutcomes.failures += 1;
-      return missResponse(request, undefined, 'online-only-deadline');
-    }
-    return winner;
+    return await preloadedOrFetch(request, preload);
   } catch {
-    if (navigation) {
+    if (isNavigationRequest(request)) {
       cacheOutcomes.failures += 1;
       return offlineMiss('online-only-offline');
     }
