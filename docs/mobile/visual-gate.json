@@ -141,6 +141,48 @@
       ]
     },
     {
+      "surface": "account-blocked",
+      "web": {
+        "route": "/account/blocked"
+      },
+      "contract": "shared/visual/account-blocked.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/account/BlockedMembersScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.1,
+            "length": 2.0
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.0975,
+            "alignment": {
+              "dx": -3,
+              "dy": 0
+            }
+          }
+        },
+        {
+          "name": "empty",
+          "tolerance": {
+            "pixels": 0.01,
+            "length": 2.0
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.0076,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        }
+      ]
+    },
+    {
       "surface": "linksnap",
       "web": {
         "route": "/linksnap"

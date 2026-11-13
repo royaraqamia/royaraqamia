@@ -1,0 +1,25 @@
+{
+  "surface": "account-blocked",
+  "state": "empty",
+  "route": "/account/blocked",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 80,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "empty": {
+      "top": 158.5,
+      "width": 361,
+      "height": 58,
+      "radius": 16,
+      "fontSize": 12
+    }
+  }
+}

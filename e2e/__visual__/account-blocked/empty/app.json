@@ -1,0 +1,18 @@
+{
+  "surface": "account-blocked",
+  "elements": {
+    "title": {
+      "top": 12,
+      "height": 46.545456,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "empty": {
+      "top": 90.545456,
+      "width": 360.72726,
+      "height": 58.181824,
+      "radius": 16,
+      "fontSize": 12
+    }
+  }
+}

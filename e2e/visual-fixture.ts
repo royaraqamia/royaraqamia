@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { createClient } from '@supabase/supabase-js';
 import type { BrowserContext } from '@playwright/test';
 
@@ -401,5 +403,145 @@ export async function clearVisualProfile(context: BrowserContext, baseURL: strin
     .eq('id', userId);
   if (hideError) {
     throw new Error(`could not hide the visual profile again: ${hideError.message}`);
+  }
+}
+
+/**
+ * The two members the blocked list records (#1346).
+ *
+ * The rows are the fixture's, not whatever the account blocked during a previous
+ * test: the page and the app must draw the same names and handles, so the
+ * accounts are fixed. Each is a real, confirmed `public.users` row so the read
+ * resolves it exactly as it resolves a member the account actually blocked, and
+ * both are hidden so the recording does not add them to the public directory
+ * (ADR-0119, ADR-0127).
+ */
+export const VISUAL_BLOCKED_MEMBERS = [
+  { email: 'e2e-blocked-sara@royaraqamia.test', username: 'sara-e2e', name: 'سارة' },
+  { email: 'e2e-blocked-omar@royaraqamia.test', username: 'omar-e2e', name: 'عمر' },
+] as const;
+
+/** An auth user by email, paging past the admin API's default page size. */
+async function findAuthUserIdByEmail(email: string): Promise<string | null> {
+  const client = serviceClient();
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await client.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) {
+      throw new Error(`could not list the visual gate blocked members: ${error.message}`);
+    }
+    const found = data.users.find((user) => user.email === email);
+    if (found) return found.id;
+    if (data.users.length < 200) return null;
+  }
+  return null;
+}
+
+/**
+ * One blocked-list fixture member: a confirmed auth account and its public row.
+ *
+ * `public.users.verified` is written from the auth row by a trigger, so the
+ * account is minted through the admin API rather than inserted here — a bare
+ * profile row has no confirmed auth row to mirror and the trigger refuses it.
+ */
+async function ensureBlockedMember(
+  member: (typeof VISUAL_BLOCKED_MEMBERS)[number]
+): Promise<string> {
+  const client = serviceClient();
+  let id = await findAuthUserIdByEmail(member.email);
+
+  if (!id) {
+    const { data, error } = await client.auth.admin.createUser({
+      email: member.email,
+      password: `${randomUUID()}Aa1!`,
+      email_confirm: true,
+      user_metadata: { name: member.name },
+    });
+    if (error || !data.user) {
+      throw new Error(
+        `could not create the visual gate blocked member ${member.email}: ${error?.message ?? 'no user returned'}`
+      );
+    }
+    id = data.user.id;
+  }
+
+  const { error } = await client.from('users').upsert(
+    {
+      id,
+      email: member.email,
+      name: member.name,
+      username: member.username,
+      avatar_url: null,
+      bio: null,
+    },
+    { onConflict: 'id' }
+  );
+  if (error) {
+    throw new Error(`could not seed the visual gate blocked member: ${error.message}`);
+  }
+
+  const { error: updateError } = await client
+    .from('users')
+    .update({
+      name: member.name,
+      username: member.username,
+      avatar_url: null,
+      bio: null,
+      verified: true,
+      is_hidden: true,
+    })
+    .eq('id', id);
+  if (updateError) {
+    throw new Error(`could not settle the visual gate blocked member: ${updateError.message}`);
+  }
+
+  return id;
+}
+
+/**
+ * Blocks the fixture's two members on the gate's own account.
+ *
+ * The accounts are minted through the admin API (the profile's `verified` flag
+ * mirrors the auth row), but the blocks themselves go through the page's own
+ * `POST /api/chats/blocks`, so the recording reads a block the product wrote.
+ * Both are ordered: the first row is what the contract measures, and a recorded
+ * baseline cannot depend on which row a table scan returns first.
+ */
+export async function seedVisualBlockedMembers(
+  context: BrowserContext,
+  baseURL: string
+): Promise<void> {
+  const ids: string[] = [];
+  for (const member of VISUAL_BLOCKED_MEMBERS) {
+    ids.push(await ensureBlockedMember(member));
+  }
+
+  await clearVisualBlocks(context, baseURL);
+
+  for (const id of ids) {
+    const response = await context.request.post(`${baseURL}/api/chats/blocks`, {
+      data: { userId: id },
+      headers: {
+        'Content-Type': 'application/json',
+        Origin: baseURL,
+        'Sec-Fetch-Site': 'same-origin',
+      },
+    });
+    if (!response.ok()) {
+      throw new Error(
+        `the blocked-member fixture was refused (${response.status()}): ${await response.text()}`
+      );
+    }
+  }
+}
+
+/**
+ * Removes every block the gate's account holds, so the empty state is empty and
+ * the populated state's order is this run's and not a previous capture's.
+ */
+export async function clearVisualBlocks(context: BrowserContext, baseURL: string): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  const { error } = await serviceClient().from('blocks').delete().eq('blocker_id', userId);
+  if (error) {
+    throw new Error(`could not remove the visual gate blocks: ${error.message}`);
   }
 }
