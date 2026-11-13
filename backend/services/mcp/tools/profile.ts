@@ -1,7 +1,7 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpUserContext } from '../session';
-import { MCP_SERVER_NAME } from '../constants';
+import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
 import { createServerUserProfileRepository } from '@/backend/config/users';
@@ -53,9 +53,9 @@ export async function getProfileHandler(
     const lines = [
       '# Your Profile',
       '',
-      `- **Name**: ${profile.name ?? '—'}`,
+      `- **Name**: ${profile.name ?? 'â€”'}`,
       `- **Email**: ${profile.email}`,
-      `- **Bio**: ${profile.bio ?? '—'}`,
+      `- **Bio**: ${profile.bio ?? 'â€”'}`,
     ];
     return structuredResponse(lines.join('\n'), output);
   } catch (error) {
@@ -65,7 +65,7 @@ export async function getProfileHandler(
 
 export function registerProfileTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_profile_get`,
+    mcpCapabilityName('account.get'),
     {
       title: 'Get Profile',
       description: `Returns your profile: name, email, bio, avatar, and admin flag. Requires the "profile.read" scope and an authenticated session.
@@ -132,8 +132,8 @@ export async function updateProfileHandler(
           [
             '# Profile Updated',
             '',
-            `- **Name**: ${params.name ?? '—'}`,
-            `- **Bio**: ${params.bio ?? '—'}`,
+            `- **Name**: ${params.name ?? 'â€”'}`,
+            `- **Bio**: ${params.bio ?? 'â€”'}`,
           ].join('\n'),
           output
         );
@@ -144,7 +144,7 @@ export async function updateProfileHandler(
 
 export function registerProfileWriteTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_profile_update`,
+    mcpCapabilityName('account.update'),
     {
       title: 'Update Profile',
       description: `Updates your profile: name, avatar, and bio. Requires the "profile.write" scope and an authenticated session.

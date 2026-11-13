@@ -152,7 +152,7 @@ describe('the MCP door', () => {
     expect(new Set(declared).size).toBe(declared.length);
   });
 
-  it('gives every MCP tool a tier, and a scope unless it is the server’s own', () => {
+  it('gives every MCP tool a tier that matches its kind', () => {
     for (const entry of mcpCapabilities()) {
       expect(TOOL_TIERS).toContain(entry.tier);
       if (entry.kind === 'read') expect(entry.tier).toBe(0);

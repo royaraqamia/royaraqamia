@@ -2,10 +2,9 @@
 
 ## Status
 
-Accepted (program). Phase 0 lands in two changes: the declaration first — one table per door,
-measured against what each door actually registers — then the handlers, because every MCP handler
-currently owns its own markdown and a shared handler needs a domain answer plus a per-door
-format.
+Accepted (program). Phase 0 lands in two changes: the table, then the modules registering from it.
+The handler contract is amended below: a shared handler is for a capability written from now on,
+not a retrofit of the existing 36.
 
 ## Context
 
@@ -91,6 +90,19 @@ run as the member. The difference between the two doors is shape, not permission
 - **One adapter with a mode flag.** Rejected: the two projections have genuinely different
   response shapes (markdown for a human-facing client, JSON for a model), and a flag would put
   both shapes in one function.
+
+## Amendment (2026-11-13)
+
+Decision 1 assumed the 36 existing handlers could move under the registry without touching their
+bodies. They cannot: every MCP handler owns its markdown, and `structuredContent` already carries
+the domain value beside it.
+
+So the table owns what is genuinely shared — the name, the kind, the tier — and the modules
+register from it. The scope stays with the handler, which is where it is enforced. A handler is
+shared when a capability is **written**, not retrofitted to symmetry: a new operation declares one
+entry that answers a domain value plus a readable rendering, and the second door reads the value
+instead of parsing markdown. An existing handler keeps its contract until the product's own change
+touches it.
 
 ## Consequences
 

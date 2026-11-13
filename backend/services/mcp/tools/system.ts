@@ -1,8 +1,9 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { appVersion } from '@/backend/config/generated/app-version';
 import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from '../constants';
+import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 
 /**
@@ -65,7 +66,7 @@ export async function getServerInfoHandler(
 
 export function registerSystemTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_server_info`,
+    mcpCapabilityName('assistant.server_info'),
     {
       title: 'Server Info',
       description: `Returns identity information about the royaraqamia MCP server and the current caller: server version, deployed release, the authenticated user (or anonymous), whether they are an admin, and the granted OAuth scopes.

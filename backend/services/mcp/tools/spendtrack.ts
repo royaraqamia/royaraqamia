@@ -1,7 +1,7 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpUserContext } from '../session';
-import { MCP_SERVER_NAME } from '../constants';
+import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
 import { createSpendtrackRepository, createSpendtrackService } from '@/backend/config/spendtrack';
@@ -134,15 +134,15 @@ export async function listTransactionsHandler(
     }
 
     const lines = [
-      `# Transactions (${start} → ${end})`,
+      `# Transactions (${start} â†’ ${end})`,
       '',
       `Found ${result.totalCount} transaction${result.totalCount === 1 ? '' : 's'}.`,
       '',
     ];
     for (const e of expenses) {
       lines.push(
-        `- **${formatAmount(e.amount, e.currency)}** — ${e.category ?? 'uncategorized'} — ${e.date}${
-          e.description ? ` — ${e.description}` : ''
+        `- **${formatAmount(e.amount, e.currency)}** â€” ${e.category ?? 'uncategorized'} â€” ${e.date}${
+          e.description ? ` â€” ${e.description}` : ''
         } (\`${e.id}\`)`
       );
     }
@@ -195,7 +195,7 @@ export async function getSummaryHandler(
     }
 
     const lines = [
-      `# Spend Summary — ${month}`,
+      `# Spend Summary â€” ${month}`,
       '',
       `- **Total spent**: ${formatAmount(total ?? 0, output.currency)}`,
       '',
@@ -240,7 +240,7 @@ export async function listCategoriesHandler(
 
     const lines = ['# Spend Categories', ''];
     for (const c of items) {
-      lines.push(`- **${c.name}**${c.isDefault ? ' (default)' : ''} — \`${c.id}\``);
+      lines.push(`- **${c.name}**${c.isDefault ? ' (default)' : ''} â€” \`${c.id}\``);
     }
     return structuredResponse(lines.join('\n'), { categories: items });
   } catch (error) {
@@ -265,7 +265,7 @@ export async function listBudgetsHandler(
       return structuredResponse(jsonText({ month, budgets: items }), { month, budgets: items });
     }
 
-    const lines = [`# Budgets — ${month}`, ''];
+    const lines = [`# Budgets â€” ${month}`, ''];
     if (items.length === 0) {
       lines.push('No budgets set for this month.');
     }
@@ -280,7 +280,7 @@ export async function listBudgetsHandler(
 
 export function registerSpendTrackTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_spendtrack_list_transactions`,
+    mcpCapabilityName('spendtrack.list_transactions'),
     {
       title: 'List Transactions',
       description: `Lists your expenses in a date range (defaults to the current month). Requires "spendtrack.read" and an authenticated session.
@@ -310,7 +310,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_spendtrack_get_summary`,
+    mcpCapabilityName('spendtrack.get_summary'),
     {
       title: 'Get Spend Summary',
       description: `Summarizes spending for a month: total, category breakdown, budgets, and daily totals. Requires "spendtrack.read" and an authenticated session.
@@ -336,7 +336,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_spendtrack_list_categories`,
+    mcpCapabilityName('spendtrack.list_categories'),
     {
       title: 'List Categories',
       description: `Lists your spending categories (custom + defaults). Requires "spendtrack.read" and an authenticated session.
@@ -360,7 +360,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_spendtrack_list_budgets`,
+    mcpCapabilityName('spendtrack.list_budgets'),
     {
       title: 'List Budgets',
       description: `Lists your budgets for a month. Requires "spendtrack.read" and an authenticated session.
@@ -541,7 +541,7 @@ export async function setBudgetHandler(
     const service = createSpendtrackService(ctx.supabase as never);
 
     // An update to an existing month/category is not a new slot, so the create
-    // cap only guards the first budget written for a pair — the same exemption
+    // cap only guards the first budget written for a pair â€” the same exemption
     // the HTTP controller makes (#526). The database trigger enforces the rest.
     const existing = await service.getBudget(userId, params.month, params.category_id ?? null);
     if (!existing) await createPlanGate().cap(userId, OWNED_ITEMS.budgets);
@@ -592,7 +592,7 @@ export async function createCategoryHandler(
 
 export function registerSpendTrackWriteTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_spendtrack_create_expense`,
+    mcpCapabilityName('spendtrack.create_expense'),
     {
       title: 'Create Expense',
       description: `Records an expense. Requires "spendtrack.write" and an authenticated session.
@@ -621,7 +621,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_spendtrack_update_expense`,
+    mcpCapabilityName('spendtrack.update_expense'),
     {
       title: 'Update Expense',
       description: `Updates one of your expenses. Requires "spendtrack.write" and an authenticated session.
@@ -651,7 +651,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_spendtrack_delete_expense`,
+    mcpCapabilityName('spendtrack.delete_expense'),
     {
       title: 'Delete Expense',
       description: `Deletes one of your expenses. Requires "spendtrack.write" and an authenticated session.
@@ -676,7 +676,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_spendtrack_set_budget`,
+    mcpCapabilityName('spendtrack.set_budget'),
     {
       title: 'Set Budget',
       description: `Creates or updates a monthly budget (overall or per-category). Requires "spendtrack.write" and an authenticated session.
@@ -703,7 +703,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_spendtrack_create_category`,
+    mcpCapabilityName('spendtrack.create_category'),
     {
       title: 'Create Category',
       description: `Creates a custom spending category. Requires "spendtrack.write" and an authenticated session.
