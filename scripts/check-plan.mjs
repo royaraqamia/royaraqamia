@@ -11,14 +11,21 @@ import { fileURLToPath } from 'node:url';
  *
  *   `native`   the shell draws it: `docs/mobile/screens.json` says `enabled: true`
  *              and `check:visual` passes for it (ADR-0118)
- *   `todo`     the app still opens the document for it
+ *   `todo`     the app still opens the document for it, and someone means to port it
+ *   `document` the page is the deliverable, and `why` says what makes native wrong
+ *              for it (ADR-0178). A finished state, not a port waiting to happen.
  *   `blocked`  it cannot be worked yet, and `blockedBy` says why
+ *
+ * The plan also carries `release`: the things a surface list cannot hold (the
+ * WebView cutover, a diagnostics screen, the FCM matrix), each `done` with its
+ * evidence or `open` with what closes it. Without them "ready" was four numbers.
  *
  * This script is the reason the list cannot rot. It fails when a surface has no
  * row, a row names a surface that does not exist, two rows name the same surface,
- * a row's phase is not declared or the phases are interleaved, the plan and
- * `screens.json` disagree about what is switched on, or a ported component in
- * `docs/mobile/parity.json` belongs to a surface the plan does not know.
+ * a row's phase is not declared or the phases are interleaved, a `document` row
+ * does not say why, the plan and `screens.json` disagree about what is switched
+ * on, a ported component in `docs/mobile/parity.json` belongs to a surface the
+ * plan does not know, or a release item is finished without evidence.
  *
  * `docs/mobile/parity-plan.md` is generated from it, and the tracking issue's body
  * is that file. Run `npm run check:plan -- --write` after changing the JSON.
@@ -31,7 +38,8 @@ const SCREENS = join(ROOT, 'docs', 'mobile', 'screens.json');
 const SURFACES = join(ROOT, 'perf', 'surfaces.json');
 const PARITY = join(ROOT, 'docs', 'mobile', 'parity.json');
 
-const STATES = new Set(['native', 'todo', 'blocked']);
+const STATES = new Set(['native', 'todo', 'document', 'blocked']);
+const RELEASE_STATES = new Set(['done', 'open']);
 
 /** Every problem with the plan, as messages. */
 export function validate({ plan, screens, surfaces, parity }) {
@@ -96,13 +104,25 @@ export function validate({ plan, screens, surfaces, parity }) {
     }
 
     if (!STATES.has(row.state)) {
-      errors.push(`row "${id}" has state "${row.state}", which is not native, todo or blocked`);
+      errors.push(
+        `row "${id}" has state "${row.state}", which is not native, todo, document or blocked`
+      );
     }
     if (row.state === 'blocked' && !row.blockedBy) {
       errors.push(`row "${id}" is blocked and does not say by what ("blockedBy")`);
     }
     if (row.state !== 'blocked' && row.blockedBy) {
       errors.push(`row "${id}" names a blocker but is not blocked`);
+    }
+    // A surface that ships as the page is a decision, and a decision with no
+    // reason is indistinguishable from a port nobody has got to.
+    if (row.state === 'document' && !row.why) {
+      errors.push(
+        `row "${id}" is document and does not say why the page is the deliverable ("why")`
+      );
+    }
+    if (row.state !== 'document' && row.why) {
+      errors.push(`row "${id}" gives a document reason but is "${row.state}"`);
     }
     if (row.state === 'native' && !enabled.has(id)) {
       errors.push(`row "${id}" is native and docs/mobile/screens.json does not have it enabled`);
@@ -137,6 +157,31 @@ export function validate({ plan, screens, surfaces, parity }) {
     }
   }
 
+  // The release list is the half of "ready" a surface row cannot hold. A ticked
+  // item names what proved it; an open one names what closes it.
+  const releaseSeen = new Set();
+  for (const item of plan.release ?? []) {
+    const id = item.id;
+    if (!id) {
+      errors.push('docs/mobile/parity-plan.json: a release item has no "id"');
+      continue;
+    }
+    if (releaseSeen.has(id)) {
+      errors.push(`docs/mobile/parity-plan.json: release item "${id}" appears twice`);
+    }
+    releaseSeen.add(id);
+    if (!item.title) errors.push(`release item "${id}" has no title`);
+    if (!RELEASE_STATES.has(item.state)) {
+      errors.push(`release item "${id}" has state "${item.state}", which is not done or open`);
+    }
+    if (item.state === 'done' && !item.evidence) {
+      errors.push(`release item "${id}" is done and names no evidence`);
+    }
+    if (item.state === 'open' && !item.why) {
+      errors.push(`release item "${id}" is open and does not say what closes it ("why")`);
+    }
+  }
+
   return errors;
 }
 
@@ -167,9 +212,11 @@ export function renderMarkdown({ plan, screens, surfaces, parity }, { issue = fa
   const intro =
     title +
     'One line per surface the site serves, and the state of its native port (#882). `native` means ' +
-    'the shell draws it and `check:visual` passes; `todo` means the app opens the document for it; ' +
-    '`blocked` means it cannot be worked yet and the line says why. The rule that decides a line ' +
-    `is [ADR-0118](${adr}): the same boxes, the ` +
+    'the shell draws it and `check:visual` passes; `todo` means the app opens the document for it ' +
+    'and someone means to port it; `document` means the page is the deliverable, and the line says ' +
+    'what makes a native copy wrong for it (ADR-0178); `blocked` means it cannot be worked yet and ' +
+    'the line says why. `[-]` is a finished state, not a port that is owed. The rule that decides ' +
+    `a line is [ADR-0118](${adr}): the same boxes, the ` +
     'same styles, and a raster inside the tolerance, recorded from both clients at 393 x 852 @ 2.75. ' +
     'A screen that cannot pass stays the document, which is a finished state, not a failure. ' +
     '`docs/mobile/screens.json` is the machine truth for what is switched on; this list is the order ' +
@@ -182,14 +229,15 @@ export function renderMarkdown({ plan, screens, surfaces, parity }, { issue = fa
     const rows = (plan.surfaces ?? []).filter((row) => row.phase === phase.id);
     if (rows.length === 0) continue;
     const lines = rows.map((row) => {
-      const box = row.state === 'native' ? '[x]' : '[ ]';
+      const box = row.state === 'native' ? '[x]' : row.state === 'document' ? '[-]' : '[ ]';
       const routes = routesOf(surfaces, row.surface)
         .map((route) => `\`${route}\``)
         .join(' ');
       const issue = row.issue ? ` · ${row.issue}` : '';
       const blocked = row.state === 'blocked' ? ` · blocked by ${row.blockedBy}` : '';
-      const state = row.state === 'native' ? 'native' : row.state;
-      return `- ${box} **${row.surface}** ${routes} — ${state}${issue}${blocked}`;
+      const why = row.state === 'document' ? ` · ${row.why}` : '';
+      const state = row.state === 'document' ? 'document, by design' : row.state;
+      return `- ${box} **${row.surface}** ${routes} — ${state}${issue}${blocked}${why}`;
     });
 
     sections.push(`## ${phase.title}\n\n_${phase.why}_\n\n${lines.join('\n')}\n`);
@@ -203,6 +251,22 @@ export function renderMarkdown({ plan, screens, surfaces, parity }, { issue = fa
       return `- ${done ? '[x]' : '[ ]'} \`${component.id}\` on **${component.surface}**${issue}`;
     });
 
+  const release = (plan.release ?? []).map((item) => {
+    const box = item.state === 'done' ? '[x]' : '[ ]';
+    const detail = item.state === 'done' ? `done: ${item.evidence}` : `open: ${item.why}`;
+    return `- ${box} **${item.id}** — ${item.title} · ${detail}`;
+  });
+
+  const releaseSection =
+    release.length === 0
+      ? ''
+      : `\n## Release readiness\n\n` +
+        'The things a surface row cannot hold: the cutover, the screens the app needs to be ' +
+        'diagnosable, and the device measurements still owed. A tick names the evidence; an open ' +
+        'item names what closes it. The list lives in `docs/mobile/parity-plan.json` and is checked ' +
+        'by `check:plan` like every other row.\n\n' +
+        `${release.join('\n')}\n`;
+
   const tail =
     `\n## Components\n\n` +
     `A component is finished when the surface that draws it is native: ` +
@@ -213,12 +277,14 @@ export function renderMarkdown({ plan, screens, surfaces, parity }, { issue = fa
     (total, row) => ({ ...total, [row.state]: (total[row.state] ?? 0) + 1 }),
     {}
   );
+  const releaseDone = (plan.release ?? []).filter((item) => item.state === 'done').length;
   const summary =
     `\n## Where this stands\n\n` +
-    `${counts.native ?? 0} native · ${counts.todo ?? 0} to do · ${counts.blocked ?? 0} blocked of ` +
-    `${(screens.screens ?? []).length} surfaces.\n`;
+    `${counts.native ?? 0} native · ${counts.todo ?? 0} to do · ${counts.document ?? 0} document · ` +
+    `${counts.blocked ?? 0} blocked of ${(screens.screens ?? []).length} surfaces. ` +
+    `${releaseDone} of ${(plan.release ?? []).length} release items done.\n`;
 
-  return `${header}${intro}${sections.join('\n')}${tail}${summary}`;
+  return `${header}${intro}${sections.join('\n')}${releaseSection}${tail}${summary}`;
 }
 
 export function load(root = ROOT) {
@@ -272,8 +338,14 @@ export function main(argv = process.argv.slice(2)) {
   }
 
   const rows = data.plan.surfaces ?? [];
-  const native = rows.filter((row) => row.state === 'native').length;
-  console.log(`  ok ${rows.length} surfaces, ${native} native, ${rows.length - native} to go`);
+  const state = (name) => rows.filter((row) => row.state === name).length;
+  const release = data.plan.release ?? [];
+  const releaseDone = release.filter((item) => item.state === 'done').length;
+  console.log(
+    `  ok ${rows.length} surfaces, ${state('native')} native, ${state('todo')} to do, ` +
+      `${state('document')} document, ${state('blocked')} blocked; ` +
+      `${releaseDone}/${release.length} release items`
+  );
   return 0;
 }
 

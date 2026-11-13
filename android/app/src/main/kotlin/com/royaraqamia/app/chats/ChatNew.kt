@@ -60,7 +60,7 @@ fun ChatNewScreen(
 
 /**
  * The screen over the call it makes, so it can be drawn in a test without a
- * client: the same shape `ConsultationScreen` uses for its two reads.
+ * client: the shape `ConnectedAppsScreen` uses for its one read.
  */
 @Composable
 internal fun ChatNewScreen(

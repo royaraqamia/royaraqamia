@@ -441,6 +441,13 @@ have to be built here rather than assumed:
   one surface in a Custom Tab, off by default, removable once the surface settles. Without it, a
   broken screen is an emergency release.
 
+**Since [ADR-0178](../adr/0178-a-content-surface-ships-as-the-document.md), four of them are not
+ported at all.** `marketing`, `account-posts`, `mcp-guide` and `mcp-connect` are `document` rows in
+`docs/mobile/parity-plan.json`: the page is the deliverable, and the row says why. That is this
+phase's own argument taken to its conclusion - a static policy page or a paste-ready snippet is
+worse in an APK, not merely harder to write. Sign-in is the exception and is not `document`: it is
+`blocked` on the cutover, because a Custom Tab cannot set the app's session.
+
 `/admin` and MCP are ported last in this phase and gated on the security review: the APK is a
 distributed binary, so the operator UI is readable by anyone who unpacks it. Nothing in it may be a
 capability the server does not re-check.
@@ -491,6 +498,10 @@ installed by the update path in one command; the escape hatch is exercised once,
 
 - Remove Capacitor, `capacitor.config.ts`, `capacitor-web/`, the bundled target (#502/#503 become
   dead work), and the plugin list.
+- Give every `document` row a renderer before the WebView leaves: a Custom Tab is the system browser
+  rather than an in-APK WebView, so the six content surfaces stay the page without putting a WebView
+  back in the APK ([ADR-0178](../adr/0178-a-content-surface-ships-as-the-document.md)). This is
+  `release.browser-surface` in the plan, and the cutover waits on it.
 - Keep `latest.json`, the installer and `versionCode` discipline; raise the update floor so devices
   on the old shell are told to move.
 - Keep the old API shape alive until the installed base has moved. Nothing in the repo should imply

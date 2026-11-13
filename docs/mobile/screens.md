@@ -11,7 +11,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | --- | --- | --- | --- |
 | `chats` | `/chats/[id]`<br>`/chats/new` | `ChatsScreen.kt` (off) | Ported (#819) and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `home` | `/` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | _web only_ | The page is the deliverable (ADR-0178): five static pages whose words the site owns, so a policy edit costs a deploy and no release. |
 | `habitflow` | `/?tab=/habitflow`<br>`/habitflow` | `HabitflowScreen.kt` |  |
 | `spendtrack` | `/?tab=/spendtrack`<br>`/spendtrack` | `SpendtrackScreen.kt` |  |
 | `spendtrack-categories` | `/spendtrack/categories` | `SpendtrackCategoriesScreen.kt` |  |
@@ -20,10 +20,10 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `quran` | `/?tab=/quran`<br>`/quran` | `QuranIndexScreen.kt` |  |
 | `notes` | `/?tab=/notes`<br>`/notes` | _web only_ | The app shows the page as the document; the product's native screens land in phase 3 (#646). |
 | `quran-surah` | `/quran/[surah]` | `QuranSurahScreen.kt` |  |
-| `athkar` | `/?tab=/athkar`<br>`/athkar`<br>`/athkar/evening` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `athkar` | `/?tab=/athkar`<br>`/athkar`<br>`/athkar/evening` | _web only_ | One of the nine homepage tabs, so it is native before the door can be (ADR-0178); the app opens the page until it is. |
 | `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948), the profile card with its two dialogs is drawn (#946) and the allowance card is drawn (#947); the public handle editor is still the page's, so the surface stays off until it is the whole page. |
 | `account-links` | `/account/links` | `LinksnapScreen.kt` |  |
-| `account-posts` | `/account/posts` | _web only_ | The account's post management page is web-only in this phase; it arrives with the native account surface, and the plan lists it as `todo` with no ticket of its own (#882). |
+| `account-posts` | `/account/posts` | _web only_ | The page is the deliverable (ADR-0178): the post card is already native in the feed, and a port would add a second write path for a list opened rarely. |
 | `account-submissions` | `/account/submissions` | _web only_ | No door on the web: the submissions page is the request, booking and training forms, and none of them has an entry point since ADR-0148. The row is `blocked` in `parity-plan.json` for the same reason `leads` and `consultation` are. |
 | `account-plan` | `/account/plan` | `PlanScreen.kt` |  |
 | `account-connected-apps` | `/account/connected-apps` | `ConnectedAppsScreen.kt` |  |
@@ -39,12 +39,12 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `verify-code` | `/verify/[code]` | `VerifyCodeScreen.kt` |  |
 | `profile` | `/u/[username]`<br>`/u/[username]/followers`<br>`/u/[username]/following` | `ProfileScreen.kt` |  |
 | `scan` | `/?tab=/scan`<br>`/scan` | `ScanScreen.kt` |  |
-| `leads` | `/training/apply`<br>`/request-project`<br>`/hire`<br>`/pricing/subscribe` | `LeadsScreen.kt` (off) | The three lead forms never get a port: the site links them nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The Kotlin screen stays declared, unreached by the shell, until a change deletes it with its store and tests. |
-| `consultation` | `/consultation/book` | `ConsultationScreen.kt` (off) | Booking never gets a port: the site links `consultation/book` nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The Kotlin screen stays declared, unreached by the shell, until a change deletes it with its store and tests. |
+| `leads` | `/training/apply`<br>`/request-project`<br>`/hire`<br>`/pricing/subscribe` | _web only_ | No port, and none owed: the site links the three lead forms nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The screen that was never reached was deleted with its store and tests (ADR-0178). |
+| `consultation` | `/consultation/book` | _web only_ | No port, and none owed: the site links `consultation/book` nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The screen was deleted with its store and tests (ADR-0178). |
 | `downloader` | `/downloader` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `mcp-guide` | `/mcp/guide` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `mcp-connect` | `/mcp/connect` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | _web only_ | Sign-in moves to the app with the cutover, not before: once the WebView leaves, a Custom Tab cannot set the app's session, so the native flow is what makes the cutover possible (ADR-0178). The plan row is `blocked` on it. |
+| `mcp-guide` | `/mcp/guide` | _web only_ | The page is the deliverable (ADR-0178): a guide whose prose and snippet belong to the server's MCP surface, so a native copy would go stale before it shipped. |
+| `mcp-connect` | `/mcp/connect` | _web only_ | The page is the deliverable (ADR-0178): a one-time setup whose whole value is the snippet the server currently accepts. |
 | `mcp-apps` | `/mcp/apps` | _web only_ | The sheet is the app's apps surface (ADR-0159), and `/mcp/apps` stays the page: a callback, a bookmark and a deep link need an address a sheet cannot carry, so the shell opens it in the document. |
 | `mcp-app-detail` | `/mcp/apps/[id]` | `ConnectionScreen.kt` |  |
 | `admin` | `/admin/**` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
