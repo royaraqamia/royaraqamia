@@ -130,8 +130,7 @@
     {
       "surface": "news",
       "native": "android/app/src/main/kotlin/com/royaraqamia/app/news/NewsDigestScreen.kt",
-      "enabled": false,
-      "reason": "The public digest, its day strip and the personal switch are ported (#926), and switched off until they are the page pixel for pixel: the shell hands `/news` to the document in the meantime (#872, ADR-0117)."
+      "enabled": true
     },
     {
       "surface": "rates",

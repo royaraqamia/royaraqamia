@@ -1,11 +1,12 @@
 {
   "surface": "news",
   "route": "/news",
-  "notes": "The digest's own boxes (#926), declared before the surface is switched on. `at-rest` measures the page title, the day strip, the first story card and its source link; `needs-connection` measures the named block a screen with nothing to show draws. The page's search box, its personal-digest banner and the plan's card allowance are not part of this contract: search is not ported in this slice, and the banner and the allowance are conditional rows rather than the digest's frame. Widths of the title are left out because its width is the run of text, not a decision; the raster is what proves colours and spacing the boxes do not name.",
+  "notes": "The digest's own boxes (#926, #1345), at the address the door draws it under (`/?tab=/news`, ADR-0168). `at-rest` measures the page title, the day strip, the first story card and its source link. `origin` is the day strip, not the title: the page's search box sits between the title and the strip and is not ported in this slice, so the compared region starts where both clients draw the same boxes. The strip's `top` is therefore zero on both sides, and the story's is the gap the two share. `capture` is the story card, the region both clients draw identically, so the omitted search box cannot colour the raster. `needs-connection` measures the named block a screen with nothing to show draws: the page puts it below its loading skeleton, so the position is the block's own and the block's own size is what both clients must agree on. Widths of the title are left out because its width is the run of text, not a decision; the raster is what proves colours, spacing and the type the boxes do not name.",
   "states": [
     {
       "name": "at-rest",
-      "origin": "title",
+      "route": "/news?date=2026-01-15",
+      "origin": "archive",
       "capture": "story",
       "elements": [
         {
@@ -16,7 +17,7 @@
           "app": {
             "tag": "news-title"
           },
-          "properties": ["top", "height", "fontSize", "fontWeight"]
+          "properties": ["height", "fontSize", "fontWeight", "lineHeight"]
         },
         {
           "name": "archive",
@@ -52,7 +53,8 @@
     },
     {
       "name": "needs-connection",
-      "origin": "title",
+      "route": "/?tab=/news",
+      "origin": "unavailable",
       "capture": "unavailable",
       "elements": [
         {
@@ -63,7 +65,7 @@
           "app": {
             "tag": "news-title"
           },
-          "properties": ["top", "height", "fontSize", "fontWeight"]
+          "properties": ["height", "fontSize", "fontWeight", "lineHeight"]
         },
         {
           "name": "unavailable",
@@ -73,7 +75,7 @@
           "app": {
             "tag": "news-unavailable"
           },
-          "properties": ["top", "width", "paddingTop", "paddingLeft"]
+          "properties": ["width", "height"]
         }
       ]
     }

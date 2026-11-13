@@ -48,6 +48,7 @@ internal fun NewsArchiveRow(
             modifier
                 .fillMaxWidth()
                 .testTag(NewsDigestMetrics.ARCHIVE)
+                .padding(bottom = NewsDigestMetrics.ARCHIVE_PADDING_BOTTOM)
                 .horizontalScroll(rememberScrollState())
                 .semantics { contentDescription = NewsArchiveCopy.ARCHIVE_LABEL },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -97,7 +98,11 @@ private fun ArchiveChip(
     ) {
         Text(
             text = label,
-            style = type.xs.copy(fontWeight = FontWeight.Bold),
+            style =
+                type.xs.copy(
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = NewsDigestMetrics.ARCHIVE_CHIP_LINE_HEIGHT,
+                ),
             color = if (selected) RoyColors.primary else RoyColors.mutedForeground,
             maxLines = 1,
         )

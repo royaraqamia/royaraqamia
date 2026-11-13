@@ -1,0 +1,15 @@
+{
+  "surface": "news",
+  "elements": {
+    "title": {
+      "height": 46.545456,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "unavailable": {
+      "width": 360.72726,
+      "height": 287.63635
+    }
+  }
+}

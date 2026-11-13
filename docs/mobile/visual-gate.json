@@ -697,6 +697,48 @@
           }
         }
       ]
+    },
+    {
+      "surface": "news",
+      "web": {
+        "route": "/?tab=/news"
+      },
+      "contract": "shared/visual/news.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/news/NewsDigestScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.1,
+            "length": 1.0
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.0844,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        },
+        {
+          "name": "needs-connection",
+          "tolerance": {
+            "pixels": 0.04,
+            "length": 1.0
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.024,
+            "alignment": {
+              "dx": 1,
+              "dy": 0
+            }
+          }
+        }
+      ]
     }
   ],
   "frame": {

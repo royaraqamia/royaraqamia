@@ -24,7 +24,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [x] **community** `/community` `/community/explore` — native
 - [ ] **community-post** `/community/[slug]` — todo · #1351
 - [x] **profile** `/u/[username]` `/u/[username]/followers` `/u/[username]/following` — native · #1343
-- [ ] **news** `/?tab=/news` `/news` — todo · #1345
+- [x] **news** `/?tab=/news` `/news` — native · #1345
 - [x] **scan** `/?tab=/scan` `/scan` — native · #1344
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [ ] **mcp-guide** `/mcp/guide` — todo
@@ -158,11 +158,11 @@ A component is finished when the surface that draws it is native: 77 ported comp
 - [x] `quran-index` on **quran** · #955
 - [x] `quran-surah` on **quran** · #955
 - [x] `quran-player` on **quran-surah** · #956
-- [ ] `news-digest` on **news** · #926
-- [ ] `news-archive` on **news** · #926
-- [ ] `news-story` on **news** · #926
-- [ ] `news-page` on **news** · #926
+- [x] `news-digest` on **news** · #926
+- [x] `news-archive` on **news** · #926
+- [x] `news-story` on **news** · #926
+- [x] `news-page` on **news** · #926
 
 ## Where this stands
 
-17 native · 17 to do · 5 blocked of 39 surfaces.
+18 native · 16 to do · 5 blocked of 39 surfaces.

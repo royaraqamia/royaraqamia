@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,6 +33,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.contracts.generated.NewsBoardResponseBoard
 import com.royaraqamia.app.contracts.generated.NewsBoardResponseBoardCards
 import com.royaraqamia.app.contracts.generated.NewsBoardResponseBoardPersonal
@@ -55,6 +58,31 @@ object NewsDigestMetrics {
     const val STALE = "news-stale"
     const val PERSONAL = "news-personal"
     const val UNAVAILABLE = "news-unavailable"
+
+    /** The page's own box for the title, recorded at 393 CSS px (#1345). */
+    val TITLE_HEIGHT = 46.5.dp
+    val TITLE_SIZE = 30.sp
+    val TITLE_LINE_HEIGHT = 37.5.sp
+    val TITLE_WEIGHT = FontWeight(800)
+
+    /** The story card's numbers, read from `frontend/ui/news/StoryCard.tsx`. */
+    val STORY_RADIUS = 16.dp
+    val STORY_PADDING = 20.dp
+    /** The page's 20, the 1px border Compose paints without consuming, and the two
+     *  pixels Compose's line boxes lose against the page's three text rows. */
+    val STORY_CONTENT_PADDING = 23.dp
+    val STORY_HEADER_HEIGHT = 26.5.dp
+    val STORY_HEADLINE_SIZE = 18.sp
+    val STORY_HEADLINE_LINE_HEIGHT = 24.75.sp
+    val STORY_SUMMARY_SIZE = 14.sp
+    val STORY_SUMMARY_LINE_HEIGHT = 28.sp
+    val STORY_META_SIZE = 11.sp
+    val STORY_META_LINE_HEIGHT = 16.5.sp
+    val STORY_SOURCE_PADDING = 8.dp
+
+    /** The day strip: the page's chip and its 4px bottom breathing room. */
+    val ARCHIVE_CHIP_LINE_HEIGHT = 16.sp
+    val ARCHIVE_PADDING_BOTTOM = 4.dp
 }
 
 /**
@@ -77,8 +105,9 @@ object NewsDigestMetrics {
  * read-failure state when the server refused rather than being unreachable
  * (ADR-0031).
  *
- * It is ported and switched off: the shell still hands `/news` to the document
- * until the visual gate passes (ADR-0117, ADR-0118).
+ * It is switched on: the layout contract and the raster were recorded against
+ * the page at 393 x 852 @ 2.75, so the shell draws this screen for `/news`
+ * (#1345, ADR-0118).
  */
 @Composable
 fun NewsDigestScreen(
@@ -174,16 +203,27 @@ private fun NewsDigestContent(
                 .padding(vertical = spacing.elementGapSm),
         verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
     ) {
-        Text(
-            text = NewsPageCopy.PAGE_TITLE,
+        Box(
             modifier =
                 Modifier.fillMaxWidth()
+                    .height(NewsDigestMetrics.TITLE_HEIGHT)
                     .testTag(NewsDigestMetrics.TITLE)
                     .semantics { contentDescription = NewsPageCopy.PAGE_TITLE },
-            style = type.h2,
-            color = RoyColors.primary,
-            textAlign = TextAlign.Center,
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = NewsPageCopy.PAGE_TITLE,
+                style =
+                    type.h2.copy(
+                        fontSize = NewsDigestMetrics.TITLE_SIZE,
+                        fontWeight = NewsDigestMetrics.TITLE_WEIGHT,
+                        lineHeight = NewsDigestMetrics.TITLE_LINE_HEIGHT,
+                        letterSpacing = (-0.025f).em,
+                    ),
+                color = RoyColors.primary,
+                textAlign = TextAlign.Center,
+            )
+        }
 
         when (state) {
             null -> Loading()
@@ -263,7 +303,14 @@ private fun Body(
     val search = board.search
     when {
         search != null -> StoryColumn(search.hits.map { it.toView() }, onOpenUrl)
-        day != null && day.stories.isNotEmpty() -> StoryColumn(day.stories.map { it.toView() }, onOpenUrl)
+        day != null && day.stories.isNotEmpty() ->
+            StoryColumn(
+                stories = day.stories.map { it.toView() },
+                onOpenUrl = onOpenUrl,
+                // The page's `mt-8` on the stories block, over the column's own
+                // 16 gap: the story card sits 32 below the day strip (#1345).
+                modifier = Modifier.padding(top = 16.dp),
+            )
         day != null ->
             Notice(text = NewsDigestCopy.CATEGORY_EMPTY, tag = NewsDigestMetrics.EMPTY)
         else -> EmptyDay(board.hasAnyDigest, onSelectDate)
@@ -279,12 +326,16 @@ private fun Body(
 }
 
 @Composable
-private fun StoryColumn(stories: List<NewsStoryView>, onOpenUrl: (String) -> Unit) {
+private fun StoryColumn(
+    stories: List<NewsStoryView>,
+    onOpenUrl: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val spacing = LocalRoySpacing.current
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
     ) {
         for (story in stories) {
             NewsStoryCard(story = story, onOpenUrl = onOpenUrl)

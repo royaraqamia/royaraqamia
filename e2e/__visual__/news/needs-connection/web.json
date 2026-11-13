@@ -1,0 +1,22 @@
+{
+  "surface": "news",
+  "state": "needs-connection",
+  "route": "/?tab=/news",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "unavailable": {
+      "width": 361,
+      "height": 287.5
+    }
+  }
+}

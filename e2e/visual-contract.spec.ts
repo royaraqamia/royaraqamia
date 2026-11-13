@@ -7,10 +7,12 @@ import QRCode from 'qrcode';
 import {
   clearVisualCommunityPosts,
   clearVisualLink,
+  clearVisualNews,
   clearVisualProfile,
   COMMUNITY_SEED_PREFIX,
   protectVisualLink,
   seedVisualLink,
+  seedVisualNews,
   seedVisualProfile,
   seedHomeServices,
   signInAsVisualAccount,
@@ -575,6 +577,29 @@ const PREPARE: Record<
     await page.waitForTimeout(600);
     await page.evaluate(() => document.fonts.ready);
   },
+  // The digest at rest (#1345): the day is pinned to the fixture's fixed one, so
+  // the card the gate measures is the same every run rather than today's news
+  // (ADR-0119). The page is the door's own tab address; `/news` now redirects
+  // there (ADR-0168).
+  'news/at-rest': async (page, visit) => {
+    await seedVisualNews();
+    await visit();
+    await page.locator('[data-visual="news-story"]').first().waitFor({ timeout: 30_000 });
+    // The pinned date survives the redirect from `/news`; without it the page
+    // would record whatever the nightly workflow published this morning.
+    await expect(page.locator('[data-visual="news-story"] h3')).toHaveText(
+      'خبر تجريبي لبوابة القياس'
+    );
+    await page.evaluate(() => document.fonts.ready);
+  },
+  // Nothing to show, offline (#1345): the board read never reaches the server,
+  // so the page names the connection instead of an empty digest (ADR-0031).
+  'news/needs-connection': async (page, visit) => {
+    await page.route('**/api/news/board*', (route) => route.abort('internetdisconnected'));
+    await visit();
+    await page.locator('[data-visual="news-unavailable"]').waitFor({ timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
+  },
   // The Scanner at rest (#1344): the public route, with the camera not started.
   // Nothing is seeded - the state is the page's own first paint - so the card's
   // viewfinder, start control and upload box are the recording.
@@ -694,6 +719,9 @@ const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
   },
   'community/at-rest': async (page) => {
     await clearVisualCommunityPosts(page.context(), projectBaseURL());
+  },
+  'news/at-rest': async () => {
+    await clearVisualNews();
   },
 };
 
