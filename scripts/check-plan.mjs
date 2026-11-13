@@ -180,6 +180,9 @@ export function validate({ plan, screens, surfaces, parity }) {
     if (item.state === 'open' && !item.why) {
       errors.push(`release item "${id}" is open and does not say what closes it ("why")`);
     }
+    if (item.issue !== undefined && !/^#\d+$/.test(item.issue)) {
+      errors.push(`release item "${id}" names issue "${item.issue}", which is not #<number>`);
+    }
   }
 
   return errors;
@@ -254,7 +257,8 @@ export function renderMarkdown({ plan, screens, surfaces, parity }, { issue = fa
   const release = (plan.release ?? []).map((item) => {
     const box = item.state === 'done' ? '[x]' : '[ ]';
     const detail = item.state === 'done' ? `done: ${item.evidence}` : `open: ${item.why}`;
-    return `- ${box} **${item.id}** — ${item.title} · ${detail}`;
+    const issue = item.issue ? ` · ${item.issue}` : '';
+    return `- ${box} **${item.id}** — ${item.title}${issue} · ${detail}`;
   });
 
   const releaseSection =

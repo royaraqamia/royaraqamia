@@ -221,6 +221,7 @@ describe('the rendered list', () => {
           evidence: 'FailureReporter',
         },
         { id: 'cutover', title: 'Remove the bridge', state: 'open', why: 'no WebView in the APK' },
+        { id: 'door', title: 'The door', state: 'open', why: 'nine tabs', issue: '#1399' },
       ],
     };
 
@@ -232,7 +233,8 @@ describe('the rendered list', () => {
     expect(rendered).toContain(
       '- [ ] **cutover** — Remove the bridge · open: no WebView in the APK'
     );
-    expect(rendered).toContain('1 of 2 release items done');
+    expect(rendered).toContain('- [ ] **door** — The door · #1399 · open: nine tabs');
+    expect(rendered).toContain('1 of 3 release items done');
   });
 
   it('ticks the component of a native surface', () => {
