@@ -12,6 +12,7 @@ import { createDefaultProjectRequestService } from '@/backend/config/project-req
 import { createProfileService } from '@/backend/config/users';
 import { createUsageService } from '@/backend/config/plans';
 import { listAgencySkills, loadAgencySkill } from '@/backend/services/chat/agency-skills';
+import type { CapabilityOwner, ToolTier } from '@/backend/services/tools/registry';
 import { toPublicCertificate } from '@/shared/contracts/certificates';
 import { PostSlugSchema } from '@/shared/contracts/community';
 import { COURSE_SLUGS } from '@/shared/contracts/training';
@@ -35,9 +36,9 @@ import type { ChatAgentToolKind, ChatAgentToolName } from '@/shared/contracts/ch
  *   session and is never part of a tool's arguments, so the model cannot name
  *   somebody else. Every schema is strict, so an argument object that tries is
  *   refused instead of silently stripped.
- * - **A write runs only on confirmation.** A `write` tool is never called from
+ * - **A tool above tier 0 runs only on confirmation.** It is never called from
  *   the turn; the turn only proposes it, and `confirm` is the one caller of
- *   `run`. The read tools are the only ones whose answer reaches the model.
+ *   `run`. Tier 0 is the only tier whose answer reaches the model (ADR-0180).
  */
 
 export interface ChatAgentToolContext {
@@ -60,6 +61,10 @@ export interface ChatAgentToolContext {
 export interface ChatAgentTool {
   name: ChatAgentToolName;
   kind: ChatAgentToolKind;
+  /** Which product owns it: the coverage axis of the registry (ADR-0183). */
+  product: CapabilityOwner;
+  /** Its blast radius: 0 for a read, 1..3 for a write (ADR-0180). */
+  tier: ToolTier;
   /** What the model is told the tool is for. Arabic, one line. */
   description: string;
   /** Strict: an unknown key is a refusal, not something quietly dropped. */
@@ -213,6 +218,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'list_certificates',
     kind: 'read',
+    product: 'certificates',
+    tier: 0,
     description: 'الشهادات التي حصل عليها العضو.',
     schema: NoArgs,
     async run(_args, context) {
@@ -225,6 +232,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'get_usage_state',
     kind: 'read',
+    product: 'account',
+    tier: 0,
     description: 'خطة العضو واستخدامه لما تسمح به الخطة.',
     schema: NoArgs,
     async run(_args, context) {
@@ -234,6 +243,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'list_consultation_bookings',
     kind: 'read',
+    product: 'consultations',
+    tier: 0,
     description: 'حجوزات الاستشارة الخاصة بالعضو وحالتها.',
     schema: NoArgs,
     async run(_args, context) {
@@ -243,6 +254,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'list_consultation_options',
     kind: 'read',
+    product: 'consultations',
+    tier: 0,
     description: 'باقات الاستشارة المتاحة والمواعيد الفارغة، لاختيار ما يُحجز.',
     schema: NoArgs,
     async run() {
@@ -257,6 +270,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'list_my_posts',
     kind: 'read',
+    product: 'community',
+    tier: 0,
     description: 'منشورات العضو ومسوداته في المجتمع.',
     schema: PostStatusArgs,
     async run(args, context) {
@@ -276,6 +291,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'get_post_by_slug',
     kind: 'read',
+    product: 'community',
+    tier: 0,
     description: 'منشور منشور واحد برابطه.',
     schema: PostSlugArgs,
     async run(args, context) {
@@ -296,6 +313,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'get_habits_summary',
     kind: 'read',
+    product: 'habitflow',
+    tier: 0,
     description: 'ملخّص عادات العضو وتذكيراتها وإنجاز آخر سبعة أيام.',
     schema: NoArgs,
     async run(_args, context) {
@@ -328,6 +347,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'get_expenses_summary',
     kind: 'read',
+    product: 'spendtrack',
+    tier: 0,
     description: 'مصروفات العضو هذا الشهر، وأحدث العمليات لاختيار واحدة لتعديلها.',
     schema: NoArgs,
     async run(_args, context) {
@@ -367,6 +388,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'create_post_draft',
     kind: 'write',
+    product: 'community',
+    tier: 1,
     description: 'إنشاء مسودة منشور في المجتمع بعنوان ونصّ.',
     schema: CreateDraftArgs,
     async run(args, context) {
@@ -383,6 +406,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'edit_post_draft',
     kind: 'write',
+    product: 'community',
+    tier: 1,
     description: 'تعديل نصّ مسودة منشور قائمة.',
     schema: EditDraftArgs,
     async run(args, context) {
@@ -402,6 +427,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'publish_post_draft',
     kind: 'write',
+    product: 'community',
+    tier: 2,
     description: 'نشر مسودة منشور قائمة.',
     schema: PublishDraftArgs,
     async run(args, context) {
@@ -418,6 +445,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'record_expense',
     kind: 'write',
+    product: 'spendtrack',
+    tier: 1,
     description: 'تسجيل مصروف بمبلغ وتصنيف بالاسم.',
     schema: RecordExpenseArgs,
     async run(args, context) {
@@ -439,6 +468,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'edit_expense',
     kind: 'write',
+    product: 'spendtrack',
+    tier: 1,
     description: 'تعديل مبلغ مصروف أو تصنيفه.',
     schema: EditExpenseArgs,
     async run(args, context) {
@@ -467,6 +498,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'create_habit',
     kind: 'write',
+    product: 'habitflow',
+    tier: 1,
     description: 'إنشاء عادة جديدة باسمها وتكرارها.',
     schema: CreateHabitArgs,
     async run(args, context) {
@@ -481,6 +514,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'set_habit_reminder',
     kind: 'write',
+    product: 'habitflow',
+    tier: 1,
     description: 'ضبط تذكير عادة على وقت HH:mm، أو إزالته بوقت فارغ.',
     schema: HabitReminderArgs,
     async run(args, context) {
@@ -497,6 +532,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'book_consultation',
     kind: 'write',
+    product: 'consultations',
+    tier: 2,
     description: 'حجز استشارة بباقة ومواعيد وبيانات التواصل.',
     schema: BookConsultationArgs,
     async run(args, context) {
@@ -511,6 +548,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'apply_training',
     kind: 'write',
+    product: 'training',
+    tier: 2,
     description: 'تقديم طلب التحاق بدورة تدريبية.',
     schema: ApplyTrainingArgs,
     async run(args, context) {
@@ -525,6 +564,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'submit_project_request',
     kind: 'write',
+    product: 'client-work',
+    tier: 2,
     description: 'إرسال طلب مشروع بوصفه وبيانات التواصل.',
     schema: ProjectRequestArgs,
     async run(args, context) {
@@ -539,6 +580,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'change_display_name',
     kind: 'write',
+    product: 'account',
+    tier: 1,
     description: 'تغيير اسم العرض فقط؛ لا بريد ولا كلمة مرور ولا حذف حساب.',
     schema: ChangeNameArgs,
     async run(args, context) {
@@ -553,6 +596,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'list_specialists',
     kind: 'read',
+    product: 'assistant',
+    tier: 0,
     description:
       'دليل المتخصصين: بلا وسيط يعرض الأقسام وعدد المتخصصين في كل قسم، وبوسيط division يعرض متخصصي ذلك القسم بأسمائهم ووصفهم. استخدمه حين يحتاج السؤال خبرة أضيق من العامة، ثم حمّل المتخصص المناسب.',
     schema: ListSpecialistsArgs,
@@ -564,6 +609,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'load_specialist',
     kind: 'read',
+    product: 'assistant',
+    tier: 0,
     description:
       'تحميل تعليمات متخصص من الدليل بمعرّفه، لتتبعها في بقية الجواب. خذه من list_specialists، ولا تخترع معرّفاً.',
     schema: LoadSpecialistArgs,
@@ -576,6 +623,8 @@ const tools: ChatAgentTool[] = [
   {
     name: 'find_app_tools',
     kind: 'read',
+    product: 'assistant',
+    tier: 0,
     description:
       'البحث في أدوات التطبيقات التي ربطها العضو. استخدمها حين يطلب شيئاً من تطبيق خارجي ولم تجد أداته بين أدواتك؛ تعيد أسماء الأدوات المطابقة لتستدعيها في الخطوة التالية.',
     schema: FindAppToolsArgs,

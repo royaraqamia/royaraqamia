@@ -111,6 +111,8 @@ function writeTool(run: ChatAgentTool['run']): ChatAgentTool {
   return {
     name: 'record_expense',
     kind: 'write',
+    product: 'spendtrack',
+    tier: 1,
     description: 'مصروف',
     schema: z.strictObject({
       amount: z.number().positive(),

@@ -232,18 +232,21 @@ The budget the work has to fit inside:
 
 Ordered, each independently reviewable.
 
-1. `tools: one registry, two doors` — phase 0, no behaviour change.
-2. `assistant: the identity block` — phase 0, one system line and its test.
-3. `assistant: the screen is the context` — phase 1 web.
-4. `android: publish the same screen snapshot` — phase 1 native pair.
-5. `assistant: saved facts and cited recall` — phase 2 schema and turn.
-6. `account: the memory page` — phase 2 surface, web + Android.
-7. `tools: the nine products, read side` — phase 3, first half.
-8. `tools: the nine products, write side with tiers` — phase 3, second half.
-9. `assistant: trust, grants and the audit trail` — phase 3 surface.
-10. `assistant: a scheduled run is a turn without a witness` — phase 4.
-11. `assistant: skills by meaning` — phase 5.
-12. `admin: the agent console` + the eval suites — phase 6.
+1. `tools: the capability table` — phase 0, the registry type, both doors' tables, and the tests
+   that fail when either drifts from what it registers. No behaviour change.
+2. `tools: one handler, two doors` — phase 0, the modules read the table and answer with a domain
+   value the adapters format.
+3. `assistant: the identity block` — phase 0, one system line and its test.
+4. `assistant: the screen is the context` — phase 1 web.
+5. `android: publish the same screen snapshot` — phase 1 native pair.
+6. `assistant: saved facts and cited recall` — phase 2 schema and turn.
+7. `account: the memory page` — phase 2 surface, web + Android.
+8. `tools: the nine products, read side` — phase 3, first half.
+9. `tools: the nine products, write side with tiers` — phase 3, second half.
+10. `assistant: trust, grants and the audit trail` — phase 3 surface.
+11. `assistant: a scheduled run is a turn without a witness` — phase 4.
+12. `assistant: skills by meaning` — phase 5.
+13. `admin: the agent console` + the eval suites — phase 6.
 
 ## Settled
 

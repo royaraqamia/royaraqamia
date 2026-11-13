@@ -796,6 +796,8 @@ describe('the assistant’s tools (#818)', () => {
   const readTool: ChatAgentTool = {
     name: 'list_certificates',
     kind: 'read',
+    product: 'certificates',
+    tier: 0,
     description: 'شهاداتك',
     schema: z.strictObject({}),
     run: vi.fn(async () => [{ id: 'cert-1', course_name: 'دورة' }]),
@@ -845,6 +847,8 @@ describe('the assistant’s tools (#818)', () => {
     const failing: ChatAgentTool = {
       name: 'list_certificates',
       kind: 'read',
+      product: 'certificates',
+      tier: 0,
       description: 'شهاداتك',
       schema: z.strictObject({}),
       run: vi.fn(async () => {
@@ -886,6 +890,8 @@ describe('the assistant’s tools (#818)', () => {
     const writeTool: ChatAgentTool = {
       name: 'record_expense',
       kind: 'write',
+      product: 'spendtrack',
+      tier: 1,
       description: 'مصروف',
       schema: z.strictObject({ amount: z.number() }),
       run: vi.fn(async () => ({ expense_id: 'expense-1' })),
