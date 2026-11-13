@@ -105,8 +105,8 @@ The foundation. Nothing else is safe to build on two registries.
   it with their current names.
 - Add `tier` and `scope` to every entry. Tier assignments come from the table in ADR-0180.
 - Add `GET /api/me` projection as the identity block, injected before the system prompt.
-- Replace `permissionLevel: 'all'` with the tier-1 interpretation; keep the column, change what
-  it means (ADR-0180, decision 5).
+- Read `permissionLevel: 'all'` as the app's tier 0 and 1 tools; keep the column, change what it
+  means, and migrate nothing (ADR-0180, decision 6).
 - Parity test: every entry projects to both doors, or carries a documented exemption.
 - One file lists the coverage matrix above, generated from the registry so it cannot be stale.
 
@@ -160,6 +160,8 @@ a tiered write; a member can grant and revoke each of them.
 ### Phase 4 — Time
 
 - `agent_tasks`, the claim/lease runner, the budget, the digest, the undo, the kill switches.
+- `profiles.timezone` in the same migration as the task row, so no reminder is ever created
+  without the zone it means (ADR-0184, decision 10).
 - Reminders first (no tools), then read-only digests, then tier-1 actions.
 - Delivery: the assistant thread plus push; no email until one exists.
 
@@ -241,14 +243,22 @@ Ordered, each independently reviewable.
 11. `assistant: skills by meaning` — phase 5.
 12. `admin: the agent console` + the eval suites — phase 6.
 
+## Settled
+
+Decided before phase 0, because both are schema-shaped and a later change would be a data
+migration with a behaviour change:
+
+- **Clocks split.** A scheduled run uses the member's IANA zone (`profiles.timezone`, snapshotted
+  onto the task); every meter and daily reset keeps the Damascus day (ADR-0184, decision 10).
+- **`all` narrows immediately.** An existing connection's `all` becomes its tier 0 and 1 tools, no
+  migration and no retroactive grants, with one line in the thread the first time it cards
+  (ADR-0180, decision 6).
+
 ## Open questions
 
-Recorded here rather than assumed:
-
-- Does the member's timezone come from the profile, the device, or Damascus, for a scheduled run?
-  Today every meter resets on Damascus midnight; a reminder at 06:00 is a different question.
-- Does `all` on an already-connected external app migrate to per-tool grants, or keep its new
-  meaning as the app's tier-1 tools? ADR-0180 says the latter; the migration of existing rows is
-  a separate decision.
-- Is the admin scope on the assistant (not just the MCP server) wanted at all, or is the admin
-  console the only operator door?
+- **Admin tools in the member-facing turn.** The recommendation on the table is yes, under four
+  conditions: tier 2 and 3 only, never in a scheduled run, a visible admin mark on the card, and
+  the page snapshot suppressed while an admin surface is open. The safety does not depend on
+  hiding the declarations — `isAdmin` is re-checked at execution and a handler without the `admin`
+  scope throws — but the conditions are what make a routine-looking card hard to misread. Not
+  accepted yet.

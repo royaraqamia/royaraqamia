@@ -57,6 +57,15 @@ next_run_at, tier_ceiling, budget, status, last_run_at, last_result, created_by)
 9. **Delivery is the thread and push.** In-app always; FCM when the member is away. No email
    until the deployment has a sender.
 
+10. **The clock is the member's; the meter is Damascus's.** A reminder or a task uses the member's
+    own IANA zone, stored on `profiles.timezone` (default `Asia/Damascus`, validated against
+    `Intl.supportedValuesOf('timeZone')`) and snapshotted onto the task row when it is created, so
+    a later profile change cannot silently move a 06:00 reminder — the settings screen offers to
+    shift pending tasks instead. Every allowance, cap and daily reset keeps the Damascus day it
+    already uses (ADR-0093): a billing day belongs to the product, a reminder belongs to the
+    member. The Telegram bridge's stored offset is not converted into a zone; an offset is not an
+    IANA name, and guessing DST is how a reminder lands an hour off.
+
 ## Considered options
 
 - **Autonomous writes at every tier.** Rejected: a run that publishes, pays or deletes without a

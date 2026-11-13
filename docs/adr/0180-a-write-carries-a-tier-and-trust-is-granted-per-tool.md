@@ -66,6 +66,14 @@ last_used_at, revoked_at)`, unique on the live pair. A grant is created only by 
    tier 0 and tier 1 tools"; its tier 2 and 3 tools still card. The column stays, its meaning
    narrows. A grant on a third-party tool is per tool, like our own.
 
+   The narrowing needs no data migration and creates no retroactive grants: an existing `all`
+   row is read under the new meaning from the first turn after the deploy. The old `all` was
+   granted under copy that promised "reads and writes", and a member who tapped it never agreed
+   that an app could publish publicly, message somebody, or delete. The first attempt that now
+   cards gets one line in the thread — once per connection, not once per tool — and the apps
+   sheet's copy changes in both clients. Nothing above tier 1 is ever inferred from a level the
+   member chose before tiers existed.
+
 7. **A missing tier fails the build.** There is no default, because a default is how a new tool
    quietly becomes automatic.
 
