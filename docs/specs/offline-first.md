@@ -139,6 +139,12 @@ stated limit.
   while the network was healthy. It now waits, and the plain 503 above answers only a request that
   actually failed (ADR-0031's 2026-11-13 amendment).
 
+  Since #1370 the same "is there something better to show?" test decides on the ordinary path too: the
+  deadline is entered only when the device holds a document that may answer this navigation, and a
+  screen that belongs to one viewer refuses every ancestor (ADR-0071's #1370 amendment). With nothing
+  to choose the navigation waits, which is also why a brand-new install's first hit with a slow but
+  healthy origin is no longer told "Offline".
+
 - **An owned-data route's shell needs one online visit, then it reloads offline.** `/habitflow`,
   `/spendtrack`, `/linksnap` and `/notes` used to be in the worker's never-cache list
   (ADR-0031: their documents were server-rendered per user, so caching them risked leaking one
@@ -212,12 +218,15 @@ Honest list of what stands between us and the bar, each with the file that shows
    English literal.
 4. **A dynamic detail deep link keeps its parent's chrome, and the item itself still needs one
    visit.** The worker answers a navigation it has no copy of with the longest cached ancestor
-   (`shellPrefixCandidates` in `public/sw-routing.js`, `serveNearestShell` in `public/sw.js`, #490),
-   silently and with no record: `/community/<slug>`, `/quran/<surah>`, `/u/<username>` and
-   `/verify/<code>` show the app at the requested URL — at the cost that what renders is the
-   ancestor's content, not the item the user asked for, until that item has been opened online once.
-   The background refresh also queues the `/_next/static` files each shell names and drains twelve
-   per idle window (`ROUTE_REFRESH_ASSET_BATCH`) from a build-stamped queue in the worker's
+   (`shellPrefixCandidates` in `public/sw-routing.js`, `cachedFallback` in `public/sw.js`, #490),
+   silently and with no record: `/community/<slug>`, `/quran/<surah>` and `/verify/<code>` show the
+   app at the requested URL — at the cost that what renders is the ancestor's content, not the item
+   the user asked for, until that item has been opened online once. A screen that belongs to one
+   viewer is outside that promise (`isPerViewerRoute`, #1370): `/community`, `/u/<handle>` and the
+   private follow lists borrow no ancestor and are never written to Cache Storage, so an offline open
+   of one this device never opened online is the browser's own error page rather than another route's
+   content. The background refresh also queues the `/_next/static` files each shell names and drains
+   twelve per idle window (`ROUTE_REFRESH_ASSET_BATCH`) from a build-stamped queue in the worker's
    bookkeeping cache — the chunks of a never-visited route otherwise arrive only with a visit, which
    is exactly the case the prefix serve exists for.
 
@@ -416,8 +425,11 @@ reading because of a chunk they never asked for (#332).
   `online-only-offline`, `static-offline`, `api-offline`) and posts one
   beacon per miss to `/api/offline-serve`, carrying the cache hit/miss/failure tallies since the
   previous report. `online-only-deadline` is retired (ADR-0031's 2026-11-13 amendment) and accepted
-  only from a worker that predates it. `navigation-prefix` is the graceful fallback (#490): an ancestor shell answered,
-  silently, so the door separates "the user saw the parent's chrome" from "the user got a 503". What
+  only from a worker that predates it, and since #1370 `navigation-deadline` no longer counts a
+  document either: a navigation with no shell it may serve waits for the origin, and the deadline is
+  left to a flight payload (ADR-0071's #1370 amendment). `navigation-prefix` is the graceful fallback
+  (#490): an ancestor shell answered, silently, so the door separates "the user saw the parent's
+  chrome" from "the user got a 503". What
   is deliberately not collected: **no URL** (not even a path), no user, session or client id, no
   cookies (`credentials: 'omit'`), no timing, no sizes. The beacon is droppable — it is not awaited,
   and a limiter outage drops it rather than opening a write path. A beacon the network refuses (the
@@ -444,8 +456,9 @@ moment it matters — with the reason stated, since the request is otherwise opa
 
 **Phase 0 of the "never show `/offline`" roadmap (#447) landed on 2026-10-21.** Three diffs close the
 most-complained paths without touching the dashboard architecture: a cold-load deadline for every
-navigation that has a cached shell (the limit above — ten seconds when it landed, three since #491;
-never-cache navigations were exempted on 2026-11-13), the auth shells in the SWR
+navigation that has a cached shell it may serve (the limit above — ten seconds when it landed, three
+since #491; never-cache navigations were exempted on 2026-11-13, and since #1370 a navigation whose
+route class refuses a shell waits for the origin instead), the auth shells in the SWR
 cache with their forms answering offline submits inline (ADR-0031's amendment; the shells join
 ADR-0071's precache), and the Android shell's fallback page recovering exactly once when the radio
 returns (ADR-0067's amendment). With it, `/offline` ended up serving only a brand-new install hit with no

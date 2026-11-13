@@ -235,6 +235,54 @@
     return RUNTIME_SHELL_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
   }
 
+  /**
+   * Screens that belong to one viewer (#1370).
+   *
+   * These documents are rendered for the session that asked for them, so they are
+   * never written to Cache Storage and never served from it: a copy can only be a
+   * leftover from a build that answered the route cacheable, and replaying it
+   * paints one visitor's screen for the next — a guest roster in front of a
+   * signed-in member, a home page at a follower list's URL.
+   *
+   * - `/community` is the member's own feed: the posts they follow, the roster's
+   *   follow states and their following count (`app/community/page.tsx`).
+   * - `/u/<handle>` and its `/followers` and `/following` lists render the
+   *   viewer's standing with that member, and the caller's own private lists.
+   *
+   * Both are `force-dynamic`, so the server answers `no-store` and the ordinary
+   * rules would already refuse the write; this list is the worker's own second
+   * lock, because a document written by an older build outlives the release that
+   * stopped being cacheable (#488) and nothing refreshes a route that left the
+   * precache list.
+   */
+  const VIEWER_DOCUMENT_EXACT = ['/community'];
+  const VIEWER_DOCUMENT_PREFIXES = ['/u/'];
+
+  /** A path without its trailing slashes, so `/u/x/` and `/u/x` are one route. */
+  function barePath(pathname) {
+    if (typeof pathname !== 'string' || pathname.charAt(0) !== '/') return pathname;
+    const trimmed = pathname.replace(/\/+$/, '');
+    return trimmed || '/';
+  }
+
+  function isViewerDocument(url) {
+    const pathname = barePath(url.pathname);
+    if (VIEWER_DOCUMENT_EXACT.includes(pathname)) return true;
+    return VIEWER_DOCUMENT_PREFIXES.some(
+      (prefix) => pathname === prefix.slice(0, -1) || pathname.startsWith(prefix)
+    );
+  }
+
+  /**
+   * A screen that is never substituted by another route's document (#1370): one
+   * viewer's own page, or a runtime shell whose rows are that member's. The
+   * runtime shells still answer from their own exact entry — it is only the
+   * ancestor that may not stand in for them.
+   */
+  function isPerViewerRoute(url) {
+    return isViewerDocument(url) || isRuntimeShell(url);
+  }
+
   self.SWRouting = {
     isNavigationRequest,
     isNextStaticAsset,
@@ -250,9 +298,13 @@
     isPubliclyCacheable,
     isNeverCache,
     isRuntimeShell,
+    isViewerDocument,
+    isPerViewerRoute,
     NEVER_CACHE_PREFIXES,
     NEVER_CACHE_EXACT,
     RUNTIME_SHELL_EXACT,
     RUNTIME_SHELL_PREFIXES,
+    VIEWER_DOCUMENT_EXACT,
+    VIEWER_DOCUMENT_PREFIXES,
   };
 })();

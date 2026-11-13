@@ -398,6 +398,10 @@ async function refreshRouteWindow(cache, urls, budget, held, collect) {
       try {
         const parsed = new URL(url, self.location.origin);
         if (parsed.origin !== self.location.origin || isNeverCache(parsed)) continue;
+        // A screen that belongs to one viewer is never written, even by the list
+        // (#1370): the generated list is static routes only, so this is the
+        // second lock rather than the mechanism (see `isViewerDocument`).
+        if (isViewerDocument(parsed)) continue;
         // `no-cache` revalidates: an unchanged shell answers from the HTTP cache
         // instead of transferring again, and a stale copy cannot become this
         // build's shell.
@@ -672,6 +676,8 @@ const {
   isPubliclyCacheable,
   isNeverCache,
   isRuntimeShell,
+  isViewerDocument,
+  isPerViewerRoute,
 } = self.SWRouting;
 
 // ---------------------------------------------------------------------------
@@ -1239,7 +1245,20 @@ async function staleWhileRevalidate(request, onMiss, event, options = {}) {
   // next navigation — and a document and a prefetched body keep entries of their
   // own, which neither may answer from the other.
   const key = options.cacheKey || request;
-  const cached = await cache.match(key);
+  // One viewer's screen is never read from Cache Storage (#1370). An entry can
+  // only be a leftover from a build that answered the route cacheable, and it
+  // outlives that release: serving it is how a guest roster painted for a
+  // signed-in member and how the bundle of a deleted endpoint ran again. The
+  // entry is dropped rather than replayed, and the request goes to the network.
+  const viewerScoped = isViewerDocument(new URL(request.url));
+  let cached = await cache.match(key);
+  if (cached && viewerScoped) {
+    cached = null;
+    const dropped = forgetCachedDocument(key).catch((error) => {
+      console.log('[sw] cache delete failed', String(error));
+    });
+    if (event) event.waitUntil(dropped);
+  }
   if (cached) {
     cacheOutcomes.hits += 1;
     touchCache(key);
@@ -1289,7 +1308,10 @@ async function staleWhileRevalidate(request, onMiss, event, options = {}) {
       // despite its `no-store`: the page carries no account data, and the
       // sign-out purge deletes the entry with every other runtime entry.
       const runtimeShell = isRuntimeShell(new URL(request.url));
-      if (response.ok && (runtimeShell || isCacheable(response))) {
+      // A viewer's own screen is never stored (#1370), whatever the server said:
+      // a route that answers a cacheable document is a routing regression, and
+      // the entry would be one session's page handed to the next.
+      if (response.ok && !viewerScoped && (runtimeShell || isCacheable(response))) {
         const write = (async () => {
           await store(CACHE, key, response.clone());
           await rememberImageFallback(new URL(request.url), response.clone());
@@ -1323,6 +1345,28 @@ async function staleWhileRevalidate(request, onMiss, event, options = {}) {
   const deadlineSunder = new Promise((resolve) =>
     setTimeout(() => resolve(undefined), NAVIGATION_TIMEOUT_MS)
   );
+
+  if (isNavigationRequest(request)) {
+    // The deadline is worth entering only when the device holds a document that
+    // may answer this navigation (#1370, ADR-0031's 2026-11-13 amendment): cut
+    // with nothing to fall back to, it can only hand back a page claiming the
+    // network is gone while the origin is merely slow. A screen that belongs to
+    // the viewer has no such document at all (`cachedFallback`), so a signed-in
+    // follower list waits for its answer instead of being served the homepage.
+    const fallback = await cachedFallback(request);
+    if (!fallback) return revalidate;
+    const winner = await Promise.race([revalidate, deadlineSunder]);
+    if (winner !== undefined) return winner;
+    // The cut fetch keeps running; what the user sees is the fallback. A prefix
+    // serve is still its own door (ADR-0074) and the tallies still count it, and
+    // `missed` keeps the cut fetch's late failure from reporting the same
+    // navigation a second time.
+    missed = true;
+    cacheOutcomes.failures += 1;
+    if (fallback.ancestor) void reportOfflineServe('navigation-prefix');
+    return fallback.response;
+  }
+
   const winner = await Promise.race([revalidate, deadlineSunder]);
   if (winner === undefined) return miss('navigation-deadline');
   return winner;
@@ -1344,25 +1388,51 @@ async function missResponse(request, onMiss, door) {
     // server, so the parent shell would be a page that cannot say anything true
     // about the request the user made (ADR-0031).
     if (isNeverCache(new URL(request.url))) return offlineMiss(door);
-    return serveNearestShell(request, door);
+    const fallback = await cachedFallback(request);
+    if (!fallback) return offlineMiss(door);
+    if (fallback.ancestor) void reportOfflineServe('navigation-prefix');
+    return fallback.response;
   }
   return new Response('Offline', { status: 503 });
 }
 
 // ---------------------------------------------------------------------------
-// The nearest cached shell (#490)
+// What a navigation may fall back to (#490, #1370)
 //
-// A navigation this worker has no copy of is answered with the parent segment's
-// document, which is almost always on the device even when the dynamic child is
-// not — `/community` for `/community/<slug>`, `/quran` for `/quran/<surah>` — so
-// a miss serves the longest cached ancestor instead: the URL stays the one
-// requested and the app's own chrome is what paints. The swap is invisible in
-// the response and nothing is recorded about it; the user sees the parent's
-// screen at their URL. When no ancestor is cached, the navigation is answered
-// with a plain 503.
+// A navigation this worker has no copy of used to be answered with the parent
+// segment's document, which is almost always on the device even when the
+// dynamic child is not — `/community/<slug>` for a post, `/quran` for
+// `/quran/<surah>` — so a miss served the longest cached ancestor instead: the
+// URL stayed the one requested and the app's own chrome was what painted. Two
+// shapes made that a wrong document rather than a graceful one:
+//
+// - a screen that belongs to one viewer (`isPerViewerRoute`), where the parent
+//   is a different screen entirely: `/u/<handle>/followers` walked past `/u`
+//   (a segment with no document) to `/`, and the follower list was answered with
+//   the home page. `isViewerDocument` screens are also never read from the
+//   cache at all.
+// - a viewer screen as the *ancestor*: `/community` is the member's own feed, so
+//   it must not answer `/community/<slug>` either.
+//
+// Both are refused here; the request reaches the network instead, and a real
+// failure is a plain 503 the browser renders as its own offline page.
 // ---------------------------------------------------------------------------
 
-/** The longest ancestor document this device holds, or null. */
+/**
+ * The document this device already holds that may answer the navigation, or
+ * null. A kept page (#320) is the page itself and always wins; anything else is
+ * an ancestor, which a viewer's own screen never accepts.
+ */
+async function cachedFallback(request) {
+  const url = new URL(request.url);
+  const kept = await keptPage(url.pathname);
+  if (kept) return { response: kept, ancestor: false };
+  if (isPerViewerRoute(url)) return null;
+  const shell = await nearestCachedShell(url.pathname);
+  return shell ? { response: shell, ancestor: true } : null;
+}
+
+/** The longest ancestor document this device may serve, or null. */
 async function nearestCachedShell(pathname) {
   const cache = await caches.open(CACHE);
   // The document at the requested path itself comes first, for a shell whose URL
@@ -1371,28 +1441,12 @@ async function nearestCachedShell(pathname) {
   // straight to `/` and replace the note with the homepage (#678). The bare path
   // is the same route, which is what the nearest-shell promise already offers.
   for (const candidate of [pathname, ...shellPrefixCandidates(pathname)]) {
+    // Another viewer's screen is not a substitute for this one (#1370).
+    if (isPerViewerRoute(new URL(candidate, self.location.origin))) continue;
     const response = await cache.match(candidate);
     if (response) return response;
   }
   return null;
-}
-
-/**
- * Answers a navigation miss with the nearest cached ancestor and reports it as
- * its own door (ADR-0074): a prefix serve is a graceful fallback the field must
- * be able to tell from a real miss, which is a plain 503.
- */
-async function serveNearestShell(request, door) {
-  const pathname = new URL(request.url).pathname;
-  // A page the reader kept for offline reading (#320) is the page they asked
-  // for, not a substitute for it: it answers under its own URL, so it is not a
-  // prefix serve and nothing is reported for it.
-  const kept = await keptPage(pathname);
-  if (kept) return kept;
-  const shell = await nearestCachedShell(pathname);
-  if (!shell) return offlineMiss(door);
-  void reportOfflineServe('navigation-prefix');
-  return shell;
 }
 
 /** The kept copy of one page, keyed by pathname, or null. */
