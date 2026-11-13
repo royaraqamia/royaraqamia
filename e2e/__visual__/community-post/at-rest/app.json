@@ -1,0 +1,26 @@
+{
+  "surface": "community-post",
+  "elements": {
+    "post": {
+      "width": 360.72726,
+      "top": 0.0
+    },
+    "author": {
+      "width": 150.90909,
+      "height": 42.909092
+    },
+    "cover": {
+      "width": 360.72726,
+      "height": 202.90909,
+      "radius": 16.0
+    },
+    "tags": {
+      "width": 360.72726,
+      "height": 64.727264
+    },
+    "body": {
+      "width": 360.72726,
+      "top": 462.54544
+    }
+  }
+}

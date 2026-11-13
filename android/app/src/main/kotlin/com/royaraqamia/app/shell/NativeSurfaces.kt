@@ -63,6 +63,7 @@ object NativeSurfaces {
             { LinksnapRoutes.codeOf(it) != null },
             { McpRoutes.connectionOf(it) != null },
             ProfileRoutes::matches,
+            CommunityRoutes::matches,
         )
 
     /**

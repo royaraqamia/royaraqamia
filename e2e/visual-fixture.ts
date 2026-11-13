@@ -106,6 +106,27 @@ const CLICK_SETTLE_MS = 30_000;
 export const COMMUNITY_SEED_PREFIX = 'e2e-visual-community-';
 
 /**
+ * The one post the community-post state records (#1351).
+ *
+ * The post is the fixture's, not whatever the account last published: the words
+ * the body draws, the cover and the tag are the same every run (ADR-0119). The
+ * body is deliberately small and plain - a heading, a paragraph and a list - so
+ * the raster compares the two Markdown renderers rather than the page's
+ * highlight.js and the app's code block, which the contract does not port yet.
+ */
+export const VISUAL_POST = {
+  slug: 'e2e-visual-post',
+  content:
+    '## عنوان تجريبي\n\nهذا نص تجريبي لمنشور البوابة، يقيس الخطّ والمسافة بين السطور على الشاشتين.\n\n- البند الأوّل\n- البند الثاني',
+  cover: '/01.webp',
+  tag: { name: 'تجريبي', slug: 'e2e-visual-tag' },
+} as const;
+
+/** The prefixes the post and its tag cleanup match, so neither can touch a real row. */
+export const VISUAL_POST_PREFIX = 'e2e-visual-post';
+export const VISUAL_POST_TAG_PREFIX = 'e2e-visual-tag';
+
+/**
  * The digest the news recording reads (#1345).
  *
  * The page's day is pinned to this fixed date (`?date=`), so the card the gate
@@ -323,6 +344,85 @@ export async function clearVisualCommunityPosts(
     .like('slug', `${COMMUNITY_SEED_PREFIX}%`);
   if (error) {
     throw new Error(`could not remove the visual gate community seeds: ${error.message}`);
+  }
+}
+
+/**
+ * Writes the one published post the community-post state draws (#1351).
+ *
+ * The post goes through the page's own create route, so its author, lifecycle and
+ * publication columns are the product's rather than a row poked from the outside.
+ * The tag is attached through the service role, because the page has no route of
+ * its own for a tag (the editor sends `tagIds` only on restore); the tag is the
+ * fixture's fixed row, deleted with the post afterwards.
+ */
+export async function seedVisualPost(context: BrowserContext, baseURL: string): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  await clearVisualPost(context, baseURL);
+
+  const response = await context.request.post(`${baseURL}/api/community/posts`, {
+    data: {
+      slug: VISUAL_POST.slug,
+      content: VISUAL_POST.content,
+      cover_image: VISUAL_POST.cover,
+      status: 'published',
+    },
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `the visual gate post was refused (${response.status()}): ${await response.text()}`
+    );
+  }
+  const { id } = (await response.json()) as { id?: string };
+  if (!id) {
+    throw new Error('the visual gate post was created without an id');
+  }
+
+  const client = serviceClient();
+  const { data: tag, error: tagError } = await client
+    .from('community_tags')
+    .insert({ user_id: userId, name: VISUAL_POST.tag.name, slug: VISUAL_POST.tag.slug })
+    .select('id')
+    .single();
+  if (tagError || !tag) {
+    throw new Error(`could not seed the visual gate post tag: ${tagError?.message ?? 'no row'}`);
+  }
+
+  const { error: linkError } = await client
+    .from('post_tags')
+    .insert({ post_id: id, tag_id: tag.id });
+  if (linkError) {
+    throw new Error(`could not attach the visual gate post tag: ${linkError.message}`);
+  }
+}
+
+/**
+ * Removes the post and its tag, tombstones included.
+ *
+ * The page's own delete is a tombstone and `posts.slug` is unique, so the fixed
+ * slug could never be written a second time; a hard delete keyed to the account
+ * and the fixture prefix is what makes the recording repeatable.
+ */
+export async function clearVisualPost(context: BrowserContext, baseURL: string): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  const client = serviceClient();
+  const { error: postError } = await client
+    .from('posts')
+    .delete()
+    .eq('author_id', userId)
+    .like('slug', `${VISUAL_POST_PREFIX}%`);
+  if (postError) {
+    throw new Error(`could not remove the visual gate post: ${postError.message}`);
+  }
+
+  const { error: tagError } = await client
+    .from('community_tags')
+    .delete()
+    .eq('user_id', userId)
+    .like('slug', `${VISUAL_POST_TAG_PREFIX}%`);
+  if (tagError) {
+    throw new Error(`could not remove the visual gate post tag: ${tagError.message}`);
   }
 }
 

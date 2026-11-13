@@ -1,0 +1,33 @@
+{
+  "surface": "community-post",
+  "state": "at-rest",
+  "route": "/community/e2e-visual-post",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "post": {
+      "width": 361,
+      "top": 80
+    },
+    "author": {
+      "width": 152,
+      "height": 42.75
+    },
+    "cover": {
+      "width": 361,
+      "height": 203.06,
+      "radius": 16
+    },
+    "tags": {
+      "width": 361,
+      "height": 64
+    },
+    "body": {
+      "width": 361,
+      "top": 541.81
+    }
+  }
+}

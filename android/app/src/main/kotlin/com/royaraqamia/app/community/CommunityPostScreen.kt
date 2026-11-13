@@ -36,10 +36,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.generated.CommunityPostResponse
@@ -66,6 +68,12 @@ object CommunityPostMetrics {
     const val AUTHOR = "community-post-author"
     const val TAGS = "community-post-tags"
     const val BODY = "community-post-body"
+
+    /** The page's `rounded-2xl` at the phone width (`sm:` is 640px). */
+    const val COVER_RADIUS = 16
+
+    /** The page's `py-4` on the tags band at the phone width. */
+    const val TAG_BAND_PADDING = 16
 }
 
 /**
@@ -152,7 +160,7 @@ private fun CommunityPostContent(
                 Post(
                     response = state.post,
                     onOpenProfile = onOpenProfile,
-                    modifier = Modifier.padding(horizontal = spacing.containerPadding * 2),
+                    modifier = Modifier.padding(horizontal = spacing.containerPadding),
                 )
         }
     }
@@ -174,52 +182,72 @@ private fun Post(
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .testTag(CommunityPostMetrics.POST)
-                .padding(vertical = spacing.elementGapSm),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
+                .testTag(CommunityPostMetrics.POST),
     ) {
-        post.author?.let { author -> AuthorChip(author, onOpenProfile) }
-
-        post.cover_image?.takeIf { it.isNotBlank() }?.let { cover ->
-            AsyncImage(
-                model = cover,
-                contentDescription = PostText.label(post.content, post.meta_desc),
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .aspectRatio(16f / 9f)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(RoyColors.muted.copy(alpha = 0.6f))
-                        .testTag(CommunityPostMetrics.COVER),
-            )
+        // The page's own rhythm, at the phone width: the author block's `mb-8`,
+        // the cover's `mb-8`, the header's `mb-10` and the date's `mb-6`. The
+        // margins are the design, so the screen carries the same numbers instead
+        // of one uniform gap.
+        post.author?.let { author ->
+            AuthorChip(author, onOpenProfile)
+            Spacer(Modifier.height(32.dp))
         }
 
-        if (response.postTags.isNotEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxWidth().testTag(CommunityPostMetrics.TAGS),
-                verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-            ) {
-                HorizontalDivider(color = RoyColors.border.copy(alpha = 0.4f))
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm)) {
-                    response.postTags.forEach { tag ->
-                        Text(
-                            text = "#${tag.name}",
-                            style = type.xs.copy(fontWeight = FontWeight.Bold),
-                            color = RoyColors.primary,
-                            modifier =
-                                Modifier.clip(CircleShape)
-                                    .background(RoyColors.primary.copy(alpha = 0.1f))
-                                    .border(1.dp, RoyColors.primary.copy(alpha = 0.2f), CircleShape)
-                                    .padding(horizontal = spacing.elementGapSm, vertical = 6.dp),
-                        )
-                    }
-                }
-                HorizontalDivider(color = RoyColors.border.copy(alpha = 0.4f))
+        val cover = post.cover_image?.takeIf { it.isNotBlank() }
+        val hasTags = response.postTags.isNotEmpty()
+        if (cover != null || hasTags) {
+            if (cover != null) {
+                AsyncImage(
+                    model = cover,
+                    contentDescription = PostText.label(post.content, post.meta_desc),
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .aspectRatio(16f / 9f)
+                            .clip(RoundedCornerShape(CommunityPostMetrics.COVER_RADIUS.dp))
+                            .background(RoyColors.muted.copy(alpha = 0.6f))
+                            .testTag(CommunityPostMetrics.COVER),
+                )
+                if (hasTags) Spacer(Modifier.height(32.dp))
             }
+            if (hasTags) {
+                Column(modifier = Modifier.fillMaxWidth().testTag(CommunityPostMetrics.TAGS)) {
+                    HorizontalDivider(color = RoyColors.border.copy(alpha = 0.4f))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                        modifier =
+                            Modifier.padding(vertical = CommunityPostMetrics.TAG_BAND_PADDING.dp),
+                    ) {
+                        response.postTags.forEach { tag ->
+                            Text(
+                                text = "#${tag.name}",
+                                style =
+                                    type.xs.copy(fontWeight = FontWeight.Bold, lineHeight = 16.sp),
+                                color = RoyColors.primary,
+                                modifier =
+                                    Modifier.clip(CircleShape)
+                                        .background(RoyColors.primary.copy(alpha = 0.1f))
+                                        .border(
+                                            1.dp,
+                                            RoyColors.primary.copy(alpha = 0.2f),
+                                            CircleShape,
+                                        )
+                                        .padding(horizontal = spacing.elementGapSm, vertical = 6.dp),
+                            )
+                        }
+                    }
+                    HorizontalDivider(color = RoyColors.border.copy(alpha = 0.4f))
+                }
+            }
+            Spacer(Modifier.height(40.dp))
         }
 
         post.published_at?.let { published ->
+            // The page's date line is 24px tall at the phone width (its `text-xs`
+            // row with the icon); the app's single Hijri date would otherwise be
+            // shorter and pull the body up under it.
             Row(
+                modifier = Modifier.height(24.dp),
                 horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -235,6 +263,7 @@ private fun Post(
                     color = RoyColors.mutedForeground,
                 )
             }
+            Spacer(Modifier.height(24.dp))
         }
 
         MarkdownBody(
@@ -256,9 +285,13 @@ private fun AuthorChip(
     val spacing = LocalRoySpacing.current
     val name = author.name.orEmpty()
 
+    // The page's chip is 42.75px at the phone width: the app pins that height so
+    // the line box's own font padding cannot make the pill taller than the page's
+    // (the row's padding already gives it the page's target).
     Row(
         modifier =
-            Modifier.clip(CircleShape)
+            Modifier.height(42.75.dp)
+                .clip(CircleShape)
                 .background(RoyColors.muted.copy(alpha = 0.3f))
                 .border(1.dp, RoyColors.border.copy(alpha = 0.4f), CircleShape)
                 .clickable { onOpenProfile(author.username) }
@@ -269,7 +302,7 @@ private fun AuthorChip(
                     contentDescription =
                         CommunityPostCopy.AUTHOR_PROFILE_LABEL.replace("{name}", name)
                 },
-        horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (!author.avatar_url.isNullOrBlank()) {
@@ -298,14 +331,24 @@ private fun AuthorChip(
         Column {
             Text(
                 text = name,
-                style = type.xs.copy(fontWeight = FontWeight.Bold),
+                style =
+                    type.xs.copy(
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = 15.sp,
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    ),
                 color = RoyColors.foreground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = "@${author.username}",
-                style = type.xs,
+                style =
+                    type.xs.copy(
+                        fontSize = 11.sp,
+                        lineHeight = 13.75.sp,
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    ),
                 color = RoyColors.mutedForeground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
