@@ -111,8 +111,10 @@ export function CommunityMembersPanel({ members, states }: CommunityMembersProps
                   aria-hidden="true"
                 />
               </Link>
-              {/* One control per row, and its state arrived with the document. */}
-              {state ? (
+              {/* One control per row, and its state arrived with the document.
+                  The viewer's own row already carries «أنت» beside the name;
+                  a follow button there would say the same thing twice. */}
+              {state && member.id !== roster.selfId ? (
                 <FollowButton
                   username={member.username}
                   name={member.name}
@@ -181,7 +183,7 @@ export function CommunityMembersStrip({ members, states }: CommunityMembersProps
                     @{member.username}
                   </span>
                 </Link>
-                {state ? (
+                {state && member.id !== roster.selfId ? (
                   <FollowButton
                     username={member.username}
                     name={member.name}

@@ -127,6 +127,7 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
                 memberId={member.id}
                 initialState={follow.state}
                 signedIn={Boolean(viewerId)}
+                size="md"
               />
               <MemberChatCta username={member.username} />
             </div>

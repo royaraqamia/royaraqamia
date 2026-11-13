@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Suspense } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { loadCommunityMembers } from '@/backend/loaders/community';
 import { loadFollowingFeed, resolveFollowingSession } from '@/backend/loaders/following-feed';
 import { createFollowsService } from '@/backend/config/follows';
@@ -73,13 +71,6 @@ export default async function CommunityPage() {
           <SectionTitle as="h1">
             <SectionTitleHighlight>المجتمع</SectionTitleHighlight>
           </SectionTitle>
-          <Link
-            href="/community/explore"
-            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/40 px-3.5 py-1.5 text-xs font-bold text-muted-foreground transition-safe duration-200 hover:border-border hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            كل المنشورات
-            <ArrowLeft className="size-3.5" aria-hidden="true" />
-          </Link>
         </div>
 
         {/* Both steps of the two-column pair are variants, never a base utility

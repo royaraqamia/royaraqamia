@@ -14,7 +14,6 @@ export const COMMUNITY_FEED_COPY = {
   emptyBody: 'لا توجد منشورات حاليًّا. عد لاحقًا لقراءة أحدث المحتوى والمنشورات.',
   followingEmptyTitle: 'لم تتابع أحدًا بعد',
   followingEmptyBody: 'تابع أعضاء المجتمع لتظهر منشوراتهم هنا.',
-  followingEmptyAction: 'اكتشف الأعضاء',
   guestEmptyTitle: 'سجّل الدخول لترى متابعاتك',
   guestEmptyBody: 'سجّل الدخول لتتابع الأعضاء وتظهر منشوراتهم في هذا القسم.',
   guestSignIn: 'تسجيل الدخول',

@@ -27,6 +27,55 @@ export async function unfollowMember(username: string, headers: Headers): Promis
   return write(username, headers, 'unfollow');
 }
 
+/**
+ * The viewer's standing with one member, for the client that draws its own
+ * header.
+ *
+ * This route had no `GET` while the site was its only reader: the page renders
+ * the standing for the viewer who asked, so a second read would only make the
+ * header settle after paint. The app has no server render, so this is that
+ * read. It answers the same body the two writes do, which is why the app
+ * decodes one contract for all three calls, and it is never cached: the answer
+ * is one viewer's edge.
+ */
+export async function getFollowState(username: string): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      const parsed = UsernameSchema.safeParse(username);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          state: 'not_following',
+          error: parsed.error.issues[0]?.message ?? 'معرِّف غير صالح',
+        });
+      }
+
+      try {
+        const { state, counts } = await createFollowsService().standingOf(userId, parsed.data);
+        const body: FollowToggleResponse = { success: true, state, counts };
+        return jsonResult(200, body, { headers: { 'cache-control': 'no-store' } });
+      } catch (error) {
+        if (error instanceof FollowRefusedError) {
+          return jsonResult(error.status, {
+            success: false,
+            state: 'not_following',
+            error: error.message,
+          });
+        }
+        throw error;
+      }
+    },
+    {
+      mapError: () =>
+        jsonResult(500, {
+          success: false,
+          state: 'not_following',
+          error: 'تعذّرت قراءة حالة المتابعة. حاول مرة أخرى.',
+        }),
+    }
+  );
+}
+
 async function write(
   username: string,
   headers: Headers,

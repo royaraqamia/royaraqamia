@@ -91,7 +91,7 @@ export function CommunityResults({
       )}
 
       {posts.length === 0 ? (
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-muted/20 py-24 px-6 flex flex-col items-center justify-center text-center my-8 shadow-2xl">
+        <div className="relative mx-auto my-8 flex w-full max-w-xl flex-col items-center justify-center overflow-hidden rounded-3xl border border-border bg-muted/20 px-6 py-24 text-center shadow-2xl">
           <div className="size-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mb-6 shadow-inner text-muted-foreground">
             <FileText className="size-8 stroke-[1.5]" />
           </div>
@@ -116,12 +116,6 @@ export function CommunityResults({
           {emptyKind === 'guest' ? (
             <Link href="/auth/login?redirect=%2Fcommunity">
               <Button className="rounded-full px-6">{COMMUNITY_FEED_COPY.guestSignIn}</Button>
-            </Link>
-          ) : emptyKind === 'no-follows' ? (
-            <Link href="/community/explore">
-              <Button className="rounded-full px-6">
-                {COMMUNITY_FEED_COPY.followingEmptyAction}
-              </Button>
             </Link>
           ) : (
             query && (

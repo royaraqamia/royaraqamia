@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,22 +43,26 @@ import coil.compose.AsyncImage
 import com.royaraqamia.app.community.CommunityFeedCopy
 import com.royaraqamia.app.community.PostCard
 import com.royaraqamia.app.contracts.ApiError
+import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.CommunityIndexResponsePostsItem
 import com.royaraqamia.app.contracts.generated.CommunityIndexResponsePostsItemAuthor
 import com.royaraqamia.app.contracts.generated.CommunityIndexResponsePostsItemStatus
 import com.royaraqamia.app.contracts.generated.CommunityMemberResponseMember
 import com.royaraqamia.app.contracts.generated.CommunityMemberResponsePostsItem
 import com.royaraqamia.app.contracts.generated.CommunityMemberResponsePostsItemStatus
+import com.royaraqamia.app.contracts.generated.FollowToggleResponseState
 import com.royaraqamia.app.shared.NeedsConnection
 import com.royaraqamia.app.shared.NeedsConnectionState
 import com.royaraqamia.app.shared.ReadFailureNotice
 import com.royaraqamia.app.shared.ReadFailureState
+import com.royaraqamia.app.shared.SignInPrompt
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.ui.vectors.LucideVectors
+import kotlinx.coroutines.launch
 
 /**
  * The visual gate's handles on a public profile (#927,
@@ -158,17 +164,102 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     onOpenPost: (String) -> Unit = {},
     onOpenProfile: (String) -> Unit = {},
+    onOpenChat: (String) -> Unit = {},
+    onSignIn: () -> Unit = {},
 ) {
     var state by remember(username) { mutableStateOf<ProfileUiState?>(null) }
     var failure by remember(username) { mutableStateOf<ApiError?>(null) }
     var attempts by remember(username) { mutableStateOf(0) }
+    var standing by remember(username) { mutableStateOf<ProfileStanding>(ProfileStanding.Loading) }
+    var busy by remember(username) { mutableStateOf(false) }
+    var actionError by remember(username) { mutableStateOf<String?>(null) }
+    var promptingSignIn by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(username, attempts) {
         state = null
         failure = null
+        actionError = null
+        standing = ProfileStanding.Loading
         val result = repository.profile(username)
         state = ProfileUiState.of(result, username)
         failure = (result as? ProfileResult.Unavailable)?.error
+        standing = readStanding(repository, username)
+    }
+
+    /** One press on the control: the write, then the state its own answer names. */
+    fun press(action: ProfileAction) {
+        scope.launch {
+            busy = true
+            actionError = null
+            try {
+                when (action) {
+                    ProfileAction.Follow,
+                    ProfileAction.Unfollow -> {
+                        val result =
+                            if (action == ProfileAction.Follow) repository.follow(username)
+                            else repository.unfollow(username)
+                        when (result) {
+                            is ApiResult.Success -> {
+                                val body = result.value
+                                // A refusal is not a state change, except `blocked`,
+                                // which is a state the control has a face for.
+                                if (body.success) {
+                                    standing = ProfileStanding.Known(body.state)
+                                } else {
+                                    actionError =
+                                        body.error
+                                            ?: if (action == ProfileAction.Follow) {
+                                                FollowButtonCopy.FOLLOW_FAILED
+                                            } else {
+                                                FollowButtonCopy.UNFOLLOW_FAILED
+                                            }
+                                    if (body.state == FollowToggleResponseState.BLOCKED) {
+                                        standing = ProfileStanding.Known(body.state)
+                                    }
+                                }
+                            }
+                            is ApiResult.Failure ->
+                                if (result.error is ApiError.NotSignedIn) {
+                                    promptingSignIn = true
+                                } else {
+                                    actionError =
+                                        if (action == ProfileAction.Follow) {
+                                            FollowButtonCopy.FOLLOW_FAILED
+                                        } else {
+                                            FollowButtonCopy.UNFOLLOW_FAILED
+                                        }
+                                }
+                        }
+                    }
+                    ProfileAction.Unblock -> {
+                        val memberId = memberIdOf(state)
+                        when (val result = memberId?.let { repository.unblock(it) }) {
+                            is ApiResult.Success<*> ->
+                                standing = ProfileStanding.Known(FollowToggleResponseState.NOT_FOLLOWING)
+                            is ApiResult.Failure ->
+                                if (result.error is ApiError.NotSignedIn) {
+                                    promptingSignIn = true
+                                } else {
+                                    actionError = FollowButtonCopy.UNBLOCK_FAILED
+                                }
+                            null -> actionError = FollowButtonCopy.UNBLOCK_FAILED
+                        }
+                    }
+                }
+            } finally {
+                busy = false
+            }
+        }
+    }
+
+    /**
+     * The site's gate at the door: a visitor whose standing is [ProfileStanding.Guest]
+     * sees the controls and is asked to sign in, rather than being shown a header
+     * with two doors and no way through either.
+     */
+    fun gated(open: () -> Unit) {
+        if (standing == ProfileStanding.Guest) promptingSignIn = true else open()
     }
 
     ProfileContent(
@@ -177,8 +268,88 @@ fun ProfileScreen(
         onRetry = { attempts += 1 },
         onOpenPost = onOpenPost,
         onOpenProfile = onOpenProfile,
+        chrome =
+            ProfileChrome(
+                standing = standing,
+                busy = busy,
+                error = actionError,
+                onFollow = { gated { press(ProfileAction.Follow) } },
+                onUnfollow = { press(ProfileAction.Unfollow) },
+                onUnblock = { press(ProfileAction.Unblock) },
+                onOpenChat = { gated { onOpenChat(username) } },
+            ),
         modifier = modifier,
     )
+
+    if (promptingSignIn) {
+        SignInPrompt(
+            onDismiss = { promptingSignIn = false },
+            onConfirm = {
+                promptingSignIn = false
+                onSignIn()
+            },
+        )
+    }
+}
+
+/** The write a press means; one name so the scope above reads as one handler. */
+private enum class ProfileAction { Follow, Unfollow, Unblock }
+
+/** The member the profile is showing, whichever face it is on. */
+private fun memberIdOf(state: ProfileUiState?): String? =
+    when (state) {
+        is ProfileUiState.AtRest -> state.member.id
+        is ProfileUiState.Empty -> state.member.id
+        is ProfileUiState.NotFound -> null
+        null -> null
+    }
+
+/**
+ * The viewer's standing, read beside the profile so the header draws its own
+ * control in the first frame it has a header for.
+ *
+ * A 401 is the site's own guest gate rather than a failure: the page shows a
+ * visitor the same buttons and sends the press to sign-in.
+ */
+private suspend fun readStanding(
+    repository: ProfileRepository,
+    username: String,
+): ProfileStanding =
+    when (val result = repository.standing(username)) {
+        is ApiResult.Success ->
+            if (result.value.success) {
+                ProfileStanding.Known(result.value.state)
+            } else {
+                ProfileStanding.Unavailable
+            }
+        is ApiResult.Failure ->
+            if (result.error is ApiError.NotSignedIn) ProfileStanding.Guest
+            else ProfileStanding.Unavailable
+    }
+
+/** The header's viewer chrome: what the control draws and what a press does. */
+private data class ProfileChrome(
+    val standing: ProfileStanding,
+    val busy: Boolean,
+    val error: String?,
+    val onFollow: () -> Unit,
+    val onUnfollow: () -> Unit,
+    val onUnblock: () -> Unit,
+    val onOpenChat: () -> Unit,
+) {
+    companion object {
+        /** A screen drawn over a state alone: no viewer, so no control. */
+        val none =
+            ProfileChrome(
+                standing = ProfileStanding.Unavailable,
+                busy = false,
+                error = null,
+                onFollow = {},
+                onUnfollow = {},
+                onUnblock = {},
+                onOpenChat = {},
+            )
+    }
 }
 
 /** The screen over a state the caller already decided, so a test can draw each face. */
@@ -197,6 +368,7 @@ internal fun ProfileScreen(
         onRetry = onRetry,
         onOpenPost = onOpenPost,
         onOpenProfile = onOpenProfile,
+        chrome = ProfileChrome.none,
         modifier = modifier,
     )
 }
@@ -208,6 +380,7 @@ private fun ProfileContent(
     onRetry: () -> Unit,
     onOpenPost: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
+    chrome: ProfileChrome,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -223,6 +396,7 @@ private fun ProfileContent(
                 Profile(
                     member = state.member,
                     posts = state.posts,
+                    chrome = chrome,
                     onOpenPost = onOpenPost,
                     onOpenProfile = onOpenProfile,
                 )
@@ -231,6 +405,7 @@ private fun ProfileContent(
                 Profile(
                     member = state.member,
                     posts = emptyList(),
+                    chrome = chrome,
                     onOpenPost = onOpenPost,
                     onOpenProfile = onOpenProfile,
                 )
@@ -243,6 +418,7 @@ private fun ProfileContent(
 private fun Profile(
     member: CommunityMemberResponseMember,
     posts: List<CommunityMemberResponsePostsItem>,
+    chrome: ProfileChrome,
     onOpenPost: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
 ) {
@@ -258,7 +434,7 @@ private fun Profile(
             ),
         verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
     ) {
-        item { Header(member = member, name = name) }
+        item { Header(member = member, name = name, chrome = chrome) }
 
         item {
             Text(
@@ -285,7 +461,7 @@ private fun Profile(
 
 /** The page's header card: the avatar, the display name, the handle and the bio. */
 @Composable
-private fun Header(member: CommunityMemberResponseMember, name: String) {
+private fun Header(member: CommunityMemberResponseMember, name: String, chrome: ProfileChrome) {
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val initial = member.name?.trim()?.firstOrNull()
@@ -364,6 +540,30 @@ private fun Header(member: CommunityMemberResponseMember, name: String) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.testTag(ProfileMetrics.BIO),
             )
+        }
+
+        // The page's two doors: the follow control and the quiet «مراسلة». The
+        // viewer's own page draws the «أنت» pill and no chat, because there is
+        // nothing to follow and nobody to write to.
+        val face = FollowButtonUiState.of(chrome.standing)
+        if (face != null) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FollowButton(
+                    state = face,
+                    name = name,
+                    busy = chrome.busy,
+                    error = chrome.error,
+                    onFollow = chrome.onFollow,
+                    onUnfollow = chrome.onUnfollow,
+                    onUnblock = chrome.onUnblock,
+                )
+                if (face != FollowButtonUiState.Self) {
+                    ProfileChatCta(onClick = chrome.onOpenChat)
+                }
+            }
         }
     }
 }

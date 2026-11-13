@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server';
-import { followMember, unfollowMember } from '@/backend/controllers/follows';
+import { followMember, getFollowState, unfollowMember } from '@/backend/controllers/follows';
 import { toNextResponse } from '@/backend/transport/http-result';
 
 /**
@@ -9,13 +9,21 @@ import { toNextResponse } from '@/backend/transport/http-result';
  * the client decodes the same `FollowToggleResponse` either way, and the
  * controller is the only place that knows which way is a write.
  *
- * There is no `GET` here on purpose. The viewer's standing and the counts are
- * part of the profile page's own render - asking the browser to fetch them is
- * what made the header settle after paint.
+ * The `GET` is the app's half of the same body: the site renders the viewer's
+ * standing on the server, so no browser asks for it, but the app draws its own
+ * header and has no render to draw it from.
  *
  * Handles may be Arabic, so the segment is percent-decoded before it is
  * validated - the same form every `/u/` link on the site produces.
  */
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ username: string }> }
+) {
+  const { username } = await params;
+  return toNextResponse(await getFollowState(decodeHandle(username)));
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ username: string }> }

@@ -140,6 +140,19 @@ export class FollowsService {
   }
 
   /**
+   * The viewer's standing with one member, addressed by the handle.
+   *
+   * The page already holds the member row it read, so `viewerState` takes its
+   * id. A client with no server render to draw from has only the handle in
+   * view, and resolving it here keeps the "who may be named" rule in one place
+   * rather than making every client repeat it.
+   */
+  async standingOf(viewerId: string, rawUsername: string): Promise<FollowResult> {
+    const target = await this.resolveTarget(rawUsername);
+    return this.viewerState(viewerId, target.id);
+  }
+
+  /**
    * Every viewer/state pair a list of members needs, in two reads.
    *
    * These rows are drawn as controls, so a read per row would make the roster
