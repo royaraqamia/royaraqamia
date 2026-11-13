@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -58,7 +60,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -96,7 +98,8 @@ internal object PickerMetrics {
     val rowVerticalPadding = 4.dp
     val rowHeight = 53.dp
     val lastRowHeight = 52.dp
-    val listPaddingHorizontal = 6.dp
+    val listPaddingHorizontal = 12.dp
+    val listPaddingTop = 12.dp
 
     /** The site's sheet border and the header's hairline: two rows above the list's own padding. */
     val topRules = 2.dp
@@ -236,7 +239,7 @@ fun ServicesSheet(
                             .padding(
                                 start = PickerMetrics.listPaddingHorizontal,
                                 end = PickerMetrics.listPaddingHorizontal,
-                                top = PickerMetrics.listPaddingBottom,
+                                top = PickerMetrics.listPaddingTop,
                                 bottom = AppsSheetMetrics.bodyPaddingBottom,
                             )
                     ) {
@@ -379,7 +382,11 @@ private fun SheetHeader(onDismiss: () -> Unit) {
 
 /**
  * The surface's three tabs as the site's chips (TabChips, ADR-0146): one
- * scroller, the active chip in the site's violet.
+ * scroller, the active chip in the page's ink.
+ *
+ * The page's chip is `min-h-10 rounded-full border px-4 text-sm font-bold`, the
+ * active one filled with the foreground ink and the rest outlined — the same on
+ * the page and in the sheet, because the two hosts draw one chip (#1256).
  */
 @Composable
 private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
@@ -401,42 +408,35 @@ private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
             val shape = RoundedCornerShape(percent = 50)
             Box(
                 modifier =
-                    Modifier.clip(shape)
-                        .background(
-                            if (active) {
-                                PickerColors.Violet500.copy(alpha = 0.15f)
-                            } else {
-                                Color.Transparent
-                            }
-                        )
+                    Modifier.heightIn(min = AppsSheetMetrics.tabMinHeight)
+                        .clip(shape)
+                        .background(if (active) MaterialTheme.colorScheme.onSurface else Color.Transparent)
                         .border(
                             width = PickerMetrics.borderWidth,
                             color =
                                 if (active) {
-                                    PickerColors.Violet500.copy(alpha = 0.4f)
+                                    Color.Transparent
                                 } else {
-                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
                                 },
                             shape = shape,
                         )
                         .clickable { onSelect(id) }
                         .semantics { selected = active }
                         .testTag("apps-tab")
-                        .padding(
-                            horizontal = AppsSheetMetrics.tabHorizontalPadding,
-                            vertical = AppsSheetMetrics.tabVerticalPadding,
-                        ),
+                        .padding(horizontal = AppsSheetMetrics.tabHorizontalPadding),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = label,
                     style =
                         MaterialTheme.typography.labelMedium.copy(
                             fontSize = AppsSheetMetrics.tabTextSize,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                         ),
                     color =
                         if (active) {
-                            PickerColors.Violet200
+                            MaterialTheme.colorScheme.surface
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
@@ -447,41 +447,76 @@ private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
     }
 }
 
-/** The one search field, in the tab's own words. */
+/**
+ * The one search field, in the tab's own words.
+ *
+ * The page draws an `<input type="search">` inside a bordered, 12px-rounded box
+ * with the glyph at the inline start and the text 36px in (`apps-surface.tsx`:
+ * `py-2.5 pe-3 ps-9 text-sm`), which is 42px tall. Material's `OutlinedTextField`
+ * cannot be that height - its minimum is 56 - so the field is drawn from the box
+ * the page draws rather than from the component the app happens to ship.
+ */
 @Composable
 private fun SearchField(query: String, onQueryChange: (String) -> Unit, placeholder: String) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
+    val shape = RoundedCornerShape(AppsSheetMetrics.searchRadius)
+    Box(
         modifier =
             Modifier.fillMaxWidth()
-                .heightIn(min = AppsSheetMetrics.searchHeight)
+                .height(AppsSheetMetrics.searchHeight)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
+                .border(
+                    width = PickerMetrics.borderWidth,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                    shape = shape,
+                )
                 .testTag("apps-search")
                 .semantics { contentDescription = AppsSheetCopy.SEARCH_LABEL },
-        placeholder = {
-            Text(
-                text = placeholder,
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontSize = AppsSheetMetrics.searchTextSize,
-                    ),
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = LucideVectors.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(PickerMetrics.iconSize),
-            )
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(AppsSheetMetrics.searchRadius),
-        textStyle =
-            MaterialTheme.typography.bodySmall.copy(
-                fontSize = AppsSheetMetrics.searchTextSize,
-            ),
-    )
+    ) {
+        Icon(
+            imageVector = LucideVectors.Search,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier =
+                Modifier.align(Alignment.CenterStart)
+                    .padding(start = AppsSheetMetrics.searchIconInset)
+                    .size(PickerMetrics.iconSize),
+        )
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(
+                        start = AppsSheetMetrics.searchTextInset,
+                        end = AppsSheetMetrics.searchEndInset,
+                    )
+                    .testTag("apps-search-input"),
+            singleLine = true,
+            textStyle =
+                MaterialTheme.typography.bodySmall.copy(
+                    fontSize = AppsSheetMetrics.searchTextSize,
+                    color = MaterialTheme.colorScheme.onSurface,
+                ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            decorationBox = { inner ->
+                Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
+                    if (query.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = AppsSheetMetrics.searchTextSize,
+                                ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            maxLines = 1,
+                        )
+                    }
+                    inner()
+                }
+            },
+        )
+    }
 }
 
 /** The surface's own geometry, read from the page's classes (ADR-0118). */
@@ -495,14 +530,17 @@ internal object AppsSheetMetrics {
     val closeIconSize = 20.dp
 
     val bandPadding = 12.dp
-    val bandPaddingTop = 8.dp
+    val bandPaddingTop = 12.dp
     val bandGap = 8.dp
     val tabGap = 8.dp
-    val tabHorizontalPadding = 12.dp
-    val tabVerticalPadding = 8.dp
-    val tabTextSize = 13.sp
+    val tabHorizontalPadding = 16.dp
+    val tabMinHeight = 40.dp
+    val tabTextSize = 14.sp
 
-    val searchHeight = 40.dp
+    val searchHeight = 42.dp
+    val searchIconInset = 12.dp
+    val searchTextInset = 36.dp
+    val searchEndInset = 12.dp
     val searchRadius = 12.dp
     val searchTextSize = 14.sp
 
