@@ -83,9 +83,18 @@ export function FollowButton({
       const body =
         action === 'follow' ? await followMember(username) : await unfollowMember(username);
 
+      // A refusal is not a state change. The controller answers a failed write
+      // with `not_following` whichever way the button was pressed, so applying
+      // it blindly turned a rejected unfollow into a "follow" button while the
+      // edge was still there. `blocked` is the one refusal that *is* a state.
+      if (!body.success) {
+        setError(body.error ?? FOLLOW_COPY.followFailed);
+        if (body.state === 'blocked') setState('blocked');
+        return;
+      }
+
       setState(body.state);
       if (body.counts) publishFollowCounts(username, body.counts);
-      if (!body.success) setError(body.error ?? FOLLOW_COPY.followFailed);
     } catch {
       setError(
         action === 'follow'
