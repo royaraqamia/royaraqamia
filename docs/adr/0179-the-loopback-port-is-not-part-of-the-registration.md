@@ -66,6 +66,21 @@ used one fixed port. That is why nothing failed until a second run.
    Collecting registrations that were never used deletes rows, and that deserves
    its own measurement and sweep rather than riding on a correctness fix.
 
+## The same flow, after the deploy
+
+The two cases the report named — a first authentication, then "I already have
+credentials, re-authenticate" — run against production once the fix was live, on
+2026-11-13:
+
+| Run                     | Client                                                      | Callback this run                 | Answer    |
+| ----------------------- | ----------------------------------------------------------- | --------------------------------- | --------- |
+| first, no credentials   | `WxXXPT8xUi2glLdvY7qD-w`, registered on `:54035`            | `http://127.0.0.1:54035/callback` | connected |
+| second, re-authenticate | the same client — the registration was re-used, not renewed | `http://127.0.0.1:57346/callback` | connected |
+
+One registration serves both launches, and the second run's port is nowhere in
+it. That is the property the string comparison could not give: the port belongs
+to the run, not to the client.
+
 ## Consequences
 
 - **The trust boundary is the host, not the port.** A loopback registration now
