@@ -47,6 +47,7 @@ object NativeSurfaces {
             "/spendtrack/categories",
             "/community",
             "/scan",
+            "/news",
         )
 
     /**

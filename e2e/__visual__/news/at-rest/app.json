@@ -1,0 +1,30 @@
+{
+  "surface": "news",
+  "elements": {
+    "title": {
+      "height": 46.545456,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "archive": {
+      "top": 74.545456,
+      "width": 360.72726,
+      "height": 34.545456
+    },
+    "story": {
+      "top": 141.09091,
+      "width": 360.72726,
+      "height": 181.45453,
+      "radius": 16,
+      "paddingTop": 20,
+      "paddingLeft": 20
+    },
+    "story-source": {
+      "height": 24.727264,
+      "fontSize": 11,
+      "fontWeight": 700,
+      "paddingLeft": 8
+    }
+  }
+}

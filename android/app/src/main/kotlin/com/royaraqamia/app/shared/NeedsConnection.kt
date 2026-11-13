@@ -1,23 +1,28 @@
 package com.royaraqamia.app.shared
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
@@ -89,38 +94,60 @@ private fun InlineBlock(message: String, onRetry: (() -> Unit)?, modifier: Modif
 @Composable
 private fun Blocked(message: String, onRetry: (() -> Unit)?, modifier: Modifier) {
     val type = LocalRoyTypeScale.current
-    val spacing = LocalRoySpacing.current
+    val badgeShape = RoundedCornerShape(16.dp)
 
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = Recipes.Card.radius,
-        color = RoyColors.warning.copy(alpha = 0.06f),
-        border = BorderStroke(1.dp, RoyColors.warning.copy(alpha = 0.4f)),
+    // The site's own card (`EmptyState`, `variant="card"`, at 393 CSS px): a 56
+    // badge over a 16-bold title, a 12 description and a 40-high retry, with the
+    // page's 48/16 outer padding. The raster is what proves it (#1345).
+    Column(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 48.75.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
-            modifier = Modifier.padding(Recipes.Card.padding(spacing)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+        Box(
+            modifier =
+                Modifier.size(56.dp)
+                    .background(RoyColors.background.copy(alpha = 0.8f), badgeShape)
+                    .border(1.dp, RoyColors.primary.copy(alpha = 0.2f), badgeShape),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier =
-                    Modifier.background(RoyColors.warning.copy(alpha = 0.12f), Recipes.GuestMark.radius)
-                        .padding(spacing.elementGapSm),
+            Icon(
+                imageVector = LucideVectors.CloudOff,
+                contentDescription = null,
+                tint = RoyColors.primary,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = NeedsConnectionCopy.TITLE,
+            style = type.body.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.Bold),
+            color = RoyColors.foreground,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = message,
+            style = type.xs.copy(fontSize = 12.sp, lineHeight = 19.5.sp),
+            color = RoyColors.mutedForeground,
+            textAlign = TextAlign.Center,
+        )
+        if (onRetry != null) {
+            Spacer(Modifier.height(24.dp))
+            OutlinedButton(
+                onClick = onRetry,
+                modifier = Modifier.height(40.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             ) {
-                Icon(
-                    imageVector = LucideVectors.CloudOff,
-                    contentDescription = null,
-                    tint = RoyColors.warning,
-                    modifier = Modifier.size(Recipes.Glyph.md),
+                Text(
+                    text = NeedsConnectionCopy.RETRY,
+                    style =
+                        type.body.copy(
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                        ),
                 )
             }
-            Text(
-                text = NeedsConnectionCopy.TITLE,
-                style = type.h3.copy(fontWeight = FontWeight.Bold),
-                color = RoyColors.warningForeground,
-            )
-            Text(text = message, style = type.small, color = RoyColors.mutedForeground)
-            if (onRetry != null) RetryButton(onRetry)
         }
     }
 }

@@ -103,6 +103,87 @@ const CLICK_SETTLE_MS = 30_000;
 /** The feed the community state seeds, and the prefix the cleanup matches. */
 export const COMMUNITY_SEED_PREFIX = 'e2e-visual-community-';
 
+/**
+ * The digest the news recording reads (#1345).
+ *
+ * The page's day is pinned to this fixed date (`?date=`), so the card the gate
+ * measures is the same every run instead of whatever the nightly workflow
+ * published this morning (ADR-0119). The story carries no `sourcePublishedAt`,
+ * because the page draws that as a relative sentence and a clock in the raster
+ * would make the recording differ by the hour it was taken.
+ */
+export const VISUAL_NEWS = {
+  digestId: 'e2e00000-0000-4000-8000-00000000e134',
+  storyId: 'e2e00000-0000-4000-8000-00000000e135',
+  date: '2026-01-15',
+  title: 'ملخّص تجريبي للبوابة',
+  lede: 'مقدّمة تجريبية للبوابة.',
+  model: 'e2e-visual-gate',
+  category: 'tech',
+  region: 'arab',
+  headline: 'خبر تجريبي لبوابة القياس',
+  summary: 'ملخّص الخبر التجريبي الذي تقيسه البوابة على الشاشتين.',
+  sourceId: 'e2e-visual-news',
+  sourceName: 'مصدر تجريبي',
+  sourceUrl: 'https://example.com/e2e-visual-news',
+} as const;
+
+/** Removes the news digest and its stories. */
+export async function clearVisualNews(): Promise<void> {
+  const { error } = await serviceClient()
+    .from('news_digests')
+    .delete()
+    .eq('id', VISUAL_NEWS.digestId);
+  if (error) {
+    throw new Error(`could not remove the visual gate news fixture: ${error.message}`);
+  }
+}
+
+/**
+ * Writes the fixed digest and its one story through the service role.
+ *
+ * The digest is the workflow's own row shape, so the page reads it like any
+ * published day rather than through a test-only path. The fixed id is deleted
+ * first: `digest_date` is unique, and a failed recording must not leave a row a
+ * later run cannot write.
+ */
+export async function seedVisualNews(): Promise<void> {
+  await clearVisualNews();
+  const client = serviceClient();
+
+  const { error: digestError } = await client.from('news_digests').insert({
+    id: VISUAL_NEWS.digestId,
+    digest_date: VISUAL_NEWS.date,
+    title: VISUAL_NEWS.title,
+    lede: VISUAL_NEWS.lede,
+    story_count: 1,
+    model: VISUAL_NEWS.model,
+    run_url: null,
+    published_at: `${VISUAL_NEWS.date}T06:00:00.000Z`,
+  });
+  if (digestError) {
+    throw new Error(`could not seed the visual gate news digest: ${digestError.message}`);
+  }
+
+  const { error: storyError } = await client.from('news_stories').insert({
+    id: VISUAL_NEWS.storyId,
+    digest_id: VISUAL_NEWS.digestId,
+    position: 1,
+    category: VISUAL_NEWS.category,
+    region: VISUAL_NEWS.region,
+    headline_ar: VISUAL_NEWS.headline,
+    summary_ar: VISUAL_NEWS.summary,
+    why_it_matters_ar: null,
+    source_id: VISUAL_NEWS.sourceId,
+    source_name: VISUAL_NEWS.sourceName,
+    source_url: VISUAL_NEWS.sourceUrl,
+    source_published_at: null,
+  });
+  if (storyError) {
+    throw new Error(`could not seed the visual gate news story: ${storyError.message}`);
+  }
+}
+
 function serviceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
