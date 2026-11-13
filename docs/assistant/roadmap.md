@@ -147,7 +147,9 @@ one fact they asked to be remembered, and every injected item is traceable to a 
 - One tool pack per product, in the coverage table's order: LinkSnap, Notes, HabitFlow,
   SpendTrack, Community, Account, Consultations, Training, Client work, then the three content
   apps (News, Rates, Quran, Athkar, Scan).
-- Admin entries last, behind `admin` scope, audited, never declared to a non-admin turn.
+- Admin entries last: behind `admin` scope, audited, declared only inside a verified admin's turn,
+  and refused at execution without the flag. Reads are tier 0; writes are tier 2 or 3 and never
+  grantable (ADR-0180, decision 10).
 - MCP store and inbound clients: connect, disconnect, revoke, and grant a tool.
 - Trust settings: the grants list, revoke, and the audit trail. The apps sheet draws the same
   rows.
@@ -245,7 +247,7 @@ Ordered, each independently reviewable.
 
 ## Settled
 
-Decided before phase 0, because both are schema-shaped and a later change would be a data
+Decided before phase 0, because each is schema-shaped and a later change would be a data
 migration with a behaviour change:
 
 - **Clocks split.** A scheduled run uses the member's IANA zone (`profiles.timezone`, snapshotted
@@ -253,12 +255,8 @@ migration with a behaviour change:
 - **`all` narrows immediately.** An existing connection's `all` becomes its tier 0 and 1 tools, no
   migration and no retroactive grants, with one line in the thread the first time it cards
   (ADR-0180, decision 6).
-
-## Open questions
-
-- **Admin tools in the member-facing turn.** The recommendation on the table is yes, under four
-  conditions: tier 2 and 3 only, never in a scheduled run, a visible admin mark on the card, and
-  the page snapshot suppressed while an admin surface is open. The safety does not depend on
-  hiding the declarations — `isAdmin` is re-checked at execution and a handler without the `admin`
-  scope throws — but the conditions are what make a routine-looking card hard to misread. Not
-  accepted yet.
+- **Admin tools are in the turn, narrowly.** Admin writes are tier 2 or 3 and never grantable;
+  admin reads are tier 0; nothing appears in a scheduled run; the card carries a visible admin
+  mark; and no page snapshot is published while an admin surface is open (ADR-0180, decision 10;
+  ADR-0181, decision 8). The boundary is `isAdmin` re-read at execution, so a turn without the
+  flag is refused by the handler rather than trusted to have been filtered.

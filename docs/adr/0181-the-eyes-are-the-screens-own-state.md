@@ -73,6 +73,12 @@ itself, redacted structurally, and never persisted.**
 7. **A refresh tool, not a replacement.** `get_screen_context` exists only for the case where the
    snapshot in the turn is older than the member's question. The normal path is the system block.
 
+8. **An admin surface is not an observed surface.** While a route under `/admin`, or an admin
+   dialog, is open, no snapshot is published at all — no fields, no text, no focus — and the turn
+   says it cannot see the screen. The eyes exist to help a member with their own data; carrying
+   another member's row into a prompt because an operator happened to be looking at it is the one
+   failure this contract cannot recover from.
+
 ## Considered options
 
 - **DOM capture.** Rejected: brittle, unbounded, and it captures secrets the member never agreed

@@ -84,6 +84,18 @@ last_used_at, revoked_at)`, unique on the live pair. A grant is created only by 
    happens to it from the entry's tier and the member's grants. A prompt line that says "ask
    before writing" is a second defence, not the defence.
 
+10. **Admin is a scope checked at execution, not a prompt line.** An admin entry requires the
+    `admin` scope and is declared only inside a verified admin's own turn. An admin **write** is
+    tier 2 or 3 — never tier 1, so no grant can make one automatic — while an admin **read** is
+    tier 0, because carding a read the admin already performs in the console is noise, not a
+    check. The declaration filter is convenience; the boundary is `isAdmin`, re-read from the
+    session at execution, so a turn that somehow named an admin tool without the flag is refused by
+    the handler (`MissingScopeError`) rather than run. An admin entry never appears in a scheduled
+    run (ADR-0184, decision 3), and while an admin surface is open the page snapshot is suppressed
+    (ADR-0181, decision 8), so another member's row cannot ride into a prompt. The card carries a
+    visible admin mark: the one thing an admin's confirm must never be is indistinguishable from a
+    routine one.
+
 ## Considered options
 
 - **Confirm everything, forever.** Rejected: it produces blind confirmation, and it punishes the
