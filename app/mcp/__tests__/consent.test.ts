@@ -265,6 +265,9 @@ describe('POST /mcp/connect/consent', () => {
     expect(res.status).toBe(307);
     const location = res.headers.get('location') ?? '';
     expect(location).toContain('/auth/login');
+    // `https://royaraqamia.com` (the mocked env.origin), never the form's own
+    // address (ADR-0178).
+    expect(new URL(location).origin).toBe('https://royaraqamia.com');
     expect(location).toContain('redirect=%2Fmcp%2Fconnect');
     const redirectParam = decodeURIComponent(new URL(location).searchParams.get('redirect') ?? '');
     expect(redirectParam).toMatch(/^\/mcp\/connect\?/);

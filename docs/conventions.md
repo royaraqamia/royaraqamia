@@ -37,10 +37,11 @@ from the request (ADR-0178).
 - `PUBLIC_ORIGIN` is the runtime value; `NEXT_PUBLIC_SITE_URL` is the build-time one the browser
   inlines, and `NEXT_PUBLIC_BASE_URL` is the old spelling. Development falls back to
   `http://localhost:3000`; production throws rather than guessing.
-- `new URL(req.url).origin`, `.nextUrl.origin` and `Host` header reads are refused by
-  `npm run check:origin`. A self-hosted Next server reports the address it listens on, so behind
-  Render those answered `https://localhost:10000` — which is what `opencode mcp auth` and every
-  completed Google sign-in were being sent to.
+- `new URL(req.url).origin`, `.nextUrl.origin`, a `Host` header read and a request used as a URL base
+  (`new URL('/x', req.url)`, in a route handler) are refused by `npm run check:origin`. A self-hosted
+  Next server reports the address it listens on, so behind Render those answered
+  `https://localhost:10000` — which is what `opencode mcp auth`, the MCP consent hop and every completed
+  Google sign-in were being sent to.
 
 ## Digits
 
