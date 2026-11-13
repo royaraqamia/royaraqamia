@@ -111,7 +111,9 @@ stated limit.
 - **The floor is a plain 503.** A navigation with no cached document answers with a 503 and the
   browser's own offline error: a brand-new install's first hit with no network (nothing has been
   cached yet, by definition), and a never-cache surface such as `/admin`, whose guard answers on the
-  server (`identity.resolveAdmin`) so a cached document could not authorize itself. There is no
+  server (`identity.resolveAdmin`) so a cached document could not authorize itself. The 503 is the
+  answer to a request that failed, never to one that is merely slow: a never-cache navigation waits
+  for the server (ADR-0031's 2026-11-13 amendment). There is no
   offline page and no card to draw; a never-visited dynamic detail route keeps its parent's chrome
   instead (#490). `/mcp/connect` is the one other user-facing surface that asks
   the network for its document, and it is not a gap left behind: its URL carries `client_id`,
@@ -122,14 +124,21 @@ stated limit.
 - **"Instant" is perceived latency, not a benchmark.** The property is that owned data paints from the
   Local Store with no network wait and a write applies on tap. It is not a claim that every route
   renders in zero milliseconds.
-- **A cold load waits no longer than three seconds for the network.** `NAVIGATION_TIMEOUT_MS = 3000`
-  (`public/sw.js`, #447, lowered by #491): a request with no cached copy races the network against
-  the deadline, and the nearest cached shell answers instead of the browser's own several-minute
-  hang. Ten seconds was the same rule with an unusable number — ten seconds of blank reads as a
-  broken app, not as protection. The cut fetch keeps running, so a late response still enters the
-  cache and the next visit gets the real page. A cached copy is never behind the deadline — stale
+- **A cold load waits no longer than three seconds for the network, when waiting has an alternative.**
+  `NAVIGATION_TIMEOUT_MS = 3000` (`public/sw.js`, #447, lowered by #491): a request with no cached copy
+  races the network against the deadline, and the nearest cached shell answers instead of the browser's
+  own several-minute hang. Ten seconds was the same rule with an unusable number — ten seconds of blank
+  reads as a broken app, not as protection. The cut fetch keeps running, so a late response still enters
+  the cache and the next visit gets the real page. A cached copy is never behind the deadline — stale
   paint stays instant — and never-cache API reads inside a painted page rely on the page's own
   states rather than on this rule.
+
+  A never-cache **navigation** is exempt, because the deadline's whole purpose is to choose the cached
+  shell over a slow origin and there is no shell on that path: on 2026-11-13 `/mcp/authorize` measured
+  3.52s cold against the 3s deadline, and the consent hop was answered with a page reading "Offline"
+  while the network was healthy. It now waits, and the plain 503 above answers only a request that
+  actually failed (ADR-0031's 2026-11-13 amendment).
+
 - **An owned-data route's shell needs one online visit, then it reloads offline.** `/habitflow`,
   `/spendtrack`, `/linksnap` and `/notes` used to be in the worker's never-cache list
   (ADR-0031: their documents were server-rendered per user, so caching them risked leaking one
@@ -404,9 +413,10 @@ reading because of a chunk they never asked for (#332).
 - Analytics/errors are best-effort, bounded and droppable; they share none of the Outbox guarantees.
 - **Every miss is counted by door** (ADR-0074, #474, and its 2026-10-30 amendment): the worker
   labels each one (`navigation-deadline`, `navigation-offline`, `navigation-prefix`,
-  `online-only-deadline`, `online-only-offline`, `static-offline`, `api-offline`) and posts one
+  `online-only-offline`, `static-offline`, `api-offline`) and posts one
   beacon per miss to `/api/offline-serve`, carrying the cache hit/miss/failure tallies since the
-  previous report. `navigation-prefix` is the graceful fallback (#490): an ancestor shell answered,
+  previous report. `online-only-deadline` is retired (ADR-0031's 2026-11-13 amendment) and accepted
+  only from a worker that predates it. `navigation-prefix` is the graceful fallback (#490): an ancestor shell answered,
   silently, so the door separates "the user saw the parent's chrome" from "the user got a 503". What
   is deliberately not collected: **no URL** (not even a path), no user, session or client id, no
   cookies (`credentials: 'omit'`), no timing, no sizes. The beacon is droppable — it is not awaited,
@@ -418,7 +428,8 @@ reading because of a chunk they never asked for (#332).
   a Vercel log query — filter on `[offline-serve]` and group the door. A door changing shape is the
   regression signal: `navigation-*` climbing means ordinary routes stopped caching. The endpoint also
   emits one Sentry message per door (fingerprint `offline-serve/<door>`): `warning` for
-  `navigation-deadline` and `online-only-deadline`, `info` for the accepted doors, so an alert rule
+  `navigation-deadline` (and for `online-only-deadline`, retired by ADR-0031's 2026-11-13 amendment
+  and only reachable from an older worker), `info` for the accepted doors, so an alert rule
   pages without a log query. Nothing in the app reads the count back.
 
 ## UX
@@ -433,7 +444,8 @@ moment it matters — with the reason stated, since the request is otherwise opa
 
 **Phase 0 of the "never show `/offline`" roadmap (#447) landed on 2026-10-21.** Three diffs close the
 most-complained paths without touching the dashboard architecture: a cold-load deadline for every
-navigation (the limit above — ten seconds when it landed, three since #491), the auth shells in the SWR
+navigation that has a cached shell (the limit above — ten seconds when it landed, three since #491;
+never-cache navigations were exempted on 2026-11-13), the auth shells in the SWR
 cache with their forms answering offline submits inline (ADR-0031's amendment; the shells join
 ADR-0071's precache), and the Android shell's fallback page recovering exactly once when the radio
 returns (ADR-0067's amendment). With it, `/offline` ended up serving only a brand-new install hit with no

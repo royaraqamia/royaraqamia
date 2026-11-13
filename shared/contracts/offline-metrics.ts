@@ -10,8 +10,12 @@ import { z } from 'zod';
  *   the 3s deadline (#447).
  * - `navigation-offline`: an ordinary navigation with no cached copy and no
  *   network answer.
- * - `online-only-deadline`: a never-cache navigation (`/admin`, `/mcp/connect`)
- *   past the deadline.
+ * - `online-only-deadline`: retired by ADR-0031's 2026-11-13 amendment. It named
+ *   a never-cache navigation cut off at the 3s deadline; that path now waits for
+ *   the server instead of inventing an "Offline" page, so no worker emits this
+ *   door. It stays in the enum because a worker already installed on a device
+ *   keeps reporting it until the next release reaches that device, and the
+ *   endpoint must accept what it sends.
  * - `online-only-offline`: a never-cache navigation with no network.
  * - `static-offline`: a static-asset navigation whose fetch failed.
  * - `api-offline`: an API-read navigation whose fetch failed.

@@ -210,3 +210,29 @@ it is a saved copy. Those are failures of a specific control or read, not a repl
 and they are unaffected. The offline-serve beacon keeps counting the misses (ADR-0074's
 2026-10-30 amendment); `offline-route-card.tsx`, `prefix-serve.ts` and `app/offline/` are deleted
 rather than left unused.
+
+## Amendment (2026-11-13): a never-cache navigation waits, because there is nothing to choose
+
+The three-second navigation deadline (#447, ADR-0031's earlier amendment, `NAVIGATION_TIMEOUT_MS`)
+was applied to every navigation, including the ones this ADR keeps online-only. On that path the
+rule has no alternative to pick: there is no cached shell, so the "graceful" answer it selects is
+`new Response('Offline', { status: 503 })` — a page that says the network is gone when the only true
+statement is that the server is slow. Measured on the free instance on 2026-11-13, `/mcp/authorize`
+took **3.52s** cold (0.92-1.33s warm) against the 3s deadline, and `/auth/callback` sampled 1.61s and
+**3.31s**. The symptom was reported as a service-worker bug on the MCP consent screen: a browser
+showing the word "Offline" at `royaraqamia.com/mcp/authorize` while the origin was healthy, and the
+same URL rendering the consent page the moment the worker was unregistered.
+
+So the deadline now applies only where it can choose something better — a navigation with a cached
+shell, which still paints instantly and still bounds a cold load to three seconds. A navigation to a
+never-cache path (`/admin`, `/auth/callback`, `/mcp/authorize`, `/mcp/connect`) makes its request
+and waits for the answer, taking the navigation preload when the browser made one (#492). The plain
+503 stays exactly as it was defined above: the answer to a request that **failed**, reported through
+`online-only-offline`, not to one that is merely slow. `online-only-deadline` is retired with the
+rule that produced it; the enum keeps the value because a worker already on a device keeps sending it
+until the next release reaches that device.
+
+A redirect is the case that made this visible and it is worth naming: `/mcp/authorize` answers 307 to
+the consent page, and a worker cannot improve a redirect hop — it has nothing to cache and nothing to
+paint. A slow 307 must reach the browser to be followed; a synthetic 503 in its place breaks the
+handshake with no error a user could act on.
