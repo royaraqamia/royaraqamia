@@ -256,6 +256,51 @@ describe('POST /mcp/connect/consent', () => {
     expect(mockCreateAuthorizationCode).not.toHaveBeenCalled();
   });
 
+  it('accepts the loopback port a native client bound this run', async () => {
+    mockGetClient.mockResolvedValue({
+      ...client,
+      redirect_uris: ['http://127.0.0.1:52151/callback'],
+    });
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
+    });
+
+    const res = (await POST(
+      makeReq(
+        makeForm({ redirect_uri: 'http://127.0.0.1:63881/callback' }),
+        new Headers({ origin: 'https://royaraqamia.com' })
+      )
+    )) as NextResponse & { headers: Headers; status: number };
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location') ?? '').toContain('code=auth-code-123');
+    // The code is issued for the value the request carried, not the registered
+    // one: the exchange repeats it and compares them (RFC 6749 §4.1.3).
+    expect(mockCreateAuthorizationCode).toHaveBeenCalledWith(
+      expect.objectContaining({ redirectUri: 'http://127.0.0.1:63881/callback' })
+    );
+  });
+
+  it('still refuses a loopback redirect on another path', async () => {
+    mockGetClient.mockResolvedValue({
+      ...client,
+      redirect_uris: ['http://127.0.0.1:52151/callback'],
+    });
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
+    });
+
+    const res = (await POST(
+      makeReq(
+        makeForm({ redirect_uri: 'http://127.0.0.1:63881/stolen' }),
+        new Headers({ origin: 'https://royaraqamia.com' })
+      )
+    )) as NextResponse & { headers: Headers; status: number };
+
+    expect(res.status).toBe(400);
+    expect(mockCreateAuthorizationCode).not.toHaveBeenCalled();
+  });
+
   it('redirects to login when the session is missing, preserving the consent query', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = (await POST(makeReq(makeForm()))) as NextResponse & {

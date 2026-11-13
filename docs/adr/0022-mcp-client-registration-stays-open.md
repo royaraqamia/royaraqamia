@@ -6,6 +6,10 @@ constraints are mechanical: registration is rate-limited (Upstash) and redirect 
 `https:`, with an exception carved out for `http://localhost*` so developers can test with a
 local agent.
 
+_Amended by [ADR 0179](0179-the-loopback-port-is-not-part-of-the-registration.md)._ The scheme
+policy stands; the exception is every loopback literal (`localhost`, `127.0.0.1`, `[::1]`), and a
+registered loopback target accepts the port the client binds at run time.
+
 ## Considered options
 
 - **Approval-gated registration.** The `mcp_oauth_clients.registration_token_hash` column

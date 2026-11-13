@@ -47,6 +47,13 @@ jobs:
       - name: Absolute URLs Come From Configuration
         run: npm run check:origin
 
+      # A loopback callback port is chosen at run time (RFC 8252 §7.3), so a
+      # redirect URI is compared as a parsed value, never as a string: one call
+      # site that compares text refuses the second launch of every native client
+      # (ADR-0179).
+      - name: Redirect URIs Are Compared As Parsed Values
+        run: npm run check:redirect-uri
+
       - name: The Bot Writes Fusha
         run: npm run check:fusha
 

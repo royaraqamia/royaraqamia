@@ -277,6 +277,28 @@ describe('createMcpOAuthProvider', () => {
         })
       ).rejects.toThrow(McpOAuthError);
     });
+
+    // ADR 0179: authorize accepts the loopback port the client bound this run.
+    // The exchange must still repeat the exact value the code was issued for.
+    it('rejects a loopback redirect_uri on another port at exchange time', async () => {
+      mockRepo.getAuthCode.mockResolvedValue({
+        ...mockCodeRecord,
+        redirect_uri: 'http://127.0.0.1:52151/callback',
+      });
+
+      await expect(
+        provider.exchangeCodeForTokens({
+          code: 'code-1',
+          codeVerifier: PKCE_VERIFIER,
+          client: mockClient,
+          redirectUri: 'http://127.0.0.1:63881/callback',
+        })
+      ).rejects.toMatchObject({
+        code: 'invalid_grant',
+        errorDescription: 'redirect_uri does not match the authorization request',
+      });
+      expect(mockRepo.createToken).not.toHaveBeenCalled();
+    });
   });
 
   describe('refreshAccessToken', () => {

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createDefaultMcpOAuthProvider } from '@/backend/config/mcp';
 import { effectiveScopes, parseScopes, scopesToLabels } from '@/backend/services/mcp/scope';
+import { allowsRedirectUri } from '@/backend/services/mcp/redirect-uri';
 import {
   Card,
   CardContent,
@@ -64,7 +65,7 @@ export default async function ConnectPage({
   const provider = createDefaultMcpOAuthProvider();
   const client = clientId ? await provider.getClient(clientId) : null;
 
-  if (!client || !redirectUri || !client.redirect_uris.includes(redirectUri)) {
+  if (!client || !redirectUri || !allowsRedirectUri(client.redirect_uris, redirectUri)) {
     redirect('/');
   }
   if (client.expires_at && new Date(client.expires_at).getTime() < Date.now()) {

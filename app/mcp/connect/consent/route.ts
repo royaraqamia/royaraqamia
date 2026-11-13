@@ -7,6 +7,7 @@ import {
   createDefaultMcpOAuthProvider,
 } from '@/backend/config/mcp';
 import { createMcpBridgeSessionMinter } from '@/backend/services/mcp/bridge-session';
+import { allowsRedirectUri } from '@/backend/services/mcp/redirect-uri';
 import { encryptBridgeSession } from '@/backend/shared/mcp-token-crypto';
 import { isSameOrigin, getClientIp } from '@/backend/transport/http';
 import { checkRateLimitApi } from '@/backend/middleware/http';
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
   const provider = createDefaultMcpOAuthProvider();
   const client = await provider.getClient(clientId);
 
-  if (!client || !redirectUri || !client.redirect_uris.includes(redirectUri)) {
+  if (!client || !redirectUri || !allowsRedirectUri(client.redirect_uris, redirectUri)) {
     return NextResponse.json(
       { error: 'invalid_request', error_description: 'Invalid client_id or redirect_uri' },
       { status: 400 }

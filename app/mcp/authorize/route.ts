@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/backend/config/env';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createDefaultMcpOAuthProvider } from '@/backend/config/mcp';
+import { allowsRedirectUri } from '@/backend/services/mcp/redirect-uri';
 import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
+import { logger } from '@/backend/shared/logger';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { toNextResponse } from '@/backend/transport/http-result';
 import { getClientIp } from '@/backend/transport/http';
@@ -45,7 +47,10 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const isRegisteredRedirect = redirectUri !== null && client.redirect_uris.includes(redirectUri);
+  // A loopback registration accepts the port the client bound this run
+  // (RFC 8252 §7.3, ADR 0179); every other URI is compared in full.
+  const isRegisteredRedirect =
+    redirectUri !== null && allowsRedirectUri(client.redirect_uris, redirectUri);
 
   if (responseType !== 'code') {
     if (isRegisteredRedirect && redirectUri) {
@@ -71,6 +76,14 @@ export async function GET(req: NextRequest) {
     );
   }
   if (!isRegisteredRedirect) {
+    // The client's own values, so a report like this one is a log query rather
+    // than a dig through the client's credential store. A redirect target is the
+    // client's, not a secret; the list is the registration it is being held to.
+    logger.warn('MCP authorize refused an unregistered redirect_uri', {
+      clientId,
+      redirectUri,
+      registered: client.redirect_uris.slice(0, 5),
+    });
     return NextResponse.json(
       {
         error: 'invalid_request',

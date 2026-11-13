@@ -45,12 +45,16 @@ const client = {
   created_at: '2026-08-01T00:00:00.000Z',
 };
 
-async function renderPage(scope: string, email = 'member@example.com') {
+async function renderPage(
+  scope: string,
+  email = 'member@example.com',
+  redirectUri = 'https://client.example/callback'
+) {
   mocks.getUser.mockResolvedValue({ data: { user: { id: 'u-1', email } } });
   const page = await ConnectPage({
     searchParams: Promise.resolve({
       client_id: 'client-1',
-      redirect_uri: 'https://client.example/callback',
+      redirect_uri: redirectUri,
       scope,
       state: 'state-123',
       code_challenge: 'challenge',
@@ -87,6 +91,21 @@ describe('MCP consent screen', () => {
     await renderPage('community.read');
 
     expect(screen.getByText('client.example')).toBeInTheDocument();
+  });
+
+  // ADR 0179: a native client binds a new loopback port per run, so the screen
+  // must render for the port the request carries — and name that port, since it
+  // is what the member is trusting.
+  it('renders for the loopback port a native client bound this run', async () => {
+    mocks.getClient.mockResolvedValue({
+      ...client,
+      redirect_uris: ['http://127.0.0.1:52151/callback'],
+    });
+
+    await renderPage('community.read', 'member@example.com', 'http://127.0.0.1:63881/callback');
+
+    expect(mocks.redirect).not.toHaveBeenCalled();
+    expect(screen.getByText('127.0.0.1:63881')).toBeInTheDocument();
   });
 
   it('shows no admin permission to a member the route would drop it for', async () => {
