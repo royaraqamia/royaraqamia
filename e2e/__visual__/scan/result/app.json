@@ -1,0 +1,43 @@
+{
+  "surface": "scan",
+  "elements": {
+    "title": {
+      "top": 40,
+      "height": 46.545456,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "result-card": {
+      "top": 110.545456,
+      "width": 360.72726,
+      "height": 247.27272,
+      "radius": 16
+    },
+    "result-badges": {
+      "top": 131.63637,
+      "height": 24,
+      "columnGap": 8
+    },
+    "result-payload": {
+      "top": 171.63637,
+      "height": 45.09091,
+      "radius": 12
+    },
+    "result-actions": {
+      "top": 232.72728,
+      "height": 103.999985,
+      "columnGap": 8
+    },
+    "result-copy": {
+      "width": 156.72726,
+      "height": 47.999985,
+      "fontSize": 16
+    },
+    "result-rescan": {
+      "width": 156.72726,
+      "height": 48,
+      "fontSize": 16
+    }
+  }
+}

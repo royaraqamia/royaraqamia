@@ -1,0 +1,58 @@
+{
+  "surface": "scan",
+  "state": "denied",
+  "route": "/scan",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 188,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "card": {
+      "top": 258.5,
+      "width": 361,
+      "height": 489.25,
+      "radius": 16
+    },
+    "viewfinder": {
+      "top": 279.5,
+      "width": 319,
+      "height": 239.25,
+      "radius": 16
+    },
+    "start": {
+      "height": 48,
+      "fontSize": 16,
+      "fontWeight": 700
+    },
+    "notice": {
+      "top": 534.75,
+      "width": 319,
+      "height": 66,
+      "radius": 12,
+      "fontSize": 14
+    },
+    "upload": {
+      "top": 616.75,
+      "width": 319,
+      "height": 110,
+      "radius": 12
+    },
+    "upload-hint": {
+      "top": 633.75,
+      "height": 16,
+      "fontSize": 12
+    },
+    "upload-button": {
+      "height": 48,
+      "fontSize": 16
+    }
+  }
+}

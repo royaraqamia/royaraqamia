@@ -25,7 +25,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [ ] **community-post** `/community/[slug]` — todo · #1351
 - [x] **profile** `/u/[username]` `/u/[username]/followers` `/u/[username]/following` — native · #1343
 - [ ] **news** `/?tab=/news` `/news` — todo · #1345
-- [ ] **scan** `/?tab=/scan` `/scan` — todo · #1344
+- [x] **scan** `/?tab=/scan` `/scan` — native · #1344
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [ ] **mcp-guide** `/mcp/guide` — todo
 - [ ] **mcp-connect** `/mcp/connect` — todo
@@ -165,4 +165,4 @@ A component is finished when the surface that draws it is native: 77 ported comp
 
 ## Where this stands
 
-16 native · 18 to do · 5 blocked of 39 surfaces.
+17 native · 17 to do · 5 blocked of 39 surfaces.

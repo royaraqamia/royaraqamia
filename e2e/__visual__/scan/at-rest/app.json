@@ -1,0 +1,44 @@
+{
+  "surface": "scan",
+  "elements": {
+    "title": {
+      "top": 40,
+      "height": 46.545456,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "card": {
+      "top": 110.545456,
+      "width": 360.72726,
+      "height": 407.2727,
+      "radius": 16
+    },
+    "viewfinder": {
+      "top": 131.63637,
+      "width": 318.54544,
+      "height": 238.90907,
+      "radius": 16
+    },
+    "start": {
+      "height": 48,
+      "fontSize": 16,
+      "fontWeight": 700
+    },
+    "upload": {
+      "top": 386.54544,
+      "width": 318.54544,
+      "height": 110.18182,
+      "radius": 12
+    },
+    "upload-hint": {
+      "top": 403.63635,
+      "height": 16,
+      "fontSize": 12
+    },
+    "upload-button": {
+      "height": 48,
+      "fontSize": 16
+    }
+  }
+}

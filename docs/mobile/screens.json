@@ -155,9 +155,8 @@
     },
     {
       "surface": "scan",
-      "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanScreen.kt",
-      "reason": "The camera, its permission and the on-device decoder are drawn (#932), and switched off until the page is pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117)."
+      "enabled": true,
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanScreen.kt"
     },
     {
       "surface": "leads",

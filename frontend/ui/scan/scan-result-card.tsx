@@ -151,9 +151,9 @@ export function ScanResultCard({
   }
 
   return (
-    <Card>
+    <Card data-visual="result-card">
       <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-2">
+        <div data-visual="result-badges" className="flex flex-wrap items-center gap-2">
           <Badge variant="glow" className="gap-1.5">
             <KindIcon className="size-3.5" />
             {SCAN_RESULT_KIND_LABELS[classification.kind]}
@@ -171,7 +171,10 @@ export function ScanResultCard({
           />
         ) : (
           <>
-            <div className="rounded-xl border border-border/60 bg-muted/40 p-3">
+            <div
+              data-visual="result-payload"
+              className="rounded-xl border border-border/60 bg-muted/40 p-3"
+            >
               <pre
                 dir="auto"
                 className="max-h-40 overflow-auto text-start font-mono text-xs leading-relaxed break-all whitespace-pre-wrap text-foreground"
@@ -251,7 +254,7 @@ export function ScanResultCard({
           </p>
         )}
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div data-visual="result-actions" className="flex flex-wrap items-center gap-2">
           {classification.actionHref && classification.actionLabel && (
             <Button asChild>
               <a
@@ -266,12 +269,17 @@ export function ScanResultCard({
             </Button>
           )}
 
-          <Button type="button" variant="outline" onClick={() => void copy(classification.value)}>
+          <Button
+            data-visual="result-copy"
+            type="button"
+            variant="outline"
+            onClick={() => void copy(classification.value)}
+          >
             {copied === classification.value ? <Check className="text-emerald-600" /> : <Copy />}
             نسخ المحتوى
           </Button>
 
-          <Button type="button" variant="ghost" onClick={onRescan}>
+          <Button data-visual="result-rescan" type="button" variant="ghost" onClick={onRescan}>
             <RefreshCw />
             مسح رمز آخر
           </Button>

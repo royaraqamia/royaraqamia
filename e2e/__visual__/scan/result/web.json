@@ -1,0 +1,50 @@
+{
+  "surface": "scan",
+  "state": "result",
+  "route": "/scan",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 188,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "result-card": {
+      "top": 258.5,
+      "width": 361,
+      "height": 247.5,
+      "radius": 16
+    },
+    "result-badges": {
+      "top": 279.5,
+      "height": 24,
+      "columnGap": 8
+    },
+    "result-payload": {
+      "top": 319.5,
+      "height": 45.5,
+      "radius": 12
+    },
+    "result-actions": {
+      "top": 381,
+      "height": 104,
+      "columnGap": 8
+    },
+    "result-copy": {
+      "width": 155.61,
+      "height": 48,
+      "fontSize": 16
+    },
+    "result-rescan": {
+      "width": 156.2,
+      "height": 48,
+      "fontSize": 16
+    }
+  }
+}

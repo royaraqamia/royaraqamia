@@ -57,6 +57,63 @@
       ]
     },
     {
+      "surface": "scan",
+      "web": {
+        "route": "/scan"
+      },
+      "contract": "shared/visual/scan.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/scan/ScanScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.1,
+            "length": 2.0
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.0958,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        },
+        {
+          "name": "denied",
+          "tolerance": {
+            "pixels": 0.115,
+            "length": 2.0
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.1072,
+            "alignment": {
+              "dx": 0,
+              "dy": 2
+            }
+          }
+        },
+        {
+          "name": "result",
+          "tolerance": {
+            "pixels": 0.05,
+            "length": 2.0
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.0429,
+            "alignment": {
+              "dx": 1,
+              "dy": 2
+            }
+          }
+        }
+      ]
+    },
+    {
       "surface": "account-faq",
       "web": {
         "route": "/account/faq"
