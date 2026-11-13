@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { McpOAuthError, isValidMcpRedirectUri } from '@/backend/services/mcp/oauth-provider';
+import { McpOAuthError } from '@/backend/services/mcp/oauth-provider';
+import { isValidMcpRedirectUri } from '@/backend/services/mcp/redirect-uri';
 import { createDefaultMcpOAuthProvider } from '@/backend/config/mcp';
 import { generateOpaqueToken } from '@/backend/shared/mcp-token-crypto';
 import { parseScopes } from '@/backend/services/mcp/scope';

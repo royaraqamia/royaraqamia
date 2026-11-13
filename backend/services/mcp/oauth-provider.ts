@@ -11,6 +11,7 @@ import {
   readBridgeSession,
 } from '@/backend/shared/mcp-token-crypto';
 import { createMcpBridgeSessionRevoker, type McpBridgeSessionRevoker } from './bridge-session';
+import { isSameRedirectUri } from './redirect-uri';
 import { ALL_SCOPES, type McpScope } from './scope';
 import { invalidateTokenCache, invalidateUserCache } from './token-cache';
 
@@ -76,28 +77,6 @@ export interface VerifiedAccessToken {
   userId: string;
   scopes: McpScope[];
   expiresAt: Date;
-}
-
-/**
- * Redirect-URI scheme policy for registered MCP clients (ADR 0022): https
- * only, except http loopback hosts for local development. Native-app and
- * other non-web schemes are rejected at registration so the authorize step
- * never has to re-litigate them.
- */
-export function isValidMcpRedirectUri(uri: string): boolean {
-  let parsed: URL;
-  try {
-    parsed = new URL(uri);
-  } catch {
-    return false;
-  }
-  if (parsed.protocol === 'https:') return true;
-  if (parsed.protocol === 'http:') {
-    // URL.hostname keeps IPv6 brackets ("[::1]"), strip them for the comparison.
-    const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-    return host === 'localhost' || host === '127.0.0.1' || host === '::1';
-  }
-  return false;
 }
 
 export interface McpOAuthProvider {
@@ -255,7 +234,11 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps): McpOAuthProv
           'Authorization code was issued to another client'
         );
       }
-      if (codeRow.redirect_uri !== input.redirectUri) {
+      // Same value, not the same shape: RFC 6749 §4.1.3 compares the exchange's
+      // redirect_uri with the one the authorization request carried. Parsing only
+      // tolerates two spellings of that value — the authorize step's loopback
+      // port rule does not apply here (see `isSameRedirectUri`).
+      if (!isSameRedirectUri(codeRow.redirect_uri, input.redirectUri)) {
         throw new McpOAuthError(
           400,
           'invalid_grant',

@@ -152,6 +152,55 @@ describe('GET /mcp/authorize', () => {
     });
   });
 
+  // ADR 0179, measured on 2026-11-13: a CLI re-uses the registration it already
+  // holds and binds a fresh loopback port per run. The port is not part of the
+  // registration (RFC 8252 §7.3), so the second run used to be refused.
+  it('accepts the loopback port a native client bound this run', async () => {
+    mockGetClient.mockResolvedValue({
+      ...client,
+      redirect_uris: ['http://127.0.0.1:52151/callback'],
+    });
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u1', email: 'user@example.com' } },
+    });
+
+    const res = await GET(
+      makeReq({
+        response_type: 'code',
+        client_id: 'client-1',
+        redirect_uri: 'http://127.0.0.1:63881/callback',
+        scope: 'profile.read',
+        code_challenge: 'challenge',
+        code_challenge_method: 'S256',
+      })
+    );
+
+    expect(res.status).toBe(307);
+    expect(new URL(res.headers.get('location') ?? '').pathname).toBe('/mcp/connect');
+  });
+
+  it('still refuses a loopback redirect on another path', async () => {
+    mockGetClient.mockResolvedValue({
+      ...client,
+      redirect_uris: ['http://127.0.0.1:52151/callback'],
+    });
+
+    const res = await GET(
+      makeReq({
+        response_type: 'code',
+        client_id: 'client-1',
+        redirect_uri: 'http://127.0.0.1:63881/stolen',
+      })
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.headers.get('location')).toBeNull();
+    expect(await readBody(res)).toEqual({
+      error: 'invalid_request',
+      error_description: 'redirect_uri is not registered for this client',
+    });
+  });
+
   it('does not redirect an expired client to an unregistered redirect_uri', async () => {
     mockGetClient.mockResolvedValue({ ...client, expires_at: '2020-01-01T00:00:00.000Z' });
     const res = await GET(
