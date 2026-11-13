@@ -635,7 +635,7 @@ describe('service worker cache durability', () => {
     const ctx = await boot();
     const release = ctx.holdWrites();
 
-    const event = fetchEvent(request('/community', 'navigate'));
+    const event = fetchEvent(request('/rates', 'navigate'));
     ctx.dispatch('fetch', event);
 
     let settled = false;
@@ -652,7 +652,7 @@ describe('service worker cache durability', () => {
     const response = await event.response;
     expect(response.status).toBe(200);
     // Survives the hypothetical termination because it was already persisted.
-    expect(await ctx.caches.match('https://site.example/community')).toBeTruthy();
+    expect(await ctx.caches.match('https://site.example/rates')).toBeTruthy();
   });
 
   it('installs when one precache URL fails, still caching the rest', async () => {
@@ -992,7 +992,7 @@ describe('service worker cache budget and eviction', () => {
     );
     // The document that names the chunk is served by build A and remembered
     // against its client.
-    const navigation = fetchEvent(request('/community'));
+    const navigation = fetchEvent(request('/rates'));
     navigation.resultingClientId = 'client-a';
     a.sandbox.fetch = vi.fn(async () => sized(300));
     a.dispatch('fetch', navigation);
@@ -1015,12 +1015,12 @@ describe('service worker cache budget and eviction', () => {
       sized(300, 'application/javascript')
     );
     // Over budget by 200: the only unpinned entry is A's document, and it goes.
-    await fetchInto(b, request('/community?page=2'), sized(300));
+    await fetchInto(b, request('/rates?page=2'), sized(300));
 
     const staticEntries = await runtimeEntries(b, STATIC_CACHE);
     expect(staticEntries['/_next/static/chunks/a.js']).toBe(300);
     expect(staticEntries['/_next/static/chunks/b.js']).toBe(300);
-    expect((await runtimeEntries(b))['/community']).toBeUndefined();
+    expect((await runtimeEntries(b))['/rates']).toBeUndefined();
   });
 
   it("keeps a live build's chunks while the next worker is only installing", async () => {
@@ -1039,7 +1039,7 @@ describe('service worker cache budget and eviction', () => {
       request('/_next/static/chunks/a.js', 'cors'),
       sized(300, 'application/javascript')
     );
-    const navigation = fetchEvent(request('/community'));
+    const navigation = fetchEvent(request('/rates'));
     navigation.resultingClientId = 'client-a';
     a.sandbox.fetch = vi.fn(async () => sized(300));
     a.dispatch('fetch', navigation);
@@ -1058,7 +1058,7 @@ describe('service worker cache budget and eviction', () => {
     // The install's own write is what takes the store over the smaller budget;
     // the page that is not build A's anymore goes, the chunk does not.
     expect((await runtimeEntries(b, STATIC_CACHE))['/_next/static/chunks/a.js']).toBe(300);
-    expect((await runtimeEntries(b))['/community']).toBeUndefined();
+    expect((await runtimeEntries(b))['/rates']).toBeUndefined();
   });
 
   it("lets a closed document's build go once no client is running it", async () => {
@@ -1074,7 +1074,7 @@ describe('service worker cache budget and eviction', () => {
       request('/_next/static/chunks/a.js', 'cors'),
       sized(300, 'application/javascript')
     );
-    const navigation = fetchEvent(request('/community'));
+    const navigation = fetchEvent(request('/rates'));
     navigation.resultingClientId = 'client-a';
     a.sandbox.fetch = vi.fn(async () => sized(300));
     a.dispatch('fetch', navigation);
@@ -1096,7 +1096,7 @@ describe('service worker cache budget and eviction', () => {
       request('/_next/static/chunks/b.js', 'cors'),
       sized(300, 'application/javascript')
     );
-    await fetchInto(b, request('/community?page=2'), sized(300));
+    await fetchInto(b, request('/rates?page=2'), sized(300));
 
     const staticEntries = await runtimeEntries(b, STATIC_CACHE);
     expect(staticEntries['/_next/static/chunks/a.js']).toBeUndefined();
@@ -1232,10 +1232,10 @@ describe('service worker navigation deadline (#447)', () => {
     expect(await response.text()).toBe('stale-shell');
   });
 
-  it('answers a cold navigation with a plain 503 after the deadline, then keeps a late answer for the next visit', async () => {
+  it('waits for a cold navigation with no cached shell, then keeps the late answer for the next visit', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
     // An empty shell: no ancestor document is on the device, so there is nothing
-    // to prefix-serve and no page to paint (#490).
+    // to prefix-serve and nothing the deadline could choose (#490).
     await (await ctx.caches.open(DATA_CACHE)).delete('https://site.example/');
     ctx.sandbox.fetch = vi.fn(
       () =>
@@ -1253,24 +1253,25 @@ describe('service worker navigation deadline (#447)', () => {
         )
     );
 
-    const event = fetchEvent(request('/community'));
+    const event = fetchEvent(request('/privacy'));
     ctx.dispatch('fetch', event);
 
-    // The deadline cut the cold load: the browser shows its own offline error,
-    // not a multi-minute hang.
-    const cut = await event.response;
-    expect(cut.status).toBe(503);
-    expect(await cut.text()).toBe('Offline');
+    // Past the deadline with nothing to fall back to, the navigation waits for
+    // the answer instead of being told the network is gone (#1370, ADR-0031's
+    // 2026-11-13 amendment).
+    const response = await event.response;
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('late-shell');
 
-    // The cut fetch keeps running as the lifetime extension and still writes.
+    // The revalidation is still a lifetime extension and still writes.
     await Promise.all(event.waitUntilCalls);
-    expect(await ctx.caches.match('https://site.example/community')).toBeTruthy();
+    expect(await ctx.caches.match('https://site.example/privacy')).toBeTruthy();
 
     // The next visit — even with the radio off — gets the real page.
     ctx.sandbox.fetch = vi.fn(async () => {
       throw new Error('offline');
     });
-    const second = fetchEvent(request('/community'));
+    const second = fetchEvent(request('/privacy'));
     ctx.dispatch('fetch', second);
     expect(await second.response.then((r) => r.text())).toBe('late-shell');
   });
@@ -1449,18 +1450,18 @@ describe('service worker RSC cache key and navigation preload (#492)', () => {
     // The live payload a navigation fetches: `_rsc` is a hash of the router's
     // own headers, so the next navigation to the same page arrives on a
     // different URL — and, before #492, an empty entry.
-    const first = fetchEvent(request('/community?_rsc=first-state'));
+    const first = fetchEvent(request('/privacy?_rsc=first-state'));
     ctx.dispatch('fetch', first);
     expect(await first.response.then((response) => response.text())).toBe('flight-payload');
     await Promise.all(first.waitUntilCalls);
 
     noNetwork(ctx);
-    const second = fetchEvent(request('/community?_rsc=second-state'));
+    const second = fetchEvent(request('/privacy?_rsc=second-state'));
     ctx.dispatch('fetch', second);
 
     expect(await second.response.then((response) => response.text())).toBe('flight-payload');
 
-    const entries = await entriesFor(ctx, '/community');
+    const entries = await entriesFor(ctx, '/privacy');
     expect(entries).toHaveLength(1);
     expect(entries[0].search).toBe('?_rsc=1');
   });
@@ -1474,18 +1475,18 @@ describe('service worker RSC cache key and navigation preload (#492)', () => {
     // a full document load, which is the round trip this change removes. So a
     // prefetch keeps its own URL and never lands on the navigation's key.
     const prefetch = fetchEvent(
-      request('/community?_rsc=prefetch', 'cors', { 'next-router-prefetch': '1' })
+      request('/privacy?_rsc=prefetch', 'cors', { 'next-router-prefetch': '1' })
     );
     ctx.dispatch('fetch', prefetch);
     expect(await prefetch.response.then((response) => response.text())).toBe('prefetched-partial');
     await Promise.all(prefetch.waitUntilCalls);
 
-    expect(await ctx.caches.match('https://site.example/community?_rsc=1')).toBeFalsy();
+    expect(await ctx.caches.match('https://site.example/privacy?_rsc=1')).toBeFalsy();
 
     // The navigation is a miss, so with the radio off it is not answered with the
     // prefetched body.
     noNetwork(ctx);
-    const navigation = fetchEvent(request('/community?_rsc=live'));
+    const navigation = fetchEvent(request('/privacy?_rsc=live'));
     ctx.dispatch('fetch', navigation);
     expect(await navigation.response.then((response) => response.text())).not.toBe(
       'prefetched-partial'
@@ -1496,19 +1497,41 @@ describe('service worker RSC cache key and navigation preload (#492)', () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
     ctx.sandbox.fetch = vi.fn(async () => cacheable('flight-payload'));
 
-    const navigation = fetchEvent(request('/community?_rsc=aaa'));
+    const navigation = fetchEvent(request('/privacy?_rsc=aaa'));
     ctx.dispatch('fetch', navigation);
     await navigation.response.then((response) => response.text());
     await Promise.all(navigation.waitUntilCalls);
 
     // The document is a different body, so it keeps its own key: a hard
     // navigation cannot be handed a flight payload as HTML.
-    expect(await ctx.caches.match('https://site.example/community')).toBeFalsy();
+    expect(await ctx.caches.match('https://site.example/privacy')).toBeFalsy();
 
     noNetwork(ctx);
-    const document = fetchEvent(request('/community', 'navigate'));
+    const document = fetchEvent(request('/privacy', 'navigate'));
     ctx.dispatch('fetch', document);
     expect(await document.response.then((response) => response.text())).not.toBe('flight-payload');
+  });
+
+  it('never stores or serves the flight payload of a per-viewer screen (#1370)', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    ctx.sandbox.fetch = vi.fn(async () => cacheable('member-feed'));
+
+    // A client navigation to `/community` fetches the feed as a flight payload,
+    // which carries the viewer's own posts and follow states: it may not be
+    // shared across sessions any more than the document may.
+    const first = fetchEvent(request('/community?_rsc=first-state'));
+    ctx.dispatch('fetch', first);
+    expect(await first.response.then((response) => response.text())).toBe('member-feed');
+    await Promise.all(first.waitUntilCalls);
+
+    expect(await entriesFor(ctx, '/community')).toHaveLength(0);
+
+    // Nothing was kept, so the next payload goes to the network rather than
+    // painting the previous visitor's feed.
+    noNetwork(ctx);
+    const second = fetchEvent(request('/community?_rsc=second-state'));
+    ctx.dispatch('fetch', second);
+    expect(await second.response.then((response) => response.text())).not.toBe('member-feed');
   });
 
   it('never keys or stores a payload on a never-cache surface', async () => {
@@ -1531,7 +1554,7 @@ describe('service worker RSC cache key and navigation preload (#492)', () => {
     });
 
     const event = fetchEvent(
-      request('/community', 'navigate'),
+      request('/privacy', 'navigate'),
       Promise.resolve(cacheable('preloaded-shell'))
     );
     ctx.dispatch('fetch', event);
@@ -1543,7 +1566,7 @@ describe('service worker RSC cache key and navigation preload (#492)', () => {
 
     // It is still a cache write, so the next visit has a copy.
     await Promise.all(event.waitUntilCalls);
-    expect(await ctx.caches.match('https://site.example/community')).toBeTruthy();
+    expect(await ctx.caches.match('https://site.example/privacy')).toBeTruthy();
   });
 
   it('falls back to its own request when the browser preloaded nothing', async () => {
@@ -1572,7 +1595,7 @@ describe('service worker RSC cache key and navigation preload (#492)', () => {
   it('still cuts a preload that never answers at the navigation deadline', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
 
-    const event = fetchEvent(request('/community', 'navigate'), new Promise(() => undefined));
+    const event = fetchEvent(request('/privacy', 'navigate'), new Promise(() => undefined));
     ctx.dispatch('fetch', event);
 
     // The deadline answers with the nearest cached shell (`/`), and the hanging
@@ -1634,12 +1657,12 @@ describe('service worker offline-serve telemetry (#474)', () => {
   it('reports a prefix serve as its own door, still with no URL in the payload', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
     const cache = await ctx.caches.open(DATA_CACHE);
-    await cache.put('https://site.example/community', new Response('community-shell'));
+    await cache.put('https://site.example/quran', new Response('quran-shell'));
     const beacons = intercept(ctx, () => Promise.reject(new Error('offline')));
 
-    const event = fetchEvent(request('/community/lead'));
+    const event = fetchEvent(request('/quran/7'));
     ctx.dispatch('fetch', event);
-    expect(await event.response.then((r) => r.text())).toBe('community-shell');
+    expect(await event.response.then((r) => r.text())).toBe('quran-shell');
 
     expect(beacons()).toHaveLength(1);
     expect(beacons()[0].init).toMatchObject({ method: 'POST', credentials: 'omit' });
@@ -1649,23 +1672,30 @@ describe('service worker offline-serve telemetry (#474)', () => {
       cache: { hits: 0, misses: 1, failures: 1 },
     });
     // Nothing about the page that missed leaves the device.
-    expect(beacons()[0].init.body).not.toContain('/community');
+    expect(beacons()[0].init.body).not.toContain('/quran');
   });
 
-  it('separates the deadline door from the network one', async () => {
+  it('waits for a navigation with no shell to fall back to, instead of reporting a cut it did not make', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
-    // No ancestor shell, so the deadline reports its own door rather than a
-    // prefix serve (#490).
+    // No ancestor shell: `/community` is the member's own feed, so it is not a
+    // document another route may be answered with (#1370). The deadline has
+    // nothing to choose, so the request waits for the origin (ADR-0031's
+    // 2026-11-13 amendment, applied to the shell ladder by #1370).
     await (await ctx.caches.open(DATA_CACHE)).delete('https://site.example/');
-    const beacons = intercept(ctx, () => new Promise(() => undefined));
+    const beacons = intercept(
+      ctx,
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(new Response('feed', { status: 200 })), 120)
+        )
+    );
 
-    const event = fetchEvent(request('/rates'));
+    const event = fetchEvent(request('/community'));
     ctx.dispatch('fetch', event);
     const response = await event.response;
-    expect(response.status).toBe(503);
-
-    expect(beacons()).toHaveLength(1);
-    expect(JSON.parse(beacons()[0].init.body).door).toBe('navigation-deadline');
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe('feed');
+    expect(beacons()).toHaveLength(0);
   });
 
   it('waits for an online-only navigation instead of answering "Offline" at the deadline', async () => {
@@ -1727,7 +1757,7 @@ describe('service worker offline-serve telemetry (#474)', () => {
       throw new Error('offline');
     });
 
-    const event = fetchEvent(request('/community'));
+    const event = fetchEvent(request('/privacy'));
     ctx.dispatch('fetch', event);
     expect(await event.response.then((r) => r.text())).toBe('ok');
     expect(beaconStarted).toBe(true);
@@ -1887,18 +1917,84 @@ describe('service worker prefix fallback (#490)', () => {
     expect(await markerOf(ctx)).toBeUndefined();
   });
 
-  it('walks up to the homepage when the segment has no document of its own', async () => {
+  it('never answers a profile or a follow list with the homepage (#1370)', async () => {
     // `/u` is a segment without a page (`app/u/layout.tsx` and a dynamic child),
-    // so the homepage — in the fixed shell, and therefore always on a device
-    // that installed the worker — is the first ancestor that exists.
+    // so the ladder's only resident ancestor was the homepage — and a follower
+    // list was answered with it, at the list's own URL, twice on production. A
+    // screen that belongs to one viewer borrows nothing.
     const ctx = await boot({ navigationTimeoutMs: 20 });
     noNetwork(ctx);
 
-    const event = fetchEvent(request('/u/someone'));
+    for (const path of ['/u/someone', '/u/someone/followers', '/community', '/notifications']) {
+      const event = fetchEvent(request(path));
+      ctx.dispatch('fetch', event);
+      const response = await event.response;
+      expect(response.status).toBe(503);
+      expect(await response.text()).toBe('Offline');
+    }
+    expect(await markerOf(ctx)).toBeUndefined();
+  });
+
+  it('never lets a per-viewer screen stand in for another route (#1370)', async () => {
+    // `/community` is the member's own feed: it may not answer a post detail,
+    // which used to reach it as the nearest ancestor.
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/community', new Response('member-feed'));
+    await cache.put('https://site.example/', new Response('home-shell'));
+    noNetwork(ctx);
+
+    const event = fetchEvent(request('/community/lead'));
     ctx.dispatch('fetch', event);
 
-    expect(await event.response.then((r) => r.text())).toBe('ok');
-    expect(await markerOf(ctx)).toBeUndefined();
+    expect(await event.response.then((r) => r.text())).toBe('home-shell');
+  });
+
+  it('drops a viewer document a previous build left in the cache (#1370)', async () => {
+    // The production failure: `/community` was cacheable before it became
+    // `force-dynamic`, and the entry outlived the release (cache names are
+    // schema-scoped, #488). Nothing refreshes a route that left the precache
+    // list, so that build's document — and the chunks that call its deleted
+    // endpoints — answered a signed-in member until the cache was cleared.
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/community', new Response('guest-roster'));
+    ctx.sandbox.fetch = vi.fn(
+      async () =>
+        new Response('member-feed', {
+          status: 200,
+          headers: { 'cache-control': 'no-store' },
+        })
+    );
+
+    const event = fetchEvent(request('/community'));
+    ctx.dispatch('fetch', event);
+
+    expect(await event.response.then((r) => r.text())).toBe('member-feed');
+    await Promise.all(event.waitUntilCalls);
+    expect(await cache.match('https://site.example/community')).toBeUndefined();
+  });
+
+  it('refuses to write a viewer document even when the server says cacheable (#1370)', async () => {
+    // A `force-dynamic` route answers `no-store`, but the worker must not depend
+    // on that: one routing regression would put the feed in Cache Storage and
+    // hand it to the next visitor.
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    ctx.sandbox.fetch = vi.fn(
+      async () =>
+        new Response('member-feed', {
+          status: 200,
+          headers: { 'cache-control': 'public, max-age=60' },
+        })
+    );
+
+    const event = fetchEvent(request('/u/someone/followers'));
+    ctx.dispatch('fetch', event);
+    expect(await event.response.then((r) => r.text())).toBe('member-feed');
+    await Promise.all(event.waitUntilCalls);
+
+    const cache = await ctx.caches.open(DATA_CACHE);
+    expect(await cache.match('https://site.example/u/someone/followers')).toBeUndefined();
   });
 
   it('answers a plain 503 when no ancestor shell is on the device', async () => {

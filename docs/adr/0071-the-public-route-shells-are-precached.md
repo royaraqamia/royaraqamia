@@ -305,3 +305,55 @@ caches only the RSC payload.
 `scripts/__tests__/sw-routing.test.mjs` pins the paths the exception covers, and
 `e2e/chats-offline.spec.ts` now cuts the radio (rather than the chats `fetch`) and reloads both
 surfaces from their own cached documents.
+
+## Amendment (2026-11-13, #1370): the ladder is not for a screen that belongs to one viewer
+
+Two wrong documents were reproduced on production on 2026-11-13. A navigation to
+`/u/ayham-alali/followers` painted the **home page** at the list's URL, twice; `performance` showed
+`workerStart > 0` and `transferSize: 0`, and clearing the worker's caches made the same URL render the
+real list. And `/community` painted a cached document whose roster carried no follow controls and whose
+bundle asked `/api/users/follow-state` — an endpoint deleted in #1360 — returning 404, while the same
+page rendered 16 controls and the correct «إلغاء المتابعة» state once the caches were cleared.
+
+Both are this ADR's ladder doing what it was built to do. `/u` is a segment with no page of its own,
+so `/u/<handle>/followers` walked past it to `/` — the one ancestor every installed device holds — and
+the followers list was answered with the homepage. And the route-shell cache is build-scoped while the
+_caches_ outlive a release (#488): `/community` was cacheable before #1356 made it `force-dynamic` (the
+profile before #1360), so the previous build's document was still on the device, nothing refreshes a
+route that has left the precache list, and it answered a signed-in member with a guest roster for as
+long as the cache survived.
+
+So the ladder now has a route class, and the class decides before an ancestor is considered:
+
+- **`isViewerDocument`** (`public/sw-routing.js`): `/community` (the member's own feed) and `/u/...`
+  (the profile's standing, and the caller's own follower and following lists). The document is
+  rendered for the session that asked for it, so it is never written to Cache Storage and never served
+  from it — not even by its own entry, because a copy can only be a leftover of a build that answered
+  the route cacheable, and serving it is how one visitor's screen reaches the next. A leftover found on
+  a read is deleted.
+- **`isPerViewerRoute`**: the same screens plus the runtime shells (`isRuntimeShell`). Their own exact
+  entry still answers (#1128); what they lose is the ancestor. `/notifications` offline with nothing
+  kept used to paint the homepage too.
+- **A per-viewer screen is never a candidate either.** `/community` is the feed, so it cannot stand in
+  for `/community/<slug>`; the post detail keeps walking to `/`, which is public content.
+
+The navigation deadline (#447, `NAVIGATION_TIMEOUT_MS`) now enters only when the device holds a
+document that may answer: a kept page, or a shell the route class allows. That is ADR-0031's
+2026-11-13 rule ("the deadline applies only where it can choose something better") applied to the
+ladder, and it closes this issue's third shape: a fresh install followed by a signed-in navigation used
+to be told «Offline» after three seconds while the origin was healthy, because the empty cache had no
+shell to fall back to. With nothing to fall back to, the request waits for the answer — the browser's
+own progress and error UI cover the rest.
+
+What the user sees changes in exactly one way: an offline open of a per-viewer screen that this device
+never opened online is now the browser's own error page instead of another route's content. The
+profile, the feed and the follow lists were never offline-capable in the sense the public shells are —
+their documents carry the viewer's answer, so there is no version of them another session may read.
+
+`scripts/__tests__/sw.test.mjs` pins the class (no ancestor, no read, no write, the leftover dropped),
+the ladder that survives (`/quran/<surah>` → `/quran`, a post → `/`), and the deadline that no longer
+cuts a document with nothing to serve; `scripts/__tests__/sw-routing.test.mjs` pins the predicate
+boundaries (`/community` and `/u/...` in, `/community/<slug>` and `/community/explore` out).
+`e2e/public-offline.spec.ts` covers both production shapes with the worker enabled: a seeded leftover
+document is never painted over the feed's own controls, and `/u/<handle>/followers` offline ends on the
+browser's error screen rather than the homepage.

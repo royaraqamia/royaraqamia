@@ -305,6 +305,21 @@ test('a community load-more that never leaves keeps the loaded page and names th
  */
 const WITHDRAWN_ROUTE_CARD = 'هذا الرابط غير متاح دون اتصال';
 
+/**
+ * Navigates to `url` and reports what the browser did with the answer.
+ *
+ * A worker refusal is a plain 503 (#1370), and Chromium commits its own screen
+ * for a 5xx document — so `goto` answers either the response or a network error
+ * naming the code. What must never come back is `200`, which is the wrong
+ * document answering at the requested URL.
+ */
+async function refusedNavigation(page: Page, url: string): Promise<string> {
+  return page
+    .goto(url, { waitUntil: 'domcontentloaded' })
+    .then((response) => String(response?.status() ?? 'no-response'))
+    .catch((error: Error) => error.message);
+}
+
 test('a never-visited dynamic detail route keeps its parent shell', async ({
   browser,
   baseURL,
@@ -335,12 +350,10 @@ test('a never-visited dynamic detail route keeps its parent shell', async ({
   await expect(page.getByRole('heading', { name: 'التَّحقُّق من الشَّهادة' })).toBeVisible();
   await expect(page.getByText(WITHDRAWN_ROUTE_CARD)).toHaveCount(0);
 
-  // `/u` is a segment with no document of its own, so the chain walks past it to
-  // the homepage — the one ancestor every installed device holds.
-  await page.goto(`${baseURL}/u/someone`, { waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(/\/u\/someone$/);
-  await expect(page.getByRole('heading', { name: /ابدأ بتطبيقك الأوَّل/ })).toBeVisible();
-  await expect(page.getByText(WITHDRAWN_ROUTE_CARD)).toHaveCount(0);
+  // `/u` is a segment with no document of its own, and a profile belongs to one
+  // viewer: it borrows nothing (#1370), so the navigation ends on the browser's
+  // own error screen — never on the homepage under the profile's URL.
+  expect(await refusedNavigation(page, `${baseURL}/u/someone`)).toMatch(/503|ERR_/);
 
   // The limit is one visit deep, not one segment deep: opening the same detail
   // route online caches its document like any other navigation, so the next
@@ -625,6 +638,77 @@ test('a filtered community page paints its snapshot rows with the radio off', as
   );
   await expect(page.locator('#main-content .animate-pulse')).toHaveCount(0);
   await expect(page.getByRole('link', { name: /العودة للرئيسية/ })).toHaveCount(0);
+
+  await context.close();
+});
+
+/**
+ * The two wrong documents of #1370, with the worker the reason they happened.
+ *
+ * A screen that belongs to one viewer is never answered from Cache Storage: not
+ * by its own entry (a build that answered the route cacheable left one behind,
+ * and its bundle asks for endpoints that no longer exist) and not by an ancestor
+ * (the follower list was served the homepage, twice, on production).
+ */
+test('a signed-in viewer’s own screens are never answered by a cached document', async ({
+  browser,
+  baseURL,
+}) => {
+  test.skip(!ACCOUNT, 'needs the test account: both screens render one viewer’s own answer');
+  test.setTimeout(180_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    viewport: { width: 1280, height: 900 },
+  });
+  await signIn(context, baseURL!);
+  const page = await context.newPage();
+
+  await gotoUnderWorkerControl(page, `${baseURL}/community`);
+
+  const rail = page.locator('aside[aria-label="أعضاء المجتمع"]');
+  const selfRow = rail.getByRole('listitem').filter({ hasText: 'أنت' }).first();
+  await expect(selfRow).toBeVisible();
+  // The pinned row's own link is the handle the private lists live under.
+  const href = await selfRow.getByRole('link').first().getAttribute('href');
+  expect(href).toMatch(/^\/u\//);
+  const handle = href!.slice('/u/'.length);
+
+  // One control per roster row, in the state the document was rendered with
+  // (#1360). A guest roster — the cached document that painted on production —
+  // has none.
+  const followControl = rail.getByRole('button', { name: /^(متابعة|إلغاء المتابعة)$/ });
+  await expect(followControl.first()).toBeVisible();
+
+  // Seed the production shape: a document stored while the route was still
+  // cacheable, before it became `force-dynamic`. Cache Storage outlives the
+  // release (#488) and nothing refreshes a route that left the precache list.
+  await page.evaluate(async () => {
+    const name = (await caches.keys()).find((key) => key.startsWith('royaraqamia-data-'));
+    const cache = await caches.open(name!);
+    await cache.put(
+      '/community',
+      new Response('<html><body>guest-roster</body></html>', {
+        headers: { 'content-type': 'text/html' },
+      })
+    );
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForAppHydrated(page);
+
+  // The stored copy is not even a paint: the network's document, with its
+  // controls, is what the member sees.
+  await expect(page.getByText('guest-roster')).toHaveCount(0);
+  await expect(followControl.first()).toBeVisible();
+
+  // The follower list is the viewer's own and `force-dynamic`, so no document of
+  // it is ever kept: online it paints, offline the worker refuses rather than
+  // borrowing the homepage.
+  await page.goto(`${baseURL}/u/${handle}/followers`, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByRole('heading', { name: 'المتابِعون' })).toBeVisible();
+
+  await context.setOffline(true);
+  expect(await refusedNavigation(page, `${baseURL}/u/${handle}/followers`)).toMatch(/503|ERR_/);
 
   await context.close();
 });

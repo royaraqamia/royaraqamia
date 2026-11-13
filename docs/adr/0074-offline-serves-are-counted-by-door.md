@@ -177,3 +177,17 @@ the two deadline doors.
 `scripts/__tests__/sw.test.mjs` and `backend/controllers/__tests__/offline-metrics.test.ts`
 are updated together; a report naming `no-fallback` is rejected as invalid, which
 is safe because no worker that ships this change can send one.
+
+## Amendment (2026-11-13, #1370): `navigation-deadline` is a payload's door now
+
+A document navigation is cut at the three-second deadline only when the device holds a shell that
+may answer it (ADR-0031's 2026-11-13 amendment, ADR-0071's #1370 amendment). With nothing to fall
+back to — a screen that belongs to one viewer, an empty cache — the navigation waits for the origin
+instead, so the door that named the cut has no document left to name. A flight payload still races
+the deadline (it has no fallback either, and the cut is what lets the router fall back to a full
+document load), and it reports nothing: a payload is not an answer a user saw.
+
+What replaces the two doors a document can still reach is unchanged: `navigation-offline` for a
+request that failed, `navigation-prefix` for an ancestor that answered. `navigation-deadline` keeps
+its `warning` severity and its paging rule while a worker that predates this change is still on a
+device.

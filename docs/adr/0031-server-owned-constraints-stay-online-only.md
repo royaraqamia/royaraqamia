@@ -236,3 +236,17 @@ A redirect is the case that made this visible and it is worth naming: `/mcp/auth
 the consent page, and a worker cannot improve a redirect hop — it has nothing to cache and nothing to
 paint. A slow 307 must reach the browser to be followed; a synthetic 503 in its place breaks the
 handshake with no error a user could act on.
+
+### Amendment (2026-11-13, #1370): and where the shell it would serve is the wrong one
+
+The same rule, read one step further: a document navigation has a shell to fall back to only when that
+shell may answer it. A screen that belongs to one viewer — `/community`, `/u/<handle>` and its private
+follow lists — has none (`isPerViewerRoute`, [ADR-0071's #1370 amendment](0071-the-public-route-shells-are-precached.md)),
+and the ladder's homepage is not a substitute for either. The deadline therefore enters only when
+`cachedFallback` returns something; with nothing to choose, the navigation waits for the origin, which
+is exactly what this amendment says about the never-cache path.
+
+`navigation-deadline` consequently no longer counts a document. It survives for a flight payload, which
+has no fallback either and is still cut at the deadline so the router can fall back to a full document
+load; a document that fails reports `navigation-offline`, and one answered by an ancestor reports
+`navigation-prefix` (ADR-0074).

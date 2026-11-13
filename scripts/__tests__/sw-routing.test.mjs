@@ -153,6 +153,47 @@ describe('sw-routing predicates', () => {
     }
   });
 
+  it('keeps one viewer’s screens out of the shared cache (#1370)', () => {
+    // `/community` is the member's own feed, and `/u/...` renders the viewer's
+    // standing with that member plus their private follow lists. Both are
+    // rendered for the session, so a cached copy is one visitor's screen handed
+    // to the next.
+    for (const path of [
+      '/community',
+      '/community?cursor=next',
+      '/community/',
+      '/u',
+      '/u/ayham-alali',
+      '/u/ayham-alali/followers',
+      '/u/ayham-alali/following?page=2',
+    ]) {
+      expect(routing.isViewerDocument(u(path))).toBe(true);
+    }
+    for (const path of [
+      // A post detail is public content (ISR), not the feed.
+      '/community/lead',
+      '/community/explore',
+      // A prefix must not swallow a neighbour: `/u` is a segment, not `/use`.
+      '/user-guide',
+      '/rates',
+      '/',
+    ]) {
+      expect(routing.isViewerDocument(u(path))).toBe(false);
+    }
+  });
+
+  it('never substitutes another route’s document for a per-viewer screen (#1370)', () => {
+    // The screen list is the viewer's own pages plus the runtime shells (#1128):
+    // their exact entries still answer, but an ancestor may not stand in for
+    // them — `/notifications` used to be answered with the homepage.
+    for (const path of ['/community', '/u/ayham-alali/followers', '/notifications', '/chats/c-1']) {
+      expect(routing.isPerViewerRoute(u(path))).toBe(true);
+    }
+    for (const path of ['/community/lead', '/quran/7', '/rates', '/admin']) {
+      expect(routing.isPerViewerRoute(u(path))).toBe(false);
+    }
+  });
+
   it('allows the public read surfaces to be cached', () => {
     for (const path of [
       '/',
@@ -309,12 +350,14 @@ describe('RSC cache keys (#492)', () => {
 describe('shell prefix candidates (#490)', () => {
   it('walks a dynamic detail route up to the cached ancestor', () => {
     // `/community/<slug>` has no document of its own (ADR-0071), so the miss
-    // falls back through the parent segment and then the homepage.
+    // falls back through the parent segment and then the homepage. The worker
+    // refuses a candidate that is a per-viewer screen (`isPerViewerRoute`), so
+    // `/community` never answers a post and `/u/...` borrows nothing (#1370).
     expect(routing.shellPrefixCandidates('/community/foo')).toEqual(['/community', '/']);
     expect(routing.shellPrefixCandidates('/quran/7')).toEqual(['/quran', '/']);
     expect(routing.shellPrefixCandidates('/verify/ABC-123')).toEqual(['/verify', '/']);
-    // `/u` is a segment with no page; the homepage is the first ancestor the
-    // worker can actually hold.
+    // `/u` is a segment with no page, so `/` is the only ancestor a device could
+    // hold — and the worker does not offer it to a profile or a follow list.
     expect(routing.shellPrefixCandidates('/u/someone')).toEqual(['/u', '/']);
   });
 
