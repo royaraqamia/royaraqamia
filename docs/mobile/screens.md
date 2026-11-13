@@ -20,7 +20,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `quran` | `/?tab=/quran`<br>`/quran` | `QuranIndexScreen.kt` |  |
 | `notes` | `/?tab=/notes`<br>`/notes` | _web only_ | The app shows the page as the document; the product's native screens land in phase 3 (#646). |
 | `quran-surah` | `/quran/[surah]` | `QuranSurahScreen.kt` |  |
-| `athkar` | `/?tab=/athkar`<br>`/athkar`<br>`/athkar/evening` | _web only_ | One of the nine homepage tabs, so it is native before the door can be (ADR-0178); the app opens the page until it is. |
+| `athkar` | `/?tab=/athkar`<br>`/athkar`<br>`/athkar/evening` | `AthkarScreen.kt` |  |
 | `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948), the profile card with its two dialogs is drawn (#946) and the allowance card is drawn (#947); the public handle editor is still the page's, so the surface stays off until it is the whole page. |
 | `account-links` | `/account/links` | `LinksnapScreen.kt` |  |
 | `account-posts` | `/account/posts` | _web only_ | The page is the deliverable (ADR-0178): the post card is already native in the feed, and a port would add a second write path for a list opened rarely. |

@@ -96,6 +96,8 @@ export interface TabChipsProps {
   idPrefix: string;
   /** The panel the tabs control; omitted when the caller draws no single panel. */
   panelId?: string;
+  /** The visual gate's own name for the row (see `shared/visual/<surface>.json`). */
+  dataVisual?: string;
   className?: string;
 }
 
@@ -111,6 +113,7 @@ export function TabChips({
   onSelect,
   idPrefix,
   panelId,
+  dataVisual,
   className,
 }: TabChipsProps) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -145,7 +148,13 @@ export function TabChips({
   };
 
   return (
-    <div role="tablist" aria-label={label} className={cn(ROW, className)} onKeyDown={onKeyDown}>
+    <div
+      role="tablist"
+      aria-label={label}
+      data-visual={dataVisual}
+      className={cn(ROW, className)}
+      onKeyDown={onKeyDown}
+    >
       {items.map((item) => {
         const active = item.id === activeId;
         return (

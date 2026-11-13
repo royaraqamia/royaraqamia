@@ -10,6 +10,7 @@ import {
 } from '@/shared/contracts/athkar';
 import { TabChips } from '@/frontend/ui/primitives/tab-chips';
 import { AthkarCard } from './athkar-card';
+import { ATHKAR_PAGE_COPY } from './athkar-page-copy';
 import { countFor } from './count-store';
 import { useAthkarCounts } from './use-athkar-counts';
 
@@ -17,6 +18,8 @@ interface AthkarReaderProps {
   collections: Record<AthkarPeriod, AthkarCollection>;
   /** The sitting the URL asks for: morning at `/athkar`, evening at `/athkar/evening`. */
   period: AthkarPeriod;
+  /** The tab row's accessible name, from the generated copy. */
+  periodLabel?: string;
   /**
    * The homepage host keeps the sitting in state instead of the URL (ADR-0151),
    * so the tab never navigates. Omitted, the reader writes the route as before.
@@ -36,7 +39,12 @@ interface AthkarReaderProps {
  * note about the midnight reset are gone: what the sitting has done is read from
  * the cards themselves.
  */
-export function AthkarReader({ collections, period, onSelectPeriod }: AthkarReaderProps) {
+export function AthkarReader({
+  collections,
+  period,
+  periodLabel = ATHKAR_PAGE_COPY.periodLabel,
+  onSelectPeriod,
+}: AthkarReaderProps) {
   const router = useRouter();
   const { counts, ready, increment, reset } = useAthkarCounts();
   const baseId = useId();
@@ -55,7 +63,8 @@ export function AthkarReader({ collections, period, onSelectPeriod }: AthkarRead
   return (
     <div className="flex flex-col gap-6">
       <TabChips
-        label="وقت الأذكار"
+        label={periodLabel}
+        dataVisual="athkar-tabs"
         items={ATHKAR_PERIODS.map((option) => ({
           id: option,
           label: collections[option].title,
@@ -73,7 +82,7 @@ export function AthkarReader({ collections, period, onSelectPeriod }: AthkarRead
         aria-labelledby={`${baseId}-tab-${period}`}
         className="flex flex-col gap-4"
       >
-        <ol className="flex flex-col gap-4">
+        <ol data-visual="athkar-list" className="flex flex-col gap-4">
           {collection.items.map((item, index) => (
             <li key={item.id}>
               <AthkarCard

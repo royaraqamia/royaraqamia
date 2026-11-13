@@ -1,0 +1,204 @@
+{
+  "surface": "athkar",
+  "route": "/athkar",
+  "notes": "The two sittings at rest, one state each: the heading, the two sitting chips, the first dhikr card with its text, counter, source and closed virtue, and the gap the list keeps between cards. The reader is shared, so the boxes are the same on both routes; the second state proves the evening route draws the same screen rather than a second interpretation. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes. `capture` is the first card, because it is the region both clients draw identically: the reading column, the counter and the source line. Widths of the text and source are left out deliberately - they are the run of the words, not a decision. Colours are left out too - they are what the raster proves.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "first-card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='athkar-title'] h1"
+          },
+          "app": {
+            "tag": "athkar-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "tabs",
+          "web": {
+            "selector": "[data-visual='athkar-tabs']"
+          },
+          "app": {
+            "tag": "athkar-tabs"
+          },
+          "properties": ["top", "height", "rowGap"]
+        },
+        {
+          "name": "tab-morning",
+          "web": {
+            "selector": "[data-visual='athkar-tabs'] [role='tab']:first-of-type"
+          },
+          "app": {
+            "tag": "athkar-tab-0"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingLeft", "paddingRight"]
+        },
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='athkar-list']"
+          },
+          "app": {
+            "tag": "athkar-list"
+          },
+          "properties": ["top", "width", "rowGap"]
+        },
+        {
+          "name": "first-card",
+          "web": {
+            "selector": "[data-visual='athkar-card-0']"
+          },
+          "app": {
+            "tag": "athkar-card-0"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "first-text",
+          "web": {
+            "selector": "[data-visual='athkar-text-0']"
+          },
+          "app": {
+            "tag": "athkar-text-0"
+          },
+          "properties": ["height", "fontSize", "lineHeight"]
+        },
+        {
+          "name": "first-count",
+          "web": {
+            "selector": "[data-visual='athkar-count-0']"
+          },
+          "app": {
+            "tag": "athkar-count-0"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "first-source",
+          "web": {
+            "selector": "[data-visual='athkar-source-0']"
+          },
+          "app": {
+            "tag": "athkar-source-0"
+          },
+          "properties": ["height", "fontSize", "lineHeight"]
+        }
+      ]
+    },
+    {
+      "name": "evening",
+      "origin": "title",
+      "capture": "first-card",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='athkar-title'] h1"
+          },
+          "app": {
+            "tag": "athkar-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "tabs",
+          "web": {
+            "selector": "[data-visual='athkar-tabs']"
+          },
+          "app": {
+            "tag": "athkar-tabs"
+          },
+          "properties": ["top", "height", "rowGap"]
+        },
+        {
+          "name": "tab-morning",
+          "web": {
+            "selector": "[data-visual='athkar-tabs'] [role='tab']:first-of-type"
+          },
+          "app": {
+            "tag": "athkar-tab-0"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "paddingLeft", "paddingRight"]
+        },
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='athkar-list']"
+          },
+          "app": {
+            "tag": "athkar-list"
+          },
+          "properties": ["top", "width", "rowGap"]
+        },
+        {
+          "name": "first-card",
+          "web": {
+            "selector": "[data-visual='athkar-card-0']"
+          },
+          "app": {
+            "tag": "athkar-card-0"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "first-text",
+          "web": {
+            "selector": "[data-visual='athkar-text-0']"
+          },
+          "app": {
+            "tag": "athkar-text-0"
+          },
+          "properties": ["height", "fontSize", "lineHeight"]
+        },
+        {
+          "name": "first-count",
+          "web": {
+            "selector": "[data-visual='athkar-count-0']"
+          },
+          "app": {
+            "tag": "athkar-count-0"
+          },
+          "properties": ["height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "first-source",
+          "web": {
+            "selector": "[data-visual='athkar-source-0']"
+          },
+          "app": {
+            "tag": "athkar-source-0"
+          },
+          "properties": ["height", "fontSize", "lineHeight"]
+        }
+      ],
+      "route": "/athkar/evening"
+    }
+  ],
+  "motion": {
+    "notes": "Nothing on the reading surface travels. A card fades its border and background on hover or focus, the counter fades between its ordinary and complete colours, and the virtue disclosure opens under the source line. The same means the same colour transitions and the same final state; reduced motion keeps the colour change and skips any expansion animation.",
+    "entries": [
+      {
+        "element": "first-card",
+        "gesture": "hover over or keyboard-focus a dhikr card",
+        "moves": "the card fades its border and background",
+        "same": "the same 300ms colour transition; the cards do not travel, and reduced motion keeps the colour change"
+      },
+      {
+        "element": "first-count",
+        "gesture": "tap or click the counter",
+        "moves": "the counter fades to its complete fill once the narration's count is reached",
+        "same": "the same colour transition and final count; reduced motion keeps the colour change, and the number never passes the narration's count"
+      },
+      {
+        "gesture": "open the virtue",
+        "moves": "the disclosure reveals the virtue below the source line",
+        "same": "the same open state and the same words; reduced motion opens it without an expansion animation"
+      }
+    ]
+  }
+}
