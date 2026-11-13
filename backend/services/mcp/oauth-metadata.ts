@@ -6,10 +6,11 @@ import { env } from '@/backend/config/env';
  * Server Metadata exposed at the `/.well-known/` endpoints so MCP clients can
  * discover the OAuth flow.
  *
- * URLs are derived from the request origin (passed in by the route handlers)
- * so the same metadata works for localhost dev, preview deployments, and the
- * production site. Falls back to `NEXT_PUBLIC_BASE_URL` when no request is
- * available.
+ * Every URL comes from the configured origin (`env.origin`, ADR-0178), never
+ * from the request: a self-hosted Next server reports the address it listens on,
+ * not the address a client dialled, so a request-derived issuer advertised
+ * `https://localhost:10000` in production. The `base` parameter exists for tests
+ * and for callers that already hold the origin.
  */
 
 export function mcpResourceUrl(base: string): string {
@@ -17,7 +18,7 @@ export function mcpResourceUrl(base: string): string {
 }
 
 export function mcpBaseUrl(base?: string): string {
-  return (base ?? env.baseUrl).replace(/\/$/, '');
+  return (base ?? env.origin).replace(/\/$/, '');
 }
 
 export interface McpAuthorizationServerMetadata {

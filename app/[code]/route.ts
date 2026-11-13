@@ -15,7 +15,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
         referrer: headers.get('referer') || null,
         userAgent: headers.get('user-agent') || null,
         ipCountry,
-        origin: new URL(req.url).origin,
       },
       // The click write and the owner notification are off the redirect path.
       // `after()` keeps the instance alive until they settle; a bare

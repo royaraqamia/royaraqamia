@@ -41,7 +41,7 @@ export function isSameOrigin(headers: Headers): boolean {
   const origin = headers.get('origin');
   if (!origin) return false;
   try {
-    return new URL(origin).origin === new URL(env.baseUrl).origin;
+    return new URL(origin).origin === new URL(env.origin).origin;
   } catch {
     return false;
   }

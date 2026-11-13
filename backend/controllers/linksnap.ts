@@ -424,7 +424,6 @@ export async function redirectShortCode(
     referrer: string | null;
     userAgent: string | null;
     ipCountry: string | null;
-    origin: string;
   },
   defer?: DeferredWork
 ): Promise<HttpResult> {
@@ -451,7 +450,7 @@ export async function redirectShortCode(
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     logger.error(`Redirect failed for code [${code}]`, { error: errorMessage });
 
-    const baseUrl = env.appUrl || info.origin;
+    const baseUrl = env.origin;
     const errorCode =
       err instanceof ShortLinkRedirectError && (err.kind === 'blocked' || err.kind === 'expired')
         ? err.kind

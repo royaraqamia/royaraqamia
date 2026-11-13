@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   mcpResourceUrl,
   mcpBaseUrl,
@@ -51,5 +51,24 @@ describe('buildProtectedResourceMetadata', () => {
   it('advertises all scopes and bearer header auth', () => {
     expect(meta.scopes_supported).toEqual(ALL_SCOPES);
     expect(meta.bearer_methods_supported).toEqual(['header']);
+  });
+});
+
+describe('with no base given', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  // The documents are served by a route that has no request to derive an origin
+  // from (ADR-0178): a self-hosted server would answer `https://localhost:10000`.
+  it('uses the configured origin, which is what a client can actually reach', () => {
+    vi.stubEnv('PUBLIC_ORIGIN', 'https://royaraqamia.com');
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://royaraqamia.com');
+
+    expect(buildAuthorizationServerMetadata().issuer).toBe('https://royaraqamia.com');
+    expect(buildAuthorizationServerMetadata().authorization_endpoint).toBe(
+      'https://royaraqamia.com/mcp/authorize'
+    );
+    expect(buildProtectedResourceMetadata().resource).toBe('https://royaraqamia.com/mcp');
   });
 });

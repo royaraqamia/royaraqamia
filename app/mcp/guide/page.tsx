@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { env } from '@/backend/config/env';
 import { McpGuideSurface } from '@/frontend/ui/mcp/guide-surface';
 
-const SERVER_URL = `${env.baseUrl.replace(/\/+$/, '')}/mcp`;
+const SERVER_URL = `${env.origin}/mcp`;
 
 export const metadata: Metadata = {
   title: 'ربط الـ MCP',

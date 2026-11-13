@@ -10,7 +10,7 @@ const mockCap = vi.fn();
 
 vi.mock('@/backend/config/env', () => ({
   env: {
-    baseUrl: 'https://royaraqamia.com',
+    origin: 'https://royaraqamia.com',
     mcpTokenEncryptionKey: '00'.repeat(32),
     adminEmails: [],
   },

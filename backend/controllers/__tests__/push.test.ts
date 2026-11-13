@@ -10,8 +10,8 @@ const mockDeviceUpsert = vi.fn();
 const mockDeviceRemoveByToken = vi.fn();
 const mockSendToUsers = vi.fn();
 const mockSendWake = vi.fn();
-const mockEnv: { baseUrl: string; pushWebhookToken?: string } = {
-  baseUrl: 'https://royaraqamia.com',
+const mockEnv: { origin: string; pushWebhookToken?: string } = {
+  origin: 'https://royaraqamia.com',
   pushWebhookToken: 'webhook-secret',
 };
 

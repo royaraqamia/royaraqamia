@@ -62,7 +62,7 @@ export function createAuthService(
     otpMaxAttempts: OTP_CONFIG.MAX_ATTEMPTS,
     otpVerifyMaxPerMinute: OTP_CONFIG.VERIFY_MAX_PER_MINUTE,
     passwordResetTokenTtlMinutes: EMAIL_VALIDITY.PASSWORD_RESET_HOURS * 60,
-    siteUrl: env.siteUrl,
+    siteUrl: env.origin,
     ...deps,
   });
 }

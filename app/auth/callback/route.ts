@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { completeOAuthSignIn } from '@/backend/controllers/auth';
+import { env } from '@/backend/config/env';
 
 /**
  * Where Supabase returns the browser after Google's consent screen: it is the
@@ -18,5 +19,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const { location } = await completeOAuthSignIn(req.nextUrl.searchParams);
-  return NextResponse.redirect(new URL(location, req.nextUrl.origin));
+  // `env.origin`, not `req.nextUrl.origin`: a self-hosted server reports the
+  // address it listens on, and this redirect was sending every completed
+  // sign-in to https://localhost:10000 (ADR-0178).
+  return NextResponse.redirect(new URL(location, env.origin));
 }

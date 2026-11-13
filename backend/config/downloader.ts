@@ -55,7 +55,7 @@ export function createDownloadSettingsRepository(): DownloadSettingsRepository {
 }
 
 export function downloaderCallbackUrl(): string {
-  return `${env.siteUrl.replace(/\/$/, '')}/api/downloader/callback`;
+  return new URL('/api/downloader/callback', env.origin).toString();
 }
 
 /**

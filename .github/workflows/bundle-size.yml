@@ -41,6 +41,9 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+          # Read while prerendering, and required by a production build (ADR-0178).
+          NEXT_PUBLIC_SITE_URL: 'https://royaraqamia.com'
+          PUBLIC_ORIGIN: 'https://royaraqamia.com'
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

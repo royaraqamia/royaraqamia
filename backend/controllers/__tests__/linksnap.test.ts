@@ -24,7 +24,7 @@ vi.mock('@/backend/config/identity', async () => {
 });
 
 vi.mock('@/backend/config/env', () => ({
-  env: { appUrl: 'https://royaraqamia.com', anonymousIpSalt: 'test-salt' },
+  env: { origin: 'https://royaraqamia.com', anonymousIpSalt: 'test-salt' },
 }));
 
 vi.mock('@/backend/middleware/http', () => ({
