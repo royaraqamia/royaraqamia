@@ -882,8 +882,12 @@ export class ChatAgentService {
 
           const args = parseToolArgs(call.arguments);
 
-          // A write is proposed, never run here: the member confirms it.
-          if (tool.kind === 'write') {
+          // A tool above tier 0 is proposed, never run here: the member
+          // confirms it (ADR-0180). Today every write is above tier 0 and every
+          // read is 0, so this is the same boundary `kind` drew; the tier is
+          // what lets a granted tier-1 tool run in a later change without moving
+          // the boundary itself.
+          if (tool.tier > 0) {
             const proposal = await this.deps.actions.propose(conversationId, tool.name, args ?? {});
             yield { type: 'proposal', message: proposal.message, action: proposal.action };
             messages.push(

@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted (program). Phase 0.
+Accepted (program). Phase 0 lands in two changes: the declaration first — one table per door,
+measured against what each door actually registers — then the handlers, because every MCP handler
+currently owns its own markdown and a shared handler needs a domain answer plus a per-door
+format.
 
 ## Context
 
