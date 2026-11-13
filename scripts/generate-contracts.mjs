@@ -270,38 +270,9 @@ export const CONTRACTS = [
       'ChatAttachmentUrlResponseSchema',
     ],
   },
-  // The lead forms (#929): the open cohorts the training form picks from and
-  // the envelope the three submit routes answer. Both are the site's own reads
-  // and writes, so the app decodes them through generated types rather than
-  // retyping `referenceCode` in Kotlin. The submit bodies stay hand-built in
-  // `LeadsWriteTransport` because their Zod schemas carry refinements the
-  // generator does not model as a Kotlin type; the field names it writes are
-  // pinned by the app's own suite.
-  {
-    module: 'shared/contracts/training',
-    file: 'TrainingCohortsContracts.kt',
-    schemas: ['TrainingCohortsResponseSchema'],
-  },
-  {
-    module: 'shared/contracts/leads',
-    file: 'LeadsContracts.kt',
-    schemas: ['LeadSubmitResponseSchema'],
-  },
-  // Consultation booking (#930): the two live reads the wizard paints and the
-  // envelope the never-queued booking write answers. The request body stays
-  // hand-built in `ConsultationRepository` so the client sends exactly the
-  // trimmed fields the draft collected, the same choice the lead bodies make;
-  // the responses are the site's own shapes, generated so a field the route
-  // stops returning breaks the app at compile time.
-  {
-    module: 'shared/contracts/consultation',
-    file: 'ConsultationContracts.kt',
-    schemas: [
-      'ConsultationPackagesResponseSchema',
-      'AvailabilitySlotsResponseSchema',
-      'BookingResultSchema',
-    ],
-  },
+  // The lead forms and consultation booking left with their ports (#929, #930,
+  // ADR-0178): the site links neither form anywhere (ADR-0148), so the app has no
+  // screen to decode these bodies for and the contracts left with the screens.
   // The account profile's two writes (#945): the name it keeps and the avatar
   // URL it points the row at. Both are the routes the page's own `ProfileEditor`
   // posts to (`PATCH /api/me/name`, `POST /api/me/avatar`), so the app decodes

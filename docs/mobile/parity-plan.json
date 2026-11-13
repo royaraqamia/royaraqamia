@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "notes": "The todo list for making the APK the web (#882): one row per surface in perf/surfaces.json, in the order the work is meant to happen, and the state of each. `state` is `native` only when the row in docs/mobile/screens.json says `enabled: true` and its evidence passes check:visual (ADR-0118); `todo` is a surface the app still opens in the document; `blocked` is one that cannot be worked yet, and `blockedBy` says why. `check:plan` fails when a surface has no row, a row names a surface that does not exist, the two files disagree about what is on, or a ported component in docs/mobile/parity.json belongs to a surface this plan does not know. docs/mobile/parity-plan.md and the tracking issue are generated from this file - do not hand-edit either.",
+  "notes": "The todo list for making the APK the web (#882): one row per surface in perf/surfaces.json, in the order the work is meant to happen, and the state of each. `native` is only when the row in docs/mobile/screens.json says `enabled: true` and its evidence passes check:visual (ADR-0118); `todo` is a surface the app still opens in the document and means to port; `document` is one where the page is the deliverable, and `why` says what makes a native copy wrong (ADR-0178); `blocked` is one that cannot be worked yet, and `blockedBy` says why. `release` is the half a surface list cannot hold - the cutover, the diagnostics screen, the device measurements - each `done` with its evidence or `open` with what closes it. check:plan fails when a surface has no row, a row names a surface that does not exist, the two files disagree about what is on, a document row gives no reason, a release item is done without evidence, or a ported component in docs/mobile/parity.json belongs to a surface this plan does not know. docs/mobile/parity-plan.md and the tracking issue are generated from this file - do not hand-edit either.",
   "phases": [
     {
       "id": "gate",
@@ -15,12 +15,12 @@
     {
       "id": "auth",
       "title": "Sign-in",
-      "why": "The site is what signs in since #873, and the native card is the one screen a guest sees first. It is also the surface every other signed-in recording depends on."
+      "why": "The site is what signs in until the cutover, and the native flow is what makes the cutover possible: a Custom Tab cannot set the app's session."
     },
     {
       "id": "core",
       "title": "The app's core",
-      "why": "Home, the account area, notifications and chats: the screens a member opens daily."
+      "why": "The account area, notifications and chats: the screens a member opens daily."
     },
     {
       "id": "products",
@@ -36,6 +36,11 @@
       "id": "operator",
       "title": "Operator surfaces",
       "why": "Listed so nothing is missing, and blocked as one decision: the admin area needs its own security review before any of it is drawn natively (#660)."
+    },
+    {
+      "id": "door",
+      "title": "The door",
+      "why": "The homepage hosts the nine apps as tabs under the strip (ADR-0146), so it comes after every app it can host: a tab whose app is still the document is a tab that leaves the door."
     }
   ],
   "surfaces": [
@@ -57,7 +62,8 @@
     {
       "surface": "marketing",
       "phase": "public-content",
-      "state": "todo"
+      "state": "document",
+      "why": "Five static pages (`/pricing`, `/privacy`, `/security`, `/terms`, `/app-info`): words the site owns and changes without an APK. The document is the page, so a policy edit costs a deploy and no release."
     },
     {
       "surface": "downloader",
@@ -79,20 +85,17 @@
     {
       "surface": "profile",
       "phase": "public-content",
-      "state": "native",
-      "issue": "#1343"
+      "state": "native"
     },
     {
       "surface": "news",
       "phase": "public-content",
-      "state": "native",
-      "issue": "#1345"
+      "state": "native"
     },
     {
       "surface": "scan",
       "phase": "public-content",
-      "state": "native",
-      "issue": "#1344"
+      "state": "native"
     },
     {
       "surface": "linksnap-unlock",
@@ -102,12 +105,14 @@
     {
       "surface": "mcp-guide",
       "phase": "public-content",
-      "state": "todo"
+      "state": "document",
+      "why": "A guide: prose and one paste-ready snippet, owned by the site. A native copy would be wrong the first time the server's MCP surface moves, for an interaction a port does not improve."
     },
     {
       "surface": "mcp-connect",
       "phase": "public-content",
-      "state": "todo"
+      "state": "document",
+      "why": "A one-time setup page whose whole value is the snippet it shows. The page changes with the server, and a port would pin a snippet the server no longer accepts."
     },
     {
       "surface": "mcp-apps",
@@ -129,12 +134,8 @@
     {
       "surface": "auth",
       "phase": "auth",
-      "state": "todo"
-    },
-    {
-      "surface": "home",
-      "phase": "core",
-      "state": "todo"
+      "state": "blocked",
+      "blockedBy": "the cutover: once the WebView leaves, a Custom Tab cannot set the app's session, so sign-in has to be native - password and OTP on screen, Google through a Custom Tab and the `royar://auth` return, and the Keystore session written back into the document cookie while one is still in front (ADR-0178)"
     },
     {
       "surface": "account",
@@ -151,7 +152,8 @@
     {
       "surface": "account-posts",
       "phase": "core",
-      "state": "todo"
+      "state": "document",
+      "why": "The member's own post management, opened rarely: the post card is already native in the feed, and the page's writes are server actions. Revisit when posting from the phone becomes a first-class flow - a creator surface, draft management, or usage that shows people opening it."
     },
     {
       "surface": "account-submissions",
@@ -242,19 +244,87 @@
       "surface": "leads",
       "phase": "leads",
       "state": "blocked",
-      "blockedBy": "no door on the web: the four forms left the picker (ADR-0148) and the site links them nowhere, so there is no page a member reaches to compare against"
+      "blockedBy": "no door on the web (ADR-0148), so there is no page to compare a screen against. The port that was never reached - screen, store and tests - was deleted in the change that added the `document` state (ADR-0178), so nothing is owed here."
     },
     {
       "surface": "consultation",
       "phase": "leads",
       "state": "blocked",
-      "blockedBy": "no door on the web: `consultation/book` left the picker with the other lead forms (ADR-0148) and the site links it nowhere"
+      "blockedBy": "no door on the web: `consultation/book` left the picker with the other lead forms (ADR-0148) and the site links it nowhere. Its port was deleted with the lead forms' (ADR-0178), so nothing is owed here."
     },
     {
       "surface": "admin",
       "phase": "operator",
       "state": "blocked",
       "blockedBy": "#971"
+    },
+    {
+      "surface": "home",
+      "phase": "door",
+      "state": "blocked",
+      "blockedBy": "the nine tabs need nine native screens: `athkar` and `notes` are the two that do not have one"
+    }
+  ],
+  "release": [
+    {
+      "id": "crash-reports",
+      "title": "The app reports its own failures",
+      "state": "done",
+      "evidence": "failure/FailureReporter.kt plus docs/mobile/crash-reports.md (#667, ADR-0115)"
+    },
+    {
+      "id": "cutover",
+      "title": "Remove the Capacitor bridge: MainActivity, ShellPlugins, capacitor.config.ts, WebSurface and DocumentCookies",
+      "state": "open",
+      "why": "Phase 5 (ADR-0089). Until the bridge leaves, the APK ships a WebView and every `document` route is the live site inside it."
+    },
+    {
+      "id": "browser-surface",
+      "title": "Give every `document` surface a renderer after the WebView goes",
+      "state": "open",
+      "why": "A Custom Tab is the system browser rather than an in-APK WebView, so it keeps the `document` rows as the page through the cutover (ADR-0178)."
+    },
+    {
+      "id": "diagnostics",
+      "title": "A diagnostics screen replacing /device",
+      "state": "open",
+      "why": "Phase 2 exit (ADR-0084): an APK has no console and no page to inspect."
+    },
+    {
+      "id": "escape-hatch",
+      "title": "A remote-config switch that opens one surface in a Custom Tab",
+      "state": "open",
+      "why": "Phase 4 exit (native-app.md): without it a broken native screen is an emergency release."
+    },
+    {
+      "id": "guest-claim",
+      "title": "A sign-in claims the guest Local Store's rows",
+      "state": "open",
+      "why": "Owed since #768 (ADR-0107): the guest store exists and is empty until a guest can write, and a guest's rows would be stranded at sign-in."
+    },
+    {
+      "id": "habitflow-form",
+      "title": "HabitFlow's add form and delete affordance",
+      "state": "open",
+      "why": "Owed since #650: the store, transport and fixtures cover create, update, toggle and delete; the screen exposes the toggle."
+    },
+    {
+      "id": "fcm-matrix",
+      "title": "The FCM wake on a real device, backgrounded and killed, and the 15-minute floor",
+      "state": "open",
+      "why": "Three rows of the real-device matrix are unverified; google-services.json is present, so the build they need exists (docs/mobile/android-shell.md)."
+    },
+    {
+      "id": "scroll-budget",
+      "title": "Measure 500 rows at 60 fps on the RMX3195",
+      "state": "open",
+      "why": "The one native budget with no witness (docs/mobile/native-app.md)."
+    },
+    {
+      "id": "provider-return",
+      "title": "Delete the royar://auth provider return",
+      "state": "open",
+      "why": "ADR-0157 made the document cookie the session, so the native provider path has no caller left; this is a deletion to decide, not a flow to build."
     }
   ]
 }

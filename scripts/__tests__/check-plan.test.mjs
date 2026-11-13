@@ -73,12 +73,46 @@ describe('the plan', () => {
     ).toEqual(['row "verify" names phase "someday", which is not declared']);
   });
 
-  it('refuses a state that is not one of the three', () => {
+  it('refuses a state that is not one of the four', () => {
     expect(
       check({
         plan: plan({ surface: 'verify', phase: 'gate', state: 'done' }, THREEE[1], THREEE[2]),
       })
-    ).toEqual(['row "verify" has state "done", which is not native, todo or blocked']);
+    ).toEqual(['row "verify" has state "done", which is not native, todo, document or blocked']);
+  });
+
+  it('refuses a document row with no reason, and a reason on a row that is not document', () => {
+    expect(
+      check({
+        plan: plan({ surface: 'verify', phase: 'gate', state: 'document' }, THREEE[1], THREEE[2]),
+      })
+    ).toEqual([
+      'row "verify" is document and does not say why the page is the deliverable ("why")',
+    ]);
+    expect(
+      check({
+        plan: plan({ ...THREEE[0], why: 'static pages' }, THREEE[1], THREEE[2]),
+      })
+    ).toEqual(['row "verify" gives a document reason but is "todo"']);
+  });
+
+  it('refuses a release item that is done with no evidence, or open with no reason', () => {
+    const withRelease = (...items) => ({ ...plan(...THREEE), release: items });
+
+    expect(
+      check({ plan: withRelease({ id: 'cutover', title: 'Remove the bridge', state: 'done' }) })
+    ).toEqual(['release item "cutover" is done and names no evidence']);
+    expect(
+      check({ plan: withRelease({ id: 'cutover', title: 'Remove the bridge', state: 'open' }) })
+    ).toEqual(['release item "cutover" is open and does not say what closes it ("why")']);
+    expect(
+      check({
+        plan: withRelease(
+          { id: 'cutover', title: 'a', state: 'done', evidence: 'x' },
+          { id: 'cutover', title: 'b', state: 'open', why: 'y' }
+        ),
+      })
+    ).toEqual(['docs/mobile/parity-plan.json: release item "cutover" appears twice']);
   });
 
   it('refuses a blocked row with no reason, and a reason with no block', () => {
@@ -159,7 +193,46 @@ describe('the rendered list', () => {
     expect(rendered).toContain('- [ ] **verify** `/verify` — todo');
     expect(rendered).toContain('- [ ] **admin** `/admin/**` — blocked · blocked by #660');
     expect(rendered.indexOf('## Prove the gate')).toBeLessThan(rendered.indexOf('## Operator'));
-    expect(rendered).toContain('0 native · 2 to do · 1 blocked of 3 surfaces');
+    expect(rendered).toContain('0 native · 2 to do · 0 document · 1 blocked of 3 surfaces');
+  });
+
+  it('marks a document surface finished with its reason, not as debt', () => {
+    const docData = data();
+    docData.plan = plan(
+      { surface: 'verify', phase: 'gate', state: 'document', why: 'static pages' },
+      THREEE[1],
+      THREEE[2]
+    );
+
+    const rendered = renderMarkdown(docData);
+    expect(rendered).toContain('- [-] **verify** `/verify` — document, by design · static pages');
+    expect(rendered).toContain('0 native · 1 to do · 1 document · 1 blocked of 3 surfaces');
+  });
+
+  it('renders the release list with evidence and what closes an open item', () => {
+    const releaseData = data();
+    releaseData.plan = {
+      ...plan(...THREEE),
+      release: [
+        {
+          id: 'reports',
+          title: 'The app reports failures',
+          state: 'done',
+          evidence: 'FailureReporter',
+        },
+        { id: 'cutover', title: 'Remove the bridge', state: 'open', why: 'no WebView in the APK' },
+      ],
+    };
+
+    const rendered = renderMarkdown(releaseData);
+    expect(rendered).toContain('## Release readiness');
+    expect(rendered).toContain(
+      '- [x] **reports** — The app reports failures · done: FailureReporter'
+    );
+    expect(rendered).toContain(
+      '- [ ] **cutover** — Remove the bridge · open: no WebView in the APK'
+    );
+    expect(rendered).toContain('1 of 2 release items done');
   });
 
   it('ticks the component of a native surface', () => {

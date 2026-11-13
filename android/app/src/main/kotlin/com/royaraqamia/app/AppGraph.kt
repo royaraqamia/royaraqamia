@@ -19,7 +19,6 @@ import com.royaraqamia.app.community.CommunityComposerRepository
 import com.royaraqamia.app.community.CommunityEditorRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
 import com.royaraqamia.app.community.CommunityPostRepository
-import com.royaraqamia.app.consultation.ConsultationRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.home.HomeServicesRepository
 import com.royaraqamia.app.mcp.McpConnectionRepository
@@ -55,8 +54,6 @@ import com.royaraqamia.app.store.chats.ChatsStores
 import com.royaraqamia.app.store.habitflow.HabitDatabase
 import com.royaraqamia.app.store.habitflow.HabitStores
 import com.royaraqamia.app.store.habitflow.HabitflowRepository
-import com.royaraqamia.app.store.leads.LeadsRepository
-import com.royaraqamia.app.store.leads.LeadsStores
 import com.royaraqamia.app.store.linksnap.KeystoreLinkPasswordCipher
 import com.royaraqamia.app.store.linksnap.LinksnapRepository
 import com.royaraqamia.app.store.linksnap.LinksnapStores
@@ -135,10 +132,6 @@ class AppGraph private constructor(
     val linksnap: LinksnapRepository,
     /** BlogPress's store and queue (#952). */
     val blogpress: BlogpressRepository,
-    /** The lead forms' queue (#929): anonymous, so one store for the device. */
-    val leads: LeadsRepository,
-    /** Consultation booking (#930): live reads and one never-queued write. */
-    val consultation: ConsultationRepository,
     /** The Quran reader's vendored text and the reader's last place (#955). */
     val quran: QuranRepository,
     /** The homepage's app set (#1194): the picker's read and replace. */
@@ -154,7 +147,6 @@ class AppGraph private constructor(
     private val linksnapDatabases: IdentityScopedStore<LinksnapStores>,
     private val blogpressDatabases: IdentityScopedStore<BlogpressStores>,
     private val chatsDatabases: IdentityScopedStore<ChatsStores>,
-    private val leadStores: LeadsStores,
     private val grant: SupabasePasswordGrant,
 ) {
     /** Whether a request can be sent right now, without waiting on a refresh. */
@@ -190,12 +182,10 @@ class AppGraph private constructor(
      * answers without the caller learning which product owes it.
      */
     suspend fun drainOutbox(): DrainReport {
-        // The lead queue is anonymous, so it drains with no session at all; the
-        // owned products' queues wait for one (ADR-0027). Returning the lead
-        // report here also keeps a guest's launch from opening four databases
-        // that have nothing to send.
-        val lead = leads.drain()
-        if (!signedIn) return lead
+        // A guest's queues wait for a sign-in rather than being sent as nobody
+        // (ADR-0027), so there is nothing to send and no database worth opening
+        // for a launch that has no identity yet.
+        if (!signedIn) return DrainReport(replayed = 0, pending = 0, failed = 0)
 
         val habit = habitflow.drain()
         val spend = spendtrack.drain()
@@ -203,9 +193,9 @@ class AppGraph private constructor(
         val posts = blogpress.drain()
         val chatLines = chats.drain()
         return DrainReport(
-            replayed = habit.replayed + spend.replayed + links.replayed + posts.replayed + chatLines.replayed + lead.replayed,
-            pending = habit.pending + spend.pending + links.pending + posts.pending + chatLines.pending + lead.pending,
-            failed = habit.failed + spend.failed + links.failed + posts.failed + chatLines.failed + lead.failed,
+            replayed = habit.replayed + spend.replayed + links.replayed + posts.replayed + chatLines.replayed,
+            pending = habit.pending + spend.pending + links.pending + posts.pending + chatLines.pending,
+            failed = habit.failed + spend.failed + links.failed + posts.failed + chatLines.failed,
         )
     }
 
@@ -216,11 +206,10 @@ class AppGraph private constructor(
         val links = linksnap.outboxStatus()
         val posts = blogpress.outboxStatus()
         val chatLines = chats.outboxStatus()
-        val lead = leads.outboxStatus()
         return DrainReport(
             replayed = 0,
-            pending = habit.pending + spend.pending + links.pending + posts.pending + chatLines.pending + lead.pending,
-            failed = habit.failed + spend.failed + links.failed + posts.failed + chatLines.failed + lead.failed,
+            pending = habit.pending + spend.pending + links.pending + posts.pending + chatLines.pending,
+            failed = habit.failed + spend.failed + links.failed + posts.failed + chatLines.failed,
         )
     }
 
@@ -245,8 +234,6 @@ class AppGraph private constructor(
         linksnapDatabases.close()
         blogpressDatabases.close()
         chatsDatabases.close()
-        // The lead queue is anonymous and belongs to the device, so it survives
-        // a sign-out the way the web's guest store does (#929).
     }
 
     /**
@@ -266,7 +253,6 @@ class AppGraph private constructor(
         linksnapDatabases.close()
         blogpressDatabases.close()
         chatsDatabases.close()
-        leadStores.close()
     }
 
     companion object {
@@ -345,9 +331,6 @@ class AppGraph private constructor(
                 IdentityScopedStore { identity -> BlogpressStores.open(context, identity) }
             val chatsDatabases =
                 IdentityScopedStore { identity -> ChatsStores.open(context, identity) }
-            // Leads are anonymous, so their queue is one file for the device and
-            // is not opened per identity nor closed on a sign-out (#929).
-            val leadStores = LeadsStores.open(context)
 
             // A guest's queue waits for a sign-in rather than being sent as
             // nobody (ADR-0027), and a drain with the radio off spends an attempt
@@ -447,24 +430,11 @@ class AppGraph private constructor(
                     ),
                 blogpress = blogpress,
                 communityEditor = CommunityEditorRepository(blogpress),
-                leads =
-                    LeadsRepository(
-                        stores = leadStores,
-                        client = client,
-                        signedIn = signedIn,
-                        online = online,
-                    ),
-                consultation =
-                    ConsultationRepository(
-                        client = client,
-                        online = online,
-                    ),
                 databases = databases,
                 spendtrackDatabases = spendtrackDatabases,
                 linksnapDatabases = linksnapDatabases,
                 blogpressDatabases = blogpressDatabases,
                 chatsDatabases = chatsDatabases,
-                leadStores = leadStores,
                 grant = SupabasePasswordGrant(authUrl, anonKey),
             )
         }

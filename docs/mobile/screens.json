@@ -16,7 +16,7 @@
     {
       "surface": "marketing",
       "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "reason": "The page is the deliverable (ADR-0178): five static pages whose words the site owns, so a policy edit costs a deploy and no release."
     },
     {
       "surface": "habitflow",
@@ -61,7 +61,7 @@
     {
       "surface": "athkar",
       "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "reason": "One of the nine homepage tabs, so it is native before the door can be (ADR-0178); the app opens the page until it is."
     },
     {
       "surface": "account",
@@ -77,7 +77,7 @@
     {
       "surface": "account-posts",
       "native": null,
-      "reason": "The account's post management page is web-only in this phase; it arrives with the native account surface, and the plan lists it as `todo` with no ticket of its own (#882)."
+      "reason": "The page is the deliverable (ADR-0178): the post card is already native in the feed, and a port would add a second write path for a list opened rarely."
     },
     {
       "surface": "account-submissions",
@@ -159,15 +159,13 @@
     },
     {
       "surface": "leads",
-      "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/leads/LeadsScreen.kt",
-      "reason": "The three lead forms never get a port: the site links them nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The Kotlin screen stays declared, unreached by the shell, until a change deletes it with its store and tests."
+      "native": null,
+      "reason": "No port, and none owed: the site links the three lead forms nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The screen that was never reached was deleted with its store and tests (ADR-0178)."
     },
     {
       "surface": "consultation",
-      "enabled": false,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/consultation/ConsultationScreen.kt",
-      "reason": "Booking never gets a port: the site links `consultation/book` nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The Kotlin screen stays declared, unreached by the shell, until a change deletes it with its store and tests."
+      "native": null,
+      "reason": "No port, and none owed: the site links `consultation/book` nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The screen was deleted with its store and tests (ADR-0178)."
     },
     {
       "surface": "downloader",
@@ -177,17 +175,17 @@
     {
       "surface": "auth",
       "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "reason": "Sign-in moves to the app with the cutover, not before: once the WebView leaves, a Custom Tab cannot set the app's session, so the native flow is what makes the cutover possible (ADR-0178). The plan row is `blocked` on it."
     },
     {
       "surface": "mcp-guide",
       "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "reason": "The page is the deliverable (ADR-0178): a guide whose prose and snippet belong to the server's MCP surface, so a native copy would go stale before it shipped."
     },
     {
       "surface": "mcp-connect",
       "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "reason": "The page is the deliverable (ADR-0178): a one-time setup whose whole value is the snippet the server currently accepts."
     },
     {
       "surface": "mcp-apps",
