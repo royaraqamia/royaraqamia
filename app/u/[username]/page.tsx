@@ -110,7 +110,10 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
               isOwner={follow.state === 'self'}
             />
             {member.bio?.trim() && (
-              <p className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground">
+              <p
+                data-visual="profile-bio"
+                className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground"
+              >
                 {member.bio}
               </p>
             )}
@@ -149,7 +152,9 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
         ) : (
           <div className="flex flex-col gap-6">
             {posts.map((post, index) => (
-              <PostCard key={post.id} post={post} index={index} showPinned />
+              <div key={post.id} data-visual={index === 0 ? 'profile-first-post' : undefined}>
+                <PostCard post={post} index={index} showPinned />
+              </div>
             ))}
           </div>
         )}

@@ -23,7 +23,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [ ] **downloader** `/downloader` — blocked · blocked by hidden from the UI; the page stays reachable by direct URL but is not a port target
 - [x] **community** `/community` `/community/explore` — native
 - [ ] **community-post** `/community/[slug]` — todo · #1351
-- [ ] **profile** `/u/[username]` `/u/[username]/followers` `/u/[username]/following` — todo · #1343
+- [x] **profile** `/u/[username]` `/u/[username]/followers` `/u/[username]/following` — native · #1343
 - [ ] **news** `/?tab=/news` `/news` — todo · #1345
 - [ ] **scan** `/?tab=/scan` `/scan` — todo · #1344
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
@@ -121,7 +121,7 @@ A component is finished when the surface that draws it is native: 77 ported comp
 - [x] `post-card` on **community** · #658
 - [x] `community-feed` on **community** · #658
 - [x] `community-post` on **community** · #922
-- [ ] `profile` on **profile** · #927
+- [x] `profile` on **profile** · #927
 - [x] `community-editor` on **community** · #925
 - [x] `community-composer` on **community** · #924
 - [x] `community-compose-fab` on **community** · #924
@@ -165,4 +165,4 @@ A component is finished when the surface that draws it is native: 77 ported comp
 
 ## Where this stands
 
-15 native · 19 to do · 5 blocked of 39 surfaces.
+16 native · 18 to do · 5 blocked of 39 surfaces.

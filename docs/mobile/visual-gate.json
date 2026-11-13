@@ -613,6 +613,33 @@
           }
         }
       ]
+    },
+    {
+      "surface": "profile",
+      "web": {
+        "route": "/u/e2e-visual-user"
+      },
+      "contract": "shared/visual/profile.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/profile/ProfileScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.02,
+            "length": 0.5
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.0122,
+            "alignment": {
+              "dx": 2,
+              "dy": 3
+            }
+          }
+        }
+      ]
     }
   ],
   "frame": {

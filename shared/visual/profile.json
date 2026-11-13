@@ -1,12 +1,12 @@
 {
   "surface": "profile",
-  "route": "/u/e2e-test-user",
-  "notes": "A public member's profile at rest (#927): the header card, the member's display name and the posts heading, which are the boxes both clients draw. The avatar, the handle and the posts themselves are data, so the contract names the structure rather than their words; the chat control the page adds for a signed-in viewer is not part of this slice. The surface is still off (ADR-0117), so this names the comparison a later recording makes rather than evidence that already passes.",
+  "route": "/u/e2e-visual-user",
+  "notes": "A public member's profile at rest (#927): the header card, the member's display name, the bio, the posts heading and the first post card. The avatar, the handle and the posts themselves are data, so the contract names the structure rather than their words; the recording is the gate's own fixture account and one fixed post (ADR-0119). The page's header also carries the viewer's follow counts and the follow/chat controls, which the app does not draw yet - they are viewer chrome outside this slice, so they are not measured, and the capture is the posts heading, the region both clients draw identically. `origin` is the posts heading for the same reason the page's frame and the app's frame differ: no `top` is compared, because the page's header is taller than the app's until that chrome is ported.",
   "states": [
     {
       "name": "at-rest",
-      "origin": "profile-header",
-      "capture": "profile-header",
+      "origin": "profile-posts",
+      "capture": "profile-posts",
       "elements": [
         {
           "name": "profile-header",
@@ -26,7 +26,17 @@
           "app": {
             "tag": "profile-name"
           },
-          "properties": ["width", "height"]
+          "properties": ["height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "profile-bio",
+          "web": {
+            "selector": "[data-visual='profile-bio']"
+          },
+          "app": {
+            "tag": "profile-bio"
+          },
+          "properties": ["height", "fontSize", "lineHeight"]
         },
         {
           "name": "profile-posts",
@@ -36,7 +46,17 @@
           "app": {
             "tag": "profile-posts"
           },
-          "properties": ["width", "top"]
+          "properties": ["width", "height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "first-post",
+          "web": {
+            "selector": "[data-visual='profile-first-post'] [data-visual='community-card']"
+          },
+          "app": {
+            "tag": "community-card"
+          },
+          "properties": ["width", "radius"]
         }
       ]
     }

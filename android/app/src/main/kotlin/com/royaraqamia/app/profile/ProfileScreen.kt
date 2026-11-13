@@ -28,10 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.royaraqamia.app.community.CommunityFeedCopy
 import com.royaraqamia.app.community.PostCard
@@ -50,6 +55,7 @@ import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
+import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.ui.vectors.LucideVectors
 
 /**
@@ -57,13 +63,77 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
  * `shared/visual/profile.json`).
  *
  * The page's own boxes are named here so a later recording can compare them:
- * the header card, the member's name and the posts heading.
+ * the header card, the member's name, the bio, the posts heading and the first
+ * post card. The numbers the page's own components carry (`text-2xl`, the
+ * `text-lg` posts heading, `leading-relaxed`) are repeated here because Compose
+ * does not expose resolved typography through the semantics tree, and the gate
+ * measures the page's computed style.
  */
 object ProfileMetrics {
     const val HEADER = "profile-header"
     const val NAME = "profile-name"
+    const val BIO = "profile-bio"
     const val POSTS = "profile-posts"
     const val HEADER_RADIUS = 24
+
+    const val NAME_FONT_SIZE = 24f
+    const val NAME_LINE_HEIGHT = 32f
+    const val NAME_LETTER_SPACING_EM = -0.025f
+
+    const val BIO_FONT_SIZE = 14f
+    const val BIO_LINE_HEIGHT = 22.75f
+
+    const val POSTS_FONT_SIZE = 18f
+    const val POSTS_LINE_HEIGHT = 28f
+    const val POSTS_LETTER_SPACING_EM = -0.025f
+
+    /**
+     * CSS measures a text box by its `line-height`, not by the font's own
+     * ascent and descent. Compose's default font padding would make the two
+     * clients report different heights for the same words, so the page's three
+     * lines opt out of it and centre the glyphs in the line box.
+     */
+    private val pageTextPlatform = PlatformTextStyle(includeFontPadding = false)
+
+    private val pageLineHeight =
+        LineHeightStyle(
+            alignment = LineHeightStyle.Alignment.Center,
+            trim = LineHeightStyle.Trim.None,
+        )
+
+    /** The page's `text-2xl font-bold tracking-tight`. */
+    val nameStyle: TextStyle =
+        TextStyle(
+            fontFamily = RoyFonts.ui,
+            fontWeight = FontWeight.Bold,
+            fontSize = NAME_FONT_SIZE.sp,
+            lineHeight = NAME_LINE_HEIGHT.sp,
+            letterSpacing = NAME_LETTER_SPACING_EM.em,
+            platformStyle = pageTextPlatform,
+            lineHeightStyle = pageLineHeight,
+        )
+
+    /** The page's `text-sm leading-relaxed`. */
+    val bioStyle: TextStyle =
+        TextStyle(
+            fontFamily = RoyFonts.ui,
+            fontSize = BIO_FONT_SIZE.sp,
+            lineHeight = BIO_LINE_HEIGHT.sp,
+            platformStyle = pageTextPlatform,
+            lineHeightStyle = pageLineHeight,
+        )
+
+    /** The page's `text-lg font-bold tracking-tight`. */
+    val postsStyle: TextStyle =
+        TextStyle(
+            fontFamily = RoyFonts.ui,
+            fontWeight = FontWeight.Bold,
+            fontSize = POSTS_FONT_SIZE.sp,
+            lineHeight = POSTS_LINE_HEIGHT.sp,
+            letterSpacing = POSTS_LETTER_SPACING_EM.em,
+            platformStyle = pageTextPlatform,
+            lineHeightStyle = pageLineHeight,
+        )
 }
 
 /**
@@ -177,7 +247,6 @@ private fun Profile(
     onOpenProfile: (String) -> Unit,
 ) {
     val spacing = LocalRoySpacing.current
-    val type = LocalRoyTypeScale.current
     val name = displayName(member)
 
     LazyColumn(
@@ -194,7 +263,7 @@ private fun Profile(
         item {
             Text(
                 text = ProfileCopy.POSTS_HEADING,
-                style = type.h2.copy(fontWeight = FontWeight.Bold),
+                style = ProfileMetrics.postsStyle,
                 color = RoyColors.foreground,
                 modifier = Modifier.fillMaxWidth().testTag(ProfileMetrics.POSTS),
             )
@@ -224,6 +293,7 @@ private fun Header(member: CommunityMemberResponseMember, name: String) {
     Column(
         modifier =
             Modifier.fillMaxWidth()
+                .testTag(ProfileMetrics.HEADER)
                 .clip(RoundedCornerShape(ProfileMetrics.HEADER_RADIUS.dp))
                 .background(RoyColors.card.copy(alpha = 0.4f))
                 .border(
@@ -231,8 +301,7 @@ private fun Header(member: CommunityMemberResponseMember, name: String) {
                     RoyColors.border.copy(alpha = 0.6f),
                     RoundedCornerShape(ProfileMetrics.HEADER_RADIUS.dp),
                 )
-                .padding(24.dp)
-                .testTag(ProfileMetrics.HEADER),
+                .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
     ) {
@@ -268,13 +337,20 @@ private fun Header(member: CommunityMemberResponseMember, name: String) {
             }
         }
 
-        Text(
-            text = name,
-            style = type.h2.copy(fontWeight = FontWeight.Bold),
-            color = RoyColors.foreground,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.testTag(ProfileMetrics.NAME),
-        )
+        Box(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(ProfileMetrics.NAME_LINE_HEIGHT.dp)
+                    .testTag(ProfileMetrics.NAME),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = name,
+                style = ProfileMetrics.nameStyle,
+                color = RoyColors.foreground,
+                textAlign = TextAlign.Center,
+            )
+        }
         Text(
             text = "@${member.username}",
             style = type.small.copy(textDirection = TextDirection.Ltr),
@@ -283,9 +359,10 @@ private fun Header(member: CommunityMemberResponseMember, name: String) {
         member.bio?.trim()?.takeIf { it.isNotEmpty() }?.let { bio ->
             Text(
                 text = bio,
-                style = type.small,
+                style = ProfileMetrics.bioStyle,
                 color = RoyColors.mutedForeground,
                 textAlign = TextAlign.Center,
+                modifier = Modifier.testTag(ProfileMetrics.BIO),
             )
         }
     }

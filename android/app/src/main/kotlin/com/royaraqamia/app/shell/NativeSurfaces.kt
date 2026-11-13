@@ -54,7 +54,11 @@ object NativeSurfaces {
      * certificate has its own path.
      */
     private val dynamicRoutes: List<(String) -> Boolean> =
-        listOf(VerifyRoutes::matches, { LinksnapRoutes.codeOf(it) != null })
+        listOf(
+            VerifyRoutes::matches,
+            { LinksnapRoutes.codeOf(it) != null },
+            ProfileRoutes::matches,
+        )
 
     /**
      * The routes a signed-out visitor reads.
