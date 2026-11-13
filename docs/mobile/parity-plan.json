@@ -189,7 +189,7 @@
     {
       "surface": "account-news",
       "phase": "core",
-      "state": "todo",
+      "state": "native",
       "issue": "#1347"
     },
     {

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -35,10 +36,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
@@ -98,49 +101,66 @@ private fun Ready(
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val allSelected = state.sources.isNotEmpty() && state.selected.size == state.sources.size
+    val groups = CATEGORY_ORDER.mapNotNull { category ->
+        state.sources.filter { it.category == category }.takeIf { it.isNotEmpty() }
+    }
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
-    ) {
-        if (actionError != null) Alert(actionError)
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (actionError != null) {
+            Alert(actionError)
+            Spacer(Modifier.height(AccountNewsMetrics.groupGap))
+        }
 
-        for (category in CATEGORY_ORDER) {
-            val group = state.sources.filter { it.category == category }
-            if (group.isEmpty()) continue
+        groups.forEachIndexed { groupIndex, group ->
+            if (groupIndex > 0) Spacer(Modifier.height(AccountNewsMetrics.groupGap))
 
-            Column(verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm)) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = LucideVectors.Newspaper,
-                        contentDescription = null,
-                        tint = RoyColors.primary,
-                        modifier = Modifier.size(Recipes.Glyph.sm),
-                    )
-                    Text(
-                        text = NewsText.categoryLabel(category),
-                        style = type.small.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
+            Row(
+                modifier = Modifier.height(AccountNewsMetrics.headingHeight),
+                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = LucideVectors.Newspaper,
+                    contentDescription = null,
+                    tint = RoyColors.primary,
+                    modifier = Modifier.size(Recipes.Glyph.sm),
+                )
+                Text(
+                    text = NewsText.categoryLabel(group.first().category),
+                    style =
+                        type.small.copy(
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = AccountNewsMetrics.headingHeight.value.sp,
+                        ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
 
-                for ((index, source) in group.withIndex()) {
-                    SourceRow(
-                        source = source,
-                        checked = state.selected.contains(source.id),
-                        onToggle = { onToggle(source.id) },
-                        modifier =
-                            if (index == 0) Modifier.testTag("account-news-source-row") else Modifier,
-                    )
-                }
+            Spacer(Modifier.height(AccountNewsMetrics.headingToRows))
+
+            group.forEachIndexed { index, source ->
+                if (index > 0) Spacer(Modifier.height(AccountNewsMetrics.rowGap))
+                SourceRow(
+                    source = source,
+                    checked = state.selected.contains(source.id),
+                    onToggle = { onToggle(source.id) },
+                    // The page's `data-visual` sits on the first row of every
+                    // group, but the gate names one box: the first row overall.
+                    modifier =
+                        if (groupIndex == 0 && index == 0) {
+                            Modifier.testTag(AccountNewsMetrics.SOURCE_ROW)
+                        } else {
+                            Modifier
+                        },
+                )
             }
         }
 
+        Spacer(Modifier.height(AccountNewsMetrics.actionsTop))
+
         Row(
-            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            modifier = Modifier.height(AccountNewsMetrics.actionsHeight),
+            horizontalArrangement = Arrangement.spacedBy(AccountNewsMetrics.actionsGap),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PrimaryButton(
@@ -184,6 +204,7 @@ private fun SourceRow(
         modifier =
             modifier
                 .fillMaxWidth()
+                .height(AccountNewsMetrics.rowHeight)
                 .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggle() }),
         shape = Recipes.Card.radius,
         color = if (checked) RoyColors.primary.copy(alpha = 0.1f) else Recipes.Card.container,
@@ -195,21 +216,38 @@ private fun SourceRow(
             },
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = spacing.elementGap, vertical = spacing.elementGapSm),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(AccountNewsMetrics.rowBorder)
+                    .padding(
+                        horizontal = AccountNewsMetrics.rowPaddingHorizontal,
+                        vertical =
+                            AccountNewsMetrics.rowPaddingVertical - AccountNewsMetrics.rowBorder,
+                    ),
             horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = source.name,
-                    style = type.small.copy(fontWeight = FontWeight.Bold),
+                    style =
+                        TextStyle(
+                            fontSize = AccountNewsMetrics.sourceNameSize,
+                            lineHeight = AccountNewsMetrics.sourceNameLineHeight,
+                            fontWeight = FontWeight.Bold,
+                        ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = NewsText.regionLabel(source.region),
-                    style = type.xs,
+                    style =
+                        TextStyle(
+                            fontSize = AccountNewsMetrics.sourceRegionSize,
+                            lineHeight = AccountNewsMetrics.sourceRegionLineHeight,
+                        ),
                     color = Recipes.Row.labelColor,
                 )
             }
@@ -246,7 +284,7 @@ private fun PrimaryButton(label: String, onClick: () -> Unit, enabled: Boolean) 
 
     Box(
         modifier =
-            Modifier.height(Recipes.Cta.height)
+            Modifier.height(AccountNewsMetrics.actionsHeight)
                 .widthIn(min = Recipes.Cta.minWidth)
                 .shadow(
                     elevation = Recipes.Cta.bloomY,

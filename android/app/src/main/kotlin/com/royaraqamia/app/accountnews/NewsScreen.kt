@@ -1,9 +1,10 @@
 package com.royaraqamia.app.accountnews
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,10 +19,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import com.royaraqamia.app.contracts.ApiResult
-import com.royaraqamia.app.theme.LocalRoySpacing
-import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
 import kotlinx.coroutines.launch
 
@@ -44,8 +44,6 @@ fun NewsScreen(
     onSignIn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val spacing = LocalRoySpacing.current
-    val type = LocalRoyTypeScale.current
     val scope = rememberCoroutineScope()
 
     var preferences by remember {
@@ -188,16 +186,27 @@ fun NewsScreen(
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = spacing.elementGap, vertical = spacing.elementGapSm),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
+                .padding(horizontal = AccountNewsMetrics.horizontalPadding)
+                .padding(top = AccountNewsMetrics.dividerToPrivate),
     ) {
         Text(
             text = AccountNewsPreferencesCopy.PAGE_TITLE,
-            modifier = Modifier.fillMaxWidth().testTag("account-news-title"),
-            style = type.h2,
-            color = RoyColors.primary,
-            textAlign = TextAlign.Center,
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(AccountNewsMetrics.titleHeight)
+                    .testTag(AccountNewsMetrics.TITLE),
+            style =
+                TextStyle(
+                    fontSize = AccountNewsMetrics.titleSize,
+                    lineHeight = AccountNewsMetrics.titleLineHeight,
+                    fontWeight = AccountNewsMetrics.titleWeight,
+                    letterSpacing = AccountNewsMetrics.titleTracking,
+                    textAlign = TextAlign.Center,
+                    brush = AccountNewsMetrics.titleBrush,
+                ),
         )
+
+        Spacer(Modifier.height(AccountNewsMetrics.titleToPreferences))
 
         NewsPreferencesCard(
             state = preferences,
@@ -211,7 +220,9 @@ fun NewsScreen(
         )
 
         if (signedIn) {
+            Spacer(Modifier.height(AccountNewsMetrics.preferencesToDivider))
             Divider()
+            Spacer(Modifier.height(AccountNewsMetrics.dividerToPrivate))
 
             NewsPrivateSourcesCard(
                 state = privateSources,

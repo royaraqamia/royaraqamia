@@ -10,6 +10,7 @@ import {
   clearVisualLink,
   clearVisualNews,
   clearVisualPost,
+  clearVisualPrivateSource,
   clearVisualProfile,
   COMMUNITY_SEED_PREFIX,
   protectVisualLink,
@@ -17,11 +18,13 @@ import {
   seedVisualLink,
   seedVisualNews,
   seedVisualPost,
+  seedVisualPrivateSource,
   seedVisualProfile,
   seedHomeServices,
   signInAsVisualAccount,
   VISUAL_HOME_SERVICES,
   VISUAL_ACCOUNT_MISSING,
+  VISUAL_NEWS_SOURCE,
   VISUAL_PROFILE,
   visualCredentials,
 } from './visual-fixture';
@@ -617,6 +620,29 @@ const PREPARE: Record<
     await page.waitForTimeout(600);
     await page.evaluate(() => document.fonts.ready);
   },
+  // The account-news page with one private feed (#1347). The catalogue is the
+  // static one every account reads; the private row is the fixture's, written
+  // through the service role because the resolver is its only writer. The
+  // session and the row are what make the state: the checklist and the one
+  // list are both drawn, and the badge reads the plan's ceiling.
+  'account-news/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualPrivateSource(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="private-sources"]').waitFor({ timeout: 20_000 });
+    await expect(page.getByText(VISUAL_NEWS_SOURCE.name)).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+  },
+  // The same page with no private feed: the one list draws its own sentence.
+  'account-news/empty': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await clearVisualPrivateSource(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="private-empty"]').waitFor({ timeout: 20_000 });
+    await page.evaluate(() => document.fonts.ready);
+  },
   // The digest at rest (#1345): the day is pinned to the fixture's fixed one, so
   // the card the gate measures is the same every run rather than today's news
   // (ADR-0119). The page is the door's own tab address; `/news` now redirects
@@ -768,6 +794,9 @@ const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
   },
   'news/at-rest': async () => {
     await clearVisualNews();
+  },
+  'account-news/at-rest': async (page) => {
+    await clearVisualPrivateSource(page.context(), projectBaseURL());
   },
 };
 

@@ -41,6 +41,7 @@ object NativeSurfaces {
             "/account/plan",
             "/account/connected-apps",
             "/account/blocked",
+            "/account/news",
             "/linksnap",
             "/account/links",
             "/rates",

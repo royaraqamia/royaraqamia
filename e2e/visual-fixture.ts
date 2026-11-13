@@ -151,6 +151,61 @@ export const VISUAL_NEWS = {
   sourceUrl: 'https://example.com/e2e-visual-news',
 } as const;
 
+/**
+ * The one private feed the account-news recording holds (#1347).
+ *
+ * The page's own list is written by the resolver, not by a route, so the fixture
+ * writes the row through the service role and removes it after the capture. The
+ * fixed URL is what the cleanup matches, so a failed run never leaves a row the
+ * next one cannot write.
+ */
+export const VISUAL_NEWS_SOURCE = {
+  id: 'e2e00000-0000-4000-8000-00000000e136',
+  name: 'مصدر البوابة',
+  url: 'https://example.com/e2e-visual-private.xml',
+} as const;
+
+/** The reader's own feed, so the account-news page draws one row rather than none. */
+export async function seedVisualPrivateSource(
+  context: BrowserContext,
+  baseURL: string
+): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  await clearVisualPrivateSource(context, baseURL);
+
+  const { error } = await serviceClient().from('news_user_sources').insert({
+    id: VISUAL_NEWS_SOURCE.id,
+    user_id: userId,
+    request_id: null,
+    name: VISUAL_NEWS_SOURCE.name,
+    url: VISUAL_NEWS_SOURCE.url,
+    kind: 'feed',
+    category: 'other',
+    region: 'world',
+    tier: 2,
+    status: 'ready',
+  });
+  if (error) {
+    throw new Error(`could not seed the visual gate private source: ${error.message}`);
+  }
+}
+
+/** Removes the fixture feed; a hard delete, so the fixed URL is reusable every run. */
+export async function clearVisualPrivateSource(
+  context: BrowserContext,
+  baseURL: string
+): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  const { error } = await serviceClient()
+    .from('news_user_sources')
+    .delete()
+    .eq('user_id', userId)
+    .eq('url', VISUAL_NEWS_SOURCE.url);
+  if (error) {
+    throw new Error(`could not remove the visual gate private source: ${error.message}`);
+  }
+}
+
 /** Removes the news digest and its stories. */
 export async function clearVisualNews(): Promise<void> {
   const { error } = await serviceClient()
