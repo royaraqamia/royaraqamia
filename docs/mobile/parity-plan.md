@@ -29,15 +29,15 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [-] **mcp-guide** `/mcp/guide` — document, by design · A guide: prose and one paste-ready snippet, owned by the site. A native copy would be wrong the first time the server's MCP surface moves, for an interaction a port does not improve.
 - [-] **mcp-connect** `/mcp/connect` — document, by design · A one-time setup page whose whole value is the snippet it shows. The page changes with the server, and a port would pin a snippet the server no longer accepts.
-- [ ] **mcp-apps** `/mcp/apps` — todo · #1256
+- [-] **mcp-apps** `/mcp/apps` — document, by design · A decision, not a queue item: the sheet is the apps surface, and `/mcp/apps` stays the address a callback, a bookmark and a deep link need (ADR-0159, #1385). The sheet is native; the page is what a link resolves to.
 - [x] **mcp-app-detail** `/mcp/apps/[id]` — native · #1256
-- [ ] **athkar** `/?tab=/athkar` `/athkar` `/athkar/evening` — todo
+- [ ] **athkar** `/?tab=/athkar` `/athkar` `/athkar/evening` — todo · #1389
 
 ## Sign-in
 
 _The site is what signs in until the cutover, and the native flow is what makes the cutover possible: a Custom Tab cannot set the app's session._
 
-- [ ] **auth** `/auth/login` `/auth/signup` `/auth/verify-otp` `/auth/reset-password` `/auth/update-password` `/auth/error` — blocked · blocked by the cutover: once the WebView leaves, a Custom Tab cannot set the app's session, so sign-in has to be native - password and OTP on screen, Google through a Custom Tab and the `royar://auth` return, and the Keystore session written back into the document cookie while one is still in front (ADR-0178)
+- [ ] **auth** `/auth/login` `/auth/signup` `/auth/verify-otp` `/auth/reset-password` `/auth/update-password` `/auth/error` — blocked · #1392 · blocked by the cutover: once the WebView leaves, a Custom Tab cannot set the app's session, so sign-in has to be native - password and OTP on screen, Google through a Custom Tab and the `royar://auth` return, and the Keystore session written back into the document cookie while one is still in front (ADR-0178)
 
 ## The app's core
 
@@ -52,7 +52,7 @@ _The account area, notifications and chats: the screens a member opens daily._
 - [ ] **account-blocked** `/account/blocked` — todo · #1346
 - [x] **account-faq** `/account/faq` — native
 - [ ] **account-news** `/account/news` — todo · #1347
-- [ ] **notifications** `/notifications` — todo
+- [ ] **notifications** `/notifications` — todo · #1391
 - [ ] **chats** `/chats/[id]` `/chats/new` — todo · #937
 
 ## Products
@@ -65,7 +65,7 @@ _The local-store products, where the app has a real reason to be native: offline
 - [x] **linksnap** `/?tab=/linksnap` — native
 - [x] **quran** `/?tab=/quran` `/quran` — native · #955
 - [x] **quran-surah** `/quran/[surah]` — native · #955
-- [ ] **notes** `/?tab=/notes` `/notes` — todo
+- [ ] **notes** `/?tab=/notes` `/notes` — todo · #1390
 
 ## Requests and bookings
 
@@ -84,22 +84,21 @@ _Listed so nothing is missing, and blocked as one decision: the admin area needs
 
 _The homepage hosts the nine apps as tabs under the strip (ADR-0146), so it comes after every app it can host: a tab whose app is still the document is a tab that leaves the door._
 
-- [ ] **home** `/` — blocked · blocked by the nine tabs need nine native screens: `athkar` and `notes` are the two that do not have one
+- [ ] **home** `/` — blocked · #1399 · blocked by the nine tabs need nine native screens: `athkar` and `notes` are the two that do not have one
 
 ## Release readiness
 
 The things a surface row cannot hold: the cutover, the screens the app needs to be diagnosable, and the device measurements still owed. A tick names the evidence; an open item names what closes it. The list lives in `docs/mobile/parity-plan.json` and is checked by `check:plan` like every other row.
 
 - [x] **crash-reports** — The app reports its own failures · done: failure/FailureReporter.kt plus docs/mobile/crash-reports.md (#667, ADR-0115)
-- [ ] **cutover** — Remove the Capacitor bridge: MainActivity, ShellPlugins, capacitor.config.ts, WebSurface and DocumentCookies · open: Phase 5 (ADR-0089). Until the bridge leaves, the APK ships a WebView and every `document` route is the live site inside it.
-- [ ] **browser-surface** — Give every `document` surface a renderer after the WebView goes · open: A Custom Tab is the system browser rather than an in-APK WebView, so it keeps the `document` rows as the page through the cutover (ADR-0178).
-- [ ] **diagnostics** — A diagnostics screen replacing /device · open: Phase 2 exit (ADR-0084): an APK has no console and no page to inspect.
-- [ ] **escape-hatch** — A remote-config switch that opens one surface in a Custom Tab · open: Phase 4 exit (native-app.md): without it a broken native screen is an emergency release.
-- [ ] **guest-claim** — A sign-in claims the guest Local Store's rows · open: Owed since #768 (ADR-0107): the guest store exists and is empty until a guest can write, and a guest's rows would be stranded at sign-in.
-- [ ] **habitflow-form** — HabitFlow's add form and delete affordance · open: Owed since #650: the store, transport and fixtures cover create, update, toggle and delete; the screen exposes the toggle.
-- [ ] **fcm-matrix** — The FCM wake on a real device, backgrounded and killed, and the 15-minute floor · open: Three rows of the real-device matrix are unverified; google-services.json is present, so the build they need exists (docs/mobile/android-shell.md).
-- [ ] **scroll-budget** — Measure 500 rows at 60 fps on the RMX3195 · open: The one native budget with no witness (docs/mobile/native-app.md).
-- [ ] **provider-return** — Delete the royar://auth provider return · open: ADR-0157 made the document cookie the session, so the native provider path has no caller left; this is a deletion to decide, not a flow to build.
+- [ ] **cutover** — Remove the Capacitor bridge: MainActivity, ShellPlugins, capacitor.config.ts, WebSurface and DocumentCookies · #938 · open: Phase 5 (ADR-0089). Until the bridge leaves, the APK ships a WebView and every `document` route is the live site inside it.
+- [ ] **browser-surface** — Give every `document` surface a renderer after the WebView goes · #1393 · open: A Custom Tab is the system browser rather than an in-APK WebView, so it keeps the `document` rows as the page through the cutover (ADR-0178).
+- [ ] **diagnostics** — A diagnostics screen replacing /device · #1394 · open: Phase 2 exit (ADR-0084): an APK has no console and no page to inspect.
+- [ ] **escape-hatch** — A remote-config switch that opens one surface in a Custom Tab · #661 · open: Phase 4 exit (native-app.md): without it a broken native screen is an emergency release.
+- [ ] **guest-claim** — A sign-in claims the guest Local Store's rows · #1395 · open: Owed since #768 (ADR-0107): the guest store exists and is empty until a guest can write, and a guest's rows would be stranded at sign-in.
+- [ ] **habitflow-form** — HabitFlow's add form and delete affordance · #1396 · open: Owed since #650: the store, transport and fixtures cover create, update, toggle and delete; the screen exposes the toggle.
+- [ ] **fcm-matrix** — The FCM wake on a real device, backgrounded and killed, and the 15-minute floor · #1397 · open: Three rows of the real-device matrix are unverified; google-services.json is present, so the build they need exists (docs/mobile/android-shell.md).
+- [ ] **scroll-budget** — Measure 500 rows at 60 fps on the RMX3195 · #1398 · open: The one native budget with no witness (docs/mobile/native-app.md).
 
 ## Components
 
@@ -186,4 +185,4 @@ A component is finished when the surface that draws it is native: 78 ported comp
 
 ## Where this stands
 
-19 native · 9 to do · 4 document · 7 blocked of 39 surfaces. 1 of 10 release items done.
+19 native · 8 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.

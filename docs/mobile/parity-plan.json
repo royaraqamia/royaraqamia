@@ -117,8 +117,8 @@
     {
       "surface": "mcp-apps",
       "phase": "public-content",
-      "state": "todo",
-      "issue": "#1256"
+      "state": "document",
+      "why": "A decision, not a queue item: the sheet is the apps surface, and `/mcp/apps` stays the address a callback, a bookmark and a deep link need (ADR-0159, #1385). The sheet is native; the page is what a link resolves to."
     },
     {
       "surface": "mcp-app-detail",
@@ -129,13 +129,15 @@
     {
       "surface": "athkar",
       "phase": "public-content",
-      "state": "todo"
+      "state": "todo",
+      "issue": "#1389"
     },
     {
       "surface": "auth",
       "phase": "auth",
       "state": "blocked",
-      "blockedBy": "the cutover: once the WebView leaves, a Custom Tab cannot set the app's session, so sign-in has to be native - password and OTP on screen, Google through a Custom Tab and the `royar://auth` return, and the Keystore session written back into the document cookie while one is still in front (ADR-0178)"
+      "blockedBy": "the cutover: once the WebView leaves, a Custom Tab cannot set the app's session, so sign-in has to be native - password and OTP on screen, Google through a Custom Tab and the `royar://auth` return, and the Keystore session written back into the document cookie while one is still in front (ADR-0178)",
+      "issue": "#1392"
     },
     {
       "surface": "account",
@@ -193,7 +195,8 @@
     {
       "surface": "notifications",
       "phase": "core",
-      "state": "todo"
+      "state": "todo",
+      "issue": "#1391"
     },
     {
       "surface": "chats",
@@ -238,7 +241,8 @@
     {
       "surface": "notes",
       "phase": "products",
-      "state": "todo"
+      "state": "todo",
+      "issue": "#1390"
     },
     {
       "surface": "leads",
@@ -262,7 +266,8 @@
       "surface": "home",
       "phase": "door",
       "state": "blocked",
-      "blockedBy": "the nine tabs need nine native screens: `athkar` and `notes` are the two that do not have one"
+      "blockedBy": "the nine tabs need nine native screens: `athkar` and `notes` are the two that do not have one",
+      "issue": "#1399"
     }
   ],
   "release": [
@@ -276,55 +281,57 @@
       "id": "cutover",
       "title": "Remove the Capacitor bridge: MainActivity, ShellPlugins, capacitor.config.ts, WebSurface and DocumentCookies",
       "state": "open",
+      "issue": "#938",
       "why": "Phase 5 (ADR-0089). Until the bridge leaves, the APK ships a WebView and every `document` route is the live site inside it."
     },
     {
       "id": "browser-surface",
       "title": "Give every `document` surface a renderer after the WebView goes",
       "state": "open",
+      "issue": "#1393",
       "why": "A Custom Tab is the system browser rather than an in-APK WebView, so it keeps the `document` rows as the page through the cutover (ADR-0178)."
     },
     {
       "id": "diagnostics",
       "title": "A diagnostics screen replacing /device",
       "state": "open",
+      "issue": "#1394",
       "why": "Phase 2 exit (ADR-0084): an APK has no console and no page to inspect."
     },
     {
       "id": "escape-hatch",
       "title": "A remote-config switch that opens one surface in a Custom Tab",
       "state": "open",
+      "issue": "#661",
       "why": "Phase 4 exit (native-app.md): without it a broken native screen is an emergency release."
     },
     {
       "id": "guest-claim",
       "title": "A sign-in claims the guest Local Store's rows",
       "state": "open",
+      "issue": "#1395",
       "why": "Owed since #768 (ADR-0107): the guest store exists and is empty until a guest can write, and a guest's rows would be stranded at sign-in."
     },
     {
       "id": "habitflow-form",
       "title": "HabitFlow's add form and delete affordance",
       "state": "open",
+      "issue": "#1396",
       "why": "Owed since #650: the store, transport and fixtures cover create, update, toggle and delete; the screen exposes the toggle."
     },
     {
       "id": "fcm-matrix",
       "title": "The FCM wake on a real device, backgrounded and killed, and the 15-minute floor",
       "state": "open",
+      "issue": "#1397",
       "why": "Three rows of the real-device matrix are unverified; google-services.json is present, so the build they need exists (docs/mobile/android-shell.md)."
     },
     {
       "id": "scroll-budget",
       "title": "Measure 500 rows at 60 fps on the RMX3195",
       "state": "open",
+      "issue": "#1398",
       "why": "The one native budget with no witness (docs/mobile/native-app.md)."
-    },
-    {
-      "id": "provider-return",
-      "title": "Delete the royar://auth provider return",
-      "state": "open",
-      "why": "ADR-0157 made the document cookie the session, so the native provider path has no caller left; this is a deletion to decide, not a flow to build."
     }
   ]
 }
