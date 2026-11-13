@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import com.royaraqamia.app.shared.SignInPrompt
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
@@ -117,6 +118,7 @@ fun AccountRows(
                 promptingSignIn = false
                 onSignIn()
             },
+            confirmTag = AccountTags.SIGN_IN_PROMPT,
         )
     }
 
@@ -271,33 +273,6 @@ private fun SignOutRow(onClick: () -> Unit) {
             )
         }
     }
-}
-
-/** The guest gate the site draws in a dialogue, in the app's own alert. */
-@Composable
-private fun SignInPrompt(onDismiss: () -> Unit, onConfirm: () -> Unit) {
-    val type = LocalRoyTypeScale.current
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = AccountRowsCopy.SIGN_IN_PROMPT,
-                style = type.small.copy(fontWeight = FontWeight.Bold),
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm,
-                modifier = Modifier.testTag(AccountTags.SIGN_IN_PROMPT),
-            ) {
-                Text(text = AccountRowsCopy.SIGN_IN, color = RoyColors.primary)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(AccountRowsCopy.CANCEL) }
-        },
-    )
 }
 
 /** The page's question before a sign-out, and its quiet way out. */

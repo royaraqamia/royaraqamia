@@ -1155,6 +1155,72 @@
       ]
     },
     {
+      "id": "profile-chat-cta",
+      "surface": "profile",
+      "web": {
+        "route": "app/u/[username]/page.tsx",
+        "component": "app/community/_components/member-chat-cta.tsx",
+        "copyModule": "app/community/_components/profile-chat-copy.ts",
+        "copyExport": "PROFILE_CHAT_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileChatCta.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileChatCtaUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileChatCtaCopy.kt",
+        "copyObject": "ProfileChatCtaCopy"
+      },
+      "copySource": "shared/copy/profile-chat.json",
+      "states": [
+        {
+          "name": "Shown",
+          "copy": "message"
+        },
+        {
+          "name": "Hidden",
+          "copy": "message"
+        }
+      ]
+    },
+    {
+      "id": "follow-button",
+      "surface": "profile",
+      "web": {
+        "route": "app/u/[username]/page.tsx",
+        "component": "frontend/ui/shared/follow-button.tsx",
+        "copyModule": "frontend/ui/shared/follow-button-copy.ts",
+        "copyExport": "FOLLOW_BUTTON_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/profile/FollowButton.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/profile/FollowButtonUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/profile/FollowButtonCopy.kt",
+        "copyObject": "FollowButtonCopy"
+      },
+      "copySource": "shared/copy/follow-button.json",
+      "states": [
+        {
+          "name": "Self",
+          "copy": "you"
+        },
+        {
+          "name": "NotFollowing",
+          "copy": "follow"
+        },
+        {
+          "name": "Following",
+          "copy": "unfollow"
+        },
+        {
+          "name": "Blocked",
+          "copy": "unblock"
+        },
+        {
+          "name": "Guest",
+          "copy": "follow"
+        }
+      ]
+    },
+    {
       "id": "profile",
       "surface": "profile",
       "issue": "#927",

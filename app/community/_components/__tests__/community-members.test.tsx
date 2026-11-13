@@ -68,6 +68,28 @@ describe('CommunityMembersPanel', () => {
     expect(screen.getAllByText('أنت')).toHaveLength(1);
   });
 
+  it('draws one follow control per row, never on the viewer’s own', () => {
+    session.current = {
+      user: { id: 'u3' },
+      profileUsername: 'royaraqamia',
+      profileName: 'رؤية رقميّة',
+      profileAvatarUrl: null,
+    };
+
+    render(
+      <CommunityMembersPanel
+        members={roster}
+        states={{ u1: 'not_following', u2: 'following', u3: 'self' }}
+      />
+    );
+
+    // The viewer's row carries «أنت» beside the name and no pill below it.
+    expect(screen.getAllByText('أنت')).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'متابعة' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'إلغاء المتابعة' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+
   it('pins a member the roster does not list', () => {
     session.current = {
       user: { id: 'u9' },

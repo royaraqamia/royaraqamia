@@ -1,0 +1,19 @@
+{
+  "surface": "profile",
+  "component": "profile-chat-cta",
+  "web": {
+    "file": "app/community/_components/profile-chat-copy.ts",
+    "export": "PROFILE_CHAT_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileChatCtaCopy.kt",
+    "object": "ProfileChatCtaCopy"
+  },
+  "notes": {
+    "source": "The second door on a member's profile: the quiet «مراسلة» beside the follow button. It used to be typed into the component; the app draws the same door now, so the word is generated for both. The site draws it in `app/community/_components/member-chat-cta.tsx`.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `member-chat-cta.tsx` does not render."
+  },
+  "strings": {
+    "message": "مراسلة"
+  }
+}

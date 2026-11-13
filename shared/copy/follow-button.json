@@ -1,0 +1,30 @@
+{
+  "surface": "profile",
+  "component": "follow-button",
+  "web": {
+    "file": "frontend/ui/shared/follow-button-copy.ts",
+    "export": "FOLLOW_BUTTON_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/profile/FollowButtonCopy.kt",
+    "object": "FollowButtonCopy"
+  },
+  "notes": {
+    "source": "The follow control's own words: one button, five faces, and the confirmation that guards the only action here that loses something. The site draws them in `frontend/ui/shared/follow-button.tsx`, which is the app's reference. Before this source existed the words lived hand-written in `follow-copy.ts`; they moved here with the app's half of the control.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `follow-button.tsx` does not render."
+  },
+  "strings": {
+    "follow": "متابعة",
+    "unfollow": "إلغاء المتابعة",
+    "unfollowTitle": "إلغاء المتابعة؟",
+    "unfollowBody": "لن تظهر منشورات {name} في متابعاتك بعد الآن.",
+    "confirmUnfollow": "نعم، إلغاء المتابعة",
+    "cancel": "تراجع",
+    "unblock": "إلغاء الحظر",
+    "busy": "جاري المتابعة...",
+    "followFailed": "تعذّرت المتابعة. حاول مرة أخرى.",
+    "unfollowFailed": "تعذّر إلغاء المتابعة. حاول مرة أخرى.",
+    "unblockFailed": "تعذّر إلغاء الحظر. حاول مرة أخرى.",
+    "you": "أنت"
+  }
+}

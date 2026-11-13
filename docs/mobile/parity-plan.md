@@ -102,7 +102,7 @@ The things a surface row cannot hold: the cutover, the screens the app needs to 
 
 ## Components
 
-A component is finished when the surface that draws it is native: 78 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native: 80 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -141,6 +141,8 @@ A component is finished when the surface that draws it is native: 78 ported comp
 - [x] `post-card` on **community** · #658
 - [x] `community-feed` on **community** · #658
 - [x] `community-post` on **community** · #922
+- [x] `profile-chat-cta` on **profile**
+- [x] `follow-button` on **profile**
 - [x] `profile` on **profile** · #927
 - [x] `community-editor` on **community** · #925
 - [x] `community-composer` on **community** · #924

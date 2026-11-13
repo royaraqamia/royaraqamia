@@ -1,26 +1,15 @@
 /**
- * The follow surface's words.
+ * The follow surface's own words, outside the button.
  *
- * Hand-written for now, on purpose: the copy pipeline (`shared/copy/*.json`)
- * generates both clients at once, and its parity rows name a Kotlin component
- * that does not exist until the app's half of this lands. The strings move
- * there - and the rows with them - in that change, so this file is the one
- * place they live in the meantime rather than a second copy nobody owns.
+ * The control itself (`follow-button.tsx`) reads the generated
+ * `follow-button-copy.ts`: the app draws the same button, so those strings are
+ * one source for both clients (`shared/copy/follow-button.json`). What stays
+ * here is what only the site draws today - the two private lists and their
+ * counts - because the copy pipeline names one component per surface, and a
+ * row whose strings no single component renders is copy that goes stale. When
+ * the app draws the lists, these move the same way the button's already did.
  */
 export const FOLLOW_COPY = {
-  follow: 'متابعة',
-  unfollow: 'إلغاء المتابعة',
-  unfollowTitle: 'إلغاء المتابعة؟',
-  unfollowBody: 'لن تظهر منشورات {name} في متابعاتك بعد الآن.',
-  confirmUnfollow: 'نعم، إلغاء المتابعة',
-  cancel: 'تراجع',
-  unblock: 'إلغاء الحظر',
-  busy: 'جاري المتابعة...',
-  followFailed: 'تعذّرت المتابعة. حاول مرة أخرى.',
-  unfollowFailed: 'تعذّر إلغاء المتابعة. حاول مرة أخرى.',
-  unblockFailed: 'تعذّر إلغاء الحظر. حاول مرة أخرى.',
-  /** The pill the viewer's own card carries instead of a button. */
-  you: 'أنت',
   followers: 'المتابِعون',
   following: 'المتابَعون',
   followersListTitle: 'المتابِعون',

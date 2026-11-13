@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { followMember, unblockMember, unfollowMember } from '@/frontend/api/follows';
 import { publishFollowCounts } from '@/frontend/shared/follow-live';
+import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
 import {
   Dialog,
@@ -13,7 +14,7 @@ import {
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
 import type { FollowState } from '@/shared/contracts/follows';
-import { FOLLOW_COPY } from './follow-copy';
+import { FOLLOW_BUTTON_COPY } from './follow-button-copy';
 
 interface FollowButtonProps {
   username: string;
@@ -31,6 +32,14 @@ interface FollowButtonProps {
   initialState: FollowState;
   /** A guest gets the same button; pressing it goes to sign in. */
   signedIn: boolean;
+  /**
+   * `md` is the profile header's button, one step taller than a row's.
+   *
+   * The control is the hero gradient everywhere because it is one action: a
+   * flat follow in a list and a gradient follow on a profile would read as two
+   * different things. What changes with the surface is only the height.
+   */
+  size?: 'sm' | 'md';
   className?: string;
 }
 
@@ -60,12 +69,17 @@ export function FollowButton({
   memberId,
   initialState,
   signedIn,
+  size = 'sm',
   className,
 }: FollowButtonProps) {
   const [state, setState] = useState<FollowState>(initialState);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+
+  // The hero variant carries the colour and the shadow; the size stays this
+  // control's own, so a list row does not grow a landing-page call to action.
+  const buttonClass = cn('rounded-full font-bold', size === 'md' && 'h-11 px-6');
 
   async function run(action: 'follow' | 'unfollow' | 'unblock') {
     setBusy(true);
@@ -88,7 +102,7 @@ export function FollowButton({
       // it blindly turned a rejected unfollow into a "follow" button while the
       // edge was still there. `blocked` is the one refusal that *is* a state.
       if (!body.success) {
-        setError(body.error ?? FOLLOW_COPY.followFailed);
+        setError(body.error ?? FOLLOW_BUTTON_COPY.followFailed);
         if (body.state === 'blocked') setState('blocked');
         return;
       }
@@ -98,10 +112,10 @@ export function FollowButton({
     } catch {
       setError(
         action === 'follow'
-          ? FOLLOW_COPY.followFailed
+          ? FOLLOW_BUTTON_COPY.followFailed
           : action === 'unfollow'
-            ? FOLLOW_COPY.unfollowFailed
-            : FOLLOW_COPY.unblockFailed
+            ? FOLLOW_BUTTON_COPY.unfollowFailed
+            : FOLLOW_BUTTON_COPY.unblockFailed
       );
     } finally {
       setBusy(false);
@@ -113,7 +127,7 @@ export function FollowButton({
       <span
         className={`inline-flex shrink-0 items-center rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[11px] font-bold leading-4 text-primary ${className ?? ''}`}
       >
-        {FOLLOW_COPY.you}
+        {FOLLOW_BUTTON_COPY.you}
       </span>
     );
   }
@@ -121,8 +135,8 @@ export function FollowButton({
   if (!signedIn) {
     return (
       <Link href={`/auth/login?redirect=${encodeURIComponent(`/u/${username}`)}`}>
-        <Button size="sm" className={`rounded-full px-5 ${className ?? ''}`}>
-          {FOLLOW_COPY.follow}
+        <Button variant="hero" size="sm" className={cn(buttonClass, className)}>
+          {FOLLOW_BUTTON_COPY.follow}
         </Button>
       </Link>
     );
@@ -134,30 +148,31 @@ export function FollowButton({
         <Button
           size="sm"
           variant="outline"
-          className="rounded-full px-5"
+          className={buttonClass}
           disabled={busy}
           onClick={() => void run('unblock')}
         >
-          {busy ? FOLLOW_COPY.busy : FOLLOW_COPY.unblock}
+          {busy ? FOLLOW_BUTTON_COPY.busy : FOLLOW_BUTTON_COPY.unblock}
         </Button>
       ) : state === 'following' ? (
         <Button
           size="sm"
           variant="outline"
-          className="rounded-full px-5"
+          className={buttonClass}
           disabled={busy}
           onClick={() => setConfirming(true)}
         >
-          {FOLLOW_COPY.unfollow}
+          {FOLLOW_BUTTON_COPY.unfollow}
         </Button>
       ) : (
         <Button
           size="sm"
-          className="rounded-full px-5"
+          variant="hero"
+          className={buttonClass}
           disabled={busy}
           onClick={() => void run('follow')}
         >
-          {busy ? FOLLOW_COPY.busy : FOLLOW_COPY.follow}
+          {busy ? FOLLOW_BUTTON_COPY.busy : FOLLOW_BUTTON_COPY.follow}
         </Button>
       )}
 
@@ -169,13 +184,13 @@ export function FollowButton({
 
       <Dialog open={confirming} onOpenChange={setConfirming}>
         <DialogContent className="max-w-sm">
-          <DialogTitle>{FOLLOW_COPY.unfollowTitle}</DialogTitle>
+          <DialogTitle>{FOLLOW_BUTTON_COPY.unfollowTitle}</DialogTitle>
           <DialogDescription>
-            {FOLLOW_COPY.unfollowBody.replace('{name}', displayName(name, username))}
+            {FOLLOW_BUTTON_COPY.unfollowBody.replace('{name}', displayName(name, username))}
           </DialogDescription>
           <DialogFooter>
             <Button variant="ghost" className="rounded-full" onClick={() => setConfirming(false)}>
-              {FOLLOW_COPY.cancel}
+              {FOLLOW_BUTTON_COPY.cancel}
             </Button>
             <Button
               variant="destructive"
@@ -186,7 +201,7 @@ export function FollowButton({
                 void run('unfollow');
               }}
             >
-              {FOLLOW_COPY.confirmUnfollow}
+              {FOLLOW_BUTTON_COPY.confirmUnfollow}
             </Button>
           </DialogFooter>
         </DialogContent>

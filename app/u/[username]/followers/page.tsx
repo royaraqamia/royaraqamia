@@ -52,7 +52,6 @@ export default async function FollowersPage(props: {
   return (
     <div className="mx-auto max-w-4xl">
       <FollowListView
-        username={handle}
         kind="followers"
         members={data.page.members}
         total={data.page.total}

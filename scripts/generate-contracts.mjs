@@ -213,6 +213,16 @@ export const CONTRACTS = [
       'CommunityMemberResponseSchema',
     ],
   },
+  // The follow graph: the app's profile header draws the viewer's standing and
+  // the two numbers beside it, and its control writes the same route. The page
+  // renders all of that on the server, so this is the body the app decodes
+  // instead of retyping a field name (ADR-0098); `GET`, `POST` and `DELETE` on
+  // `/api/users/{username}/follow` all answer it.
+  {
+    module: 'shared/contracts/follows',
+    file: 'FollowsContracts.kt',
+    schemas: ['FollowToggleResponseSchema'],
+  },
   // BlogPress (#952): the snapshot the app's store merges and the two bodies its
   // Outbox replays — the delete and the restore of a tombstoned post. The read is
   // `/api/community/sync`, the same route the web's pull reads, tombstones

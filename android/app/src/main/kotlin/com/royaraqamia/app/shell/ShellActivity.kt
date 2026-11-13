@@ -520,6 +520,8 @@ class ShellActivity : ComponentActivity() {
                                             onOpenProfile = { username ->
                                                 openRoute(ProfileRoutes.profileOf(username))
                                             },
+                                            onOpenChat = ::openChatPreview,
+                                            onSignIn = ::showSignIn,
                                         )
                                     quranSurah != null ->
                                         QuranSurahRoute(
