@@ -59,6 +59,7 @@ import com.royaraqamia.app.profile.ProfileRoutes
 import com.royaraqamia.app.profile.ProfileScreen
 import com.royaraqamia.app.quran.QuranIndexRoute
 import com.royaraqamia.app.mcp.ConnectionScreen
+import com.royaraqamia.app.mcp.McpAppsScreen
 import com.royaraqamia.app.mcp.McpRoutes
 import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.quran.QuranSurahRoute
@@ -580,6 +581,46 @@ class ShellActivity : ComponentActivity() {
                                                 onSignIn = ::showSignIn,
                                                 onOpenExternal = ::openExternal,
                                                 onDisconnected = { openRoute(McpRoutes.APPS) },
+                                            )
+                                        } ?: McpRoutes.appsTabOf(current)?.let { tab ->
+                                            // The apps page (#1256): the same surface the
+                                            // sheet draws, at the address a callback, a
+                                            // bookmark and a deep link need. Its tab is the
+                                            // route, so choosing one navigates.
+                                            McpAppsScreen(
+                                                tab = tab,
+                                                order = homeServices.order,
+                                                busy = homeServices.busy,
+                                                error = homeServices.error,
+                                                onToggle = { route ->
+                                                    lifecycleScope.launch {
+                                                        homeServices.toggle(route)
+                                                    }
+                                                },
+                                                marketplace = graph.marketplace,
+                                                signedIn = signedIn,
+                                                onSignIn = ::showSignIn,
+                                                onOpenConnection = { id ->
+                                                    openRoute(
+                                                        McpRoutes.detailOf(id)
+                                                    )
+                                                },
+                                                onOpenExternal = ::openExternal,
+                                                brandMark = graph.brandMark,
+                                                connectedApps = graph.connectedApps,
+                                                onConnectNew = { openRoute("/mcp/guide") },
+                                                onTabChange = { chosen ->
+                                                    openRoute(
+                                                        when (chosen) {
+                                                            AppsSheetTab.Internal ->
+                                                                "/mcp/apps?tab=internal"
+                                                            AppsSheetTab.External ->
+                                                                McpRoutes.APPS
+                                                            AppsSheetTab.Inbound ->
+                                                                "/mcp/apps?tab=inbound"
+                                                        }
+                                                    )
+                                                },
                                             )
                                         } ?: VerifyRoutes.codeOf(current)?.let { code ->
                                             VerifyCodeScreen(

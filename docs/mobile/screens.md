@@ -45,6 +45,6 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `mcp-guide` | `/mcp/guide` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `mcp-connect` | `/mcp/connect` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `mcp-apps` | `/mcp/apps` | _web only_ | The marketplace is the page until phase 6 ports it (#1228, ADR-0155); the app opens `/mcp/apps` in the document until the visual gate passes. |
-| `mcp-app-detail` | `/mcp/apps/[id]` | `ConnectionScreen.kt` (off) | Ported (#1256), and switched off until it is the page pixel for pixel: the shell hands `/mcp/apps/<id>` to the document in the meantime (#872, ADR-0117). |
+| `mcp-apps` | `/mcp/apps` | `McpAppsScreen.kt` |  |
+| `mcp-app-detail` | `/mcp/apps/[id]` | `ConnectionScreen.kt` (off) | Ported (#1256) and measured against the page at 393 x 852: the permission levels and the title now match, but the section between them and the tool list is ~46px taller in the app (the tool starts at 563.6 against the page 517.4), so the gate refuses the port and the shell still hands /mcp/apps/<id> to the document (#872, ADR-0117). |
 | `admin` | `/admin/**` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

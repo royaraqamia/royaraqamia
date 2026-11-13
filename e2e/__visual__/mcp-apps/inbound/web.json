@@ -1,0 +1,36 @@
+{
+  "surface": "mcp-apps",
+  "state": "inbound",
+  "route": "/mcp/apps?tab=inbound",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "tabs": {
+      "top": 150.5,
+      "height": 44
+    },
+    "search": {
+      "top": 214.5,
+      "height": 42,
+      "radius": 12,
+      "fontSize": 14
+    },
+    "empty": {
+      "top": 276.5,
+      "width": 361,
+      "height": 178,
+      "radius": 16,
+      "paddingTop": 24,
+      "paddingLeft": 24
+    }
+  }
+}

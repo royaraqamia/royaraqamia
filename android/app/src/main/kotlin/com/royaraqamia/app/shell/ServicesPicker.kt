@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,6 +34,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -41,6 +43,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.account.AvatarLoader
@@ -58,7 +61,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -96,7 +99,8 @@ internal object PickerMetrics {
     val rowVerticalPadding = 4.dp
     val rowHeight = 53.dp
     val lastRowHeight = 52.dp
-    val listPaddingHorizontal = 6.dp
+    val listPaddingHorizontal = 12.dp
+    val listPaddingTop = 12.dp
 
     /** The site's sheet border and the header's hairline: two rows above the list's own padding. */
     val topRules = 2.dp
@@ -186,150 +190,309 @@ fun ServicesSheet(
                     .windowInsetsPadding(WindowInsets.statusBars.only(WindowInsetsSides.Top))
             ) {
                 SheetHeader(onDismiss)
-
-                Column(
-                    Modifier.fillMaxWidth()
-                        .padding(
-                            start = AppsSheetMetrics.bandPadding,
-                            end = AppsSheetMetrics.bandPadding,
-                            top = AppsSheetMetrics.bandPaddingTop,
-                            bottom = AppsSheetMetrics.bandPadding,
-                        ),
-                    verticalArrangement = Arrangement.spacedBy(AppsSheetMetrics.bandGap),
-                ) {
-                    AppsTabs(
-                        tab = tab,
-                        onSelect = { chosen ->
-                            when (chosen) {
-                                AppsSheetTab.Internal -> tab = AppsSheetTab.Internal
-                                AppsSheetTab.External -> tab = AppsSheetTab.External
-                                AppsSheetTab.Inbound -> tab = AppsSheetTab.Inbound
-                            }
-                        },
-                    )
-                    // The surface owns the field and asks the active tab for its
-                    // placeholder, as the page does (#1256).
-                    SearchField(
-                        query = query,
-                        onQueryChange = { query = it },
-                        placeholder =
-                            when (tab) {
-                                AppsSheetTab.Internal -> AppsSheetCopy.SEARCH_INTERNAL
-                                AppsSheetTab.External -> AppsSheetCopy.SEARCH_STORE
-                                AppsSheetTab.Inbound -> AppsSheetCopy.SEARCH_INBOUND
-                            },
-                    )
-                }
-
-                Box(
-                    Modifier.fillMaxWidth()
-                        .height(PickerMetrics.borderWidth)
-                        .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                AppsSurface(
+                    host = AppsHost.Sheet,
+                    tab = tab,
+                    onTabChange = { tab = it },
+                    query = query,
+                    onQueryChange = { query = it },
+                    order = order,
+                    busy = busy,
+                    error = error,
+                    onToggle = onToggle,
+                    marketplace = marketplace,
+                    signedIn = signedIn,
+                    onSignIn = onSignIn,
+                    onOpenConnection = onOpenConnection,
+                    onOpenExternal = onOpenExternal,
+                    brandMark = brandMark,
+                    connectedApps = connectedApps,
+                    onConnectNew = onConnectNew,
+                    modifier = Modifier.weight(1f),
                 )
 
-                if (tab == AppsSheetTab.Internal || (tab == AppsSheetTab.External && marketplace == null) || (tab == AppsSheetTab.Inbound && connectedApps == null)) {
-                    Column(
-                        Modifier.fillMaxWidth()
-                            .weight(1f)
-                            .verticalScroll(rememberScrollState())
-                            .navigationBarsPadding()
-                            .padding(
-                                start = PickerMetrics.listPaddingHorizontal,
-                                end = PickerMetrics.listPaddingHorizontal,
-                                top = PickerMetrics.listPaddingBottom,
-                                bottom = AppsSheetMetrics.bodyPaddingBottom,
-                            )
-                    ) {
-                        val term = query.trim()
-                        val rows =
-                            ServicesEntry.rows.filter { entry ->
-                                term.isEmpty() || labelOf(entry).contains(term)
-                            }
-
-                        rows.forEachIndexed { index, entry ->
-                            PickerRow(
-                                entry = entry,
-                                added = entry.route in order,
-                                pending = busy == entry.route,
-                                enabled = busy == null,
-                                last = index == rows.lastIndex,
-                                onToggle = { onToggle(entry.route) },
-                            )
-                        }
-
-                        if (rows.isEmpty()) {
-                            Text(
-                                text = ServicesSheetCopy.SEARCH_EMPTY_INTERNAL,
-                                style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = PickerMetrics.errorTextSize,
-                                        lineHeight = 16.sp,
-                                    ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .padding(
-                                            top = AppsSheetMetrics.emptyTopPadding,
-                                            start = PickerMetrics.rowHorizontalPadding,
-                                            end = PickerMetrics.rowHorizontalPadding,
-                                        ),
-                                maxLines = 2,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-
-                        // The page's line is a block that only has its top padding when
-                        // there is nothing to say (whitespace collapses), so a quiet
-                        // sheet stays shorter than one drawing a refusal.
-                        if (error != null) {
-                            Text(
-                                text = error,
-                                style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = PickerMetrics.errorTextSize,
-                                        lineHeight = 16.sp,
-                                    ),
-                                color = PickerColors.Red300,
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .padding(
-                                            top = PickerMetrics.errorTopPadding,
-                                            start = PickerMetrics.rowHorizontalPadding,
-                                            end = PickerMetrics.rowHorizontalPadding,
-                                        ),
-                                maxLines = 2,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                    }
-                } else if (tab == AppsSheetTab.External) {
-                    // The store is a panel, not a door (#1256): the surface's field
-                    // is its search, and the body scrolls inside the tab.
-                    MarketplaceTab(
-                        repository = marketplace!!,
-                        query = query,
-                        signedIn = signedIn,
-                        onSignIn = onSignIn,
-                        onOpenConnection = onOpenConnection,
-                        onOpenExternal = onOpenExternal,
-                        brandMark = brandMark,
-                        modifier = Modifier.fillMaxSize().weight(1f),
-                    )
-                } else {
-                    // The connected clients are the same card the account screen
-                    // draws, under the same field (#1256).
-                    InboundTab(
-                        repository = connectedApps!!,
-                        signedIn = signedIn,
-                        query = query,
-                        onSignIn = onSignIn,
-                        onConnectNew = onConnectNew,
-                        modifier = Modifier.fillMaxSize().weight(1f),
-                    )
-                }
             }
         }
     }
+}
+
+/**
+ * Which host draws the apps surface (#1256, ADR-0159).
+ *
+ * The site's `apps-surface.tsx` takes the same decision as `host`: a page
+ * scrolls as a document, and a sheet gives the body its own scroll area. The
+ * tabs, the field and the three panels are one composable so the two hosts
+ * cannot drift the way ADR-0117 records.
+ */
+internal enum class AppsHost {
+    Sheet,
+    Page,
+}
+
+/**
+ * The one apps surface: our apps, the marketplace, and the clients connected to
+ * our MCP server, over one search field that belongs to the active tab.
+ *
+ * The reference is `frontend/ui/apps/apps-surface.tsx`. A page tab is a URL and a
+ * sheet tab is state, which is the only difference the two hosts carry; the
+ * chips, the field and the panels are the same drawing.
+ */
+@Composable
+internal fun AppsSurface(
+    host: AppsHost,
+    tab: AppsSheetTab,
+    onTabChange: (AppsSheetTab) -> Unit,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    order: List<String>,
+    busy: String?,
+    error: String?,
+    onToggle: (String) -> Unit,
+    marketplace: McpStoreRepository?,
+    signedIn: Boolean,
+    onSignIn: () -> Unit,
+    onOpenConnection: (String) -> Unit,
+    onOpenExternal: (String) -> Unit,
+    brandMark: AvatarLoader?,
+    connectedApps: ConnectedAppsRepository?,
+    onConnectNew: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (host == AppsHost.Sheet) {
+        Column(modifier.fillMaxSize()) {
+            Column(
+                Modifier.fillMaxWidth()
+                    .padding(
+                        start = AppsSheetMetrics.bandPadding,
+                        end = AppsSheetMetrics.bandPadding,
+                        top = AppsSheetMetrics.bandPaddingTop,
+                        bottom = AppsSheetMetrics.bandPadding,
+                    ),
+                verticalArrangement = Arrangement.spacedBy(AppsSheetMetrics.bandGap),
+            ) {
+                AppsTabs(tab = tab, onSelect = onTabChange)
+                SurfaceSearchField(tab = tab, query = query, onQueryChange = onQueryChange)
+            }
+
+            Box(
+                Modifier.fillMaxWidth()
+                    .height(PickerMetrics.borderWidth)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+            )
+
+            Box(Modifier.fillMaxWidth().weight(1f)) {
+                AppsPanel(
+                    tab = tab,
+                    query = query,
+                    order = order,
+                    busy = busy,
+                    error = error,
+                    onToggle = onToggle,
+                    marketplace = marketplace,
+                    signedIn = signedIn,
+                    onSignIn = onSignIn,
+                    onOpenConnection = onOpenConnection,
+                    onOpenExternal = onOpenExternal,
+                    brandMark = brandMark,
+                    connectedApps = connectedApps,
+                    onConnectNew = onConnectNew,
+                    scroll = true,
+                    listPadding = PickerMetrics.listPaddingHorizontal,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+    } else {
+        // The page scrolls as a document, so the panel has neither a scroll of
+        // its own nor an inset: the page's own horizontal padding is the inset.
+        Column(
+            modifier.fillMaxWidth().testTag("apps-surface"),
+            verticalArrangement = Arrangement.spacedBy(AppsSheetMetrics.pageGap),
+        ) {
+            Box(Modifier.fillMaxWidth().testTag("apps-tabs")) {
+                AppsTabs(tab = tab, onSelect = onTabChange, bottomPadding = 4.dp)
+            }
+            SurfaceSearchField(tab = tab, query = query, onQueryChange = onQueryChange)
+            Box(Modifier.fillMaxWidth().testTag("apps-panel")) {
+                AppsPanel(
+                    tab = tab,
+                    query = query,
+                    order = order,
+                    busy = busy,
+                    error = error,
+                    onToggle = onToggle,
+                    marketplace = marketplace,
+                    signedIn = signedIn,
+                    onSignIn = onSignIn,
+                    onOpenConnection = onOpenConnection,
+                    onOpenExternal = onOpenExternal,
+                    brandMark = brandMark,
+                    connectedApps = connectedApps,
+                    onConnectNew = onConnectNew,
+                    scroll = false,
+                    listPadding = 0.dp,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+}
+
+/** The active tab's panel: the picker, the store, or the connected clients. */
+@Composable
+private fun AppsPanel(
+    tab: AppsSheetTab,
+    query: String,
+    order: List<String>,
+    busy: String?,
+    error: String?,
+    onToggle: (String) -> Unit,
+    marketplace: McpStoreRepository?,
+    signedIn: Boolean,
+    onSignIn: () -> Unit,
+    onOpenConnection: (String) -> Unit,
+    onOpenExternal: (String) -> Unit,
+    brandMark: AvatarLoader?,
+    connectedApps: ConnectedAppsRepository?,
+    onConnectNew: () -> Unit,
+    scroll: Boolean,
+    listPadding: Dp,
+    modifier: Modifier,
+) {
+    val picked =
+        tab == AppsSheetTab.Internal ||
+            (tab == AppsSheetTab.External && marketplace == null) ||
+            (tab == AppsSheetTab.Inbound && connectedApps == null)
+
+    if (picked) {
+        Column(
+            modifier
+                .fillMaxWidth()
+                .then(
+                    if (scroll) {
+                        Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding()
+                    } else {
+                        Modifier
+                    }
+                )
+                .padding(
+                    start = listPadding,
+                    end = listPadding,
+                    top = if (scroll) PickerMetrics.listPaddingTop else 0.dp,
+                    bottom = if (scroll) AppsSheetMetrics.bodyPaddingBottom else 0.dp,
+                )
+        ) {
+            val term = query.trim()
+            val rows =
+                ServicesEntry.rows.filter { entry ->
+                    term.isEmpty() || labelOf(entry).contains(term)
+                }
+
+            rows.forEachIndexed { index, entry ->
+                PickerRow(
+                    entry = entry,
+                    added = entry.route in order,
+                    pending = busy == entry.route,
+                    enabled = busy == null,
+                    last = index == rows.lastIndex,
+                    onToggle = { onToggle(entry.route) },
+                )
+            }
+
+            if (rows.isEmpty()) {
+                Text(
+                    text = ServicesSheetCopy.SEARCH_EMPTY_INTERNAL,
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontSize = PickerMetrics.errorTextSize,
+                            lineHeight = 16.sp,
+                        ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(
+                                top = AppsSheetMetrics.emptyTopPadding,
+                                start = PickerMetrics.rowHorizontalPadding,
+                                end = PickerMetrics.rowHorizontalPadding,
+                            ),
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            // The page's line is a block that only has its top padding when there
+            // is nothing to say (whitespace collapses), so a quiet sheet stays
+            // shorter than one drawing a refusal.
+            // The page always draws its status line - an empty one is a space
+            // with the line's top padding - so the page host reserves the same
+            // 8px under the list. The sheet has no such line (#1256).
+            if (!scroll && error == null) {
+                Spacer(Modifier.height(8.dp))
+            }
+
+            if (error != null) {
+                Text(
+                    text = error,
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontSize = PickerMetrics.errorTextSize,
+                            lineHeight = 16.sp,
+                        ),
+                    color = PickerColors.Red300,
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(
+                                top = PickerMetrics.errorTopPadding,
+                                start = PickerMetrics.rowHorizontalPadding,
+                                end = PickerMetrics.rowHorizontalPadding,
+                            ),
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    } else if (tab == AppsSheetTab.External) {
+        // The store is a panel, not a door (#1256): the surface's field is its
+        // search, and the body scrolls inside the sheet's tab.
+        MarketplaceTab(
+            repository = marketplace!!,
+            query = query,
+            signedIn = signedIn,
+            onSignIn = onSignIn,
+            onOpenConnection = onOpenConnection,
+            onOpenExternal = onOpenExternal,
+            brandMark = brandMark,
+            scroll = scroll,
+            modifier = modifier,
+        )
+    } else {
+        // The connected clients are the same card the account screen draws,
+        // under the same field (#1256).
+        InboundTab(
+            repository = connectedApps!!,
+            signedIn = signedIn,
+            query = query,
+            onSignIn = onSignIn,
+            onConnectNew = onConnectNew,
+            scroll = scroll,
+            modifier = modifier,
+        )
+    }
+}
+
+/** The surface's field, in the active tab's own words. */
+@Composable
+private fun SurfaceSearchField(tab: AppsSheetTab, query: String, onQueryChange: (String) -> Unit) {
+    SearchField(
+        query = query,
+        onQueryChange = onQueryChange,
+        placeholder =
+            when (tab) {
+                AppsSheetTab.Internal -> AppsSheetCopy.SEARCH_INTERNAL
+                AppsSheetTab.External -> AppsSheetCopy.SEARCH_STORE
+                AppsSheetTab.Inbound -> AppsSheetCopy.SEARCH_INBOUND
+            },
+    )
 }
 
 /** The sheet's title and its close control, in the site's order. */
@@ -379,10 +542,14 @@ private fun SheetHeader(onDismiss: () -> Unit) {
 
 /**
  * The surface's three tabs as the site's chips (TabChips, ADR-0146): one
- * scroller, the active chip in the site's violet.
+ * scroller, the active chip in the page's ink.
+ *
+ * The page's chip is `min-h-10 rounded-full border px-4 text-sm font-bold`, the
+ * active one filled with the foreground ink and the rest outlined — the same on
+ * the page and in the sheet, because the two hosts draw one chip (#1256).
  */
 @Composable
-private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
+private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit, bottomPadding: Dp = 0.dp) {
     val tabs =
         listOf(
             AppsSheetTab.Internal to AppsSheetCopy.TAB_INTERNAL,
@@ -393,6 +560,7 @@ private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
         modifier =
             Modifier.fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
+                .padding(bottom = bottomPadding)
                 .semantics { contentDescription = AppsSheetCopy.TABS_LABEL },
         horizontalArrangement = Arrangement.spacedBy(AppsSheetMetrics.tabGap),
     ) {
@@ -401,42 +569,35 @@ private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
             val shape = RoundedCornerShape(percent = 50)
             Box(
                 modifier =
-                    Modifier.clip(shape)
-                        .background(
-                            if (active) {
-                                PickerColors.Violet500.copy(alpha = 0.15f)
-                            } else {
-                                Color.Transparent
-                            }
-                        )
+                    Modifier.heightIn(min = AppsSheetMetrics.tabMinHeight)
+                        .clip(shape)
+                        .background(if (active) MaterialTheme.colorScheme.onSurface else Color.Transparent)
                         .border(
                             width = PickerMetrics.borderWidth,
                             color =
                                 if (active) {
-                                    PickerColors.Violet500.copy(alpha = 0.4f)
+                                    Color.Transparent
                                 } else {
-                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+                                    MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
                                 },
                             shape = shape,
                         )
                         .clickable { onSelect(id) }
                         .semantics { selected = active }
                         .testTag("apps-tab")
-                        .padding(
-                            horizontal = AppsSheetMetrics.tabHorizontalPadding,
-                            vertical = AppsSheetMetrics.tabVerticalPadding,
-                        ),
+                        .padding(horizontal = AppsSheetMetrics.tabHorizontalPadding),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = label,
                     style =
                         MaterialTheme.typography.labelMedium.copy(
                             fontSize = AppsSheetMetrics.tabTextSize,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                         ),
                     color =
                         if (active) {
-                            PickerColors.Violet200
+                            MaterialTheme.colorScheme.surface
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
@@ -447,41 +608,76 @@ private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
     }
 }
 
-/** The one search field, in the tab's own words. */
+/**
+ * The one search field, in the tab's own words.
+ *
+ * The page draws an `<input type="search">` inside a bordered, 12px-rounded box
+ * with the glyph at the inline start and the text 36px in (`apps-surface.tsx`:
+ * `py-2.5 pe-3 ps-9 text-sm`), which is 42px tall. Material's `OutlinedTextField`
+ * cannot be that height - its minimum is 56 - so the field is drawn from the box
+ * the page draws rather than from the component the app happens to ship.
+ */
 @Composable
 private fun SearchField(query: String, onQueryChange: (String) -> Unit, placeholder: String) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
+    val shape = RoundedCornerShape(AppsSheetMetrics.searchRadius)
+    Box(
         modifier =
             Modifier.fillMaxWidth()
-                .heightIn(min = AppsSheetMetrics.searchHeight)
+                .height(AppsSheetMetrics.searchHeight)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
+                .border(
+                    width = PickerMetrics.borderWidth,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f),
+                    shape = shape,
+                )
                 .testTag("apps-search")
                 .semantics { contentDescription = AppsSheetCopy.SEARCH_LABEL },
-        placeholder = {
-            Text(
-                text = placeholder,
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontSize = AppsSheetMetrics.searchTextSize,
-                    ),
-            )
-        },
-        leadingIcon = {
-            Icon(
-                imageVector = LucideVectors.Search,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(PickerMetrics.iconSize),
-            )
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(AppsSheetMetrics.searchRadius),
-        textStyle =
-            MaterialTheme.typography.bodySmall.copy(
-                fontSize = AppsSheetMetrics.searchTextSize,
-            ),
-    )
+    ) {
+        Icon(
+            imageVector = LucideVectors.Search,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier =
+                Modifier.align(Alignment.CenterStart)
+                    .padding(start = AppsSheetMetrics.searchIconInset)
+                    .size(PickerMetrics.iconSize),
+        )
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            modifier =
+                Modifier.fillMaxSize()
+                    .padding(
+                        start = AppsSheetMetrics.searchTextInset,
+                        end = AppsSheetMetrics.searchEndInset,
+                    )
+                    .testTag("apps-search-input"),
+            singleLine = true,
+            textStyle =
+                MaterialTheme.typography.bodySmall.copy(
+                    fontSize = AppsSheetMetrics.searchTextSize,
+                    color = MaterialTheme.colorScheme.onSurface,
+                ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            decorationBox = { inner ->
+                Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.CenterStart) {
+                    if (query.isEmpty()) {
+                        Text(
+                            text = placeholder,
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = AppsSheetMetrics.searchTextSize,
+                                ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            maxLines = 1,
+                        )
+                    }
+                    inner()
+                }
+            },
+        )
+    }
 }
 
 /** The surface's own geometry, read from the page's classes (ADR-0118). */
@@ -495,14 +691,20 @@ internal object AppsSheetMetrics {
     val closeIconSize = 20.dp
 
     val bandPadding = 12.dp
-    val bandPaddingTop = 8.dp
+    val bandPaddingTop = 12.dp
     val bandGap = 8.dp
     val tabGap = 8.dp
-    val tabHorizontalPadding = 12.dp
-    val tabVerticalPadding = 8.dp
-    val tabTextSize = 13.sp
+    val tabHorizontalPadding = 16.dp
+    val tabMinHeight = 40.dp
+    val tabTextSize = 14.sp
 
-    val searchHeight = 40.dp
+    /** The page's `space-y-5`: tabs, field and panel are one column of gaps. */
+    val pageGap = 20.dp
+
+    val searchHeight = 42.dp
+    val searchIconInset = 12.dp
+    val searchTextInset = 36.dp
+    val searchEndInset = 12.dp
     val searchRadius = 12.dp
     val searchTextSize = 14.sp
 

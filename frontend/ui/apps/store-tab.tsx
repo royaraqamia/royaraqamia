@@ -211,7 +211,7 @@ export function StoreTab({ query, connect }: StoreTabProps) {
   const dimmed = searching && searchTerm !== query.trim();
 
   return (
-    <div className="space-y-8">
+    <div data-visual="store-panel" className="space-y-8">
       <ConnectOutcome connect={connect} />
 
       {actionError && (
@@ -223,9 +223,14 @@ export function StoreTab({ query, connect }: StoreTabProps) {
         </p>
       )}
 
-      <section aria-labelledby="mcp-connections-title" className="space-y-3">
+      <section
+        data-visual="store-connections"
+        aria-labelledby="mcp-connections-title"
+        className="space-y-3"
+      >
         <h2
           id="mcp-connections-title"
+          data-visual="store-connections-title"
           className="max-sm:text-base font-extrabold text-foreground sm:text-lg"
         >
           {MCP_STORE_COPY.connectionsTitle}
@@ -558,7 +563,10 @@ function CatalogueRow({
   const name = server.title ?? server.registryName;
 
   return (
-    <div className="flex items-start justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5">
+    <div
+      data-visual="store-row"
+      className="flex items-start justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5"
+    >
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <CatalogueMark server={server} />
         <div className="min-w-0 space-y-1">
@@ -567,6 +575,7 @@ function CatalogueRow({
             <BadgeCheck
               role="img"
               aria-label={MCP_STORE_COPY.verifiedBadge}
+              data-visual="store-verified"
               className="h-4 w-4 shrink-0 text-primary"
             />
             {server.nameAr && (
@@ -610,6 +619,7 @@ function CatalogueRow({
       ) : (
         <button
           type="button"
+          data-visual="store-connect"
           onClick={onConnect}
           disabled={disabled}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 max-sm:text-xs font-bold text-primary transition-safe duration-150 ease-out hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 sm:text-sm"
@@ -635,6 +645,7 @@ function CatalogueMark({ server }: { server: McpCatalogRow }) {
     return (
       <span
         aria-hidden="true"
+        data-visual="store-mark"
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/50 text-sm font-extrabold text-muted-foreground"
       >
         {name.charAt(0).toUpperCase()}
@@ -656,6 +667,7 @@ function CatalogueMark({ server }: { server: McpCatalogRow }) {
       width={40}
       height={40}
       unoptimized
+      data-visual="store-mark"
       onError={() => setFailed(true)}
       className="h-10 w-10 shrink-0 rounded-xl border border-border/50 bg-background object-contain p-1"
     />
@@ -709,7 +721,10 @@ function FailureRow({ message, onRetry }: { message: string; onRetry: () => void
 
 function EmptyCard({ title, body }: { title: string; body: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
+    <div
+      data-visual="store-empty"
+      className="flex flex-col items-center gap-2 rounded-2xl border border-border/50 bg-card/60 p-6 text-center"
+    >
       <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
         <Unplug aria-hidden="true" size={22} />
       </div>

@@ -154,10 +154,10 @@ export function AppsSurface({
   }
 
   return (
-    <div className="space-y-5">
-      {tabs}
-      {showSearch && search}
-      <div>{panel}</div>
+    <div data-visual="apps-surface" className="space-y-5">
+      <div data-visual="apps-tabs">{tabs}</div>
+      {showSearch && <div data-visual="apps-search">{search}</div>}
+      <div data-visual="apps-panel">{panel}</div>
     </div>
   );
 }

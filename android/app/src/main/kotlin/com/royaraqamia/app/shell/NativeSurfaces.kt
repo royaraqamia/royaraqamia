@@ -48,6 +48,7 @@ object NativeSurfaces {
             "/community",
             "/scan",
             "/news",
+            "/mcp/apps",
         )
 
     /**

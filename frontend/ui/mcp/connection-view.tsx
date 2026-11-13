@@ -210,7 +210,10 @@ export function McpConnectionView({
 
   if (notFound) {
     return (
-      <div className="rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
+      <div
+        data-visual="connection-not-found"
+        className="rounded-2xl border border-border/50 bg-card/60 p-6 text-center"
+      >
         <p className="text-sm font-bold text-foreground sm:text-base">
           {MCP_CONNECTION_COPY.detailNotFound}
         </p>
@@ -245,7 +248,7 @@ export function McpConnectionView({
   const staleTools = connection.tools.some((tool) => tool.stale);
 
   return (
-    <div className="space-y-6">
+    <div data-visual="connection-screen" className="space-y-6">
       {connected && (
         <p
           role="status"
@@ -256,7 +259,7 @@ export function McpConnectionView({
         </p>
       )}
 
-      <header className="space-y-3 text-center">
+      <header data-visual="connection-header" className="space-y-3 text-center">
         <SectionTitle as="h1">
           <SectionTitleHighlight>{name}</SectionTitleHighlight>
         </SectionTitle>
@@ -309,7 +312,11 @@ export function McpConnectionView({
 
       {actionError && <Notice tone="danger">{actionError}</Notice>}
 
-      <section aria-labelledby="mcp-permission-title" className="space-y-3">
+      <section
+        data-visual="connection-permission"
+        aria-labelledby="mcp-permission-title"
+        className="space-y-3"
+      >
         <div className="flex items-center justify-between gap-3">
           <h2 id="mcp-permission-title" className="text-base font-extrabold text-foreground">
             {MCP_CONNECTION_COPY.detailPermissionTitle}
@@ -344,6 +351,7 @@ export function McpConnectionView({
         </div>
 
         <div
+          data-visual="connection-levels"
           role="radiogroup"
           aria-labelledby="mcp-permission-title"
           className="grid gap-2 sm:grid-cols-3"
@@ -355,6 +363,7 @@ export function McpConnectionView({
                 key={level}
                 type="button"
                 role="radio"
+                data-visual="connection-level"
                 aria-checked={active}
                 disabled={savingPermission}
                 onClick={() => void changePermission(level)}
@@ -496,7 +505,11 @@ export function McpConnectionView({
         )}
       </section>
 
-      <section aria-labelledby="mcp-tools-title" className="space-y-3">
+      <section
+        data-visual="connection-tools"
+        aria-labelledby="mcp-tools-title"
+        className="space-y-3"
+      >
         <h2 id="mcp-tools-title" className="text-base font-extrabold text-foreground">
           {MCP_CONNECTION_COPY.detailToolsTitle}
         </h2>
@@ -510,6 +523,7 @@ export function McpConnectionView({
             {connection.tools.map((tool) => (
               <li
                 key={tool.name}
+                data-visual="connection-tool"
                 className="flex items-start justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3"
               >
                 <div className="min-w-0 flex-1 space-y-1">
@@ -544,6 +558,7 @@ export function McpConnectionView({
                 <button
                   type="button"
                   role="switch"
+                  data-visual="connection-tool-switch"
                   aria-checked={tool.enabled}
                   aria-label={
                     tool.enabled
@@ -576,6 +591,7 @@ export function McpConnectionView({
       <div className="flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
+          data-visual="connection-disconnect"
           onClick={() => setConfirmOpen(true)}
           className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
         >

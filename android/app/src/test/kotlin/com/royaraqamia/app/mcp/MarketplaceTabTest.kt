@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -134,7 +135,12 @@ class MarketplaceTabTest {
             compose.onAllNodesWithTag(MarketplaceMetrics.SERVER).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Acme").assertIsDisplayed()
-        compose.onNodeWithText(McpStoreCopy.VERIFIED_BADGE).assertIsDisplayed()
+        // The page's badge is the mark alone with the sentence as its accessible
+        // name (#1256): the label is what a screen reader says, not a second run
+        // of text beside the icon.
+        compose
+            .onNodeWithContentDescription(McpStoreCopy.VERIFIED_BADGE)
+            .assertIsDisplayed()
         compose.onNodeWithTag(MarketplaceMetrics.MARK).assertIsDisplayed()
     }
 

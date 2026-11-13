@@ -1,0 +1,52 @@
+{
+  "surface": "mcp-apps",
+  "state": "internal",
+  "route": "/mcp/apps?tab=internal",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "surface": {
+      "top": 150.5,
+      "width": 361,
+      "height": 610
+    },
+    "title": {
+      "top": 80,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "tabs": {
+      "top": 150.5,
+      "height": 44
+    },
+    "tab": {
+      "height": 40,
+      "radius": 33554400,
+      "fontSize": 14,
+      "fontWeight": 700,
+      "paddingLeft": 16
+    },
+    "search": {
+      "top": 214.5,
+      "height": 42,
+      "radius": 12,
+      "fontSize": 14,
+      "paddingLeft": 12
+    },
+    "row": {
+      "top": 276.5,
+      "height": 53
+    },
+    "row-action": {
+      "width": 80,
+      "height": 36,
+      "radius": 33554400,
+      "fontSize": 12
+    }
+  }
+}

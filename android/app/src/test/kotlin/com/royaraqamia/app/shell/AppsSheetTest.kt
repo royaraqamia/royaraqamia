@@ -136,7 +136,7 @@ class AppsSheetTest {
         sheet()
 
         val before = compose.onAllNodesWithTag("services-row").fetchSemanticsNodes().size
-        compose.onNodeWithTag("apps-search").performTextInput("القرآن")
+        compose.onNodeWithTag("apps-search-input").performTextInput("القرآن")
 
         val after = compose.onAllNodesWithTag("services-row").fetchSemanticsNodes().size
         assertTrue("the filter should leave fewer rows than the nine", after < before)
@@ -147,7 +147,7 @@ class AppsSheetTest {
     fun `a search that matches nothing says so`() {
         sheet()
 
-        compose.onNodeWithTag("apps-search").performTextInput("999")
+        compose.onNodeWithTag("apps-search-input").performTextInput("999")
         compose.onNodeWithText(ServicesSheetCopy.SEARCH_EMPTY_INTERNAL).assertIsDisplayed()
     }
 

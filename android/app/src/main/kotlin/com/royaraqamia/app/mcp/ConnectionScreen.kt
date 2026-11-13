@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -46,8 +47,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.shared.NeedsConnection
@@ -145,7 +148,7 @@ fun ConnectionScreen(
     when (current) {
         ConnectionUiState.NotFound -> {
             Card(
-                modifier = modifier.testTag(ConnectionMetrics.NOT_FOUND),
+                modifier = modifier.fillMaxWidth().testTag(ConnectionMetrics.NOT_FOUND),
                 tone = RoyColors.border,
             ) {
                 Text(
@@ -193,17 +196,19 @@ fun ConnectionScreen(
     val detail = (current as ConnectionUiState.Ready).detail
     val type = LocalRoyTypeScale.current
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                // The store's panel and this screen share one scroll body: the
-                // sheet's body is a column, and the detail fills it.
-                .verticalScroll(rememberScrollState())
-                .testTag(ConnectionMetrics.SCREEN)
-                .padding(horizontal = spacing.elementGap, vertical = spacing.elementGapSm),
-        verticalArrangement = Arrangement.spacedBy(ConnectionMetrics.sectionGap),
-    ) {
+    Box(modifier.fillMaxSize().background(RoyColors.background)) {
+        Column(
+            modifier =
+                Modifier.fillMaxWidth()
+                    // The store's panel and this screen share one scroll body: the
+                    // sheet's body is a column, and the detail fills it. The page's
+                    // horizontal inset is its px-4 wrapper, and the box the contract
+                    // measures is the content inside it (#1256).
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = spacing.elementGap)
+                    .testTag(ConnectionMetrics.SCREEN),
+            verticalArrangement = Arrangement.spacedBy(ConnectionMetrics.sectionGap),
+        ) {
         if (connected) Banner(McpConnectionCopy.CONNECTED_BANNER)
 
         Column(
@@ -213,15 +218,25 @@ fun ConnectionScreen(
         ) {
             Text(
                 text = detail.name,
-                modifier = Modifier.testTag(ConnectionMetrics.TITLE),
-                style = type.h2.copy(fontWeight = FontWeight.ExtraBold),
+                modifier =
+                    Modifier.testTag(ConnectionMetrics.TITLE)
+                        // The site's `SectionTitle` highlight is `py-[0.15em]`
+                        // around a 37.5px line: 46.5px of box (#1256).
+                        .height(46.5.dp),
+                style =
+                    type.h2.copy(
+                        fontSize = 30.sp,
+                        lineHeight = 37.5.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                    ),
                 color = RoyColors.primary,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
             )
             Text(
                 text = McpConnectionCopy.DETAIL_REACH,
-                style = type.small,
+                // The page's text-sm leading-relaxed: 14px over 22.75px.
+                style = type.small.copy(lineHeight = 22.75.sp),
                 color = RoyColors.mutedForeground,
                 textAlign = TextAlign.Center,
             )
@@ -325,13 +340,13 @@ fun ConnectionScreen(
                 )
             }
 
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth().testTag(ConnectionMetrics.LEVELS),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 MarketplacePermission.entries.forEach { level ->
                     LevelButton(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         level = level,
                         active = detail.permission == level,
                         enabled = !savingPermission,
@@ -604,6 +619,7 @@ fun ConnectionScreen(
                 )
             }
         }
+        }
     }
 
     if (confirmOpen) {
@@ -691,7 +707,7 @@ private fun ToolRow(tool: ConnectionTool, busy: Boolean, enabled: Boolean, onTog
         border = Recipes.Card.border,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Top,
         ) {
@@ -701,7 +717,13 @@ private fun ToolRow(tool: ConnectionTool, busy: Boolean, enabled: Boolean, onTog
             ) {
                 Text(
                     text = tool.name,
-                    style = type.xs.copy(fontWeight = FontWeight.Bold),
+                    // The page writes `dir="auto"`: a Latin tool name is an LTR
+                    // run even inside the RTL screen (#1256).
+                    style =
+                        type.xs.copy(
+                            fontWeight = FontWeight.Bold,
+                            textDirection = TextDirection.Ltr,
+                        ),
                     color = RoyColors.foreground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -709,7 +731,7 @@ private fun ToolRow(tool: ConnectionTool, busy: Boolean, enabled: Boolean, onTog
                 tool.description?.let { description ->
                     Text(
                         text = description,
-                        style = type.xs,
+                        style = type.xs.copy(textDirection = TextDirection.Ltr),
                         color = RoyColors.mutedForeground,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,

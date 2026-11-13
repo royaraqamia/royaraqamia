@@ -191,14 +191,14 @@
     },
     {
       "surface": "mcp-apps",
-      "native": null,
-      "reason": "The marketplace is the page until phase 6 ports it (#1228, ADR-0155); the app opens `/mcp/apps` in the document until the visual gate passes."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/mcp/McpAppsScreen.kt",
+      "enabled": true
     },
     {
       "surface": "mcp-app-detail",
       "enabled": false,
       "native": "android/app/src/main/kotlin/com/royaraqamia/app/mcp/ConnectionScreen.kt",
-      "reason": "Ported (#1256), and switched off until it is the page pixel for pixel: the shell hands `/mcp/apps/<id>` to the document in the meantime (#872, ADR-0117)."
+      "reason": "Ported (#1256) and measured against the page at 393 x 852: the permission levels and the title now match, but the section between them and the tool list is ~46px taller in the app (the tool starts at 563.6 against the page 517.4), so the gate refuses the port and the shell still hands /mcp/apps/<id> to the document (#872, ADR-0117)."
     },
     {
       "surface": "admin",

@@ -1,0 +1,51 @@
+{
+  "surface": "mcp-apps",
+  "state": "store",
+  "route": "/mcp/apps",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "tabs": {
+      "top": 150.5,
+      "height": 44
+    },
+    "connections-title": {
+      "top": 276.5,
+      "height": 24,
+      "fontSize": 16,
+      "fontWeight": 800
+    },
+    "row": {
+      "top": 498.5,
+      "width": 361,
+      "height": 93,
+      "radius": 16,
+      "paddingTop": 14,
+      "paddingLeft": 16
+    },
+    "mark": {
+      "width": 40,
+      "height": 40,
+      "radius": 12
+    },
+    "verified": {
+      "width": 16,
+      "height": 16
+    },
+    "connect": {
+      "width": 65.14,
+      "height": 34,
+      "radius": 12,
+      "fontSize": 12
+    }
+  }
+}

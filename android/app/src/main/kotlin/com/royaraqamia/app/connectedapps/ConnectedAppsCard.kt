@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
@@ -317,11 +318,11 @@ private fun Empty() {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
 
-    CardShell {
+    CardShell(modifier = Modifier.fillMaxWidth().testTag("connected-empty")) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
                 modifier =
@@ -344,18 +345,31 @@ private fun Empty() {
                     modifier = Modifier.size(Recipes.Glyph.md),
                 )
             }
-            Text(
-                text = ConnectedAppsCopy.EMPTY_TITLE,
-                style = type.body.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = ConnectedAppsCopy.EMPTY_BODY,
-                style = type.xs,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
+            // The page's text block is `space-y-1`: a 4px gap inside the block,
+            // and the 12px gap is between the circle and it (#1256).
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = ConnectedAppsCopy.EMPTY_TITLE,
+                    style =
+                        type.body.copy(
+                            fontSize = 16.sp,
+                            lineHeight = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    text = ConnectedAppsCopy.EMPTY_BODY,
+                    style = type.xs.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
@@ -573,11 +587,14 @@ private fun Failed(onRetry: () -> Unit, modifier: Modifier = Modifier) {
 
 /** The site's card surface, shared by the empty state and the alert. */
 @Composable
-private fun CardShell(content: @Composable ColumnScope.() -> Unit) {
+private fun CardShell(
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val spacing = LocalRoySpacing.current
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         shape = Recipes.Card.radius,
         colors = CardDefaults.cardColors(containerColor = Recipes.Card.container),
         border = Recipes.Card.border,

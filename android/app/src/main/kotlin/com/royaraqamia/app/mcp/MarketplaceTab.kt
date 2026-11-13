@@ -53,6 +53,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.account.AvatarLoader
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
@@ -103,6 +104,11 @@ fun MarketplaceTab(
     modifier: Modifier = Modifier,
     /** Reads a row's brand mark; null draws the monogram alone. */
     brandMark: AvatarLoader? = null,
+    /**
+     * Whether the panel scrolls itself (#1256): the sheet's body does, a page
+     * scrolls as one document and the panel is then only its content.
+     */
+    scroll: Boolean = true,
 ) {
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
@@ -207,13 +213,15 @@ fun MarketplaceTab(
         modifier =
             modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .then(
+                    if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier
+                )
                 .testTag(MarketplaceMetrics.PANEL)
                 .padding(
-                    start = MarketplaceMetrics.bodyPaddingHorizontal,
-                    end = MarketplaceMetrics.bodyPaddingHorizontal,
-                    top = MarketplaceMetrics.bodyPaddingTop,
-                    bottom = MarketplaceMetrics.bodyPaddingBottom,
+                    start = if (scroll) MarketplaceMetrics.bodyPaddingHorizontal else 0.dp,
+                    end = if (scroll) MarketplaceMetrics.bodyPaddingHorizontal else 0.dp,
+                    top = if (scroll) MarketplaceMetrics.bodyPaddingTop else 0.dp,
+                    bottom = if (scroll) MarketplaceMetrics.bodyPaddingBottom else 0.dp,
                 ),
         verticalArrangement = Arrangement.spacedBy(MarketplaceMetrics.sectionGap),
     ) {
@@ -225,7 +233,7 @@ fun MarketplaceTab(
             Text(
                 text = McpStoreCopy.CONNECTIONS_TITLE,
                 modifier = Modifier.fillMaxWidth().testTag(MarketplaceMetrics.CONNECTIONS_TITLE),
-                style = type.h3.copy(fontWeight = FontWeight.ExtraBold),
+                style = type.small.copy(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.ExtraBold),
                 color = RoyColors.foreground,
                 maxLines = 1,
             )
@@ -507,7 +515,7 @@ private fun CatalogueRow(
         border = Recipes.Card.border,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 15.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Top,
         ) {
@@ -522,33 +530,20 @@ private fun CatalogueRow(
                 ) {
                     Text(
                         text = server.name,
-                        style = type.small.copy(fontWeight = FontWeight.Bold),
+                        style = type.small.copy(fontWeight = FontWeight.Bold, lineHeight = 20.sp),
                         color = RoyColors.foreground,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     if (server.verified) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
+                        Icon(
+                            imageVector = LucideVectors.BadgeCheck,
+                            contentDescription = McpStoreCopy.VERIFIED_BADGE,
+                            tint = RoyColors.primary,
                             modifier =
-                                Modifier.semantics {
-                                    contentDescription = McpStoreCopy.VERIFIED_BADGE
-                                },
-                        ) {
-                            Icon(
-                                imageVector = LucideVectors.BadgeCheck,
-                                contentDescription = null,
-                                tint = RoyColors.primary,
-                                modifier = Modifier.size(Recipes.Glyph.sm),
-                            )
-                            Text(
-                                text = McpStoreCopy.VERIFIED_BADGE,
-                                style = type.xs.copy(fontWeight = FontWeight.Bold),
-                                color = RoyColors.primary,
-                                maxLines = 1,
-                            )
-                        }
+                                Modifier.size(Recipes.Glyph.sm)
+                                    .testTag(MarketplaceMetrics.VERIFIED),
+                        )
                     }
                     server.nameAr?.let { arabic ->
                         Text(
@@ -563,7 +558,7 @@ private fun CatalogueRow(
                 server.description?.let { description ->
                     Text(
                         text = description,
-                        style = type.xs,
+                        style = type.xs.copy(lineHeight = 19.5.sp),
                         color = RoyColors.mutedForeground,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -1006,6 +1001,7 @@ internal object MarketplaceMetrics {
     const val CONNECTION = "marketplace-connection"
     const val SERVER = "marketplace-server"
     const val MARK = "marketplace-mark"
+    const val VERIFIED = "marketplace-verified"
     const val CONNECT = "marketplace-connect"
     const val MANAGE = "marketplace-manage"
     const val CONSENT = "marketplace-consent"

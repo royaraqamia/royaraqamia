@@ -30,8 +30,11 @@ function tabHref(tab: AppsTab): string {
 
 export function McpMarketplaceView({ tab, connect }: McpMarketplaceViewProps) {
   return (
-    <div className="cv-auto mx-auto max-w-3xl px-4">
-      <header className="mb-6 flex flex-col items-center text-center sm:mb-8">
+    <div data-visual="apps-page" className="cv-auto mx-auto max-w-3xl px-4">
+      <header
+        data-visual="apps-page-title"
+        className="mb-6 flex flex-col items-center text-center sm:mb-8"
+      >
         <SectionTitle as="h1">
           <SectionTitleHighlight>{SERVICES_SHEET_COPY.title}</SectionTitleHighlight>
         </SectionTitle>

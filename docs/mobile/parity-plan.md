@@ -29,7 +29,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [ ] **mcp-guide** `/mcp/guide` — todo
 - [ ] **mcp-connect** `/mcp/connect` — todo
-- [ ] **mcp-apps** `/mcp/apps` — todo · #1256
+- [x] **mcp-apps** `/mcp/apps` — native · #1256
 - [ ] **mcp-app-detail** `/mcp/apps/[id]` — todo · #1256
 - [ ] **athkar** `/?tab=/athkar` `/athkar` `/athkar/evening` — todo
 
@@ -93,8 +93,8 @@ A component is finished when the surface that draws it is native: 78 ported comp
 - [ ] `shell-tab-bar` on **home** · #647
 - [ ] `shell-services` on **home** · #647
 - [x] `shell-back-control` on **account-faq** · #967
-- [ ] `apps-surface` on **mcp-apps** · #1256
-- [ ] `apps-store` on **mcp-apps** · #1256
+- [x] `apps-surface` on **mcp-apps** · #1256
+- [x] `apps-store` on **mcp-apps** · #1256
 - [ ] `mcp-connection` on **mcp-app-detail** · #1256
 - [ ] `home-strip` on **home** · #1194
 - [ ] `home-empty` on **home** · #1194
@@ -166,4 +166,4 @@ A component is finished when the surface that draws it is native: 78 ported comp
 
 ## Where this stands
 
-18 native · 16 to do · 5 blocked of 39 surfaces.
+19 native · 15 to do · 5 blocked of 39 surfaces.

@@ -184,6 +184,130 @@ export async function seedVisualNews(): Promise<void> {
   }
 }
 
+/**
+ * The marketplace fixture (#1256).
+ *
+ * The store draws the curated catalogue, which is the daily sync's data rather
+ * than the gate's, and the detail screen draws a connection. A recording that
+ * depends on whatever the sync published today is not evidence (ADR-0119), so a
+ * fixed row is written through the service role and a fixed connection is
+ * written on top of it. The catalogue admission rule is the API's, not this
+ * file's: the row is `active`, `verified_at` is set and `connectable` is true,
+ * which are the three columns `listCatalogServers` filters on.
+ *
+ * The gate account's own connections are removed first so the store's
+ * "connected" panel and the detail screen cannot pick up a grant a previous
+ * session left behind. That account is the gate's own (#920), never the shared
+ * offline one.
+ */
+export const VISUAL_MCP = {
+  registryName: 'e2e-visualgate.example/mcp',
+  /** The store's own search term: it matches the fixed row and nothing else. */
+  term: 'e2e-visualgate',
+  title: 'Visualgate',
+  description: 'A fixed row the visual gate seeds for one recording.',
+  connectionId: '00000000-0000-4000-8000-00000000e2e1',
+  connectionName: 'Visualgate',
+  toolName: 'visualgate_search',
+  toolDescription: 'Searches the fixed row.',
+} as const;
+
+/** The fixture row's address: its registry key's host, as the sync stores one. */
+const VISUAL_MCP_REMOTE = `https://${VISUAL_MCP.registryName.split('/')[0]}/mcp`;
+const VISUAL_MCP_AT = '2026-01-01T00:00:00.000Z';
+
+/** Removes the fixture row and every connection the gate account owns. */
+export async function clearVisualMcp(context: BrowserContext, baseURL: string): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  const client = serviceClient();
+
+  // The connection first: it references the catalogue row with `on delete
+  // restrict`, and its tools and credentials cascade from it.
+  const connections = await client.from('mcp_connections').delete().eq('user_id', userId);
+  if (connections.error) {
+    throw new Error(
+      `could not remove the visual gate MCP connections: ${connections.error.message}`
+    );
+  }
+
+  const catalog = await client
+    .from('mcp_catalog_servers')
+    .delete()
+    .eq('registry_name', VISUAL_MCP.registryName);
+  if (catalog.error) {
+    throw new Error(`could not remove the visual gate MCP row: ${catalog.error.message}`);
+  }
+}
+
+/**
+ * Writes the fixed catalogue row, and — when the state draws one — the fixed
+ * connection and its one tool.
+ *
+ * The row has no icon on purpose: a third-party mark would make the recording
+ * depend on that site answering, and the page's monogram is the fallback both
+ * clients must draw anyway.
+ */
+export async function seedVisualMcp(
+  context: BrowserContext,
+  baseURL: string,
+  { connection = false }: { connection?: boolean } = {}
+): Promise<string | null> {
+  await clearVisualMcp(context, baseURL);
+  const userId = await sessionUserId(context, baseURL);
+  const client = serviceClient();
+
+  const catalog = await client.from('mcp_catalog_servers').insert({
+    registry_name: VISUAL_MCP.registryName,
+    title: VISUAL_MCP.title,
+    description: VISUAL_MCP.description,
+    remote_url: VISUAL_MCP_REMOTE,
+    status: 'active',
+    auth_mode: 'oauth',
+    verified_at: VISUAL_MCP_AT,
+    connectable: true,
+    // A verdict without a time is refused by the table's own check: the row's
+    // connectable answer is the probe's, so the probe's stamp goes with it.
+    probed_at: VISUAL_MCP_AT,
+    featured_rank: 1,
+  });
+  if (catalog.error) {
+    throw new Error(`could not seed the visual gate MCP row: ${catalog.error.message}`);
+  }
+
+  if (!connection) return null;
+
+  const row = await client.from('mcp_connections').insert({
+    id: VISUAL_MCP.connectionId,
+    user_id: userId,
+    registry_name: VISUAL_MCP.registryName,
+    server_url: VISUAL_MCP_REMOTE,
+    display_name: VISUAL_MCP.connectionName,
+    enabled: true,
+    permission_level: 'reads',
+    status: 'active',
+    tool_count: 1,
+    connected_at: VISUAL_MCP_AT,
+    last_synced_at: VISUAL_MCP_AT,
+  });
+  if (row.error) {
+    throw new Error(`could not seed the visual gate MCP connection: ${row.error.message}`);
+  }
+
+  const tool = await client.from('mcp_connection_tools').insert({
+    connection_id: VISUAL_MCP.connectionId,
+    tool_name: VISUAL_MCP.toolName,
+    description: VISUAL_MCP.toolDescription,
+    read_only: true,
+    enabled: true,
+    last_seen_at: VISUAL_MCP_AT,
+  });
+  if (tool.error) {
+    throw new Error(`could not seed the visual gate MCP tool: ${tool.error.message}`);
+  }
+
+  return VISUAL_MCP.connectionId;
+}
+
 function serviceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

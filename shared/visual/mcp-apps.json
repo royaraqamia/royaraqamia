@@ -1,0 +1,215 @@
+{
+  "surface": "mcp-apps",
+  "route": "/mcp/apps",
+  "notes": "The apps surface at its own address (#1256, ADR-0159), drawn by the page host (`marketplace-view.tsx` and `apps-surface.tsx` with `host=\"page\"`). `internal` is our own list: the account's two fixture apps give the add/remove pills one row of each, and the page's tab is a URL (`?tab=internal`). `store` is the marketplace: it is one bounded query (ADR-0162), and the recording is the fixed catalogue row found through the page's own search, because a recording of whatever the daily sync published is not evidence (ADR-0119). `inbound` is the clients connected to our MCP server with none: the gate account's grants are revoked through the member's own endpoint, so the empty card is the state. `origin` is the tab row on the two tab states and the connections heading on the store, because the page's frame and the app's are different heights and the design is the gaps between these boxes. `capture` is the region both clients draw identically - the surface, the catalogue row, the empty card - so the page's own margins cannot colour the raster. Title widths are left out: a width is the run of the words, not a decision.",
+  "states": [
+    {
+      "name": "internal",
+      "route": "/mcp/apps?tab=internal",
+      "origin": "tabs",
+      "capture": "surface",
+      "elements": [
+        {
+          "name": "surface",
+          "web": {
+            "selector": "[data-visual='apps-surface']"
+          },
+          "app": {
+            "tag": "apps-surface"
+          },
+          "properties": ["top", "width", "height"]
+        },
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='apps-page-title'] h1"
+          },
+          "app": {
+            "tag": "apps-page-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "tabs",
+          "web": {
+            "selector": "[data-visual='apps-tabs']"
+          },
+          "app": {
+            "tag": "apps-tabs"
+          },
+          "properties": ["top", "height"]
+        },
+        {
+          "name": "tab",
+          "web": {
+            "selector": "[data-visual='apps-tabs'] [aria-current='page']"
+          },
+          "app": {
+            "tag": "apps-tab"
+          },
+          "properties": ["height", "radius", "fontSize", "fontWeight", "paddingLeft"]
+        },
+        {
+          "name": "search",
+          "web": {
+            "selector": "[data-visual='apps-search'] input"
+          },
+          "app": {
+            "tag": "apps-search"
+          },
+          "properties": ["top", "height", "radius", "fontSize", "paddingLeft"]
+        },
+        {
+          "name": "row",
+          "web": {
+            "selector": "[data-visual='services-row']"
+          },
+          "app": {
+            "tag": "services-row"
+          },
+          "properties": ["top", "height"]
+        },
+        {
+          "name": "row-action",
+          "web": {
+            "selector": "[data-visual='services-row-action']"
+          },
+          "app": {
+            "tag": "services-row-action"
+          },
+          "properties": ["width", "height", "radius", "fontSize"]
+        }
+      ]
+    },
+    {
+      "name": "store",
+      "route": "/mcp/apps",
+      "origin": "connections-title",
+      "capture": "row",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='apps-page-title'] h1"
+          },
+          "app": {
+            "tag": "apps-page-title"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "tabs",
+          "web": {
+            "selector": "[data-visual='apps-tabs']"
+          },
+          "app": {
+            "tag": "apps-tabs"
+          },
+          "properties": ["top", "height"]
+        },
+        {
+          "name": "connections-title",
+          "web": {
+            "selector": "[data-visual='store-connections-title']"
+          },
+          "app": {
+            "tag": "marketplace-connections-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "row",
+          "web": {
+            "selector": "[data-visual='store-row']"
+          },
+          "app": {
+            "tag": "marketplace-server"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        },
+        {
+          "name": "mark",
+          "web": {
+            "selector": "[data-visual='store-row'] [data-visual='store-mark']"
+          },
+          "app": {
+            "tag": "marketplace-mark"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "verified",
+          "web": {
+            "selector": "[data-visual='store-verified']"
+          },
+          "app": {
+            "tag": "marketplace-verified"
+          },
+          "properties": ["width", "height"]
+        },
+        {
+          "name": "connect",
+          "web": {
+            "selector": "[data-visual='store-connect']"
+          },
+          "app": {
+            "tag": "marketplace-connect"
+          },
+          "properties": ["width", "height", "radius", "fontSize"]
+        }
+      ]
+    },
+    {
+      "name": "inbound",
+      "route": "/mcp/apps?tab=inbound",
+      "origin": "tabs",
+      "capture": "empty",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='apps-page-title'] h1"
+          },
+          "app": {
+            "tag": "apps-page-title"
+          },
+          "properties": ["height", "fontSize", "fontWeight", "lineHeight"]
+        },
+        {
+          "name": "tabs",
+          "web": {
+            "selector": "[data-visual='apps-tabs']"
+          },
+          "app": {
+            "tag": "apps-tabs"
+          },
+          "properties": ["top", "height"]
+        },
+        {
+          "name": "search",
+          "web": {
+            "selector": "[data-visual='apps-search'] input"
+          },
+          "app": {
+            "tag": "apps-search"
+          },
+          "properties": ["top", "height", "radius", "fontSize"]
+        },
+        {
+          "name": "empty",
+          "web": {
+            "selector": "[data-visual='inbound-empty']"
+          },
+          "app": {
+            "tag": "connected-empty"
+          },
+          "properties": ["top", "width", "height", "radius", "paddingTop", "paddingLeft"]
+        }
+      ]
+    }
+  ],
+  "motion": {
+    "notes": "The chips fade their border and colour on hover and the active one is the page's ink, with no travel; the search field draws a violet focus ring; the store's rows dim to 60% while a search runs; the panels' loading state is a pulse skeleton. The same means the same colour transitions and focus ring; reduced motion drops the pulse and keeps the settled state.",
+    "entries": []
+  }
+}

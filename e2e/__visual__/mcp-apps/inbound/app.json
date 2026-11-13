@@ -1,0 +1,30 @@
+{
+  "surface": "mcp-apps",
+  "state": "inbound",
+  "elements": {
+    "title": {
+      "height": 46.545456,
+      "fontSize": 30.0,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "tabs": {
+      "top": 94.545456,
+      "height": 44.0
+    },
+    "search": {
+      "top": 158.54546,
+      "height": 42.181824,
+      "radius": 12.0,
+      "fontSize": 14.0
+    },
+    "empty": {
+      "top": 220.72728,
+      "width": 360.72726,
+      "height": 178.18181,
+      "radius": 16,
+      "paddingTop": 24,
+      "paddingLeft": 24
+    }
+  }
+}

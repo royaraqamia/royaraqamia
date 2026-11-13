@@ -205,7 +205,7 @@ function ConnectedAppsBody({ query }: { query: string }) {
   const hasMatches = visible.length > 0;
 
   return (
-    <div className="space-y-4">
+    <div data-visual="inbound-panel" className="space-y-4">
       {actionError && (
         <p
           role="alert"
@@ -279,7 +279,10 @@ function ConnectedAppsBody({ query }: { query: string }) {
           </p>
         )
       ) : (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
+        <div
+          data-visual="inbound-empty"
+          className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-6 text-center"
+        >
           <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
             <Plug aria-hidden="true" size={24} />
           </div>

@@ -1,5 +1,7 @@
 package com.royaraqamia.app.mcp
 
+import com.royaraqamia.app.shell.AppsSheetTab
+
 /**
  * The marketplace's addresses (#1256).
  *
@@ -13,6 +15,29 @@ object McpRoutes {
     const val APPS = "/mcp/apps"
 
     private const val PREFIX = "$APPS/"
+
+    /**
+     * The tab `/mcp/apps` names, or null when the route is not the apps page.
+     *
+     * The page's tab is a URL (`frontend/ui/mcp/marketplace-view.tsx`): the store
+     * is the bare address, and `?tab=internal` / `?tab=inbound` name the other
+     * two. An unknown value is the store, the same default `appsTab` answers.
+     */
+    fun appsTabOf(route: String): AppsSheetTab? {
+        val clean = route.substringBefore('#')
+        if (clean.substringBefore('?').trimEnd('/') != APPS) return null
+        val query = clean.substringAfter('?', "")
+        val tab =
+            query
+                .split('&')
+                .firstOrNull { it.startsWith("tab=") }
+                ?.removePrefix("tab=")
+        return when (tab) {
+            "internal" -> AppsSheetTab.Internal
+            "inbound" -> AppsSheetTab.Inbound
+            else -> AppsSheetTab.External
+        }
+    }
 
     /** The connection a detail route names, or null. */
     fun connectionOf(route: String): String? {

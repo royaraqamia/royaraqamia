@@ -7,17 +7,20 @@ import QRCode from 'qrcode';
 import {
   clearVisualCommunityPosts,
   clearVisualLink,
+  clearVisualMcp,
   clearVisualNews,
   clearVisualProfile,
   COMMUNITY_SEED_PREFIX,
   protectVisualLink,
   seedVisualLink,
+  seedVisualMcp,
   seedVisualNews,
   seedVisualProfile,
   seedHomeServices,
   signInAsVisualAccount,
   VISUAL_HOME_SERVICES,
   VISUAL_ACCOUNT_MISSING,
+  VISUAL_MCP,
   VISUAL_PROFILE,
   visualCredentials,
 } from './visual-fixture';
@@ -692,6 +695,71 @@ const PREPARE: Record<
     await hideDevIndicator(page);
     await page.waitForTimeout(400);
   },
+  // The apps page on our own list (#1256). The account's homepage apps are the
+  // fixture's two, so the add/remove pills are the same every run; the page's
+  // first tab is the store, so the state has to name the internal one.
+  'mcp-apps/internal': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedHomeServices(page.context(), baseURL, [...VISUAL_HOME_SERVICES]);
+    await seedVisualMcp(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="services-row"]').first().waitFor({ timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
+    await hideDevIndicator(page);
+    await page.waitForTimeout(400);
+  },
+  // The store with one row: the fixed catalogue row, found through the page's own
+  // search so the recording cannot pick up whatever the daily sync published.
+  'mcp-apps/store': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualMcp(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="apps-search"] input').fill(VISUAL_MCP.term);
+    await page.locator('[data-visual="store-row"]').first().waitFor({ timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
+    await hideDevIndicator(page);
+    await page.waitForTimeout(400);
+  },
+  // The clients connected to our MCP server, with none: the gate account's grants
+  // are revoked through the member's own endpoint, so the empty card is the
+  // state rather than whatever a previous session authorized.
+  'mcp-apps/inbound': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await page.context().request.delete(`${baseURL}/api/me/mcp/connected-apps`);
+    await visit(baseURL);
+    await page.locator('[data-visual="inbound-empty"]').waitFor({ timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
+    await hideDevIndicator(page);
+    await page.waitForTimeout(400);
+  },
+  // The post-connect screen's steady state (#1256): the fixed connection, its
+  // one read-only tool, and the permission the row holds.
+  'mcp-app-detail/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualMcp(page.context(), baseURL, { connection: true });
+    await visit(baseURL);
+    await page.locator('[data-visual="connection-tool"]').first().waitFor({ timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
+    await hideDevIndicator(page);
+    await page.waitForTimeout(400);
+  },
+  // The screen an id the member does not own lands on: the API answers 404 and
+  // the page draws its one sentence. No fixture is seeded, and the connections
+  // are cleared so the route cannot resolve to a row by accident.
+  'mcp-app-detail/not-found': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await clearVisualMcp(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="connection-not-found"]').waitFor({ timeout: 30_000 });
+    await page.evaluate(() => document.fonts.ready);
+    await hideDevIndicator(page);
+    await page.waitForTimeout(400);
+  },
 };
 
 /** What a state removes after its recording, so a seed is never left behind. */
@@ -722,6 +790,18 @@ const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
   },
   'news/at-rest': async () => {
     await clearVisualNews();
+  },
+  'mcp-apps/internal': async (page) => {
+    await clearVisualMcp(page.context(), projectBaseURL());
+  },
+  'mcp-apps/store': async (page) => {
+    await clearVisualMcp(page.context(), projectBaseURL());
+  },
+  'mcp-app-detail/at-rest': async (page) => {
+    await clearVisualMcp(page.context(), projectBaseURL());
+  },
+  'mcp-app-detail/not-found': async (page) => {
+    await clearVisualMcp(page.context(), projectBaseURL());
   },
 };
 

@@ -44,6 +44,11 @@ fun InboundTab(
     onSignIn: () -> Unit,
     onConnectNew: () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Whether the panel scrolls itself (#1256): the sheet's body does, a page
+     * scrolls as one document and the panel is then only its content.
+     */
+    scroll: Boolean = true,
 ) {
     val spacing = LocalRoySpacing.current
     val scope = rememberCoroutineScope()
@@ -86,13 +91,15 @@ fun InboundTab(
         modifier =
             modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .then(
+                    if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier
+                )
                 .testTag(InboundMetrics.PANEL)
                 .padding(
-                    start = spacing.elementGap,
-                    end = spacing.elementGap,
-                    top = spacing.elementGapSm,
-                    bottom = spacing.elementGap,
+                    start = if (scroll) spacing.elementGap else 0.dp,
+                    end = if (scroll) spacing.elementGap else 0.dp,
+                    top = if (scroll) spacing.elementGapSm else 0.dp,
+                    bottom = if (scroll) spacing.elementGap else 0.dp,
                 ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {

@@ -1,0 +1,46 @@
+{
+  "surface": "mcp-apps",
+  "state": "internal",
+  "elements": {
+    "surface": {
+      "top": 94.545456,
+      "width": 360.72726,
+      "height": 610.90906
+    },
+    "title": {
+      "top": 24.0,
+      "height": 46.545456,
+      "fontSize": 30.0,
+      "fontWeight": 800,
+      "lineHeight": 37.5
+    },
+    "tabs": {
+      "top": 94.545456,
+      "height": 44.0
+    },
+    "tab": {
+      "height": 40.0,
+      "radius": 33554400,
+      "fontSize": 14.0,
+      "fontWeight": 700,
+      "paddingLeft": 16.0
+    },
+    "search": {
+      "top": 158.54546,
+      "height": 42.181824,
+      "radius": 12.0,
+      "fontSize": 14.0,
+      "paddingLeft": 12.0
+    },
+    "row": {
+      "top": 220.72728,
+      "height": 53.090897
+    },
+    "row-action": {
+      "width": 80.0,
+      "height": 36.000015,
+      "radius": 33554400,
+      "fontSize": 12.0
+    }
+  }
+}
