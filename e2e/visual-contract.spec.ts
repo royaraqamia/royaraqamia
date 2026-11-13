@@ -9,12 +9,14 @@ import {
   clearVisualCommunityPosts,
   clearVisualLink,
   clearVisualNews,
+  clearVisualPost,
   clearVisualProfile,
   COMMUNITY_SEED_PREFIX,
   protectVisualLink,
   seedVisualBlockedMembers,
   seedVisualLink,
   seedVisualNews,
+  seedVisualPost,
   seedVisualProfile,
   seedHomeServices,
   signInAsVisualAccount,
@@ -481,6 +483,18 @@ const PREPARE: Record<
     await visit(baseURL);
     await page.locator('[data-visual="community-load-more"]').waitFor({ timeout: 20_000 });
   },
+  // One published post, written through the page's own create route so its
+  // author and lifecycle are the product's (#1351). The tag is the fixture's and
+  // is attached through the service role, because the page has no tag route. The
+  // body is what makes the recording that state: the contract measures its
+  // column and the raster is where a Markdown renderer that lost a node shows.
+  'community-post/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualPost(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="community-post-body"]').waitFor({ timeout: 20_000 });
+  },
   // The dashboard with the fixture's two rows (#958). The page paints from its
   // Local Store and pulls on open, so the rows are written through the page's own
   // routes first and the row is what makes the recording that state.
@@ -743,6 +757,9 @@ const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
   },
   'community/at-rest': async (page) => {
     await clearVisualCommunityPosts(page.context(), projectBaseURL());
+  },
+  'community-post/at-rest': async (page) => {
+    await clearVisualPost(page.context(), projectBaseURL());
   },
   'news/at-rest': async () => {
     await clearVisualNews();

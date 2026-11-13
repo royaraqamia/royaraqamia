@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +18,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -29,14 +34,18 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
+import com.royaraqamia.app.theme.RoyTypeScale
 
 /**
  * The subset of Markdown the community post page renders (#922).
@@ -359,21 +368,52 @@ fun MarkdownBody(blocks: List<MarkdownBlock>, modifier: Modifier = Modifier) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
 
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.elementGap)) {
-        blocks.forEach { block ->
+    // The page's prose rhythm at the phone width (#1351): the heading's `mt-12`,
+    // `pb-3` and border, the paragraph's 16/26 line box, and the list's 18/32
+    // rows with their 12px leading. The margins collapse the way the page's do,
+    // so the body's own box is the same height on both clients and the raster
+    // compares the nodes rather than the spacing.
+    Column(modifier = modifier.fillMaxWidth()) {
+        var previousAfter: Dp? = null
+        blocks.forEachIndexed { index, block ->
+            val before =
+                if (index == 0) firstMarginBefore(block)
+                else maxOf(previousAfter ?: 0.dp, marginBefore(block))
+            if (before > 0.dp) Spacer(Modifier.height(before))
+
             when (block) {
-                is MarkdownBlock.Heading ->
+                is MarkdownBlock.Heading -> {
+                    // The page's `text-2xl` line box is 32px; Compose reports the
+                    // font's natural 36.36 for a one-line 24px heading, so a
+                    // single-line h2 pins the page's height. A heading that wraps
+                    // keeps its natural height rather than being clipped.
+                    var lines by remember(block.text, block.level) { mutableStateOf(1) }
+                    val pinHeight = block.level <= 2 && lines == 1
                     Text(
                         text = CommunityMarkdown.inline(block.text),
-                        style = headingStyle(block.level, type.h2, type.h3, type.h4),
+                        style = headingStyle(block.level, type),
                         color = RoyColors.foreground,
-                        modifier = Modifier.padding(top = if (block.level <= 2) spacing.elementGapSm else 0.dp),
+                        onTextLayout = { lines = it.lineCount },
+                        modifier = if (pinHeight) Modifier.height(32.dp) else Modifier,
                     )
+                    if (block.level <= 2) {
+                        Spacer(Modifier.height(12.dp))
+                        HorizontalDivider(
+                            color = RoyColors.border.copy(alpha = 0.4f),
+                            thickness = 1.dp,
+                        )
+                    }
+                }
 
                 is MarkdownBlock.Paragraph ->
                     Text(
                         text = CommunityMarkdown.inline(block.text),
-                        style = type.body.copy(lineHeight = type.body.fontSize * 1.7f),
+                        style =
+                            type.body.copy(
+                                fontSize = 16.sp,
+                                lineHeight = 26.sp,
+                                lineHeightStyle = BODY_LINE_HEIGHT,
+                            ),
                         color = RoyColors.foreground.copy(alpha = 0.9f),
                     )
 
@@ -431,12 +471,12 @@ fun MarkdownBody(blocks: List<MarkdownBlock>, modifier: Modifier = Modifier) {
                     }
 
                 is MarkdownBlock.Bullets ->
-                    Column(verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         block.items.forEach { item -> ListRow(marker = "•", text = item) }
                     }
 
                 is MarkdownBlock.Numbered ->
-                    Column(verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         block.items.forEachIndexed { position, item ->
                             ListRow(marker = "${position + 1}.", text = item)
                         }
@@ -448,39 +488,91 @@ fun MarkdownBody(blocks: List<MarkdownBlock>, modifier: Modifier = Modifier) {
                         modifier = Modifier.padding(vertical = spacing.elementGapSm),
                     )
             }
+
+            previousAfter = marginAfter(block)
         }
+
+        previousAfter?.let { if (it > 0.dp) Spacer(Modifier.height(it)) }
     }
 }
 
+/** The page's list item: an 18/32 row with the marker in the flow. */
 @Composable
 private fun ListRow(marker: String, text: String) {
-    val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
     ) {
-        Text(text = marker, style = type.body, color = RoyColors.mutedForeground)
+        Text(
+            text = marker,
+            style = listStyle(),
+            color = RoyColors.mutedForeground,
+        )
         Text(
             text = CommunityMarkdown.inline(text),
-            style = type.body,
+            style = listStyle(),
             color = RoyColors.foreground.copy(alpha = 0.9f),
             modifier = Modifier.weight(1f),
         )
     }
 }
 
-private fun headingStyle(
-    level: Int,
-    h2: TextStyle,
-    h3: TextStyle,
-    h4: TextStyle,
-): TextStyle =
-    when (level) {
-        1 -> h2.copy(fontWeight = FontWeight.Bold)
-        2 -> h2.copy(fontWeight = FontWeight.Bold)
-        3 -> h3.copy(fontWeight = FontWeight.Bold)
-        else -> h4.copy(fontWeight = FontWeight.Bold)
+@Composable
+private fun listStyle(): TextStyle =
+    LocalRoyTypeScale.current.body.copy(
+        fontSize = 18.sp,
+        lineHeight = 32.sp,
+        lineHeightStyle = BODY_LINE_HEIGHT,
+    )
+
+private fun headingStyle(level: Int, type: RoyTypeScale): TextStyle =
+    when {
+        level <= 2 ->
+            type.h2.copy(
+                fontSize = 24.sp,
+                lineHeight = 32.sp,
+                lineHeightStyle = BODY_LINE_HEIGHT,
+                fontWeight = FontWeight.Bold,
+            )
+        level == 3 ->
+            type.h3.copy(
+                fontSize = 20.sp,
+                lineHeight = 28.sp,
+                lineHeightStyle = BODY_LINE_HEIGHT,
+                fontWeight = FontWeight.Bold,
+            )
+        else ->
+            type.h4.copy(
+                fontSize = 18.sp,
+                lineHeight = 26.sp,
+                lineHeightStyle = BODY_LINE_HEIGHT,
+                fontWeight = FontWeight.Bold,
+            )
     }
 
+private val BODY_LINE_HEIGHT =
+    LineHeightStyle(
+        alignment = LineHeightStyle.Alignment.Center,
+        trim = LineHeightStyle.Trim.None,
+    )
+
+
+/** The prose margin above a block when it opens the body. */
+private fun firstMarginBefore(block: MarkdownBlock): Dp =
+    if (block is MarkdownBlock.Heading && block.level <= 2) 48.dp else 0.dp
+
+/** The prose margin above a block, its CSS `margin-top`. */
+private fun marginBefore(block: MarkdownBlock): Dp =
+    when (block) {
+        is MarkdownBlock.Heading -> if (block.level <= 2) 48.dp else 24.dp
+        else -> 24.dp
+    }
+
+/** The prose margin below a block, its CSS `margin-bottom` (and the list's leading). */
+private fun marginAfter(block: MarkdownBlock): Dp =
+    when (block) {
+        is MarkdownBlock.Bullets, is MarkdownBlock.Numbered -> 12.dp
+        else -> 24.dp
+    }

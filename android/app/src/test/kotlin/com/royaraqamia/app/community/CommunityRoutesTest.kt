@@ -54,11 +54,13 @@ class CommunityRoutesTest {
     }
 
     @Test
-    fun `the feed is native, and a post and a profile are public`() {
-        // #901 + ADR-0118: the feed's port passed the gate, so the shell draws it.
-        // A post is still the document, and a profile is public but not native.
+    fun `the feed, a post and a profile are native and public`() {
+        // #901 + #1351 + ADR-0118: each port passed the gate, so the shell draws
+        // it. A post and a profile stay public as well: a guest who taps a
+        // publisher or a card must not be told to sign in.
         assertTrue(NativeSurfaces.isNative("/community"))
-        assertFalse(NativeSurfaces.isNative("/community/first-post"))
+        assertTrue(NativeSurfaces.isNative("/community/first-post"))
+        assertTrue(NativeSurfaces.isNative("/u/ahmad"))
 
         assertTrue(NativeSurfaces.isPublic("/community"))
         assertTrue(NativeSurfaces.isPublic("/community/first-post"))

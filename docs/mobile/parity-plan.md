@@ -22,7 +22,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [-] **marketing** `/pricing` `/privacy` `/security` `/terms` `/app-info` — document, by design · Five static pages (`/pricing`, `/privacy`, `/security`, `/terms`, `/app-info`): words the site owns and changes without an APK. The document is the page, so a policy edit costs a deploy and no release.
 - [ ] **downloader** `/downloader` — blocked · blocked by hidden from the UI; the page stays reachable by direct URL but is not a port target
 - [x] **community** `/community` `/community/explore` — native
-- [ ] **community-post** `/community/[slug]` — todo · #1351
+- [x] **community-post** `/community/[slug]` — native · #1351
 - [x] **profile** `/u/[username]` `/u/[username]/followers` `/u/[username]/following` — native
 - [x] **news** `/?tab=/news` `/news` — native
 - [x] **scan** `/?tab=/scan` `/scan` — native
@@ -187,4 +187,4 @@ A component is finished when the surface that draws it is native: 80 ported comp
 
 ## Where this stands
 
-20 native · 7 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.
+21 native · 6 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.

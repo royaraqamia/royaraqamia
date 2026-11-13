@@ -1,7 +1,7 @@
 {
   "surface": "community-post",
   "route": "/community/e2e-visual-post",
-  "notes": "One public post at rest (#922): the publisher chip, the cover, the tags and the Markdown body, which are the boxes both clients draw. The body's text is data, so the contract names its column rather than its words; the table of contents is hidden on the phone layout and is not part of this contract. The surface is still off (ADR-0117), so this names the comparison a later recording makes rather than evidence that already passes.",
+  "notes": "One public post at rest (#922, #1351): the publisher chip, the cover, the tags and the Markdown body, which are the boxes both clients draw. The body's text is data, so the contract names its column rather than its words; the table of contents is hidden on the phone layout and is not part of this contract. `origin` is the post itself, so the body's `top` is the gap from the article's own top rather than the page's header, and the app's screen is measured from the same zero. The author pill's radius is left out deliberately: the page draws it with Tailwind's `rounded-full`, which computes to a value that is not a length either client can compare, and the raster proves the round shape. The recording is the gate's own fixture - one fixed published post with one fixed tag, written through the page's own create route (ADR-0119).",
   "states": [
     {
       "name": "at-rest",
@@ -16,7 +16,7 @@
           "app": {
             "tag": "community-post"
           },
-          "properties": ["width"]
+          "properties": ["width", "top"]
         },
         {
           "name": "author",
@@ -26,7 +26,7 @@
           "app": {
             "tag": "community-post-author"
           },
-          "properties": ["width", "height", "radius"]
+          "properties": ["width", "height"]
         },
         {
           "name": "cover",

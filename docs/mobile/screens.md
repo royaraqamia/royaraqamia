@@ -32,7 +32,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-blocked` | `/account/blocked` | `BlockedMembersScreen.kt` |  |
 | `notifications` | `/notifications` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `community` | `/community`<br>`/community/explore` | `CommunityFeedScreen.kt` |  |
-| `community-post` | `/community/[slug]` | `CommunityPostScreen.kt` (off) | The post, its publisher and its Markdown body are drawn (#922), and switched off until the visual gate passes for it: the shell hands `/community/<slug>` to the document in the meantime (#872, ADR-0117). |
+| `community-post` | `/community/[slug]` | `CommunityPostScreen.kt` |  |
 | `news` | `/?tab=/news`<br>`/news` | `NewsDigestScreen.kt` |  |
 | `rates` | `/?tab=/rates`<br>`/rates` | `RatesScreen.kt` |  |
 | `verify` | `/verify` | `VerifyScreen.kt` |  |
