@@ -72,18 +72,23 @@ export class FollowsService {
 
     await this.assertUnderWriteLimit(viewerId);
 
-    await this.deps.follows.follow(viewerId, target.id);
+    const wroteEdge = await this.deps.follows.follow(viewerId, target.id);
 
-    // After the write, and never awaited as a condition: a member's feed must
-    // not fail because a push did.
-    const viewer = await this.deps.users.getById(viewerId);
-    void this.deps.notify({
-      user_id: target.id,
-      type: 'new_follower',
-      title: 'متابِع جديد',
-      body: `${viewer?.name?.trim() || `@${viewer?.username ?? ''}`} بدأ متابعتك.`,
-      metadata: { username: viewer?.username ?? null, name: viewer?.name ?? null },
-    });
+    // Only the call that wrote the row tells the member. Following someone who
+    // is already followed is the same edge in the graph, and the recipient has
+    // read «بدأ متابعتك» for it already - a second one is noise, not news.
+    if (wroteEdge) {
+      // After the write, and never awaited as a condition: a member's feed must
+      // not fail because a push did.
+      const viewer = await this.deps.users.getById(viewerId);
+      void this.deps.notify({
+        user_id: target.id,
+        type: 'new_follower',
+        title: 'متابِع جديد',
+        body: `${viewer?.name?.trim() || `@${viewer?.username ?? ''}`} بدأ متابعتك.`,
+        metadata: { username: viewer?.username ?? null, name: viewer?.name ?? null },
+      });
+    }
 
     return { state: 'following', counts: await this.countsOf(target.id) };
   }

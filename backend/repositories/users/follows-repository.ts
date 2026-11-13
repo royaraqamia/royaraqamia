@@ -20,8 +20,14 @@ import {
  * the counts on a profile and never the edges behind them.
  */
 export interface FollowsRepository {
-  /** Insert the edge; an existing one is not an error. */
-  follow(followerId: string, followeeId: string): Promise<void>;
+  /**
+   * Insert the edge; an existing one is not an error.
+   *
+   * Answers whether *this* call wrote the row. The pair is the primary key, so
+   * a repeated follow is a no-op at the database and returns no row - which is
+   * how the service tells a new edge from a retried one without reading first.
+   */
+  follow(followerId: string, followeeId: string): Promise<boolean>;
   /** Remove the edge; a missing one is not an error. */
   unfollow(followerId: string, followeeId: string): Promise<void>;
   isFollowing(followerId: string, followeeId: string): Promise<boolean>;
@@ -137,12 +143,21 @@ export function createFollowsRepository(supabase: SupabaseClient<Database>): Fol
 
   return guardRepositoryMethods<FollowsRepository>({
     async follow(followerId, followeeId) {
-      const { error } = await supabase
+      // `ignoreDuplicates` is `on conflict (pair) do nothing`: a repeated follow
+      // answers no row instead of 23505, so `data` is the answer to "did this
+      // call write the edge?". Two concurrent follows of one pair still insert
+      // once - the second waits on the first and inserts nothing - so the graph
+      // holds one edge and exactly one caller is told it is new.
+      const { data, error } = await supabase
         .from('follows')
-        .insert({ follower_id: followerId, followee_id: followeeId });
+        .upsert(
+          { follower_id: followerId, followee_id: followeeId },
+          { onConflict: 'follower_id,followee_id', ignoreDuplicates: true }
+        )
+        .select('follower_id');
 
-      // Following twice is the same edge from the member's point of view.
-      if (error && error.code !== UNIQUE_VIOLATION) throw error;
+      if (error) throw error;
+      return (data ?? []).length === 1;
     },
 
     async unfollow(followerId, followeeId) {
@@ -215,6 +230,3 @@ export function createFollowsRepository(supabase: SupabaseClient<Database>): Fol
     blockedAmong,
   });
 }
-
-/** Postgres' duplicate-key code, the one answer a re-follow is allowed to give. */
-const UNIQUE_VIOLATION = '23505';
