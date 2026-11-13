@@ -143,57 +143,17 @@ describe('proxy', () => {
     expect(mockGetSession).not.toHaveBeenCalled();
   });
 
-  it('persists the IP-derived country in a cookie on the forms that read it', async () => {
-    mockRequest.headers = new Headers({ 'x-vercel-ip-country': 'DE' });
-    mockNextUrl.pathname = '/consultation';
-
-    const { proxy } = await import('@/proxy');
-    await proxy(mockRequest as never);
-
-    expect(cookieSetMock).toHaveBeenCalledWith(
-      'rr-country',
-      'DE',
-      expect.objectContaining({ path: '/' })
-    );
-  });
-
-  it('leaves a cacheable page without a Set-Cookie, so the edge can store it', async () => {
-    // ADR-0176: a response that sets a cookie is never cached, so the country
-    // cookie is written only where a component reads it. The home page and the
-    // rates surfaces fall back to timezone and language instead.
+  it('writes no cookie of its own, so every document stays cacheable', async () => {
+    // ADR-0176: a response that carries Set-Cookie is never stored by a shared
+    // cache. The country is a server prop now and the visitor id is minted by the
+    // counted action, so the middleware has nothing to stamp.
     mockRequest.headers = new Headers({ 'cf-ipcountry': 'SY' });
-    mockNextUrl.pathname = '/';
+    mockNextUrl.pathname = '/consultation/book';
 
     const { proxy } = await import('@/proxy');
     await proxy(mockRequest as never);
 
     expect(cookieSetMock).not.toHaveBeenCalled();
-  });
-
-  it('does not set the country cookie when no geo data is available', async () => {
-    mockNextUrl.pathname = '/consultation';
-
-    const { proxy } = await import('@/proxy');
-    await proxy(mockRequest as never);
-
-    expect(cookieSetMock).not.toHaveBeenCalledWith(
-      'rr-country',
-      expect.anything(),
-      expect.anything()
-    );
-  });
-
-  it('never mints the visitor id on a document, only a counted action does', async () => {
-    // ADR-0176: the id is stamped by the POST route that counts against it, so a
-    // navigation carries no Set-Cookie and stays cacheable.
-    const { proxy } = await import('@/proxy');
-    await proxy(mockRequest as never);
-
-    expect(cookieSetMock).not.toHaveBeenCalledWith(
-      'rar_visitor',
-      expect.anything(),
-      expect.anything()
-    );
   });
 
   it('does not refresh the session on public pages, even with a session cookie', async () => {

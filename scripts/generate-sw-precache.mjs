@@ -82,9 +82,10 @@ function isUnderPrefix(route, prefix) {
  * without saying why the page cannot be a shell.
  */
 export const DYNAMIC_BY_DESIGN = [
-  // The three lead forms call `getOptionalUser()` (and the price loaders) on the
-  // server, so they render per request. Their writes are outbox rows, so a
-  // visitor who opens one offline gets the ancestor shell and the form's own
+  // The lead forms call `getOptionalUser()` (and the price loaders) on the
+  // server, so they render per request; the booking shell joined them when it
+  // started reading the geo header (ADR-0176). Their writes are outbox rows, so
+  // a visitor who opens one offline gets the ancestor shell and the form's own
   // needs-connection state, which is the promise the matrix makes for them.
   {
     route: '/hire',
@@ -99,6 +100,11 @@ export const DYNAMIC_BY_DESIGN = [
   {
     route: '/training/apply',
     reason: 'same as `/hire`, plus `TRAINING_COURSE.isOpen`, which a frozen shell would lock in',
+  },
+  {
+    route: '/consultation/book',
+    reason:
+      'reads the platform geo header to default the phone picker (ADR-0176), so the document is per-request; its packages were already live reads',
   },
   {
     route: '/pricing/subscribe',

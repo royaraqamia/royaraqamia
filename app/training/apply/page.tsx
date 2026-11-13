@@ -8,6 +8,8 @@ import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { loadServiceDiscount } from '@/backend/loaders/service-discount';
 import { ProPrice, ServiceDiscountProvider } from '@/frontend/ui/plans/pro-price';
+import { GeoCountryProvider } from '@/frontend/ui/shared/geo-country';
+import { geoCountry } from '@/backend/transport/geo';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
 
 export default async function TrainingApplyPage() {
@@ -44,44 +46,47 @@ export default async function TrainingApplyPage() {
   }
 
   const isPro = await loadServiceDiscount(user?.id);
+  const country = await geoCountry();
 
   return (
-    <ServiceDiscountProvider initialIsPro={isPro}>
-      <TrainingApplyFlow
-        isAuthenticated={Boolean(user)}
-        summary={
-          /* Course summary — same source as the homepage card, so copy cannot drift. */
-          <section
-            aria-label="تفاصيل الدورة"
-            className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
-          >
-            <SectionTitle size="card">
-              <SectionTitleHighlight>التَّسجيل في التَّدريب</SectionTitleHighlight>
-            </SectionTitle>
-            <CollapsibleText
-              lines={2}
-              className="mt-2 text-sm text-muted-foreground leading-relaxed"
-              buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
+    <GeoCountryProvider value={country}>
+      <ServiceDiscountProvider initialIsPro={isPro}>
+        <TrainingApplyFlow
+          isAuthenticated={Boolean(user)}
+          summary={
+            /* Course summary — same source as the homepage card, so copy cannot drift. */
+            <section
+              aria-label="تفاصيل الدورة"
+              className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
             >
-              <CourseSummaryText />
-            </CollapsibleText>
+              <SectionTitle size="card">
+                <SectionTitleHighlight>التَّسجيل في التَّدريب</SectionTitleHighlight>
+              </SectionTitle>
+              <CollapsibleText
+                lines={2}
+                className="mt-2 text-sm text-muted-foreground leading-relaxed"
+                buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
+              >
+                <CourseSummaryText />
+              </CollapsibleText>
 
-            <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">
-              <span className="text-xs font-medium text-muted-foreground">رسوم الاستثمار</span>
-              <ProPrice
-                amountUsd={TRAINING_COURSE.priceUsd}
-                className="text-2xl font-black tracking-tight text-foreground"
-                originalClassName="text-sm font-medium text-muted-foreground"
-              />
-              <span className="text-xs text-muted-foreground">للدَّورة كاملة</span>
-              <span className="inline-flex items-center gap-1 self-center rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                <Wallet className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                الدَّفع بالتَّقسيط مُتاح
-              </span>
-            </div>
-          </section>
-        }
-      />
-    </ServiceDiscountProvider>
+              <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">
+                <span className="text-xs font-medium text-muted-foreground">رسوم الاستثمار</span>
+                <ProPrice
+                  amountUsd={TRAINING_COURSE.priceUsd}
+                  className="text-2xl font-black tracking-tight text-foreground"
+                  originalClassName="text-sm font-medium text-muted-foreground"
+                />
+                <span className="text-xs text-muted-foreground">للدَّورة كاملة</span>
+                <span className="inline-flex items-center gap-1 self-center rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <Wallet className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  الدَّفع بالتَّقسيط مُتاح
+                </span>
+              </div>
+            </section>
+          }
+        />
+      </ServiceDiscountProvider>
+    </GeoCountryProvider>
   );
 }
