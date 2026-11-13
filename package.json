@@ -72,7 +72,6 @@
     "perf:field": "node scripts/perf-field.mjs",
     "perf:paint": "node scripts/perf-paint.mjs",
     "perf:paint:update": "node scripts/perf-paint.mjs --update",
-    "prune:deployments": "node scripts/prune-deployments.mjs",
     "android:sync": "cap sync android",
     "android:apk": "npm run android:sync && node scripts/android.mjs apk",
     "android:release": "cross-env NODE_ENV=production npm run android:sync && node scripts/android.mjs release",

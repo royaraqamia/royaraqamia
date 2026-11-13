@@ -20,7 +20,6 @@
 | `npm run perf:baseline`                     | Shipped-weight report + budget status (needs `npm run build`; see `docs/performance.md`)                                                                                                                                                                                                           |
 | `npm run perf:check`                        | Same, but exits 1 on a budget breach (run in CI)                                                                                                                                                                                                                                                   |
 | `npm run perf:baseline:update`              | Re-record `perf/baseline.json` after an intended change                                                                                                                                                                                                                                            |
-| `npm run prune:deployments -- --dry-run`    | List the Vercel deployments a prune would delete (see `docs/vercel-usage.md`)                                                                                                                                                                                                                      |
 | `npm run android:apk`                       | Debug APK (syncs the native project first) — see `docs/mobile/android-shell.md`                                                                                                                                                                                                                    |
 | `npm run android:test`                      | The shell's JVM unit tests: the update decision and the download — no device needed (ADR-0043, ADR-0044)                                                                                                                                                                                           |
 | `npm run android:launch`                    | The app's own first frame on an attached device: cold and warm `am start -W` runs against the 400/300 ms budgets, `--device`, `--runs`, `--no-budget` — see `docs/mobile/native-app.md`                                                                                                            |
@@ -130,10 +129,17 @@ double every job. Manual override if resumed: `vercel deploy --prod`.
 dispatches `Android Release` when the batch should ship; a dispatch with no native change publishes
 nothing, and a failed run is re-runnable from the Actions page (ADR-0090 amendment).
 
-**Retained Vercel deployments:** Hobby charges Deployment Storage and Functions Storage
-across _all_ retained deployments and never prunes them, so
-`.github/workflows/prune-deployments.yml` deletes everything but the newest 25
-weekly. Budget, measurements and levers: `docs/vercel-usage.md`.
+**The edge cache is purged when a deploy lands.** Cloudflare honours the origin's `s-maxage`,
+and a prerendered page carries a year of it, so a deploy would otherwise leave the old HTML
+in place until someone purged by hand. `.github/workflows/purge-cache.yml` waits for the new
+build to answer (`sw-version.js` carries `<semver>-<7-char-sha>`) and then purges the zone
+([ADR-0177](adr/0177-the-edge-is-purged-when-a-deploy-lands.md)). It needs
+`CLOUDFLARE_API_TOKEN` (Zone → Cache Purge) as a secret and `CLOUDFLARE_ZONE_ID` as a
+variable; with the token absent the job fails loudly rather than skipping silently.
+
+**Retained deployments:** Render keeps them for rollback and does not meter deployment
+storage, so nothing prunes them — the Vercel-only `prune-deployments.yml` and its script were
+deleted with the migration. `docs/vercel-usage.md` is a historical record now.
 
 ## Release versioning
 
