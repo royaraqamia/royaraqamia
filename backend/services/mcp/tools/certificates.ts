@@ -1,7 +1,7 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpUserContext } from '../session';
-import { MCP_SERVER_NAME } from '../constants';
+import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId, requireAdmin } from './guards';
 import { createCertificatesRepository } from '@/backend/config/certificates';
@@ -15,7 +15,7 @@ import { formatDate, PAGE_SIZE_SCHEMA } from './shared';
  * (anon) client so it resolves any valid code for every caller, authenticated
  * or not. The user-scoped `ctx.supabase` cannot read certificates the caller
  * neither owns nor administers, so it is never used here. Listing your own
- * certificates stays user-scoped — recipient_user_ids is only visible to the
+ * certificates stays user-scoped â€” recipient_user_ids is only visible to the
  * owner under the app's access model.
  */
 
@@ -78,7 +78,7 @@ export async function verifyCertificateHandler(
         ? `- **Grade/Status**: ${publicCertificate.grade_or_status}`
         : null,
       '',
-      'This certificate is valid and was issued by رؤيَة رقَميَّة.',
+      'This certificate is valid and was issued by Ø±Ø¤ÙŠÙŽØ© Ø±Ù‚ÙŽÙ…ÙŠÙŽÙ‘Ø©.',
     ].filter((line): line is string => line !== null);
 
     return structuredResponse(lines.join('\n'), publicCertificate);
@@ -110,7 +110,7 @@ export async function listMineHandler(
       '',
     ];
     for (const c of items) {
-      lines.push(`- **${c.student_name}** — ${c.course_name} (\`${c.certificate_code}\`)`);
+      lines.push(`- **${c.student_name}** â€” ${c.course_name} (\`${c.certificate_code}\`)`);
     }
     return structuredResponse(lines.join('\n'), { certificates: items });
   } catch (error) {
@@ -120,10 +120,10 @@ export async function listMineHandler(
 
 export function registerCertificateTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_certificates_verify`,
+    mcpCapabilityName('certificates.verify'),
     {
       title: 'Verify Certificate',
-      description: `Verifies a certificate by its code. Works anonymously — no scope or authentication required. Returns the certificate's public details.
+      description: `Verifies a certificate by its code. Works anonymously â€” no scope or authentication required. Returns the certificate's public details.
 
 Args:
   - code (string, required): certificate code in the format COMP-YYYY-XXXXXXXX
@@ -145,7 +145,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_certificates_list_mine`,
+    mcpCapabilityName('certificates.list_mine'),
     {
       title: 'List My Certificates',
       description: `Lists the certificates issued to you. Requires the "certificates.read" scope and an authenticated session.
@@ -170,7 +170,7 @@ Examples:
 }
 
 // ============================================================
-// Admin tools (certificates.write — admin only)
+// Admin tools (certificates.write â€” admin only)
 // ============================================================
 
 const DATE_SCHEMA = z
@@ -288,7 +288,7 @@ export async function createCertificateHandler(
     return params.format === 'json'
       ? structuredResponse(jsonText(output), output)
       : structuredResponse(
-          `# Certificate Issued\n\n**${certificate.student_name}** — ${certificate.course_name}\nCode: \`${certificate.certificate_code}\` (\`${certificate.id}\`)`,
+          `# Certificate Issued\n\n**${certificate.student_name}** â€” ${certificate.course_name}\nCode: \`${certificate.certificate_code}\` (\`${certificate.id}\`)`,
           output
         );
   } catch (error) {
@@ -403,7 +403,7 @@ export async function listCertificatesHandler(
     ];
     for (const c of items) {
       lines.push(
-        `- **${c.student_name}** — ${c.course_name} (\`${c.certificate_code}\`, issued ${formatDate(c.issue_date)})`
+        `- **${c.student_name}** â€” ${c.course_name} (\`${c.certificate_code}\`, issued ${formatDate(c.issue_date)})`
       );
     }
     return structuredResponse(lines.join('\n'), { certificates: items, meta });
@@ -454,10 +454,10 @@ export async function getCertificateHandler(
 
 export function registerCertificateWriteTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_certificates_create`,
+    mcpCapabilityName('certificates.create'),
     {
       title: 'Create Certificate',
-      description: `Issues a new certificate. Admin only — requires the "certificates.write" scope and an ADMIN_EMAILS user.
+      description: `Issues a new certificate. Admin only â€” requires the "certificates.write" scope and an ADMIN_EMAILS user.
 
 Args:
   - student_name (string, required)
@@ -473,7 +473,7 @@ Args:
 Returns (JSON): { "id": string, "certificate_code": string, "student_name": string, "course_name": string, "message": string }
 
 Examples:
-  - Use when: "issue a certificate to أحمد for برمجة الويب" -> student_name="أحمد", course_name="برمجة الويب", issue_date="2026-08-19"`,
+  - Use when: "issue a certificate to Ø£Ø­Ù…Ø¯ for Ø¨Ø±Ù…Ø¬Ø© Ø§Ù„ÙˆÙŠØ¨" -> student_name="Ø£Ø­Ù…Ø¯", course_name="Ø¨Ø±Ù…Ø¬Ø© Ø§Ù„ÙˆÙŠØ¨", issue_date="2026-08-19"`,
       inputSchema: CreateCertificateInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -486,10 +486,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_certificates_update`,
+    mcpCapabilityName('certificates.update'),
     {
       title: 'Update Certificate',
-      description: `Updates an existing certificate. Admin only — requires the "certificates.write" scope and an ADMIN_EMAILS user.
+      description: `Updates an existing certificate. Admin only â€” requires the "certificates.write" scope and an ADMIN_EMAILS user.
 
 Args:
   - id (string, required)
@@ -501,7 +501,7 @@ Args:
 Returns (JSON): { "id": string, "certificate_code": string, "message": string }
 
 Examples:
-  - Use when: "update the student name of certificate c1" -> id="c1", student_name="مريم"`,
+  - Use when: "update the student name of certificate c1" -> id="c1", student_name="Ù…Ø±ÙŠÙ…"`,
       inputSchema: UpdateCertificateInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -514,10 +514,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_certificates_delete`,
+    mcpCapabilityName('certificates.delete'),
     {
       title: 'Delete Certificate',
-      description: `Deletes a certificate. Admin only — requires the "certificates.write" scope and an ADMIN_EMAILS user.
+      description: `Deletes a certificate. Admin only â€” requires the "certificates.write" scope and an ADMIN_EMAILS user.
 
 Args:
   - id (string, required)
@@ -539,10 +539,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_certificates_list`,
+    mcpCapabilityName('certificates.list'),
     {
       title: 'List Certificates',
-      description: `Lists all certificates with pagination and optional search. Admin only — requires the "certificates.write" scope and an ADMIN_EMAILS user.
+      description: `Lists all certificates with pagination and optional search. Admin only â€” requires the "certificates.write" scope and an ADMIN_EMAILS user.
 
 Args:
   - page (number, default 1)
@@ -554,7 +554,7 @@ Returns (JSON): { "certificates": PublicCertificate[], "meta": { "page": number,
 
 Examples:
   - Use when: "list certificates" -> page=1, page_size=20
-  - Use when: "search certificates for الويب" -> search="الويب"`,
+  - Use when: "search certificates for Ø§Ù„ÙˆÙŠØ¨" -> search="Ø§Ù„ÙˆÙŠØ¨"`,
       inputSchema: ListCertificatesInputSchema,
       annotations: {
         readOnlyHint: true,
@@ -567,10 +567,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_certificates_get`,
+    mcpCapabilityName('certificates.get'),
     {
       title: 'Get Certificate',
-      description: `Gets a single certificate by id with full details. Admin only — requires the "certificates.write" scope and an ADMIN_EMAILS user.
+      description: `Gets a single certificate by id with full details. Admin only â€” requires the "certificates.write" scope and an ADMIN_EMAILS user.
 
 Args:
   - id (string, required)

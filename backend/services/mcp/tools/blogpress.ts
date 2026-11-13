@@ -1,7 +1,7 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpUserContext } from '../session';
-import { MCP_SERVER_NAME } from '../constants';
+import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
 import { createPostsRepository } from '@/backend/config/blogpress';
@@ -19,7 +19,7 @@ import {
 /**
  * BlogPress + Community read tools. BlogPress is the content product (manage
  * your own posts) and Community is its public reader (published posts under
- * /community) — both share the `blogpress` contract and repository. These tools
+ * /community) â€” both share the `blogpress` contract and repository. These tools
  * operate on the caller's own posts when authenticated, and on public published
  * content when anonymous. The user-scoped client enforces
  * `posts_select_own_or_published` RLS.
@@ -96,7 +96,7 @@ export async function listPostsHandler(
       ];
       for (const p of items) {
         lines.push(
-          `- **${p.excerpt || '(untitled)'}** (${p.status}) — views: ${p.view_count}${
+          `- **${p.excerpt || '(untitled)'}** (${p.status}) â€” views: ${p.view_count}${
             p.community_visible ? ', visible' : ''
           } | \`${p.id}\``
         );
@@ -124,7 +124,7 @@ export async function listPostsHandler(
 
     const lines = ['# Published Posts', '', `Total pages: ${result.totalPages}.`, ''];
     for (const p of items) {
-      lines.push(`- **${p.excerpt || '(untitled)'}** (${p.slug}) — views: ${p.view_count}`);
+      lines.push(`- **${p.excerpt || '(untitled)'}** (${p.slug}) â€” views: ${p.view_count}`);
     }
     return structuredResponse(lines.join('\n'), { posts: items, ...meta });
   } catch (error) {
@@ -162,7 +162,7 @@ export async function getPostHandler(
           `- **Slug**: ${post.slug}`,
           `- **Views**: ${post.view_count}`,
           `- **Published**: ${formatDate(post.published_at)}`,
-          `- **Reading time**: ${post.reading_time_minutes ?? '—'} min`,
+          `- **Reading time**: ${post.reading_time_minutes ?? 'â€”'} min`,
           '',
           truncated.text,
         ].join('\n'),
@@ -190,7 +190,7 @@ export async function getPostHandler(
           `- **Slug**: ${post.slug}`,
           `- **Views**: ${post.view_count}`,
           `- **Published**: ${formatDate(post.published_at)}`,
-          `- **Reading time**: ${post.reading_time_minutes ?? '—'} min`,
+          `- **Reading time**: ${post.reading_time_minutes ?? 'â€”'} min`,
           '',
           truncated.text,
         ].join('\n'),
@@ -211,7 +211,7 @@ export async function getPostHandler(
 
 export function registerCommunityTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_community_list_posts`,
+    mcpCapabilityName('community.list_posts'),
     {
       title: 'List Community Posts',
       description: `Lists community posts. Authenticated callers get their own posts (all statuses); anonymous callers get the public published feed.
@@ -239,7 +239,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_community_get_post`,
+    mcpCapabilityName('community.get_post'),
     {
       title: 'Get Community Post',
       description: `Gets a single community post. Provide "id" to fetch one of your own posts (requires "community.read"), or "slug" to fetch a public published post (works anonymously).
@@ -432,7 +432,7 @@ export async function deletePostHandler(
 
 export function registerCommunityWriteTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_community_create_post`,
+    mcpCapabilityName('community.create_post'),
     {
       title: 'Create Community Post',
       description: `Creates a new draft community post. Requires the "community.write" scope and an authenticated session.
@@ -456,7 +456,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_community_update_post`,
+    mcpCapabilityName('community.update_post'),
     {
       title: 'Update Community Post',
       description: `Updates one of your community posts (slug, content, cover image, meta). Requires "community.write" and an authenticated session.
@@ -486,7 +486,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_community_publish_post`,
+    mcpCapabilityName('community.publish_post'),
     {
       title: 'Publish Community Post',
       description: `Publishes one of your draft/scheduled community posts. Requires "community.write" and an authenticated session. Posts by admin users are made visible on the public community.
@@ -511,7 +511,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_community_unpublish_post`,
+    mcpCapabilityName('community.unpublish_post'),
     {
       title: 'Unpublish Community Post',
       description: `Returns one of your published posts to draft. Requires "community.write" and an authenticated session.
@@ -536,7 +536,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_community_delete_post`,
+    mcpCapabilityName('community.delete_post'),
     {
       title: 'Delete Community Post',
       description: `Permanently deletes one of your community posts. Requires "community.write" and an authenticated session.

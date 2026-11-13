@@ -234,8 +234,8 @@ Ordered, each independently reviewable.
 
 1. `tools: the capability table` — phase 0, the registry type, both doors' tables, and the tests
    that fail when either drifts from what it registers. No behaviour change.
-2. `tools: one handler, two doors` — phase 0, the modules read the table and answer with a domain
-   value the adapters format.
+2. `tools: the modules register from the table` — phase 0, the name has one authority; a
+   capability written from now on answers one value for both doors.
 3. `assistant: the identity block` — phase 0, one system line and its test.
 4. `assistant: the screen is the context` — phase 1 web.
 5. `android: publish the same screen snapshot` — phase 1 native pair.

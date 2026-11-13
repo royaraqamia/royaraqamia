@@ -1,7 +1,7 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpUserContext } from '../session';
-import { MCP_SERVER_NAME } from '../constants';
+import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
 import { createAnalyticsRepository, createShortLinkRepository } from '@/backend/config/linksnap';
@@ -20,7 +20,7 @@ import {
 /**
  * LinkSnap read tools. The analytics repository already scopes events to the
  * caller via the `analytics_select` RLS policy (EXISTS a short_links row owned
- * by auth.uid()), and the short-link list is filtered by user_id — both on the
+ * by auth.uid()), and the short-link list is filtered by user_id â€” both on the
  * user-scoped client, so cross-tenant reads are impossible.
  */
 
@@ -94,8 +94,8 @@ export async function listLinksHandler(
     ];
     for (const l of items) {
       lines.push(
-        `- **${l.code}** → ${l.originalUrl}${l.isBlocked ? ' (blocked)' : ''}${
-          l.expiresAt !== '—' ? `, expires ${l.expiresAt}` : ''
+        `- **${l.code}** â†’ ${l.originalUrl}${l.isBlocked ? ' (blocked)' : ''}${
+          l.expiresAt !== 'â€”' ? `, expires ${l.expiresAt}` : ''
         }`
       );
     }
@@ -155,10 +155,11 @@ export async function getAnalyticsHandler(
       '',
       '**Device breakdown**',
       `- Devices: ${
-        summary.device.devices.map((d) => `${d.name} ${d.count} (${d.percent}%)`).join(', ') || '—'
+        summary.device.devices.map((d) => `${d.name} ${d.count} (${d.percent}%)`).join(', ') ||
+        'â€”'
       }`,
-      `- OS: ${summary.device.os.map((d) => `${d.name} ${d.count}`).join(', ') || '—'}`,
-      `- Browsers: ${summary.device.browsers.map((d) => `${d.name} ${d.count}`).join(', ') || '—'}`,
+      `- OS: ${summary.device.os.map((d) => `${d.name} ${d.count}`).join(', ') || 'â€”'}`,
+      `- Browsers: ${summary.device.browsers.map((d) => `${d.name} ${d.count}`).join(', ') || 'â€”'}`,
       '',
       '**Top referrers**',
       ...summary.topReferrers.map((r) => `- ${r.name}: ${r.count}`),
@@ -176,7 +177,7 @@ export async function getAnalyticsHandler(
 
 export function registerLinkSnapTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_linksnap_list_links`,
+    mcpCapabilityName('linksnap.list_links'),
     {
       title: 'List Short Links',
       description: `Lists your short links. Requires the "linksnap.read" scope and an authenticated session. Only links owned by the caller are returned.
@@ -202,7 +203,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_linksnap_get_analytics`,
+    mcpCapabilityName('linksnap.get_analytics'),
     {
       title: 'Get Link Analytics',
       description: `Returns click analytics for one of your short links: total clicks, daily breakdown, top referrers, and device breakdown. Requires "linksnap.read" and an authenticated session. Only links owned by the caller can be queried.
@@ -237,9 +238,9 @@ export type { ListLinksInput, GetAnalyticsInput };
 // Writes go through the service role, exactly as the HTTP path does: the
 // 20261021150000 revocation removed INSERT/UPDATE/DELETE and the
 // `upsert_short_link` EXECUTE grant from `authenticated`, so a user-scoped
-// client can no longer write. Authorization stays in the service layer —
+// client can no longer write. Authorization stays in the service layer â€”
 // `requireAnyScope`/`requireUserId` here, then the ownership check inside
-// UpdateLinkService/DeleteLinkService — so the service role is not a bypass.
+// UpdateLinkService/DeleteLinkService â€” so the service role is not a bypass.
 // Reads stay on `ctx.supabase` and keep their RLS scoping.
 // ============================================================
 
@@ -378,7 +379,7 @@ export async function deleteLinkHandler(
 
 export function registerLinkSnapWriteTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_linksnap_create_link`,
+    mcpCapabilityName('linksnap.create_link'),
     {
       title: 'Create Short Link',
       description: `Shortens a URL for you. Requires "linksnap.write" and an authenticated session.
@@ -407,7 +408,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_linksnap_update_link`,
+    mcpCapabilityName('linksnap.update_link'),
     {
       title: 'Update Short Link',
       description: `Updates the destination, code, expiry, or password of one of your short links. Requires "linksnap.write" and an authenticated session.
@@ -436,7 +437,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_linksnap_delete_link`,
+    mcpCapabilityName('linksnap.delete_link'),
     {
       title: 'Delete Short Link',
       description: `Deletes one of your short links. Requires "linksnap.write" and an authenticated session.

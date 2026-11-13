@@ -1,8 +1,9 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+﻿import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createPlanGate } from '@/backend/config/plans';
 import { OWNED_ITEMS, type OwnedItemKey } from '@/shared/contracts/plans';
 import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from '../constants';
+import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { registerSystemTools } from './system';
 import { registerCommunityTools, registerCommunityWriteTools } from './blogpress';
 import { registerLinkSnapTools, registerLinkSnapWriteTools } from './linksnap';
@@ -23,11 +24,11 @@ import { toolErrorResponse } from './tool-utils';
  * as the HTTP controller does.
  */
 const CAPPED_TOOLS: Record<string, OwnedItemKey> = {
-  [`${MCP_SERVER_NAME}_linksnap_create_link`]: OWNED_ITEMS.shortLinks,
-  [`${MCP_SERVER_NAME}_community_create_post`]: OWNED_ITEMS.communityDrafts,
-  [`${MCP_SERVER_NAME}_spendtrack_create_expense`]: OWNED_ITEMS.expenses,
-  [`${MCP_SERVER_NAME}_spendtrack_create_category`]: OWNED_ITEMS.expenseCategories,
-  [`${MCP_SERVER_NAME}_habitflow_create_habit`]: OWNED_ITEMS.habits,
+  [mcpCapabilityName('linksnap.create_link')]: OWNED_ITEMS.shortLinks,
+  [mcpCapabilityName('community.create_post')]: OWNED_ITEMS.communityDrafts,
+  [mcpCapabilityName('spendtrack.create_expense')]: OWNED_ITEMS.expenses,
+  [mcpCapabilityName('spendtrack.create_category')]: OWNED_ITEMS.expenseCategories,
+  [mcpCapabilityName('habitflow.create_habit')]: OWNED_ITEMS.habits,
 };
 
 type ToolHandler = (...args: unknown[]) => unknown;
@@ -35,8 +36,8 @@ type RegisterTool = (name: string, config: unknown, handler: ToolHandler) => unk
 
 /**
  * Wraps `registerTool` so every write tool checks its cap first (ADR-0093). A
- * refusal comes back as a tool error — the same shape a handler's own failure
- * takes — because an MCP client has no HTTP status to read.
+ * refusal comes back as a tool error â€” the same shape a handler's own failure
+ * takes â€” because an MCP client has no HTTP status to read.
  */
 function meteredWrites(server: McpServer, ctx: McpUserContext): McpServer {
   const register = server.registerTool.bind(server) as RegisterTool;

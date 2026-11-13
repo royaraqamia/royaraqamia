@@ -1,7 +1,7 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpUserContext } from '../session';
-import { MCP_SERVER_NAME } from '../constants';
+import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
 import { getHabitRepository } from '@/backend/config/habitflow';
@@ -90,7 +90,7 @@ export async function listHabitsHandler(
       '',
     ];
     for (const h of items) {
-      lines.push(`- **${h.name}** (${h.frequency}) — \`${h.id}\``);
+      lines.push(`- **${h.name}** (${h.frequency}) â€” \`${h.id}\``);
     }
     if (meta.has_more) {
       lines.push('', `(Showing ${meta.count} of ${meta.total}; use offset to continue.)`);
@@ -128,16 +128,16 @@ export async function getLogsHandler(
     }
 
     const lines = [
-      `# Habit Logs (${params.start} → ${params.end})`,
+      `# Habit Logs (${params.start} â†’ ${params.end})`,
       '',
       `Found ${meta.total} log${meta.total === 1 ? '' : 's'}.`,
       '',
     ];
     for (const l of items) {
       lines.push(
-        `- ${l.completed ? '[x]' : '[ ]'} ${l.date} — \`${l.habitId}\`${
+        `- ${l.completed ? '[x]' : '[ ]'} ${l.date} â€” \`${l.habitId}\`${
           l.kind ? ` (${l.kind})` : ''
-        }${l.note ? ` — ${l.note}` : ''}`
+        }${l.note ? ` â€” ${l.note}` : ''}`
       );
     }
     if (meta.has_more) {
@@ -151,7 +151,7 @@ export async function getLogsHandler(
 
 export function registerHabitFlowTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_habitflow_list_habits`,
+    mcpCapabilityName('habitflow.list_habits'),
     {
       title: 'List Habits',
       description: `Lists your active habits. Requires "habitflow.read" and an authenticated session.
@@ -177,7 +177,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_habitflow_get_logs`,
+    mcpCapabilityName('habitflow.get_logs'),
     {
       title: 'Get Habit Logs',
       description: `Returns your habit completion logs in a date range. Requires "habitflow.read" and an authenticated session.
@@ -387,7 +387,7 @@ export async function toggleLogHandler(
 
 export function registerHabitFlowWriteTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_habitflow_create_habit`,
+    mcpCapabilityName('habitflow.create_habit'),
     {
       title: 'Create Habit',
       description: `Creates a new habit. Requires "habitflow.write" and an authenticated session.
@@ -417,7 +417,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_habitflow_update_habit`,
+    mcpCapabilityName('habitflow.update_habit'),
     {
       title: 'Update Habit',
       description: `Updates one of your habits. Requires "habitflow.write" and an authenticated session.
@@ -448,7 +448,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_habitflow_delete_habit`,
+    mcpCapabilityName('habitflow.delete_habit'),
     {
       title: 'Delete Habit',
       description: `Archives (soft-deletes) one of your habits. Requires "habitflow.write" and an authenticated session.
@@ -473,7 +473,7 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_habitflow_toggle_log`,
+    mcpCapabilityName('habitflow.toggle_log'),
     {
       title: 'Toggle Habit Log',
       description: `Marks a habit complete or incomplete for a given date. Requires "habitflow.write" and an authenticated session.
