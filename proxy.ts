@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { withAppUpdateGate } from '@/backend/middleware/app-update';
 import { updateSession } from '@/backend/middleware/session';
-import { withVisitorCookie } from '@/backend/middleware/visitor-cookie';
 import { COUNTRY_COOKIE_NAME, COUNTRY_ISO_PATTERN } from '@/frontend/ui/shared/country-cookie';
 
 /**
@@ -42,6 +41,25 @@ function withCountryCookie(request: NextRequest, response: NextResponse): NextRe
   return response;
 }
 
+const COUNTRY_COOKIE_PATHS = ['/consultation', '/request-project', '/hire', '/training'] as const;
+
+/**
+ * The pages whose own components read the country cookie — the contact forms in
+ * these flows (`CountryPhoneInput` → `useDefaultCountry`).
+ *
+ * Everywhere else the cookie buys nothing and costs the page its cacheability:
+ * a response that sets a cookie is never stored at the edge, so stamping it on
+ * every navigation is why Cloudflare could cache no HTML on this site at all
+ * (ADR-0176). The rates surfaces fall back to timezone and language, which is
+ * the fallback `useDefaultCountry` already implements.
+ *
+ * A route added here by mistake costs a cacheable page; a route left out loses
+ * the IP-derived default until it is added, and nothing breaks.
+ */
+function wantsCountryCookie(pathname: string): boolean {
+  return COUNTRY_COOKIE_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 export async function proxy(request: NextRequest) {
   // Before the session: an app below the supported floor must not spend a
   // Supabase call on an answer the server will refuse anyway (#503).
@@ -49,7 +67,9 @@ export async function proxy(request: NextRequest) {
   if (updateRequired) return updateRequired;
 
   const response = await updateSession(request);
-  return withVisitorCookie(request, withCountryCookie(request, response));
+  return wantsCountryCookie(request.nextUrl.pathname)
+    ? withCountryCookie(request, response)
+    : response;
 }
 
 export const config = {

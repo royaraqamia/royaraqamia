@@ -143,8 +143,9 @@ describe('proxy', () => {
     expect(mockGetSession).not.toHaveBeenCalled();
   });
 
-  it('persists the IP-derived country in a cookie for the contact forms', async () => {
+  it('persists the IP-derived country in a cookie on the forms that read it', async () => {
     mockRequest.headers = new Headers({ 'x-vercel-ip-country': 'DE' });
+    mockNextUrl.pathname = '/consultation';
 
     const { proxy } = await import('@/proxy');
     await proxy(mockRequest as never);
@@ -156,7 +157,22 @@ describe('proxy', () => {
     );
   });
 
+  it('leaves a cacheable page without a Set-Cookie, so the edge can store it', async () => {
+    // ADR-0176: a response that sets a cookie is never cached, so the country
+    // cookie is written only where a component reads it. The home page and the
+    // rates surfaces fall back to timezone and language instead.
+    mockRequest.headers = new Headers({ 'cf-ipcountry': 'SY' });
+    mockNextUrl.pathname = '/';
+
+    const { proxy } = await import('@/proxy');
+    await proxy(mockRequest as never);
+
+    expect(cookieSetMock).not.toHaveBeenCalled();
+  });
+
   it('does not set the country cookie when no geo data is available', async () => {
+    mockNextUrl.pathname = '/consultation';
+
     const { proxy } = await import('@/proxy');
     await proxy(mockRequest as never);
 
@@ -167,21 +183,10 @@ describe('proxy', () => {
     );
   });
 
-  it('mints a visitor id when the request carries none, and leaves an existing one alone', async () => {
+  it('never mints the visitor id on a document, only a counted action does', async () => {
+    // ADR-0176: the id is stamped by the POST route that counts against it, so a
+    // navigation carries no Set-Cookie and stays cacheable.
     const { proxy } = await import('@/proxy');
-    await proxy(mockRequest as never);
-
-    expect(cookieSetMock).toHaveBeenCalledWith(
-      'rar_visitor',
-      expect.stringMatching(/^[0-9a-f-]{36}$/),
-      expect.objectContaining({ path: '/', httpOnly: true })
-    );
-
-    cookieSetMock.mockClear();
-    (mockRequest.cookies as { get: ReturnType<typeof vi.fn> }).get.mockReturnValue({
-      value: '11111111-1111-4111-8111-111111111111',
-    });
-
     await proxy(mockRequest as never);
 
     expect(cookieSetMock).not.toHaveBeenCalledWith(
