@@ -10,9 +10,9 @@ package com.royaraqamia.app.shell
  * tab one client can draw and the other cannot is visible to `check:parity`
  * rather than to a member.
  *
- * The two MCP tabs are destinations in this slice: the store is still the page
- * and the connected list is the screen that already exists, so a tab opens the
- * door instead of drawing a panel that is not there yet.
+ * Both MCP tabs are panels since #1256: [External] is `mcp/MarketplaceTab.kt`
+ * and [Inbound] is `connectedapps/InboundTab.kt`, each receiving the surface's
+ * one search term rather than opening a door.
  */
 sealed interface AppsSheetTab {
     data object Internal : AppsSheetTab

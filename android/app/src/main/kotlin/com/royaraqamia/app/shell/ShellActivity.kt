@@ -58,6 +58,8 @@ import com.royaraqamia.app.plans.PlanScreen
 import com.royaraqamia.app.profile.ProfileRoutes
 import com.royaraqamia.app.profile.ProfileScreen
 import com.royaraqamia.app.quran.QuranIndexRoute
+import com.royaraqamia.app.mcp.ConnectionScreen
+import com.royaraqamia.app.mcp.McpRoutes
 import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.quran.QuranSurahRoute
 import com.royaraqamia.app.news.NewsDigestScreen
@@ -293,6 +295,8 @@ class ShellActivity : ComponentActivity() {
                         onOpenConnection = { id -> openRoute("/mcp/apps/$id") },
                         onOpenExternal = ::openExternal,
                         brandMark = graph.brandMark,
+                        connectedApps = graph.connectedApps,
+                        onConnectNew = { openRoute("/mcp/guide") },
                         onBack = ::goBack,
                     ) {
                         // The launch and every sign-in/sign-out run the same load:
@@ -563,7 +567,21 @@ class ShellActivity : ComponentActivity() {
                                             onBack = { openRoute("/linksnap") },
                                         )
                                     else ->
-                                        VerifyRoutes.codeOf(current)?.let { code ->
+                                        McpRoutes.connectionOf(current)?.let { connectionId ->
+                                            // The post-connect screen (#1256): ported and
+                                            // off until its gate passes, so the document
+                                            // still opens on top of it (ADR-0117).
+                                            ConnectionScreen(
+                                                repository = graph.mcpConnection,
+                                                store = graph.marketplace,
+                                                connectionId = connectionId,
+                                                signedIn = signedIn,
+                                                connected = current.contains("connect=done"),
+                                                onSignIn = ::showSignIn,
+                                                onOpenExternal = ::openExternal,
+                                                onDisconnected = { openRoute(McpRoutes.APPS) },
+                                            )
+                                        } ?: VerifyRoutes.codeOf(current)?.let { code ->
                                             VerifyCodeScreen(
                                                 code = code,
                                                 repository = graph.verify,

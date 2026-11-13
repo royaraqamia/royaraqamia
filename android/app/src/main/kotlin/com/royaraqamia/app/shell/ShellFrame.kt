@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.assistant.AssistantFab
 import com.royaraqamia.app.account.AvatarLoader
+import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.mcp.McpStoreRepository
 import com.royaraqamia.app.theme.LocalRoySpacing
 
@@ -114,6 +115,10 @@ fun ShellFrame(
     onOpenExternal: (String) -> Unit = {},
     /** Reads a catalogue row's mark. */
     brandMark: AvatarLoader? = null,
+    /** The connected list's data (#1256): the tab is a panel now, not a door. */
+    connectedApps: ConnectedAppsRepository? = null,
+    /** The page's "connect a new client", which the guide is still the document for. */
+    onConnectNew: () -> Unit = {},
     /** What the secondary frame's floating control does; the page's own back. */
     onBack: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit = {},
@@ -158,12 +163,8 @@ fun ShellFrame(
                 onOpenConnection = onOpenConnection,
                 onOpenExternal = onOpenExternal,
                 brandMark = brandMark,
-                // The connected-apps tab is the door the retired account row used
-                // to be (#1256): the screen is native, so the sheet routes to it.
-                onOpenConnectedApps = {
-                    servicesOpen = false
-                    onOpenRoute(Routes.CONNECTED_APPS_ROUTE)
-                },
+                connectedApps = connectedApps,
+                onConnectNew = onConnectNew,
             )
         } else {
             Box(Modifier.fillMaxSize()) {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AlertTriangle, Check, Loader2, RefreshCw, Unplug } from 'lucide-react';
 
 import { MCP_STORE_COPY } from '@/frontend/ui/apps/store-copy';
-import { MCP_MARKETPLACE_COPY as COPY } from './marketplace-copy';
+import { MCP_CONNECTION_COPY } from './connection-copy';
 
 import {
   MCP_PERMISSION_LEVELS,
@@ -93,7 +93,7 @@ export function McpConnectionView({
     const result = await updateMcpConnection(connection.id, { permissionLevel: level });
     setSavingPermission(false);
     if (!result.success) {
-      setActionError(result.error ?? COPY.saveFailed);
+      setActionError(result.error ?? MCP_CONNECTION_COPY.saveFailed);
       return;
     }
     await load();
@@ -106,7 +106,7 @@ export function McpConnectionView({
     const result = await updateMcpConnection(connection.id, { enabled: !connection.enabled });
     setSavingEnabled(false);
     if (!result.success) {
-      setActionError(result.error ?? COPY.saveFailed);
+      setActionError(result.error ?? MCP_CONNECTION_COPY.saveFailed);
       return;
     }
     await load();
@@ -132,7 +132,7 @@ export function McpConnectionView({
       // The consent page is a third party's origin; the whole document leaves.
       window.location.assign(started.authorizeUrl);
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : COPY.reconnectFailed);
+      setActionError(error instanceof Error ? error.message : MCP_CONNECTION_COPY.reconnectFailed);
       setReconnecting(false);
     }
   };
@@ -151,7 +151,7 @@ export function McpConnectionView({
     const result = await replaceMcpConnectionKey(connection.id, key);
     setSavingKey(false);
     if (!result.success) {
-      setKeyError(result.error ?? COPY.detailKeyFailed);
+      setKeyError(result.error ?? MCP_CONNECTION_COPY.detailKeyFailed);
       return;
     }
     setNewKey('');
@@ -169,7 +169,7 @@ export function McpConnectionView({
     });
     setBusyTool(null);
     if (!result.success) {
-      setActionError(result.error ?? COPY.toolFailed);
+      setActionError(result.error ?? MCP_CONNECTION_COPY.toolFailed);
       return;
     }
     await load();
@@ -183,7 +183,7 @@ export function McpConnectionView({
     setDisconnecting(false);
     setConfirmOpen(false);
     if (!result.success) {
-      setActionError(result.error ?? COPY.saveFailed);
+      setActionError(result.error ?? MCP_CONNECTION_COPY.saveFailed);
       return;
     }
     router.replace('/mcp/apps');
@@ -211,18 +211,22 @@ export function McpConnectionView({
   if (notFound) {
     return (
       <div className="rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
-        <p className="text-sm font-bold text-foreground sm:text-base">{COPY.detailNotFound}</p>
+        <p className="text-sm font-bold text-foreground sm:text-base">
+          {MCP_CONNECTION_COPY.detailNotFound}
+        </p>
       </div>
     );
   }
 
   if (failed) {
     if (offline) {
-      return <NeedsConnection message={COPY.detailOffline} onRetry={() => void load()} />;
+      return (
+        <NeedsConnection message={MCP_CONNECTION_COPY.detailOffline} onRetry={() => void load()} />
+      );
     }
     return (
       <div className="space-y-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-5 text-center">
-        <p className="text-sm font-bold text-destructive">{COPY.detailFailed}</p>
+        <p className="text-sm font-bold text-destructive">{MCP_CONNECTION_COPY.detailFailed}</p>
         <button
           type="button"
           onClick={() => void load()}
@@ -248,7 +252,7 @@ export function McpConnectionView({
           className="flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm font-bold text-primary"
         >
           <Check aria-hidden="true" className="h-4 w-4 shrink-0" />
-          {COPY.connectedBanner}
+          {MCP_CONNECTION_COPY.connectedBanner}
         </p>
       )}
 
@@ -257,7 +261,7 @@ export function McpConnectionView({
           <SectionTitleHighlight>{name}</SectionTitleHighlight>
         </SectionTitle>
         <p className="mx-auto max-w-xl text-sm leading-relaxed text-balance text-muted-foreground">
-          {COPY.detailReach}
+          {MCP_CONNECTION_COPY.detailReach}
         </p>
       </header>
 
@@ -268,8 +272,8 @@ export function McpConnectionView({
             {/* The OAuth sentence is about the grant; the key and no-auth modes
                 carry the service's own sentence, which names their repair. */}
             {connection.authMode === 'oauth'
-              ? COPY.detailNeedsReauth
-              : (connection.lastError ?? COPY.detailNeedsReauth)}
+              ? MCP_CONNECTION_COPY.detailNeedsReauth
+              : (connection.lastError ?? MCP_CONNECTION_COPY.detailNeedsReauth)}
           </p>
           {/* The repair is a consent only for an OAuth connection; a key has its
               own field below, and a no-auth row has nothing left to repair. */}
@@ -285,13 +289,15 @@ export function McpConnectionView({
               ) : (
                 <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
               )}
-              {reconnecting ? COPY.reconnecting : COPY.reconnect}
+              {reconnecting ? MCP_CONNECTION_COPY.reconnecting : MCP_CONNECTION_COPY.reconnect}
             </button>
           )}
         </div>
       )}
       {connection.status === 'error' && (
-        <Notice tone="danger">{connection.lastError ?? COPY.detailUnreachable}</Notice>
+        <Notice tone="danger">
+          {connection.lastError ?? MCP_CONNECTION_COPY.detailUnreachable}
+        </Notice>
       )}
       {/* A refusal the provider answered with a scope, not a dead grant: the
           sentence names the permission and the widen control below is the
@@ -299,14 +305,14 @@ export function McpConnectionView({
       {connection.status === 'active' && connection.lastError && (
         <Notice tone="warning">{connection.lastError}</Notice>
       )}
-      {staleTools && <Notice tone="warning">{COPY.detailStale}</Notice>}
+      {staleTools && <Notice tone="warning">{MCP_CONNECTION_COPY.detailStale}</Notice>}
 
       {actionError && <Notice tone="danger">{actionError}</Notice>}
 
       <section aria-labelledby="mcp-permission-title" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 id="mcp-permission-title" className="text-base font-extrabold text-foreground">
-            {COPY.detailPermissionTitle}
+            {MCP_CONNECTION_COPY.detailPermissionTitle}
           </h2>
 
           <button
@@ -314,7 +320,9 @@ export function McpConnectionView({
             role="switch"
             aria-checked={connection.enabled}
             aria-label={
-              connection.enabled ? COPY.connectionEnabled : MCP_STORE_COPY.connectionDisabled
+              connection.enabled
+                ? MCP_CONNECTION_COPY.connectionEnabled
+                : MCP_STORE_COPY.connectionDisabled
             }
             onClick={() => void toggleEnabled()}
             disabled={savingEnabled}
@@ -329,7 +337,9 @@ export function McpConnectionView({
             ) : (
               <Check aria-hidden="true" className="h-3.5 w-3.5" />
             )}
-            {connection.enabled ? COPY.connectionEnabled : MCP_STORE_COPY.connectionDisabled}
+            {connection.enabled
+              ? MCP_CONNECTION_COPY.connectionEnabled
+              : MCP_STORE_COPY.connectionDisabled}
           </button>
         </div>
 
@@ -366,7 +376,7 @@ export function McpConnectionView({
           <>
             <div className="flex items-center justify-between gap-3">
               <h2 id="mcp-scopes-title" className="text-base font-extrabold text-foreground">
-                {COPY.detailScopesTitle}
+                {MCP_CONNECTION_COPY.detailScopesTitle}
               </h2>
 
               {/* One repair, one control: a dead grant already has its own button in
@@ -384,19 +394,24 @@ export function McpConnectionView({
                   ) : (
                     <RefreshCw aria-hidden="true" className="h-3.5 w-3.5" />
                   )}
-                  {reconnecting ? COPY.reconnecting : COPY.widen}
+                  {reconnecting ? MCP_CONNECTION_COPY.reconnecting : MCP_CONNECTION_COPY.widen}
                 </button>
               )}
             </div>
 
-            <p className="text-xs leading-relaxed text-muted-foreground">{COPY.detailScopesBody}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {MCP_CONNECTION_COPY.detailScopesBody}
+            </p>
 
             {connection.scopes.length === 0 ? (
               <p className="rounded-2xl border border-border/50 bg-card/60 px-4 py-3 text-xs text-muted-foreground">
-                {COPY.detailScopesEmpty}
+                {MCP_CONNECTION_COPY.detailScopesEmpty}
               </p>
             ) : (
-              <ul className="flex flex-wrap gap-1.5" aria-label={COPY.detailScopesTitle}>
+              <ul
+                className="flex flex-wrap gap-1.5"
+                aria-label={MCP_CONNECTION_COPY.detailScopesTitle}
+              >
                 {connection.scopes.map((scope) => (
                   <li
                     key={scope}
@@ -410,7 +425,7 @@ export function McpConnectionView({
             )}
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              {COPY.detailScopesAsk}
+              {MCP_CONNECTION_COPY.detailScopesAsk}
             </p>
           </>
         ) : (
@@ -419,19 +434,21 @@ export function McpConnectionView({
                 to widen (#1269); what it has is a credential — or nothing — and
                 the one repair is a new key. */}
             <h2 id="mcp-scopes-title" className="text-base font-extrabold text-foreground">
-              {COPY.detailAuthTitle}
+              {MCP_CONNECTION_COPY.detailAuthTitle}
             </h2>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              {connection.authMode === 'api_key' ? COPY.detailAuthApiKey : COPY.detailAuthNone}
+              {connection.authMode === 'api_key'
+                ? MCP_CONNECTION_COPY.detailAuthApiKey
+                : MCP_CONNECTION_COPY.detailAuthNone}
             </p>
 
             {connection.authMode === 'api_key' && (
               <div className="space-y-2 rounded-2xl border border-border/50 bg-card/60 px-4 py-3">
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  {COPY.detailKeyBody}
+                  {MCP_CONNECTION_COPY.detailKeyBody}
                 </p>
                 <label htmlFor="mcp-new-key" className="block text-xs font-bold text-foreground">
-                  {COPY.detailKeyLabel}
+                  {MCP_CONNECTION_COPY.detailKeyLabel}
                 </label>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <input
@@ -441,7 +458,7 @@ export function McpConnectionView({
                     autoComplete="off"
                     spellCheck={false}
                     value={newKey}
-                    placeholder={COPY.detailKeyPlaceholder}
+                    placeholder={MCP_CONNECTION_COPY.detailKeyPlaceholder}
                     onChange={(event) => {
                       setNewKey(event.target.value);
                       setKeyError(null);
@@ -460,7 +477,7 @@ export function McpConnectionView({
                     ) : (
                       <Check aria-hidden="true" className="h-3.5 w-3.5" />
                     )}
-                    {COPY.detailKeyAction}
+                    {MCP_CONNECTION_COPY.detailKeyAction}
                   </button>
                 </div>
                 {keyError && (
@@ -470,7 +487,7 @@ export function McpConnectionView({
                 )}
                 {keySaved && (
                   <p role="status" className="text-xs font-bold text-primary">
-                    {COPY.detailKeyDone}
+                    {MCP_CONNECTION_COPY.detailKeyDone}
                   </p>
                 )}
               </div>
@@ -481,12 +498,12 @@ export function McpConnectionView({
 
       <section aria-labelledby="mcp-tools-title" className="space-y-3">
         <h2 id="mcp-tools-title" className="text-base font-extrabold text-foreground">
-          {COPY.detailToolsTitle}
+          {MCP_CONNECTION_COPY.detailToolsTitle}
         </h2>
 
         {connection.tools.length === 0 ? (
           <p className="rounded-2xl border border-border/50 bg-card/60 px-4 py-5 text-center text-sm text-muted-foreground">
-            {COPY.detailToolsEmpty}
+            {MCP_CONNECTION_COPY.detailToolsEmpty}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -512,11 +529,13 @@ export function McpConnectionView({
                           : 'rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-bold text-amber-600 dark:text-amber-300'
                       }
                     >
-                      {tool.readOnly ? COPY.toolReads : COPY.toolWrites}
+                      {tool.readOnly
+                        ? MCP_CONNECTION_COPY.toolReads
+                        : MCP_CONNECTION_COPY.toolWrites}
                     </span>
                     {tool.stale && (
                       <span className="rounded-full border border-destructive/30 bg-destructive/5 px-2 py-0.5 font-bold text-destructive">
-                        {COPY.toolStale}
+                        {MCP_CONNECTION_COPY.toolStale}
                       </span>
                     )}
                   </p>
@@ -526,7 +545,11 @@ export function McpConnectionView({
                   type="button"
                   role="switch"
                   aria-checked={tool.enabled}
-                  aria-label={tool.enabled ? COPY.toolEnabled : COPY.toolDisabled}
+                  aria-label={
+                    tool.enabled
+                      ? MCP_CONNECTION_COPY.toolEnabled
+                      : MCP_CONNECTION_COPY.toolDisabled
+                  }
                   disabled={busyTool !== null}
                   onClick={() => void toggleTool(tool)}
                   className={
@@ -540,7 +563,9 @@ export function McpConnectionView({
                   ) : (
                     <Check aria-hidden="true" className="h-3.5 w-3.5" />
                   )}
-                  {tool.enabled ? COPY.toolEnabled : COPY.toolDisabled}
+                  {tool.enabled
+                    ? MCP_CONNECTION_COPY.toolEnabled
+                    : MCP_CONNECTION_COPY.toolDisabled}
                 </button>
               </li>
             ))}
@@ -555,15 +580,15 @@ export function McpConnectionView({
           className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
         >
           <Unplug aria-hidden="true" className="h-4 w-4 shrink-0" />
-          <span>{COPY.detailDisconnect}</span>
+          <span>{MCP_CONNECTION_COPY.detailDisconnect}</span>
         </button>
       </div>
 
       <ConfirmDialog
         open={confirmOpen}
-        title={COPY.detailDisconnectTitle}
-        message={COPY.detailDisconnectMessage.replace('{name}', name)}
-        confirmLabel={COPY.confirmDisconnect}
+        title={MCP_CONNECTION_COPY.detailDisconnectTitle}
+        message={MCP_CONNECTION_COPY.detailDisconnectMessage.replace('{name}', name)}
+        confirmLabel={MCP_CONNECTION_COPY.confirmDisconnect}
         cancelLabel={MCP_STORE_COPY.cancel}
         onConfirm={() => void disconnect()}
         onCancel={() => {
