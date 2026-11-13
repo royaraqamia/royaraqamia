@@ -45,6 +45,6 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `mcp-guide` | `/mcp/guide` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `mcp-connect` | `/mcp/connect` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
-| `mcp-apps` | `/mcp/apps` | _web only_ | The marketplace is the page until phase 6 ports it (#1228, ADR-0155); the app opens `/mcp/apps` in the document until the visual gate passes. |
-| `mcp-app-detail` | `/mcp/apps/[id]` | `ConnectionScreen.kt` (off) | Ported (#1256), and switched off until it is the page pixel for pixel: the shell hands `/mcp/apps/<id>` to the document in the meantime (#872, ADR-0117). |
+| `mcp-apps` | `/mcp/apps` | _web only_ | The sheet is the app's apps surface (ADR-0159), and `/mcp/apps` stays the page: a callback, a bookmark and a deep link need an address a sheet cannot carry, so the shell opens it in the document. |
+| `mcp-app-detail` | `/mcp/apps/[id]` | `ConnectionScreen.kt` |  |
 | `admin` | `/admin/**` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |

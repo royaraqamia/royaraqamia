@@ -2,6 +2,7 @@ package com.royaraqamia.app.shell
 
 import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.linksnap.LinksnapRoutes
+import com.royaraqamia.app.mcp.McpRoutes
 import com.royaraqamia.app.profile.ProfileRoutes
 import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.verify.VerifyRoutes
@@ -59,6 +60,7 @@ object NativeSurfaces {
         listOf(
             VerifyRoutes::matches,
             { LinksnapRoutes.codeOf(it) != null },
+            { McpRoutes.connectionOf(it) != null },
             ProfileRoutes::matches,
         )
 

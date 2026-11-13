@@ -195,7 +195,10 @@ export function McpConnectionView({
   if (!user) {
     return (
       <div className="flex flex-col items-center gap-4 px-4 py-6 text-center">
-        <p className="max-w-sm text-sm leading-relaxed text-balance text-muted-foreground">
+        <p
+          data-visual="connection-sign-in-body"
+          className="max-w-sm text-sm leading-relaxed text-balance text-muted-foreground"
+        >
           {MCP_STORE_COPY.signInBody}
         </p>
         <SignInCta

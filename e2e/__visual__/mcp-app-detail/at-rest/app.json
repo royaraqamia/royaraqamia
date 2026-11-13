@@ -1,0 +1,18 @@
+{
+  "surface": "mcp-app-detail",
+  "elements": {
+    "body": {
+      "top": 0.0,
+      "height": 44.0,
+      "fontSize": 14.0
+    },
+    "cta": {
+      "top": 60.0,
+      "width": 176.0,
+      "height": 52.0,
+      "radius": 9999,
+      "fontSize": 16.0,
+      "fontWeight": 700
+    }
+  }
+}

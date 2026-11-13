@@ -1,0 +1,25 @@
+{
+  "surface": "mcp-app-detail",
+  "state": "at-rest",
+  "route": "/mcp/apps/e2e-connection",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "body": {
+      "top": 104,
+      "height": 45.5,
+      "fontSize": 14
+    },
+    "cta": {
+      "top": 165.5,
+      "width": 176,
+      "height": 52,
+      "radius": 9999,
+      "fontSize": 16,
+      "fontWeight": 700
+    }
+  }
+}
