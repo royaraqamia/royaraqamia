@@ -49,7 +49,7 @@ _The account area, notifications and chats: the screens a member opens daily._
 - [ ] **account-submissions** `/account/submissions` — blocked · blocked by no door on the web: the page is the request, booking and training forms, which left the UI in ADR-0148; leads and consultation are blocked for the same reason
 - [x] **account-plan** `/account/plan` — native · #900
 - [x] **account-connected-apps** `/account/connected-apps` — native · #900
-- [ ] **account-blocked** `/account/blocked` — todo · #1346
+- [x] **account-blocked** `/account/blocked` — native · #1346
 - [x] **account-faq** `/account/faq` — native
 - [ ] **account-news** `/account/news` — todo · #1347
 - [ ] **notifications** `/notifications` — todo · #1391
@@ -167,7 +167,7 @@ A component is finished when the surface that draws it is native: 78 ported comp
 - [ ] `chat-thread` on **chats** · #819
 - [ ] `chat-compose-attachments` on **chats** · #933
 - [ ] `chat-attachments` on **chats** · #933
-- [ ] `account-blocked` on **account-blocked** · #977
+- [x] `account-blocked` on **account-blocked** · #977
 - [ ] `account-rows` on **account** · #948
 - [ ] `account-profile` on **account** · #946
 - [ ] `account-usage` on **account** · #947
@@ -185,4 +185,4 @@ A component is finished when the surface that draws it is native: 78 ported comp
 
 ## Where this stands
 
-19 native · 8 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.
+20 native · 7 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.

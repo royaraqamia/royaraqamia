@@ -5,12 +5,14 @@ import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
 import QRCode from 'qrcode';
 import {
+  clearVisualBlocks,
   clearVisualCommunityPosts,
   clearVisualLink,
   clearVisualNews,
   clearVisualProfile,
   COMMUNITY_SEED_PREFIX,
   protectVisualLink,
+  seedVisualBlockedMembers,
   seedVisualLink,
   seedVisualNews,
   seedVisualProfile,
@@ -449,6 +451,25 @@ const PREPARE: Record<
     await page.waitForTimeout(600);
     await page.evaluate(() => document.fonts.ready);
   },
+  // The blocked list with the fixture's two rows (#1346). The account is the
+  // gate's own and its blocks are replaced with the fixed pair, so the first row
+  // is the same member every run rather than whatever an earlier capture left.
+  'account-blocked/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualBlockedMembers(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="blocked-row-0"]').waitFor({ timeout: 20_000 });
+  },
+  // The same page with nobody blocked (#1346). Removing the blocks is the state:
+  // the page draws its own sentence instead of a list.
+  'account-blocked/empty': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await clearVisualBlocks(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="blocked-empty"]').waitFor({ timeout: 20_000 });
+  },
   // The community feed's load-more is the region the gate measures, and it only
   // exists past the first page. The fixture account seeds ten rows and the
   // cleanup below removes them, so the feed after the run is the feed before it.
@@ -696,6 +717,9 @@ const PREPARE: Record<
 
 /** What a state removes after its recording, so a seed is never left behind. */
 const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
+  'account-blocked/at-rest': async (page) => {
+    await clearVisualBlocks(page.context(), projectBaseURL());
+  },
   'profile/at-rest': async (page) => {
     await clearVisualProfile(page.context(), projectBaseURL());
   },

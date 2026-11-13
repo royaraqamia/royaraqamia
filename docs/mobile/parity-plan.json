@@ -178,7 +178,7 @@
     {
       "surface": "account-blocked",
       "phase": "core",
-      "state": "todo",
+      "state": "native",
       "issue": "#1346"
     },
     {

@@ -19,10 +19,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,20 +37,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.royaraqamia.app.chats.ChatFailure
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.theme.DesignTokens
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
@@ -129,7 +136,7 @@ fun BlockedMembersScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = spacing.elementGap, vertical = spacing.elementGapSm),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGap),
+        verticalArrangement = Arrangement.spacedBy(BlockedMembersMetrics.titleGap),
     ) {
         Text(
             text = BlockedMembersCopy.PAGE_TITLE,
@@ -299,7 +306,7 @@ private fun EmptyCard() {
                 Modifier.fillMaxWidth()
                     .padding(
                         horizontal = spacing.elementGap,
-                        vertical = spacing.elementGapSm + spacing.elementGapSm / 2f,
+                        vertical = BlockedMembersMetrics.emptyPaddingVertical,
                     ),
             style = type.xs,
             color = RoyColors.mutedForeground.copy(alpha = 0.8f),
@@ -354,25 +361,40 @@ private fun MemberRow(
 
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2f),
         ) {
             Text(
                 text = name,
                 modifier = Modifier.testTag(BlockedMembersMetrics.nameTag(index)),
-                style = type.small.copy(fontWeight = FontWeight.Bold),
+                style =
+                    type.small.copy(
+                        fontWeight = FontWeight.Bold,
+                        lineHeight = BlockedMembersMetrics.nameLineHeight,
+                        lineHeightStyle = BlockedMembersMetrics.lineBox,
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    ),
                 color = RoyColors.foreground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = "@${member.username}",
-                modifier = Modifier.testTag(BlockedMembersMetrics.handleTag(index)),
-                style = type.xs,
-                color = RoyColors.mutedForeground.copy(alpha = 0.7f),
-                textAlign = TextAlign.Right,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            // The handle is an LTR run inside an RTL row (`dir="ltr"` on the
+            // page), so the bidi order is the page's rather than the row's.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Text(
+                    text = "@${member.username}",
+                    modifier =
+                        Modifier.testTag(BlockedMembersMetrics.handleTag(index))
+                            .height(BlockedMembersMetrics.handleBoxHeight),
+                    style =
+                        type.xs.copy(
+                            lineHeight = BlockedMembersMetrics.handleLineHeight,
+                            lineHeightStyle = BlockedMembersMetrics.lineBox,
+                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        ),
+                    color = RoyColors.mutedForeground.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
         UnblockButton(
@@ -389,23 +411,28 @@ private fun MemberRow(
 private fun UnblockButton(name: String, index: Int, enabled: Boolean, onClick: () -> Unit) {
     val type = LocalRoyTypeScale.current
 
-    Surface(
-        onClick = onClick,
-        modifier =
-            Modifier.testTag(BlockedMembersMetrics.unblockTag(index)).semantics {
-                contentDescription = BlockedMembersCopy.UNBLOCK_ARIA.replace("{name}", name)
-            },
-        enabled = enabled,
-        shape = MaterialTheme.shapes.large,
-        color = Color.Transparent,
-        border = BorderStroke(1f.dp, RoyColors.border.copy(alpha = 0.7f)),
-    ) {
-        Text(
-            text = BlockedMembersCopy.UNBLOCK,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            style = type.xs.copy(fontWeight = FontWeight.Bold),
-            color = RoyColors.foreground,
-        )
+    // The page's pill is 30px tall. Material's 48dp minimum touch target would
+    // make the row 48dp where the page draws 30, so the port keeps the page's
+    // size (the same rule [NewsDigestMetrics] records for its own controls).
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+        Surface(
+            onClick = onClick,
+            modifier =
+                Modifier.testTag(BlockedMembersMetrics.unblockTag(index)).semantics {
+                    contentDescription = BlockedMembersCopy.UNBLOCK_ARIA.replace("{name}", name)
+                },
+            enabled = enabled,
+            shape = MaterialTheme.shapes.medium,
+            color = Color.Transparent,
+            border = BorderStroke(1f.dp, RoyColors.border.copy(alpha = 0.7f)),
+        ) {
+            Text(
+                text = BlockedMembersCopy.UNBLOCK,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                style = type.xs.copy(fontWeight = FontWeight.Bold),
+                color = RoyColors.foreground,
+            )
+        }
     }
 }
 
@@ -484,6 +511,38 @@ internal object BlockedMembersMetrics {
     val titleStart = Color(0xFFA684FF)
     val titleMiddle = Color(0xFFED6AFF)
     val titleEnd = Color(0xFF7C86FF)
+
+    /** The page's title-to-list gap: `mb-8` at the app's phone width. */
+    val titleGap = 32.dp
+
+    /** The page's two row lines: `text-sm` is 20px, `text-xs` is 16px. */
+    val nameLineHeight = 20.sp
+    val handleLineHeight = 16.sp
+
+    /**
+     * The page's line is a hard 16px box; Compose's face is taller than its
+     * `lineHeight`, so the run takes the page's box and the leading falls outside
+     * it. The ink still fits the page's own line, which is what the raster shows.
+     */
+    val handleBoxHeight = 16.dp
+
+    /**
+     * Compose keeps a font's own ascent/descent unless the line box is trimmed;
+     * the page's `line-height` is a hard number, so the row's two lines take the
+     * page's height rather than the face's natural one.
+     */
+    val lineBox =
+        LineHeightStyle(
+            alignment = LineHeightStyle.Alignment.Center,
+            trim = LineHeightStyle.Trim.Both,
+        )
+
+    /** The page's empty card: `py-5` with its 16px line. */
+    val emptyPaddingVertical = 20.dp
+
+    /** The page's `rounded-2xl` card and `rounded-lg` unblock pill. */
+    val cardRadius = (DesignTokens.Radii.base + 8f).dp
+    val unblockRadius = DesignTokens.Radii.base
 
     val cardBorder = BorderStroke(1f.dp, RoyColors.border.copy(alpha = 0.7f))
     val avatarSize = 36.dp

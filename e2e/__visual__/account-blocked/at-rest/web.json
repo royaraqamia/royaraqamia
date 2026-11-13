@@ -1,0 +1,44 @@
+{
+  "surface": "account-blocked",
+  "state": "at-rest",
+  "route": "/account/blocked",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 80,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "list": {
+      "top": 158.5,
+      "width": 361,
+      "radius": 16
+    },
+    "first-row": {
+      "top": 159.5,
+      "width": 359,
+      "height": 61
+    },
+    "first-name": {
+      "height": 20,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "first-handle": {
+      "height": 16,
+      "fontSize": 12
+    },
+    "first-unblock": {
+      "width": 77,
+      "height": 30,
+      "radius": 8,
+      "fontSize": 12,
+      "fontWeight": 700
+    }
+  }
+}
