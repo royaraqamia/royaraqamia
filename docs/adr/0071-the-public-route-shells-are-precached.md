@@ -318,10 +318,10 @@ page rendered 16 controls and the correct «إلغاء المتابعة» state 
 Both are this ADR's ladder doing what it was built to do. `/u` is a segment with no page of its own,
 so `/u/<handle>/followers` walked past it to `/` — the one ancestor every installed device holds — and
 the followers list was answered with the homepage. And the route-shell cache is build-scoped while the
-_caches_ outlive a release (#488): `/community` was cacheable before it became `force-dynamic` (#1356,
-#1360), so the previous build's document was still on the device, nothing refreshes a route that has
-left the precache list, and it answered a signed-in member with a guest roster for as long as the cache
-survived.
+_caches_ outlive a release (#488): `/community` was cacheable before #1356 made it `force-dynamic` (the
+profile before #1360), so the previous build's document was still on the device, nothing refreshes a
+route that has left the precache list, and it answered a signed-in member with a guest roster for as
+long as the cache survived.
 
 So the ladder now has a route class, and the class decides before an ancestor is considered:
 
