@@ -8,27 +8,33 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
@@ -55,43 +61,106 @@ fun NewsSourceRequestCard(
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val submitting = state is NewsSourceRequestUiState.Submitting
+    // The page's CTA is always the gradient; only the browser's `required`
+    // stops an empty submit, so the app keeps the colour and guards the tap.
     val canSubmit = !submitting && url.isNotBlank()
 
     Column(
-        modifier = modifier.fillMaxWidth().testTag("account-news-request"),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+        modifier = modifier.fillMaxWidth().testTag(AccountNewsMetrics.REQUEST),
     ) {
         Text(
             text = AccountNewsRequestCopy.TITLE,
-            style = type.small.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.height(AccountNewsMetrics.requestTitleHeight),
+            style =
+                TextStyle(
+                    fontSize = AccountNewsMetrics.requestTitleSize,
+                    lineHeight = AccountNewsMetrics.requestTitleLineHeight,
+                    fontWeight = FontWeight.Bold,
+                ),
             color = MaterialTheme.colorScheme.onSurface,
         )
 
-        OutlinedTextField(
-            value = url,
-            onValueChange = onUrlChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text(AccountNewsRequestCopy.URL_LABEL, style = type.xs) },
-            placeholder = { Text(AccountNewsRequestCopy.URL_PLACEHOLDER, style = type.xs) },
-            singleLine = true,
-            textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr),
-            shape = Recipes.Card.radius,
+        Spacer(Modifier.height(AccountNewsMetrics.requestTitleToForm))
+
+        Text(
+            text = AccountNewsRequestCopy.URL_LABEL,
+            modifier = Modifier.height(AccountNewsMetrics.requestLabelHeight),
+            style =
+                TextStyle(
+                    fontSize = AccountNewsMetrics.requestLabelSize,
+                    lineHeight = AccountNewsMetrics.requestLabelLineHeight,
+                    fontWeight = FontWeight.Bold,
+                ),
+            color = MaterialTheme.colorScheme.onSurface,
         )
 
+        Spacer(Modifier.height(AccountNewsMetrics.requestLabelToField))
+
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(AccountNewsMetrics.requestFieldHeight)
+                        .clip(RoundedCornerShape(AccountNewsMetrics.requestFieldRadius))
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.8f))
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.outline.copy(alpha = 0.8f),
+                            RoundedCornerShape(AccountNewsMetrics.requestFieldRadius),
+                        )
+                        .padding(horizontal = AccountNewsMetrics.requestFieldPaddingHorizontal),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                if (url.isEmpty()) {
+                    Text(
+                        text = AccountNewsRequestCopy.URL_PLACEHOLDER,
+                        style =
+                            TextStyle(
+                                fontSize = AccountNewsMetrics.requestValueSize,
+                                lineHeight = AccountNewsMetrics.requestValueLineHeight,
+                                textDirection = TextDirection.Ltr,
+                            ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                BasicTextField(
+                    value = url,
+                    onValueChange = onUrlChange,
+                    singleLine = true,
+                    textStyle =
+                        TextStyle(
+                            fontSize = AccountNewsMetrics.requestValueSize,
+                            lineHeight = AccountNewsMetrics.requestValueLineHeight,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            textDirection = TextDirection.Ltr,
+                        ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(AccountNewsMetrics.requestFormToButton))
+
         when (state) {
-            is NewsSourceRequestUiState.Failed -> Feedback(
-                text = state.message.ifBlank { AccountNewsRequestCopy.SEND_FAILED },
-                destructive = true,
-            )
-            NewsSourceRequestUiState.Submitted ->
+            is NewsSourceRequestUiState.Failed -> {
+                Feedback(
+                    text = state.message.ifBlank { AccountNewsRequestCopy.SEND_FAILED },
+                    destructive = true,
+                )
+                Spacer(Modifier.height(AccountNewsMetrics.requestFormToButton))
+            }
+            NewsSourceRequestUiState.Submitted -> {
                 Feedback(text = AccountNewsRequestCopy.RECEIVED, destructive = false)
+                Spacer(Modifier.height(AccountNewsMetrics.requestFormToButton))
+            }
             else -> Unit
         }
 
         Box(
             modifier =
-                Modifier.height(Recipes.Cta.height)
-                    .widthIn(min = Recipes.Cta.minWidth)
+                Modifier.height(AccountNewsMetrics.requestButtonHeight)
                     .shadow(
                         elevation = Recipes.Cta.bloomY,
                         shape = Recipes.Cta.radius,
@@ -100,10 +169,10 @@ fun NewsSourceRequestCard(
                     )
                     .clip(Recipes.Cta.radius)
                     .background(
-                        if (canSubmit) {
-                            Brush.horizontalGradient(Recipes.Cta.stops)
-                        } else {
+                        if (submitting) {
                             Brush.horizontalGradient(listOf(RoyColors.muted, RoyColors.muted))
+                        } else {
+                            Brush.horizontalGradient(Recipes.Cta.stops)
                         }
                     )
                     .border(Recipes.Cta.border, Recipes.Cta.radius)

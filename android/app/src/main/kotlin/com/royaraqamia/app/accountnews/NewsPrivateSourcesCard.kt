@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
@@ -109,22 +111,25 @@ private fun Ready(
     onAskRemove: (NewsOwnedSource) -> Unit,
     modifier: Modifier,
 ) {
-    val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
 
     Column(
-        modifier = modifier.fillMaxWidth().testTag("account-news-private"),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+        modifier = modifier.fillMaxWidth().testTag(AccountNewsMetrics.PRIVATE),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().height(AccountNewsMetrics.privateHeadingHeight),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Bottom,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = AccountNewsPrivateCopy.HEADING,
-                    style = type.small.copy(fontWeight = FontWeight.Bold),
+                    style =
+                        TextStyle(
+                            fontSize = AccountNewsMetrics.privateHeadingSize,
+                            lineHeight = AccountNewsMetrics.privateHeadingLineHeight,
+                            fontWeight = FontWeight.Bold,
+                        ),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -134,7 +139,12 @@ private fun Ready(
             }
         }
 
-        if (actionError != null) Alert(actionError)
+        Spacer(Modifier.height(AccountNewsMetrics.privateGap))
+
+        if (actionError != null) {
+            Alert(actionError)
+            Spacer(Modifier.height(AccountNewsMetrics.privateGap))
+        }
 
         NewsSourceRequestCard(
             state = requestState,
@@ -143,22 +153,33 @@ private fun Ready(
             onSubmit = onSubmit,
         )
 
+        Spacer(Modifier.height(AccountNewsMetrics.privateGap))
+
         if (summary.rows.isEmpty()) {
             Text(
                 text = AccountNewsPrivateCopy.EMPTY,
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .testTag("account-news-private-empty")
+                        .height(AccountNewsMetrics.emptyHeight)
+                        .testTag(AccountNewsMetrics.PRIVATE_EMPTY)
                         .clip(Recipes.Card.radius)
                         .background(Recipes.Card.container)
                         .border(Recipes.Card.border, Recipes.Card.radius)
-                        .padding(Recipes.Card.padding(spacing)),
-                style = type.xs,
+                        .padding(
+                            horizontal = AccountNewsMetrics.emptyPadding,
+                            vertical = AccountNewsMetrics.emptyPadding - AccountNewsMetrics.cardBorder,
+                        ),
+                style =
+                    TextStyle(
+                        fontSize = AccountNewsMetrics.emptySize,
+                        lineHeight = AccountNewsMetrics.emptyLineHeight,
+                    ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         } else {
-            for (row in summary.rows) {
+            summary.rows.forEachIndexed { index, row ->
+                if (index > 0) Spacer(Modifier.height(AccountNewsMetrics.rowGap))
                 OwnedRow(
                     row = row,
                     removing = removingId == row.id,
@@ -168,6 +189,7 @@ private fun Ready(
         }
 
         if (summary.rows.any { it.state == "broken" }) {
+            Spacer(Modifier.height(AccountNewsMetrics.privateGap))
             Row(
                 modifier =
                     Modifier
@@ -178,8 +200,8 @@ private fun Ready(
                             BorderStroke(1.dp, RoyColors.destructive.copy(alpha = 0.3f)),
                             Recipes.Card.radius,
                         )
-                        .padding(spacing.elementGapSm),
-                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                        .padding(AccountNewsMetrics.ownedRowPadding),
+                horizontalArrangement = Arrangement.spacedBy(AccountNewsMetrics.ownedRowPadding),
             ) {
                 Icon(
                     imageVector = LucideVectors.Link2,
@@ -203,27 +225,41 @@ private fun OwnedRow(row: NewsOwnedSource, removing: Boolean, onRemove: () -> Un
     val type = LocalRoyTypeScale.current
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().height(AccountNewsMetrics.ownedRowHeight),
         shape = Recipes.Card.radius,
         color = Recipes.Card.container,
         border = Recipes.Card.border,
     ) {
         Row(
-            modifier = Modifier.padding(spacing.elementGapSm),
-            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            modifier =
+                Modifier.padding(
+                    horizontal = AccountNewsMetrics.ownedRowPadding,
+                    vertical = AccountNewsMetrics.ownedRowPadding,
+                ),
+            horizontalArrangement = Arrangement.spacedBy(AccountNewsMetrics.rowGap),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = row.name,
-                    style = type.small.copy(fontWeight = FontWeight.Bold),
+                    style =
+                        TextStyle(
+                            fontSize = AccountNewsMetrics.ownedNameSize,
+                            lineHeight = AccountNewsMetrics.ownedNameLineHeight,
+                            fontWeight = FontWeight.Bold,
+                        ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = row.url,
-                    style = type.xs.copy(textDirection = TextDirection.Ltr),
+                    style =
+                        TextStyle(
+                            fontSize = AccountNewsMetrics.ownedUrlSize,
+                            lineHeight = AccountNewsMetrics.ownedUrlLineHeight,
+                            textDirection = TextDirection.Ltr,
+                        ),
                     color = Recipes.Row.labelColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -348,7 +384,9 @@ private fun CountBadge(used: Int, cap: Int) {
         Text(
             text = "$used / $cap",
             modifier = Modifier.padding(horizontal = size.paddingX, vertical = size.paddingY),
-            style = size.text,
+            // The page states the count `dir="ltr"`: without it the slash
+            // reverses the two numbers in an RTL paragraph.
+            style = type.digits(size.text).copy(textDirection = TextDirection.Ltr),
             color = Recipes.Badge.neutral.content,
         )
     }

@@ -1,0 +1,28 @@
+{
+  "surface": "account-news",
+  "elements": {
+    "title": {
+      "top": 24,
+      "height": 46.545456,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "private-sources": {
+      "top": 2191.2727,
+      "width": 360.72726,
+      "fontSize": 16
+    },
+    "private-empty": {
+      "top": 2405.4546,
+      "width": 360.72726,
+      "height": 74.181885,
+      "fontSize": 14,
+      "paddingLeft": 16
+    },
+    "source-request": {
+      "top": 2231.2727,
+      "width": 360.72726,
+      "fontSize": 16
+    }
+  }
+}

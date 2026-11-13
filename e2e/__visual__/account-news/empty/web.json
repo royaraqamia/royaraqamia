@@ -1,0 +1,35 @@
+{
+  "surface": "account-news",
+  "state": "empty",
+  "route": "/account/news",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": -1666,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "private-sources": {
+      "top": 500,
+      "width": 361,
+      "fontSize": 16
+    },
+    "private-empty": {
+      "top": 714,
+      "width": 361,
+      "height": 74,
+      "fontSize": 14,
+      "paddingLeft": 16
+    },
+    "source-request": {
+      "top": 540,
+      "width": 361,
+      "fontSize": 16
+    }
+  }
+}

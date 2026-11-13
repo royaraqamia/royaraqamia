@@ -51,7 +51,7 @@ _The account area, notifications and chats: the screens a member opens daily._
 - [x] **account-connected-apps** `/account/connected-apps` — native · #900
 - [x] **account-blocked** `/account/blocked` — native · #1346
 - [x] **account-faq** `/account/faq` — native
-- [ ] **account-news** `/account/news` — todo · #1347
+- [x] **account-news** `/account/news` — native · #1347
 - [ ] **notifications** `/notifications` — todo · #1391
 - [ ] **chats** `/chats/[id]` `/chats/new` — todo · #937
 
@@ -174,9 +174,9 @@ A component is finished when the surface that draws it is native: 82 ported comp
 - [ ] `account-profile` on **account** · #946
 - [ ] `account-usage` on **account** · #947
 - [x] `account-faq` on **account-faq** · #949
-- [ ] `account-news-preferences` on **account-news** · #950
-- [ ] `account-news-private` on **account-news** · #950
-- [ ] `account-news-request` on **account-news** · #950
+- [x] `account-news-preferences` on **account-news** · #950
+- [x] `account-news-private` on **account-news** · #950
+- [x] `account-news-request` on **account-news** · #950
 - [x] `quran-index` on **quran** · #955
 - [x] `quran-surah` on **quran** · #955
 - [x] `quran-player` on **quran-surah** · #956
@@ -189,4 +189,4 @@ A component is finished when the surface that draws it is native: 82 ported comp
 
 ## Where this stands
 
-22 native · 5 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.
+23 native · 4 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.
