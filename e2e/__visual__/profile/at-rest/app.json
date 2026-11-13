@@ -1,0 +1,31 @@
+{
+  "surface": "profile",
+  "elements": {
+    "profile-header": {
+      "width": 360.72726,
+      "radius": 24.0
+    },
+    "profile-name": {
+      "height": 32.0,
+      "fontSize": 24.0,
+      "fontWeight": 700,
+      "lineHeight": 32.0
+    },
+    "profile-bio": {
+      "height": 22.909088,
+      "fontSize": 14.0,
+      "lineHeight": 22.75
+    },
+    "profile-posts": {
+      "width": 360.72726,
+      "height": 28.0,
+      "fontSize": 18.0,
+      "fontWeight": 700,
+      "lineHeight": 28.0
+    },
+    "first-post": {
+      "width": 360.72726,
+      "radius": 24.0
+    }
+  }
+}

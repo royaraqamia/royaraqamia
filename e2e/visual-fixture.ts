@@ -242,3 +242,83 @@ export async function clearVisualCommunityPosts(
     throw new Error(`could not remove the visual gate community seeds: ${error.message}`);
   }
 }
+
+/**
+ * The profile the gate records (#1343).
+ *
+ * A hidden member answers 404 through `loadCommunityMember` (ADR-0127), so the
+ * fixture account is made visible for the recording and hidden again after it.
+ * The bio and the one published post are the fixture's, not the account's: a
+ * recording that depended on whatever a previous run left is not evidence
+ * (ADR-0119).
+ */
+export const VISUAL_PROFILE = {
+  username: 'e2e-visual-user',
+  name: 'E2E Visual User',
+  bio: 'نبذة تعريفية للبوابة.',
+  slug: 'e2e-visual-profile-post',
+  content: 'منشور تجريبي لصفحة العضو',
+} as const;
+
+/** The prefix the profile cleanup matches, so it cannot touch a real post. */
+export const PROFILE_SEED_PREFIX = 'e2e-visual-profile-';
+
+/**
+ * Makes the fixture member visible with its one fixed post.
+ *
+ * The row is unhidden through the service role because the public loader refuses
+ * a hidden member; the post is written through the page's own route so its author
+ * and lifecycle are the product's, not a row poked from the outside. The fixed
+ * slug is hard-deleted first, because a previous run's tombstone keeps the unique
+ * slug taken.
+ */
+export async function seedVisualProfile(context: BrowserContext, baseURL: string): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  await clearVisualProfile(context, baseURL);
+
+  const { error } = await serviceClient()
+    .from('users')
+    .update({ is_hidden: false, bio: VISUAL_PROFILE.bio })
+    .eq('id', userId);
+  if (error) {
+    throw new Error(`could not make the visual profile visible: ${error.message}`);
+  }
+
+  const response = await context.request.post(`${baseURL}/api/community/posts`, {
+    data: { slug: VISUAL_PROFILE.slug, content: VISUAL_PROFILE.content, status: 'published' },
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok()) {
+    throw new Error(
+      `the profile fixture post was refused (${response.status()}): ${await response.text()}`
+    );
+  }
+}
+
+/**
+ * Removes the profile fixture and hides the account again.
+ *
+ * Hiding matters even when the recording failed: the row is a real verified
+ * member, and every public listing would name it until the next bootstrap
+ * (ADR-0127). The post is a hard delete for the same reason as the community
+ * seeds: the page's own delete is a tombstone that keeps the slug.
+ */
+export async function clearVisualProfile(context: BrowserContext, baseURL: string): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  const { error } = await serviceClient()
+    .from('posts')
+    .delete()
+    .eq('author_id', userId)
+    .like('slug', `${PROFILE_SEED_PREFIX}%`);
+  if (error) {
+    throw new Error(`could not remove the visual profile fixture: ${error.message}`);
+  }
+
+  const { error: hideError } = await serviceClient()
+    .from('users')
+    .update({ is_hidden: true, bio: null })
+    .eq('id', userId);
+  if (hideError) {
+    throw new Error(`could not hide the visual profile again: ${hideError.message}`);
+  }
+}

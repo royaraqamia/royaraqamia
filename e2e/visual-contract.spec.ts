@@ -6,13 +6,16 @@ import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 import {
   clearVisualCommunityPosts,
   clearVisualLink,
+  clearVisualProfile,
   COMMUNITY_SEED_PREFIX,
   protectVisualLink,
   seedVisualLink,
+  seedVisualProfile,
   seedHomeServices,
   signInAsVisualAccount,
   VISUAL_HOME_SERVICES,
   VISUAL_ACCOUNT_MISSING,
+  VISUAL_PROFILE,
   visualCredentials,
 } from './visual-fixture';
 
@@ -310,6 +313,18 @@ const PREPARE: Record<
   'at-rest': async (_page, visit) => {
     await visit();
   },
+  // The gate's own member, made visible with one fixed post (#1343). A hidden
+  // member is a 404 through the public loader (ADR-0127), so the fixture changes
+  // that flag for the recording and the cleanup puts it back. The account is the
+  // gate's, never the shared offline one, and the post is removed afterwards.
+  'profile/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualProfile(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="profile-posts"]').waitFor({ timeout: 20_000 });
+    await expect(page.locator('[data-visual="profile-bio"]')).toHaveText(VISUAL_PROFILE.bio);
+  },
   // The frame's second chrome (#967): a drill-down wears no bar, so the page is
   // a real secondary route and the recording is the band and the back control.
   'chrome/secondary': async (_page, visit) => {
@@ -576,6 +591,9 @@ const PREPARE: Record<
 
 /** What a state removes after its recording, so a seed is never left behind. */
 const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
+  'profile/at-rest': async (page) => {
+    await clearVisualProfile(page.context(), projectBaseURL());
+  },
   'linksnap/signed-in': async (page) => {
     await clearVisualLink(page.context(), projectBaseURL());
   },

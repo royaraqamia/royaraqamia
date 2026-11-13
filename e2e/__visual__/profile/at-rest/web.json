@@ -1,0 +1,38 @@
+{
+  "surface": "profile",
+  "state": "at-rest",
+  "route": "/u/e2e-visual-user",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "profile-header": {
+      "width": 361,
+      "radius": 24
+    },
+    "profile-name": {
+      "height": 32,
+      "fontSize": 24,
+      "fontWeight": 700,
+      "lineHeight": 32
+    },
+    "profile-bio": {
+      "height": 22.75,
+      "fontSize": 14,
+      "lineHeight": 22.75
+    },
+    "profile-posts": {
+      "width": 361,
+      "height": 28,
+      "fontSize": 18,
+      "fontWeight": 700,
+      "lineHeight": 28
+    },
+    "first-post": {
+      "width": 361,
+      "radius": 24
+    }
+  }
+}
