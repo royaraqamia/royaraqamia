@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { env } from '@/backend/config/env';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import {
   createDefaultMcpConnectedAppService,
@@ -91,7 +92,10 @@ export async function POST(req: NextRequest) {
   if (!user) {
     // Session missing/expired — send the browser user to login and bring them
     // back to the consent page afterwards so they can re-submit their choice.
-    const consentUrl = new URL('/mcp/connect', req.url);
+    // `env.origin`, not `req.url` (ADR-0178): a route handler has no
+    // relative-Location rewrite, so this redirect left the browser on
+    // https://localhost:10000.
+    const consentUrl = new URL('/mcp/connect', env.origin);
     for (const key of [
       'client_id',
       'redirect_uri',
@@ -103,7 +107,7 @@ export async function POST(req: NextRequest) {
       const value = form.get(key);
       if (value) consentUrl.searchParams.set(key, value as string);
     }
-    const loginUrl = new URL('/auth/login', req.url);
+    const loginUrl = new URL('/auth/login', env.origin);
     loginUrl.searchParams.set('redirect', consentUrl.pathname + consentUrl.search);
     return NextResponse.redirect(loginUrl, { headers: noStore() });
   }

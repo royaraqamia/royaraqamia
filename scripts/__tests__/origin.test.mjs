@@ -44,8 +44,29 @@ describe('originLines', () => {
   it('accepts the configured origin and a relative base', () => {
     expect(originLines(`const base = env.origin;`)).toEqual([]);
     expect(originLines(`new URL('/mcp/callback', env.origin).toString()`)).toEqual([]);
-    expect(originLines(`new URL(target, request.url)`)).toEqual([]);
     expect(originLines(`request.nextUrl.clone()`)).toEqual([]);
+  });
+
+  it('reports the request used as a URL base in a route handler', () => {
+    expect(originLines(`const consentUrl = new URL('/mcp/connect', req.url);`)).toHaveLength(1);
+    expect(originLines(`const loginUrl = new URL('/auth/login', request.nextUrl);`)).toHaveLength(
+      1
+    );
+    expect(originLines(`new URL('/x', env.origin)`)).toEqual([]);
+  });
+
+  it('reads a query out of the request without flagging it', () => {
+    expect(originLines(`const { searchParams } = new URL(req.url);`)).toEqual([]);
+    expect(originLines(`return new URL(req.url).searchParams;`)).toEqual([]);
+  });
+
+  it('leaves middleware alone: Next rewrites its Location to a relative one', () => {
+    expect(
+      originLines(
+        `return NextResponse.redirect(new URL(target, request.url));`,
+        'backend/middleware/session.ts'
+      )
+    ).toEqual([]);
   });
 
   it('lets a comment name the pattern it forbids', () => {
@@ -89,8 +110,11 @@ describe('scan', () => {
   it('ignores excluded files and files that are gone', () => {
     const dir = tree({
       'app/__tests__/route.test.ts': `new URL(req.url).origin\n`,
+      'backend/middleware/session.ts': `new URL(target, request.url)\n`,
     });
 
-    expect(scan(['app/__tests__/route.test.ts', 'gone.ts'], dir)).toEqual([]);
+    expect(
+      scan(['app/__tests__/route.test.ts', 'backend/middleware/session.ts', 'gone.ts'], dir)
+    ).toEqual([]);
   });
 });

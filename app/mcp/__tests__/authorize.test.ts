@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/backend/config/env';
 
 const mockGetClient = vi.fn();
 const mockGetUser = vi.fn();
@@ -180,6 +181,9 @@ describe('GET /mcp/authorize', () => {
     expect(res.status).toBe(307);
     const location = res.headers.get('location') ?? '';
     expect(location).toContain('/auth/login');
+    // The base is the configured origin, not the request's (ADR-0178): the
+    // request here is http://localhost, and a redirect to that is unreachable.
+    expect(new URL(location).origin).toBe(env.origin);
     const redirectParam = decodeURIComponent(new URL(location).searchParams.get('redirect') ?? '');
     expect(redirectParam).toMatch(/^\/mcp\/authorize\?/);
     const authorizeQuery = new URL('http://localhost' + redirectParam).searchParams;
@@ -206,6 +210,7 @@ describe('GET /mcp/authorize', () => {
     expect(res.status).toBe(307);
     const location = res.headers.get('location') ?? '';
     expect(new URL(location).pathname).toBe('/mcp/connect');
+    expect(new URL(location).origin).toBe(env.origin);
     const consentQuery = new URL(location).searchParams;
     expect(consentQuery.get('client_id')).toBe('client-1');
     expect(consentQuery.get('state')).toBe('state-123');

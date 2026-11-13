@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/backend/config/env';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createDefaultMcpOAuthProvider } from '@/backend/config/mcp';
 import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
@@ -96,13 +97,16 @@ export async function GET(req: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    const loginUrl = new URL('/auth/login', req.url);
+    // The base is `env.origin`, not `req.url` (ADR-0178): a route handler has no
+    // relative-Location rewrite, so `req.url` sent the browser to
+    // https://localhost:10000/auth/login and the flow died there.
+    const loginUrl = new URL('/auth/login', env.origin);
     loginUrl.searchParams.set('redirect', req.nextUrl.pathname + req.nextUrl.search);
     return NextResponse.redirect(loginUrl, { headers: noStore() });
   }
 
   // Forward to the consent page with the full original query preserved.
-  const consentUrl = new URL('/mcp/connect', req.url);
+  const consentUrl = new URL('/mcp/connect', env.origin);
   consentUrl.search = params.toString();
   return NextResponse.redirect(consentUrl, { headers: noStore() });
 }

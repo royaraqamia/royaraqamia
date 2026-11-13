@@ -59,10 +59,18 @@ kept working through the whole period this was broken.
    token — it hardcodes `https`, and it is experimental. `x-forwarded-host` only moves the problem into a
    proxy chain that has to be trusted and validated hop by hop. This site has exactly one canonical
    origin; configuration is simpler and strictly safer than either.
-6. **`npm run check:origin` refuses the pattern**, not the four instances: it fails any
+6. **`npm run check:origin` refuses the pattern**, not the instances it was written against: it fails any
    `new URL(req.url).origin`, `.nextUrl.origin` or `Host` header read in `app/`, `backend/`, `shared/`,
-   `frontend/` and `proxy.ts`. A fifth call site is the normal way this returns.
-7. **The deploy reads its own documents back.** `purge-cache.yml` already waits for the new build to
+   `frontend/` and `proxy.ts`. A further call site is the normal way this returns.
+7. **The request is not a URL base either.** `new URL('/mcp/connect', req.url)` is the same defect in its
+   other shape, and the first version of the gate missed it: the OAuth consent hop answered
+   `https://localhost:10000/mcp/connect?...` in the browser, so a client could register and authorize and
+   then be handed a URL its own machine would refuse. Route handlers never get Next's relative-Location
+   rewrite — measured: `/auth/callback` emitted its absolute `localhost` Location, while the middleware's
+   `/admin` redirect came out relative — so the gate now fails a request-based base in `app/` and
+   deliberately not in `backend/middleware/` or `proxy.ts`, where Next does rewrite it. A query read
+   (`new URL(req.url).searchParams`) is untouched by the rule.
+8. **The deploy reads its own documents back.** `purge-cache.yml` already waits for the new build to
    answer; it now also asserts that the live discovery documents name the configured origin. Unit tests
    construct their own requests and cannot see this class of bug, so the assertion belongs where a real
    request is answered.

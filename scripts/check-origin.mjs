@@ -32,16 +32,31 @@ export const EXCLUDED = ['__tests__/', '.test.', '.spec.', 'backend/config/gener
 
 export const FORBIDDEN = [
   {
+    scope: 'any',
     why: 'builds an origin from the request URL (use env.origin)',
     pattern: /new\s+URL\(\s*(?:req|request|r)\s*\.\s*(?:url|nextUrl)\s*\)\s*\.\s*origin/,
   },
   {
+    scope: 'any',
     why: 'reads an origin off nextUrl (use env.origin)',
     pattern: /\.nextUrl\s*\.\s*origin/,
   },
   {
+    scope: 'any',
     why: 'trusts a Host header (use env.origin)',
     pattern: /\.\s*get\(\s*['"](?:host|x-forwarded-host)['"]\s*\)/,
+  },
+  {
+    // The same defect in its other shape: `new URL('/mcp/connect', req.url)` is
+    // an absolute URL to the container's own address. Route handlers never get
+    // Next's relative-Location rewrite (measured: `NextResponse.redirect` out of
+    // a route emits the absolute URL it was handed), so the base must be the
+    // configured origin. Middleware is excluded on purpose — Next does rewrite a
+    // same-origin middleware redirect to a relative Location, and `proxy.ts` plus
+    // `backend/middleware/session.ts` rely on that.
+    scope: 'route',
+    why: 'uses the request as a URL base (use env.origin)',
+    pattern: /new\s+URL\(\s*[^)]*,\s*(?:req|request|r)\s*\.\s*(?:url|nextUrl)\s*\)/,
   },
 ];
 
@@ -74,12 +89,22 @@ function isComment(line) {
   return trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*');
 }
 
-/** `{ line, text, why }` for every line that derives an origin from the request. */
-export function originLines(text) {
+/** Route handlers are where Next does not rewrite a Location; the base matters there. */
+const isRoute = (file) => file.startsWith('app/');
+
+/**
+ * `{ line, text, why }` for every line that derives a URL from the request.
+ *
+ * `file` decides which patterns apply: the request-as-base rule is a route
+ * concern (see `FORBIDDEN`). It defaults to a route so the unit tests exercise
+ * every pattern without naming a file.
+ */
+export function originLines(text, file = 'app/route.ts') {
+  const patterns = FORBIDDEN.filter(({ scope }) => scope === 'any' || isRoute(file));
   const found = [];
   text.split('\n').forEach((line, index) => {
     if (isComment(line)) return;
-    const hit = FORBIDDEN.find(({ pattern }) => pattern.test(line));
+    const hit = patterns.find(({ pattern }) => pattern.test(line));
     if (hit) found.push({ line: index + 1, text: line.trim(), why: hit.why });
   });
   return found;
@@ -92,7 +117,7 @@ export function scan(files, cwd = process.cwd()) {
     if (!isScanned(file)) continue;
     const text = readText(file, cwd);
     if (text === null) continue;
-    const lines = originLines(text);
+    const lines = originLines(text, file);
     if (lines.length > 0) offenders.push({ file, lines });
   }
   return offenders;
