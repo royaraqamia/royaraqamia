@@ -6,6 +6,7 @@ import { createDevicePushTokensRepository } from '@/backend/repositories/push/su
 import type { PushSubscriptionRepository } from '@/backend/repositories/push/push-subscriptions-repository';
 import type { DevicePushTokenRepository } from '@/backend/repositories/push/device-push-tokens-repository';
 import { PushService, type WebPushAdapter } from '@/backend/services/push/push-service';
+import { PushSubscriptionService } from '@/backend/services/push/subscription-service';
 import { FcmPushService } from '@/backend/services/push/fcm-push-service';
 import { createFcmAdapter } from '@/backend/services/push/fcm-client';
 import { PushFanout } from '@/backend/services/push/push-fanout';
@@ -93,4 +94,15 @@ export function createFcmPushService(): FcmPushService {
  */
 export function createPushNotifier(): PushFanout {
   return new PushFanout([createWebPushService(), createFcmPushService()]);
+}
+
+/**
+ * The subscribe side: one endpoint stored, the member's list kept to a device
+ * list. Admin client, because an endpoint belongs to a browser rather than a
+ * user and moves with whoever signs in on it next.
+ */
+export function createPushSubscriptionService(): PushSubscriptionService {
+  return new PushSubscriptionService({
+    repository: createPushSubscriptionsRepository(getAdminSupabase()),
+  });
 }

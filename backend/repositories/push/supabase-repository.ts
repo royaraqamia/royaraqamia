@@ -50,6 +50,12 @@ export function createPushSubscriptionsRepository(
           p256dh: input.p256dh,
           auth: input.auth,
           user_agent: input.userAgent,
+          // Resubscribing IS a liveness signal, and `ON CONFLICT DO UPDATE`
+          // leaves the column alone unless the row sets it: without this the
+          // client's daily re-POST never refreshed `updated_at`, so the stale
+          // sweep judged an actively used subscription by its first-ever date
+          // and the per-user cap trimmed the wrong row.
+          updated_at: new Date().toISOString(),
         },
         { onConflict: 'endpoint' }
       );

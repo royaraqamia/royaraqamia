@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const mockGetAuthUser = vi.fn();
 const mockCheckRateLimit = vi.fn();
 const mockGetRateLimitDecision = vi.fn();
-const mockUpsert = vi.fn();
+const mockSubscribe = vi.fn();
 const mockRemoveByEndpoint = vi.fn();
 const mockCreatePushSubscriptionsRepository = vi.fn();
 const mockDeviceUpsert = vi.fn();
@@ -53,6 +53,7 @@ vi.mock('@/backend/config/env', () => ({
 vi.mock('@/backend/config/push', () => ({
   createPushNotifier: () => ({ sendToUsers: mockSendToUsers }),
   createFcmPushService: () => ({ sendWakeToUser: mockSendWake }),
+  createPushSubscriptionService: () => ({ subscribe: mockSubscribe }),
   runAfter: (fn: () => void) => void fn(),
 }));
 
@@ -83,10 +84,10 @@ describe('push controller', () => {
     });
     mockCheckRateLimit.mockResolvedValue(true);
     mockGetRateLimitDecision.mockResolvedValue({ allowed: true, retryAfterMs: 0 });
-    mockUpsert.mockResolvedValue(undefined);
+    mockSubscribe.mockResolvedValue(undefined);
     mockRemoveByEndpoint.mockResolvedValue(undefined);
     mockCreatePushSubscriptionsRepository.mockReturnValue({
-      upsert: mockUpsert,
+      upsert: mockSubscribe,
       removeByEndpoint: mockRemoveByEndpoint,
     });
     mockDeviceUpsert.mockResolvedValue(undefined);
@@ -103,7 +104,7 @@ describe('push controller', () => {
 
       expect(result.status).toBe(401);
       expect(result).toMatchObject({ body: expect.objectContaining({ code: 'session_expired' }) });
-      expect(mockUpsert).not.toHaveBeenCalled();
+      expect(mockSubscribe).not.toHaveBeenCalled();
     });
 
     it('rejects cross-site requests with 403', async () => {
@@ -112,7 +113,7 @@ describe('push controller', () => {
       const result = await subscribePush(validBody, crossOriginHeaders());
 
       expect(result.status).toBe(403);
-      expect(mockUpsert).not.toHaveBeenCalled();
+      expect(mockSubscribe).not.toHaveBeenCalled();
     });
 
     it('accepts requests whose Origin matches the site URL', async () => {
@@ -132,7 +133,7 @@ describe('push controller', () => {
       const result = await subscribePush({ endpoint: 'not-a-url', keys: {} }, sameOriginHeaders());
 
       expect(result.status).toBe(400);
-      expect(mockUpsert).not.toHaveBeenCalled();
+      expect(mockSubscribe).not.toHaveBeenCalled();
     });
 
     it('returns 429 with a code and the wait the limiter still needs', async () => {
@@ -147,7 +148,7 @@ describe('push controller', () => {
         headers: { 'Retry-After': '90' },
       });
       expect(mockGetRateLimitDecision).toHaveBeenCalledWith('push:subscribe:u-1', 20, 3600_000);
-      expect(mockUpsert).not.toHaveBeenCalled();
+      expect(mockSubscribe).not.toHaveBeenCalled();
     });
 
     it('never sends a Retry-After of zero', async () => {
@@ -168,7 +169,7 @@ describe('push controller', () => {
       );
 
       expect(result.status).toBe(200);
-      expect(mockUpsert).toHaveBeenCalledWith(
+      expect(mockSubscribe).toHaveBeenCalledWith(
         'u-1',
         expect.objectContaining({
           endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
@@ -176,7 +177,7 @@ describe('push controller', () => {
           auth: 'auth',
         })
       );
-      expect(mockUpsert.mock.calls[0]?.[0]).toBe('u-1');
+      expect(mockSubscribe.mock.calls[0]?.[0]).toBe('u-1');
     });
 
     it('passes the request user-agent through', async () => {
@@ -184,28 +185,26 @@ describe('push controller', () => {
 
       await subscribePush(validBody, sameOriginHeaders());
 
-      expect(mockUpsert).toHaveBeenCalledWith(
+      expect(mockSubscribe).toHaveBeenCalledWith(
         'u-1',
         expect.objectContaining({ userAgent: 'Chrome/128' })
       );
     });
 
-    it('hands the endpoint over with the service-role client, taking the owner from the session', async () => {
+    it('routes the subscribe through the subscription service, taking the owner from the session', async () => {
       const { subscribePush } = await importControllers();
 
       const result = await subscribePush(validBody, sameOriginHeaders());
 
       expect(result.status).toBe(200);
-      // A row's endpoint can belong to the previous account on this browser;
-      // only the admin client may reassign it. The owner is still the session.
-      expect(mockCreatePushSubscriptionsRepository).toHaveBeenCalledWith({
-        kind: 'admin-client',
-      });
-      expect(mockUpsert.mock.calls[0]?.[0]).toBe('u-1');
+      // The cap lives behind this service, so the controller must not write the
+      // row itself: a direct upsert would let rotation debris accumulate.
+      expect(mockSubscribe).toHaveBeenCalledTimes(1);
+      expect(mockSubscribe.mock.calls[0]?.[0]).toBe('u-1');
     });
 
     it('returns 500 when the repository upsert fails', async () => {
-      mockUpsert.mockRejectedValue(new Error('db down'));
+      mockSubscribe.mockRejectedValue(new Error('db down'));
       const { subscribePush } = await importControllers();
 
       const result = await subscribePush(validBody, sameOriginHeaders());

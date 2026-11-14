@@ -3,7 +3,12 @@ import { getAuthUser } from '@/backend/middleware/auth-guard';
 import { createPushSubscriptionsRepository } from '@/backend/repositories/push/supabase-repository';
 import { createDevicePushTokensRepository } from '@/backend/repositories/push/supabase-device-tokens-repository';
 import { checkRateLimit, getRateLimitDecision } from '@/backend/config/rate-limiter';
-import { createPushNotifier, createFcmPushService, runAfter } from '@/backend/config/push';
+import {
+  createPushNotifier,
+  createFcmPushService,
+  createPushSubscriptionService,
+  runAfter,
+} from '@/backend/config/push';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { mapWithConcurrency } from '@/backend/services/push/dispatch';
 import { env } from '@/backend/config/env';
@@ -76,7 +81,7 @@ export async function subscribePush(body: unknown, headers: Headers): Promise<Ht
     }
 
     // user_id always comes from the session, never from the client body.
-    await createPushSubscriptionsRepository(getAdminSupabase()).upsert(user.id, {
+    await createPushSubscriptionService().subscribe(user.id, {
       endpoint: parsed.data.endpoint,
       p256dh: parsed.data.keys.p256dh,
       auth: parsed.data.keys.auth,

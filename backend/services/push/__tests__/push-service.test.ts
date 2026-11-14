@@ -154,10 +154,7 @@ describe('PushService', () => {
 
       await expect(service.sendToUser('u-1', payload)).resolves.toBeUndefined();
       expect(adapter.sendNotification).toHaveBeenCalledTimes(1);
-      expect(loggerWarn).not.toHaveBeenCalledWith(
-        'Failed to send push notification',
-        expect.anything()
-      );
+      expect(loggerWarn).not.toHaveBeenCalled();
     });
 
     it('does nothing for an empty user id list', async () => {
@@ -215,6 +212,84 @@ describe('PushService', () => {
       );
     });
 
+    it('prunes an endpoint the provider rejects with 401', async () => {
+      const { repository, adapter, service } = makeService({
+        allowlist: ['.notify.windows.com'],
+      });
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([
+        makeRecord({ endpoint: 'https://wns2-bl2p.notify.windows.com/w/?token=dead' }),
+      ]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+        Object.assign(new Error('WebPushError: Received unexpected response code'), {
+          statusCode: 401,
+        })
+      );
+
+      await service.sendToUser('u-1', payload);
+
+      expect(repository.removeEndpoint).toHaveBeenCalledWith(
+        'https://wns2-bl2p.notify.windows.com/w/?token=dead'
+      );
+    });
+
+    it('logs at most one warning for a member whose only endpoint is dead, and keeps the rest quiet', async () => {
+      const { repository, adapter, service } = makeService();
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+        Object.assign(new Error('gone'), { statusCode: 410 })
+      );
+
+      await service.sendToUser('u-1', payload);
+
+      expect(loggerWarn).toHaveBeenCalledTimes(1);
+      expect(loggerWarn).toHaveBeenCalledWith(
+        'Push dispatch pruned dead subscriptions',
+        expect.objectContaining({ total: 1, delivered: 0, pruned: 1, failed: 0 })
+      );
+    });
+
+    it('reports a dozen dead endpoints as one summary line, not one per endpoint', async () => {
+      const { repository, adapter, service } = makeService({
+        allowlist: ['.notify.windows.com'],
+      });
+      const records = Array.from({ length: 12 }, (_, i) =>
+        makeRecord({ id: `sub-${i}`, endpoint: `https://wns2.notify.windows.com/w/?token=${i}` })
+      );
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue(records);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+        Object.assign(new Error('WebPushError: Received unexpected response code'), {
+          statusCode: 401,
+        })
+      );
+
+      await service.sendToUser('u-1', payload);
+
+      expect(repository.removeEndpoint).toHaveBeenCalledTimes(12);
+      expect(loggerWarn).toHaveBeenCalledTimes(1);
+      expect(loggerWarn).toHaveBeenCalledWith(
+        'Push dispatch pruned dead subscriptions',
+        expect.objectContaining({ total: 12, delivered: 0, pruned: 12, unauthorized: 12 })
+      );
+    });
+
+    it('does not write the subscription token into the log', async () => {
+      const { repository, adapter, service } = makeService({
+        allowlist: ['.notify.windows.com'],
+      });
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([
+        makeRecord({ endpoint: 'https://wns2.notify.windows.com/w/?token=secret-token' }),
+      ]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+        Object.assign(new Error('bad request'), { statusCode: 400 })
+      );
+
+      await service.sendToUser('u-1', payload);
+
+      const logged = JSON.stringify(loggerWarn.mock.calls);
+      expect(logged).not.toContain('secret-token');
+      expect(logged).toContain('wns2.notify.windows.com');
+    });
+
     it('logs (not throws) on other send failures and does not prune', async () => {
       const { repository, adapter, service } = makeService();
       (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
@@ -224,6 +299,11 @@ describe('PushService', () => {
 
       await expect(service.sendToUser('u-1', payload)).resolves.toBeUndefined();
       expect(repository.removeEndpoint).not.toHaveBeenCalled();
+      expect(loggerWarn).toHaveBeenCalledTimes(1);
+      expect(loggerWarn).toHaveBeenCalledWith(
+        'Push dispatch finished with failures',
+        expect.objectContaining({ total: 1, delivered: 0, pruned: 0, failed: 1 })
+      );
     });
 
     it('retries a transient network error and succeeds on the second attempt', async () => {
@@ -278,7 +358,7 @@ describe('PushService', () => {
       expect(repository.removeEndpoint).not.toHaveBeenCalled();
     });
 
-    it('logs the HTTP status code when a send finally fails', async () => {
+    it('carries the HTTP status code in the dispatch summary', async () => {
       const { repository, adapter, service } = makeService();
       (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
       (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
@@ -288,11 +368,9 @@ describe('PushService', () => {
       await service.sendToUser('u-1', payload);
 
       expect(loggerWarn).toHaveBeenCalledWith(
-        'Failed to send push notification',
+        'Push dispatch finished with failures',
         expect.objectContaining({
-          endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
-          attempt: 1,
-          statusCode: 400,
+          failures: [{ host: 'fcm.googleapis.com', status: 400 }],
         })
       );
     });
@@ -307,8 +385,8 @@ describe('PushService', () => {
       await service.sendToUser('u-1', payload);
 
       expect(loggerWarn).toHaveBeenCalledWith(
-        'Failed to send push notification',
-        expect.objectContaining({ statusCode: null, attempt: 3 })
+        'Push dispatch finished with failures',
+        expect.objectContaining({ failures: [{ host: 'fcm.googleapis.com', status: null }] })
       );
     });
 
