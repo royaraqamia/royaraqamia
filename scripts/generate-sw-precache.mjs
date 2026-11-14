@@ -109,7 +109,7 @@ export const DYNAMIC_BY_DESIGN = [
   {
     route: '/pricing/subscribe',
     reason:
-      'the plan, the price and the account (guest, already subscribed, or an open request) are all decided per request',
+      'the plan, the price, the account (guest, already subscribed, or an open request) and the phone picker default from the geo header are all decided per request',
   },
   // The member's own feed (ADR-0173). Its answer depends on who is asking, so
   // there is no document to precache: a guest would receive the empty state and
