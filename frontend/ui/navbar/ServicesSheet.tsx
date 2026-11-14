@@ -99,7 +99,10 @@ export function ServicesSheet({
           (document.getElementById(triggerId) as HTMLElement | null)?.focus();
         }}
       >
-        <SheetHeader className="flex-row items-center gap-3 border-b border-border/40 px-4 pb-3 pt-[max(0.75rem,var(--roy-safe-top))] pe-14">
+        <SheetHeader
+          data-visual="apps-sheet-header"
+          className="flex-row items-center gap-3 border-b border-border/40 px-4 pb-3 pt-[max(0.75rem,var(--roy-safe-top))] pe-14"
+        >
           <SheetTitle className="text-lg font-extrabold">{SERVICES_SHEET_COPY.title}</SheetTitle>
         </SheetHeader>
 

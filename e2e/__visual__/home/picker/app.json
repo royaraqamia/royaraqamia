@@ -9,9 +9,45 @@
       "radius": 0,
       "paddingTop": 0
     },
+    "header": {
+      "top": 0.0,
+      "height": 42.909092,
+      "paddingTop": 12.0
+    },
+    "tab-internal": {
+      "top": 54.909092,
+      "width": 81.09091,
+      "height": 39.999996,
+      "radius": 33554400,
+      "fontSize": 14.0,
+      "fontWeight": 700
+    },
+    "tab-external": {
+      "top": 54.909092,
+      "width": 121.81818,
+      "height": 39.999996,
+      "radius": 33554400,
+      "fontSize": 14.0,
+      "fontWeight": 700
+    },
+    "tab-inbound": {
+      "top": 54.909092,
+      "width": 133.81818,
+      "height": 39.999996,
+      "radius": 33554400,
+      "fontSize": 14.0,
+      "fontWeight": 700
+    },
+    "search": {
+      "top": 106.90909,
+      "width": 368.72726,
+      "height": 42.181824,
+      "radius": 12.0,
+      "fontSize": 14.0
+    },
     "row": {
-      "top": 175.27272,
-      "height": 53.09091
+      "top": 174.18182,
+      "height": 53.090897
     },
     "row-action": {
       "width": 80.0,

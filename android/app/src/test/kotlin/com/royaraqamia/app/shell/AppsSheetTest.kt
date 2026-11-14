@@ -128,7 +128,9 @@ class AppsSheetTest {
         compose.onNodeWithText(AppsSheetCopy.TAB_INTERNAL).assertIsDisplayed()
         compose.onNodeWithText(AppsSheetCopy.TAB_EXTERNAL).assertIsDisplayed()
         compose.onNodeWithText(AppsSheetCopy.TAB_INBOUND).assertIsDisplayed()
-        assertEquals(3, compose.onAllNodesWithTag("apps-tab").fetchSemanticsNodes().size)
+        compose.onNodeWithTag("apps-tab-internal").assertIsDisplayed()
+        compose.onNodeWithTag("apps-tab-external").assertIsDisplayed()
+        compose.onNodeWithTag("apps-tab-inbound").assertIsDisplayed()
     }
 
     @Test

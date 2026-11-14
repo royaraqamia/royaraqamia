@@ -738,15 +738,15 @@
         {
           "name": "picker",
           "tolerance": {
-            "pixels": 0.142,
+            "pixels": 0.1,
             "length": 2
           },
           "baseline": {
-            "recorded": "2026-11-10",
-            "measured": 0.1411,
+            "recorded": "2026-11-14",
+            "measured": 0.0992,
             "alignment": {
-              "dx": 1,
-              "dy": -3
+              "dx": 0,
+              "dy": 0
             }
           }
         },

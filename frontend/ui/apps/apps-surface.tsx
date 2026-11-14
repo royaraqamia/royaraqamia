@@ -87,7 +87,11 @@ export function AppsSurface({
     setQuery('');
   }
 
-  const tabItems = APPS_TABS.map((id) => ({ id, label: TAB_LABELS[id] }));
+  const tabItems = APPS_TABS.map((id) => ({
+    id,
+    label: TAB_LABELS[id],
+    visual: `apps-tab-${id}`,
+  }));
 
   const tabs =
     host === 'page' ? (
@@ -120,6 +124,7 @@ export function AppsSurface({
         onChange={(event) => setQuery(event.target.value)}
         placeholder={TAB_PLACEHOLDERS[tab]}
         aria-label={APPS_SURFACE_COPY.searchLabel}
+        data-visual="apps-search"
         className="w-full rounded-xl border border-border/60 bg-card/70 py-2.5 pe-3 ps-9 text-sm text-foreground placeholder:text-muted-foreground/70 focus-visible:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
       />
     </div>
