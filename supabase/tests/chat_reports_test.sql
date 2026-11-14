@@ -1,4 +1,4 @@
--- Assertions for the one writer of `public.chat_reports` (#886).
+-- Assertions for the one writer of `public.chat_reports` (#886, #1378).
 -- Run with `supabase test db` against the local stack - see README.md.
 --
 -- A report carries the reporter, a frozen snapshot of the thread and the
@@ -19,7 +19,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(13);
+select plan(20);
 
 -- ---------------------------------------------------------------------------
 -- Fixtures
@@ -51,6 +51,32 @@ values
   ),
   (
     '00000000-0000-0000-0000-0000000d0201',
+    '00000000-0000-0000-0000-0000000d0102',
+    'member',
+    'active'
+  );
+
+-- A group thread, so "a null reported id stays null" has somewhere to hold:
+-- only a direct thread names the peer on the caller's behalf.
+insert into public.chat_conversations (id, kind, status, title, created_by)
+values (
+  '00000000-0000-0000-0000-0000000d0202',
+  'group',
+  'active',
+  'مجموعة الاختبار',
+  '00000000-0000-0000-0000-0000000d0101'
+);
+
+insert into public.chat_participants (conversation_id, user_id, role, status)
+values
+  (
+    '00000000-0000-0000-0000-0000000d0202',
+    '00000000-0000-0000-0000-0000000d0101',
+    'owner',
+    'active'
+  ),
+  (
+    '00000000-0000-0000-0000-0000000d0202',
     '00000000-0000-0000-0000-0000000d0102',
     'member',
     'active'
@@ -197,6 +223,91 @@ select is(
 );
 
 -- ---------------------------------------------------------------------------
+-- The reported side is resolved against the conversation (#1378)
+-- ---------------------------------------------------------------------------
+
+select is(
+  (
+    select reported_user_id
+      from public.chat_reports
+     where reporter_id = '00000000-0000-0000-0000-0000000d0101'
+       and reason = 'إساءة في الحديث'
+  ),
+  '00000000-0000-0000-0000-0000000d0102'::uuid,
+  'the peer the caller named is stored as the reported side'
+);
+
+set local role authenticated;
+
+-- The admin queue labels whoever this names and highlights their messages, so
+-- an id from outside the conversation is refused rather than written.
+select throws_ok(
+  $$
+    select public.report_chat_conversation(
+      '00000000-0000-0000-0000-0000000d0201',
+      'طرف خارج الحديث',
+      '00000000-0000-0000-0000-0000000d0103'
+    )
+  $$,
+  '22023',
+  'a report naming a non-participant is refused'
+);
+
+reset role;
+
+select is(
+  (select count(*)::integer from public.chat_reports),
+  1,
+  'the refused report wrote no row'
+);
+
+set local role authenticated;
+
+select ok(
+  public.report_chat_conversation(
+    '00000000-0000-0000-0000-0000000d0201',
+    'بلاغ بلا طرف مسمّى',
+    null
+  ) is not null,
+  'a member can file a report without naming a side'
+);
+
+reset role;
+
+select is(
+  (
+    select reported_user_id
+      from public.chat_reports
+     where reason = 'بلاغ بلا طرف مسمّى'
+  ),
+  '00000000-0000-0000-0000-0000000d0102'::uuid,
+  'a null reported id on a direct thread stores the other participant'
+);
+
+set local role authenticated;
+
+select ok(
+  public.report_chat_conversation(
+    '00000000-0000-0000-0000-0000000d0202',
+    'بلاغ في مجموعة',
+    null
+  ) is not null,
+  'a member can file a report on a group thread'
+);
+
+reset role;
+
+select is(
+  (
+    select reported_user_id
+      from public.chat_reports
+     where reason = 'بلاغ في مجموعة'
+  ),
+  null::uuid,
+  'a null reported id on a group thread stays null'
+);
+
+-- ---------------------------------------------------------------------------
 -- A non-member is still refused at the function
 -- ---------------------------------------------------------------------------
 
@@ -224,8 +335,8 @@ reset role;
 
 select is(
   (select count(*)::integer from public.chat_reports),
-  1,
-  'the refused attempts wrote no row'
+  3,
+  'the refused attempts wrote no row, and every accepted report did'
 );
 
 select * from finish();
