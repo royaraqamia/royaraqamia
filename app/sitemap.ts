@@ -70,7 +70,11 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
-    path: '/rates',
+    // Every app root below is a tab of the door (ADR-0168), so the root itself
+    // is a 307 and never a URL a crawler can index: the tab form is the 200 it
+    // lands on. `app/__tests__/sitemap.test.ts` fails if a redirect source from
+    // `next.config.js` is listed here again.
+    path: '/?tab=/rates',
     changeFrequency: 'daily',
     priority: 0.8,
   },
@@ -82,7 +86,7 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
-    path: '/scan',
+    path: '/?tab=/scan',
     changeFrequency: 'monthly',
     priority: 0.8,
   },
@@ -94,15 +98,15 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.5,
   },
   {
-    // The index and, below, the 114 sura pages themselves.
-    path: '/quran',
+    // The index is a tab; the 114 sura pages below are still their own 200s.
+    path: '/?tab=/quran',
     changeFrequency: 'monthly',
     priority: 0.8,
   },
   {
-    // A reading surface like `/quran`: the text changes with a release, not with
-    // a day, so `monthly` is the honest claim.
-    path: '/athkar',
+    // A reading surface like the `/quran` tab: the text changes with a release,
+    // not with a day, so `monthly` is the honest claim.
+    path: '/?tab=/athkar',
     changeFrequency: 'monthly',
     priority: 0.8,
   },
