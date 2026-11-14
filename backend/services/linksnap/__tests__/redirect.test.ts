@@ -85,8 +85,15 @@ describe('the reserved routes match `app/`', () => {
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     // `[code]` is the redirect itself; route groups and dotted folders
-    // (`.well-known`) are never a code.
-    .filter((name) => !name.startsWith('[') && !name.startsWith('(') && !name.startsWith('.'));
+    // (`.well-known`) are never a code, and neither is a folder holding the
+    // route's tests — it has no `page.tsx`, so Next serves nothing from it.
+    .filter(
+      (name) =>
+        name !== '__tests__' &&
+        !name.startsWith('[') &&
+        !name.startsWith('(') &&
+        !name.startsWith('.')
+    );
 
   it('walks the top-level routes', () => {
     expect(staticSegments).toContain('account');
