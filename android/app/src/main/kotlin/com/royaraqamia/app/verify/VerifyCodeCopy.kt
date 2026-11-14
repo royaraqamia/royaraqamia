@@ -16,7 +16,7 @@ object VerifyCodeCopy {
     const val NOT_FOUND_HEADING = "شهادة غير موجودة"
     const val NOT_FOUND_BODY = "لم يتمَّ العثور على أي بيانات مسجَّلة برمز الشهادة:"
     const val NOT_FOUND_REASON = "الرَّمز المُدخل غير صالح أو انتهت صلاحيَّته"
-    const val NOT_FOUND_HINT = "تأكَّد من إدخال الرَّمز كاملًا مع الشَّرطات والحرُوف الصحيحة (مثال: COMP-2024-XXXXXX)."
+    const val NOT_FOUND_HINT = "تأكَّد من إدخال الرَّمز كاملًا مع الشَّرطات والحرُوف الصحيحة (مثال: COMP-YYYY-XXXXXXXX)."
     const val RETRY_ACTION = "المحاولة مرَّة أخرى"
     const val HOME_ACTION = "الصَّفحة الرَّئيسيَّة"
     const val VERIFIED_LEAD = "تمَّ التَّحقُّق"
