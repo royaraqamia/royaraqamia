@@ -1,28 +1,22 @@
-'use client';
-
 import Link from 'next/link';
 import { MessageCircle } from 'lucide-react';
 
-import { useSession } from '@/frontend/state/session-provider';
 import { PROFILE_CHAT_COPY } from './profile-chat-copy';
 
 /**
  * The «مراسلة» button on a public profile.
  *
  * A member has nothing to say to themselves, so the button is absent on their
- * own page. It is decided on the client on purpose: `/u/[username]` is a shared,
- * revalidated document (ISR), and reading the session on the server would make
- * it per-visitor for everyone.
+ * own page. The page knows: it resolves the viewer's standing with this member
+ * for the follow control anyway, and hands the answer down. So the decision is
+ * in the first paint — no session to wait on, and nothing that appears and then
+ * disappears once `/api/me` answers (#1375).
+ *
+ * A guest is `false` here and gets the button; the chat route asks them to sign
+ * in and brings them back to the member they picked.
  */
-export function MemberChatCta({ username }: { username: string }) {
-  const { profileUsername, isLoading } = useSession();
-
-  // Undecided while the session resolves — and it renders nothing on the server
-  // for the same reason, so the first client paint matches the document.
-  if (isLoading) return null;
-
-  const mine = profileUsername?.trim().toLowerCase() === username.trim().toLowerCase();
-  if (mine) return null;
+export function MemberChatCta({ username, isSelf }: { username: string; isSelf: boolean }) {
+  if (isSelf) return null;
 
   return (
     <Link

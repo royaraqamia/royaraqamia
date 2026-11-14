@@ -13,10 +13,10 @@ import { MemberChatCta } from '@/app/community/_components/member-chat-cta';
 import { PROFILE_COPY } from './profile-copy';
 
 /**
- * Rendered per request, because one part of this page is about the viewer: the
- * follow control and the two numbers above it are *your* standing with this
- * member, and a document cached for everyone can only answer them by guessing
- * or by asking the browser afterwards.
+ * Rendered per request, because part of this page is about the viewer: the
+ * follow control, the two numbers above it and the chat door are *your*
+ * standing with this member, and a document cached for everyone can only answer
+ * them by guessing or by asking the browser afterwards.
  *
  * Asking the browser was the first attempt and it felt heavy: two skeletons in
  * the middle of a profile header, a read that waited on `/api/me`, and a layout
@@ -129,7 +129,7 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
                 signedIn={Boolean(viewerId)}
                 size="md"
               />
-              <MemberChatCta username={member.username} />
+              <MemberChatCta username={member.username} isSelf={follow.state === 'self'} />
             </div>
           </div>
         </div>
