@@ -12,7 +12,6 @@ data class FollowToggleResponse(
     val success: Boolean,
     val state: FollowToggleResponseState,
     val counts: FollowToggleResponseCounts? = null,
-    val memberId: String? = null,
     val error: String? = null,
 )
 
