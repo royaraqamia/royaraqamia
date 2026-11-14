@@ -19,3 +19,15 @@ export const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 export const PUBLIC_CACHEABLE = {
   'Cache-Control': 'public, max-age=0, must-revalidate',
 } as const;
+
+/**
+ * A public read the edge may keep. `s-maxage` is the permission Cloudflare's
+ * Cache Rule reads; `max-age=0` keeps the browser and the service worker's
+ * network-first read the source of truth, and the `public` token is still the
+ * worker's opt-in.
+ */
+export function publicEdgeCache(seconds: number): { 'Cache-Control': string } {
+  return {
+    'Cache-Control': `public, max-age=0, s-maxage=${seconds}, stale-while-revalidate=${seconds * 2}`,
+  };
+}

@@ -34,7 +34,8 @@ const routing = (() => {
 })();
 
 const NO_STORE_DECLARATION = /\bNO_STORE\b|['"]Cache-Control['"]\s*:\s*['"]no-store/i;
-const PUBLIC_DECLARATION = /\bPUBLIC_CACHEABLE\b|['"]Cache-Control['"]\s*:\s*['"][^'"]*\bpublic\b/i;
+const PUBLIC_DECLARATION =
+  /\bPUBLIC_CACHEABLE\b|\bpublicEdgeCache\b|['"]Cache-Control['"]\s*:\s*['"][^'"]*\bpublic\b/i;
 const AUTHENTICATED = /\bwithAuthenticatedUser\b|\bwithBearerUser\b|\bwithAdminUser\b/;
 
 function isNeverCache(path: string): boolean {

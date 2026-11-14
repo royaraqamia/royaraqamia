@@ -24,7 +24,7 @@ import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_BASE = 'https://royaraqamia.com';
 
-/** Public, cookie-free documents. Keep this list in step with the Cache Rule. */
+/** Public, cookie-free documents and the explicit public API reads. */
 export const PUBLIC_PATHS = [
   '/',
   '/terms',
@@ -37,6 +37,12 @@ export const PUBLIC_PATHS = [
   '/quran/1',
   '/athkar/evening',
   '/verify',
+  '/api/rates/board',
+  '/api/community/index',
+  '/api/consultation/packages',
+  '/api/training/cohorts',
+  '/api/athkar',
+  '/api/version',
 ];
 
 /** Paths that must never be cached, whether or not the visitor is signed in. */
@@ -46,6 +52,7 @@ export const PRIVATE_PATHS = [
   '/notifications',
   '/api/me',
   '/api/notifications',
+  '/api/community/following',
 ];
 
 const CACHE_HITS = new Set(['hit', 'revalidated']);
@@ -170,6 +177,15 @@ export async function main(argv = process.argv.slice(2)) {
     const verdict = privateVerdict(answer);
     rows.push({ kind: 'private', path: profile, cache: answer.cache, verdict });
     if (!verdict.ok) failures.push(`${profile}: ${verdict.reason}`);
+
+    // The page renders the viewer's follow state; the API beside it is the
+    // public row the app reads and is an explicit edge read.
+    const apiProfile = `/api${profile}`;
+    await probe(args.base, apiProfile);
+    const apiAnswer = await probe(args.base, apiProfile);
+    const apiVerdict = publicVerdict(apiAnswer);
+    rows.push({ kind: 'public', path: apiProfile, cache: apiAnswer.cache, verdict: apiVerdict });
+    if (!apiVerdict.ok) failures.push(`${apiProfile}: ${apiVerdict.reason}`);
   }
 
   report(rows, failures, args);

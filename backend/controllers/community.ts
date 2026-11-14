@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
-import { NO_STORE, PUBLIC_CACHEABLE } from '@/backend/transport/cache-policy';
+import { NO_STORE, publicEdgeCache } from '@/backend/transport/cache-policy';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { recordCommunityPostView } from '@/backend/config/community';
@@ -68,7 +68,7 @@ export async function getCommunityPost(slug: string): Promise<HttpResult> {
         },
         postTags,
       },
-      { headers: PUBLIC_CACHEABLE }
+      { headers: publicEdgeCache(300) }
     );
   } catch (error) {
     if (!isRepositoryError(error)) Sentry.captureException(error);
@@ -121,7 +121,7 @@ export async function getCommunityMember(username: string): Promise<HttpResult> 
         posts,
         nextCursor,
       },
-      { headers: PUBLIC_CACHEABLE }
+      { headers: publicEdgeCache(60) }
     );
   } catch (error) {
     if (!isRepositoryError(error)) Sentry.captureException(error);
