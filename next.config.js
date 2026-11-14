@@ -422,26 +422,31 @@ const nextConfig = {
   },
 };
 
+// Uploads need all three, not just the token: the plugin fails the build when a
+// token is present but the org or project is blank, and the build host where
+// that happens (Render) is the one nobody can rebuild by hand.
+const sentryUpload = Boolean(
+  process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
+);
+
 const sentryWebpackPluginOptions = {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   // Name releases after the deploy the app itself reports
-  // (`<semver>+build.<count>.<sha>`), so Vercel-uploaded sourcemaps and the
-  // events they describe reference one release. See `sentryRelease` above.
+  // (`<semver>+build.<count>.<sha>`), so uploaded sourcemaps and the events
+  // they describe reference one release. See `sentryRelease` above.
   release: sentryRelease(),
   silent: true,
-  dryRun: !process.env.SENTRY_AUTH_TOKEN,
-  // Source maps are only useful if they are uploaded. With no auth token there
-  // is nothing to upload, so skip generating them (`.next/server` was 77% maps
-  // on a local build) — those bytes otherwise land in every deployment's
-  // function payload. With a token, upload then delete them from the output.
-  sourcemaps: process.env.SENTRY_AUTH_TOKEN
-    ? { deleteSourcemapsAfterUpload: true }
-    : { disable: true },
-  // Client events are tunnelled through `/monitoring`, a Vercel function
-  // invocation per event (the CSP forbids direct sentry.io calls, so the tunnel
-  // stays). Keeping it cheap is a sampling problem — see the client trace rate
-  // in frontend/shared/sentry.ts.
+  dryRun: !sentryUpload,
+  // Source maps are only useful if they are uploaded. Without the credentials
+  // there is nothing to upload, so skip generating them (`.next/server` was 77%
+  // maps on a local build) — those bytes otherwise land in every deployment's
+  // payload. With them, upload then delete the maps from the output.
+  sourcemaps: sentryUpload ? { deleteSourcemapsAfterUpload: true } : { disable: true },
+  // Client events are tunnelled through `/monitoring`, one server request per
+  // event on whichever host serves the site (the CSP forbids direct sentry.io
+  // calls, so the tunnel stays). Keeping it cheap is a sampling problem — see
+  // the client trace rate in frontend/shared/sentry.ts.
   tunnelRoute: '/monitoring',
   // Middleware runs on nearly every request here, so Sentry's per-invocation
   // transaction wrapping is the most expensive place it can be enabled. The
@@ -461,7 +466,11 @@ const sentryWebpackPluginOptions = {
   },
 };
 
-const skipSentryPlugin = process.env.VERCEL !== '1';
-module.exports = skipSentryPlugin
-  ? withBundleAnalyzer(nextConfig)
-  : withSentryConfig(withBundleAnalyzer(nextConfig), sentryWebpackPluginOptions);
+// The plugin is not Vercel-specific: it builds the `/monitoring` tunnel and
+// uploads the source maps, and Render runs the result on `next start` where the
+// tunnel rewrite is served like any other. Skipping it there left the client SDK
+// posting to `ingest.sentry.io`, which `connect-src` blocks (#1373).
+const sentryBuildHost = process.env.VERCEL === '1' || Boolean(process.env.RENDER);
+module.exports = sentryBuildHost
+  ? withSentryConfig(withBundleAnalyzer(nextConfig), sentryWebpackPluginOptions)
+  : withBundleAnalyzer(nextConfig);

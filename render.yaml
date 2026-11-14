@@ -92,6 +92,9 @@ services:
         sync: false
       - key: SENTRY_DSN
         sync: false
+      # The build uploads source maps only when all three of the org, the project
+      # and the token are set; with the token alone the build still runs, it just
+      # reports minified stacks (`next.config.js`).
       - key: SENTRY_ORG
         sync: false
       - key: SENTRY_PROJECT
