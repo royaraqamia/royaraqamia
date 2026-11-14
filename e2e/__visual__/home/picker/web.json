@@ -15,6 +15,42 @@
       "radius": 0,
       "paddingTop": 0
     },
+    "header": {
+      "top": 1,
+      "height": 43,
+      "paddingTop": 12
+    },
+    "tab-internal": {
+      "top": 56,
+      "width": 82,
+      "height": 40,
+      "radius": 33554400,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "tab-external": {
+      "top": 56,
+      "width": 121,
+      "height": 40,
+      "radius": 33554400,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "tab-inbound": {
+      "top": 56,
+      "width": 132,
+      "height": 40,
+      "radius": 33554400,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "search": {
+      "top": 108,
+      "width": 369,
+      "height": 42,
+      "radius": 12,
+      "fontSize": 14
+    },
     "row": {
       "top": 175,
       "height": 53

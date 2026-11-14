@@ -12,9 +12,11 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.royaraqamia.app.shell.AppsSheetMetrics
 import com.royaraqamia.app.shell.PickerMetrics
 import com.royaraqamia.app.shell.ServicesSheet
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
@@ -189,6 +191,11 @@ class HomeVisualTest {
         val sheet = boxOf("services-sheet")
         val row = compose.onAllNodesWithTag("services-row")[0].getUnclippedBoundsInRoot()
         val action = compose.onAllNodesWithTag("services-row-action")[0].getUnclippedBoundsInRoot()
+        val header = boxOf("apps-sheet-header")
+        val tabInternal = boxOf("apps-tab-internal")
+        val tabExternal = boxOf("apps-tab-external")
+        val tabInbound = boxOf("apps-tab-inbound")
+        val search = boxOf("apps-search")
 
         val json =
             """
@@ -202,6 +209,42 @@ class HomeVisualTest {
                   "height": ${(sheet.bottom - sheet.top).value},
                   "radius": 0,
                   "paddingTop": 0
+                },
+                "header": {
+                  "top": ${header.top.value},
+                  "height": ${(header.bottom - header.top).value},
+                  "paddingTop": ${AppsSheetMetrics.headerPaddingTop.value}
+                },
+                "tab-internal": {
+                  "top": ${tabInternal.top.value},
+                  "width": ${(tabInternal.right - tabInternal.left).value},
+                  "height": ${(tabInternal.bottom - tabInternal.top).value},
+                  "radius": $FULL_RADIUS,
+                  "fontSize": ${AppsSheetMetrics.tabTextSize.value},
+                  "fontWeight": ${FontWeight.Bold.weight}
+                },
+                "tab-external": {
+                  "top": ${tabExternal.top.value},
+                  "width": ${(tabExternal.right - tabExternal.left).value},
+                  "height": ${(tabExternal.bottom - tabExternal.top).value},
+                  "radius": $FULL_RADIUS,
+                  "fontSize": ${AppsSheetMetrics.tabTextSize.value},
+                  "fontWeight": ${FontWeight.Bold.weight}
+                },
+                "tab-inbound": {
+                  "top": ${tabInbound.top.value},
+                  "width": ${(tabInbound.right - tabInbound.left).value},
+                  "height": ${(tabInbound.bottom - tabInbound.top).value},
+                  "radius": $FULL_RADIUS,
+                  "fontSize": ${AppsSheetMetrics.tabTextSize.value},
+                  "fontWeight": ${FontWeight.Bold.weight}
+                },
+                "search": {
+                  "top": ${search.top.value},
+                  "width": ${(search.right - search.left).value},
+                  "height": ${(search.bottom - search.top).value},
+                  "radius": ${AppsSheetMetrics.searchRadius.value},
+                  "fontSize": ${AppsSheetMetrics.searchTextSize.value}
                 },
                 "row": {
                   "top": ${row.top.value},

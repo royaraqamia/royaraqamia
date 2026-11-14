@@ -10,6 +10,11 @@ export interface TabChip {
   label: string;
   /** A count or dot drawn after the label, inside the same chip. */
   badge?: ReactNode;
+  /**
+   * The visual gate's own name for this chip (see `shared/visual/<surface>.json`).
+   * Only the surfaces a contract measures set it.
+   */
+  visual?: string;
 }
 
 /**
@@ -166,6 +171,7 @@ export function TabChips({
             type="button"
             role="tab"
             id={`${idPrefix}-tab-${item.id}`}
+            data-visual={item.visual}
             aria-selected={active}
             aria-controls={panelId}
             tabIndex={active ? 0 : -1}

@@ -1,7 +1,7 @@
 {
   "surface": "home",
   "route": "/",
-  "notes": "The door's own boxes (ADR-0146), declared before the native sheet ports them (phase 5 of #1194). `strip` measures the horizontally scrolling row of apps and the control that opens the picker; `picker` measures the same add/remove sheet the strip's end control and the empty state open. The pills themselves are left out of `strip`: their order is the member's, so the contract measures the row, not one app's label - the app test that draws it is named by the gate entry when the sheet is ported, and until then this file is a contract with no recording, which `check:visual` reports as declared and not yet captured rather than pretending the page and an app agree. The sheet carries no visible title (ADR-0153), so there is no title box to measure. The empty state is the third state of the same surface and is recorded when the strip is.",
+  "notes": "The door's own boxes (ADR-0146, ADR-0159). `strip` measures the horizontally scrolling row of apps and the control that opens the picker; `picker` measures the full-height apps sheet the strip's end control and the empty state open - its header, three tabs, one search field, its first add/remove row and that row's action - which is the surface `/mcp/apps` renders as a page. The pills themselves are left out of `strip`: their order is the member's, so the contract measures the row, not one app's label. The empty state is the third state of the same surface.",
   "states": [
     {
       "name": "strip",
@@ -32,6 +32,36 @@
           "web": { "selector": "[data-visual='services-sheet']" },
           "app": { "tag": "services-sheet" },
           "properties": ["top", "width", "height", "radius", "paddingTop"]
+        },
+        {
+          "name": "header",
+          "web": { "selector": "[data-visual='apps-sheet-header']" },
+          "app": { "tag": "apps-sheet-header" },
+          "properties": ["top", "height", "paddingTop"]
+        },
+        {
+          "name": "tab-internal",
+          "web": { "selector": "[data-visual='apps-tab-internal']" },
+          "app": { "tag": "apps-tab-internal" },
+          "properties": ["top", "width", "height", "radius", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "tab-external",
+          "web": { "selector": "[data-visual='apps-tab-external']" },
+          "app": { "tag": "apps-tab-external" },
+          "properties": ["top", "width", "height", "radius", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "tab-inbound",
+          "web": { "selector": "[data-visual='apps-tab-inbound']" },
+          "app": { "tag": "apps-tab-inbound" },
+          "properties": ["top", "width", "height", "radius", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "search",
+          "web": { "selector": "[data-visual='apps-search']" },
+          "app": { "tag": "apps-search" },
+          "properties": ["top", "width", "height", "radius", "fontSize"]
         },
         {
           "name": "row",

@@ -341,6 +341,7 @@ private fun SheetHeader(onDismiss: () -> Unit) {
     Row(
         modifier =
             Modifier.fillMaxWidth()
+                .testTag("apps-sheet-header")
                 .padding(
                     start = AppsSheetMetrics.headerPadding,
                     end = AppsSheetMetrics.headerPaddingEnd,
@@ -392,18 +393,19 @@ private fun SheetHeader(onDismiss: () -> Unit) {
 private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
     val tabs =
         listOf(
-            AppsSheetTab.Internal to AppsSheetCopy.TAB_INTERNAL,
-            AppsSheetTab.External to AppsSheetCopy.TAB_EXTERNAL,
-            AppsSheetTab.Inbound to AppsSheetCopy.TAB_INBOUND,
+            Triple(AppsSheetTab.Internal, AppsSheetCopy.TAB_INTERNAL, "apps-tab-internal"),
+            Triple(AppsSheetTab.External, AppsSheetCopy.TAB_EXTERNAL, "apps-tab-external"),
+            Triple(AppsSheetTab.Inbound, AppsSheetCopy.TAB_INBOUND, "apps-tab-inbound"),
         )
     Row(
         modifier =
             Modifier.fillMaxWidth()
+                .padding(bottom = AppsSheetMetrics.tabRowBottomPadding)
                 .horizontalScroll(rememberScrollState())
                 .semantics { contentDescription = AppsSheetCopy.TABS_LABEL },
         horizontalArrangement = Arrangement.spacedBy(AppsSheetMetrics.tabGap),
     ) {
-        tabs.forEach { (id, label) ->
+        tabs.forEach { (id, label, tag) ->
             val active = id == tab
             val shape = RoundedCornerShape(percent = 50)
             Box(
@@ -423,7 +425,7 @@ private fun AppsTabs(tab: AppsSheetTab, onSelect: (AppsSheetTab) -> Unit) {
                         )
                         .clickable { onSelect(id) }
                         .semantics { selected = active }
-                        .testTag("apps-tab")
+                        .testTag(tag)
                         .padding(horizontal = AppsSheetMetrics.tabHorizontalPadding),
                 contentAlignment = Alignment.Center,
             ) {
@@ -524,7 +526,14 @@ internal object AppsSheetMetrics {
     val headerPadding = 16.dp
     val headerPaddingEnd = 8.dp
     val headerPaddingTop = 12.dp
-    val headerPaddingBottom = 8.dp
+
+    /**
+     * The page's header is 43px because its title carries an 18px line box
+     * (`text-lg/[1]`) and its close control floats outside the flow. The app's
+     * close is a 28dp control in the row, so the same 43px comes from the
+     * control's own height plus these paddings, not from the title's.
+     */
+    val headerPaddingBottom = 3.dp
     val titleTextSize = 18.sp
     val closeSize = 28.dp
     val closeIconSize = 20.dp
@@ -533,7 +542,16 @@ internal object AppsSheetMetrics {
     val bandPaddingTop = 12.dp
     val bandGap = 8.dp
     val tabGap = 8.dp
-    val tabHorizontalPadding = 16.dp
+
+    /** The page's chip row reserves `pb-1` (4px) under its chips. */
+    val tabRowBottomPadding = 4.dp
+
+    /**
+     * The page's chip is `px-4` (16px). The app's Arabic shaping sets the same
+     * label a few pixels narrower, so one extra point each side is what makes
+     * the recorded box the page's box rather than a second spelling of it.
+     */
+    val tabHorizontalPadding = 17.dp
     val tabMinHeight = 40.dp
     val tabTextSize = 14.sp
 
