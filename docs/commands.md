@@ -115,7 +115,9 @@ deploy identity is the generated `<semver>+build.<N>.<sha>`.
 ([ADR-0186](adr/0186-the-origin-deploys-on-a-clock-not-on-every-merge.md)). A train with no new
 commit costs nothing: the workflow reads the running build's `<7-char-sha>` from `sw-version.js` and
 stops before calling the hook. Merge cadence is unchanged; only time-to-production is bounded (at
-most six hours, or one dispatch).
+most six hours, or one dispatch). A dispatch also takes **`purge_only`**, which skips the build and
+re-runs the discovery check and the purge — the recovery for a purge that failed after a build had
+already landed.
 
 **Render is the origin** ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md)).
 `render.yaml` is the blueprint: a free native-Node service, built with `npm ci && npm run build:render`
@@ -156,9 +158,9 @@ job fails loudly rather than skipping silently. `purge-cache.yml` no longer exis
 step of the deploy the train triggers
 ([ADR-0186](adr/0186-the-origin-deploys-on-a-clock-not-on-every-merge.md)).
 
-**The edge caches the public document.** The three Cache Rules and the warm Worker are in
-[edge-cache.md](edge-cache.md); `npm run check:edge` asserts the public paths are `HIT` and the
-member surfaces are not
+**The edge caches the public document.** The four Cache Rules and the warm Worker are in
+[edge-cache.md](edge-cache.md); `npm run check:edge` asserts the public documents and the explicit
+public API reads are `HIT` and the member surfaces are not
 ([ADR-0187](adr/0187-the-edge-caches-the-public-document-and-a-cron-keeps-the-origin-awake.md)).
 
 **Retained deployments:** Render keeps them for rollback and does not meter deployment

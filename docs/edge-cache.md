@@ -65,13 +65,38 @@ The filename carries the version and the origin marks it `immutable`, so this is
 edge. It is the one large file the site serves (7.4 MB); without the rule a few hundred installs spend
 the 5 GB outbound allowance the free plan suspends on.
 
+### 4. Public API reads
+
+```text
+(http.request.method eq "GET" and (http.request.uri.path eq "/api/rates/board" or http.request.uri.path eq "/api/rates/series" or http.request.uri.path eq "/api/community/index" or http.request.uri.path eq "/api/athkar" or http.request.uri.path eq "/api/version" or http.request.uri.path eq "/api/consultation/packages" or http.request.uri.path eq "/api/training/cohorts" or starts_with(http.request.uri.path, "/api/u/")))
+```
+
+The same "respect origin, bypass if absent" setting makes the rule harmless for a path that forgets
+its `s-maxage`: it simply is not cached. The reads above opt in explicitly:
+
+| Path                                    | Who reads it                               | `s-maxage` |
+| --------------------------------------- | ------------------------------------------ | ---------- |
+| `/api/rates/board`, `/api/rates/series` | the rates tab and the app's converter      | 300        |
+| `/api/community/index`                  | the public hub, cursor pages included      | 300        |
+| `/api/training/cohorts`                 | the apply form                             | 300        |
+| `/api/consultation/packages`            | the booking page                           | 60         |
+| `/api/u/<handle>`                       | the app's profile screen (public row only) | 60         |
+| `/api/athkar`, `/api/version`           | the shell, once per open tab               | 1 day / 60 |
+
+`/api/news/board` is deliberately **not** in the list: its body is shaped by the reader's plan
+(visitor one card, Free five, Pro fifty — ADR-0093), so it answers `no-store` and must keep doing so.
+The profile page (`/u/**`) is also not here — it renders the viewer's follow state; only its API
+sibling is public.
+
 ## What must never be cached
 
 - `/community` — the member's feed (`force-dynamic`, `private, no-store`).
 - `/notifications`, `/chats/**`, `/admin/**`, `/auth/**` — signed-in surfaces (`private, no-store`).
 - `/u/**` — the profile renders the viewer's follow state into the HTML (`force-dynamic`).
 - `/mcp` and `/mcp/*` — the MCP endpoint; tools and streams.
-- `/api/**` — every route authenticates itself; a public API rule is a separate, explicit decision.
+- `/api/**` — except the explicit reads in rule 4; every other route authenticates itself or answers
+  `no-store` (the API cache-posture contract in `scripts/__tests__/api-cache-contract.test.ts` keeps
+  that true).
 - `/sw.js`, `sw-*.js`, `/manifest.json` — `no-store` / `no-cache` by design.
 - `/android/latest.json` — the update manifest must be re-read on every visit.
 
@@ -122,10 +147,11 @@ npm run check:edge -- --json             # machine-readable
 ```
 
 It requests every public path twice (the first request is what fills the edge), requires the second
-answer to be `HIT` or `REVALIDATED`, checks one real `/_next/static` chunk and one optimized image,
-and then asserts that `/community`, `/notifications`, `/admin`, `/api/me`, `/api/notifications` and a
-profile discovered from the public hub are **not** served from the edge — and that the feed and the
-profile still say `private, no-store`.
+answer to be `HIT` or `REVALIDATED`, checks one real `/_next/static` chunk, one optimized image, the
+public API reads, and the public API row of a profile discovered from the hub; then it asserts that
+`/community`, `/notifications`, `/admin`, `/api/me`, `/api/notifications`, `/api/community/following`
+and the profile page itself are **not** served from the edge — and that the feed and the profile still
+say `private, no-store`.
 
 It cannot prove the signed-in case: `/account` redirects and `/api/me` answers 401 when the script
 has no cookie, and neither is cacheable anyway. The header assertion is the invariant that carries
@@ -133,7 +159,7 @@ it. For a real signed-in check, use the browser tool against the deployed site.
 
 ## Order of operations
 
-1. Create the three rules above.
+1. Create the four rules above.
 2. Run `npm run check:edge`. A first request after a deploy can be `MISS`; the script's second
    request is the answer.
 3. Deploy the Worker and confirm a trigger fires.

@@ -1,5 +1,6 @@
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { createDefaultTrainingCohortsRepository } from '@/backend/config/training';
+import { NO_STORE, publicEdgeCache } from '@/backend/transport/cache-policy';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import { isRepositoryError } from '@/backend/shared/repository-error';
@@ -24,11 +25,12 @@ interface CohortActionResult {
 export async function listOpenTrainingCohorts(): Promise<HttpResult> {
   try {
     const cohorts = await createDefaultTrainingCohortsRepository().list({ status: 'open' });
-    return jsonResult(200, { cohorts });
+    return jsonResult(200, { cohorts }, { headers: publicEdgeCache(300) });
   } catch (error) {
     if (!isRepositoryError(error)) throw error;
-    // The form degrades to "no cohorts" rather than failing the page.
-    return jsonResult(200, { cohorts: [] });
+    // The form degrades to "no cohorts" rather than failing the page. A
+    // transient failure is not a fact worth keeping at the edge.
+    return jsonResult(200, { cohorts: [] }, { headers: NO_STORE });
   }
 }
 

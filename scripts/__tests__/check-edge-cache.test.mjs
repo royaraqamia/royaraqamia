@@ -72,9 +72,20 @@ describe('privateVerdict', () => {
 });
 
 describe('the path lists', () => {
+  const PUBLIC_API = new Set([
+    '/api/rates/board',
+    '/api/community/index',
+    '/api/consultation/packages',
+    '/api/training/cohorts',
+    '/api/athkar',
+    '/api/version',
+  ]);
+
   it('never lists an authenticated or personalized surface as public', () => {
     for (const path of PUBLIC_PATHS) {
-      expect(path.startsWith('/api/')).toBe(false);
+      if (path.startsWith('/api/')) {
+        expect(PUBLIC_API.has(path)).toBe(true);
+      }
       expect(path.startsWith('/account')).toBe(false);
       expect(path.startsWith('/admin')).toBe(false);
       expect(path.startsWith('/chats')).toBe(false);
@@ -87,5 +98,6 @@ describe('the path lists', () => {
     expect(PRIVATE_PATHS).toContain('/community');
     expect(PRIVATE_PATHS).toContain('/notifications');
     expect(PRIVATE_PATHS).toContain('/api/me');
+    expect(PRIVATE_PATHS).toContain('/api/community/following');
   });
 });

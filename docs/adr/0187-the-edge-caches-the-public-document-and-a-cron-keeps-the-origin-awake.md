@@ -62,3 +62,17 @@ most of the day, so the first visitor after every gap pays that minute.
   after any Cloudflare change and after a deploy that touches the public paths.
 - **The warm window costs instance-hours, not money.** The meter is shared with `downloader-host`;
   the table in `docs/edge-cache.md` is what keeps that trade visible.
+
+## Amendment — the public API reads (2026-11-14)
+
+The first version of this decision kept `/api/**` entirely off the edge. That was too broad for the
+reads that are public by construction — the rates board and series, the community index, open
+training cohorts, consultation packages, the public profile row, athkar and the version — and the
+whitelist shape made it safe to add them: a path that is not listed is not cached, whatever its
+header says.
+
+Rule 4 in `docs/edge-cache.md` names those reads, and `publicEdgeCache(seconds)` is how a handler
+opts in with `s-maxage`. `/api/news/board` stays `no-store` because its body is shaped by the
+reader's plan (ADR-0093); every authenticated read keeps the `no-store` the authenticated seam
+already gives it, and `scripts/__tests__/api-cache-contract.test.ts` keeps a new route from
+forgetting which of the two it is.
