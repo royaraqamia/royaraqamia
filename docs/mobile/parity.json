@@ -2567,6 +2567,42 @@
           "copy": "emptyTitle"
         }
       ]
+    },
+    {
+      "id": "notifications-list",
+      "surface": "notifications",
+      "issue": "#1391",
+      "web": {
+        "route": "app/notifications/page.tsx",
+        "component": "frontend/ui/notifications/notifications-view.tsx",
+        "copyModule": "frontend/ui/notifications/notifications-copy.ts",
+        "copyExport": "NOTIFICATIONS_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/notifications/NotificationsScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/notifications/NotificationsUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/notifications/NotificationsCopy.kt",
+        "copyObject": "NotificationsCopy"
+      },
+      "copySource": "shared/copy/notifications.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loading"
+        },
+        {
+          "name": "SignedOut",
+          "copy": "signInTitle"
+        },
+        {
+          "name": "Failed",
+          "copy": "listError"
+        },
+        {
+          "name": "Ready",
+          "copy": "emptyTitle"
+        }
+      ]
     }
   ],
   "exempt": [

@@ -1,0 +1,47 @@
+{
+  "surface": "notifications",
+  "elements": {
+    "notifications-list": {
+      "top": 60.363636,
+      "width": 360.72726,
+      "radius": 16,
+      "borderTopWidth": 1
+    },
+    "notification-row": {
+      "top": 60.363636,
+      "width": 360.72726,
+      "height": 116
+    },
+    "notification-icon": {
+      "top": 74.545456,
+      "width": 38.181824,
+      "height": 38.181816,
+      "radius": 12
+    },
+    "notification-title": {
+      "top": 76.72727,
+      "height": 18.909088,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "notification-body": {
+      "top": 99.63636,
+      "height": 38.909096,
+      "fontSize": 12
+    },
+    "notification-time": {
+      "top": 144.72728,
+      "height": 17.454544,
+      "fontSize": 11
+    },
+    "notification-unread": {
+      "width": 8,
+      "height": 8
+    },
+    "notification-delete": {
+      "top": 72.36364,
+      "width": 26.18182,
+      "height": 26.181816
+    }
+  }
+}

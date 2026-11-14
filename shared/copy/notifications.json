@@ -1,0 +1,33 @@
+{
+  "surface": "notifications",
+  "component": "notifications-list",
+  "web": {
+    "file": "frontend/ui/notifications/notifications-copy.ts",
+    "export": "NOTIFICATIONS_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/notifications/NotificationsCopy.kt",
+    "object": "NotificationsCopy"
+  },
+  "notes": {
+    "source": "The notification centre's Alerts list, in both clients (#1391): the loading and empty faces, the guest sentence, the one failure line, the mark-all and delete controls, the unread announcement, and the relative-time words. `frontend/ui/notifications/notifications-view.tsx` is the reference, and the surface owns the sentence around the shared `timeAgoParts` (ADR-0104), so the row and its port cannot word the same instant differently.",
+    "placeholders": "The `ago*` strings carry `{count}`; each client substitutes the shared formatter's count.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference view does not render or a state the app's `NotificationsUiState` declares that the row does not list."
+  },
+  "strings": {
+    "loading": "جاري التَّحميل...",
+    "emptyTitle": "لا توجد إشعارات",
+    "emptyBody": "ستظهر هنا الإشعارات والتَّنبيهات الجديدة",
+    "markAllRead": "تحديد الكل كمقروء",
+    "deleteLabel": "حذف الإشعار",
+    "unreadLabel": "غير مقروء",
+    "signInTitle": "سجِّل الدُّخول لمتابعة إشعاراتك",
+    "listError": "تعذّر تحميل الإشعارات. أعد المحاولة.",
+    "retry": "إعادة المحاولة",
+    "agoNow": "منذ لحظات",
+    "agoMinutes": "منذ {count} دقيقة",
+    "agoHours": "منذ {count} ساعة",
+    "agoDays": "منذ {count} يوم",
+    "agoWeeks": "منذ {count} أسبوع"
+  }
+}

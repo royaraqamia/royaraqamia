@@ -1,0 +1,117 @@
+{
+  "surface": "notifications",
+  "route": "/notifications",
+  "notes": "The notification centre's Alerts feed (#1391) at the address the bell opens, with two of the fixture account's rows: one unread with the type's icon and dot, one read. `origin` is the list, so the measurement is the page's row anatomy and the gaps inside it, not where the site's tabs end and the app begins; `capture` is the list, the region both clients draw identically. The empty state is the page's own frame when the account has no notifications. The relative time is the fixture's (`two hours`, `three days`), so the clock is not in the recording, and the words come from the surface's generated copy (ADR-0104).",
+  "motion": {
+    "notes": "The settled feed is still; a row fades its background and its icon surface on hover with the same colour transition, and the page's loading face is a pulse skeleton. The app draws no travel on a row, so the same means the same colour change.",
+    "entries": []
+  },
+  "states": [
+    {
+      "name": "at-rest",
+      "route": "/notifications?tab=alerts",
+      "origin": "notifications-list",
+      "capture": "notifications-list",
+      "elements": [
+        {
+          "name": "notifications-list",
+          "web": {
+            "selector": "[data-visual='notifications-list']"
+          },
+          "app": {
+            "tag": "notifications-list"
+          },
+          "properties": ["top", "width", "radius", "borderTopWidth"]
+        },
+        {
+          "name": "notification-row",
+          "web": {
+            "selector": "[data-visual='notification-row']"
+          },
+          "app": {
+            "tag": "notification-row"
+          },
+          "properties": ["top", "width", "height"]
+        },
+        {
+          "name": "notification-icon",
+          "web": {
+            "selector": "[data-visual='notification-icon']"
+          },
+          "app": {
+            "tag": "notification-icon"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "notification-title",
+          "web": {
+            "selector": "[data-visual='notification-title']"
+          },
+          "app": {
+            "tag": "notification-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "notification-body",
+          "web": {
+            "selector": "[data-visual='notification-body']"
+          },
+          "app": {
+            "tag": "notification-body"
+          },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "notification-time",
+          "web": {
+            "selector": "[data-visual='notification-time']"
+          },
+          "app": {
+            "tag": "notification-time"
+          },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "notification-unread",
+          "web": {
+            "selector": "[data-visual='notification-unread']"
+          },
+          "app": {
+            "tag": "notification-unread"
+          },
+          "properties": ["width", "height"]
+        },
+        {
+          "name": "notification-delete",
+          "web": {
+            "selector": "[data-visual='notification-delete']"
+          },
+          "app": {
+            "tag": "notification-delete"
+          },
+          "properties": ["top", "width", "height"]
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "route": "/notifications?tab=alerts",
+      "origin": "notifications-empty",
+      "capture": "notifications-empty",
+      "elements": [
+        {
+          "name": "notifications-empty",
+          "web": {
+            "selector": "[data-visual='notifications-empty']"
+          },
+          "app": {
+            "tag": "notifications-empty"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        }
+      ]
+    }
+  ]
+}

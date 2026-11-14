@@ -115,7 +115,7 @@ object Routes {
     fun isTabDestination(path: String?): Boolean =
         path != null && tabDestinations.contains(normalize(path))
 
-/** The notification centre (#659): still the document, and the bell's destination. */
+/** The notification centre (#659, #1391): the bell's destination, drawn natively. */
 const val NOTIFICATIONS_ROUTE = "/notifications"
 
 /** The connected apps (#657): a native screen, and the apps sheet's third tab (#1256). */

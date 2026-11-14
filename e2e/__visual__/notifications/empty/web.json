@@ -1,0 +1,18 @@
+{
+  "surface": "notifications",
+  "state": "empty",
+  "route": "/notifications?tab=alerts",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "notifications-empty": {
+      "top": 140,
+      "width": 361,
+      "height": 220,
+      "radius": 16
+    }
+  }
+}

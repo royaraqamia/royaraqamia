@@ -9,6 +9,7 @@ import {
   clearVisualCommunityPosts,
   clearVisualLink,
   clearVisualNews,
+  clearVisualNotifications,
   clearVisualPost,
   clearVisualPrivateSource,
   clearVisualProfile,
@@ -17,6 +18,7 @@ import {
   seedVisualBlockedMembers,
   seedVisualLink,
   seedVisualNews,
+  seedVisualNotifications,
   seedVisualPost,
   seedVisualPrivateSource,
   seedVisualProfile,
@@ -643,6 +645,27 @@ const PREPARE: Record<
     await page.locator('[data-visual="private-empty"]').waitFor({ timeout: 20_000 });
     await page.evaluate(() => document.fonts.ready);
   },
+  // The notification centre's Alerts feed (#1391): the fixture's unread row and
+  // read row, at the tab the unread row opens. The rows are written through the
+  // service role because the table gives INSERT to no signed-in client, exactly
+  // as a producer writes them; the cleanup empties the account again.
+  'notifications/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await seedVisualNotifications(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="notification-row"]').first().waitFor({ timeout: 20_000 });
+    await page.evaluate(() => document.fonts.ready);
+  },
+  // The same page with nothing to read: the one frame draws its own sentence.
+  'notifications/empty': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await clearVisualNotifications(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="notifications-empty"]').waitFor({ timeout: 20_000 });
+    await page.evaluate(() => document.fonts.ready);
+  },
   // The digest at rest (#1345): the day is pinned to the fixture's fixed one, so
   // the card the gate measures is the same every run rather than today's news
   // (ADR-0119). The page is the door's own tab address; `/news` now redirects
@@ -797,6 +820,12 @@ const CLEANUP: Record<string, (page: Page) => Promise<void>> = {
   },
   'account-news/at-rest': async (page) => {
     await clearVisualPrivateSource(page.context(), projectBaseURL());
+  },
+  'notifications/at-rest': async (page) => {
+    await clearVisualNotifications(page.context(), projectBaseURL());
+  },
+  'notifications/empty': async (page) => {
+    await clearVisualNotifications(page.context(), projectBaseURL());
   },
 };
 

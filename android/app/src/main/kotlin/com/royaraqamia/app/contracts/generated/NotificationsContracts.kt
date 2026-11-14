@@ -5,8 +5,50 @@
 package com.royaraqamia.app.contracts.generated
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 
 @Serializable
 data class UnreadNotificationCount(
     val count: Long,
+)
+
+@Serializable
+data class NotificationsResponse(
+    val notifications: List<NotificationsResponseNotificationsItem>,
+)
+
+@Serializable
+data class NotificationsResponseNotificationsItem(
+    val id: String,
+    val user_id: String,
+    val type: NotificationsResponseNotificationsItemType,
+    val title: String,
+    val body: String?,
+    val metadata: NotificationsResponseNotificationsItemMetadata,
+    val is_read: Boolean,
+    val created_at: String,
+    val read_at: String?,
+)
+
+@Serializable
+enum class NotificationsResponseNotificationsItemType {
+    @SerialName("certificate_issued") CERTIFICATE_ISSUED,
+    @SerialName("habit_reminder") HABIT_REMINDER,
+    @SerialName("recovery_nudge") RECOVERY_NUDGE,
+    @SerialName("expense_alert") EXPENSE_ALERT,
+    @SerialName("link_clicked") LINK_CLICKED,
+    @SerialName("system_announcement") SYSTEM_ANNOUNCEMENT,
+    @SerialName("training_application") TRAINING_APPLICATION,
+    @SerialName("consultation_booking") CONSULTATION_BOOKING,
+    @SerialName("project_request") PROJECT_REQUEST,
+    @SerialName("retainer_request") RETAINER_REQUEST,
+    @SerialName("subscription_request") SUBSCRIPTION_REQUEST,
+    @SerialName("chat_request") CHAT_REQUEST,
+    @SerialName("new_follower") NEW_FOLLOWER,
+}
+
+@Serializable
+data class NotificationsResponseNotificationsItemMetadata(
+    val certificateCode: String? = null,
+    val conversationId: String? = null,
 )

@@ -26,6 +26,8 @@ interface NotificationContextType {
   notifications: NotificationWithMeta[];
   unreadCount: number;
   isLoading: boolean;
+  /** The read failed: an unreachable server is not "you have no notifications". */
+  failed: boolean;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
@@ -39,6 +41,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationWithMeta[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const notificationsRef = useRef(notifications);
   notificationsRef.current = notifications;
@@ -51,6 +54,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setNotifications([]);
       setUnreadCount(0);
+      setFailed(false);
       setIsLoading(false);
       return;
     }
@@ -64,10 +68,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       }));
       setNotifications(withMeta);
       setUnreadCount(count);
+      setFailed(false);
     } catch {
       if (!controller.signal.aborted) {
         setNotifications([]);
         setUnreadCount(0);
+        setFailed(true);
       }
     } finally {
       if (!controller.signal.aborted) {
@@ -180,6 +186,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       notifications,
       unreadCount,
       isLoading,
+      failed,
       markAsRead: handleMarkAsRead,
       markAllAsRead: handleMarkAllAsRead,
       deleteNotification: handleDelete,
@@ -189,6 +196,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       notifications,
       unreadCount,
       isLoading,
+      failed,
       handleMarkAsRead,
       handleMarkAllAsRead,
       handleDelete,

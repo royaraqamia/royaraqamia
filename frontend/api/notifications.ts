@@ -18,21 +18,13 @@ export function subscribeToNotificationChanges(
 }
 
 export async function getNotifications(): Promise<Notification[]> {
-  try {
-    const data = await request<{ notifications: Notification[] }>('/api/notifications');
-    return data.notifications ?? [];
-  } catch {
-    return [];
-  }
+  const data = await request<{ notifications: Notification[] }>('/api/notifications');
+  return data.notifications ?? [];
 }
 
 export async function getUnreadCount(): Promise<number> {
-  try {
-    const data = await request<{ count: number }>('/api/notifications/unread-count');
-    return data.count ?? 0;
-  } catch {
-    return 0;
-  }
+  const data = await request<{ count: number }>('/api/notifications/unread-count');
+  return data.count ?? 0;
 }
 
 export async function markAsRead(id: string) {
