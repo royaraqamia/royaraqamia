@@ -21,9 +21,10 @@ export interface OwnFollowList {
  * handle with the one in the URL and answers not-found for anyone else's - which
  * is why no `?handle=` parameter exists to be tampered with.
  *
- * The counts a profile draws are not here on purpose: they come back with the
- * follow state on one client read (`frontend/shared/follow-state-store.ts`), so
- * prerendering a profile never depends on the follow table.
+ * The counts a profile draws are not here on purpose: the profile page reads
+ * them with the viewer's standing in one call
+ * (`createFollowsService().viewerState`), so a profile render never depends on
+ * this loader.
  */
 export async function loadOwnFollowList(
   kind: 'followers' | 'following',

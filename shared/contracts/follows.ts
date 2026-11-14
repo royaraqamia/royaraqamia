@@ -40,8 +40,6 @@ export const FollowToggleResponseSchema = z.object({
   success: z.boolean(),
   state: FollowStateSchema,
   counts: FollowCountsSchema.optional(),
-  /** The member's id, so a blocked profile can lift the block by id. */
-  memberId: z.string().optional(),
   error: z.string().optional(),
 });
 

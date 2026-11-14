@@ -71,12 +71,20 @@ fun FollowButton(
         when (state) {
             FollowButtonUiState.Self -> SelfPill(type)
             FollowButtonUiState.Following ->
-                OutlineButton(FollowButtonCopy.UNFOLLOW, busy) { confirming = true }
-            FollowButtonUiState.Blocked -> OutlineButton(FollowButtonCopy.UNBLOCK, busy, onUnblock)
+                OutlineButton(
+                    if (busy) FollowButtonCopy.BUSY_UNFOLLOW else FollowButtonCopy.UNFOLLOW,
+                    enabled = !busy,
+                ) { confirming = true }
+            FollowButtonUiState.Blocked ->
+                OutlineButton(
+                    if (busy) FollowButtonCopy.BUSY_UNBLOCK else FollowButtonCopy.UNBLOCK,
+                    enabled = !busy,
+                    onClick = onUnblock,
+                )
             FollowButtonUiState.NotFollowing,
             FollowButtonUiState.Guest ->
                 PrimaryButton(
-                    text = if (busy) FollowButtonCopy.BUSY else FollowButtonCopy.FOLLOW,
+                    text = if (busy) FollowButtonCopy.BUSY_FOLLOW else FollowButtonCopy.FOLLOW,
                     enabled = !busy,
                     onClick = onFollow,
                 )

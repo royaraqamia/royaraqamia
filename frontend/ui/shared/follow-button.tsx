@@ -47,6 +47,9 @@ function displayName(name: string | null | undefined, username: string): string 
   return name?.trim() || `@${username}`;
 }
 
+/** The write in flight, so the label that replaces the button names that action. */
+type PendingAction = 'follow' | 'unfollow' | 'unblock';
+
 /**
  * The one control the follow graph puts in a visitor's hands.
  *
@@ -61,7 +64,10 @@ function displayName(name: string | null | undefined, username: string): string 
  * - a guest: follow, linked to the sign-in page rather than answering 401 later.
  *
  * After a press the state is whatever the write answered, and the numbers above
- * the header are updated from the same answer.
+ * the header are updated from the same answer. While a write is in flight the
+ * label names the action it is performing: unfollow and unblock are not a
+ * follow, and a button that says one is doing what it is not is a lie the press
+ * can see.
  */
 export function FollowButton({
   username,
@@ -73,7 +79,7 @@ export function FollowButton({
   className,
 }: FollowButtonProps) {
   const [state, setState] = useState<FollowState>(initialState);
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<PendingAction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
@@ -81,8 +87,8 @@ export function FollowButton({
   // control's own, so a list row does not grow a landing-page call to action.
   const buttonClass = cn('rounded-full font-bold', size === 'md' && 'h-11 px-6');
 
-  async function run(action: 'follow' | 'unfollow' | 'unblock') {
-    setBusy(true);
+  async function run(action: PendingAction) {
+    setPending(action);
     setError(null);
 
     try {
@@ -118,7 +124,7 @@ export function FollowButton({
             : FOLLOW_BUTTON_COPY.unblockFailed
       );
     } finally {
-      setBusy(false);
+      setPending(null);
     }
   }
 
@@ -149,30 +155,30 @@ export function FollowButton({
           size="sm"
           variant="outline"
           className={buttonClass}
-          disabled={busy}
+          disabled={pending !== null}
           onClick={() => void run('unblock')}
         >
-          {busy ? FOLLOW_BUTTON_COPY.busy : FOLLOW_BUTTON_COPY.unblock}
+          {pending === 'unblock' ? FOLLOW_BUTTON_COPY.busyUnblock : FOLLOW_BUTTON_COPY.unblock}
         </Button>
       ) : state === 'following' ? (
         <Button
           size="sm"
           variant="outline"
           className={buttonClass}
-          disabled={busy}
+          disabled={pending !== null}
           onClick={() => setConfirming(true)}
         >
-          {FOLLOW_BUTTON_COPY.unfollow}
+          {pending === 'unfollow' ? FOLLOW_BUTTON_COPY.busyUnfollow : FOLLOW_BUTTON_COPY.unfollow}
         </Button>
       ) : (
         <Button
           size="sm"
           variant="hero"
           className={buttonClass}
-          disabled={busy}
+          disabled={pending !== null}
           onClick={() => void run('follow')}
         >
-          {busy ? FOLLOW_BUTTON_COPY.busy : FOLLOW_BUTTON_COPY.follow}
+          {pending === 'follow' ? FOLLOW_BUTTON_COPY.busyFollow : FOLLOW_BUTTON_COPY.follow}
         </Button>
       )}
 
@@ -195,7 +201,7 @@ export function FollowButton({
             <Button
               variant="destructive"
               className="rounded-full"
-              disabled={busy}
+              disabled={pending !== null}
               onClick={() => {
                 setConfirming(false);
                 void run('unfollow');
