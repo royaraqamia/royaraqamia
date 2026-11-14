@@ -172,9 +172,30 @@ describe('createPushSubscriptionsRepository', () => {
           p256dh: 'p256',
           auth: 'auth',
           user_agent: 'Chrome/128',
+          updated_at: expect.any(String),
         },
         { onConflict: 'endpoint' }
       );
+    });
+
+    it('refreshes updated_at so a resubscribe reads as liveness, not as age', async () => {
+      const { client, upsert } = makeClient();
+      const repo = createPushSubscriptionsRepository(client);
+      vi.useFakeTimers();
+
+      try {
+        await repo.upsert('u-1', {
+          endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
+          p256dh: 'p256',
+          auth: 'auth',
+          userAgent: null,
+        });
+        expect(upsert.mock.calls[0]?.[0]).toMatchObject({
+          updated_at: new Date().toISOString(),
+        });
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('deletes no other row for the user (a User-Agent is not a device identity)', async () => {
