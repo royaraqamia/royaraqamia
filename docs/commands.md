@@ -19,6 +19,7 @@
 | `npm run check:migrations:safety`           | Vets the migrations the project has not recorded, and refuses the destructive ones: what the workflow runs before applying anything unattended (ADR 0041)                                                                                                                                          |
 | `npm run perf:baseline`                     | Shipped-weight report + budget status (needs `npm run build`; see `docs/performance.md`)                                                                                                                                                                                                           |
 | `npm run perf:check`                        | Same, but exits 1 on a budget breach (run in CI)                                                                                                                                                                                                                                                   |
+| `npm run check:edge`                        | Edge cache: public paths are `HIT`, private paths are never cached — see `docs/edge-cache.md`                                                                                                                                                                                                      |
 | `npm run perf:baseline:update`              | Re-record `perf/baseline.json` after an intended change                                                                                                                                                                                                                                            |
 | `npm run android:apk`                       | Debug APK (syncs the native project first) — see `docs/mobile/android-shell.md`                                                                                                                                                                                                                    |
 | `npm run android:test`                      | The shell's JVM unit tests: the update decision and the download — no device needed (ADR-0043, ADR-0044)                                                                                                                                                                                           |
@@ -154,6 +155,11 @@ someone purged by hand. The deploy job waits for the new build to answer (`sw-ve
 job fails loudly rather than skipping silently. `purge-cache.yml` no longer exists: the purge is a
 step of the deploy the train triggers
 ([ADR-0186](adr/0186-the-origin-deploys-on-a-clock-not-on-every-merge.md)).
+
+**The edge caches the public document.** The three Cache Rules and the warm Worker are in
+[edge-cache.md](edge-cache.md); `npm run check:edge` asserts the public paths are `HIT` and the
+member surfaces are not
+([ADR-0187](adr/0187-the-edge-caches-the-public-document-and-a-cron-keeps-the-origin-awake.md)).
 
 **Retained deployments:** Render keeps them for rollback and does not meter deployment
 storage, so nothing prunes them — the Vercel-only `prune-deployments.yml` and its script were

@@ -72,6 +72,7 @@
     "perf:baseline": "node scripts/perf-baseline.mjs",
     "perf:baseline:update": "node scripts/perf-baseline.mjs --update-baseline",
     "perf:check": "node scripts/perf-baseline.mjs --check",
+    "check:edge": "node scripts/check-edge-cache.mjs",
     "perf:field": "node scripts/perf-field.mjs",
     "perf:paint": "node scripts/perf-paint.mjs",
     "perf:paint:update": "node scripts/perf-paint.mjs --update",
