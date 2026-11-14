@@ -22,6 +22,7 @@ import com.royaraqamia.app.session.TokenRefresher
 import com.royaraqamia.app.store.MemoryIdentityStorage
 import com.royaraqamia.app.support.RecordingTransport
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -81,7 +82,7 @@ class ConnectionScreenTest {
         body: String = detailBody,
         signedIn: Boolean = true,
         onDisconnected: () -> Unit = {},
-        requests: MutableList<String> = mutableListOf(),
+        requests: MutableList<String> = CopyOnWriteArrayList(),
     ) {
         val transport =
             RecordingTransport { request ->
@@ -163,7 +164,7 @@ class ConnectionScreenTest {
 
     @Test
     fun `a tool's switch is one write`() {
-        val requests = mutableListOf<String>()
+        val requests = CopyOnWriteArrayList<String>()
         screen(requests = requests)
 
         compose.waitUntil(timeoutMillis = 5_000) {
@@ -194,7 +195,7 @@ class ConnectionScreenTest {
 
     @Test
     fun `no session is the sign-in card, before any request`() {
-        val requests = mutableListOf<String>()
+        val requests = CopyOnWriteArrayList<String>()
         screen(signedIn = false, requests = requests)
 
         compose.onNodeWithTag(ConnectionMetrics.SIGNED_OUT).assertIsDisplayed()
