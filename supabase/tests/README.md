@@ -36,6 +36,19 @@ test here.
   `INSERT`/`UPDATE`/`DELETE`, no write policy is left, and `upsert_short_link` refuses both
   roles while `service_role` keeps execute. The owner-scoped `short_links_read` stays.
 
+`community_follows_test.sql` (#1379):
+
+- Neither `authenticated` nor `anon` holds INSERT, UPDATE or DELETE on
+  `public.follows`; `authenticated` keeps SELECT for the `security_invoker` feed and
+  `anon` holds none. `service_role` keeps INSERT and DELETE, and is the only caller of
+  `public.follow_edge`.
+- The insert and delete policies stay as defence in depth.
+- A signed-in client cannot POST or DELETE a follow through the Data API (`42501`).
+- `follow_edge` writes one edge, a second follow writes nothing, and an unfollow removes
+  it; the feed shows the followee's post only while the edge exists.
+- A hidden or unconfirmed member answers `not_found`, a block answers `blocked`, and a
+  self-follow answers `self`, none of them writing a row.
+
 `plan_cap_enforcement_test.sql` (#526):
 
 - The count a cap reads excludes tombstones.
@@ -294,6 +307,13 @@ trigger reads instead of the row's declared number — if a first run refuses wi
 first-run adjustment are the `current_user` owner check inside the guard (it compares against
 `pg_class.relowner`, not a literal role name) and the direct pair keys the triggers write while the
 file runs.
+
+`community_follows_test.sql` (#1379) is unrun for the same reason (no Docker on the
+writing machine). Its fixtures mirror `chat_reports_test.sql` (replica-role seeding, one
+rolled-back file, assertions that name a role), and the grant assertions are the live
+project's own `has_table_privilege` answers after the migration. If `plan(29)` and the
+run disagree, the policy count and the two `following_feed` reads are the first places
+to look.
 
 `chat_direct_key_test.sql` (#841) is unrun too, and it seeds with the status trigger live instead of
 `replica`, so the trigger writes the keys the file is about: if `plan(17)` and the run disagree, the
