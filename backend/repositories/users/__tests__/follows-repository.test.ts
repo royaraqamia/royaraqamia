@@ -183,53 +183,103 @@ describe('createFollowsRepository.listFollowingIds', () => {
 });
 
 /**
- * A client for one write: `.upsert(values, options)` hands back the builder and
- * `.select()` is the terminal read. `data` is what PostgREST answers - a row
- * when this call wrote the edge, nothing when the pair was already there.
+ * A client for the one write call: `follow_edge` answers a single row naming the
+ * outcome, whether this call wrote the edge, the viewer's row (only when it did)
+ * and the target's numbers.
  */
-function createFollowClient(options: {
-  data: Array<{ follower_id: string }> | null;
-  error?: unknown;
-}) {
-  const select = vi.fn(async () => ({ data: options.data, error: options.error ?? null }));
-  const upsert = vi.fn(() => ({ select }));
+function createFollowEdgeClient(options: { data: unknown[] | null; error?: unknown }) {
+  const rpc = vi.fn(async () => ({ data: options.data, error: options.error ?? null }));
 
-  const from = vi.fn((table: string) => {
-    if (table !== 'follows') throw new Error(`unexpected table: ${table}`);
-    return { upsert };
-  });
-
-  return { supabase: { from } as unknown as SupabaseClient<Database>, upsert };
+  return { supabase: { rpc } as unknown as SupabaseClient<Database>, rpc };
 }
 
-describe('createFollowsRepository.follow', () => {
-  it('answers true for the insert that wrote the edge', async () => {
-    const { supabase, upsert } = createFollowClient({ data: [{ follower_id: 'viewer' }] });
+describe('createFollowsRepository.followEdge', () => {
+  it('sends the direction and the viewer, and maps the whole answer', async () => {
+    const { supabase, rpc } = createFollowEdgeClient({
+      data: [
+        {
+          outcome: 'ok',
+          target_id: 'target',
+          wrote: true,
+          viewer_name: 'Viewer',
+          viewer_username: 'viewer',
+          target_followers: 3,
+          target_following: 5,
+        },
+      ],
+    });
     const repository = createFollowsRepository(supabase);
 
-    await expect(repository.follow('viewer', 'target')).resolves.toBe(true);
-    // The pair is the conflict target, so an unrelated unique violation still
-    // fails instead of being read as a repeat.
-    expect(upsert).toHaveBeenCalledWith(
-      { follower_id: 'viewer', followee_id: 'target' },
-      { onConflict: 'follower_id,followee_id', ignoreDuplicates: true }
+    await expect(repository.followEdge('viewer', 'Target', true)).resolves.toEqual({
+      outcome: 'ok',
+      targetId: 'target',
+      wrote: true,
+      counts: { followers: 3, following: 5 },
+      viewer: { name: 'Viewer', username: 'viewer' },
+    });
+    // `users.username` is stored and compared lowercased, so the handle is
+    // normalised here rather than in the function.
+    expect(rpc).toHaveBeenCalledWith('follow_edge', {
+      p_follower_id: 'viewer',
+      p_username: 'target',
+      p_follow: true,
+    });
+  });
+
+  it('answers not_found for a handle the directory would not name', async () => {
+    const { supabase } = createFollowEdgeClient({
+      data: [
+        {
+          outcome: 'not_found',
+          target_id: null,
+          wrote: false,
+          viewer_name: null,
+          viewer_username: null,
+          target_followers: 0,
+          target_following: 0,
+        },
+      ],
+    });
+    const repository = createFollowsRepository(supabase);
+
+    await expect(repository.followEdge('viewer', 'ghost', true)).resolves.toEqual({
+      outcome: 'not_found',
+    });
+  });
+
+  // #1371: a repeat is the same edge, so the function writes no row and answers
+  // no viewer - the service has nobody to name, so it says nothing.
+  it('answers no viewer when this call wrote nothing', async () => {
+    const { supabase } = createFollowEdgeClient({
+      data: [
+        {
+          outcome: 'ok',
+          target_id: 'target',
+          wrote: false,
+          viewer_name: null,
+          viewer_username: null,
+          target_followers: 3,
+          target_following: 5,
+        },
+      ],
+    });
+    const repository = createFollowsRepository(supabase);
+
+    await expect(repository.followEdge('viewer', 'target', false)).resolves.toEqual({
+      outcome: 'ok',
+      targetId: 'target',
+      wrote: false,
+      counts: { followers: 3, following: 5 },
+      viewer: null,
+    });
+  });
+
+  it('still fails on a write error', async () => {
+    const { supabase } = createFollowEdgeClient({ data: null, error: DB_ERROR });
+    const repository = createFollowsRepository(supabase);
+
+    await expect(repository.followEdge('viewer', 'target', true)).rejects.toBeInstanceOf(
+      RepositoryError
     );
-  });
-
-  // #1371: a repeat used to come back 23505, which the repository swallowed into
-  // `void` - so the service could not tell a new follow from a retried one and
-  // notified again. A conflict is now "no row written", not "success".
-  it('answers false when the pair was already there', async () => {
-    const { supabase } = createFollowClient({ data: [] });
-    const repository = createFollowsRepository(supabase);
-
-    await expect(repository.follow('viewer', 'target')).resolves.toBe(false);
-  });
-
-  it('still fails on a write error that is not a duplicate pair', async () => {
-    const { supabase } = createFollowClient({ data: null, error: DB_ERROR });
-    const repository = createFollowsRepository(supabase);
-
-    await expect(repository.follow('viewer', 'target')).rejects.toBeInstanceOf(RepositoryError);
   });
 });

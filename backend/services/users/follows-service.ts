@@ -38,74 +38,74 @@ export interface FollowResult {
 /**
  * Following, unfollowing, and the two lists.
  *
- * The rules that live here rather than in a policy, because they need reads a
- * policy cannot make:
+ * The write's rules — a member cannot follow themselves, only a member the
+ * directory would name can be followed (verified, not hidden), a block in either
+ * direction forbids the edge, and the pair is written once — are enforced in one
+ * database function, `follow_edge`: each of them is a read whose answer only the
+ * database needs, and six of them in sequence was the 1.7 s a press took
+ * (#1374). What lives here is the one rule that needs something Postgres does
+ * not have (the write budget) and the notification a new edge owes, which must
+ * never fail the write.
  *
- * - a member cannot follow themselves, and the viewer's own profile says `self`
- *   instead of offering a button;
- * - only a member the directory would name can be followed (verified, not
- *   hidden), so a follow cannot surface a row the roster, the search and the
- *   sitemap all skip;
- * - a block in either direction forbids the edge, and blocking already severs
- *   existing edges in the database trigger, so this check is about the write;
- * - a script gets thirty writes a minute; a member never meets it.
- *
- * The lists are private: the only member whose follower or following list this
- * service answers is the caller asking for their own.
+ * The read side keeps its shape: a page that already holds the member row passes
+ * its id (`viewerState`), a client that holds only the handle resolves it here
+ * (`standingOf`), and the lists are private - the only member whose follower or
+ * following list this service answers is the caller asking for their own.
  */
 export class FollowsService {
   constructor(private readonly deps: FollowsServiceDeps) {}
 
+  /** Follow one member by handle. */
   async follow(viewerId: string, rawUsername: string): Promise<FollowResult> {
-    const target = await this.resolveTarget(rawUsername);
+    return this.write(viewerId, rawUsername, true);
+  }
 
-    if (target.id === viewerId) {
-      return {
-        state: 'self',
-        counts: await this.countsOf(viewerId),
-      };
-    }
+  /** Unfollow one member by handle. Nobody is told they lost a follower. */
+  async unfollow(viewerId: string, rawUsername: string): Promise<FollowResult> {
+    return this.write(viewerId, rawUsername, false);
+  }
 
-    if (await this.deps.follows.isBlockedEitherWay(viewerId, target.id)) {
-      return { state: 'blocked', counts: await this.countsOf(target.id) };
-    }
-
+  /**
+   * The one write path: the budget, the call, and the notification an edge owes.
+   *
+   * The budget is checked before the call rather than beside it: it decides
+   * whether a write may happen at all, so a caller it refuses must not have
+   * written anything. Resolving the handle is part of the write it guards now,
+   * so a refused handle spends one of the thirty - the price of not sequencing
+   * a read in front of the limiter.
+   */
+  private async write(
+    viewerId: string,
+    rawUsername: string,
+    follow: boolean
+  ): Promise<FollowResult> {
     await this.assertUnderWriteLimit(viewerId);
 
-    const wroteEdge = await this.deps.follows.follow(viewerId, target.id);
+    const edge = await this.deps.follows.followEdge(viewerId, rawUsername, follow);
+
+    if (edge.outcome === 'not_found') {
+      throw new FollowRefusedError(404, 'هذا العضو غير موجود.');
+    }
 
     // Only the call that wrote the row tells the member. Following someone who
     // is already followed is the same edge in the graph, and the recipient has
     // read «بدأ متابعتك» for it already - a second one is noise, not news.
-    if (wroteEdge) {
-      // After the write, and never awaited as a condition: a member's feed must
-      // not fail because a push did.
-      const viewer = await this.deps.users.getById(viewerId);
+    // Never awaited as a condition: a member's follow must not fail because a
+    // push did.
+    if (follow && edge.wrote) {
       void this.deps.notify({
-        user_id: target.id,
+        user_id: edge.targetId,
         type: 'new_follower',
         title: 'متابِع جديد',
-        body: `${viewer?.name?.trim() || `@${viewer?.username ?? ''}`} بدأ متابعتك.`,
-        metadata: { username: viewer?.username ?? null, name: viewer?.name ?? null },
+        body: `${edge.viewer?.name?.trim() || `@${edge.viewer?.username ?? ''}`} بدأ متابعتك.`,
+        metadata: { username: edge.viewer?.username ?? null, name: edge.viewer?.name ?? null },
       });
     }
 
-    return { state: 'following', counts: await this.countsOf(target.id) };
-  }
-
-  async unfollow(viewerId: string, rawUsername: string): Promise<FollowResult> {
-    const target = await this.resolveTarget(rawUsername);
-
-    if (target.id === viewerId) {
-      return { state: 'self', counts: await this.countsOf(viewerId) };
-    }
-
-    await this.assertUnderWriteLimit(viewerId);
-    await this.deps.follows.unfollow(viewerId, target.id);
-
-    // No notification: nobody is told they lost a follower. That is the one
-    // deliberate silence in this surface.
-    return { state: 'not_following', counts: await this.countsOf(target.id) };
+    return {
+      state: edge.outcome === 'ok' ? (follow ? 'following' : 'not_following') : edge.outcome,
+      counts: edge.counts,
+    };
   }
 
   async countsOf(userId: string): Promise<FollowCounts> {

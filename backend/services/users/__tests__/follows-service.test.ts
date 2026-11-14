@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { FollowsService, FollowRefusedError } from '@/backend/services/users/follows-service';
+import { FollowsService } from '@/backend/services/users/follows-service';
 import type { PublicUser } from '@/shared/contracts/users';
 
 const viewer: PublicUser = {
@@ -22,13 +22,21 @@ const target: PublicUser = {
 
 function makeService(overrides: Record<string, unknown> = {}) {
   const follows = {
-    follow: vi.fn().mockResolvedValue(true),
-    unfollow: vi.fn().mockResolvedValue(undefined),
+    // The write path's one call: `follow_edge` resolves, judges, writes and
+    // counts, so the double answers for all four at once (#1374).
+    followEdge: vi.fn().mockResolvedValue({
+      outcome: 'ok',
+      targetId: 'target',
+      wrote: true,
+      counts: { followers: 3, following: 5 },
+      viewer: { name: 'المستخدم', username: 'viewer' },
+    }),
     isFollowing: vi.fn().mockResolvedValue(false),
     counts: vi.fn().mockResolvedValue({ target: { followers: 3, following: 5 } }),
     listFollowerIds: vi.fn().mockResolvedValue({ ids: [], total: 0 }),
     listFollowingIds: vi.fn().mockResolvedValue({ ids: [], total: 0 }),
     followingAmong: vi.fn().mockResolvedValue([]),
+    blockedAmong: vi.fn().mockResolvedValue({ blockedByViewer: [], blockedViewer: [] }),
     isBlockedEitherWay: vi.fn().mockResolvedValue(false),
     ...overrides,
   };
@@ -62,36 +70,74 @@ describe('FollowsService.follow', () => {
   it('writes the edge and tells the member who was followed', async () => {
     const { service, follows, notify } = makeService();
 
-    const result = await service.follow('viewer', 'target');
+    const result = await service.follow('viewer', 'Target');
 
-    expect(follows.follow).toHaveBeenCalledWith('viewer', 'target');
-    expect(result.state).toBe('following');
-    expect(notify).toHaveBeenCalledWith(
-      expect.objectContaining({ user_id: 'target', type: 'new_follower' })
-    );
+    expect(follows.followEdge).toHaveBeenCalledWith('viewer', 'Target', true);
+    expect(result).toEqual({ state: 'following', counts: { followers: 3, following: 5 } });
+    expect(notify).toHaveBeenCalledWith({
+      user_id: 'target',
+      type: 'new_follower',
+      title: 'متابِع جديد',
+      body: 'المستخدم بدأ متابعتك.',
+      metadata: { username: 'viewer', name: 'المستخدم' },
+    });
+  });
+
+  // #1374: the whole write is one call plus the budget. Six sequential reads is
+  // what made a press take ~1.7 s, so this pins the shape, not just the answer.
+  it('answers the write in one call, without the reads it replaced', async () => {
+    const { service, follows, users, checkRateLimit } = makeService();
+
+    await service.follow('viewer', 'target');
+
+    expect(follows.followEdge).toHaveBeenCalledTimes(1);
+    expect(checkRateLimit).toHaveBeenCalledTimes(1);
+    expect(users.getByUsername).not.toHaveBeenCalled();
+    expect(users.getById).not.toHaveBeenCalled();
+    expect(follows.isBlockedEitherWay).not.toHaveBeenCalled();
+    expect(follows.counts).not.toHaveBeenCalled();
   });
 
   // #1371: a repeat follow is the same edge, and the recipient has already been
   // told. Seven notifications for one edge is what this pins down.
   it('stays silent when the edge was already there', async () => {
-    const { service, follows, notify, users } = makeService({
-      follow: vi.fn().mockResolvedValue(false),
+    const { service, follows, notify } = makeService({
+      followEdge: vi.fn().mockResolvedValue({
+        outcome: 'ok',
+        targetId: 'target',
+        wrote: false,
+        counts: { followers: 3, following: 5 },
+        viewer: null,
+      }),
     });
 
     const result = await service.follow('viewer', 'target');
 
     expect(result.state).toBe('following');
-    expect(follows.follow).toHaveBeenCalledWith('viewer', 'target');
+    expect(follows.followEdge).toHaveBeenCalledWith('viewer', 'target', true);
     expect(notify).not.toHaveBeenCalled();
-    // Nobody was told, so there was nothing to name.
-    expect(users.getById).not.toHaveBeenCalled();
   });
 
   // Two requests for the same pair: the database writes one edge and hands the
   // row to one caller, so exactly one «بدأ متابعتك» goes out.
   it('tells the member once when two follows of the pair race', async () => {
-    const follow = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-    const { service, notify } = makeService({ follow });
+    const followEdge = vi
+      .fn()
+      .mockResolvedValueOnce({
+        outcome: 'ok',
+        targetId: 'target',
+        wrote: true,
+        counts: { followers: 3, following: 5 },
+        viewer: { name: 'المستخدم', username: 'viewer' },
+      })
+      .mockResolvedValueOnce({
+        outcome: 'ok',
+        targetId: 'target',
+        wrote: false,
+        counts: { followers: 3, following: 5 },
+        viewer: null,
+      });
+    const { service, notify } = makeService({ followEdge });
 
     const [first, second] = await Promise.all([
       service.follow('viewer', 'target'),
@@ -100,53 +146,61 @@ describe('FollowsService.follow', () => {
 
     expect(first.state).toBe('following');
     expect(second.state).toBe('following');
-    expect(follow).toHaveBeenCalledTimes(2);
+    expect(followEdge).toHaveBeenCalledTimes(2);
     expect(notify).toHaveBeenCalledTimes(1);
   });
 
-  it('answers self without writing anything', async () => {
-    const { service, follows, users } = makeService();
-    users.getByUsername = vi.fn(async () => viewer);
+  it('answers self without telling anyone', async () => {
+    const { service, follows, notify } = makeService({
+      followEdge: vi.fn().mockResolvedValue({
+        outcome: 'self',
+        targetId: 'viewer',
+        wrote: false,
+        counts: { followers: 3, following: 5 },
+        viewer: null,
+      }),
+    });
 
     const result = await service.follow('viewer', 'viewer');
 
     expect(result.state).toBe('self');
-    expect(follows.follow).not.toHaveBeenCalled();
+    expect(follows.followEdge).toHaveBeenCalledWith('viewer', 'viewer', true);
+    expect(notify).not.toHaveBeenCalled();
   });
 
-  it('refuses a block in either direction, and does not write', async () => {
-    const { service, follows } = makeService({
-      isBlockedEitherWay: vi.fn().mockResolvedValue(true),
+  it('answers a block in either direction, and tells nobody', async () => {
+    const { service, notify } = makeService({
+      followEdge: vi.fn().mockResolvedValue({
+        outcome: 'blocked',
+        targetId: 'target',
+        wrote: false,
+        counts: { followers: 3, following: 5 },
+        viewer: null,
+      }),
     });
 
     const result = await service.follow('viewer', 'target');
 
-    expect(result.state).toBe('blocked');
-    expect(follows.follow).not.toHaveBeenCalled();
+    expect(result).toEqual({ state: 'blocked', counts: { followers: 3, following: 5 } });
+    expect(notify).not.toHaveBeenCalled();
   });
 
-  it('treats a hidden member as absent, not as followable', async () => {
-    const { service, users } = makeService();
-    users.getByUsername = vi.fn(async () => ({ ...target, is_hidden: true }));
+  // Hidden, unconfirmed and absent all answer the same 404, so the write cannot
+  // be used to find a row the directory skips.
+  it('refuses a handle the directory would not name', async () => {
+    const { service } = makeService({
+      followEdge: vi.fn().mockResolvedValue({ outcome: 'not_found' }),
+    });
 
-    await expect(service.follow('viewer', 'target')).rejects.toBeInstanceOf(FollowRefusedError);
-  });
-
-  it('refuses an unverified member the same way', async () => {
-    const { service, users } = makeService();
-    users.getByUsername = vi.fn(async () => ({ ...target, verified: false }));
-
-    await expect(service.follow('viewer', 'target')).rejects.toBeInstanceOf(FollowRefusedError);
+    await expect(service.follow('viewer', 'ghost')).rejects.toMatchObject({ status: 404 });
   });
 
   it('stops a caller over the write limit', async () => {
-    const { service, follows, checkRateLimit } = makeService({
-      isBlockedEitherWay: vi.fn().mockResolvedValue(false),
-    });
+    const { service, follows, checkRateLimit } = makeService();
     checkRateLimit.mockResolvedValue(false);
 
     await expect(service.follow('viewer', 'target')).rejects.toMatchObject({ status: 429 });
-    expect(follows.follow).not.toHaveBeenCalled();
+    expect(follows.followEdge).not.toHaveBeenCalled();
   });
 
   it('never lets a notification failure fail the follow', async () => {
@@ -156,6 +210,26 @@ describe('FollowsService.follow', () => {
     await expect(service.follow('viewer', 'target')).resolves.toMatchObject({
       state: 'following',
     });
+  });
+});
+
+describe('FollowsService.unfollow', () => {
+  it('removes the edge in the same one call, and tells nobody', async () => {
+    const { service, follows, notify } = makeService({
+      followEdge: vi.fn().mockResolvedValue({
+        outcome: 'ok',
+        targetId: 'target',
+        wrote: false,
+        counts: { followers: 2, following: 5 },
+        viewer: null,
+      }),
+    });
+
+    const result = await service.unfollow('viewer', 'target');
+
+    expect(follows.followEdge).toHaveBeenCalledWith('viewer', 'target', false);
+    expect(result).toEqual({ state: 'not_following', counts: { followers: 2, following: 5 } });
+    expect(notify).not.toHaveBeenCalled();
   });
 });
 

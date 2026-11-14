@@ -3354,6 +3354,18 @@ export type Database = {
           user_id: string;
         }[];
       };
+      follow_edge: {
+        Args: { p_follow: boolean; p_follower_id: string; p_username: string };
+        Returns: {
+          outcome: string;
+          target_followers: number;
+          target_following: number;
+          target_id: string | null;
+          viewer_name: string | null;
+          viewer_username: string | null;
+          wrote: boolean;
+        }[];
+      };
       generate_certificate_code: { Args: never; Returns: string };
       get_auth_user_by_email: {
         Args: { p_email: string };
