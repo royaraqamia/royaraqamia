@@ -219,8 +219,12 @@ export class FollowsService {
     // order, and `getMany` also drops any id whose row is gone.
     const hydrated = [...members].sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 
+    // One read for the whole page. A follower row draws its follow control, so
+    // the flag is needed, but asking `isFollowing` per row spent a round trip
+    // per member - thirty for a full page (#1372). The following list is the
+    // edge itself, so its rows are followed without a second read.
     const followingSet = new Set(
-      kind === 'following' ? ids : await this.followingIntersection(ownerId, ids)
+      kind === 'following' ? ids : await this.deps.follows.followingAmong(ownerId, ids)
     );
 
     const entries: FollowListEntry[] = hydrated.map((member) => ({
@@ -229,12 +233,6 @@ export class FollowsService {
     }));
 
     return { members: entries, total };
-  }
-
-  private async followingIntersection(ownerId: string, ids: string[]): Promise<string[]> {
-    if (ids.length === 0) return [];
-    const flags = await Promise.all(ids.map((id) => this.deps.follows.isFollowing(ownerId, id)));
-    return ids.filter((_, index) => flags[index]);
   }
 
   private async resolveTarget(rawUsername: string) {

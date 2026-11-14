@@ -28,6 +28,7 @@ function makeService(overrides: Record<string, unknown> = {}) {
     counts: vi.fn().mockResolvedValue({ target: { followers: 3, following: 5 } }),
     listFollowerIds: vi.fn().mockResolvedValue({ ids: [], total: 0 }),
     listFollowingIds: vi.fn().mockResolvedValue({ ids: [], total: 0 }),
+    followingAmong: vi.fn().mockResolvedValue([]),
     isBlockedEitherWay: vi.fn().mockResolvedValue(false),
     ...overrides,
   };
@@ -165,5 +166,53 @@ describe('FollowsService.list', () => {
     await expect(service.list('viewer', 'target', 'followers', 1)).rejects.toMatchObject({
       status: 403,
     });
+  });
+
+  // #1372: the followers page paid one `isFollowing` read per row - thirty round
+  // trips for a page of thirty - while a single `followingAmong` answers the
+  // same question. This pins the read count, not just the flags.
+  it('answers a full page of followers in one follow read', async () => {
+    const ids = Array.from({ length: 30 }, (_, index) => `member-${index}`);
+    const members: PublicUser[] = ids.map((id) => ({
+      id,
+      username: id,
+      name: null,
+      avatar_url: null,
+      bio: null,
+      verified: true,
+    }));
+    const { service, follows, users } = makeService({
+      listFollowerIds: vi.fn().mockResolvedValue({ ids, total: ids.length }),
+      followingAmong: vi.fn().mockResolvedValue(['member-7']),
+    });
+    users.getMany = vi.fn().mockResolvedValue(members);
+
+    const page = await service.list('viewer', 'viewer', 'followers', 1);
+
+    expect(follows.followingAmong).toHaveBeenCalledTimes(1);
+    expect(follows.followingAmong).toHaveBeenCalledWith('viewer', ids);
+    expect(follows.isFollowing).not.toHaveBeenCalled();
+    expect(page.members).toHaveLength(30);
+    expect(page.members.filter((member) => member.following)).toEqual([
+      expect.objectContaining({ id: 'member-7', following: true }),
+    ]);
+  });
+
+  it('marks every row of the following list without reading the edges twice', async () => {
+    const members: PublicUser[] = [
+      { id: 'a', username: 'a', name: null, avatar_url: null, bio: null, verified: true },
+      { id: 'b', username: 'b', name: null, avatar_url: null, bio: null, verified: true },
+    ];
+    const { service, follows, users } = makeService({
+      listFollowingIds: vi.fn().mockResolvedValue({ ids: ['a', 'b'], total: 2 }),
+    });
+    users.getMany = vi.fn().mockResolvedValue(members);
+
+    const page = await service.list('viewer', 'viewer', 'following', 1);
+
+    // The list is the edge: every row is, by definition, followed.
+    expect(page.members.every((member) => member.following)).toBe(true);
+    expect(follows.followingAmong).not.toHaveBeenCalled();
+    expect(follows.isFollowing).not.toHaveBeenCalled();
   });
 });
