@@ -6,6 +6,8 @@ import { Lock } from 'lucide-react';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { loadPlanCatalog } from '@/backend/loaders/plans';
 import { createDefaultSubscriptionRequestService } from '@/backend/config/subscriptions';
+import { geoCountry } from '@/backend/transport/geo';
+import { GeoCountryProvider } from '@/frontend/ui/shared/geo-country';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { SubscribeFlow } from '@/frontend/ui/subscriptions/subscribe-flow';
 import { SubscribePageHeading } from '@/frontend/ui/subscriptions/subscribe-page-heading';
@@ -30,14 +32,22 @@ export const metadata: Metadata = {
  * Three states, decided on the server: a guest sees the sign-in panel; a member
  * already on the paid plan sees where their plan lives; a member who already has
  * an open request sees its reference code instead of being asked twice.
+ *
+ * It also hands the platform's country to the form, so the phone picker opens on
+ * the visitor's own country — the number is what the Admin uses to arrange
+ * activation (ADR-0176). The read costs no cacheability: the account and the plan
+ * already make this document per-request, which is why it is declared in
+ * `DYNAMIC_BY_DESIGN`.
  */
 export default async function SubscribePage() {
-  const { user } = await getOptionalUser();
+  const [{ user }, country] = await Promise.all([getOptionalUser(), geoCountry()]);
 
   return (
-    <main id="main-content" dir="rtl" className="mx-auto max-w-2xl px-4 pt-6 pb-16 md:pb-24">
-      {user ? <MemberSubscribeForm userId={user.id} /> : <GuestPanel />}
-    </main>
+    <GeoCountryProvider value={country}>
+      <main id="main-content" dir="rtl" className="mx-auto max-w-2xl px-4 pt-6 pb-16 md:pb-24">
+        {user ? <MemberSubscribeForm userId={user.id} /> : <GuestPanel />}
+      </main>
+    </GeoCountryProvider>
   );
 }
 
