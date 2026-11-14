@@ -19,10 +19,11 @@ services:
     plan: free
     region: frankfurt
     branch: main
-    # `npm run build` runs the whole prebuild chain (service worker, icons,
-    # version) plus `tsc --noEmit`, exactly as CI does. `npm ci` honours the
-    # repository's `.npmrc` (`legacy-peer-deps`).
-    buildCommand: npm ci && npm run build
+    # `build:render` is `npm run build` without `tsc --noEmit`: CI already gates
+    # types on the pull request, and the build machine only needs the artifact.
+    # It still runs the whole prebuild chain and the postbuild precache list.
+    # `npm ci` honours the repository's `.npmrc` (`legacy-peer-deps`).
+    buildCommand: npm ci && npm run build:render
     startCommand: npm start
     # A static file: a health check that touches the app would count against the
     # 0.1 CPU the free instance has, and would report unhealthy while a page is

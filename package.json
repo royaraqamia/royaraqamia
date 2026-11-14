@@ -14,6 +14,7 @@
     "predev": "node scripts/sync-zxing-wasm.mjs && node scripts/generate-sw-config.mjs && node scripts/build-sw-outbox.mjs && node scripts/build-sync-flush.mjs && node scripts/generate-sw-precache.mjs && node scripts/compute-version.mjs",
     "prebuild": "node scripts/sync-zxing-wasm.mjs && node scripts/generate-sw-config.mjs && node scripts/build-sw-outbox.mjs && node scripts/build-sync-flush.mjs && node scripts/generate-icons.mjs && node scripts/compute-version.mjs",
     "build": "tsc --noEmit && next build",
+    "build:render": "npm run prebuild && next build && node scripts/generate-sw-precache.mjs",
     "postbuild": "node scripts/generate-sw-precache.mjs",
     "start": "next start",
     "lint": "eslint .",

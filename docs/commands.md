@@ -117,9 +117,11 @@ stops before calling the hook. Merge cadence is unchanged; only time-to-producti
 most six hours, or one dispatch).
 
 **Render is the origin** ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md)).
-`render.yaml` is the blueprint: a free native-Node service, built with `npm ci && npm run build` and
-started with `npm start`, health-checked on `/manifest.json`, with `autoDeployTrigger: 'off'` so only
-the train deploys. Native rather than Docker because the assistant's roster is read from
+`render.yaml` is the blueprint: a free native-Node service, built with `npm ci && npm run build:render`
+and started with `npm start`, health-checked on `/manifest.json`, with `autoDeployTrigger: 'off'` so
+only the train deploys. `build:render` is `npm run build` without `tsc --noEmit` — the pull request
+already gates types — so the build machine spends its minutes on the artifact, not a second type
+check. Native rather than Docker because the assistant's roster is read from
 `.opencode/skills/agency/` at request time. Cloudflare proxies the custom domain and caches
 `/_next/static/*`, fonts and images: that caching is what keeps the origin inside the 5 GB monthly
 bandwidth allowance, after which a workspace with no payment method is suspended for the rest of the

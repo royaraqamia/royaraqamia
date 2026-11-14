@@ -42,6 +42,10 @@ The alternatives, and why they are not this change:
 5. **A build that does not answer fails the job.** It does not purge. A failed build leaves the
    previous container and its cached pages consistent; a purge of the old build while a slow new one
    is still coming would leave the new pages stale for a year.
+6. **The build drops the second type check.** `render.yaml` builds with `npm run build:render`, which
+   is `npm run build` without `tsc --noEmit`, with the prebuild chain and the postbuild precache list
+   kept. Every pull request already runs `npx tsc --noEmit`; paying for it again on the build machine
+   spends the minutes this change is trying to protect.
 
 ## Consequences
 
