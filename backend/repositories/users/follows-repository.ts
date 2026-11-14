@@ -7,6 +7,29 @@ import {
   isRangeNotSatisfiableError,
 } from '@/backend/shared/repository-error';
 
+/** What one call to `follow_edge` decided. */
+export type FollowEdgeOutcome = 'ok' | 'self' | 'blocked' | 'not_found';
+
+/** The three outcomes that name a member the caller may be shown. */
+export type FollowEdgeDecision = Exclude<FollowEdgeOutcome, 'not_found'>;
+
+/**
+ * The answer to a follow or unfollow, in one round trip.
+ *
+ * `viewer` is present only when this call wrote a new edge: the notification is
+ * the one thing on this path that needs the follower's name, so the row is read
+ * only when there is somebody to tell.
+ */
+export type FollowEdgeResult =
+  | { outcome: 'not_found' }
+  | {
+      outcome: FollowEdgeDecision;
+      targetId: string;
+      wrote: boolean;
+      counts: FollowCounts;
+      viewer: { name: string | null; username: string | null } | null;
+    };
+
 /**
  * The follow graph, as rows.
  *
@@ -21,15 +44,14 @@ import {
  */
 export interface FollowsRepository {
   /**
-   * Insert the edge; an existing one is not an error.
+   * Resolve, judge and write one edge, and answer the target's counts.
    *
-   * Answers whether *this* call wrote the row. The pair is the primary key, so
-   * a repeated follow is a no-op at the database and returns no row - which is
-   * how the service tells a new edge from a retried one without reading first.
+   * One call, because the rules the service states are a sequence of reads
+   * whose answers only the database needs: six of them in a row was the 1.7 s a
+   * press took (#1374). `username` is the handle as it was typed; the function
+   * lowercases it the way every other read of `users.username` does.
    */
-  follow(followerId: string, followeeId: string): Promise<boolean>;
-  /** Remove the edge; a missing one is not an error. */
-  unfollow(followerId: string, followeeId: string): Promise<void>;
+  followEdge(followerId: string, username: string, follow: boolean): Promise<FollowEdgeResult>;
   isFollowing(followerId: string, followeeId: string): Promise<boolean>;
   /** Both numbers per member, in one read. A member with no rows answers zeros. */
   counts(userIds: string[]): Promise<Record<string, FollowCounts>>;
@@ -142,32 +164,37 @@ export function createFollowsRepository(supabase: SupabaseClient<Database>): Fol
   }
 
   return guardRepositoryMethods<FollowsRepository>({
-    async follow(followerId, followeeId) {
-      // `ignoreDuplicates` is `on conflict (pair) do nothing`: a repeated follow
-      // answers no row instead of 23505, so `data` is the answer to "did this
-      // call write the edge?". Two concurrent follows of one pair still insert
-      // once - the second waits on the first and inserts nothing - so the graph
-      // holds one edge and exactly one caller is told it is new.
-      const { data, error } = await supabase
-        .from('follows')
-        .upsert(
-          { follower_id: followerId, followee_id: followeeId },
-          { onConflict: 'follower_id,followee_id', ignoreDuplicates: true }
-        )
-        .select('follower_id');
+    async followEdge(followerId, username, follow) {
+      const { data, error } = await supabase.rpc('follow_edge', {
+        p_follower_id: followerId,
+        p_username: username.toLowerCase(),
+        p_follow: follow,
+      });
 
       if (error) throw error;
-      return (data ?? []).length === 1;
-    },
 
-    async unfollow(followerId, followeeId) {
-      const { error } = await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', followerId)
-        .eq('followee_id', followeeId);
+      const row = data?.[0];
+      if (!row) throw new Error('follow_edge answered no row');
 
-      if (error) throw error;
+      if (row.outcome === 'not_found' || !row.target_id) {
+        return { outcome: 'not_found' };
+      }
+
+      return {
+        outcome: row.outcome as FollowEdgeDecision,
+        targetId: row.target_id,
+        wrote: row.wrote,
+        counts: {
+          followers: Number(row.target_followers),
+          following: Number(row.target_following),
+        },
+        // Only the call that wrote the edge names the follower; the function
+        // answers nulls for every other outcome.
+        viewer:
+          row.viewer_name === null && row.viewer_username === null
+            ? null
+            : { name: row.viewer_name, username: row.viewer_username },
+      };
     },
 
     async isFollowing(followerId, followeeId): Promise<boolean> {
