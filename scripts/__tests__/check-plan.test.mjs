@@ -162,6 +162,16 @@ describe('the plan', () => {
     ]);
   });
 
+  it('accepts a component that names the shell frame instead of a surface', () => {
+    expect(check({ pa: { components: [{ id: 'shell-tab-bar', frame: 'chrome' }] } })).toEqual([]);
+  });
+
+  it('refuses a component that names both a surface and a frame', () => {
+    expect(check({ pa: { components: [{ id: 'x', surface: 'rates', frame: 'chrome' }] } })).toEqual(
+      ['component "x" names both surface "rates" and frame "chrome"']
+    );
+  });
+
   it('refuses no phases at all', () => {
     expect(
       validate({
@@ -247,6 +257,17 @@ describe('the rendered list', () => {
     dataWithNative.screens = screens('rates');
 
     expect(renderMarkdown(dataWithNative)).toContain('- [x] `rates-page` on **rates**');
+  });
+
+  it('ticks a frame component and names the frame rather than a surface', () => {
+    const frameData = data();
+    frameData.parity = {
+      components: [{ id: 'shell-tab-bar', frame: 'chrome', issue: '#647' }],
+    };
+
+    const rendered = renderMarkdown(frameData);
+    expect(rendered).toContain('- [x] `shell-tab-bar` on the **chrome** frame · #647');
+    expect(rendered).toContain('belongs to the shell frame the visual gate measures');
   });
 
   it('carries no generated-file header when it is an issue body, and links the ADR absolutely', () => {

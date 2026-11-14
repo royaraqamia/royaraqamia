@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, a copy source no row claims, and any Kotlin file that reads `Recipes` or `LucideVectors` without a row (`exempt` takes a path and a reason). The rules are in docs/mobile/two-clients.md, and ADR-0098 and ADR-0103 record why this exists.",
+  "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. A row names what draws it: a `surface` from perf/surfaces.json, or the `frame` from docs/mobile/visual-gate.json when the component is the shell's chrome rather than one screen's content (ADR-0118: the frame is not a surface, so it is named separately). `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, a copy source no row claims, and any Kotlin file that reads `Recipes` or `LucideVectors` without a row (`exempt` takes a path and a reason). The rules are in docs/mobile/two-clients.md, and ADR-0098 and ADR-0103 record why this exists.",
   "components": [
     {
       "id": "habit-list",
@@ -180,10 +180,11 @@
     },
     {
       "id": "shell-tab-bar",
-      "surface": "home",
+      "frame": "chrome",
       "issue": "#647",
+      "note": "The shell frame's bottom bar: drawn on every primary route and measured as the chrome frame's `at-rest` state (shared/visual/chrome.json), not by the home page's own content.",
       "web": {
-        "route": "app/page.tsx",
+        "route": "app/layout.tsx",
         "component": "frontend/ui/navbar/BottomTabBar.tsx",
         "copyModule": "frontend/ui/navbar/bottom-tab-bar-copy.ts",
         "copyExport": "BOTTOM_TAB_BAR_COPY"
@@ -212,10 +213,11 @@
     },
     {
       "id": "shell-services",
-      "surface": "home",
+      "frame": "chrome",
       "issue": "#647",
+      "note": "The top bar's `التَّطبيقات` trigger, drawn on every primary route and measured by the chrome frame's `at-rest` state; the sheet it opens is measured by the home surface's `picker` state.",
       "web": {
-        "route": "app/page.tsx",
+        "route": "app/layout.tsx",
         "component": "frontend/ui/navbar/services-link.ts",
         "copyModule": "frontend/ui/navbar/services-copy.ts",
         "copyExport": "SERVICES_COPY"

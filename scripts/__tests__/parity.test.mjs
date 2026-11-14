@@ -100,7 +100,7 @@ const copies = new Map([
   ['shared/copy/plan-card.json', JSON.parse(files['shared/copy/plan-card.json'])],
 ]);
 
-function run({ row = {}, manifest: doc, extraFiles = {}, extraCopies = copies } = {}) {
+function run({ row = {}, manifest: doc, extraFiles = {}, extraCopies = copies, gate } = {}) {
   const patched = doc ?? {
     ...manifest,
     components: [{ ...manifest.components[0], ...row }],
@@ -108,6 +108,7 @@ function run({ row = {}, manifest: doc, extraFiles = {}, extraCopies = copies } 
   return validate({
     manifest: patched,
     surfaces,
+    gate,
     copies: extraCopies,
     icons,
     read: (file) => {
@@ -126,6 +127,7 @@ describe('a pair that matches', () => {
     const real = validate({
       manifest: JSON.parse(readFileSync(join(ROOT, 'docs', 'mobile', 'parity.json'), 'utf8')),
       surfaces: JSON.parse(readFileSync(join(ROOT, 'perf', 'surfaces.json'), 'utf8')),
+      gate: JSON.parse(readFileSync(join(ROOT, 'docs', 'mobile', 'visual-gate.json'), 'utf8')),
       copies: copySources(ROOT),
       icons: JSON.parse(readFileSync(join(ROOT, 'shared', 'icons', 'icons.json'), 'utf8')),
       read: (file) => {
@@ -209,6 +211,30 @@ describe('a pair that drifted', () => {
   it('fails a surface the app is not allowed to draw', () => {
     const errors = run({ row: { surface: 'nowhere' } });
     expect(errors.join('\n')).toContain('perf/surfaces.json does not have');
+  });
+
+  it('fails a row that says neither a surface nor a frame draws it', () => {
+    const errors = run({ row: { surface: undefined } });
+    expect(errors.join('\n')).toContain('says neither the surface nor the frame that draws it');
+  });
+
+  it('fails a row that names both a surface and a frame', () => {
+    const errors = run({ row: { frame: 'chrome' } });
+    expect(errors.join('\n')).toContain('names both surface "account-server" and frame "chrome"');
+  });
+
+  it('fails a frame the visual gate does not have', () => {
+    const errors = run({ row: { surface: undefined, frame: 'gone' } });
+    expect(errors.join('\n')).toContain('docs/mobile/visual-gate.json does not have');
+  });
+
+  it('reads the frame from the gate and its contract, not the surface matrix', () => {
+    const errors = run({
+      row: { surface: undefined, frame: 'chrome' },
+      gate: { frame: { id: 'chrome', contract: 'shared/visual/chrome.json' } },
+      extraFiles: { 'shared/visual/chrome.json': '{}' },
+    });
+    expect(errors).toEqual([]);
   });
 
   it('fails a component that does not read the generated module', () => {

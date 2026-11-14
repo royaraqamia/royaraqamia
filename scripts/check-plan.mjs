@@ -143,14 +143,22 @@ export function validate({ plan, screens, surfaces, parity }) {
     }
   }
 
-  // A component is drawn by a surface; a component whose surface is not on the
-  // list is a port that exists outside the plan.
+  // A component is drawn by a surface, or by the shell frame every primary
+  // screen wears. A component whose surface is not on the list is a port that
+  // exists outside the plan; a frame component is on no surface, so it names the
+  // frame instead (#966, ADR-0118).
   for (const component of parity.components ?? []) {
-    if (!component.surface) {
+    if (!component.surface && !component.frame) {
       errors.push(`component "${component.id}" does not say which surface draws it`);
       continue;
     }
-    if (!seen.has(component.surface)) {
+    if (component.surface && component.frame) {
+      errors.push(
+        `component "${component.id}" names both surface "${component.surface}" and frame "${component.frame}"`
+      );
+      continue;
+    }
+    if (component.surface && !seen.has(component.surface)) {
       errors.push(
         `component "${component.id}" belongs to surface "${component.surface}", which the plan does not list`
       );
@@ -247,10 +255,16 @@ export function renderMarkdown({ plan, screens, surfaces, parity }, { issue = fa
   }
 
   const components = (parity.components ?? [])
-    .filter((component) => byId.has(component.surface))
+    .filter((component) => component.frame || byId.has(component.surface))
     .map((component) => {
-      const done = byId.get(component.surface)?.state === 'native';
       const issue = component.issue ? ` · ${component.issue}` : '';
+      if (component.frame) {
+        // The frame is not a surface (ADR-0118): it is the chrome, recorded once
+        // on `/` and gated by its contract, so its components are measured the
+        // moment check:visual runs rather than waiting for a screen to be native.
+        return `- [x] \`${component.id}\` on the **${component.frame}** frame${issue}`;
+      }
+      const done = byId.get(component.surface)?.state === 'native';
       return `- ${done ? '[x]' : '[ ]'} \`${component.id}\` on **${component.surface}**${issue}`;
     });
 
@@ -273,7 +287,8 @@ export function renderMarkdown({ plan, screens, surfaces, parity }, { issue = fa
 
   const tail =
     `\n## Components\n\n` +
-    `A component is finished when the surface that draws it is native: ` +
+    `A component is finished when the surface that draws it is native, or when it belongs to the ` +
+    `shell frame the visual gate measures: ` +
     `${components.length} ported components, listed by the screen they belong to and gated by ` +
     `\`check:parity\` (ADR-0098).\n\n${components.join('\n')}\n`;
 

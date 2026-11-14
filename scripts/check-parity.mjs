@@ -23,10 +23,14 @@ import { fileURLToPath } from 'node:url';
  *    generated copy source rather than a retyped label?
  * 5. Is every string in the copy source rendered by the reference component? A
  *    key no client draws is copy that exists only to go stale.
+ * 6. Does the row say what draws it - a surface from the matrix, or the shell
+ *    frame from the visual gate? The frame is not a surface (ADR-0118), so a
+ *    chrome component names it separately and the id cannot drift.
  */
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = join(ROOT, 'docs', 'mobile', 'parity.json');
 const MATRIX = join(ROOT, 'perf', 'surfaces.json');
+const GATE = join(ROOT, 'docs', 'mobile', 'visual-gate.json');
 const ICONS = join(ROOT, 'shared', 'icons', 'icons.json');
 const VECTORS = 'android/app/src/main/kotlin/com/royaraqamia/app/ui/vectors/LucideVectors.kt';
 
@@ -103,7 +107,7 @@ export function copySources(root = ROOT) {
 }
 
 /** Every problem, not just the first. `read` returns null for a missing file. */
-export function validate({ manifest, surfaces, copies, icons, read, sources = [] }) {
+export function validate({ manifest, surfaces, copies, icons, read, sources = [], gate = null }) {
   const errors = [];
   const surfaceIds = new Set((surfaces.surfaces ?? []).map((surface) => surface.id));
   const listedIcons = new Set(icons?.icons ?? []);
@@ -134,6 +138,27 @@ export function validate({ manifest, surfaces, copies, icons, read, sources = []
 
     if (row.surface && !surfaceIds.has(row.surface)) {
       errors.push(`"${id}" names a surface perf/surfaces.json does not have: ${row.surface}`);
+    }
+
+    // What draws the component: one surface, or the shell frame. The frame is
+    // not a surface (ADR-0118), so it is named here rather than added to
+    // perf/surfaces.json, and a stale id fails instead of pointing at nothing.
+    if (row.surface && row.frame) {
+      errors.push(`"${id}" names both surface "${row.surface}" and frame "${row.frame}"`);
+    } else if (!row.surface && !row.frame) {
+      errors.push(`"${id}" says neither the surface nor the frame that draws it`);
+    }
+    if (row.frame) {
+      const frame = gate?.frame;
+      if (!frame || frame.id !== row.frame) {
+        errors.push(
+          `"${id}" names frame "${row.frame}", which docs/mobile/visual-gate.json does not have`
+        );
+      } else if (read(frame.contract) === null) {
+        errors.push(
+          `"${id}" names frame "${row.frame}", whose contract ${frame.contract} does not exist`
+        );
+      }
     }
 
     const paths = {
@@ -344,7 +369,7 @@ export function kotlinSources(root = ROOT) {
 }
 
 function main() {
-  for (const file of [MANIFEST, MATRIX]) {
+  for (const file of [MANIFEST, MATRIX, GATE]) {
     if (!existsSync(file)) {
       console.error(`x ${relative(ROOT, file)} is missing`);
       return 1;
@@ -353,6 +378,7 @@ function main() {
 
   const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'));
   const surfaces = JSON.parse(readFileSync(MATRIX, 'utf8'));
+  const gate = JSON.parse(readFileSync(GATE, 'utf8'));
   const copies = copySources();
   const icons = existsSync(ICONS) ? JSON.parse(readFileSync(ICONS, 'utf8')) : null;
   const read = (file) => {
@@ -366,7 +392,7 @@ function main() {
     return 1;
   }
 
-  const errors = validate({ manifest, surfaces, copies, icons, read, sources });
+  const errors = validate({ manifest, surfaces, copies, icons, read, sources, gate });
   if (errors.length > 0) {
     for (const error of errors) console.error(`x ${error}`);
     return 1;
