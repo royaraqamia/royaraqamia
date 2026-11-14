@@ -1,0 +1,174 @@
+# Deploys the origin on a clock, not on every merge.
+#
+# Render's Hobby workspace includes 500 build-pipeline minutes a month, and this
+# repository merges far more often than that pays for: ~22 deploy-triggering
+# merges a day at the recorded ~2m45 a build is ~1,800 minutes. So the service
+# no longer builds on a push (`autoDeployTrigger: off` in `render.yaml`); this
+# workflow calls the deploy hook four times a day, and on demand for a fix that
+# cannot wait for the next train.
+#
+# The hook builds whatever `main` is when it fires. The job then waits for
+# `sw-version.js` to stop naming the build that was serving before it — that
+# file is `no-store`, so the wait cannot read a cached answer — and only then
+# purges the edge (ADR-0177) and reads the discovery documents back
+# (ADR-0178). A build that never answers fails the job instead of purging a
+# stale container and calling it a deploy.
+#
+# Secrets:
+#   RENDER_DEPLOY_HOOK_URL - the service's deploy hook (Settings → Deploy Hook)
+#   CLOUDFLARE_API_TOKEN   - Zone.Cache Purge only
+# Variables:
+#   CLOUDFLARE_ZONE_ID     - royaraqamia.com
+#   SITE_BASE_URL          - optional, defaults to https://royaraqamia.com
+#
+# GitHub disables a schedule after 60 days without repository activity. This
+# repository merges daily, so that only matters for a fork.
+
+name: 'Deploy'
+
+on:
+  schedule:
+    # 00:00, 06:00, 12:00, 18:00 UTC = 03:00, 09:00, 15:00, 21:00 in Baghdad.
+    # Four builds a day is ~330 of the 500 minutes at the recorded build time,
+    # which leaves about 170 minutes for the manual lane below.
+    - cron: '0 0,6,12,18 * * *'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why this deploy cannot wait for the next train'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  BASE_URL: ${{ vars.SITE_BASE_URL || 'https://royaraqamia.com' }}
+
+jobs:
+  deploy:
+    name: Build, wait, purge
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      # A dispatch can name any ref, but the Render service only ever builds its
+      # own branch. Waiting for another ref's SHA would time out against a build
+      # that was never going to carry it.
+      - name: Only main deploys
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::the origin deploys from main only; dispatch this workflow on main."
+            exit 1
+          fi
+
+      - name: The deploy hook exists
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL is not set. Render → service → Settings → Deploy Hook, then add it as an Actions secret."
+            exit 1
+          fi
+
+      - name: What is serving now
+        id: before
+        run: |
+          for attempt in $(seq 1 6); do
+            body="$(curl -fsS --max-time 60 "$BASE_URL/sw-version.js?before=$attempt" || true)"
+            version="$(printf '%s' "$body" | sed -n "s/.*CACHE_VERSION = '\([^']*\)'.*/\1/p")"
+            if [ -n "$version" ]; then
+              echo "version=$version" >> "$GITHUB_OUTPUT"
+              echo "serving $version"
+              # The last seven characters of the service-worker version are the
+              # commit the running build was made from. A train with no new
+              # commit would rebuild the same tree and then wait forever for a
+              # version that cannot change, so it stops here and spends no
+              # build minute.
+              target="${GITHUB_SHA:0:7}"
+              if [ "${version##*-}" = "$target" ]; then
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+                echo "::notice::the running build already names $target; no deploy needed."
+              else
+                echo "skip=false" >> "$GITHUB_OUTPUT"
+              fi
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::$BASE_URL did not answer with a version; refusing to deploy blind."
+          exit 1
+
+      - name: Trigger the build
+        if: steps.before.outputs.skip != 'true'
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          curl -fsS -X POST --max-time 30 "$RENDER_DEPLOY_HOOK_URL"
+          echo "deploy hook accepted"
+
+      - name: Wait for the new build to answer
+        id: wait
+        if: steps.before.outputs.skip != 'true'
+        env:
+          BEFORE: ${{ steps.before.outputs.version }}
+        run: |
+          target="${GITHUB_SHA:0:7}"
+          for attempt in $(seq 1 60); do
+            body="$(curl -fsS --max-time 60 "$BASE_URL/sw-version.js?attempt=$attempt" || true)"
+            version="$(printf '%s' "$body" | sed -n "s/.*CACHE_VERSION = '\([^']*\)'.*/\1/p")"
+            # A change is the normal proof; the target suffix covers the rare
+            # rebuild of the commit that is already serving (for example an
+            # eight-character `--short` sha that the skip check could not match).
+            if [ -n "$version" ] && { [ "$version" != "$BEFORE" ] || [ "${version##*-}" = "$target" ]; }; then
+              echo "deploy $version is live"
+              echo "version=$version" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::the new build did not answer within 20 minutes; the previous build is still serving. Check the Render deploy, then re-run this job."
+          exit 1
+
+      - name: Discovery documents name the public origin
+        if: steps.before.outputs.skip != 'true'
+        run: |
+          base="${BASE_URL%/}"
+          issuer="$(curl -fsS --max-time 15 "$base/.well-known/oauth-authorization-server" | jq -r .issuer)"
+          resource="$(curl -fsS --max-time 15 "$base/.well-known/oauth-protected-resource" | jq -r .resource)"
+          echo "issuer=$issuer resource=$resource"
+          test "$issuer" = "$base"
+          test "$resource" = "$base/mcp"
+
+      - name: Purge the edge
+        if: steps.before.outputs.skip != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+        run: |
+          response="$(curl -fsS -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            --data '{"purge_everything":true}')"
+          echo "$response"
+          printf '%s' "$response" | grep -q '"success":true'
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.before.outputs.skip }}" = "true" ]; then
+            echo "### No deploy: the running build already names this commit" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Deployed ${{ steps.wait.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Trigger: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Reason: ${{ github.event.inputs.reason || 'scheduled train' }}" >> "$GITHUB_STEP_SUMMARY"

@@ -13,24 +13,33 @@ services:
   - type: web
     name: royaraqamia
     runtime: node
+    # First upgrade, at the first paying user: `0.5c-512mb` ($7) doubles the CPU
+    # to 0.5 and removes the spin-down, keeping the same 512 MB. `1c-2g` ($25)
+    # is the 2 GB memory wall, not the CPU one.
     plan: free
     region: frankfurt
     branch: main
-    # `npm run build` runs the whole prebuild chain (service worker, icons,
-    # version) plus `tsc --noEmit`, exactly as CI does. `npm ci` honours the
-    # repository's `.npmrc` (`legacy-peer-deps`).
-    buildCommand: npm ci && npm run build
+    # `build:render` is `npm run build` without `tsc --noEmit`: CI already gates
+    # types on the pull request, and the build machine only needs the artifact.
+    # It still runs the whole prebuild chain and the postbuild precache list.
+    # `npm ci` honours the repository's `.npmrc` (`legacy-peer-deps`).
+    buildCommand: npm ci && npm run build:render
     startCommand: npm start
     # A static file: a health check that touches the app would count against the
     # 0.1 CPU the free instance has, and would report unhealthy while a page is
     # being rendered rather than when the process is actually down.
     healthCheckPath: /manifest.json
-    autoDeployTrigger: commit
-    # 500 build minutes a month is roughly 180 builds of this app (one takes
-    # about 2m45s), and the recorded cadence before the move was 291 production
-    # deploys in a month — over the allowance before a single visitor arrived.
-    # A push that cannot change the running app does not spend one. `scripts/**`
-    # and `next.config.js` are deliberately absent: the build runs them.
+    # A merge does not build. Hobby includes 500 pipeline minutes a month, and
+    # this repository merges ~22 deploy-triggering commits a day: at the
+    # recorded ~2m45 a build that is ~1,800 minutes, gone in the first week.
+    # `.github/workflows/deploy.yml` calls the deploy hook four times a day
+    # (ADR-0186) — ~330 minutes — and keeps a manual lane for hotfixes. A
+    # deploy hook ignores the build filter below; the filter only governs an
+    # automatic deploy, so turning auto-deploys back on stays safe.
+    autoDeployTrigger: 'off'
+    # A push that cannot change the running app does not spend a build when
+    # auto-deploys return. `scripts/**` and `next.config.js` are deliberately
+    # absent: the build runs them.
     buildFilter:
       ignoredPaths:
         - docs/**
