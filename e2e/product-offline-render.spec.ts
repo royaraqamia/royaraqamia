@@ -260,6 +260,13 @@ test('a never-visited product subroute falls back to the door', async ({ page, b
   await gotoUnderWorkerControl(page, `${baseURL}/?tab=/linksnap`);
   await expect(page.getByRole('heading', { name: 'اختصار الرَّوابط' })).toBeVisible();
 
+  // The fallback is `/` without the tab query, so the door's own kept apps
+  // (localStorage, ADR-0146) decide which tab paints. Keep LinkSnap so the door
+  // shell this test lands on is recognisable by its heading.
+  await page.evaluate(() => {
+    window.localStorage.setItem('royaraqamia:home-services:v1', JSON.stringify(['/linksnap']));
+  });
+
   // The door is in the worker's fixed precache list (`PRECACHE_URLS`), so the
   // offline deep link below has an ancestor to be answered with.
   await expect
@@ -309,10 +316,12 @@ test('Notes reloads offline and keeps the note written with the radio off', asyn
   await expect(page.locator('#note-body')).toContainText(marker);
   await page.waitForTimeout(900);
 
-  // The reload is the drill: the cached document paints the same note.
+  // The reload is the drill: the cached document paints the same note. The note
+  // sheet is already open after the reload, so its own heading is the one on
+  // screen; the list heading behind it is not in the accessibility tree.
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\?tab=\/notes&note=/);
-  await expect(page.getByRole('heading', { name: 'الملاحظات' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'الملاحظة' })).toBeVisible();
   await expect(page.locator('#note-body')).toContainText(marker);
   await expectNoStoreSkeleton(page);
   await expectOfflinePill(page);

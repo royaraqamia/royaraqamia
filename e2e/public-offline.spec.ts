@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { normaliseSnapshotRoute } from '@/frontend/shared/local-store/snapshot-route';
 import { gotoUnderWorkerControl, waitForAppHydrated } from './worker-control';
 import { signIn } from './sign-in';
 
@@ -168,7 +169,7 @@ test('a never-visited public route deep-links offline from the background precac
     '/auth/login',
     '/account',
     '/downloader',
-    '/consultation/book',
+    '/security',
   ]);
 
   await context.setOffline(true);
@@ -195,24 +196,18 @@ test('a never-visited public route deep-links offline from the background precac
   await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/account$/);
 
-  // The product roots are tabs of the door since ADR-0168, and `/` is the one
-  // pinned shell, so an offline deep link to a product this context never opened
-  // paints the door with that tab selected; the Local Store (empty for a guest
-  // here) is what the client awaits.
-  await page.goto(`${baseURL}/?tab=/habitflow`, { waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(/\?tab=\/habitflow$/);
-  await expect(page.getByRole('heading', { name: 'تتبُّع العادات' })).toBeVisible();
-
   // The two Phase 3 shells (#450) are data-free documents too: a deep link to a
-  // never-opened `/downloader` or `/consultation/book` paints its own chrome,
-  // and the reads underneath it answer with their own needs-connection states.
+  // never-opened `/downloader` or `/security` paints its own chrome, and the
+  // reads underneath it answer with their own needs-connection states. The
+  // booking form is absent from this list on purpose: it reads the platform's
+  // country so its document is per-request, not a shell (ADR-0176).
   await page.goto(`${baseURL}/downloader`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/downloader$/);
   await expect(page.getByRole('heading', { name: 'مُنزِّل الوسائط' })).toBeVisible();
 
-  await page.goto(`${baseURL}/consultation/book`, { waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(/\/consultation\/book$/);
-  await expect(page.getByRole('heading', { name: 'حجز استشارة' })).toBeVisible();
+  await page.goto(`${baseURL}/security`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/security$/);
+  await expect(page.getByRole('heading', { name: 'سياسة الأمان' })).toBeVisible();
 
   await context.close();
 });
@@ -279,11 +274,13 @@ test('a community load-more that never leaves keeps the loaded page and names th
   };
 
   await page.route(
-    (url) => url.pathname === '/api/community/index' && url.searchParams.get('cursor') === 'seed',
+    (url) =>
+      url.pathname === '/api/community/following' && url.searchParams.get('cursor') === 'seed',
     (route) => route.fulfill({ json: firstPage })
   );
   await page.route(
-    (url) => url.pathname === '/api/community/index' && url.searchParams.get('cursor') === 'next',
+    (url) =>
+      url.pathname === '/api/community/following' && url.searchParams.get('cursor') === 'next',
     (route) => route.abort('failed')
   );
 
@@ -504,12 +501,17 @@ test('the news digest paints from its snapshot with the radio off', async ({
   await gotoUnderWorkerControl(page, `${baseURL}/?tab=/news`);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
+  // The digest is a tab of the door now (ADR-0168), so the snapshot is keyed by
+  // the door's addressed tab (`/?tab=%2Fnews`), not by the standalone `/news`.
+  const addressed = new URL(page.url());
+  const snapshotKey = normaliseSnapshotRoute(addressed.pathname, addressed.search);
+
   // The board settles once, from the API read; the recorder writes after the
   // paint it is given, so polling the store is the honest signal that the frame
   // this test reloads has been recorded.
   const snapshotRows = () =>
-    page.evaluate(() => {
-      const raw = window.localStorage.getItem('royaraqamia:snapshot:public:/news');
+    page.evaluate((key) => {
+      const raw = window.localStorage.getItem(`royaraqamia:snapshot:public:${key}`);
       if (!raw) return -1;
       try {
         const envelope = JSON.parse(raw) as { data?: { day?: { stories?: unknown[] } } };
@@ -517,7 +519,7 @@ test('the news digest paints from its snapshot with the radio off', async ({
       } catch {
         return -1;
       }
-    });
+    }, snapshotKey);
 
   await expect.poll(snapshotRows, { timeout: 60_000 }).toBeGreaterThan(0);
   const rows = await snapshotRows();
@@ -529,6 +531,20 @@ test('the news digest paints from its snapshot with the radio off', async ({
   await waitForCachedRoutes(page, ['/']);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await waitForAppHydrated(page);
+
+  // The worker also keeps the public API answer (`public`, ADR-0031). The
+  // snapshot exists for the case that copy is gone — evicted, or a newer build —
+  // so drop it here: only the document and the snapshot may answer the reload,
+  // which is the fallback this test measures.
+  await page.evaluate(async () => {
+    for (const name of await caches.keys()) {
+      if (!name.startsWith('royaraqamia-data-')) continue;
+      const cache = await caches.open(name);
+      for (const request of await cache.keys()) {
+        if (new URL(request.url).pathname === '/api/news/board') await cache.delete(request);
+      }
+    }
+  });
 
   await context.setOffline(true);
   await page.reload({ waitUntil: 'domcontentloaded' });
