@@ -1,38 +1,20 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 
-const mocks = vi.hoisted(() => ({
-  session: {
-    user: null as { id: string } | null,
-    profileUsername: null as string | null,
-    isLoading: false,
-  },
-}));
-
-vi.mock('@/frontend/state/session-provider', () => ({
-  useSession: () => mocks.session,
-}));
-
 import { MemberChatCta } from '../member-chat-cta';
-
-beforeEach(() => {
-  mocks.session.user = null;
-  mocks.session.profileUsername = null;
-  mocks.session.isLoading = false;
-});
 
 afterEach(cleanup);
 
 /**
  * A profile is public, but «مراسلة» on your own is a conversation with
- * yourself: the button is decided on the client so the page stays the shared,
- * revalidated document it is.
+ * yourself. The page resolves the viewer's standing for the follow control and
+ * passes it down, so the button is decided before the first paint (#1375).
  */
 describe('MemberChatCta', () => {
+  // No `SessionProvider` above it on purpose: the answer came with the page, so
+  // the button never waits on a session and never flashes in and back out.
   it('draws the chat action for another member', () => {
-    mocks.session.user = { id: 'u1' };
-    mocks.session.profileUsername = 'sara';
-    render(<MemberChatCta username="royaraqamia" />);
+    render(<MemberChatCta username="royaraqamia" isSelf={false} />);
 
     expect(screen.getByRole('link', { name: /مراسلة/ })).toHaveAttribute(
       'href',
@@ -41,19 +23,17 @@ describe('MemberChatCta', () => {
   });
 
   it('draws nothing on the member’s own profile', () => {
-    mocks.session.user = { id: 'u1' };
-    mocks.session.profileUsername = 'Royaraqamia';
-    render(<MemberChatCta username="royaraqamia" />);
+    render(<MemberChatCta username="royaraqamia" isSelf />);
 
     expect(screen.queryByRole('link', { name: /مراسلة/ })).not.toBeInTheDocument();
   });
 
-  it('waits for the session before deciding, so the first paint is the document', () => {
-    mocks.session.user = null;
-    mocks.session.profileUsername = null;
-    mocks.session.isLoading = true;
-    render(<MemberChatCta username="royaraqamia" />);
+  it('encodes a handle that needs it, so the thread opens on the member', () => {
+    render(<MemberChatCta username="رؤية" isSelf={false} />);
 
-    expect(screen.queryByRole('link', { name: /مراسلة/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /مراسلة/ })).toHaveAttribute(
+      'href',
+      `/chats/new?to=${encodeURIComponent('رؤية')}`
+    );
   });
 });
