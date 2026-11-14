@@ -59,6 +59,8 @@ import com.royaraqamia.app.store.habitflow.HabitflowRepository
 import com.royaraqamia.app.store.linksnap.KeystoreLinkPasswordCipher
 import com.royaraqamia.app.store.linksnap.LinksnapRepository
 import com.royaraqamia.app.store.linksnap.LinksnapStores
+import com.royaraqamia.app.store.notes.NotesRepository
+import com.royaraqamia.app.store.notes.NotesStores
 import com.royaraqamia.app.store.outbox.DrainReport
 import com.royaraqamia.app.store.spendtrack.SpendtrackRepository
 import com.royaraqamia.app.store.spendtrack.SpendtrackStores
@@ -132,6 +134,8 @@ class AppGraph private constructor(
     val spendtrack: SpendtrackRepository,
     /** LinkSnap's store and queue (#654). */
     val linksnap: LinksnapRepository,
+    /** Notes' store and queue (#1390). */
+    val notes: NotesRepository,
     /** BlogPress's store and queue (#952). */
     val blogpress: BlogpressRepository,
     /** The Quran reader's vendored text and the reader's last place (#955). */
@@ -149,6 +153,7 @@ class AppGraph private constructor(
     private val databases: IdentityScopedStore<HabitStores>,
     private val spendtrackDatabases: IdentityScopedStore<SpendtrackStores>,
     private val linksnapDatabases: IdentityScopedStore<LinksnapStores>,
+    private val notesDatabases: IdentityScopedStore<NotesStores>,
     private val blogpressDatabases: IdentityScopedStore<BlogpressStores>,
     private val chatsDatabases: IdentityScopedStore<ChatsStores>,
     private val grant: SupabasePasswordGrant,
@@ -194,12 +199,19 @@ class AppGraph private constructor(
         val habit = habitflow.drain()
         val spend = spendtrack.drain()
         val links = linksnap.drain()
+        val notes = notes.drain()
         val posts = blogpress.drain()
         val chatLines = chats.drain()
         return DrainReport(
-            replayed = habit.replayed + spend.replayed + links.replayed + posts.replayed + chatLines.replayed,
-            pending = habit.pending + spend.pending + links.pending + posts.pending + chatLines.pending,
-            failed = habit.failed + spend.failed + links.failed + posts.failed + chatLines.failed,
+            replayed =
+                habit.replayed + spend.replayed + links.replayed + notes.replayed + posts.replayed +
+                    chatLines.replayed,
+            pending =
+                habit.pending + spend.pending + links.pending + notes.pending + posts.pending +
+                    chatLines.pending,
+            failed =
+                habit.failed + spend.failed + links.failed + notes.failed + posts.failed +
+                    chatLines.failed,
         )
     }
 
@@ -208,12 +220,17 @@ class AppGraph private constructor(
         val habit = habitflow.outboxStatus()
         val spend = spendtrack.outboxStatus()
         val links = linksnap.outboxStatus()
+        val notes = notes.outboxStatus()
         val posts = blogpress.outboxStatus()
         val chatLines = chats.outboxStatus()
         return DrainReport(
             replayed = 0,
-            pending = habit.pending + spend.pending + links.pending + posts.pending + chatLines.pending,
-            failed = habit.failed + spend.failed + links.failed + posts.failed + chatLines.failed,
+            pending =
+                habit.pending + spend.pending + links.pending + notes.pending + posts.pending +
+                    chatLines.pending,
+            failed =
+                habit.failed + spend.failed + links.failed + notes.failed + posts.failed +
+                    chatLines.failed,
         )
     }
 
@@ -236,6 +253,7 @@ class AppGraph private constructor(
         databases.close()
         spendtrackDatabases.close()
         linksnapDatabases.close()
+        notesDatabases.close()
         blogpressDatabases.close()
         chatsDatabases.close()
     }
@@ -255,6 +273,7 @@ class AppGraph private constructor(
         databases.close()
         spendtrackDatabases.close()
         linksnapDatabases.close()
+        notesDatabases.close()
         blogpressDatabases.close()
         chatsDatabases.close()
     }
@@ -331,6 +350,8 @@ class AppGraph private constructor(
                 IdentityScopedStore { identity -> SpendtrackStores.open(context, identity) }
             val linksnapDatabases =
                 IdentityScopedStore { identity -> LinksnapStores.open(context, identity) }
+            val notesDatabases =
+                IdentityScopedStore { identity -> NotesStores.open(context, identity) }
             val blogpressDatabases =
                 IdentityScopedStore { identity -> BlogpressStores.open(context, identity) }
             val chatsDatabases =
@@ -433,11 +454,20 @@ class AppGraph private constructor(
                         online = online,
                         passwordCipher = KeystoreLinkPasswordCipher(),
                     ),
+                notes =
+                    NotesRepository(
+                        databases = notesDatabases,
+                        identity = { session.storeIdentity },
+                        client = client,
+                        signedIn = signedIn,
+                        online = online,
+                    ),
                 blogpress = blogpress,
                 communityEditor = CommunityEditorRepository(blogpress),
                 databases = databases,
                 spendtrackDatabases = spendtrackDatabases,
                 linksnapDatabases = linksnapDatabases,
+                notesDatabases = notesDatabases,
                 blogpressDatabases = blogpressDatabases,
                 chatsDatabases = chatsDatabases,
                 grant = SupabasePasswordGrant(authUrl, anonKey),

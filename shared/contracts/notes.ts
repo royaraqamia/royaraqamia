@@ -74,6 +74,33 @@ export const NoteDeleteSchema = z.object({
   updatedAt: z.string().optional(),
 });
 
+/**
+ * One note as `GET /notes/api/sync` sends it (#1390), read by the app's store.
+ *
+ * The read model above is a TypeScript interface, which the Kotlin generator
+ * cannot see: a body the site accepts and the app cannot decode is a blank
+ * screen, so the shape the app reads is a schema. It carries the Outbox fields
+ * because the route is tombstone-inclusive (ADR-0029) — a row deleted on another
+ * device arrives as a tombstone, not as an absence.
+ */
+export const NoteSyncRowSchema = z.object({
+  id: z.string(),
+  clientId: z.string(),
+  body: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  deletedAt: z.string().nullable(),
+});
+
+/** The pull's answer: the owned notes and the cursor the device holds next. */
+export const NotesSyncResponseSchema = z.object({
+  notes: z.array(NoteSyncRowSchema),
+  cursor: z.string().nullable(),
+});
+
+export type NoteSyncRow = z.infer<typeof NoteSyncRowSchema>;
+export type NotesSyncResponse = z.infer<typeof NotesSyncResponseSchema>;
+
 export type NoteWriteInput = z.infer<typeof NoteWriteSchema>;
 export type NoteUpdateInput = z.infer<typeof NoteUpdateSchema>;
 export type NoteDeleteInput = z.infer<typeof NoteDeleteSchema>;

@@ -50,8 +50,9 @@
     },
     {
       "surface": "notes",
-      "native": null,
-      "reason": "The app shows the page as the document; the product's native screens land in phase 3 (#646)."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/notes/NotesScreen.kt",
+      "enabled": false,
+      "reason": "The port is drawn from the device store and its Outbox, and is switched off until check:visual records both measurements (ADR-0118, #1390)."
     },
     {
       "surface": "quran-surah",

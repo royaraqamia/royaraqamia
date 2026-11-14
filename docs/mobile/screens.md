@@ -18,7 +18,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `linksnap` | `/?tab=/linksnap` | `LinksnapShortenerScreen.kt` |  |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` |  |
 | `quran` | `/?tab=/quran`<br>`/quran` | `QuranIndexScreen.kt` |  |
-| `notes` | `/?tab=/notes`<br>`/notes` | _web only_ | The app shows the page as the document; the product's native screens land in phase 3 (#646). |
+| `notes` | `/?tab=/notes`<br>`/notes` | `NotesScreen.kt` (off) | The port is drawn from the device store and its Outbox, and is switched off until check:visual records both measurements (ADR-0118, #1390). |
 | `quran-surah` | `/quran/[surah]` | `QuranSurahScreen.kt` |  |
 | `athkar` | `/?tab=/athkar`<br>`/athkar`<br>`/athkar/evening` | `AthkarScreen.kt` |  |
 | `account` | `/account` | `AccountScreen.kt` (off) | The rows and sign-out are drawn (#948), the profile card with its two dialogs is drawn (#946) and the allowance card is drawn (#947); the public handle editor is still the page's, so the surface stays off until it is the whole page. |

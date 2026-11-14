@@ -167,9 +167,15 @@ function NoteEditorDialogBody({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="flex min-w-0 flex-col gap-1.5 max-sm:min-h-0 max-sm:flex-1">
+        <div
+          data-visual="notes-editor"
+          className="flex min-w-0 flex-col gap-1.5 max-sm:min-h-0 max-sm:flex-1"
+        >
           <Label htmlFor="note-body">النَّصّ</Label>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-input/80 bg-background/80">
+          <div
+            data-visual="notes-editor-body"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-input/80 bg-background/80"
+          >
             <NoteBodyEditor
               initialMarkdown={note.body}
               onChange={setBody}

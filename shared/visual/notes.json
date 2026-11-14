@@ -1,0 +1,118 @@
+{
+  "surface": "notes",
+  "route": "/notes",
+  "notes": "The notes list and the open note (#1390). The list state records the heading, the search field, the bordered list shell and the empty block with its two sentences; the open-note state records the editor shell and the text surface under it. `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. Widths of the search field and the two sentences are left out deliberately - they are the run of the words, not a decision. Colours are left out too - they are what the raster proves. The contract is declared here before the surface is gated: it is recorded into `docs/mobile/visual-gate.json` by the change that switches it on, once both clients are measured (ADR-0118).",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "empty",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='notes-title']"
+          },
+          "app": {
+            "tag": "notes-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='notes-list']"
+          },
+          "app": {
+            "tag": "notes-list"
+          },
+          "properties": ["top", "width", "radius"]
+        },
+        {
+          "name": "search",
+          "web": {
+            "selector": "[data-visual='notes-search']"
+          },
+          "app": {
+            "tag": "notes-search"
+          },
+          "properties": ["height", "fontSize", "radius"]
+        },
+        {
+          "name": "empty",
+          "web": {
+            "selector": "[data-visual='notes-empty']"
+          },
+          "app": {
+            "tag": "notes-empty"
+          },
+          "properties": ["top", "width", "paddingTop"]
+        },
+        {
+          "name": "empty-title",
+          "web": {
+            "selector": "[data-visual='notes-empty-title']"
+          },
+          "app": {
+            "tag": "notes-empty-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "empty-body",
+          "web": {
+            "selector": "[data-visual='notes-empty-body']"
+          },
+          "app": {
+            "tag": "notes-empty-body"
+          },
+          "properties": ["top", "width", "fontSize", "lineHeight"]
+        }
+      ]
+    },
+    {
+      "name": "open-note",
+      "origin": "editor",
+      "capture": "editor",
+      "elements": [
+        {
+          "name": "editor",
+          "web": {
+            "selector": "[data-visual='notes-editor']"
+          },
+          "app": {
+            "tag": "notes-editor"
+          },
+          "properties": ["top", "width"]
+        },
+        {
+          "name": "editor-body",
+          "web": {
+            "selector": "[data-visual='notes-editor-body']"
+          },
+          "app": {
+            "tag": "notes-editor-body"
+          },
+          "properties": ["top", "width", "radius"]
+        }
+      ]
+    }
+  ],
+  "motion": {
+    "notes": "The list is still: a note arrives where its row sorts, and the search filters in place. The composer and the open note rise as the site's dialogs do — a short fade and travel from the bottom of the viewport — and reduced motion shows them in their final position without the travel.",
+    "entries": [
+      {
+        "element": "list",
+        "gesture": "a note is created, edited or deleted",
+        "moves": "the row appears, moves or disappears in its sorted place",
+        "same": "the same order and no entrance animation on an existing row; reduced motion is identical"
+      },
+      {
+        "element": "editor",
+        "gesture": "a note is opened, or the composer is opened",
+        "moves": "the surface fades in and rises from the bottom edge",
+        "same": "the same short fade and travel; reduced motion shows the final surface without the travel"
+      }
+    ]
+  }
+}
