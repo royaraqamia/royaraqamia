@@ -61,6 +61,10 @@ export const env = {
     return (
       read('VERCEL_DEPLOYMENT_ID') ||
       read('VERCEL_GIT_COMMIT_SHA') ||
+      // Render sets this for a service built from a repo, at build and at
+      // runtime; without it `/api/version` answered `unknown` on every deploy
+      // (issue #1466).
+      read('RENDER_GIT_COMMIT') ||
       read('NEXT_BUILD_ID') ||
       'unknown'
     );

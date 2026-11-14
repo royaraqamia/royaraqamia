@@ -277,10 +277,22 @@ describe('GET /api/version', () => {
     expectVersionShape(body);
   });
 
+  it('falls back to the Render commit on a Render deploy', async () => {
+    vi.stubEnv('VERCEL_DEPLOYMENT_ID', '');
+    vi.stubEnv('VERCEL_GIT_COMMIT_SHA', '');
+    vi.stubEnv('NEXT_BUILD_ID', '');
+    vi.stubEnv('RENDER_GIT_COMMIT', 'ff4ae27abc');
+    const res = await versionGET({} as NextRequest);
+    const body = readBody<Record<string, string>>(res);
+    expect(body).toMatchObject({ version: 'ff4ae27abc' });
+    expectVersionShape(body);
+  });
+
   it('returns "unknown" when nothing is set', async () => {
     vi.stubEnv('VERCEL_DEPLOYMENT_ID', '');
     vi.stubEnv('VERCEL_GIT_COMMIT_SHA', '');
     vi.stubEnv('NEXT_BUILD_ID', '');
+    vi.stubEnv('RENDER_GIT_COMMIT', '');
     const res = await versionGET({} as NextRequest);
     const body = readBody<Record<string, string>>(res);
     expect(body).toMatchObject({ version: 'unknown' });

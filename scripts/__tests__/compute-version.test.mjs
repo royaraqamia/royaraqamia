@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { resolveReleaseVersion, shouldWriteAppVersion } from '../compute-version.mjs';
+import {
+  resolveBuildIdentity,
+  resolveReleaseVersion,
+  shouldWriteAppVersion,
+} from '../compute-version.mjs';
 
 describe('compute-version', () => {
   it('produces +build.0.<sha> when HEAD is exactly the tag', () => {
@@ -82,6 +86,10 @@ describe('shouldWriteAppVersion', () => {
     expect(shouldWriteAppVersion({ VERCEL: '1' })).toBe(true);
   });
 
+  it('writes on Render builds (RENDER=true)', () => {
+    expect(shouldWriteAppVersion({ RENDER: 'true' })).toBe(true);
+  });
+
   it('writes when Vercel build metadata exists', () => {
     expect(shouldWriteAppVersion({ VERCEL_GIT_COMMIT_SHA: 'abc1234' })).toBe(true);
     expect(shouldWriteAppVersion({ VERCEL_ENV: 'production' })).toBe(true);
@@ -93,5 +101,58 @@ describe('shouldWriteAppVersion', () => {
 
   it('APP_VERSION_WRITE=skip overrides CI detection', () => {
     expect(shouldWriteAppVersion({ APP_VERSION_WRITE: 'skip', CI: 'true' })).toBe(false);
+  });
+});
+
+describe('resolveBuildIdentity', () => {
+  it('prefers Render metadata over the local checkout', () => {
+    const identity = resolveBuildIdentity({
+      env: {
+        RENDER: 'true',
+        RENDER_GIT_COMMIT: 'abc1234def',
+        RENDER_GIT_BRANCH: 'main',
+      },
+      commitFromGit: '9999999',
+      refFromGit: 'opencode/dispatch-stale',
+    });
+    expect(identity).toEqual({
+      commit: 'abc1234def',
+      ref: 'main',
+      env: 'production',
+    });
+  });
+
+  it('reads the checkout when no build host provided metadata', () => {
+    const identity = resolveBuildIdentity({
+      env: {},
+      commitFromGit: 'abc1234',
+      refFromGit: 'fix/1466-render-build-identity',
+    });
+    expect(identity).toEqual({
+      commit: 'abc1234',
+      ref: 'fix/1466-render-build-identity',
+      env: 'development',
+    });
+  });
+
+  it('keeps the Vercel metadata reading it had before Render existed', () => {
+    const identity = resolveBuildIdentity({
+      env: {
+        VERCEL_GIT_COMMIT_SHA: 'abc1234',
+        VERCEL_GIT_COMMIT_REF: 'main',
+        VERCEL_ENV: 'preview',
+      },
+      commitFromGit: '9999999',
+      refFromGit: 'local',
+    });
+    expect(identity).toEqual({ commit: 'abc1234', ref: 'main', env: 'preview' });
+  });
+
+  it('answers unknown rather than an empty ref when git has no branch', () => {
+    expect(resolveBuildIdentity({ env: {}, commitFromGit: '', refFromGit: '' })).toEqual({
+      commit: '',
+      ref: 'unknown',
+      env: 'development',
+    });
   });
 });
