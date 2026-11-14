@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import JSZip from 'jszip';
 
 import {
+  DOCUMENT_ENTRIES_MAX,
+  DOCUMENT_ENTRY_MAX_BYTES,
   DOCUMENT_PAGES_MAX,
   DOCUMENT_SHEETS_MAX,
   DOCUMENT_TEXT_MAX,
@@ -205,5 +208,26 @@ describe('the list of documents', () => {
       const reading = await readDocumentText(await fixtures[mime]!(), mime);
       expect(reading?.text, mime).toBeTruthy();
     }
+  });
+});
+
+describe('an archive that asks for too much memory', () => {
+  it('refuses an entry larger than the inflation budget', async () => {
+    const zip = new JSZip();
+    zip.file('word/document.xml', 'a'.repeat(DOCUMENT_ENTRY_MAX_BYTES + 1024));
+    const bytes = await zip.generateAsync({ type: 'uint8array' });
+
+    await expect(readDocumentText(bytes, DOCX)).rejects.toBeInstanceOf(DocumentReadError);
+  });
+
+  it('refuses a package with more entries than a document has', async () => {
+    const zip = new JSZip();
+    zip.file('word/document.xml', '<document/>');
+    for (let index = 0; index < DOCUMENT_ENTRIES_MAX; index += 1) {
+      zip.file(`media/${index}.bin`, '');
+    }
+    const bytes = await zip.generateAsync({ type: 'uint8array' });
+
+    await expect(readDocumentText(bytes, DOCX)).rejects.toBeInstanceOf(DocumentReadError);
   });
 });

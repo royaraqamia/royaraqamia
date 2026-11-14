@@ -27,6 +27,18 @@ export const DOCUMENT_SHEETS_MAX = 5;
  * context, and the point at which the answer has to say it stopped.
  */
 export const DOCUMENT_TEXT_MAX = 100_000;
+/**
+ * Bytes one archive entry may inflate to. A memo's `word/document.xml` is far
+ * below this; the ceiling is what keeps a zip bomb from turning one upload into
+ * gigabytes of XML before the text cap ever sees it.
+ */
+export const DOCUMENT_ENTRY_MAX_BYTES = 8 * 1024 * 1024;
+/** Inflation across every entry one document reads, not just the largest. */
+export const DOCUMENT_ARCHIVE_MAX_BYTES = 16 * 1024 * 1024;
+/** Entries one package may carry; a normal document is a few dozen. */
+export const DOCUMENT_ENTRIES_MAX = 2_000;
+/** Documents read at once: the free instance has 512 MB, and a parser tree is many times its bytes. */
+const DOCUMENT_READS_MAX = 2;
 
 /** What a document says, and the one sentence naming what was left out. */
 export interface DocumentReading {
@@ -51,6 +63,31 @@ export class DocumentReadError extends Error {
   }
 }
 
+let activeReads = 0;
+const waitingReads: Array<() => void> = [];
+
+/**
+ * A process-wide ceiling on concurrent document reads. Nothing here streams:
+ * PDF.js holds the file and the XML parser holds a tree many times its size, so
+ * two large documents at once would spend most of the free instance's 512 MB
+ * before either one answers.
+ */
+async function withDocumentSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (activeReads >= DOCUMENT_READS_MAX) {
+    await new Promise<void>((resolve) => waitingReads.push(resolve));
+  } else {
+    activeReads += 1;
+  }
+
+  try {
+    return await work();
+  } finally {
+    const next = waitingReads.shift();
+    if (next) next();
+    else activeReads -= 1;
+  }
+}
+
 const [PDF_MIME, DOCX_MIME, XLSX_MIME, ODS_MIME, PPTX_MIME] = CHAT_DOCUMENT_MIME_TYPES;
 
 /**
@@ -62,6 +99,13 @@ const [PDF_MIME, DOCX_MIME, XLSX_MIME, ODS_MIME, PPTX_MIME] = CHAT_DOCUMENT_MIME
  * format the contract accepts is a format this module reads.
  */
 export async function readDocumentText(
+  bytes: Uint8Array,
+  mimeType: string
+): Promise<DocumentReading | null> {
+  return withDocumentSlot(() => readDocumentTextNow(bytes, mimeType));
+}
+
+async function readDocumentTextNow(
   bytes: Uint8Array,
   mimeType: string
 ): Promise<DocumentReading | null> {
@@ -170,11 +214,12 @@ const DOCX_BODY = 'word/document.xml';
 
 async function readDocx(bytes: Uint8Array): Promise<DocumentReading | null> {
   const zip = await openZip(bytes);
-  const body = zip.file(DOCX_BODY);
-  if (!body) throw new DocumentReadError('broken');
+  const budget = newArchiveBudget();
+  const body = await entryText(zip, DOCX_BODY, budget);
+  if (body === null) throw new DocumentReadError('broken');
 
   const words = new Words();
-  walkWord(parseXml(await body.async('string')), words);
+  walkWord(parseXml(body), words);
   return words.read();
 }
 
@@ -234,11 +279,12 @@ async function readWorkbook(
   kind: 'xlsx' | 'ods'
 ): Promise<DocumentReading | null> {
   const zip = await openZip(bytes);
+  const budget = newArchiveBudget();
   const words = new Words();
 
   if (kind === 'ods') {
-    const content = await zip.file(ODS_CONTENT)?.async('string');
-    if (!content) throw new DocumentReadError('broken');
+    const content = await entryText(zip, ODS_CONTENT, budget);
+    if (content === null) throw new DocumentReadError('broken');
 
     const tables = collect(parseXml(content), 'table');
     for (const [index, table] of tables.slice(0, DOCUMENT_SHEETS_MAX).entries()) {
@@ -250,12 +296,12 @@ async function readWorkbook(
     return words.read();
   }
 
-  const sheets = await xlsxSheets(zip);
-  const shared = await xlsxStrings(zip);
+  const sheets = await xlsxSheets(zip, budget);
+  const shared = await xlsxStrings(zip, budget);
 
   for (const sheet of sheets.slice(0, DOCUMENT_SHEETS_MAX)) {
-    const xml = await zip.file(sheet.path)?.async('string');
-    if (!xml) continue;
+    const xml = await entryText(zip, sheet.path, budget);
+    if (xml === null) continue;
     pushRows(words, sheet.name, xlsxRows(parseXml(xml), shared));
     if (words.full) break;
   }
@@ -287,9 +333,9 @@ interface Row {
 }
 
 /** The workbook's sheets, in the order they are drawn, resolved to zip paths. */
-async function xlsxSheets(zip: JSZip): Promise<Sheet[]> {
-  const workbook = await zip.file(XLSX_WORKBOOK)?.async('string');
-  const rels = await zip.file(XLSX_RELS)?.async('string');
+async function xlsxSheets(zip: JSZip, budget: ArchiveBudget): Promise<Sheet[]> {
+  const workbook = await entryText(zip, XLSX_WORKBOOK, budget);
+  const rels = await entryText(zip, XLSX_RELS, budget);
   if (!workbook || !rels) throw new DocumentReadError('broken');
 
   const targets = new Map<string, string>();
@@ -306,9 +352,9 @@ async function xlsxSheets(zip: JSZip): Promise<Sheet[]> {
 }
 
 /** The workbook's shared-string table: the words a cell references by number. */
-async function xlsxStrings(zip: JSZip): Promise<string[]> {
-  const xml = await zip.file(XLSX_SHARED_STRINGS)?.async('string');
-  if (!xml) return [];
+async function xlsxStrings(zip: JSZip, budget: ArchiveBudget): Promise<string[]> {
+  const xml = await entryText(zip, XLSX_SHARED_STRINGS, budget);
+  if (xml === null) return [];
   return collect(parseXml(xml), 'si').map((entry) => elementText(entry.children));
 }
 
@@ -372,6 +418,7 @@ const PPTX_SLIDE = /^ppt\/slides\/slide(\d+)\.xml$/;
 /** A deck's slides, one to a block, each paragraph on its own line. */
 async function readSlides(bytes: Uint8Array): Promise<DocumentReading | null> {
   const zip = await openZip(bytes);
+  const budget = newArchiveBudget();
   const slides = Object.keys(zip.files)
     .filter((path) => PPTX_SLIDE.test(path))
     .sort((left, right) => slideNumber(left) - slideNumber(right));
@@ -381,8 +428,8 @@ async function readSlides(bytes: Uint8Array): Promise<DocumentReading | null> {
   const read = slides.slice(0, DOCUMENT_PAGES_MAX);
 
   for (const [index, path] of read.entries()) {
-    const xml = await zip.file(path)?.async('string');
-    if (!xml) continue;
+    const xml = await entryText(zip, path, budget);
+    if (xml === null) continue;
     if (index > 0) words.push('\n\n');
     walkSlide(parseXml(xml), words);
     if (words.full) break;
@@ -453,10 +500,55 @@ function parseXml(xml: string): XmlNode[] {
   }
 }
 
+interface ArchiveBudget {
+  left: number;
+}
+
+function newArchiveBudget(): ArchiveBudget {
+  return { left: DOCUMENT_ARCHIVE_MAX_BYTES };
+}
+
+/**
+ * The uncompressed size the archive's own directory declares. JSZip does not
+ * expose it publicly, and inflating the entry to measure it is exactly the
+ * allocation this check exists to prevent; `_data` is the field its reader uses.
+ */
+function declaredEntrySize(entry: JSZip.JSZipObject): number | null {
+  const data = (entry as unknown as { _data?: { uncompressedSize?: number } })._data;
+  return typeof data?.uncompressedSize === 'number' ? data.uncompressedSize : null;
+}
+
+/**
+ * One entry's text, refused before inflation when the archive says it is over
+ * the per-entry or remaining-archive budget. A normal memo is a handful of
+ * kilobytes; a package that claims megabytes of XML is not one this reader
+ * should spend the instance's memory on.
+ */
+async function entryText(zip: JSZip, path: string, budget: ArchiveBudget): Promise<string | null> {
+  const entry = zip.file(path);
+  if (!entry) return null;
+
+  const declared = declaredEntrySize(entry);
+  if (declared !== null) {
+    if (declared > DOCUMENT_ENTRY_MAX_BYTES || declared > budget.left) {
+      throw new DocumentReadError('broken');
+    }
+    budget.left -= declared;
+  }
+
+  return entry.async('string');
+}
+
 async function openZip(bytes: Uint8Array): Promise<JSZip> {
-  return JSZip.loadAsync(bytes).catch(() => {
+  const zip = await JSZip.loadAsync(bytes).catch(() => {
     throw new DocumentReadError('broken');
   });
+
+  if (Object.keys(zip.files).length > DOCUMENT_ENTRIES_MAX) {
+    throw new DocumentReadError('broken');
+  }
+
+  return zip;
 }
 
 /** Every element called `tag`, at any depth, in document order. */

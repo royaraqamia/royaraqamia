@@ -163,6 +163,11 @@ step of the deploy the train triggers
 public API reads are `HIT` and the member surfaces are not
 ([ADR-0187](adr/0187-the-edge-caches-the-public-document-and-a-cron-keeps-the-origin-awake.md)).
 
+**The free instance has a 512 MB memory budget.** The upload and document caps are in
+[memory-budget.md](memory-budget.md); an OOM restart or a memory graph above roughly 350 MB is the
+trigger for the `1c-2g` ($25) compute plan
+([ADR-0188](adr/0188-the-free-instance-has-a-memory-budget.md)).
+
 **Retained deployments:** Render keeps them for rollback and does not meter deployment
 storage, so nothing prunes them — the Vercel-only `prune-deployments.yml` and its script were
 deleted with the migration. `docs/vercel-usage.md` is a historical record now.

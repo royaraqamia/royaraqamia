@@ -3,6 +3,9 @@ import type { MediaRepository } from '@/backend/repositories/blogpress/media-rep
 const SVG_MIME_TYPE = 'image/svg+xml';
 const SVG_FILE_EXTENSIONS = ['.svg', '.svgz'];
 
+/** The bucket's ceiling, and the route's pre-buffer ceiling, from one number. */
+export const POST_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
 // `post-images` is public and Storage serves an object under the type it was
 // stored with, so an SVG would be a script-executing URL on the storage origin.
 // The bucket allowlist rejects SVG as well (20261018120000_reject_svg_from_post_images_bucket.sql);
@@ -37,7 +40,7 @@ export class BlogpressMediaService {
       return { error: 'صيغة الصُّورة غير مدعومة' };
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > POST_IMAGE_MAX_BYTES) {
       return { error: 'يجب أن يكون الملف أقل من 5 ميغابايت' };
     }
 
