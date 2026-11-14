@@ -46,6 +46,7 @@ import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
+import com.royaraqamia.app.notes.NotesScreen
 import com.royaraqamia.app.home.HomeServicesController
 import com.royaraqamia.app.home.PreferencesHomeServicesStore
 import com.royaraqamia.app.linksnap.LinksnapAnalyticsExportCopy
@@ -322,6 +323,9 @@ class ShellActivity : ComponentActivity() {
                                     onSignOut = ::signOut,
                                 )
                             "/habitflow" -> HabitflowScreen(repository = graph.habitflow)
+                            // Notes (#1390): drawn from the device store and its
+                            // Outbox, switched on only after `check:visual` passes.
+                            "/notes" -> NotesScreen(repository = graph.notes)
                             // SpendTrack's two routes share one implementation
                             // (#653): the dashboard, and the categories that
                             // list files against. Each route has its own gate

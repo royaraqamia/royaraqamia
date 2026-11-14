@@ -50,7 +50,7 @@ function NotesSkeleton() {
 export function NotesPageClient({ embedded = false }: { embedded?: boolean } = {}) {
   return (
     <>
-      <header className="mb-8 text-center">
+      <header className="mb-8 text-center" data-visual="notes-title">
         <SectionTitle as="h1">
           <SectionTitleHighlight>الملاحظات</SectionTitleHighlight>
         </SectionTitle>

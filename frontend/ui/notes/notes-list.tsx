@@ -6,6 +6,7 @@ import type { Note } from '@/shared/contracts/notes';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { noteName, notePreview } from '@/frontend/shared/notes/text';
 import { cn } from '@/frontend/shared/cn';
+import { NOTES_LIST_COPY } from './notes-list-copy';
 
 interface NotesListProps {
   notes: Note[];
@@ -28,6 +29,7 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
   return (
     <section
       aria-label="قائمة الملاحظات"
+      data-visual="notes-list"
       className="flex flex-col rounded-3xl border border-border/60 bg-card/60"
     >
       <div className="border-b border-border/50 p-3">
@@ -38,13 +40,14 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
           />
           <input
             type="text"
+            data-visual="notes-search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Escape') onQueryChange('');
             }}
-            placeholder="ابحث في ملاحظاتك…"
-            aria-label="ابحث في الملاحظات"
+            placeholder={NOTES_LIST_COPY.searchPlaceholder}
+            aria-label={NOTES_LIST_COPY.searchLabel}
             autoComplete="off"
             className="h-11 w-full rounded-xl border border-border/50 bg-background/60 ps-10 pe-10 text-sm outline-none transition-safe placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
           />
@@ -53,7 +56,7 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
               type="button"
               onClick={() => onQueryChange('')}
               className="absolute inset-e-3 top-1/2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground transition-colors hover:bg-muted-foreground/30"
-              aria-label="إلغاء البحث"
+              aria-label={NOTES_LIST_COPY.clearSearch}
             >
               <X className="size-3" />
             </button>
@@ -62,14 +65,18 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
       </div>
 
       {notes.length === 0 ? (
-        <div className="flex min-h-[40vh] flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-          <p className="text-sm font-bold text-foreground">
-            {query === '' ? 'لا ملاحظات بعد' : 'لا نتائج للبحث'}
+        <div
+          data-visual="notes-empty"
+          className="flex min-h-[40vh] flex-1 flex-col items-center justify-center gap-3 p-8 text-center"
+        >
+          <p data-visual="notes-empty-title" className="text-sm font-bold text-foreground">
+            {query === '' ? NOTES_LIST_COPY.emptyTitle : NOTES_LIST_COPY.noResultsTitle}
           </p>
-          <p className="max-w-[24ch] text-xs leading-relaxed text-muted-foreground">
-            {query === ''
-              ? 'اكتب أول ملاحظة، وستُحفظ على هذا الجهاز حتى بلا اتِّصال.'
-              : 'جرِّب كلمة أخرى، أو امسح البحث لعرض كل الملاحظات.'}
+          <p
+            data-visual="notes-empty-body"
+            className="max-w-[24ch] text-xs leading-relaxed text-muted-foreground"
+          >
+            {query === '' ? NOTES_LIST_COPY.emptyBody : NOTES_LIST_COPY.noResultsBody}
           </p>
         </div>
       ) : (
@@ -78,7 +85,7 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
             const selected = note.id === selectedId;
             // A note is its body (ADR-0110): the row is named by the first line
             // the writer typed, and the preview is the rest of the text.
-            const name = noteName(note.body) || 'ملاحظة بلا نصّ';
+            const name = noteName(note.body) || NOTES_LIST_COPY.untitled;
             const preview = notePreview(note.body, 90);
 
             return (

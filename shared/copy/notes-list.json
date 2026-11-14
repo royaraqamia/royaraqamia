@@ -1,0 +1,22 @@
+{
+  "surface": "notes",
+  "component": "notes-list",
+  "web": {
+    "file": "frontend/ui/notes/notes-list-copy.ts",
+    "export": "NOTES_LIST_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/notes/NotesListCopy.kt",
+    "object": "NotesListCopy"
+  },
+  "strings": {
+    "searchLabel": "ابحث في الملاحظات",
+    "searchPlaceholder": "ابحث في ملاحظاتك…",
+    "clearSearch": "إلغاء البحث",
+    "emptyTitle": "لا ملاحظات بعد",
+    "emptyBody": "اكتب أول ملاحظة، وستُحفظ على هذا الجهاز حتى بلا اتِّصال.",
+    "noResultsTitle": "لا نتائج للبحث",
+    "noResultsBody": "جرِّب كلمة أخرى، أو امسح البحث لعرض كل الملاحظات.",
+    "untitled": "ملاحظة بلا نصّ"
+  }
+}

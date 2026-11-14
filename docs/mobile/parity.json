@@ -2539,6 +2539,34 @@
           "copy": "countOf"
         }
       ]
+    },
+    {
+      "id": "notes-list",
+      "surface": "notes",
+      "issue": "#1390",
+      "web": {
+        "route": "app/notes/(app)/page.tsx",
+        "component": "frontend/ui/notes/notes-list.tsx",
+        "copyModule": "frontend/ui/notes/notes-list-copy.ts",
+        "copyExport": "NOTES_LIST_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/notes/NotesScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/notes/NotesUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/notes/NotesListCopy.kt",
+        "copyObject": "NotesListCopy"
+      },
+      "copySource": "shared/copy/notes-list.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "searchPlaceholder"
+        },
+        {
+          "name": "Empty",
+          "copy": "emptyTitle"
+        }
+      ]
     }
   ],
   "exempt": [

@@ -117,6 +117,16 @@ export const CONTRACTS = [
       'HabitLogWriteSchema',
     ],
   },
+  // Notes (#1390): the snapshot the app's store merges, and the bodies its Outbox
+  // replays. The read is `/notes/api/sync` — the same route the web's pull reads,
+  // tombstones included (ADR-0029) — and the writes are the endpoints
+  // `frontend/api/notes/sync-transport.ts` already drains to, so the app cannot
+  // queue a body the site has stopped accepting.
+  {
+    module: 'shared/contracts/notes',
+    file: 'NotesContracts.kt',
+    schemas: ['NotesSyncResponseSchema', 'NoteWriteSchema', 'NoteUpdateSchema', 'NoteDeleteSchema'],
+  },
   // SpendTrack (#653): the snapshot the app's store merges, and the bodies its
   // Outbox replays. The read is `/spendtrack/api/sync` — the same route the web's
   // pull reads, tombstones included (ADR-0029) — and the writes are the endpoints
