@@ -108,6 +108,17 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
 - A member can neither edit nor tombstone the other side of the thread, and a message keeps its
   identity.
 
+`chat_reports_test.sql` (#886, #1378):
+
+- `authenticated` holds no table-wide write on `chat_reports`: the RPC is the one writer and a direct
+  POST is refused `42501`, while the reporter, the trimmed reason and the frozen snapshot all come
+  from the function.
+- A report naming an account outside the conversation is refused `22023` and writes no row; the peer
+  a direct-thread caller names is stored as the reported side.
+- A null reported id on a direct thread stores the other participant; a null id on a group thread
+  stays null.
+- The fixtures seed with `session_replication_role = replica` and the whole file rolls back.
+
 `chat_direct_key_test.sql` (#841, ADR-0113):
 
 - A direct thread with two roster rows is keyed by the sorted pair, and one with a single row
@@ -283,6 +294,12 @@ available rehearsal.
 `chat_attachments_test.sql` (#815) is unrun for the same reason. It is the first assertion here
 against `storage.objects`, so expect its first real run to need the storage triggers' own `NOT NULL`
 columns filled in.
+
+The #1378 cases in `chat_reports_test.sql` were rehearsed against the linked project inside a
+rolled-back transaction: the replaced `report_chat_conversation` body, the outsider refusal with no
+row, the stored peer, the direct-thread default and the group-thread null all ran, and a DO block
+that raises does abort the same run, so a failed assertion would have shown. Only the pgTAP harness
+around them is unrun.
 
 `chat_attachment_allowances_test.sql` (#852) is unrun too. Its arithmetic is checked by hand in the
 comments beside each assertion; the risk is the settings update between role switches, not the caps.
