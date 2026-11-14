@@ -108,9 +108,13 @@ The convention is what makes the last one work: an app screen is a Kotlin file w
 
 `docs/mobile/parity.json` has one row per component the app draws natively and the site already draws:
 the web route and component, the Kotlin component, the Kotlin state file, the copy source, and the
-states the component draws. `npm run check:parity` fails when
+states the component draws. A row names what draws it: a `surface` from `perf/surfaces.json`, or the
+`frame` from `docs/mobile/visual-gate.json` when it is the shell's chrome rather than one screen's
+content (ADR-0118: the frame is not a surface, so it is named separately and its id is checked against
+the gate). `npm run check:parity` fails when
 
-- a listed file is missing, or a row names a surface `perf/surfaces.json` does not have;
+- a listed file is missing, a row names a surface `perf/surfaces.json` does not have, or a row names a
+  frame the visual gate does not have (or names both, or neither);
 - the app's sealed interface declares a state the row does not list, or the row lists one the app
   does not declare;
 - a state's string is not rendered on **both** sides from the one generated copy source;
