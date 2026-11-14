@@ -172,8 +172,9 @@ deleted with the migration. `docs/vercel-usage.md` is a historical record now.
 - **Web:** no releases (ADR-0090). The deploy identity is `<X.Y.Z>+build.<N>.<7-char-sha>`:
   `X.Y.Z` from the committed `package.json#version` (bumped by hand at a milestone), `N` the commit
   count on the branch, the sha the commit. `backend/config/generated/app-version.ts` is regenerated
-  by `prebuild`/`predev` on CI and Vercel only; do not hand-edit it, and Sentry names its release
-  after the same generated string.
+  by `prebuild`/`predev` on every build host — GitHub Actions, Vercel and Render — and skipped on a
+  local run (override with `APP_VERSION_WRITE=force`); do not hand-edit it, and Sentry names its
+  release after the same generated string.
 - **Android:** the shell's version is `1.<minor>.<patch>`, graded from the batch the cut releases
   (`!` → major, `feat` → minor, else patch). Its `versionCode` is
   `20000 + (major-1)*10000 + minor*100 + patch`, so it only ever goes up. Both lines live in
