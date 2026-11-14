@@ -66,6 +66,7 @@ import com.royaraqamia.app.mcp.McpRoutes
 import com.royaraqamia.app.quran.QuranRoutes
 import com.royaraqamia.app.quran.QuranSurahRoute
 import com.royaraqamia.app.news.NewsDigestScreen
+import com.royaraqamia.app.notifications.NotificationsScreen
 import com.royaraqamia.app.rates.RatesScreen
 import com.royaraqamia.app.scan.ScanScreen
 import com.royaraqamia.app.spendtrack.SpendtrackCategoriesScreen
@@ -472,6 +473,20 @@ class ShellActivity : ComponentActivity() {
                                     onSignIn = ::showSignIn,
                                     onSeePlans = { openRoute("/pricing") },
                                     onManageSources = { openRoute("/account/news") },
+                                )
+                            // The notification centre (#1391): the page's Alerts
+                            // feed, its marks and its destinations. A write is a
+                            // request followed by a re-read, and the bell's number
+                            // is refreshed from the same answer.
+                            "/notifications" ->
+                                NotificationsScreen(
+                                    repository = graph.notifications,
+                                    signedIn = signedIn,
+                                    onSignIn = ::showSignIn,
+                                    onOpenRoute = ::openRoute,
+                                    onChanged = {
+                                        lifecycleScope.launch { refreshUnreadCount() }
+                                    },
                                 )
                             // The new-conversation panel (#934): the member
                             // directory and the direct picker. Ported and off

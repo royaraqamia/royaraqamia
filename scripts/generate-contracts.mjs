@@ -96,7 +96,7 @@ export const CONTRACTS = [
   {
     module: 'shared/contracts/notifications',
     file: 'NotificationsContracts.kt',
-    schemas: ['UnreadNotificationCountSchema'],
+    schemas: ['UnreadNotificationCountSchema', 'NotificationsResponseSchema'],
   },
   // The homepage's app set (#1194): the picker writes the whole ordered list and
   // reads it back, so the body and the answer are generated types rather than a

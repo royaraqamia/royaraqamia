@@ -700,3 +700,74 @@ export async function clearVisualBlocks(context: BrowserContext, baseURL: string
     throw new Error(`could not remove the visual gate blocks: ${error.message}`);
   }
 }
+
+/**
+ * The two rows the notification centre records (#1391).
+ *
+ * The gate's account, and rows the fixture owns: one unread with a body and the
+ * certificate destination, one read without a body, so the row's unread and read
+ * treatments are both in the recording. The instants are offsets from the
+ * capture's own clock, so the relative sentence is the same every run
+ * (`two hours`, `three days`) instead of a date that changes at midnight
+ * (ADR-0119). The ids are the cleanup's, so a failed run leaves nothing the next
+ * one cannot replace.
+ */
+export const VISUAL_NOTIFICATIONS = [
+  {
+    id: 'e2e00000-0000-4000-8000-00000000e141',
+    type: 'certificate_issued',
+    title: 'شهادة تجريبية للبوابة',
+    body: 'هذه شهادة تجريبية تقيس صفَّ الإشعارات على الشاشتين، وتقارن المسافات والحجم واللون بين التطبيق والموقع في الحالة نفسها.',
+    metadata: { certificateCode: 'e2e-visual' },
+    isRead: false,
+    minutesAgo: 120,
+  },
+  {
+    id: 'e2e00000-0000-4000-8000-00000000e142',
+    type: 'link_clicked',
+    title: 'رابط تجريبي للبوابة',
+    body: null,
+    metadata: {},
+    isRead: true,
+    minutesAgo: 3 * 24 * 60,
+  },
+] as const;
+
+/** Writes the two fixture rows, replacing whatever the account held. */
+export async function seedVisualNotifications(
+  context: BrowserContext,
+  baseURL: string
+): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  await clearVisualNotifications(context, baseURL);
+
+  const now = Date.now();
+  const rows = VISUAL_NOTIFICATIONS.map((row) => ({
+    id: row.id,
+    user_id: userId,
+    type: row.type,
+    title: row.title,
+    body: row.body,
+    metadata: row.metadata,
+    is_read: row.isRead,
+    created_at: new Date(now - row.minutesAgo * 60_000).toISOString(),
+    read_at: row.isRead ? new Date(now - row.minutesAgo * 60_000).toISOString() : null,
+  }));
+
+  const { error } = await serviceClient().from('notifications').insert(rows);
+  if (error) {
+    throw new Error(`could not seed the visual gate notifications: ${error.message}`);
+  }
+}
+
+/** Removes every notification the gate's account holds, so the empty state is empty. */
+export async function clearVisualNotifications(
+  context: BrowserContext,
+  baseURL: string
+): Promise<void> {
+  const userId = await sessionUserId(context, baseURL);
+  const { error } = await serviceClient().from('notifications').delete().eq('user_id', userId);
+  if (error) {
+    throw new Error(`could not remove the visual gate notifications: ${error.message}`);
+  }
+}

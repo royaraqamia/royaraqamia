@@ -1,5 +1,6 @@
 package com.royaraqamia.app.shell
 
+import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.community.CommunityRoutes
 import com.royaraqamia.app.linksnap.LinksnapRoutes
 import com.royaraqamia.app.mcp.McpRoutes
@@ -51,6 +52,7 @@ object NativeSurfaces {
             "/community",
             "/scan",
             "/news",
+            "/notifications",
             "/athkar",
             "/athkar/evening",
         )
@@ -81,10 +83,17 @@ object NativeSurfaces {
     private val publicRoutes: Set<String> = setOf("/verify", "/rates", "/community")
 
     /** Whether the shell can draw [route] without the document. */
-    fun isNative(route: String): Boolean =
-        routes.contains(Routes.normalize(route)) ||
+    fun isNative(route: String): Boolean {
+        // The notification centre's chats tab is the chats port, not this one
+        // (#937): `/notifications` is native for its Alerts feed, and the query
+        // that names the other tab still belongs to the document until that
+        // surface's own gate passes.
+        if (ChatRoutes.isChatsTab(route)) return false
+
+        return routes.contains(Routes.normalize(route)) ||
             dynamicRoutes.any { it(route) } ||
             QuranRoutes.matches(route)
+    }
 
     /** Whether [route] is readable with no session (the matrix's public rows). */
     fun isPublic(route: String): Boolean =

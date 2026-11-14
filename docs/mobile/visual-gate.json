@@ -919,6 +919,48 @@
           }
         }
       ]
+    },
+    {
+      "surface": "notifications",
+      "web": {
+        "route": "/notifications"
+      },
+      "contract": "shared/visual/notifications.json",
+      "app": {
+        "test": "android/app/src/test/kotlin/com/royaraqamia/app/notifications/NotificationsScreenVisualTest.kt"
+      },
+      "states": [
+        {
+          "name": "at-rest",
+          "tolerance": {
+            "pixels": 0.085,
+            "length": 2
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.07683,
+            "alignment": {
+              "dx": 0,
+              "dy": 3
+            }
+          }
+        },
+        {
+          "name": "empty",
+          "tolerance": {
+            "pixels": 0.03,
+            "length": 2
+          },
+          "baseline": {
+            "recorded": "2026-11-13",
+            "measured": 0.02209,
+            "alignment": {
+              "dx": 0,
+              "dy": 0
+            }
+          }
+        }
+      ]
     }
   ],
   "frame": {

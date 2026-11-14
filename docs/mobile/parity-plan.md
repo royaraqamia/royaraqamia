@@ -52,7 +52,7 @@ _The account area, notifications and chats: the screens a member opens daily._
 - [x] **account-blocked** `/account/blocked` — native · #1346
 - [x] **account-faq** `/account/faq` — native
 - [x] **account-news** `/account/news` — native · #1347
-- [ ] **notifications** `/notifications` — todo · #1391
+- [x] **notifications** `/notifications` — native · #1391
 - [ ] **chats** `/chats/[id]` `/chats/new` — todo · #937
 
 ## Products
@@ -187,7 +187,8 @@ A component is finished when the surface that draws it is native: 83 ported comp
 - [x] `athkar-page` on **athkar** · #1389
 - [x] `athkar-card` on **athkar** · #1389
 - [ ] `notes-list` on **notes** · #1390
+- [x] `notifications-list` on **notifications** · #1391
 
 ## Where this stands
 
-23 native · 4 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.
+24 native · 3 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import type { NotificationWithMeta } from '@/shared/contracts/notifications';
+import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { useNotifications } from '@/frontend/state/NotificationContext';
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
@@ -29,6 +30,32 @@ import { ChatsPanel } from '@/frontend/ui/chats/chats-panel';
 import { TabChips } from '@/frontend/ui/primitives/tab-chips';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { notificationTarget } from './notification-target';
+import { NOTIFICATIONS_COPY } from './notifications-copy';
+
+/**
+ * What a past instant is, in the notifications surface's own words (#1391).
+ *
+ * The thresholds are the shared formatter's (`timeAgoParts`, ADR-0104); the
+ * sentences are this surface's generated copy, which the app draws from the same
+ * file, so a row and its port cannot disagree about "two hours ago".
+ */
+export function notificationsTimeAgo(dateStr: string): string {
+  const parts = timeAgoParts(dateStr);
+  switch (parts.unit) {
+    case 'now':
+      return NOTIFICATIONS_COPY.agoNow;
+    case 'minutes':
+      return NOTIFICATIONS_COPY.agoMinutes.replace('{count}', String(parts.count));
+    case 'hours':
+      return NOTIFICATIONS_COPY.agoHours.replace('{count}', String(parts.count));
+    case 'days':
+      return NOTIFICATIONS_COPY.agoDays.replace('{count}', String(parts.count));
+    case 'weeks':
+      return NOTIFICATIONS_COPY.agoWeeks.replace('{count}', String(parts.count));
+    case 'date':
+      return formatHijriDate(dateStr);
+  }
+}
 
 const typeIcons: Record<string, React.ReactNode> = {
   certificate_issued: <BadgeCheck size={18} />,
@@ -73,8 +100,16 @@ export function NotificationsView() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
-    useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    failed,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    refresh,
+  } = useNotifications();
   // The badge reads the same device-first list the tab draws (#1033).
   const chats = useChatThreads(Boolean(user), identity);
 
@@ -87,7 +122,7 @@ export function NotificationsView() {
   // Until the feed answers, the page cannot tell Alerts from Chats, so it paints
   // the frame and a loading panel instead of a tab that is about to change.
   const activeTab: TabId | null =
-    requestedTab ?? chosen ?? (settled ? defaultTab(notifications) : null);
+    requestedTab ?? chosen ?? (settled ? (failed ? 'alerts' : defaultTab(notifications)) : null);
 
   // The bare `/notifications` is not an address of its own (ADR-0156): once the
   // feed has answered, the address names the tab on screen, so a reload, a
@@ -134,11 +169,12 @@ export function NotificationsView() {
         <div className="mb-3 flex items-center justify-end">
           <button
             type="button"
+            data-visual="notifications-mark-all"
             onClick={() => markAllAsRead()}
             className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-primary transition-safe duration-150 hover:bg-primary/10 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
           >
             <Check size={14} className="shrink-0" />
-            <span>تحديد الكل كمقروء</span>
+            <span>{NOTIFICATIONS_COPY.markAllRead}</span>
           </button>
         </div>
       )}
@@ -172,26 +208,40 @@ export function NotificationsView() {
         className="mt-4"
       >
         {!user ? (
-          <PanelState icon={<Bell size={24} />}>
-            <p className="text-sm font-bold text-foreground">سجِّل الدُّخول لمتابعة إشعاراتك</p>
+          <PanelState icon={<Bell size={24} />} testId="notifications-guest">
+            <p className="text-sm font-bold text-foreground">{NOTIFICATIONS_COPY.signInTitle}</p>
             <SignInCta href={loginHref} className="mt-4" />
           </PanelState>
         ) : isLoading ? (
-          <PanelState>
+          <PanelState testId="notifications-loading">
             <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
+            <p className="text-sm font-medium text-muted-foreground">
+              {NOTIFICATIONS_COPY.loading}
+            </p>
           </PanelState>
         ) : activeTab === 'chats' ? (
           <ChatsPanel />
+        ) : failed ? (
+          <PanelState icon={<Bell size={24} />} testId="notifications-failed">
+            <p className="text-sm font-bold text-foreground">{NOTIFICATIONS_COPY.listError}</p>
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              className="mt-4 rounded-lg border border-border/70 px-3 py-1.5 text-xs font-medium text-foreground transition-safe duration-150 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {NOTIFICATIONS_COPY.retry}
+            </button>
+          </PanelState>
         ) : notifications.length === 0 ? (
-          <PanelState icon={<Bell size={24} />}>
-            <p className="text-sm font-bold text-foreground">لا توجد إشعارات</p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
-              ستظهر هنا الإشعارات والتَّنبيهات الجديدة
-            </p>
+          <PanelState icon={<Bell size={24} />} testId="notifications-empty">
+            <p className="text-sm font-bold text-foreground">{NOTIFICATIONS_COPY.emptyTitle}</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">{NOTIFICATIONS_COPY.emptyBody}</p>
           </PanelState>
         ) : (
-          <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
+          <ul
+            data-visual="notifications-list"
+            className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs"
+          >
             {notifications.map((notification) => (
               <NotificationRow
                 key={notification.id}
@@ -210,12 +260,17 @@ export function NotificationsView() {
 interface PanelStateProps {
   children: React.ReactNode;
   icon?: React.ReactNode;
+  /** The visual gate's name for this state's frame. */
+  testId?: string;
 }
 
 /** The page's one empty/loading frame, so every state has the same rhythm. */
-function PanelState({ children, icon }: PanelStateProps) {
+function PanelState({ children, icon, testId }: PanelStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
+    <div
+      data-visual={testId}
+      className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs"
+    >
       {icon && (
         <div className="mb-3 rounded-full border border-border/40 bg-muted/60 p-3.5 text-muted-foreground/80 shadow-inner">
           {icon}
@@ -243,6 +298,7 @@ function NotificationRow({ notification, onMarkRead, onDelete }: NotificationRow
   const body = (
     <div className="flex items-start gap-3.5 pe-8">
       <div
+        data-visual="notification-icon"
         className={cn(
           'flex shrink-0 items-center justify-center rounded-xl p-2.5 transition-colors duration-200',
           read
@@ -256,6 +312,7 @@ function NotificationRow({ notification, onMarkRead, onDelete }: NotificationRow
       <div className="min-w-0 flex-1 pt-0.5">
         <div className="flex items-center justify-between gap-2">
           <p
+            data-visual="notification-title"
             className={cn(
               'text-sm leading-snug tracking-tight',
               read ? 'font-medium text-foreground/80' : 'font-bold text-foreground'
@@ -265,22 +322,29 @@ function NotificationRow({ notification, onMarkRead, onDelete }: NotificationRow
           </p>
           {!read && (
             <span
+              data-visual="notification-unread"
               className="h-2 w-2 shrink-0 rounded-full bg-primary ring-4 ring-primary/20"
               role="status"
             >
-              <span className="sr-only">غير مقروء</span>
+              <span className="sr-only">{NOTIFICATIONS_COPY.unreadLabel}</span>
             </span>
           )}
         </div>
 
         {notification.body && (
-          <p className="mt-1 line-clamp-2 text-xs font-normal leading-relaxed text-muted-foreground/80">
+          <p
+            data-visual="notification-body"
+            className="mt-1 line-clamp-2 text-xs font-normal leading-relaxed text-muted-foreground/80"
+          >
             {notification.body}
           </p>
         )}
 
-        <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-muted-foreground/60">
-          {notification.timeAgo}
+        <p
+          data-visual="notification-time"
+          className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-muted-foreground/60"
+        >
+          {notificationsTimeAgo(notification.created_at)}
         </p>
       </div>
     </div>
@@ -288,6 +352,7 @@ function NotificationRow({ notification, onMarkRead, onDelete }: NotificationRow
 
   return (
     <li
+      data-visual="notification-row"
       className={cn(
         'group relative transition-safe duration-200 ease-out',
         'focus-within:bg-accent/60',
@@ -318,8 +383,9 @@ function NotificationRow({ notification, onMarkRead, onDelete }: NotificationRow
           invalid, and the delete has to stay reachable without opening the row. */}
       <button
         type="button"
+        data-visual="notification-delete"
         onClick={() => void onDelete(notification.id)}
-        aria-label="حذف الإشعار"
+        aria-label={NOTIFICATIONS_COPY.deleteLabel}
         className={cn(
           'absolute top-3 end-3 rounded-lg p-1.5 text-muted-foreground/70 transition-safe duration-150',
           'hover:bg-destructive/10 hover:text-destructive focus-visible:bg-destructive/10 focus-visible:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive',

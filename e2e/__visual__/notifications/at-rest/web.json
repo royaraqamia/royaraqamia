@@ -1,0 +1,54 @@
+{
+  "surface": "notifications",
+  "state": "at-rest",
+  "route": "/notifications?tab=alerts",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "notifications-list": {
+      "top": 176,
+      "width": 361,
+      "radius": 16,
+      "borderTopWidth": 1
+    },
+    "notification-row": {
+      "top": 177,
+      "width": 359,
+      "height": 116.84
+    },
+    "notification-icon": {
+      "top": 191,
+      "width": 38,
+      "height": 38,
+      "radius": 12
+    },
+    "notification-title": {
+      "top": 193,
+      "height": 19.25,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "notification-body": {
+      "top": 216.25,
+      "height": 39,
+      "fontSize": 12
+    },
+    "notification-time": {
+      "top": 261.25,
+      "height": 17.59,
+      "fontSize": 11
+    },
+    "notification-unread": {
+      "width": 8,
+      "height": 8
+    },
+    "notification-delete": {
+      "top": 189,
+      "width": 26,
+      "height": 26
+    }
+  }
+}

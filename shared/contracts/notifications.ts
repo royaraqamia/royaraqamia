@@ -1,20 +1,55 @@
 import { z } from 'zod';
 import { UserIdsSchema } from '@/shared/contracts/users';
 
-export type NotificationType =
-  | 'certificate_issued'
-  | 'habit_reminder'
-  | 'recovery_nudge'
-  | 'expense_alert'
-  | 'link_clicked'
-  | 'system_announcement'
-  | 'training_application'
-  | 'consultation_booking'
-  | 'project_request'
-  | 'retainer_request'
-  | 'subscription_request'
-  | 'chat_request'
-  | 'new_follower';
+export const NotificationTypeSchema = z.enum([
+  'certificate_issued',
+  'habit_reminder',
+  'recovery_nudge',
+  'expense_alert',
+  'link_clicked',
+  'system_announcement',
+  'training_application',
+  'consultation_booking',
+  'project_request',
+  'retainer_request',
+  'subscription_request',
+  'chat_request',
+  'new_follower',
+]);
+
+export type NotificationType = z.infer<typeof NotificationTypeSchema>;
+
+/**
+ * The metadata a row's destination is derived from (`notificationTarget`).
+ *
+ * Only the identifiers one target needs are typed: a notification's metadata is
+ * a JSON column producers fill differently per type, and the app decodes this
+ * shape to answer "where does the row lead" rather than to redraw the payload.
+ * Unknown keys are ignored by both decoders.
+ */
+export const NotificationMetadataSchema = z.object({
+  certificateCode: z.string().optional(),
+  conversationId: z.string().optional(),
+});
+
+export const NotificationSchema = z.object({
+  id: z.string(),
+  user_id: z.string(),
+  type: NotificationTypeSchema,
+  title: z.string(),
+  body: z.string().nullable(),
+  metadata: NotificationMetadataSchema,
+  is_read: z.boolean(),
+  created_at: z.string(),
+  read_at: z.string().nullable(),
+});
+
+/** The body `/api/notifications` answers, and the app's notification list reads. */
+export const NotificationsResponseSchema = z.object({
+  notifications: z.array(NotificationSchema),
+});
+
+export type NotificationsResponse = z.infer<typeof NotificationsResponseSchema>;
 
 /**
  * The unread count behind the shell's notification control (#659).

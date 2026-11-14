@@ -195,7 +195,7 @@
     {
       "surface": "notifications",
       "phase": "core",
-      "state": "todo",
+      "state": "native",
       "issue": "#1391"
     },
     {
