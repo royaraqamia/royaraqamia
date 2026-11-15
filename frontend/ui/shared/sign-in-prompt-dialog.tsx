@@ -59,7 +59,7 @@ export function SignInPromptDialog({
         </div>
 
         <DialogActions onCancel={onDismiss} cancelLabel={cancelLabel}>
-          <SignInCta href={loginHref} dismiss={onClose} className="w-full sm:w-auto">
+          <SignInCta href={loginHref} dismiss={onClose} className="max-sm:w-full sm:w-auto">
             {signInLabel}
           </SignInCta>
         </DialogActions>
