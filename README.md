@@ -287,6 +287,9 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `AI_CHAT_MODEL` | The model id the assistant asks for (empty = `deepseek-v4.1-flash`) | `deepseek-v4.1-flash` | Chats assistant only |
 | `AI_CHAT_API_KEY` | **Secret.** Provider key for the assistant's turns; empty falls back to `OPENCODE_API_KEY`, and neither means the assistant is off, not broken | `change-me` | Chats assistant only |
 
+| `AI_EMBEDDING_MODEL` | The embedding model recall uses, on the chat provider's endpoint and key — never the chat model (empty = recall is lexical, and a turn still answers) | a provider's embedding model id | Chats assistant only |
+| `AI_EMBEDDING_DIMENSIONS` | The model's vector width. Must equal the index generation (`1536`); a different width needs a new table and a backfill, and until then the embedding path stays off with one operator warning | `1536` | Chats assistant only |
+
 > **Web Push (VAPID):** OS-level push notifications (browser subscription → server dispatch via `web-push`) activate once the five keys above are set. Generate a key pair with `node scripts/generate-vapid.mjs`; put the public key in `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and keep `VAPID_PRIVATE_KEY` + `PUSH_WEBHOOK_TOKEN` server-only. `PUSH_ENDPOINT_ALLOWLIST` defaults to the known push-service hosts and is fail-closed. Without these keys the push pipeline is a graceful no-op — in-app notifications keep working.
 
 > **Naming convention:** `NEXT_PUBLIC_*` variables are inlined into the client bundle and are therefore **not** secrets. Everything else must only be read server-side. The Supabase **service-role key** bypasses RLS — never expose it to the browser.

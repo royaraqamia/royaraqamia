@@ -8,6 +8,54 @@ export type Database = {
   };
   public: {
     Tables: {
+      agent_memory_embeddings: {
+        Row: {
+          created_at: string;
+          embedding: string;
+          id: string;
+          memory_id: string;
+          model: string;
+          source_updated_at: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          embedding: string;
+          id?: string;
+          memory_id: string;
+          model: string;
+          source_updated_at: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          embedding?: string;
+          id?: string;
+          memory_id?: string;
+          model?: string;
+          source_updated_at?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'agent_memory_embeddings_memory_id_fkey';
+            columns: ['memory_id'];
+            isOneToOne: true;
+            referencedRelation: 'agent_embedding_pending';
+            referencedColumns: ['source_id'];
+          },
+          {
+            foreignKeyName: 'agent_memory_embeddings_memory_id_fkey';
+            columns: ['memory_id'];
+            isOneToOne: true;
+            referencedRelation: 'agent_memories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       agent_turns: {
         Row: {
           attempts: number;
@@ -3130,6 +3178,16 @@ export type Database = {
       };
     };
     Views: {
+      agent_embedding_pending: {
+        Row: {
+          body: string | null;
+          source_id: string | null;
+          source_kind: string | null;
+          source_updated_at: string | null;
+          user_id: string | null;
+        };
+        Relationships: [];
+      };
       following_feed: {
         Row: {
           author_id: string;
@@ -3165,6 +3223,15 @@ export type Database = {
       };
     };
     Functions: {
+      agent_memory_nearest: {
+        Args: { p_limit?: number; p_query: string; p_user_id: string };
+        Returns: {
+          memory_id: string;
+          similarity: number;
+          text: string;
+          updated_at: string;
+        }[];
+      };
       agent_turns_due: {
         Args: { p_limit?: number };
         Returns: { id: string }[];
