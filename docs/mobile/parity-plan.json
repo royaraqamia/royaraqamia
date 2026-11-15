@@ -35,7 +35,7 @@
     {
       "id": "operator",
       "title": "Operator surfaces",
-      "why": "Listed so nothing is missing, and blocked as one decision: the admin area needs its own security review before any of it is drawn natively (#660)."
+      "why": "One decision first: the admin area's security review (#971, ADR-0193). It allows the console's server-authorized reads and its reversible or internal moderation natively, and leaves the irreversible, money, public-copy and deletion actions on the page."
     },
     {
       "id": "door",
@@ -112,7 +112,7 @@
       "surface": "mcp-connect",
       "phase": "public-content",
       "state": "document",
-      "why": "A one-time setup page whose whole value is the snippet it shows. The page changes with the server, and a port would pin a snippet the server no longer accepts."
+      "why": "The OAuth consent page: its code is minted server-side under a same-origin check and a PKCE challenge, and the client's callback is a web address. A native copy would be a second consent route; the page is the deliverable (ADR-0178, ADR-0193)."
     },
     {
       "surface": "mcp-apps",
@@ -259,8 +259,8 @@
     {
       "surface": "admin",
       "phase": "operator",
-      "state": "blocked",
-      "blockedBy": "#971"
+      "state": "todo",
+      "issue": "#974"
     },
     {
       "surface": "home",

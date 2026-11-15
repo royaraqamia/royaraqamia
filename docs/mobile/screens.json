@@ -183,7 +183,7 @@
     {
       "surface": "mcp-connect",
       "native": null,
-      "reason": "The page is the deliverable (ADR-0178): a one-time setup whose whole value is the snippet the server currently accepts."
+      "reason": "The OAuth consent page is the deliverable (ADR-0178, ADR-0193): its code is minted server-side under a same-origin check and a PKCE challenge, and the client's callback is a web address."
     },
     {
       "surface": "mcp-apps",
@@ -198,7 +198,8 @@
     {
       "surface": "admin",
       "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "reason": "The console's server-authorized reads and reversible or internal moderation may be drawn natively (ADR-0193); its irreversible, money, public-copy and deletion actions stay the page.",
+      "issue": "#974"
     }
   ]
 }

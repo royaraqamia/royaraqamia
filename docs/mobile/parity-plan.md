@@ -28,7 +28,7 @@ _Read with no session, so the page can be recorded without the fixture account a
 - [x] **scan** `/?tab=/scan` `/scan` — native
 - [x] **linksnap-unlock** `/linksnap/unlock/[code]` — native
 - [-] **mcp-guide** `/mcp/guide` — document, by design · A guide: prose and one paste-ready snippet, owned by the site. A native copy would be wrong the first time the server's MCP surface moves, for an interaction a port does not improve.
-- [-] **mcp-connect** `/mcp/connect` — document, by design · A one-time setup page whose whole value is the snippet it shows. The page changes with the server, and a port would pin a snippet the server no longer accepts.
+- [-] **mcp-connect** `/mcp/connect` — document, by design · The OAuth consent page: its code is minted server-side under a same-origin check and a PKCE challenge, and the client's callback is a web address. A native copy would be a second consent route; the page is the deliverable (ADR-0178, ADR-0193).
 - [-] **mcp-apps** `/mcp/apps` — document, by design · A decision, not a queue item: the sheet is the apps surface, and `/mcp/apps` stays the address a callback, a bookmark and a deep link need (ADR-0159, #1385). The sheet is native; the page is what a link resolves to.
 - [x] **mcp-app-detail** `/mcp/apps/[id]` — native · #1256
 - [x] **athkar** `/?tab=/athkar` `/athkar` `/athkar/evening` — native · #1389
@@ -76,9 +76,9 @@ _Forms that end in a server write, so a port has to bring the same validation an
 
 ## Operator surfaces
 
-_Listed so nothing is missing, and blocked as one decision: the admin area needs its own security review before any of it is drawn natively (#660)._
+_One decision first: the admin area's security review (#971, ADR-0193). It allows the console's server-authorized reads and its reversible or internal moderation natively, and leaves the irreversible, money, public-copy and deletion actions on the page._
 
-- [ ] **admin** `/admin/**` — blocked · blocked by #971
+- [ ] **admin** `/admin/**` — todo · #974
 
 ## The door
 
@@ -191,4 +191,4 @@ A component is finished when the surface that draws it is native, or when it bel
 
 ## Where this stands
 
-24 native · 3 to do · 5 document · 7 blocked of 39 surfaces. 1 of 9 release items done.
+24 native · 4 to do · 5 document · 6 blocked of 39 surfaces. 1 of 9 release items done.
