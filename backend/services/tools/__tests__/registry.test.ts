@@ -31,7 +31,7 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   spendtrack: 3,
   notes: 0,
   community: 5,
-  account: 2,
+  account: 3,
   certificates: 1,
   consultations: 3,
   training: 1,
@@ -91,6 +91,7 @@ describe('the assistant door', () => {
       'edit_expense',
       'edit_post_draft',
       'record_expense',
+      'remember',
       'set_habit_reminder',
     ]);
     // A third party can see it, or money moves: never grantable (ADR-0180).

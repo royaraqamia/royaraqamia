@@ -89,3 +89,122 @@ export interface RecalledMemory {
   similarity: number;
   updatedAt: string;
 }
+
+/**
+ * The fact store's own contract (ADR-0182 decisions 2 and 5, #1509).
+ *
+ * A saved fact is a row the member owns: one door writes it, the member's own
+ * session reads it back, and the row says what kind of thing it is so a health
+ * or financial fact is visibly one and never inferred.
+ */
+
+/** `agent_memories.text`'s own check, mirrored so the refusal is a sentence. */
+export const MEMORY_TEXT_MAX = 500;
+
+export const AGENT_MEMORY_SCOPES = ['account', 'product', 'thread'] as const;
+export type AgentMemoryScope = (typeof AGENT_MEMORY_SCOPES)[number];
+
+export const AGENT_MEMORY_KINDS = ['fact', 'preference', 'health', 'legal', 'financial'] as const;
+export type AgentMemoryKind = (typeof AGENT_MEMORY_KINDS)[number];
+
+/** One saved fact, as the page and a turn both read it. */
+export interface AgentMemory {
+  id: string;
+  scope: AgentMemoryScope;
+  /** Set exactly when `scope = 'product'`. */
+  product: string | null;
+  /** Set exactly when `scope = 'thread'`. */
+  threadId: string | null;
+  kind: AgentMemoryKind;
+  text: string;
+  /** The turn it was written from, when the member did not type it into the page. */
+  sourceTurnId: string | null;
+  confidence: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** What every caller hands the one door: the tool today, extraction next. */
+export interface RememberFactInput {
+  userId: string;
+  text: string;
+  scope?: AgentMemoryScope;
+  product?: string | null;
+  threadId?: string | null;
+  kind?: AgentMemoryKind;
+  sourceTurnId?: string | null;
+  /** 1.00 for an explicit `remember`; lower for extraction (decision 5). */
+  confidence?: number;
+}
+
+/** The sentences the writer answers with, in the member's language. */
+export const MEMORY_EMPTY = 'اكتب ما تريد أن أتذكّره.';
+export const MEMORY_TOO_LONG = `الحد الأقصى للشيء الذي أتذكّره ${MEMORY_TEXT_MAX} حرفاً.`;
+export const MEMORY_INVALID_KIND = 'نوع الحفظ غير معروف.';
+export const MEMORY_SCOPE_KEY = 'نطاق الحفظ لا يطابق مفتاحه.';
+export const MEMORY_REFUSED_SENTENCE = 'لا أحفظ كلمات المرور ولا الرموز ولا بيانات البطاقات.';
+
+/**
+ * What the writer refuses before any row exists (decision 5).
+ *
+ * The list is deterministic on purpose. A prompt that asks the model not to
+ * store a card number is a wish; a check here is the rule. Another member's data
+ * is not detectable from text, so it is the extraction schema's job (#1511) —
+ * this list covers the shapes that are detectable and are never worth storing.
+ *
+ * The patterns are deliberately narrow: a member who says "نسيت كلمة المرور"
+ * asked for something, so the word alone does not refuse the fact; a value
+ * handed over does.
+ */
+const CREDENTIAL_PATTERNS: readonly RegExp[] = [
+  // A secret with a value: password: …, كلمة المرور هي …, an OTP.
+  /(?:password|passwd|\bpwd\b|كلمة\s*(?:ال)?مرور|كلمة\s*(?:ال)?سر|رمز\s*(?:ال)?دخول)\s*(?:[:=]|هي|هو)\s*\S/i,
+  /(?:رمز\s*(?:ال)?تحقق|\botp\b)\s*(?:[:=]|هو|هي)\s*\S/i,
+  // Provider tokens, and the header that carries one.
+  /\bsk-[A-Za-z0-9_-]{8,}/,
+  /\b(?:ghp|gho|ghs|ghu)_[A-Za-z0-9]{16,}/,
+  /\bAKIA[0-9A-Z]{16}\b/,
+  /\bbearer\s+[A-Za-z0-9._-]{16,}/i,
+  // A JWT is three base64url parts and nothing else looks like one.
+  /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/,
+  // A card's security code, and an IBAN's country-code prefix.
+  /\bcvv\b|\bcvc\b|رمز\s*(?:ال)?أمان/i,
+  /\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b/,
+];
+
+/** The Luhn check every real card number passes and a phone number does not. */
+function passesLuhn(digits: string): boolean {
+  let sum = 0;
+  let double = false;
+  for (let index = digits.length - 1; index >= 0; index -= 1) {
+    let value = Number(digits[index]);
+    if (double) {
+      value *= 2;
+      if (value > 9) value -= 9;
+    }
+    sum += value;
+    double = !double;
+  }
+  return sum % 10 === 0;
+}
+
+function carriesCardNumber(text: string): boolean {
+  // 13–19 digits, with the separators people type. Luhn decides, so a long
+  // number that is not a card — a national id, an order number — still passes.
+  for (const match of text.matchAll(/\b\d(?:[ -]?\d){12,18}\b/g)) {
+    const digits = match[0].replace(/\D/g, '');
+    if (passesLuhn(digits)) return true;
+  }
+  return false;
+}
+
+/**
+ * The refusal for a text that must never be stored, or `null` when it may be.
+ * The sentence is what the member reads, so it is returned rather than thrown.
+ */
+export function memoryRefusal(text: string): string | null {
+  for (const pattern of CREDENTIAL_PATTERNS) {
+    if (pattern.test(text)) return MEMORY_REFUSED_SENTENCE;
+  }
+  return carriesCardNumber(text) ? MEMORY_REFUSED_SENTENCE : null;
+}

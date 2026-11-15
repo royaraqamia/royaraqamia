@@ -35,6 +35,12 @@ export interface MemoryEmbeddingsService {
   embedFact(memoryId: string, signal?: AbortSignal): Promise<boolean>;
   /** The read path: the k nearest facts for one member, from a given vector. */
   nearest(userId: string, embedding: number[], limit?: number): Promise<RecalledMemory[]>;
+  /**
+   * The delete path: the vector over a fact the member forgot. The row is
+   * soft-deleted, so no foreign key reaches this copy; it is deleted here to
+   * keep the promise decision 6 makes. Never throws.
+   */
+  forget(memoryId: string): Promise<boolean>;
 }
 
 export interface BackfillOptions {
@@ -151,6 +157,21 @@ export function createMemoryEmbeddingsService({
     async nearest(userId, embedding, limit = RECALL_MAX_ITEMS) {
       const wanted = Math.min(Math.max(1, limit), RECALL_MAX_ITEMS);
       return repository.nearest(userId, embedding, wanted);
+    },
+
+    async forget(memoryId) {
+      try {
+        return await repository.remove(memoryId);
+      } catch (error) {
+        // The fact is already unrecallable — `agent_memory_nearest` joins the
+        // row and filters `deleted_at` — so a failed delete leaves a stale
+        // vector, not a recalled one. The operator reads it; the member does not.
+        logger.warn('A forgotten memory left its vector behind; the delete failed', {
+          memoryId,
+          error: String(error),
+        });
+        return false;
+      }
     },
   };
 }

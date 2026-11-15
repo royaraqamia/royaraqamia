@@ -11,6 +11,7 @@ import { createDefaultTrainingApplicationService } from '@/backend/config/traini
 import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
 import { createProfileService } from '@/backend/config/users';
 import { createUsageService } from '@/backend/config/plans';
+import { createAgentMemoryFor } from '@/backend/config/agent-memory';
 import { listAgencySkills, loadAgencySkill } from '@/backend/services/chat/agency-skills';
 import { screenContextAnswer } from '@/backend/services/chat/turn-screen';
 import type { CapabilityOwner, ToolTier } from '@/backend/services/tools/registry';
@@ -18,6 +19,7 @@ import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 import { toPublicCertificate } from '@/shared/contracts/certificates';
 import { PostSlugSchema } from '@/shared/contracts/community';
 import { COURSE_SLUGS } from '@/shared/contracts/training';
+import { AGENT_MEMORY_KINDS, MEMORY_TEXT_MAX } from '@/backend/shared/domain/agent-memory';
 import {
   PROJECT_REQUEST_TYPES,
   PROJECT_REQUEST_BUDGET_RANGES,
@@ -177,6 +179,16 @@ const ProjectRequestArgs = z.strictObject({
 });
 
 const ChangeNameArgs = z.strictObject({ name: ProfileNameSchema });
+
+/**
+ * What the model may ask to save. Only the fact and its kind: the scope and its
+ * key are the server's (the tool always remembers for the account), so a model
+ * cannot pin a fact to a thread or a product it does not know.
+ */
+const RememberArgs = z.strictObject({
+  text: z.string().trim().min(1, 'اكتب ما تريد أن أتذكّره').max(MEMORY_TEXT_MAX, 'النصّ طويل جداً'),
+  kind: z.enum(AGENT_MEMORY_KINDS).optional(),
+});
 
 const FindAppToolsArgs = z.strictObject({
   query: z.string().trim().min(2, 'اكتب ما تبحث عنه').max(120, 'النصّ طويل جداً'),
@@ -600,6 +612,24 @@ const tools: ChatAgentTool[] = [
         input.name
       );
       return { name: updated.name };
+    },
+  },
+  {
+    name: 'remember',
+    kind: 'write',
+    product: 'account',
+    tier: 1,
+    description:
+      'حفظ أمر يطلب العضو أن يتذكّره نور في وقت لاحق: تفضيل أو قرار أو معلومة عنه. لا يحفظ كلمة مرور ولا رمزاً ولا بيانات بطاقة. استخدمه حين يقول «تذكّر» أو «احفظ»، ولا تدّعِ التذكّر دون استدعائه.',
+    schema: RememberArgs,
+    async run(args, context) {
+      const input = RememberArgs.parse(args);
+      const memory = await createAgentMemoryFor(context.supabase).remember({
+        userId: context.userId,
+        text: input.text,
+        ...(input.kind ? { kind: input.kind } : {}),
+      });
+      return { memory_id: memory.id, text: memory.text };
     },
   },
   {
