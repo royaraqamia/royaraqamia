@@ -38,14 +38,21 @@ lines wrong.
    argument against owning the same rule twice. A hand-written rule in the shell
    needs no `@source` entry and cannot drift between the two.
 
-4. **The rich-text editors keep `dir="auto"` and do not take `plaintext`.** Their
-   placeholder rule (`:root[dir='rtl'] .tiptap p.is-editor-empty`) sets the empty
-   paragraph's direction on purpose: the hint has to sit at the inline start of an
-   Arabic composer before any strong character exists to detect. `plaintext`
-   ignores that declared direction when it computes the paragraph level, so
-   applying the rule to `.tiptap` would move the hint to the left of an
-   Arabic-first note — the opposite trade, for a surface whose first-line
-   direction already reads correctly.
+4. **The rich-text blocks take the same rule, one level down.** The editor's own
+   `dir="auto"` reads the _document's_ first strong character, so an English
+   paragraph typed after an Arabic one was still drawn against the right edge —
+   the identical bug in a different element. `plaintext` on the surface cannot
+   fix that: a paragraph is its own bidi paragraph, so the rule names the blocks
+   (`.tiptap :is(p, h1, h2, h3, li, blockquote)`).
+
+   This was measured rather than assumed, because the empty-block hint depends on
+   direction: the hint is painted as a float at the paragraph's inline start, and
+   the rule below declares `direction: rtl` for it on an Arabic page. An empty
+   block has no strong character, and Chromium keeps the declared direction —
+   the empty note composer still opens with its hint on the right, with the
+   per-block rule in place. (The first version of this decision left the editors
+   out over exactly that fear; the fear was wrong, and the paragraph-after-
+   paragraph case it left broken is the case the product actually meets.)
 
 ## Consequences
 
@@ -61,5 +68,9 @@ lines wrong.
   `dir="auto"` alone already fixes the reported case, so a browser that ignores
   the rule degrades to per-field direction rather than to the bug.
 - **This is the rule for the next surface that shows written conversation.** A
-  new field, bubble or preview joins by naming the class; it does not get its own
-  direction logic.
+  new field, bubble or preview joins by naming the class; a block in a rich-text
+  document joins through the `.tiptap` block rule; neither gets its own direction
+  logic.
+- **The note, post and editor surfaces get it too.** They are one component
+  (`NoteBodyEditor`), so the paragraph-after-paragraph case is fixed everywhere
+  the product writes Markdown.
