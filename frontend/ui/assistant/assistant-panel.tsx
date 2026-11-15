@@ -28,7 +28,6 @@ import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
-import { DismissThenNavigateLink } from '@/frontend/ui/shared/dismiss-then-navigate';
 import { ActionCard } from '@/frontend/ui/chats/chat-agent-action-card';
 import { AssistantComposer } from '@/frontend/ui/chats/chat-assistant-composer';
 import { AssistantMark } from '@/frontend/ui/chats/assistant-mark';
@@ -51,7 +50,7 @@ import { ScreenContextPublisher } from '@/frontend/ui/ScreenContextPublisher';
 import './assistant.css';
 
 /** The faces the panel can wear before a single word is sent. */
-type PanelState = 'loading' | 'guest' | 'locked' | 'unavailable' | 'failed' | 'ready';
+type PanelState = 'loading' | 'guest' | 'unavailable' | 'failed' | 'ready';
 
 /**
  * نور in the corner, opened over whatever the member was reading (ADR-0143).
@@ -63,9 +62,10 @@ type PanelState = 'loading' | 'guest' | 'locked' | 'unavailable' | 'failed' | 'r
  * panel never gets a row, and a member who opens it twice gets one thread.
  *
  * The states are the server's answers, not guesses: no provider key
- * (`available`), a plan with no turn (`cap === 0`), or a day whose allowance is
- * spent (the composer says so itself). A guest sees the invitation, not a
- * composer that would refuse every question.
+ * (`available`), or a day whose allowance is spent (the composer says so
+ * itself). Every plan has an allowance, so there is no paid-only face here
+ * (#1456). A guest sees the invitation, not a composer that would refuse every
+ * question.
  */
 export function AssistantPanel({
   open,
@@ -276,11 +276,10 @@ export function AssistantPanel({
   }, [actions]);
 
   // Before the live read answers, the last remembered face is the honest one:
-  // a Free member sees the upgrade immediately instead of a composer that would
-  // refuse the turn a moment later.
+  // whether the deployment has a provider key is the answer the panel draws
+  // first, and the live read replaces it a moment later.
   const measured = assistant.allowance !== null;
   const available = measured ? assistant.available : (remembered?.available ?? true);
-  const allowance = assistant.allowance ?? remembered?.allowance ?? null;
 
   const state: PanelState =
     sessionLoading || (opening && !thread)
@@ -295,9 +294,7 @@ export function AssistantPanel({
               ? 'loading'
               : !available
                 ? 'unavailable'
-                : allowance && allowance.member.cap === 0
-                  ? 'locked'
-                  : 'ready';
+                : 'ready';
 
   async function ask(body: string, files: File[]) {
     if (await assistant.ask(body, files)) setDraft('');
@@ -335,12 +332,11 @@ export function AssistantPanel({
 
   /**
    * A state that is not a conversation does not need a conversation's height:
-   * the invitation, the lock and the failure are short answers, and a 640px
-   * card around four lines reads as an empty page. The size returns the moment
-   * the thread is ready, which is the one jump the panel is allowed.
+   * the invitation and the failure are short answers, and a 640px card around
+   * four lines reads as an empty page. The size returns the moment the thread is
+   * ready, which is the one jump the panel is allowed.
    */
-  const compact =
-    state === 'guest' || state === 'locked' || state === 'unavailable' || state === 'failed';
+  const compact = state === 'guest' || state === 'unavailable' || state === 'failed';
 
   /**
    * The one line under the name (ADR-0173): the turn's own phase while it runs,
@@ -411,8 +407,6 @@ export function AssistantPanel({
             <PanelLoading />
           ) : state === 'guest' ? (
             <PanelGuest onDismiss={onDismiss} />
-          ) : state === 'locked' ? (
-            <PanelLocked onDismiss={onDismiss} />
           ) : state === 'unavailable' ? (
             <PanelUnavailable />
           ) : state === 'failed' ? (
@@ -623,24 +617,6 @@ function PanelGuest({ onDismiss }: { onDismiss: () => void }) {
       >
         {ASSISTANT_PANEL_COPY.signIn}
       </SignInCta>
-    </div>
-  );
-}
-
-function PanelLocked({ onDismiss }: { onDismiss: () => void }) {
-  return (
-    <div className="flex h-full flex-col items-center justify-center px-2 py-8 text-center">
-      <AssistantOrb className="size-16" />
-      <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-        {ASSISTANT_PANEL_COPY.locked}
-      </p>
-      <DismissThenNavigateLink
-        href="/pricing"
-        dismiss={onDismiss}
-        className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition-safe hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {ASSISTANT_PANEL_COPY.upgrade}
-      </DismissThenNavigateLink>
     </div>
   );
 }

@@ -10,7 +10,8 @@ import org.junit.Test
  * The face a kept page wears before the live read answers (ADR-0150).
  *
  * The order is the panel's: a deployment with no key is unavailable even for a
- * member who could otherwise ask, and a plan with no turn is the upgrade.
+ * member who could otherwise ask, and every plan has an allowance (#1456), so
+ * the allowance picks no face at all.
  */
 class AssistantSnapshotTest {
     private fun snapshot(available: Boolean = true, cap: Double = 40.0) =
@@ -34,8 +35,10 @@ class AssistantSnapshotTest {
     }
 
     @Test
-    fun `a plan with no turn opens on the upgrade`() {
-        assertEquals(AssistantUiState.Locked, snapshot(cap = 0.0).face())
+    fun `an allowance no longer picks a face`() {
+        // A free day and a paid one both open on the conversation; a spent day is
+        // the composer's own sentence, not a face (#1456).
+        assertEquals(AssistantUiState.Ready, snapshot(cap = 0.0).face())
     }
 
     @Test

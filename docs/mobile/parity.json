@@ -1845,10 +1845,6 @@
           "copy": "guestTitle"
         },
         {
-          "name": "Locked",
-          "copy": "locked"
-        },
-        {
           "name": "Unavailable",
           "copy": "unavailable"
         },

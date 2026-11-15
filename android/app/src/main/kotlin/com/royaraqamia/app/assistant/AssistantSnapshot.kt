@@ -23,11 +23,11 @@ data class AssistantSnapshot(
 
 /**
  * The face a snapshot can wear before the live read answers. The order is the
- * panel's own: no key, then no turn, then the conversation (ADR-0143).
+ * panel's own: no key, then the conversation (ADR-0143). Every plan has an
+ * allowance (#1456), so a remembered cap decides nothing.
  */
 fun AssistantSnapshot.face(): AssistantUiState =
     when {
         !available -> AssistantUiState.Unavailable
-        allowance?.member?.cap == 0.0 -> AssistantUiState.Locked
         else -> AssistantUiState.Ready
     }

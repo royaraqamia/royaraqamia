@@ -638,25 +638,24 @@ describe('ChatThreadView assistant', () => {
     expect(screen.getByRole('button', { name: 'تسجيل رسالة صوتية' })).toBeInTheDocument();
   });
 
-  it('locks a Free member and points at the plans', async () => {
+  it('gives a Free member a limited allowance instead of a wall', async () => {
     api.getChatAssistant.mockResolvedValue({
       available: true,
-      allowance: { ...PRO_ALLOWANCE, plan: 'free', member: { used: 0, cap: 0 } },
+      allowance: { ...PRO_ALLOWANCE, plan: 'free', member: { used: 9, cap: 10 } },
     });
 
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(await screen.findByText('نور متاحة لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'ترقية الخطة' })).toHaveAttribute('href', '/pricing');
-    expect(screen.queryByRole('textbox')).toBeNull();
-    // A plan that allows no turn has nothing to count down, so no "0 من 0".
-    expect(toastSpies.info).not.toHaveBeenCalled();
+    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'ترقية الخطة' })).toBeNull();
+    // The count is the plan gate's, and it is the free day's own numbers.
+    expect(toastSpies.info).toHaveBeenCalledWith('المتبقي اليوم: 1 من 10', expect.anything());
   });
 
   it('names the spent day instead of drawing a composer', async () => {
     api.getChatAssistant.mockResolvedValue({
       available: true,
-      allowance: { ...PRO_ALLOWANCE, member: { used: 40, cap: 40 } },
+      allowance: { ...PRO_ALLOWANCE, plan: 'free', member: { used: 10, cap: 10 } },
     });
 
     render(<ChatThreadView conversationId="c-1" />);

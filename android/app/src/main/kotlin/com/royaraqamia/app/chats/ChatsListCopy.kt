@@ -17,8 +17,6 @@ object ChatsListCopy {
     const val THREAD_COUNT = "{count} محادثة"
     const val ASSISTANT_TITLE = "نور"
     const val ASSISTANT_BODY = "اسأل نور عن أي شيء، والرد يصلك هنا."
-    const val ASSISTANT_LOCKED = "نور متاحة لمشتركي الخطة المدفوعة."
-    const val ASSISTANT_UPGRADE = "ترقية الخطة"
     const val ASSISTANT_FAILED = "تعذّر فتح نور"
     const val REQUESTS_LABEL = "طلبات المحادثة"
     const val REQUEST_DIRECT = "يريد بدء محادثة معك"

@@ -65,14 +65,14 @@ import kotlinx.coroutines.launch
  * The notification centre's Chats tab, as a screen (#819).
  *
  * It is the app's half of `frontend/ui/chats/chats-panel.tsx`: the same count
- * line, the same assistant row and its locked face, the same requests waiting on
- * this member with their two answers, the same rows with their last line, time
- * and unread badge, and the same empty state. Every sentence comes from
- * [ChatsListCopy], generated from the file the site's module is generated from.
+ * line, the same assistant row, the same requests waiting on this member with
+ * their two answers, the same rows with their last line, time and unread badge,
+ * and the same empty state. Every sentence comes from [ChatsListCopy], generated
+ * from the file the site's module is generated from.
  *
- * The assistant's row is **locked** rather than offered when the plan allows no
- * turn (`allowance.member.cap == 0`, the server's own answer). A row that opens a
- * thread which refuses every question is a control that lies.
+ * The assistant's row is offered like any other: every plan has an allowance, a
+ * small free one and the paid day beside it (#1456), so there is no lock to draw.
+ * The thread itself says when a spent day returns.
  *
  * The floating action opens the site's new-conversation screen: the member picker
  * and the group form are their own surface (`/chats/new`, [ChatNewScreen]), ported
@@ -89,14 +89,12 @@ fun ChatsScreen(
     onOpenThread: (String) -> Unit = {},
     onOpenAssistant: (String) -> Unit = {},
     onNewChat: () -> Unit = {},
-    onUpgrade: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
 
     var state by remember { mutableStateOf<ChatsUiState?>(null) }
     var attempts by remember { mutableStateOf(0) }
     var failure by remember { mutableStateOf<String?>(null) }
-    var assistantLocked by remember { mutableStateOf(false) }
     var assistantBusy by remember { mutableStateOf(false) }
     var answering by remember { mutableStateOf<Answering?>(null) }
     var busy by remember { mutableStateOf(false) }
@@ -175,13 +173,7 @@ fun ChatsScreen(
 
         state =
             when (val result = repository.threads()) {
-                is ApiResult.Success -> {
-                    // The lock is the server's answer, not a guess: one read says
-                    // what today's allowance is, and a failed read leaves the row
-                    // offered — the thread's own refusal is then the sentence.
-                    assistantLocked = assistantLockedNow(repository)
-                    ChatsUiState.of(result.value)
-                }
+                is ApiResult.Success -> ChatsUiState.of(result.value)
                 is ApiResult.Failure ->
                     ChatsUiState.Unavailable(offline = result.error is ApiError.Network)
             }
@@ -207,7 +199,7 @@ fun ChatsScreen(
     }
 
     fun openAssistant() {
-        if (assistantBusy || assistantLocked) return
+        if (assistantBusy) return
         scope.launch {
             assistantBusy = true
             when (val result = repository.startAssistant()) {
@@ -233,12 +225,10 @@ fun ChatsScreen(
                     threads = shown.threads,
                     presence = presenceByThread,
                     runningTurns = runningTurns,
-                    assistantLocked = assistantLocked,
                     assistantBusy = assistantBusy,
                     failure = failure,
                     onAnswer = { thread, accept -> answering = Answering(thread, accept) },
                     onOpenAssistant = ::openAssistant,
-                    onUpgrade = onUpgrade,
                     onOpenThread = onOpenThread,
                     onNewChat = onNewChat,
                 )
@@ -295,25 +285,16 @@ private fun answerSentence(thread: ChatThreadsResponseThreadsItem, accept: Boole
     }
 }
 
-/** The assistant's allowance, as the row's lock reads it. */
-private suspend fun assistantLockedNow(repository: ChatsRepository): Boolean =
-    when (val state = repository.assistant()) {
-        is ApiResult.Success -> state.value.allowance?.member?.cap == 0.0
-        is ApiResult.Failure -> false
-    }
-
 /** The rows, the requests above them, and the one action that starts a chat. */
 @Composable
 private fun ChatsList(
     threads: List<ChatThreadsResponseThreadsItem>,
     presence: Map<String, ChatPresenceEvent>,
     runningTurns: Map<String, AssistantTurn>,
-    assistantLocked: Boolean,
     assistantBusy: Boolean,
     failure: String?,
     onAnswer: (ChatThreadsResponseThreadsItem, Boolean) -> Unit,
     onOpenAssistant: () -> Unit,
-    onUpgrade: () -> Unit,
     onOpenThread: (String) -> Unit,
     onNewChat: () -> Unit,
 ) {
@@ -389,10 +370,8 @@ private fun ChatsList(
             if (!hasAssistant) {
                 item {
                     AssistantRow(
-                        locked = assistantLocked,
                         busy = assistantBusy,
                         onOpen = onOpenAssistant,
-                        onUpgrade = onUpgrade,
                     )
                 }
             }
@@ -479,13 +458,11 @@ private fun ChatsList(
     }
 }
 
-/** The assistant's row: offered, or locked with the way to unlock it. */
+/** The assistant's row: offered like any other, and the way into its thread. */
 @Composable
 private fun AssistantRow(
-    locked: Boolean,
     busy: Boolean,
     onOpen: () -> Unit,
-    onUpgrade: () -> Unit,
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
@@ -495,7 +472,7 @@ private fun AssistantRow(
             Modifier.fillMaxWidth()
                 .border(1.dp, RoyColors.border.copy(alpha = 0.7f), Recipes.Card.radius)
                 .background(Recipes.Card.container, Recipes.Card.radius)
-                .clickable(enabled = !locked && !busy) { if (locked) Unit else onOpen() }
+                .clickable(enabled = !busy, onClick = onOpen)
                 .padding(spacing.cardPadding),
         horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
         verticalAlignment = Alignment.CenterVertically,
@@ -504,7 +481,7 @@ private fun AssistantRow(
             modifier = Modifier.size(36.dp),
             contentAlignment = Alignment.Center,
         ) {
-            AssistantMark(size = 36.dp, dimmed = locked)
+            AssistantMark(size = 36.dp)
         }
 
         Column(modifier = Modifier.weight(1f)) {
@@ -514,19 +491,10 @@ private fun AssistantRow(
                 color = RoyColors.foreground,
             )
             Text(
-                text = if (locked) ChatsListCopy.ASSISTANT_LOCKED else ChatsListCopy.ASSISTANT_BODY,
+                text = ChatsListCopy.ASSISTANT_BODY,
                 style = type.xs,
                 color = RoyColors.mutedForeground,
                 modifier = Modifier.padding(top = spacing.elementGapSm / 2),
-            )
-        }
-
-        if (locked) {
-            Text(
-                text = ChatsListCopy.ASSISTANT_UPGRADE,
-                style = type.xs.copy(fontWeight = FontWeight.Bold),
-                color = RoyColors.primary,
-                modifier = Modifier.clickable(onClick = onUpgrade),
             )
         }
     }

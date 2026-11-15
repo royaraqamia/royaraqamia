@@ -578,7 +578,6 @@ class ShellActivity : ComponentActivity() {
                                             onOpenThread = { openRoute(ChatRoutes.threadOf(it)) },
                                             onOpenAssistant = { openRoute(ChatRoutes.threadOf(it)) },
                                             onNewChat = { openRoute("/chats/new") },
-                                            onUpgrade = { openRoute("/pricing") },
                                         )
                                     conversationId != null ->
                                         ChatThread(
@@ -704,10 +703,6 @@ class ShellActivity : ComponentActivity() {
                         onSignIn = {
                             assistantOpen = false
                             showSignIn()
-                        },
-                        onUpgrade = {
-                            assistantOpen = false
-                            openRoute("/pricing")
                         },
                         onOpenAttachment = ::openExternal,
                     )

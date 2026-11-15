@@ -12,7 +12,6 @@ import {
   ChatAgentError,
   ChatAgentService,
   SYSTEM_PROMPT,
-  allowanceSpentSentence,
   trimHistory,
   type ChatAgentServiceDeps,
 } from '@/backend/services/chat/chat-agent-service';
@@ -24,6 +23,7 @@ import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import {
   CHAT_APP_CALLS_SPENT,
+  allowanceSpentSentence,
   type ChatAgentAllowance,
   type ChatAgentEvent,
   type ChatMessage,
@@ -83,6 +83,13 @@ const PRO_ALLOWANCE: ChatAgentAllowance = {
   project: { used: 10, limit: 200 },
   resetsAt: '2026-11-03T00:00:00.000Z',
   apps: { used: 0, cap: 0, connected: 0 },
+};
+
+/** The free day as the plan gate reports it: ten turns, the tenth not yet taken. */
+const FREE_ALLOWANCE: ChatAgentAllowance = {
+  ...PRO_ALLOWANCE,
+  plan: 'free',
+  member: { used: 9, cap: 10 },
 };
 
 /** What a turn's tools need from the request; none of it comes from the model. */
@@ -312,39 +319,36 @@ describe('the assistant turn', () => {
     ).rejects.toMatchObject({ status: 503 });
   });
 
-  it('locks the assistant for a Free member without writing anything', async () => {
-    const { chats, reserve } = makeService();
-
-    const free = new ChatAgentService({
+  it('answers a Free member’s tenth turn of the day', async () => {
+    const { service, reserve } = makeService({
       agent: {
-        allowance: vi.fn(async () => ({
-          ...PRO_ALLOWANCE,
-          plan: 'free' as const,
-          member: { used: 0, cap: 0 },
-        })),
-        insertAgentMessage: vi.fn(),
+        ...makeService().agent,
+        allowance: vi.fn(async () => FREE_ALLOWANCE),
       } as unknown as ChatAgentRepository,
-      chats,
-      attachments: { download: vi.fn(async () => new Uint8Array()) },
-      reserve,
-      reserveAppCall: vi.fn(async () => ({ eventId: null, release: vi.fn(async () => undefined) })),
-      usageState: vi.fn(async () => ({
-        plan: 'free' as const,
-        unlimited: false,
-        expiresAt: null,
-        counters: [],
-      })),
-      client: scriptedClient([textStream('x')]),
-      actions: { propose: vi.fn() },
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+
+    expect(events.some((event) => event.type === 'done')).toBe(true);
+    expect(reserve).toHaveBeenCalledTimes(1);
+  });
+
+  it('names the reset on a Free member’s eleventh turn, without spending a count', async () => {
+    const { service, chats, reserve } = makeService({
+      agent: {
+        ...makeService().agent,
+        allowance: vi.fn(async () => ({ ...FREE_ALLOWANCE, member: { used: 10, cap: 10 } })),
+      } as unknown as ChatAgentRepository,
     });
 
     await expect(
-      collect(free.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT))
+      collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT))
     ).rejects.toMatchObject({
       status: 402,
-      message: 'نور متاحة لمشتركي الخطة المدفوعة.',
+      message: allowanceSpentSentence(FREE_ALLOWANCE.resetsAt),
     });
     expect(reserve).not.toHaveBeenCalled();
+    expect(chats.sendMessage).not.toHaveBeenCalled();
   });
 
   it('refuses the turn whose day is spent, naming the reset', async () => {

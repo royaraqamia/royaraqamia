@@ -16,9 +16,6 @@ export const ASSISTANT_COPY = {
   intro: 'أهلاً، أنا نور. اسألني عن أي شيء، وسيصلك الرد هنا.',
   placeholder: 'اكتب سؤالك لنور...',
   send: 'إرسال السؤال',
-  /** The Free plan sees the thread and this, not a composer. */
-  locked: 'نور متاحة لمشتركي الخطة المدفوعة.',
-  upgrade: 'ترقية الخطة',
   unavailable: 'نور غير متاحة حالياً.',
   failure: 'تعذّر الحصول على ردّ من نور. حاول مرة أخرى.',
   /** Under text that arrived before a turn failed, so it is not read as whole. */
@@ -32,9 +29,6 @@ export const ASSISTANT_COPY = {
    * back is the line this composer draws.
    */
   appsMeter: 'تطبيقات: {used} من {cap} اليوم',
-  /** The sentence a spent day shows: `{time}` is the Damascus reset instant. */
-  limitReached: 'وصلت إلى حد اليوم. يعود الحد بعد {time}.',
-  midnight: 'منتصف الليل',
   /** The proposal card's two answers (#818). */
   confirmAction: 'تأكيد',
   cancelAction: 'إلغاء',

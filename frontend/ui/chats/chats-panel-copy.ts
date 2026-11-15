@@ -15,8 +15,6 @@ export const CHATS_LIST_COPY = {
   threadCount: '{count} محادثة',
   assistantTitle: 'نور',
   assistantBody: 'اسأل نور عن أي شيء، والرد يصلك هنا.',
-  assistantLocked: 'نور متاحة لمشتركي الخطة المدفوعة.',
-  assistantUpgrade: 'ترقية الخطة',
   assistantFailed: 'تعذّر فتح نور',
   requestsLabel: 'طلبات المحادثة',
   requestDirect: 'يريد بدء محادثة معك',

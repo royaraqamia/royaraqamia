@@ -28,7 +28,7 @@ Verified against this checkout, not estimated.
 | Page awareness    | none. The panel is on every screen (ADR-0143) and knows nothing about it                                  |
 | Scheduling        | none on the agent. Cron exists only for sweeps                                                            |
 | Account awareness | identity block every turn (name, handle, plan, apps). No profile read tool                                |
-| Plans             | paid-only, member and project counters, per-day reset at Damascus midnight                                |
+| Plans             | free 10 turns a day, Pro 40, member and project counters, per-day reset at Damascus midnight              |
 
 ### The coverage table
 
