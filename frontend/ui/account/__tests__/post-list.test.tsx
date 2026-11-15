@@ -37,15 +37,13 @@ function post(id: string, status: Post['status'] = 'draft'): Post {
   };
 }
 
-function renderList() {
-  return render(
-    <PostList
-      posts={[post('a'), post('b')]}
-      onEdit={vi.fn()}
-      onChanged={vi.fn()}
-      onCreate={vi.fn()}
-    />
-  );
+function renderList(posts: Post[] = [post('a'), post('b')]) {
+  return render(<PostList posts={posts} onEdit={vi.fn()} onChanged={vi.fn()} onCreate={vi.fn()} />);
+}
+
+/** Select the first row, which is the one under test unless a case says otherwise. */
+function selectFirst() {
+  fireEvent.click(screen.getAllByRole('checkbox', { name: 'تحديد المنشور' })[0]!);
 }
 
 describe('PostList', () => {
@@ -58,10 +56,37 @@ describe('PostList', () => {
     expect(screen.queryByRole('button', { name: 'نشر' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'حذف' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole('checkbox', { name: 'تحديد المنشور' })[0]!);
+    selectFirst();
 
+    expect(screen.getByRole('button', { name: 'حذف' })).toBeInTheDocument();
+  });
+
+  it('offers only the move a draft selection has', () => {
+    renderList([post('a', 'draft'), post('b', 'scheduled')]);
+    selectFirst();
+
+    // Neither row is published, so a bulk unpublish would report `0 affected`.
     expect(screen.getByRole('button', { name: 'نشر' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'إلغاء النَّشر' })).not.toBeInTheDocument();
+  });
+
+  it('offers only the move a published selection has', () => {
+    renderList([post('a', 'published'), post('b', 'published')]);
+    selectFirst();
+
     expect(screen.getByRole('button', { name: 'إلغاء النَّشر' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'نشر' })).not.toBeInTheDocument();
+  });
+
+  it('names both moves by what they will do on a mixed selection', () => {
+    renderList([post('a', 'published'), post('b', 'draft')]);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'تحديد الكل' }));
+
+    expect(screen.getByRole('button', { name: 'نشر المسودَّات' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'إلغاء نشر المنشورة' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'نشر' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'إلغاء النَّشر' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'حذف' })).toBeInTheDocument();
   });
 
