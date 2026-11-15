@@ -25,6 +25,7 @@ import {
 
 import { Button } from '@/frontend/ui/primitives/button';
 import { cn } from '@/frontend/shared/cn';
+import { resolveMentionHandles } from '@/frontend/api/usernames';
 
 const turndown = new TurndownService({
   headingStyle: 'atx',
@@ -45,6 +46,57 @@ function toggleLink(editor: Editor) {
     return;
   }
   editor.chain().focus().extendMarkRange('link').setLink({ href: href.trim() }).run();
+}
+
+/**
+ * Turning a just-finished `@handle` into a link (ADR-0192).
+ *
+ * The trigger is the space (or the line) after the handle, which is the moment a
+ * writer has said "that is the name". URLs need no equivalent: the Link extension
+ * autolinks what is typed. A handle is different, because whether it is a link
+ * depends on a member existing — the one question an input rule cannot ask.
+ *
+ * The read is awaited and the document is re-checked when it answers: the writer
+ * may have moved on, and a link placed at stale offsets would wrap the wrong
+ * words. `converting` is what keeps the transaction this makes from re-entering
+ * the same path.
+ */
+async function linkTrailingMention(editor: Editor, converting: { current: boolean }) {
+  if (converting.current) return;
+
+  const { from, empty } = editor.state.selection;
+  if (!empty) return;
+
+  const $from = editor.state.doc.resolve(from);
+  if (!$from.parent.isTextblock) return;
+
+  const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
+  const match = /(^|[\s(])@([\p{L}\p{N}-]{3,30})\s$/u.exec(before);
+  if (!match) return;
+
+  const written = match[2]!;
+  const handle = written.toLowerCase();
+  const start = $from.start() + before.length - match[0].length + match[1]!.length;
+  const end = start + 1 + written.length;
+  const linkMark = editor.schema.marks.link;
+  if (linkMark && editor.state.doc.rangeHasMark(start, end, linkMark)) return;
+
+  converting.current = true;
+  try {
+    const resolved = await resolveMentionHandles([handle]);
+    if (!resolved.includes(handle)) return;
+
+    // The document may have moved while the answer travelled.
+    if (editor.state.doc.textBetween(start, end, ' ') !== `@${written}`) return;
+    editor
+      .chain()
+      .setTextSelection({ from: start, to: end })
+      .setLink({ href: `/u/${encodeURIComponent(handle)}`, class: 'mention' })
+      .setTextSelection(end + 1)
+      .run();
+  } finally {
+    converting.current = false;
+  }
 }
 
 interface NoteBodyEditorProps {
@@ -86,6 +138,9 @@ export function NoteBodyEditor({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
+  /** One mention conversion at a time; the chain it runs fires `onUpdate` again. */
+  const converting = useRef(false);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -119,6 +174,7 @@ export function NoteBodyEditor({
     onUpdate: ({ editor: current }) => {
       onChangeRef.current(turndown.turndown(current.getHTML()));
       forceRender();
+      void linkTrailingMention(current, converting);
     },
     onTransaction: () => forceRender(),
   });

@@ -79,6 +79,30 @@ export type UpdateUsernameInput = z.infer<typeof UpdateUsernameSchema>;
 export const ProfileNameSchema = z.string().trim().min(1, 'الاسم مطلوب').max(80, 'الاسم طويل جدًا');
 
 /**
+ * The handles one render wants to know about (ADR-0192). A batch, not a stream:
+ * a chat thread asks once for the handles on its screen, and the ceiling is the
+ * same number the composer's own list uses, so one message cannot ask about the
+ * whole directory.
+ */
+export const MentionHandlesSchema = z.object({
+  handles: z.array(z.string().trim().min(1).max(64)).max(50),
+});
+
+export type MentionHandlesInput = z.infer<typeof MentionHandlesSchema>;
+
+/**
+ * What `POST /api/users/mentions` answers: the handles among the request that
+ * name a listed member. Absent means "no such member", which renders the handle
+ * as plain text — the same answer a network failure gets, so a mention is never
+ * a link to a 404.
+ */
+export const MentionResolveResponseSchema = z.object({
+  handles: z.array(z.string()),
+});
+
+export type MentionResolveResponse = z.infer<typeof MentionResolveResponseSchema>;
+
+/**
  * What `GET /api/me` answers: the caller's identity as the account card draws
  * it. The app reads the same route the page's session provider reads, so the
  * profile card cannot show a name or an avatar the page would not (#946,

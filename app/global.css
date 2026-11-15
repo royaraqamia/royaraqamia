@@ -1634,6 +1634,14 @@ select,
   unicode-bidi: plaintext;
 }
 
+/* A mention is one left-to-right run inside whatever sentence holds it: the `@`
+ * belongs at the start of the name, not at the paragraph's right edge because
+ * the words around it are Arabic (ADR-0192). */
+.tiptap a.mention {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 /* The empty rich-text surface says what it is for.
  *
  * Tiptap's `Placeholder` extension only decorates the empty block: it puts

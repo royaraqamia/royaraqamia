@@ -50,6 +50,7 @@ import { ChatComposer } from './chat-composer';
 import { VoiceNotePlayer } from './voice-note-player';
 import { AttachmentChip } from './attachment-chip';
 import { ChatImage } from './chat-image';
+import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { stageFiles } from './attachment-quota';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
@@ -438,7 +439,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
                 <p className="whitespace-pre-wrap break-words bidi-lines" dir="auto">
-                  {assistant.streamingText}
+                  <LinkifiedText text={assistant.streamingText} />
                 </p>
               </div>
             </div>
@@ -450,7 +451,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted/60 px-3 py-2 text-sm leading-relaxed text-foreground/80">
                 <p className="whitespace-pre-wrap break-words bidi-lines" dir="auto">
-                  {assistant.interrupted}
+                  <LinkifiedText text={assistant.interrupted} />
                 </p>
               </div>
               <p className="text-[11px] italic text-muted-foreground">
@@ -992,7 +993,10 @@ function MessageRow({
           dir="auto"
           className="bidi-lines max-w-[85%] truncate rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground"
         >
-          {message.replyTo.deletedAt ? CHAT_THREAD_COPY.deletedReply : (message.replyTo.body ?? '')}
+          {message.replyTo.deletedAt ? CHAT_THREAD_COPY.deletedReply : null}
+          {!message.replyTo.deletedAt && message.replyTo.body ? (
+            <LinkifiedText text={message.replyTo.body} />
+          ) : null}
         </p>
       )}
 
@@ -1042,7 +1046,7 @@ function MessageRow({
           ) : (
             message.body && (
               <p dir="auto" className="whitespace-pre-wrap break-words bidi-lines">
-                {message.body}
+                <LinkifiedText text={message.body} />
               </p>
             )
           )}

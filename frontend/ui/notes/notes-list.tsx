@@ -6,6 +6,7 @@ import type { Note } from '@/shared/contracts/notes';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import { noteName, notePreview } from '@/frontend/shared/notes/text';
 import { cn } from '@/frontend/shared/cn';
+import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { NOTES_LIST_COPY } from './notes-list-copy';
 
 interface NotesListProps {
@@ -89,16 +90,24 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
             const preview = notePreview(note.body, 90);
 
             return (
-              <li key={note.id}>
+              <li
+                key={note.id}
+                className={cn(
+                  'relative rounded-2xl transition-safe',
+                  selected && 'bg-primary/10 ring-1 ring-primary/25'
+                )}
+              >
+                {/* The row is one target and the preview may hold a pressable
+                    handle, so the target is an overlay and the handle stacks
+                    above it (ADR-0192). A link inside a button is not HTML. */}
                 <button
                   type="button"
                   onClick={() => onSelect(note.id)}
                   aria-current={selected ? 'true' : undefined}
-                  className={cn(
-                    'w-full rounded-2xl px-3 py-2.5 text-start transition-safe hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-                    selected && 'bg-primary/10 ring-1 ring-primary/25'
-                  )}
-                >
+                  aria-label={name}
+                  className="absolute inset-0 z-10 rounded-2xl hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                />
+                <div className="pointer-events-none relative px-3 py-2.5">
                   <span className="flex items-baseline justify-between gap-2">
                     <span className="min-w-0 flex-1 truncate text-sm font-bold">{name}</span>
                     <span className="shrink-0 text-[10px] text-muted-foreground">
@@ -107,10 +116,14 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
                   </span>
                   {preview !== '' && (
                     <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-muted-foreground">
-                      {preview}
+                      <LinkifiedText
+                        text={preview}
+                        truncated
+                        linkClassName="pointer-events-auto relative z-20"
+                      />
                     </span>
                   )}
-                </button>
+                </div>
               </li>
             );
           })}

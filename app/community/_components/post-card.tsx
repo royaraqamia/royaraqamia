@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, User } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
+import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { postExcerpt, stripMarkdown } from '@/shared/reading-time';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { POST_CARD_COPY } from './post-card-copy';
@@ -105,7 +106,10 @@ export function PostCard({ post, index, showPinned = false }: PostCardProps) {
               expandLabel={POST_CARD_COPY.expand}
               collapseLabel={POST_CARD_COPY.collapse}
             >
-              {body}
+              {/* The card is one link; a handle inside the excerpt stacks above
+                  it, so the reader can follow the mention without leaving first
+                  (ADR-0192). */}
+              <LinkifiedText text={body} linkClassName="relative z-20" />
             </CollapsibleText>
           )}
         </div>

@@ -30,6 +30,9 @@ import {
 import { getCanonicalOrigin } from '@/frontend/shared/constants';
 import { postExcerpt } from '@/shared/reading-time';
 import { markdownHeadings, remarkHeadingIds } from '@/shared/markdown/heading-ids';
+import { remarkMentions } from '@/shared/markdown/remark-mentions';
+import { mentionedHandles } from '@/shared/text/linkify';
+import { createMentionsService } from '@/backend/config/users';
 import type { Metadata } from 'next';
 
 const highlightLanguages: Record<string, LanguageFn> = {
@@ -105,6 +108,14 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
   const postUrl = `${getCanonicalOrigin()}/community/${slug}`;
   const hasHeadings = headings.length > 0;
   const excerpt = postExcerpt(p.content, p.meta_desc ?? '');
+
+  // One batch for the body's own handles, resolved with the render (ADR-0192).
+  // A handle that names nobody stays text; the page is revalidated every five
+  // minutes, so the answer rides the same cache as the post.
+  const mentioned = mentionedHandles(p.content ?? '');
+  const mentionHandles = new Set(
+    mentioned.length > 0 ? await createMentionsService().resolve(mentioned) : []
+  );
 
   const markdownComponents = {
     h2: (props: React.ComponentPropsWithoutRef<'h2'> & ExtraProps) => {
@@ -247,7 +258,11 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                 className="cv-auto prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-p:leading-relaxed prose-p:text-foreground/90 prose-p:mb-6 prose-a:text-primary prose-a:font-bold prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-xl prose-img:border prose-img:border-border/50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-border/40 prose-pre:relative prose-pre:bg-muted/90 prose-pre:border prose-pre:border-border/60 prose-pre:rounded-2xl prose-pre:shadow-md prose-blockquote:border-s-primary prose-blockquote:border-s-4 prose-blockquote:bg-muted/30 prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:rounded-e-2xl prose-blockquote:not-italic prose-blockquote:text-foreground/90 prose-hr:border-border/50"
               >
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkHeadingIds]}
+                  remarkPlugins={[
+                    remarkGfm,
+                    remarkHeadingIds,
+                    [remarkMentions, { handles: mentionHandles }],
+                  ]}
                   rehypePlugins={[[rehypeHighlight, highlightOptions]]}
                   components={markdownComponents}
                 >

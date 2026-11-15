@@ -44,6 +44,12 @@ export interface PublicUsersRepository {
   getById(id: string): Promise<PublicUser | null>;
   /** Several members in one read, for a chat thread's roster. */
   getMany(ids: string[]): Promise<PublicUser[]>;
+  /**
+   * Which of these handles name a listed member (ADR-0192). Handles only, no
+   * profile payload: a mention needs to know whether `/u/<handle>` is a page,
+   * not who is behind it, and hidden or unconfirmed rows must answer no.
+   */
+  getManyByUsernames(usernames: string[]): Promise<string[]>;
 }
 
 export function createPublicUsersRepository(
@@ -138,6 +144,21 @@ export function createPublicUsersRepository(
 
       if (error) throw error;
       return (data ?? []) as PublicUser[];
+    },
+
+    async getManyByUsernames(usernames): Promise<string[]> {
+      const unique = [...new Set(usernames.map((handle) => handle.toLowerCase()))];
+      if (unique.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('username')
+        .in('username', unique)
+        .eq('verified', true)
+        .eq('is_hidden', false);
+
+      if (error) throw error;
+      return (data ?? []).map((row) => row.username);
     },
   });
 }
