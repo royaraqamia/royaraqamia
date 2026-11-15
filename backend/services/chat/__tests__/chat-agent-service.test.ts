@@ -1564,3 +1564,155 @@ describe('memory extraction after the answer', () => {
     expect(defer).not.toHaveBeenCalled();
   });
 });
+
+describe('the earlier part of a thread past the window', () => {
+  const SUMMARY = {
+    text: 'اتفقتا على أن تبدأ الميزانية في 15 من كل شهر، وبقي سؤال عن التقارير.',
+    throughMessageId: 'message-20',
+    updatedAt: '2026-11-15T09:00:00.000Z',
+  };
+
+  const FACT = {
+    memoryId: 'memory-1',
+    text: 'قهوتي سادة',
+    similarity: 0.81,
+    updatedAt: '2026-10-03T09:00:00.000Z',
+  };
+
+  it('opens the turn with the summary, after recall and ahead of the standing prompt', async () => {
+    const client = scriptedClient([textStream('نعم')]);
+    const summary = { read: vi.fn(async () => SUMMARY), refresh: vi.fn(async () => undefined) };
+    const recall = { recall: vi.fn(async () => [FACT]) };
+    const { service } = makeService({
+      client,
+      summary,
+      recall,
+      identity: vi.fn(async () => null),
+    });
+
+    await collect(service.turn('user-1', 'conversation-1', 'وأين توقفنا؟', TURN_CONTEXT));
+
+    // Read once, from the thread the turn is on.
+    expect(summary.read).toHaveBeenCalledWith('conversation-1');
+
+    const messages = client.calls[0] ?? [];
+    // Recall, then the summary, then the standing prompt: the summary sits
+    // nearest the history because it is the oldest part of it.
+    expect(String(messages[0]?.content)).toContain('قهوتي سادة');
+    expect(String(messages[1]?.content)).toContain('اتفقتا على أن تبدأ الميزانية');
+    expect(String(messages[1]?.content)).toContain('ليس رسالة من العضو');
+    expect(messages[2]).toEqual({ role: 'system', content: SYSTEM_PROMPT });
+  });
+
+  it('opens with the standing prompt alone when the conversation has no summary', async () => {
+    const client = scriptedClient([textStream('أهلاً')]);
+    const summary = { read: vi.fn(async () => null), refresh: vi.fn(async () => undefined) };
+    const { service } = makeService({
+      client,
+      summary,
+      identity: vi.fn(async () => null),
+    });
+
+    await collect(service.turn('user-1', 'conversation-1', 'مرحبا', TURN_CONTEXT));
+
+    expect(summary.read).toHaveBeenCalledTimes(1);
+    expect(client.calls[0]?.[0]).toEqual({ role: 'system', content: SYSTEM_PROMPT });
+  });
+
+  it('answers without a block when the summary read throws', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    const client = scriptedClient([textStream('أهلاً')]);
+    const { service } = makeService({
+      client,
+      summary: {
+        read: vi.fn(async () => {
+          throw new Error('summary unavailable');
+        }),
+        refresh: vi.fn(async () => undefined),
+      },
+      identity: vi.fn(async () => null),
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'مرحبا', TURN_CONTEXT));
+
+    expect(events.at(-1)).toMatchObject({ type: 'done' });
+    expect(client.calls[0]?.[0]).toEqual({ role: 'system', content: SYSTEM_PROMPT });
+    expect(warn).toHaveBeenCalledWith('Conversation summary could not be read for this turn', {
+      error: expect.stringContaining('summary unavailable'),
+    });
+    warn.mockRestore();
+  });
+
+  it('schedules the regeneration behind the answer, and never waits for it', async () => {
+    const refresh = vi.fn(() => new Promise<void>(() => undefined));
+    const defer = vi.fn();
+    const { service, agent } = makeService({
+      summary: { read: vi.fn(async () => null), refresh },
+      defer,
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+
+    expect(agent.settleTurn).toHaveBeenCalledWith('turn-1');
+    expect(events.at(-1)).toMatchObject({ type: 'done' });
+    // The service decides whether it is due; the turn only schedules it.
+    expect(refresh).toHaveBeenCalledWith('conversation-1');
+    expect(defer).toHaveBeenCalledTimes(1);
+  });
+
+  it('turns a regeneration that throws into a warning, not into a failed turn', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    const scheduled: Array<Promise<unknown>> = [];
+    const { service } = makeService({
+      summary: {
+        read: vi.fn(async () => null),
+        refresh: async () => {
+          throw new Error('boom');
+        },
+      },
+      defer: (promise) => scheduled.push(promise),
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+    await Promise.allSettled(scheduled);
+
+    expect(events.at(-1)).toMatchObject({ type: 'done' });
+    expect(events.some((event) => event.type === 'error')).toBe(false);
+    expect(warn).toHaveBeenCalledWith('Conversation summary threw for this turn', {
+      error: expect.stringContaining('boom'),
+    });
+    warn.mockRestore();
+  });
+
+  it('does not schedule one when the summary is not wired', async () => {
+    const defer = vi.fn();
+    const { service } = makeService({ defer });
+
+    await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+
+    expect(defer).not.toHaveBeenCalled();
+  });
+
+  it('resumes with the same summary the member was watching', async () => {
+    const client = scriptedClient([textStream('نعم')]);
+    const summary = { read: vi.fn(async () => SUMMARY), refresh: vi.fn(async () => undefined) };
+    const { service } = makeService({ client, summary, identity: vi.fn(async () => null) });
+
+    await collect(
+      service.resume(
+        {
+          id: 'turn-1',
+          conversationId: 'conversation-1',
+          memberId: 'user-1',
+          question: 'سؤال',
+          resumes: 1,
+        },
+        TURN_CONTEXT
+      )
+    );
+
+    // A resumed turn that lost the summary would reintroduce itself mid-thread.
+    expect(summary.read).toHaveBeenCalledWith('conversation-1');
+    expect(String(client.calls[0]?.[0]?.content)).toContain('اتفقتا على أن تبدأ الميزانية');
+  });
+});

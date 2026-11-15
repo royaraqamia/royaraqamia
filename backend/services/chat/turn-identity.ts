@@ -2,6 +2,10 @@ import type { AiChatMessage } from '@/backend/clients/ai-chat';
 import type { UserProfile } from '@/backend/repositories/users/user-profile-repository';
 import { screenContextMessages } from '@/backend/services/chat/turn-screen';
 import { recallBlock, type RecalledMemory } from '@/backend/shared/domain/agent-memory';
+import {
+  summaryBlock,
+  type ConversationSummary,
+} from '@/backend/shared/domain/conversation-summary';
 import type { PlanId } from '@/shared/contracts/plans';
 import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 
@@ -119,24 +123,30 @@ export function identityBlock(identity: TurnIdentity): string {
 
 /**
  * The context layers a turn opens with, in the order ADR-0182 fixes: identity
- * first, then the page's own state, then recall, then the standing prompt, then
- * the thread. The rolling summary and the tools' own declarations join this list
- * as their phases land, so the two call sites in the service stay one call.
+ * first, then the page's own state, then recall, then the rolling summary of
+ * what the window no longer holds, then the standing prompt, then the thread.
+ * The summary sits last of the layers on purpose: it is the oldest part of the
+ * conversation, so it reads immediately above the messages it precedes.
  *
  * Recall is a block of its own, never a line inside the history: the member's
  * own messages are theirs, and a recalled fact is the assistant's working
  * context — mixing them would put words in the member's mouth, and a bad recall
- * would read as something they said.
+ * would read as something they said. The summary is the same rule for the same
+ * reason (#1512): it is prose the server wrote, and the history below it is
+ * speech the member did.
  */
 export function turnContextMessages(
   identity: TurnIdentity | null,
   screen?: ScreenContextInput,
-  recalled: readonly RecalledMemory[] = []
+  recalled: readonly RecalledMemory[] = [],
+  summary?: ConversationSummary | null
 ): AiChatMessage[] {
   const memory = recallBlock(recalled);
+  const earlier = summaryBlock(summary ?? null);
   return [
     ...(identity ? [{ role: 'system' as const, content: identityBlock(identity) }] : []),
     ...screenContextMessages(screen),
     ...(memory ? [{ role: 'system' as const, content: memory }] : []),
+    ...(earlier ? [{ role: 'system' as const, content: earlier }] : []),
   ];
 }

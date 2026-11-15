@@ -66,9 +66,11 @@ export const RECALL_QUERY_TIMEOUT_MS = 2500;
 export const EMBEDDING_MAX_INPUT_CHARS = 2000;
 
 /**
- * What a vector describes. `fact` is the only source today; the thread summary
- * is the next one, and it arrives with the table that holds it (#1426) rather
- * than as a column nothing can fill.
+ * What a vector describes. `fact` is the only source, and the only one this
+ * store should have (ADR-0182's 2026-11-15 amendment, #1529): the thread summary
+ * is context injected into the turn, not a recall item. A vector of it would
+ * return what the prompt already holds, and a superseded summary would come back
+ * with the same confidence as the current one.
  */
 export type EmbeddingSourceKind = 'fact';
 

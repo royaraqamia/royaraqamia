@@ -23,6 +23,14 @@ import {
   createMemoryExtractionService,
   type MemoryExtractionService,
 } from '@/backend/services/agent/memory-extraction-service';
+import {
+  createSupabaseConversationSummaryReader,
+  createSupabaseConversationSummaryWriter,
+} from '@/backend/repositories/chat/conversation-summary-repository';
+import {
+  createConversationSummaryService,
+  type ConversationSummaryService,
+} from '@/backend/services/agent/conversation-summary-service';
 
 /**
  * Wire the memory embedding service for one client (ADR-0185, #1425).
@@ -112,6 +120,33 @@ export function createMemoryExtractionFor(
   return createMemoryExtractionService({
     memories: createAgentMemoryFor(supabase),
     claim: (turnId, at) => turns.claim(turnId, at),
+    client,
+  });
+}
+
+/**
+ * Wire the rolling summary of a conversation (ADR-0182 decision 4, #1512).
+ *
+ * The same two-client shape the fact store uses, for the same reason. The
+ * **read** is the member's own session — the summary lives on the conversation
+ * row, and the policy that answers "which threads may I read" is already the
+ * boundary, so no new policy is drawn for a column it covers. The
+ * **regeneration** is background work: it reads the thread and writes the row on
+ * the service role, because a member holds no `update` grant on
+ * `chat_conversations` and should not. What keeps that from being a read path
+ * into somebody else's thread is the input: a conversation id the server is
+ * already running a turn for, never one from a request.
+ *
+ * `client` is a parameter like every other seam here: a deployment with no key
+ * still reads and injects a summary it has, and simply stops writing new ones.
+ */
+export function createConversationSummaryFor(
+  supabase: SupabaseClient<Database>,
+  client: Pick<AiChatClient, 'reply'> | null
+): ConversationSummaryService {
+  return createConversationSummaryService({
+    read: createSupabaseConversationSummaryReader(supabase),
+    write: createSupabaseConversationSummaryWriter(getAdminSupabase()),
     client,
   });
 }

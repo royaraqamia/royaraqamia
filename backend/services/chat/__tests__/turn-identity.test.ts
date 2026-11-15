@@ -155,4 +155,53 @@ describe('turnContextMessages', () => {
   it('injects no recall block when recall found nothing', () => {
     expect(turnContextMessages(null, undefined, [])).toEqual([]);
   });
+
+  it('opens the summary as its own block, after recall and nearest the history', () => {
+    const messages = turnContextMessages(
+      identity(),
+      undefined,
+      [
+        {
+          memoryId: 'memory-1',
+          text: 'أحب القهوة السادة',
+          similarity: 0.82,
+          updatedAt: '2026-10-03T09:00:00.000Z',
+        },
+      ],
+      {
+        text: 'اتفقتا على أن تبدأ الميزانية في 15 من كل شهر.',
+        throughMessageId: 'message-20',
+        updatedAt: '2026-11-15T09:00:00.000Z',
+      }
+    );
+
+    expect(messages).toHaveLength(3);
+    expect(String(messages[1]?.content)).toContain('أحب القهوة السادة');
+    expect(String(messages[2]?.content)).toContain('اتفقتا على أن تبدأ الميزانية');
+  });
+
+  it('labels the summary as the server’s account of the thread, never the member’s words', () => {
+    const messages = turnContextMessages(null, undefined, [], {
+      text: 'اتفقتا على أن تبدأ الميزانية في 15 من كل شهر.',
+      throughMessageId: 'message-20',
+      updatedAt: '2026-11-15T09:00:00.000Z',
+    });
+
+    // The header is what stops a paragraph of past conversation from reading as
+    // something the member just said.
+    expect(messages).toHaveLength(1);
+    expect(String(messages[0]?.content)).toContain('ليس رسالة من العضو');
+    expect(String(messages[0]?.content)).toContain('لا تنسبي نصّه إلى العضو');
+  });
+
+  it('injects no summary block for a conversation that has none', () => {
+    expect(turnContextMessages(null, undefined, [], null)).toEqual([]);
+    expect(
+      turnContextMessages(null, undefined, [], {
+        text: '   ',
+        throughMessageId: null,
+        updatedAt: '',
+      })
+    ).toEqual([]);
+  });
 });

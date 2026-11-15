@@ -24,9 +24,11 @@ import {
 import type { McpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import type { AgentRecallService } from '@/backend/services/agent/agent-recall-service';
+import type { ConversationSummaryService } from '@/backend/services/agent/conversation-summary-service';
 import type { MemoryExtractionService } from '@/backend/services/agent/memory-extraction-service';
 import { turnContextMessages, type TurnIdentity } from '@/backend/services/chat/turn-identity';
 import type { RecalledMemory } from '@/backend/shared/domain/agent-memory';
+import type { ConversationSummary } from '@/backend/shared/domain/conversation-summary';
 import { settledTurn } from '@/backend/shared/domain/memory-extraction';
 import { fireAndForget, type DeferredWork } from '@/backend/shared/deferred-work';
 import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
@@ -302,6 +304,13 @@ export interface ChatAgentServiceDeps {
    */
   recall?: Pick<AgentRecallService, 'recall'>;
   /**
+   * What the beginning of a thread past the window said (ADR-0182 decision 4,
+   * #1512). `read` is what the turn injects and costs nothing; `refresh` is the
+   * provider call behind the answer, and the service itself decides whether it
+   * is due — so this dep can never make a turn regenerate per message.
+   */
+  summary?: Pick<ConversationSummaryService, 'read' | 'refresh'>;
+  /**
    * What this exchange states, extracted after the answer is stored (ADR-0182
    * decision 2, #1511). Absent unless the deployment switched it on, and the
    * turn is then exactly the turn it was before extraction existed.
@@ -449,6 +458,46 @@ export class ChatAgentService {
   }
 
   /**
+   * The earlier part of this conversation, as the row holds it (ADR-0182
+   * decision 4). A conversation with no summary injects no block, and a read
+   * that fails is a turn without one — never a turn without an answer.
+   */
+  private async summarised(conversationId: string): Promise<ConversationSummary | null> {
+    if (!this.deps.summary) return null;
+    try {
+      return await this.deps.summary.read(conversationId);
+    } catch (error) {
+      // The service is written never to throw, and this is the second half of
+      // that promise: an unwired or broken implementation costs the summary,
+      // never the answer.
+      logger.warn('Conversation summary could not be read for this turn', {
+        error: String(error),
+      });
+      return null;
+    }
+  }
+
+  /**
+   * The regeneration, scheduled behind the answer (ADR-0182 decision 4).
+   *
+   * It is never awaited and never thrown: the member's answer is already
+   * stored, and the service applies the two gates that make a call worth its
+   * cost — the thread past the window, and ten new messages past the cursor.
+   * A turn that does not clear them schedules nothing that spends anything.
+   */
+  private scheduleSummary(conversationId: string): void {
+    const summary = this.deps.summary;
+    if (!summary) return;
+
+    const defer = this.deps.defer ?? fireAndForget;
+    defer(
+      summary.refresh(conversationId).catch((error: unknown) => {
+        logger.warn('Conversation summary threw for this turn', { error: String(error) });
+      })
+    );
+  }
+
+  /**
    * The facts this exchange states, offered to the one door after the answer.
    *
    * The turn builds the record itself, from what it already holds: the settled
@@ -545,12 +594,15 @@ export class ChatAgentService {
       });
 
     try {
-      // The turn reads its two context layers at once: the files (ADR-0127,
-      // ADR-0139, ADR-0140) and the account row behind the identity block
-      // (ADR-0182). A failed projection leaves the block out, never the answer.
-      const [read, identity] = await Promise.all([
+      // The turn reads its context layers at once: the files (ADR-0127,
+      // ADR-0139, ADR-0140), the account row behind the identity block
+      // (ADR-0182), and the earlier part of this conversation when the window
+      // has already dropped it (decision 4). A failed read leaves its block
+      // out, never the answer.
+      const [read, identity, summary] = await Promise.all([
         this.readAttachments(attachments),
         this.turnIdentity(userId, allowance.plan),
+        this.summarised(conversationId),
       ]);
       const question = [typed, read.words].filter(Boolean).join('\n');
       if (!question && read.parts.length === 0) throw new ChatAgentError(422, COULD_NOT_READ);
@@ -594,7 +646,7 @@ export class ChatAgentService {
         context,
         screen,
         messages: [
-          ...turnContextMessages(identity, screen, recalled),
+          ...turnContextMessages(identity, screen, recalled, summary),
           { role: 'system', content: SYSTEM_PROMPT },
           ...(read.spoken ? [{ role: 'system' as const, content: SPOKEN_NOTE }] : []),
           // The line just stored is replaced by its own reading, so an image or a
@@ -757,6 +809,11 @@ export class ChatAgentService {
     // product-scoped fact stays out: the turn no longer knows which product it
     // is about, and guessing one is worse than a quieter answer.
     const recalled = await this.remembered(turn.memberId, turn.question, turn.conversationId, null);
+    // And the earlier part of the thread for the same reason the identity block
+    // is read again (ADR-0182 decision 4): a turn that lost it mid-thread would
+    // answer as if the conversation had just started — the exact failure the
+    // summary exists to end.
+    const summary = await this.summarised(turn.conversationId);
     try {
       yield* this.answer({
         userId: turn.memberId,
@@ -765,7 +822,7 @@ export class ChatAgentService {
         question: turn.question ?? '',
         context,
         messages: [
-          ...turnContextMessages(identity, undefined, recalled),
+          ...turnContextMessages(identity, undefined, recalled, summary),
           { role: 'system', content: SYSTEM_PROMPT },
           ...trimHistory(page.messages),
         ],
@@ -1167,6 +1224,12 @@ export class ChatAgentService {
       answer: text,
       product: this.visibleProduct(screen),
     });
+
+    // And the summary that will carry this exchange once ten more arrive
+    // (ADR-0182 decision 4). Same seam, same reason: the answer is stored, the
+    // turn is settled, and whether this turn pays for a regeneration is the
+    // service's gate, not this call site's.
+    this.scheduleSummary(conversationId);
 
     yield {
       type: 'done',
