@@ -23,10 +23,14 @@ import {
 import { ChatAttachmentSweepService } from '@/backend/services/chat/chat-attachment-sweep';
 import { attachAppNames } from '@/backend/services/chat/chat-app-tools';
 import { appToolParts } from '@/shared/contracts/chat-agent-actions';
-import { createPublicUsersRepositoryServer } from '@/backend/config/users';
+import {
+  createPublicUsersRepositoryServer,
+  createServerUserProfileRepository,
+} from '@/backend/config/users';
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { createDefaultMcpAppToolsService } from '@/backend/config/mcp';
 import { createPlanGate, createUsageService } from '@/backend/config/plans';
+import { projectIdentity } from '@/backend/services/chat/turn-identity';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createAiChatClient } from '@/backend/clients/ai-chat';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
@@ -114,6 +118,10 @@ export function createSupabaseChatAgentService(
 ): ChatAgentService {
   const gate = createPlanGate();
   const usage = createUsageService();
+  const apps = createDefaultMcpAppToolsService();
+  // The member's own client: `/api/me` and the profile editor read the same
+  // repository, so the block and the header menu cannot disagree about a name.
+  const profiles = createServerUserProfileRepository(supabase);
 
   return new ChatAgentService({
     agent: createSupabaseChatAgentRepository(getAdminSupabase()),
@@ -133,10 +141,21 @@ export function createSupabaseChatAgentService(
     // not be able to forge one); the member's own confirmation is a separate
     // service, on their own session.
     actions: createSupabaseChatAgentActionService(supabase),
+    // Who the turn is talking to, before it asks anything (ADR-0182, decision
+    // 1): the account row plus the plan the gate just read, so "من أنا؟" costs
+    // no tool call. A read that fails leaves the block out; it never refuses the
+    // answer, and the address never enters the block (see `turn-identity`).
+    identity: async (userId, plan) => {
+      const [profile, connected] = await Promise.all([
+        profiles.getById(userId).catch(() => null),
+        apps.connectedCount(userId).catch(() => 0),
+      ]);
+      return projectIdentity({ profile, plan, connectedApps: connected });
+    },
     // The apps the member connected, when the marketplace is configured: the
     // turn declares at most sixteen of their tools, and a write among them is a
     // card like any other (ADR-0155, decision 7).
-    apps: createDefaultMcpAppToolsService(),
+    apps,
     ...deps,
   });
 }
