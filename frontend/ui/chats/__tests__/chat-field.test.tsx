@@ -62,6 +62,15 @@ describe('ChatField', () => {
     expect(field.querySelector('strong')).toHaveTextContent('عريض');
   });
 
+  it('wraps a token that reaches the edge instead of widening the row', async () => {
+    const { field } = await open();
+
+    // `wrap-anywhere` is what lets a token with no space in it break; with
+    // `break-words` its min-content width still set the row's width, and the
+    // field pushed the composer (and the panel) wider than its container.
+    expect(field).toHaveClass('wrap-anywhere');
+  });
+
   it('keeps the field read-only when it is disabled', async () => {
     render(
       <ChatField value="سلام" onChange={vi.fn()} ariaLabel="نص الرسالة" labels={LABELS} disabled />

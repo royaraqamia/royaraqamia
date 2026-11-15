@@ -327,7 +327,7 @@ export function ChatComposer({
           </>
         ) : (
           <>
-            <div className="relative flex min-h-10 flex-1 items-end">
+            <div className="relative flex min-h-10 min-w-0 flex-1 items-end">
               {/* The field is the editor (ADR-0193). Its padding is physical for
                   the reason the clip is: the clip is pinned to the box while the
                   text's direction follows the draft. */}

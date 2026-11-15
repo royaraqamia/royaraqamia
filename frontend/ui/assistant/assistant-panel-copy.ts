@@ -11,7 +11,7 @@
  */
 export const ASSISTANT_PANEL_COPY = {
   title: 'نور',
-  intro: 'أهلاً، أنا نور. اسألني عن منتجاتنا وخدماتنا، أو اطلب مني إنجاز مهمة.',
+  intro: 'أهلاً، أنا نور. اسألني عن أي شيء، وسيصلك الرد هنا.',
   placeholder: 'اكتب سؤالك لنور...',
   send: 'إرسال السؤال',
   thinking: 'تفكّر...',
@@ -25,10 +25,6 @@ export const ASSISTANT_PANEL_COPY = {
   failed: 'تعذّر فتح المحادثة. حاول مرة أخرى.',
   retry: 'إعادة المحاولة',
   unavailable: 'نور غير متاحة حالياً.',
-  suggestionsLabel: 'جرّب أن تسأل',
-  suggestService: 'ما الخدمات التي تقدّمونها؟',
-  suggestCourse: 'أي دورة تناسبني؟',
-  suggestConsultation: 'أريد حجز استشارة',
   attachmentOnly: 'مرفق',
   downloadFile: 'تنزيل {name}',
 } as const;

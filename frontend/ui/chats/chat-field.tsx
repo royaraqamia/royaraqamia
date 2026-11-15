@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -74,6 +74,8 @@ export function ChatField({
   labels: ChatFieldLabels;
 }) {
   const editorRef = useRef<Editor | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [bubble, setBubble] = useState<{ top: number; left: number } | null>(null);
   /** The newest value this field wrote, so an external reset is not mistaken for typing. */
   const emitted = useRef(value);
@@ -116,7 +118,7 @@ export function ChatField({
         'aria-multiline': 'true',
         dir: 'auto',
         class: cn(
-          'tiptap outline-none break-words whitespace-pre-wrap',
+          'tiptap outline-none wrap-anywhere whitespace-pre-wrap',
           compact ? 'min-h-8 text-sm' : 'min-h-10 max-h-32 overflow-y-auto',
           className
         ),
@@ -156,14 +158,17 @@ export function ChatField({
     editor.commands.setContent(chatMarkdownToDoc(value), { emitUpdate: false });
   }, [editor, value]);
 
-  // The bubble follows the selection; it is a viewport coordinate, so it is
-  // `fixed` and needs no scroll listener of its own.
+  // The bubble follows the selection, measured against the field rather than
+  // the viewport: the panel it opens in is a dialog whose `contain-layout` makes
+  // it the containing block for anything `fixed`, so a viewport coordinate was
+  // read as a panel coordinate and landed below the panel's edge on a desktop.
   useEffect(() => {
     if (!editor) return;
 
     const place = () => {
+      const root = rootRef.current;
       const selection = window.getSelection();
-      if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+      if (!root || !selection || selection.isCollapsed || selection.rangeCount === 0) {
         setBubble(null);
         return;
       }
@@ -177,12 +182,33 @@ export function ChatField({
         setBubble(null);
         return;
       }
-      setBubble({ top: rect.top, left: rect.left + rect.width / 2 });
+      const box = root.getBoundingClientRect();
+      setBubble({
+        top: rect.top - box.top - 46,
+        left: rect.left - box.left + rect.width / 2,
+      });
     };
 
     document.addEventListener('selectionchange', place);
     return () => document.removeEventListener('selectionchange', place);
   }, [editor]);
+
+  /**
+   * The first placement runs before the bubble has ever been drawn, so its width
+   * is not known yet. One layout pass puts it back inside the field: the panel
+   * clips at its own edge, and a bubble centred on a word near that edge would
+   * otherwise be drawn half outside it.
+   */
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    const element = bubbleRef.current;
+    if (!root || !element || !bubble) return;
+    const half = element.offsetWidth / 2;
+    const min = half + 4;
+    const max = Math.max(min, root.clientWidth - half - 4);
+    const left = Math.min(Math.max(bubble.left, min), max);
+    if (left !== bubble.left) setBubble({ ...bubble, left });
+  }, [bubble]);
 
   const run = (action: (chain: ReturnType<Editor['chain']>) => ReturnType<Editor['chain']>) => {
     if (!editor) return;
@@ -216,18 +242,19 @@ export function ChatField({
   }
 
   return (
-    <div className="relative w-full" onFocusCapture={onFocus}>
+    <div ref={rootRef} className="relative w-full" onFocusCapture={onFocus}>
       <EditorContent editor={editor} />
 
       {bubble && !disabled ? (
         <div
+          ref={bubbleRef}
           role="toolbar"
           aria-label={labels.toolbar}
-          // Above the selection, centred on it. `fixed` because the rect is a
-          // viewport coordinate, and `pointer-events-auto` because the bubble
-          // must not be clipped by the field's own scroll box.
-          style={{ top: Math.max(8, bubble.top - 46), left: bubble.left }}
-          className="fixed z-50 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-border/70 bg-popover px-1 py-0.5 shadow-lg"
+          // Above the selection, centred on it, in the field's own coordinates.
+          // It is a sibling of the editor rather than a child, so the field's
+          // scroll box cannot clip it.
+          style={{ top: bubble.top, left: bubble.left }}
+          className="absolute z-50 flex -translate-x-1/2 items-center gap-0.5 rounded-full border border-border/70 bg-popover px-1 py-0.5 shadow-lg"
           // The press that applies a mark must not move focus out of the field:
           // `mousedown` is where a button takes it, and cancelling *that* keeps
           // the selection while still letting the press through.

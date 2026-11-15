@@ -90,9 +90,9 @@ export const CHAT_FIELD_LABELS: ChatFieldLabels = {
  * - `write`    an active member of an active thread → composer
  * - `inactive` anything else → one sentence saying why
  */
-type ThreadState = 'answer' | 'waiting' | 'blocked' | 'closed' | 'write' | 'inactive';
+export type ThreadState = 'answer' | 'waiting' | 'blocked' | 'closed' | 'write' | 'inactive';
 
-function stateOf(thread: ChatThread): ThreadState {
+export function stateOf(thread: ChatThread): ThreadState {
   const mine = thread.me?.status ?? null;
   const closed = thread.status === 'declined' || thread.status === 'archived';
 
@@ -116,6 +116,11 @@ function counterpartOf(thread: ChatThread) {
   );
 }
 
+/** What a waiting answer says: the request that started this thread. */
+function inviteNote(thread: ChatThread): string {
+  return CHAT_THREAD_COPY.inviteDirect.replace('{title}', thread.title);
+}
+
 /**
  * The live sentence a peer's state draws, in the thread's own words (#819).
  *
@@ -126,11 +131,6 @@ function counterpartOf(thread: ChatThread) {
 function presenceText(state: ChatPresenceState | null): string | null {
   if (!state) return null;
   return state === 'recording' ? CHAT_THREAD_COPY.recordingNow : CHAT_THREAD_COPY.typingNow;
-}
-
-/** What a waiting answer says: the request that started this thread. */
-function inviteNote(thread: ChatThread): string {
-  return CHAT_THREAD_COPY.inviteDirect.replace('{title}', thread.title);
 }
 
 /**
@@ -451,7 +451,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           {assistant.isStreaming && assistant.streamingText && (
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
-                <p className="whitespace-pre-wrap break-words bidi-lines" dir="auto">
+                <p className="whitespace-pre-wrap wrap-anywhere bidi-lines" dir="auto">
                   <ChatBody text={assistant.streamingText} />
                 </p>
               </div>
@@ -463,7 +463,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           {!assistant.isStreaming && assistant.interrupted && (
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted/60 px-3 py-2 text-sm leading-relaxed text-foreground/80">
-                <p className="whitespace-pre-wrap break-words bidi-lines" dir="auto">
+                <p className="whitespace-pre-wrap wrap-anywhere bidi-lines" dir="auto">
                   <ChatBody text={assistant.interrupted} />
                 </p>
               </div>
@@ -736,17 +736,32 @@ function ThreadHeader({
   );
 }
 
-/** The empty thread: who this is, and what can happen next. */
-function ThreadIntro({
+/**
+ * The empty thread: who this is, and what can happen next.
+ *
+ * One component for both doors: `/chats/<id>` draws it inside the thread, and
+ * the floating panel (ADR-0143) draws it too, so the assistant's first screen is
+ * the same first screen in both places rather than a second introduction that
+ * drifts from the first.
+ */
+export function ThreadIntro({
   thread,
   counterpart,
   state,
+  note,
 }: {
   thread: ChatThread;
   counterpart: ReturnType<typeof counterpartOf>;
   state: ThreadState;
+  /**
+   * The sentence an agent thread opens on, when the thread's state has nothing
+   * of its own to say. The panel passes it from its own copy module because
+   * `check:parity` binds that key to `assistant-panel.tsx`: the row's reference
+   * component has to name it, even though the words are drawn here.
+   */
+  note?: string;
 }) {
-  const note =
+  const statusNote =
     state === 'answer'
       ? inviteNote(thread)
       : state === 'waiting'
@@ -773,7 +788,10 @@ function ThreadIntro({
       ) : null}
       <p className="text-sm font-bold text-foreground">{thread.title}</p>
       <p className="text-xs leading-relaxed text-muted-foreground/80">
-        {note ?? (thread.kind === 'agent' ? ASSISTANT_COPY.intro : CHAT_THREAD_COPY.emptyThread)}
+        {statusNote ??
+          (thread.kind === 'agent'
+            ? (note ?? ASSISTANT_PANEL_COPY.intro)
+            : CHAT_THREAD_COPY.emptyThread)}
       </p>
     </div>
   );
@@ -1061,7 +1079,7 @@ function MessageRow({
             </div>
           ) : (
             message.body && (
-              <p dir="auto" className="whitespace-pre-wrap break-words bidi-lines">
+              <p dir="auto" className="whitespace-pre-wrap wrap-anywhere bidi-lines">
                 <ChatBody text={message.body} />
               </p>
             )

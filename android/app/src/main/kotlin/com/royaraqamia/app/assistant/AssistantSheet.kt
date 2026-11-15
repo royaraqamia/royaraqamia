@@ -415,7 +415,6 @@ fun AssistantSheet(
                             listState = listState,
                             type = type,
                             onOpenAttachment = ::openAttachment,
-                            onPick = { draft = it },
                         )
                 }
             }
@@ -554,7 +553,6 @@ private fun AssistantConversation(
     listState: LazyListState,
     type: RoyTypeScale,
     onOpenAttachment: (String) -> Unit,
-    onPick: (String) -> Unit,
 ) {
     LazyColumn(
         state = listState,
@@ -564,7 +562,7 @@ private fun AssistantConversation(
     ) {
         if (messages.isEmpty() && !asking) {
             item {
-                AssistantIntro(onPick = onPick)
+                AssistantIntro()
             }
         }
 
@@ -618,49 +616,26 @@ private fun Provenance(tools: List<String>, type: RoyTypeScale) {
 }
 
 @Composable
-private fun AssistantIntro(onPick: (String) -> Unit) {
+private fun AssistantIntro() {
     val type = LocalRoyTypeScale.current
 
     Column(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            AssistantMark(size = 32.dp)
-            Text(
-                text = AssistantPanelCopy.INTRO,
-                style = type.small,
-                color = RoyColors.foreground,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        AssistantMark(size = 32.dp)
         Text(
-            text = AssistantPanelCopy.SUGGESTIONS_LABEL,
-            style = type.xs.copy(fontWeight = FontWeight.Bold),
-            color = RoyColors.mutedForeground,
+            text = AssistantPanelCopy.TITLE,
+            style = type.small.copy(fontWeight = FontWeight.Bold),
+            color = RoyColors.foreground,
         )
-        listOf(
-                AssistantPanelCopy.SUGGEST_SERVICE,
-                AssistantPanelCopy.SUGGEST_COURSE,
-                AssistantPanelCopy.SUGGEST_CONSULTATION,
-            )
-            .forEach { question ->
-                Text(
-                    text = question,
-                    style = type.xs.copy(fontWeight = FontWeight.Bold),
-                    color = RoyColors.foreground,
-                    modifier =
-                        Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(RoyColors.muted.copy(alpha = 0.6f))
-                            .clickable { onPick(question) }
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                )
-            }
+        Text(
+            text = AssistantPanelCopy.INTRO,
+            style = type.small,
+            color = RoyColors.mutedForeground.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
