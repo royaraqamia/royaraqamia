@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { BarChart3, CalendarClock, Eye, FileText, PenLine } from 'lucide-react';
+import { PenLine } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/frontend/state/session-provider';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
@@ -19,10 +19,9 @@ import type { Post } from '@/shared/contracts/blogpress';
 function PostsSkeleton() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="جاري تحميل منشوراتك">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((key) => (
-          <Skeleton key={key} className="h-24 rounded-xl" />
-        ))}
+      <div className="flex items-center justify-between gap-3">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-10 w-24 rounded-full" />
       </div>
       <Skeleton className="h-14 rounded-2xl" />
       <Skeleton className="h-28 rounded-2xl" />
@@ -57,8 +56,6 @@ function AccountPostsContent() {
   const stats = useMemo(
     () => ({
       total: posts.length,
-      published: posts.filter((post) => post.status === 'published').length,
-      scheduled: posts.filter((post) => post.status === 'scheduled').length,
       views: posts.reduce((sum, post) => sum + (post.view_count ?? 0), 0),
     }),
     [posts]
@@ -104,16 +101,25 @@ function AccountPostsContent() {
   if (!ready) return <PostsSkeleton />;
 
   const isGuest = identity === GUEST_IDENTITY;
-  const cards = [
-    { label: 'إجمالي المنشورات', value: stats.total, icon: FileText, tone: 'text-primary' },
-    { label: 'منشورة', value: stats.published, icon: Eye, tone: 'text-success' },
-    { label: 'مجدولة', value: stats.scheduled, icon: CalendarClock, tone: 'text-info' },
-    { label: 'إجمالي المشاهدات', value: stats.views, icon: BarChart3, tone: 'text-warning' },
-  ] as const;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <span>
+            <span className="font-digits text-sm font-bold text-foreground">
+              {formatCount(stats.total)}
+            </span>{' '}
+            منشور
+          </span>
+          <span aria-hidden="true">·</span>
+          <span>
+            <span className="font-digits text-sm font-bold text-foreground">
+              {formatCount(stats.views)}
+            </span>{' '}
+            مشاهدة
+          </span>
+        </p>
         <SyncStatusPill status={sync} />
       </div>
 
@@ -128,27 +134,6 @@ function AccountPostsContent() {
           />
         </section>
       ) : null}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div key={card.label} className="rounded-xl border border-border/60 bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted/60">
-                  <Icon className={`size-5 ${card.tone}`} />
-                </div>
-                <div className="min-w-0">
-                  <p className="mb-1 font-digits text-2xl font-bold leading-none">
-                    {formatCount(card.value)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{card.label}</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
 
       <PostList
         posts={posts}
