@@ -29,6 +29,7 @@ import {
   type ChatMessage,
 } from '@/shared/contracts/chat';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
+import type { ScreenContext } from '@/shared/contracts/screen-context';
 import { pdfDocument, scannedPdf } from './document-fixtures';
 
 /**
@@ -1022,6 +1023,125 @@ describe('the assistant’s tools (#818)', () => {
       'conversation-1',
       'لم أستطع إكمال ما طلبته الآن. أعد صياغة الطلب أو أكمل ما تريده بنفسك.'
     );
+  });
+});
+
+/**
+ * The eyes, refreshed (ADR-0181, decision 7).
+ *
+ * The block at the top of the turn is the normal path; this tool exists only
+ * for the case where the model needs the screen again after a round or two.
+ * What it must never do is answer from another turn's copy: the server has no
+ * channel to the page while it streams, so the request's own snapshot is both
+ * the newest one that exists and the only one worth answering.
+ */
+describe('the assistant’s screen refresh (#1423)', () => {
+  const SCREEN: ScreenContext = {
+    route: '/notes',
+    product: 'notes',
+    screenId: 'notes',
+    title: 'الملاحظات',
+    overlays: [],
+    focus: null,
+    tab: null,
+    fields: {},
+    text: '',
+    updatedAt: '2026-11-15T09:00:00.000Z',
+  };
+
+  function declared(client: ReturnType<typeof scriptedClient>): string[] {
+    return (client.offered[0] ?? []).map((tool) => tool.function.name);
+  }
+
+  it('declares the refresh only for a turn whose request carried a snapshot', async () => {
+    const withEyes = scriptedClient([textStream('نعم')]);
+    const withoutEyes = scriptedClient([textStream('نعم')]);
+    const blind = scriptedClient([textStream('نعم')]);
+
+    await collect(
+      makeService({ client: withEyes }).service.turn(
+        'user-1',
+        'conversation-1',
+        'ما هذه الشاشة؟',
+        TURN_CONTEXT,
+        [],
+        SCREEN
+      )
+    );
+    await collect(
+      makeService({ client: withoutEyes }).service.turn(
+        'user-1',
+        'conversation-1',
+        'ما هذه الشاشة؟',
+        TURN_CONTEXT
+      )
+    );
+    await collect(
+      makeService({ client: blind }).service.turn(
+        'user-1',
+        'conversation-1',
+        'ما هذه الشاشة؟',
+        TURN_CONTEXT,
+        [],
+        { blind: true }
+      )
+    );
+
+    expect(declared(withEyes)).toContain('get_screen_context');
+    expect(declared(withoutEyes)).not.toContain('get_screen_context');
+    // An opted-out surface has eyes that see nothing: the tool would spend a
+    // round saying so, and the block already says it.
+    expect(declared(blind)).not.toContain('get_screen_context');
+  });
+
+  it('hands the model the request’s own snapshot, never another turn’s', async () => {
+    const notes = scriptedClient([
+      [toolCall('get_screen_context', {})],
+      textStream('عندك ملاحظة.'),
+    ]);
+    const expenses = scriptedClient([
+      [toolCall('get_screen_context', {})],
+      textStream('عندك مصروف.'),
+    ]);
+
+    await collect(
+      makeService({ client: notes }).service.turn(
+        'user-1',
+        'conversation-1',
+        'أين أنا؟',
+        TURN_CONTEXT,
+        [],
+        SCREEN
+      )
+    );
+    await collect(
+      makeService({ client: expenses }).service.turn(
+        'user-1',
+        'conversation-1',
+        'أين أنا؟',
+        TURN_CONTEXT,
+        [],
+        {
+          ...SCREEN,
+          route: '/spendtrack/expenses',
+          product: 'spendtrack',
+          screenId: 'spendtrack',
+          title: 'المصروفات',
+          updatedAt: '2026-11-15T10:00:00.000Z',
+        }
+      )
+    );
+
+    const answerOf = (client: ReturnType<typeof scriptedClient>) => {
+      const toolMessage = (client.calls[1] ?? []).find((entry) => entry.role === 'tool');
+      return JSON.parse(String(toolMessage?.content)) as { screen: string; updatedAt: string };
+    };
+
+    expect(answerOf(notes).screen).toContain('المسار: /notes');
+    expect(answerOf(notes).updatedAt).toBe(SCREEN.updatedAt);
+    expect(answerOf(expenses).screen).toContain('المسار: /spendtrack/expenses');
+    expect(answerOf(expenses).screen).not.toContain('المسار: /notes');
+    expect(answerOf(expenses).updatedAt).toBe('2026-11-15T10:00:00.000Z');
   });
 });
 

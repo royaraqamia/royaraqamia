@@ -152,8 +152,26 @@ export function screenContextBlock(context: ScreenContext): string {
  */
 export function screenContextMessages(input: ScreenContextInput | undefined): AiChatMessage[] {
   if (!input) return [];
-  if (isScreenContextBlind(input)) {
-    return [{ role: 'system', content: SCREEN_BLOCK_BLIND }];
-  }
-  return [{ role: 'system', content: screenContextBlock(input) }];
+  return [{ role: 'system', content: screenContextAnswer(input).screen }];
+}
+
+/**
+ * The same words, for the refresh tool (ADR-0181, decision 7).
+ *
+ * The tool is not a second source: it re-reads the one snapshot the client sent
+ * with the question, because the server has no channel to the page mid-turn and
+ * a cached copy of another turn would be a page the member has left (decision
+ * 5). `updatedAt` is how the model can tell how old the copy is, and it is
+ * `null` when the client is blind — there is no page time to report.
+ */
+export interface ScreenContextAnswer {
+  /** The block exactly as the turn's own layer words it, under the same cap. */
+  screen: string;
+  /** When the page settled, or `null` for a client with no eyes. */
+  updatedAt: string | null;
+}
+
+export function screenContextAnswer(input: ScreenContextInput): ScreenContextAnswer {
+  if (isScreenContextBlind(input)) return { screen: SCREEN_BLOCK_BLIND, updatedAt: null };
+  return { screen: screenContextBlock(input), updatedAt: input.updatedAt };
 }

@@ -58,7 +58,7 @@ import {
   type ChatMessage,
 } from '@/shared/contracts/chat';
 import { USAGE_COUNTERS, type PlanId, type UsageState } from '@/shared/contracts/plans';
-import type { ScreenContextInput } from '@/shared/contracts/screen-context';
+import { isScreenContextBlind, type ScreenContextInput } from '@/shared/contracts/screen-context';
 import { CHAT_AGENT_TOOLS } from '@/shared/contracts/chat-agent-actions';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
 
@@ -491,6 +491,7 @@ export class ChatAgentService {
         conversationId,
         turnId,
         context,
+        screen,
         messages: [
           ...turnContextMessages(identity, screen),
           { role: 'system', content: SYSTEM_PROMPT },
@@ -683,12 +684,15 @@ export class ChatAgentService {
     turnId,
     messages,
     context,
+    screen,
   }: {
     userId: string;
     conversationId: string;
     turnId: string | null;
     messages: AiChatWireMessage[];
     context: ChatAgentTurnContext;
+    /** The snapshot the request brought, or absent for a client with no eyes. */
+    screen?: ScreenContextInput;
   }): AsyncGenerator<ChatAgentEvent, void, void> {
     const client = this.deps.client;
     if (!client) throw new ChatAgentError(503, UNAVAILABLE);
@@ -718,7 +722,14 @@ export class ChatAgentService {
 
     // `find_app_tools` rides along whenever the member has an app at all, not
     // only when the router matched one: it is the answer to a miss.
-    const firstParty = chatAgentToolDefinitionsForTurn({ hasApps: catalog.length > 0 });
+    // `get_screen_context` rides along only when the request brought a snapshot:
+    // the block is the normal path (ADR-0181, decision 7), and a tool that
+    // promises eyes to a blind turn spends a round on "nothing".
+    const visibleScreen = screen !== undefined && !isScreenContextBlind(screen);
+    const firstParty = chatAgentToolDefinitionsForTurn({
+      hasApps: catalog.length > 0,
+      hasScreen: visibleScreen,
+    });
     const deadline = Date.now() + CHAT_AGENT_TURN_TIMEOUT_MS;
     let answerText = '';
     let rounds = 0;
@@ -970,6 +981,10 @@ export class ChatAgentService {
               userId,
               supabase: context.supabase,
               ip: context.ip,
+              // The turn's own copy, never a cached one: a tool that answered
+              // from another turn would name a page the member has left
+              // (ADR-0181, decision 5 and 7).
+              ...(visibleScreen && screen ? { screen } : {}),
               // The recovery path: the matches are declared for the next round,
               // so a miss in the router costs one call rather than the turn.
               ...(apps

@@ -37,7 +37,7 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   training: 1,
   'client-work': 1,
   admin: 0,
-  assistant: 3,
+  assistant: 4,
 };
 
 describe('the assistant door', () => {
@@ -112,6 +112,7 @@ describe('the assistant door', () => {
     const mechanisms = capabilities.filter((entry) => entry.owner === 'assistant');
     expect(mechanisms.map((entry) => entry.agentName).sort()).toEqual([
       'find_app_tools',
+      'get_screen_context',
       'list_specialists',
       'load_specialist',
     ]);

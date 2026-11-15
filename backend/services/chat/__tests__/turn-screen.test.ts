@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { screenContextBlock, screenContextMessages } from '@/backend/services/chat/turn-screen';
+import {
+  screenContextAnswer,
+  screenContextBlock,
+  screenContextMessages,
+} from '@/backend/services/chat/turn-screen';
 import { SCREEN_CONTEXT_CHARS_MAX, type ScreenContext } from '@/shared/contracts/screen-context';
 
 function screen(overrides: Partial<ScreenContext> = {}): ScreenContext {
@@ -154,6 +158,23 @@ describe('screenContextBlock', () => {
     expect(block).not.toContain('hunter2');
     expect(block).not.toContain('482913');
     expect(block).toContain('الحقول: amount=12.50');
+  });
+});
+
+describe('screenContextAnswer', () => {
+  it('re-reads the snapshot the turn carries, with the time it settled', () => {
+    expect(screenContextAnswer(screen())).toEqual({
+      screen: screenContextBlock(screen()),
+      updatedAt: '2026-11-15T09:00:00.000Z',
+    });
+  });
+
+  it('answers a blind client with the sentence, and no page time to report', () => {
+    const answer = screenContextAnswer({ blind: true });
+
+    expect(answer.screen).toContain('لا يراها المساعد');
+    expect(answer.screen).not.toContain('المسار:');
+    expect(answer.updatedAt).toBeNull();
   });
 });
 

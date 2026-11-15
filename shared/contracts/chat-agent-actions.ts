@@ -71,6 +71,10 @@ export const CHAT_AGENT_TOOL_NAMES = [
   // Declared only when the member has an enabled app, so a turn with no
   // connections carries no invitation to look for one.
   'find_app_tools',
+  // The refresh for the eyes the turn already carries (ADR-0181, decision 7).
+  // Declared only when the request brought a snapshot, so a client without eyes
+  // carries no invitation to read a screen it does not have.
+  'get_screen_context',
 ] as const;
 
 export type ChatAgentToolName = (typeof CHAT_AGENT_TOOL_NAMES)[number];
@@ -163,6 +167,11 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     kind: 'read',
     label: 'البحث في أدوات التطبيقات',
     activity: 'تبحث في أدوات التطبيقات',
+  },
+  get_screen_context: {
+    kind: 'read',
+    label: 'قراءة الشاشة الحالية',
+    activity: 'تقرأ الشاشة الحالية',
   },
 };
 
