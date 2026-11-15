@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { Lock, Mic, Square, X } from 'lucide-react';
 
@@ -10,59 +10,12 @@ import { holdUnrequestedReload } from '@/frontend/shared/sw-update';
 import { useVoiceRecorder, VOICE_NOTE_MAX_MS } from '@/frontend/state/chats/use-voice-recorder';
 import { formatVoiceDuration, VOICE_COPY } from './voice-copy';
 import { ChatAttachButton, ChatStagedFiles } from './chat-attach-control';
+import { ChatField, type ChatFieldLabels } from './chat-field';
 
 /** How far a pressed pointer travels before the release counts as a cancel. */
 const CANCEL_DISTANCE_PX = 64;
 /** The bars the recording meter draws before the first reading arrives. */
 const IDLE_LEVELS = 16;
-/** The tallest the field gets before it scrolls inside; Tailwind's `max-h-32`. */
-const FIELD_MAX_HEIGHT_PX = 128;
-
-/**
- * Fits the field to its draft, one row per line: every added line makes it
- * taller, the ceiling above is where it starts scrolling, and deleting a line
- * gives the height back (WhatsApp's field, ADR-0166).
- *
- * Reflow matters as much as the text — the same sentence wraps differently when
- * the panel widens — so the fit also runs when the field's width changes, and
- * only then: the height is written by this hook, and answering its own height
- * change would loop.
- */
-function useFieldHeight(value: string) {
-  const field = useRef<HTMLTextAreaElement>(null);
-
-  useLayoutEffect(() => {
-    const element = field.current;
-    if (!element) return;
-
-    const fit = () => {
-      // jsdom and the first paint have no layout to measure; the CSS minimum
-      // holds the row until there is one.
-      if (!element.scrollHeight) return;
-      element.style.height = '0px';
-      // `scrollHeight` counts the padding but not the border, which a
-      // border-box height does count.
-      const border = element.offsetHeight - element.clientHeight;
-      const needed = element.scrollHeight + border;
-      element.style.height = `${Math.min(needed, FIELD_MAX_HEIGHT_PX)}px`;
-      element.style.overflowY = needed > FIELD_MAX_HEIGHT_PX ? 'auto' : 'hidden';
-    };
-
-    fit();
-
-    let width = element.clientWidth;
-    const observer = new ResizeObserver(() => {
-      if (element.clientWidth === width) return;
-      width = element.clientWidth;
-      fit();
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [value]);
-
-  return field;
-}
-
 /**
  * The composer's input row, shared by the member's thread and the assistant's
  * (ADR-0127).
@@ -104,6 +57,7 @@ export function ChatComposer({
   recordLabel = VOICE_COPY.record,
   stopLabel = VOICE_COPY.stopAndSend,
   cancelLabel = VOICE_COPY.cancelRecording,
+  fieldLabels,
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -135,9 +89,10 @@ export function ChatComposer({
   recordLabel?: string;
   stopLabel?: string;
   cancelLabel?: string;
+  /** The field's six marks, worded by the surface that draws the row (ADR-0193). */
+  fieldLabels: ChatFieldLabels;
 }) {
   const recorder = useVoiceRecorder();
-  const field = useFieldHeight(value);
   const [locked, setLocked] = useState(false);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const cancelling = useRef(false);
@@ -373,38 +328,19 @@ export function ChatComposer({
         ) : (
           <>
             <div className="relative flex min-h-10 flex-1 items-end">
-              <textarea
-                ref={field}
+              {/* The field is the editor (ADR-0193). Its padding is physical for
+                  the reason the clip is: the clip is pinned to the box while the
+                  text's direction follows the draft. */}
+              <ChatField
                 value={value}
-                onChange={(event) => {
-                  const next = event.target.value;
-                  onValueChange(next);
-                  // A draft that is being typed says so; a cleared one says it
-                  // stopped, so the reader does not wait out the five-second
-                  // window for a line the member already deleted.
-                  if (!onTyping) return;
-                  if (next.trim()) onTyping();
-                  else onDraftEmpty?.();
-                }}
-                rows={1}
-                maxLength={4000}
+                onChange={onValueChange}
+                onTyping={onTyping}
+                onDraftEmpty={onDraftEmpty}
+                ariaLabel={ariaLabel}
                 placeholder={placeholder}
-                aria-label={ariaLabel}
-                // Return is a line, not a send: the button is the only send path.
-                enterKeyHint="enter"
-                // The page is Arabic; the line is whatever the member is writing.
-                // `dir="auto"` takes the direction from the first strong
-                // character and `bidi-lines` does it per line, so an English
-                // message starts on the left and an Arabic one on the right —
-                // the composer reads like the bubbles it fills (ADR-0190).
-                dir="auto"
-                // The clip lives inside the field, so the text keeps clear of it.
-                // Both the clip's offset and this padding are physical (`left`,
-                // `pl`) on purpose: the clip is pinned to the field's box while
-                // the field's own direction follows the draft, so logical
-                // padding would slide away from the clip the moment the member
-                // typed English and the first line would start under it.
-                className="bidi-lines max-h-32 min-h-10 w-full resize-none rounded-xl border border-border/70 bg-background py-2 pl-10 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+                disabled={disabled}
+                labels={fieldLabels}
+                className="w-full min-h-10 resize-none rounded-xl border border-border/70 bg-background py-2 pl-10 pr-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary/40"
               />
               <ChatAttachButton
                 onAddFiles={onAddFiles}

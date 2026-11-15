@@ -45,6 +45,16 @@ function renderComposer(onRecorded = vi.fn()) {
       ariaLabel="نصّ الرسالة"
       sendLabel="إرسال"
       sendIcon={<span aria-hidden />}
+      fieldLabels={{
+        toolbar: 'تنسيق الرَّسالة',
+        bold: 'عريض',
+        italic: 'مائل',
+        underline: 'تسطير',
+        strike: 'يتوسطه خط',
+        code: 'كود',
+        link: 'رابط',
+        linkPrompt: 'عنوان الرَّابط',
+      }}
     />
   );
   return { mic: screen.getByRole('button', { name: 'تسجيل رسالة صوتية' }), onRecorded };
@@ -71,6 +81,16 @@ describe('ChatComposer recording allowance', () => {
         ariaLabel="نصّ الرسالة"
         sendLabel="إرسال"
         sendIcon={<span aria-hidden />}
+        fieldLabels={{
+          toolbar: 'تنسيق الرَّسالة',
+          bold: 'عريض',
+          italic: 'مائل',
+          underline: 'تسطير',
+          strike: 'يتوسطه خط',
+          code: 'كود',
+          link: 'رابط',
+          linkPrompt: 'عنوان الرَّابط',
+        }}
       />
     );
   }

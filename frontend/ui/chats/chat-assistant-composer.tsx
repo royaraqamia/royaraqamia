@@ -17,8 +17,25 @@ import {
   stageFiles,
 } from './attachment-quota';
 import { ASSISTANT_COPY } from './assistant-copy';
+import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { ChatComposer } from './chat-composer';
 import { shrinkChatImage } from './image-downscale';
+
+/**
+ * The field's six marks (ADR-0193). The assistant panel draws the same composer
+ * the thread does, so it words the marks the same way — from the chats surface's
+ * copy rather than a second set nobody proofread.
+ */
+const FIELD_LABELS = {
+  toolbar: CHAT_THREAD_COPY.formatToolbar,
+  bold: CHAT_THREAD_COPY.formatBold,
+  italic: CHAT_THREAD_COPY.formatItalic,
+  underline: CHAT_THREAD_COPY.formatUnderline,
+  strike: CHAT_THREAD_COPY.formatStrike,
+  code: CHAT_THREAD_COPY.formatCode,
+  link: CHAT_THREAD_COPY.formatLink,
+  linkPrompt: CHAT_THREAD_COPY.formatLinkPrompt,
+};
 
 /**
  * When the turn count is worth a line.
@@ -217,6 +234,7 @@ export function AssistantComposer({
         placeholder={placeholder}
         ariaLabel={placeholder}
         sendLabel={sendLabel}
+        fieldLabels={FIELD_LABELS}
         sendIcon={<Send size={16} />}
       />
     </form>

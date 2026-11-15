@@ -3,10 +3,46 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), error: vi.fn() } }));
 
-import { ChatComposer } from '@/frontend/ui/chats/chat-composer';
+/**
+ * The rich field is the editor (ADR-0193); the row's own contract is what this
+ * file tests, so the field arrives as a plain input with the same props. What
+ * the editor does with a keystroke lives in `chat-field.test.tsx` and in the
+ * browser.
+ */
+vi.mock('@/frontend/ui/chats/chat-field', () => ({
+  CHAT_FIELD_MAX: 4000,
+  ChatField: ({
+    value,
+    onChange,
+    ariaLabel,
+    onTyping,
+    onDraftEmpty,
+    placeholder,
+  }: {
+    value: string;
+    onChange: (value: string) => void;
+    ariaLabel: string;
+    onTyping?: () => void;
+    onDraftEmpty?: () => void;
+    placeholder?: string;
+  }) => (
+    <textarea
+      aria-label={ariaLabel}
+      placeholder={placeholder}
+      value={value}
+      onChange={(event) => {
+        const next = event.target.value;
+        onChange(next);
+        // The row's contract: a draft with no typing channel says nothing.
+        if (!onTyping) return;
+        if (next.trim()) onTyping();
+        else onDraftEmpty?.();
+      }}
+    />
+  ),
+}));
 
-/** The field's ceiling, mirroring `FIELD_MAX_HEIGHT_PX` and Tailwind's `max-h-32`. */
-const FIELD_MAX = 128;
+import { ChatComposer } from '@/frontend/ui/chats/chat-composer';
 
 function Composer({
   value,
@@ -37,23 +73,18 @@ function Composer({
       ariaLabel="نصّ الرسالة"
       sendLabel="إرسال"
       sendIcon={<span aria-hidden />}
+      fieldLabels={{
+        toolbar: 'تنسيق الرَّسالة',
+        bold: 'عريض',
+        italic: 'مائل',
+        underline: 'تسطير',
+        strike: 'يتوسطه خط',
+        code: 'كود',
+        link: 'رابط',
+        linkPrompt: 'عنوان الرَّابط',
+      }}
     />
   );
-}
-
-/**
- * `scrollHeight` is the one input the fit reads and jsdom has no layout, so the
- * test hands the field a height instead of trusting one (ADR-0166).
- */
-function fakeScrollHeight(field: HTMLElement) {
-  let height = 0;
-  Object.defineProperty(field, 'scrollHeight', {
-    configurable: true,
-    get: () => height,
-  });
-  return (next: number) => {
-    height = next;
-  };
 }
 
 describe('ChatComposer keyboard', () => {
@@ -106,47 +137,5 @@ describe('ChatComposer typing signal', () => {
 
     fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } });
     expect(onDraftEmpty).not.toHaveBeenCalled();
-  });
-});
-
-describe('ChatComposer height', () => {
-  it('grows one row per line, stops at the ceiling, and shrinks again', () => {
-    const { rerender } = render(<Composer value="سطر" onSend={() => undefined} />);
-    const field = screen.getByRole('textbox') as HTMLTextAreaElement;
-    const setHeight = fakeScrollHeight(field);
-
-    // Two lines: the fit reads the content, not the draft's length in characters.
-    setHeight(60);
-    rerender(<Composer value={'سطر\nثانٍ'} onSend={() => undefined} />);
-    expect(field.style.height).toBe('60px');
-    expect(field.style.overflowY).toBe('hidden');
-
-    // Past the ceiling the field keeps its height and scrolls the rest.
-    setHeight(400);
-    rerender(<Composer value={'a\nb\nc\nd\ne\nf\ng\nh'} onSend={() => undefined} />);
-    expect(field.style.height).toBe(`${FIELD_MAX}px`);
-    expect(field.style.overflowY).toBe('auto');
-
-    // Deleting the lines gives the height back, and clearing the draft returns
-    // the one-row field the composer starts as.
-    setHeight(20);
-    rerender(<Composer value="سطر" onSend={() => undefined} />);
-    expect(field.style.height).toBe('20px');
-    expect(field.style.overflowY).toBe('hidden');
-  });
-});
-
-/**
- * The page is Arabic; a draft is not. The field follows the first strong
- * character it holds and every line follows its own, so «Hey» starts on the
- * left and «سلام» on the right (ADR-0190).
- */
-describe('ChatComposer direction', () => {
-  it('takes its direction from the text, per line', () => {
-    render(<Composer value="Hey" onSend={() => undefined} />);
-
-    const field = screen.getByRole('textbox');
-    expect(field).toHaveAttribute('dir', 'auto');
-    expect(field).toHaveClass('bidi-lines');
   });
 });

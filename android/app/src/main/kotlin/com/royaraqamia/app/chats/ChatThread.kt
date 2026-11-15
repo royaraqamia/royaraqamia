@@ -44,11 +44,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.royaraqamia.app.community.CommunityMarkdown
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItem
@@ -938,7 +946,12 @@ private fun MessageRow(
                     }
                 else ->
                     Text(
-                        text = message.body.orEmpty(),
+                        // The same marks the site draws (ADR-0193): the body is
+                        // markdown, and `CommunityMarkdown.inline` is the app's
+                        // one inline renderer.
+                        text = remember(message.body) {
+                            CommunityMarkdown.inline(message.body.orEmpty())
+                        },
                         style = type.small,
                         color = if (mine) RoyColors.primaryForeground else RoyColors.foreground,
                     )
@@ -1056,7 +1069,89 @@ private fun MessageRow(
     }
 }
 
-/** The bottom of the screen: six faces, and each says what can happen next. */
+/** The six marks, offered while a selection is active (ADR-0193). */
+@Composable
+private fun ChatFormatStrip(onMark: (ChatMark) -> Unit, onLink: () -> Unit) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        FormatAction("B", ChatThreadCopy.FORMAT_BOLD) { onMark(ChatMark.Bold) }
+        FormatAction("I", ChatThreadCopy.FORMAT_ITALIC, italic = true) { onMark(ChatMark.Italic) }
+        FormatAction("U", ChatThreadCopy.FORMAT_UNDERLINE, underline = true) {
+            onMark(ChatMark.Underline)
+        }
+        FormatAction("S", ChatThreadCopy.FORMAT_STRIKE, strike = true) {
+            onMark(ChatMark.Strike)
+        }
+        FormatAction("<>", ChatThreadCopy.FORMAT_CODE) { onMark(ChatMark.Code) }
+        FormatAction(LucideVectors.Link2, ChatThreadCopy.FORMAT_LINK, onLink)
+    }
+}
+
+/**
+ * One mark, while text is selected (ADR-0193).
+ *
+ * The gesture is the site's — select, then choose — but it is a strip rather than
+ * a floating bubble: Compose's text toolbar owns copy, cut and paste, and
+ * replacing it to host these six would take those away from every member. The
+ * letters carry the same marks the site's toolbar does, and the accessible name
+ * is the sentence.
+ */
+@Composable
+private fun FormatAction(
+    glyph: String,
+    description: String,
+    italic: Boolean = false,
+    underline: Boolean = false,
+    strike: Boolean = false,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 8.dp),
+        modifier = Modifier.semantics { contentDescription = description },
+    ) {
+        Text(
+            text = glyph,
+            style =
+                LocalRoyTypeScale.current.xs.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontStyle = if (italic) FontStyle.Italic else FontStyle.Normal,
+                    textDecoration =
+                        when {
+                            underline -> TextDecoration.Underline
+                            strike -> TextDecoration.LineThrough
+                            else -> TextDecoration.None
+                        },
+                ),
+            color = RoyColors.mutedForeground,
+        )
+    }
+}
+
+/** The link's own control: the one mark the site draws as an icon. */
+@Composable
+private fun FormatAction(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 8.dp),
+        modifier = Modifier.semantics { contentDescription = description },
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = RoyColors.mutedForeground,
+            modifier = Modifier.size(16.dp),
+        )
+    }
+}
+
 @Composable
 private fun Footer(
     thread: ChatThreadResponseThread,
@@ -1096,13 +1191,39 @@ private fun Footer(
                         onRemove = onRemoveAttachment,
                     )
                     val hasContent = draft.trim().isNotEmpty() || attached.isNotEmpty()
+                    // The field carries its own selection so a mark can wrap it
+                    // (ADR-0193). The hoisted draft stays a string — the send
+                    // path and the outbox know nothing about cursors.
+                    var field by remember {
+                        mutableStateOf(TextFieldValue(draft, TextRange(draft.length)))
+                    }
+                    LaunchedEffect(draft) {
+                        if (field.text != draft) {
+                            field = TextFieldValue(draft, TextRange(draft.length))
+                        }
+                    }
+                    if (field.selection.length > 0) {
+                        ChatFormatStrip(
+                            onMark = { mark ->
+                                field = toggleChatMark(field, mark)
+                                onDraft(field.text)
+                            },
+                            onLink = {
+                                field = insertChatLink(field)
+                                onDraft(field.text)
+                            },
+                        )
+                    }
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
                         verticalAlignment = Alignment.Bottom,
                     ) {
                         OutlinedTextField(
-                            value = draft,
-                            onValueChange = onDraft,
+                            value = field,
+                            onValueChange = {
+                                field = it
+                                onDraft(it.text)
+                            },
                             modifier = Modifier.weight(1f).heightIn(min = 44.dp, max = 128.dp),
                             placeholder = {
                                 Text(text = ChatThreadCopy.PLACEHOLDER, style = type.small)
@@ -1506,3 +1627,5 @@ private fun answerSentence(thread: ChatThreadResponseThread?, accept: Boolean): 
         ChatsListCopy.DECLINE_DIRECT_MESSAGE
     }
 }
+
+

@@ -65,6 +65,14 @@ export const CHAT_THREAD_COPY = {
   sendFailed: 'تعذّر إرسال الرسالة',
   retry: 'إعادة المحاولة',
   loadFailed: 'تعذّر تحميل المحادثة. أعد المحاولة.',
+  formatToolbar: 'تنسيق الرَّسالة',
+  formatBold: 'عريض',
+  formatItalic: 'مائل',
+  formatUnderline: 'تسطير',
+  formatStrike: 'يتوسطه خط',
+  formatCode: 'كود',
+  formatLink: 'رابط',
+  formatLinkPrompt: 'عنوان الرَّابط',
 } as const;
 
 export type ChatThreadCopyStrings = typeof CHAT_THREAD_COPY;
