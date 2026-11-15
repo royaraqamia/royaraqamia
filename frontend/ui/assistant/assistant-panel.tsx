@@ -36,6 +36,7 @@ import { AttachmentChip } from '@/frontend/ui/chats/attachment-chip';
 import { ChatImage } from '@/frontend/ui/chats/chat-image';
 import { CHAT_THREAD_COPY } from '@/frontend/ui/chats/chat-thread-copy';
 import { VoiceNotePlayer } from '@/frontend/ui/chats/voice-note-player';
+import { ThreadIntro, stateOf } from '@/frontend/ui/chats/chat-thread-view';
 import {
   chatAttachmentIsAudio,
   chatAttachmentIsInlineImage,
@@ -416,10 +417,19 @@ export function AssistantPanel({
               role="log"
               aria-live="polite"
               aria-busy={assistant.isStreaming}
-              className="space-y-3"
+              className="flex min-h-full flex-col gap-3"
             >
               {messages.length === 0 && !assistant.isStreaming ? (
-                <PanelIntro onPick={setDraft} />
+                thread ? (
+                  // The same first screen the full thread opens on: one mark,
+                  // the name and the sentence, centred in the list (ADR-0143).
+                  <ThreadIntro
+                    thread={thread}
+                    counterpart={null}
+                    state={stateOf(thread)}
+                    note={ASSISTANT_PANEL_COPY.intro}
+                  />
+                ) : null
               ) : null}
 
               {messages.map((message) => (
@@ -443,14 +453,14 @@ export function AssistantPanel({
 
               {assistant.interrupted ? (
                 <AgentBubble>
-                  <p className="whitespace-pre-wrap break-words">{assistant.interrupted}</p>
+                  <p className="whitespace-pre-wrap wrap-anywhere">{assistant.interrupted}</p>
                   <p className="mt-1 text-[10px] italic opacity-70">{ASSISTANT_COPY.interrupted}</p>
                 </AgentBubble>
               ) : null}
 
               {assistant.isStreaming && assistant.streamingText ? (
                 <AgentBubble>
-                  <p className="whitespace-pre-wrap break-words">
+                  <p className="whitespace-pre-wrap wrap-anywhere">
                     {assistant.streamingText}
                     <span className="ms-0.5 inline-block h-4 w-[2px] animate-pulse bg-current align-middle" />
                   </p>
@@ -505,7 +515,7 @@ const PanelMessage = memo(function PanelMessage({
       {message.deletedAt ? (
         <span className="text-xs italic opacity-70">{CHAT_THREAD_COPY.deletedMessage}</span>
       ) : message.body ? (
-        <p className="whitespace-pre-wrap break-words">{message.body}</p>
+        <p className="whitespace-pre-wrap wrap-anywhere">{message.body}</p>
       ) : (
         <p className="text-xs italic opacity-70">{ASSISTANT_PANEL_COPY.attachmentOnly}</p>
       )}
@@ -567,36 +577,6 @@ function AgentBubble({ children }: { children: React.ReactNode }) {
       <AssistantMark className="mb-0.5 size-6 shrink-0" glyphClassName="size-[58%]" />
       <div className="rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
         {children}
-      </div>
-    </div>
-  );
-}
-
-function PanelIntro({ onPick }: { onPick: (question: string) => void }) {
-  return (
-    <div className="rounded-2xl border border-border/60 bg-card/70 p-4">
-      <div className="flex items-start gap-3">
-        <AssistantOrb className="size-9 shrink-0" />
-        <p className="pt-1 text-sm leading-relaxed text-foreground">{ASSISTANT_PANEL_COPY.intro}</p>
-      </div>
-      <p className="mt-4 text-[11px] font-bold text-muted-foreground">
-        {ASSISTANT_PANEL_COPY.suggestionsLabel}
-      </p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {[
-          ASSISTANT_PANEL_COPY.suggestService,
-          ASSISTANT_PANEL_COPY.suggestCourse,
-          ASSISTANT_PANEL_COPY.suggestConsultation,
-        ].map((question) => (
-          <button
-            key={question}
-            type="button"
-            onClick={() => onPick(question)}
-            className="inline-flex min-h-9 items-center rounded-full border border-border/70 bg-background/60 px-3 py-2 text-[11px] font-bold text-foreground transition-safe hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {question}
-          </button>
-        ))}
       </div>
     </div>
   );

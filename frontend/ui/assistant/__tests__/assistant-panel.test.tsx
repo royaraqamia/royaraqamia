@@ -158,22 +158,24 @@ describe('AssistantPanel', () => {
     expect(await screen.findByText('نور غير متاحة حالياً.')).toBeInTheDocument();
   });
 
-  it('opens the thread with the introduction and the composer', async () => {
+  it('opens on the same first screen as the full thread', async () => {
     render(<AssistantPanel open onDismiss={vi.fn()} />);
 
     expect(
-      await screen.findByText(
-        'أهلاً، أنا نور. اسألني عن منتجاتنا وخدماتنا، أو اطلب مني إنجاز مهمة.'
-      )
+      await screen.findByText('أهلاً، أنا نور. اسألني عن أي شيء، وسيصلك الرد هنا.')
     ).toBeInTheDocument();
-    expect(screen.getByText('ما الخدمات التي تقدّمونها؟')).toBeInTheDocument();
+    // The panel is the thread's short conversation (ADR-0143), so its empty
+    // state is the thread's own rather than a second introduction with its own
+    // suggestions.
+    expect(screen.queryByText('جرّب أن تسأل')).toBeNull();
+    expect(screen.queryByText('ما الخدمات التي تقدّمونها؟')).toBeNull();
     expect(screen.getByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'فتح المحادثة كاملة' })).not.toBeInTheDocument();
   });
 
   it('revalidates on reopen without creating a second thread', async () => {
     const { rerender } = render(<AssistantPanel open onDismiss={vi.fn()} />);
-    await screen.findByText('ما الخدمات التي تقدّمونها؟');
+    await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
     expect(api.startAssistantChat).toHaveBeenCalledTimes(1);
     const reads = api.getChatMessages.mock.calls.length;
 

@@ -13,7 +13,6 @@
  * panel all read the same word.
  */
 export const ASSISTANT_COPY = {
-  intro: 'أهلاً، أنا نور. اسألني عن أي شيء، وسيصلك الرد هنا.',
   placeholder: 'اكتب سؤالك لنور...',
   send: 'إرسال السؤال',
   unavailable: 'نور غير متاحة حالياً.',

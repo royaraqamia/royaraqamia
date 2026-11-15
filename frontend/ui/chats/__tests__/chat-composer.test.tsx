@@ -88,6 +88,15 @@ function Composer({
 }
 
 describe('ChatComposer keyboard', () => {
+  it('lets the field shrink, so a long token cannot widen the row', () => {
+    render(<Composer value="ffffffffffffffffffff" onSend={vi.fn()} />);
+    const field = screen.getByRole('textbox');
+
+    // A flex item's `min-width: auto` is its longest word's width: without
+    // `min-w-0` the field's box outgrew the composer instead of wrapping.
+    expect(field.parentElement).toHaveClass('min-w-0');
+  });
+
   it('leaves Enter to the field, which adds a line rather than sending', () => {
     const onSend = vi.fn();
     render(<Composer value="سلام" onSend={onSend} />);

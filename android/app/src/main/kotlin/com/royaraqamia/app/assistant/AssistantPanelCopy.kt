@@ -13,7 +13,7 @@ package com.royaraqamia.app.assistant
  */
 object AssistantPanelCopy {
     const val TITLE = "نور"
-    const val INTRO = "أهلاً، أنا نور. اسألني عن منتجاتنا وخدماتنا، أو اطلب مني إنجاز مهمة."
+    const val INTRO = "أهلاً، أنا نور. اسألني عن أي شيء، وسيصلك الرد هنا."
     const val PLACEHOLDER = "اكتب سؤالك لنور..."
     const val SEND = "إرسال السؤال"
     const val THINKING = "تفكّر..."
@@ -27,10 +27,6 @@ object AssistantPanelCopy {
     const val FAILED = "تعذّر فتح المحادثة. حاول مرة أخرى."
     const val RETRY = "إعادة المحاولة"
     const val UNAVAILABLE = "نور غير متاحة حالياً."
-    const val SUGGESTIONS_LABEL = "جرّب أن تسأل"
-    const val SUGGEST_SERVICE = "ما الخدمات التي تقدّمونها؟"
-    const val SUGGEST_COURSE = "أي دورة تناسبني؟"
-    const val SUGGEST_CONSULTATION = "أريد حجز استشارة"
     const val ATTACHMENT_ONLY = "مرفق"
     const val DOWNLOAD_FILE = "تنزيل {name}"
 }
