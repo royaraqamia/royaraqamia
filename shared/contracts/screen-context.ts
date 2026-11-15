@@ -1,12 +1,13 @@
-import { z } from 'zod';
-
-/**
+﻿/**
  * What a turn knows about the screen the member is on (ADR-0181, decision 1).
  *
  * The assistant's eyes are not the DOM and not a screenshot: they are the
  * surface's own state, published by the surface and capped before it travels.
  * This module is the one place that says what that snapshot is, how big it may
- * get, and when it is allowed to leave the page.
+ * get, and when it is allowed to leave the page. It carries no schema, because
+ * the browser imports it too and a Zod parser in every page's bundle is not a
+ * price the eyes are worth: the wire shape lives in `screen-context-schema.ts`,
+ * which only the server and the turn's own tests read.
  *
  * The identity of a screen is the id `docs/mobile/screens.json` already gives
  * the surface, so the eyes and the two-client registry are one list rather than
@@ -34,7 +35,7 @@ export interface ScreenContextFocus {
  *
  * Everything here is the surface's own model, never a rendering of it: `fields`
  * is the allowlisted form state, `text` is the words the surface chooses to
- * quote, and neither is scraped. `route` is always present — a surface that
+ * quote, and neither is scraped. `route` is always present â€” a surface that
  * registers nothing is still visible by route, never invisible (decision 2).
  */
 export interface ScreenContext {
@@ -43,7 +44,7 @@ export interface ScreenContext {
   /** The product the surface belongs to: `spendtrack`, `quran`, `site`. */
   product: string;
   /** The surface's id in the one registry: `spendtrack-categories`. Empty when
-   * the path is not in the registry — a route-only snapshot, never a made-up id. */
+   * the path is not in the registry â€” a route-only snapshot, never a made-up id. */
   screenId: string;
   /** The screen's own title, as drawn. Empty when the screen has none. */
   title: string;
@@ -68,7 +69,7 @@ export interface ScreenContext {
  * opt out (decision 5). Both need the turn to say it cannot see the screen
  * instead of guessing, which is only possible when "opted out" is a thing the
  * client can say. A tab that sends no `screen` field at all is a client without
- * eyes — the turn then answers exactly as it did before this contract existed.
+ * eyes â€” the turn then answers exactly as it did before this contract existed.
  */
 export interface ScreenContextBlind {
   blind: true;
@@ -139,52 +140,7 @@ export function plainText(value: string): string {
   return out.replace(/\s+/g, ' ').trim();
 }
 
-/** The snapshot as it arrives on the wire. `.strict()` is not the house style. */
-export const ScreenContextSnapshotSchema = z.object({
-  route: z.string().trim().min(1).max(SCREEN_CONTEXT_ROUTE_CHARS_MAX),
-  product: z.string().trim().max(SCREEN_CONTEXT_PRODUCT_CHARS_MAX),
-  screenId: z.string().trim().max(SCREEN_CONTEXT_SCREEN_ID_CHARS_MAX),
-  title: z.string().max(SCREEN_CONTEXT_TITLE_CHARS_MAX),
-  overlays: z
-    .array(
-      z.object({
-        id: z.string().max(SCREEN_CONTEXT_OVERLAY_ID_CHARS_MAX),
-        kind: z.string().max(SCREEN_CONTEXT_OVERLAY_KIND_CHARS_MAX),
-      })
-    )
-    .max(SCREEN_CONTEXT_OVERLAYS_MAX),
-  focus: z
-    .object({
-      kind: z.string().max(SCREEN_CONTEXT_FOCUS_KIND_CHARS_MAX),
-      id: z.string().max(SCREEN_CONTEXT_FOCUS_ID_CHARS_MAX),
-    })
-    .nullable(),
-  tab: z.string().max(SCREEN_CONTEXT_TAB_CHARS_MAX).nullable(),
-  fields: z
-    .record(
-      z.string().max(SCREEN_CONTEXT_FIELD_KEY_CHARS_MAX),
-      z.string().max(SCREEN_CONTEXT_FIELD_VALUE_CHARS_MAX)
-    )
-    .refine((fields) => Object.keys(fields).length <= SCREEN_CONTEXT_FIELDS_MAX, {
-      message: 'حقول كثيرة في الشاشة الواحدة',
-    }),
-  text: z.string().max(SCREEN_CONTEXT_TEXT_CHARS_MAX),
-  updatedAt: z.string().max(40),
-});
-
-export const ScreenContextBlindSchema = z.object({ blind: z.literal(true) });
-
-/**
- * A request's page state. A client with no eyes sends no field at all; a client
- * on a screen it may not show sends `{ blind: true }`.
- */
-export const ScreenContextInputSchema = z.union(
-  [ScreenContextSnapshotSchema, ScreenContextBlindSchema],
-  {
-    error: 'تعذّر قراءة حالة الشاشة',
-  }
-);
-
+/** The client saying it has no eyes here: `{ blind: true }` and nothing else. */
 export function isScreenContextBlind(input: ScreenContextInput): input is ScreenContextBlind {
   return (input as ScreenContextBlind).blind === true;
 }

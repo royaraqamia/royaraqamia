@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import type { PlanId } from '@/shared/contracts/plans.constants';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
-import { ScreenContextInputSchema } from '@/shared/contracts/screen-context';
+import { ScreenContextInputSchema } from '@/shared/contracts/screen-context-schema';
 import { toLatinDigits } from '@/shared/contracts/text';
 
 /** A message body's ceiling. Long enough for a real answer, still one row. */
