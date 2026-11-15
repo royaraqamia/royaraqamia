@@ -73,6 +73,20 @@ secret or CLI leaves the row unwritten and the job untouched. The Console
 (**Activity → Usage**, with a CSV export over 7/30/90 days) remains the truth for
 the plan as a whole, because it also counts usage the repository did not record.
 
+Two shapes decide whether a row carries a number at all, and both are handled
+where the CLI and the ledger are read (issue #1497):
+
+- **The CLI is not always the JSON one.** `@opencode/cli` 2.x answers
+  `stats --json`; `opencode-ai` 1.x has no `--json` flag and prints its help with
+  exit 1. The 1.x human table is parsed as the documented last resort, reading
+  `Total Cost` from the COST & TOKENS block, with the machine's digits and
+  separators folded to ASCII first. `--project` is passed `.`, never a path: 2.x
+  accepts a path silently and reports zero.
+- **The ledger is summed here, not by PostgREST.** Aggregates are refused on this
+  project (`PGRST123`), so the gate reads plain rows in pages of 1000 and adds
+  `allowance_usd` itself. A `null` row is an unmeasured step (ADR-0142), never a
+  zero: it is skipped, and the gate says how many it skipped.
+
 ## The soft gate
 
 Before an autonomous run, `.github/actions/agent-usage` in `gate` mode sums the
