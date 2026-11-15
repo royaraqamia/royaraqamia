@@ -240,14 +240,14 @@ export class AuthService {
     if (!loginRateOk) {
       return {
         ok: false,
-        message: 'تم تجاوز الحد الأقصى لمحاولات الدخول. يرجى المحاولة بعد دقيقة',
+        message: 'تم تجاوز الحد الأقصى لمحاولات الدُّخول. يرجى المحاولة بعد دقيقة',
       };
     }
 
     if (await this.isIpRateLimited('login', input.ipAddress)) {
       return {
         ok: false,
-        message: 'تم تجاوز الحد الأقصى لمحاولات الدخول. يرجى المحاولة بعد دقيقة',
+        message: 'تم تجاوز الحد الأقصى لمحاولات الدُّخول. يرجى المحاولة بعد دقيقة',
       };
     }
 
@@ -641,7 +641,7 @@ export class AuthService {
       return { ok: false, message: error.message };
     }
     if (!url) {
-      return { ok: false, message: 'تعذر بدء تسجيل الدخول عبر جوجل' };
+      return { ok: false, message: 'تعذر بدء تسجيل الدُّخول عبر جوجل' };
     }
     return { ok: true, url };
   }

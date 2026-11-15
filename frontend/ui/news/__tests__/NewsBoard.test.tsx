@@ -148,10 +148,10 @@ describe('NewsBoard snapshots', () => {
     render(<NewsBoard />);
 
     await expect(screen.findByText(/تعرض لك الصفحة 1 من 3 بطاقة/)).resolves.toBeTruthy();
-    expect(screen.getByRole('link', { name: 'تسجيل الدُّخول' })).toHaveAttribute(
-      'href',
-      '/auth/login?redirect=%2Fnews'
-    );
+    // The visitor is asked where they are; the sign-in page is one press away in
+    // the prompt, not a link that leaves the digest (#1500).
+    expect(screen.getByRole('button', { name: 'تسجيل الدُّخول' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'تسجيل الدُّخول' })).not.toBeInTheDocument();
   });
 
   it('paints the last-seen digest when the read cannot answer', async () => {

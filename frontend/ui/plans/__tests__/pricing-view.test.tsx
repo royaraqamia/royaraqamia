@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { PlanCatalog, UsageState } from '@/shared/contracts/plans';
 
 const mocks = vi.hoisted(() => ({
@@ -17,6 +17,18 @@ vi.mock('@/frontend/state/plans/use-my-plan', () => ({
 
 vi.mock('@/frontend/shared/constants', () => ({
   getWhatsAppUrl: (message: string) => `https://wa.me/100?text=${encodeURIComponent(message)}`,
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    refresh: vi.fn(),
+    back: vi.fn(),
+  }),
+  usePathname: () => '/pricing',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 import { PricingView } from '../pricing-view';
@@ -155,21 +167,31 @@ describe('PricingView', () => {
     expect(screen.queryByText(/تحسين خدمات Google/)).not.toBeInTheDocument();
   });
 
-  it('sends a guest to sign-in, and the paid pill to the subscribe form', () => {
+  it('asks a guest to sign in where they are, then returns them to the plans', () => {
     render(<PricingView catalog={catalog} />);
 
-    expect(screen.getByRole('link', { name: 'ابدأ مجَّانًا' })).toHaveAttribute(
+    fireEvent.click(screen.getByRole('button', { name: 'ابدأ مجَّانًا' }));
+
+    expect(screen.getByText('سجِّل الدُّخول للمتابعة')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'تسجيل الدُّخول' })).toHaveAttribute(
       'href',
-      '/auth/login'
+      '/auth/login?redirect=%2Fpricing'
     );
+  });
+
+  it('sends the paid pill to the subscribe form through the same prompt', () => {
+    render(<PricingView catalog={catalog} />);
 
     // No WhatsApp hand-off: the request becomes a row an Admin can answer.
     expect(
-      screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.includes('wa.me'))
+      screen.queryAllByRole('link').filter((link) => link.getAttribute('href')?.includes('wa.me'))
     ).toHaveLength(0);
-    expect(screen.getByRole('link', { name: 'اشترِك الآن' })).toHaveAttribute(
+
+    fireEvent.click(screen.getByRole('button', { name: 'اشترِك الآن' }));
+
+    expect(screen.getByRole('link', { name: 'تسجيل الدُّخول' })).toHaveAttribute(
       'href',
-      '/pricing/subscribe'
+      '/auth/login?redirect=%2Fpricing%2Fsubscribe'
     );
   });
 

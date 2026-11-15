@@ -14,5 +14,5 @@ package com.royaraqamia.app.habitflow
 object HabitflowCopy {
     const val LIST_TITLE = "العادات"
     const val EMPTY_TITLE = "لا توجد عادات بعد"
-    const val EMPTY_BODY = "لم تُسجَّل أي عادة في هذا اليوم. سجّل عادتك الأولى ثم ابدأ البناء عليها يومًا بعد يوم."
+    const val EMPTY_BODY = "لم تُسجَّل أي عادة في هذا اليوم. سجِّل عادتك الأولى ثم ابدأ البناء عليها يومًا بعد يوم."
 }

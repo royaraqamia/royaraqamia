@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { useSession } from '@/frontend/state/session-provider';
+import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
 
 const DISMISS_KEY = 'royaraqamia.guest-mode.dismissed';
 
@@ -13,6 +13,7 @@ export function GuestModeBanner() {
   const { user, isLoading } = useSession();
   const pathname = usePathname();
   const [dismissed, setDismissed] = useState(true);
+  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt();
 
   useEffect(() => {
     try {
@@ -23,8 +24,6 @@ export function GuestModeBanner() {
   }, []);
 
   if (isLoading || user || dismissed) return null;
-
-  const loginHref = `/auth/login?redirect=${encodeURIComponent(pathname || '/')}`;
 
   function dismiss() {
     setDismissed(true);
@@ -47,8 +46,13 @@ export function GuestModeBanner() {
         </span>
       </p>
       <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
-        <Button asChild variant="hero" size="sm" className="shrink-0">
-          <Link href={loginHref}>تسجيل الدُّخول</Link>
+        <Button
+          variant="hero"
+          size="sm"
+          className="shrink-0"
+          onClick={() => requireSignIn(pathname || '/')}
+        >
+          تسجيل الدُّخول
         </Button>
         <Button
           variant="ghost"
@@ -60,6 +64,7 @@ export function GuestModeBanner() {
           <X className="size-4" />
         </Button>
       </div>
+      {signInPrompt}
     </div>
   );
 }

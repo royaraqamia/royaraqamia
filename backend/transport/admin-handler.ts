@@ -21,7 +21,7 @@ import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
  */
 export type AdminIdentity = SessionIdentity;
 
-const UNAUTHENTICATED_BODY = { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' };
+const UNAUTHENTICATED_BODY = { success: false, error: 'غير مصرح. يرجى تسجيل الدُّخول.' };
 const FORBIDDEN_BODY = { success: false, error: 'غير مصرح' };
 const FAILED_BODY = { success: false, error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.' };
 

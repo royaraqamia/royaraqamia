@@ -4,18 +4,17 @@ import { Suspense, useState, lazy } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CircleAlert, User, Mail, LockKeyhole, Loader2 } from 'lucide-react';
-import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
-import { signup, signInWithGoogle } from '@/frontend/api/auth';
+import { signup } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
-import { Button } from '@/frontend/ui/primitives/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
+import { GoogleAuthButton } from '@/frontend/ui/auth/GoogleAuthButton';
+import { SIGN_IN_COPY } from '../login/sign-in-copy';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
-import { ApiError } from '@/frontend/transport/http';
 
 const PasswordStrength = lazy(
   tolerateChunkFailure('password strength meter', () =>
@@ -36,9 +35,8 @@ function SignupForm() {
   const [isPending, setIsPending] = useState(false);
   const [password, setPassword] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(null);
-  const [googleOffline, setGoogleOffline] = useState(false);
+  /** The email form is the second door: it opens when the visitor asks for it. */
+  const [emailOpen, setEmailOpen] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -66,183 +64,168 @@ function SignupForm() {
   }
 
   return (
-    <div dir="rtl" className="w-full max-w-md mx-auto antialiased">
+    <div dir="rtl" className="mx-auto w-full max-w-md antialiased">
       <AuthCard title="إنشاء حساب">
-        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
-          <input type="hidden" name="redirectTo" value={redirectTo} />
-
-          <div className="space-y-4 sm:space-y-5">
-            {/* Full Name Input Group */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="signup-name"
-                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground/90 select-none"
-              >
-                <User size={15} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
-                <span>الاسم الكامل</span>
-                <span className="text-destructive font-bold select-none" aria-hidden="true">
-                  *
-                </span>
-              </label>
-              <Input
-                id="signup-name"
-                name="name"
-                type="text"
-                required
-                autoComplete="name"
-                placeholder="الاسم الكامل"
-                aria-describedby={message ? 'signup-error' : undefined}
-                className="w-full h-11 px-3.5 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-safe duration-200 text-sm placeholder:text-muted-foreground/50 shadow-xs focus-visible:outline-none"
-              />
-            </div>
-
-            {/* Email Input Group */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="signup-email"
-                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground/90 select-none"
-              >
-                <Mail size={15} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
-                <span>البريد الإلكتروني</span>
-                <span className="text-destructive font-bold select-none" aria-hidden="true">
-                  *
-                </span>
-              </label>
-              <Input
-                id="signup-email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                placeholder="example@email.com"
-                aria-describedby={message ? 'signup-error' : undefined}
-                className="w-full h-11 px-3.5 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-safe duration-200 text-sm placeholder:text-muted-foreground/50 shadow-xs focus-visible:outline-none"
-              />
-            </div>
-
-            {/* Password Input Group */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="signup-password"
-                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground/90 select-none"
-              >
-                <LockKeyhole
-                  size={15}
-                  className="text-muted-foreground/80 shrink-0"
-                  aria-hidden="true"
-                />
-                <span>كلمة المرور</span>
-                <span className="text-destructive font-bold select-none" aria-hidden="true">
-                  *
-                </span>
-              </label>
-              <PasswordInput
-                id="signup-password"
-                name="password"
-                autoComplete="new-password"
-                onChange={setPassword}
-                aria-describedby={message ? 'signup-error' : undefined}
-                className="w-full h-11 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 transition-safe duration-200 shadow-xs"
-              />
-              <PasswordStrength password={password} />
-            </div>
-          </div>
-
-          {/* Styled Turnstile Security Container */}
-          <div className="flex justify-center items-center p-2.5 rounded-xl bg-muted/20 border border-border/40 min-h-17 overflow-hidden shadow-xs hover:border-border/60 transition-colors duration-200">
-            <Turnstile onToken={setTurnstileToken} />
-          </div>
-
-          <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
-
-          {/* Animated Error Alert */}
-          {offline ? (
-            <NeedsConnection
-              variant="inline"
-              message="لم يصل طلب إنشاء الحساب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
-            />
-          ) : (
-            message && (
-              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs">
-                <CircleAlert
-                  size={20}
-                  className="shrink-0 mt-0.5 text-destructive"
-                  aria-hidden="true"
-                />
-                <p id="signup-error" role="alert" className="text-sm font-medium leading-relaxed">
-                  {message}
-                </p>
-              </div>
-            )
-          )}
-
-          {/* Primary Action Button */}
-          <HeroCtaButton type="submit" disabled={isPending} className="w-full">
-            {isPending ? (
-              <>
-                <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
-                <span>جاري إنشاء الحساب...</span>
-              </>
-            ) : (
-              'إنشاء حساب'
-            )}
-          </HeroCtaButton>
-        </form>
+        {/* The same Google button as the sign-in page, because it is the same
+            action: a first Google use creates the account, a later one returns
+            to it, and the visitor never sees a second Google door. */}
+        <GoogleAuthButton
+          redirectTo={redirectTo}
+          label={SIGN_IN_COPY.google}
+          busyLabel={SIGN_IN_COPY.googleBusy}
+        />
 
         <div className="my-5 sm:my-6">
           <AuthDivider />
         </div>
 
-        {/* Secondary Google Auth Section */}
-        <div className="space-y-2">
-          <Button
-            type="button"
-            variant="outline"
-            isLoading={googleLoading}
-            onClick={async () => {
-              setGoogleLoading(true);
-              setGoogleError(null);
-              setGoogleOffline(false);
-              try {
-                await signInWithGoogle(redirectTo);
-              } catch (e) {
-                if (e instanceof ApiError && e.isNetworkError) {
-                  setGoogleOffline(true);
-                } else if (e instanceof Error && e.message !== 'NEXT_REDIRECT') {
-                  setGoogleError('حدث خطأ أثناء الاتِّصال بـ Google. يُرجَى المحاولة لاحقًا');
-                }
-              } finally {
-                setGoogleLoading(false);
-              }
-            }}
-            className="w-full h-11 sm:h-12 rounded-full font-medium border border-border/80 bg-background hover:bg-muted/50 hover:border-border hover:scale-[1.01] active:scale-[0.99] transition-safe duration-200 ease-out flex items-center justify-center gap-2.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            <GoogleLogo size={20} className="shrink-0" />
-            <span>{googleLoading ? 'جاري الاتِّصال بـ Google...' : 'التَّسجيل بحساب Google'}</span>
-          </Button>
+        {emailOpen ? (
+          <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
+            <input type="hidden" name="redirectTo" value={redirectTo} />
 
-          {googleOffline && (
-            <NeedsConnection
-              variant="inline"
-              message="لم نتمكَّن من الوصول إلى Google. تحقَّق من اتِّصالك ثم أعد المحاولة."
-            />
-          )}
+            <div className="space-y-4 sm:space-y-5">
+              {/* Full Name Input Group */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="signup-name"
+                  className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-foreground/90 uppercase select-none"
+                >
+                  <User
+                    size={15}
+                    className="shrink-0 text-muted-foreground/80"
+                    aria-hidden="true"
+                  />
+                  <span>الاسم الكامل</span>
+                  <span className="font-bold text-destructive select-none" aria-hidden="true">
+                    *
+                  </span>
+                </label>
+                <Input
+                  id="signup-name"
+                  name="name"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  placeholder="الاسم الكامل"
+                  aria-describedby={message ? 'signup-error' : undefined}
+                  className="h-11 w-full rounded-xl border border-border/60 bg-background/50 px-3.5 text-sm shadow-xs transition-safe duration-200 placeholder:text-muted-foreground/50 hover:border-border hover:bg-background/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 focus-visible:outline-none"
+                />
+              </div>
 
-          {googleError && (
-            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-center">
-              <p role="alert" className="text-sm font-medium text-destructive">
-                {googleError}
-              </p>
+              {/* Email Input Group */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="signup-email"
+                  className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-foreground/90 uppercase select-none"
+                >
+                  <Mail
+                    size={15}
+                    className="shrink-0 text-muted-foreground/80"
+                    aria-hidden="true"
+                  />
+                  <span>البريد الإلكتروني</span>
+                  <span className="font-bold text-destructive select-none" aria-hidden="true">
+                    *
+                  </span>
+                </label>
+                <Input
+                  id="signup-email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="example@email.com"
+                  aria-describedby={message ? 'signup-error' : undefined}
+                  className="h-11 w-full rounded-xl border border-border/60 bg-background/50 px-3.5 text-sm shadow-xs transition-safe duration-200 placeholder:text-muted-foreground/50 hover:border-border hover:bg-background/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/20 focus-visible:outline-none"
+                />
+              </div>
+
+              {/* Password Input Group */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="signup-password"
+                  className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-foreground/90 uppercase select-none"
+                >
+                  <LockKeyhole
+                    size={15}
+                    className="shrink-0 text-muted-foreground/80"
+                    aria-hidden="true"
+                  />
+                  <span>كلمة المرور</span>
+                  <span className="font-bold text-destructive select-none" aria-hidden="true">
+                    *
+                  </span>
+                </label>
+                <PasswordInput
+                  id="signup-password"
+                  name="password"
+                  autoComplete="new-password"
+                  onChange={setPassword}
+                  aria-describedby={message ? 'signup-error' : undefined}
+                  className="h-11 w-full rounded-xl border border-border/60 bg-background/50 shadow-xs transition-safe duration-200 hover:border-border hover:bg-background/80"
+                />
+                <PasswordStrength password={password} />
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Styled Turnstile Security Container */}
+            <div className="flex min-h-17 items-center justify-center overflow-hidden rounded-xl border border-border/40 bg-muted/20 p-2.5 shadow-xs transition-colors duration-200 hover:border-border/60">
+              <Turnstile onToken={setTurnstileToken} />
+            </div>
+
+            <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
+
+            {/* Animated Error Alert */}
+            {offline ? (
+              <NeedsConnection
+                variant="inline"
+                message="لم يصل طلب إنشاء الحساب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
+              />
+            ) : (
+              message && (
+                <div className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-3.5 text-destructive shadow-xs">
+                  <CircleAlert
+                    size={20}
+                    className="mt-0.5 shrink-0 text-destructive"
+                    aria-hidden="true"
+                  />
+                  <p id="signup-error" role="alert" className="text-sm font-medium leading-relaxed">
+                    {message}
+                  </p>
+                </div>
+              )
+            )}
+
+            {/* Primary Action Button */}
+            <HeroCtaButton type="submit" disabled={isPending} className="w-full">
+              {isPending ? (
+                <>
+                  <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
+                  <span>جاري إنشاء الحساب...</span>
+                </>
+              ) : (
+                'إنشاء حساب'
+              )}
+            </HeroCtaButton>
+          </form>
+        ) : (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setEmailOpen(true)}
+              className="link-underline rounded-xs text-xs font-bold text-primary transition-colors duration-200 hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:outline-none sm:text-sm"
+            >
+              إنشاء حساب بالبريد الإلكتروني
+            </button>
+          </div>
+        )}
 
         {/* Footer Navigation Link */}
-        <p className="text-center text-sm text-muted-foreground mt-6 sm:mt-7">
+        <p className="mt-6 text-center text-sm text-muted-foreground sm:mt-7">
           لديك حساب بالفعل؟{' '}
           <Link
             href={authLink('/auth/login', redirectTo)}
-            className="text-primary font-bold hover:text-primary/80 underline-offset-4 hover:underline transition-safe duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md px-1 py-0.5"
+            className="rounded-md px-1 py-0.5 font-bold text-primary underline-offset-4 transition-safe duration-150 hover:text-primary/80 hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             تسجيل الدُّخول
           </Link>

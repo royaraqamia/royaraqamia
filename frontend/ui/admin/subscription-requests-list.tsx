@@ -176,7 +176,7 @@ export function SubscriptionRequestsList({
                 maxLength={2000}
                 value={notes}
                 disabled={isSaving}
-                placeholder="سجّل ما حدث في المتابعة: متى تمَّ التَّواصل، وما تمَّ الاتِّفاق عليه..."
+                placeholder="سجِّل ما حدث في المتابعة: متى تمَّ التَّواصل، وما تمَّ الاتِّفاق عليه..."
                 onChange={(event) =>
                   setDrafts((current) => ({ ...current, [request.id]: event.target.value }))
                 }

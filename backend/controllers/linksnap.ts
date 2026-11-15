@@ -123,7 +123,7 @@ function offlineUpdateMeta(body: {
   };
 }
 
-const UNAUTHORIZED_BODY = { success: false, error: 'غير مصرح. يرجى تسجيل الدخول أولاً.' };
+const UNAUTHORIZED_BODY = { success: false, error: 'غير مصرح. يرجى تسجيل الدُّخول أولاً.' };
 
 function errorResponse(err: unknown, log: string): HttpResult {
   // `String(err)` printed `[object Object]` for the plain PostgREST error that

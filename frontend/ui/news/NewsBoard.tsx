@@ -27,6 +27,7 @@ import { newsScreenScope } from '@/frontend/ui/news/news-screen-scope';
 import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { HeroCtaButton, HeroCtaSheen } from '@/frontend/ui/shared/hero-cta-button';
+import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
 import {
   ReadFailureNotice,
   toReadFailure,
@@ -89,6 +90,7 @@ export function NewsBoard() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const search = searchParams.toString();
+  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt();
 
   const route = useMemo(() => normaliseSnapshotRoute(pathname, search), [pathname, search]);
   const apiUrl = useMemo(() => normaliseSnapshotRoute('/api/news/board', search), [search]);
@@ -351,14 +353,18 @@ export function NewsBoard() {
                     .replace('{shown}', formatCount(cards.shown))
                     .replace('{total}', formatCount(cards.total))}
             </p>
-            <HeroCtaButton asChild className="mt-4">
-              <Link href={cards.visitor ? '/auth/login?redirect=%2Fnews' : '/pricing'}>
-                <HeroCtaSheen />
-                <span className="relative z-10">
-                  {cards.visitor ? NEWS_DIGEST_COPY.signIn : NEWS_DIGEST_COPY.seePlans}
-                </span>
-              </Link>
-            </HeroCtaButton>
+            {cards.visitor ? (
+              <HeroCtaButton type="button" onClick={() => requireSignIn('/news')} className="mt-4">
+                {NEWS_DIGEST_COPY.signIn}
+              </HeroCtaButton>
+            ) : (
+              <HeroCtaButton asChild className="mt-4">
+                <Link href="/pricing">
+                  <HeroCtaSheen />
+                  <span className="relative z-10">{NEWS_DIGEST_COPY.seePlans}</span>
+                </Link>
+              </HeroCtaButton>
+            )}
           </div>
         ) : null}
       </div>
@@ -373,6 +379,7 @@ export function NewsBoard() {
           {NEWS_DIGEST_COPY.refreshing}
         </p>
       ) : null}
+      {signInPrompt}
     </div>
   );
 }

@@ -13,8 +13,8 @@ package com.royaraqamia.app.account
  */
 object AccountRowsCopy {
     const val NAV_LABEL = "إجراءات الحساب"
-    const val SUBMISSIONS = "الطَّلبات"
-    const val POSTS = "المنشورات"
+    const val SUBMISSIONS = "طلباتي"
+    const val POSTS = "منشوراتي"
     const val BLOCKED = "الأعضاء المحظورون"
     const val PRICING = "خطط التَّسعير"
     const val ADMIN = "الإدارة"

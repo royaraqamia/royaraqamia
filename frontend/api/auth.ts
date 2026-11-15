@@ -127,7 +127,7 @@ export async function login(data: {
       ? { ok: true, needsOtp: true, redirectUrl: res.redirectUrl }
       : { ok: true, redirectUrl: res.redirectUrl };
   } catch (error) {
-    return authFailure(error, 'فشل تسجيل الدخول');
+    return authFailure(error, 'فشل تسجيل الدُّخول');
   }
 }
 

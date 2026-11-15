@@ -351,7 +351,7 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
                 maxLength={RETAINER_NOTES_MAX}
                 value={notes}
                 disabled={isSaving}
-                placeholder="سجّل ما حدث في المتابعة: متى تمَّ التَّواصل، ماذا اتُّفق عليه، وما تمَّ تحصيله..."
+                placeholder="سجِّل ما حدث في المتابعة: متى تمَّ التَّواصل، ماذا اتُّفق عليه، وما تمَّ تحصيله..."
                 onChange={(event) => updateDraft({ notes: event.target.value })}
               />
               {(dirty || feeError !== null) && (

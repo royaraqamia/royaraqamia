@@ -132,8 +132,8 @@ describe('AssistantPanel', () => {
     session.user = null;
     render(<AssistantPanel open onDismiss={vi.fn()} />);
 
-    expect(await screen.findByText('تحدّث مع نور')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /تسجيل الدخول/ })).toBeInTheDocument();
+    expect(await screen.findByText('تحدَّث مع نور')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /تسجيل الدُّخول/ })).toBeInTheDocument();
     expect(api.startAssistantChat).not.toHaveBeenCalled();
   });
 

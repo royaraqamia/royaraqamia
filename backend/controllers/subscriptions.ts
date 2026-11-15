@@ -57,7 +57,7 @@ export async function submitSubscriptionRequest(body: unknown): Promise<HttpResu
       if (parsed.data.user_id && parsed.data.user_id !== userId) {
         return jsonResult(403, {
           success: false,
-          error: 'هذا الطلب مُسجَّل لحساب آخر. سجّل الدخول بالحساب الذي أرسله.',
+          error: 'هذا الطلب مُسجَّل لحساب آخر. سجِّل الدُّخول بالحساب الذي أرسله.',
         } satisfies SubscriptionRequestActionResult);
       }
 
@@ -86,7 +86,7 @@ export async function submitSubscriptionRequest(body: unknown): Promise<HttpResu
         } satisfies SubscriptionRequestActionResult);
       }
     },
-    { whenFailed: { success: false, error: 'يلزم تسجيل الدخول لإرسال طلب الاشتراك.' } }
+    { whenFailed: { success: false, error: 'يلزم تسجيل الدُّخول لإرسال طلب الاشتراك.' } }
   );
 }
 

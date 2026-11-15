@@ -11,6 +11,9 @@
  */
 export const SIGN_IN_COPY = {
   title: 'تسجيل الدُّخول',
+  google: 'المتابعة باستخدام Google',
+  googleBusy: 'جاري الاتِّصال بـ Google...',
+  emailToggle: 'الدُّخول بالبريد الإلكتروني',
   email: 'البريد الإلكتروني',
   password: 'كلمة المرور',
   submit: 'تسجيل الدُّخول',

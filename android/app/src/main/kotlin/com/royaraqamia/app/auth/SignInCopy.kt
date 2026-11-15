@@ -13,6 +13,9 @@ package com.royaraqamia.app.auth
  */
 object SignInCopy {
     const val TITLE = "تسجيل الدُّخول"
+    const val GOOGLE = "المتابعة باستخدام Google"
+    const val GOOGLE_BUSY = "جاري الاتِّصال بـ Google..."
+    const val EMAIL_TOGGLE = "الدُّخول بالبريد الإلكتروني"
     const val EMAIL = "البريد الإلكتروني"
     const val PASSWORD = "كلمة المرور"
     const val SUBMIT = "تسجيل الدُّخول"

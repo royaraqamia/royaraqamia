@@ -5,16 +5,15 @@ import { usePathname, useRouter } from 'next/navigation';
 import { PenLine } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
 import { useUI } from '@/frontend/state/UIContext';
-import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
-import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
-import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
+import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
 import { PostComposerDialog } from './post-composer-dialog';
 import { COMMUNITY_COMPOSE_FAB_COPY } from './community-compose-fab-copy';
 
 /**
  * Facebook/X-style composer for the public community. Signed-in users can publish a
- * post without ever leaving `/community`; anonymous visitors get the same nudge the
- * notification bell gives them — a prompt to sign in — instead of a hard redirect.
+ * post without ever leaving `/community`; anonymous visitors get the same prompt the
+ * notification bell gives them — the site's one sign-in gate — instead of a hard
+ * redirect.
  */
 export function ComposeFab() {
   const { user, isLoading } = useSession();
@@ -22,17 +21,17 @@ export function ComposeFab() {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [authPromptOpen, setAuthPromptOpen] = useState(false);
-
-  const loginHref = `/auth/login?redirect=${encodeURIComponent(pathname || '/community')}`;
+  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt(
+    COMMUNITY_COMPOSE_FAB_COPY.guestTitle
+  );
 
   const handleFabClick = useCallback(() => {
     if (!user) {
-      setAuthPromptOpen(true);
+      requireSignIn(pathname || '/community');
       return;
     }
     setOpen(true);
-  }, [user]);
+  }, [user, pathname, requireSignIn]);
 
   const handleSaved = useCallback(
     (slug: string) => {
@@ -65,26 +64,7 @@ export function ComposeFab() {
         }}
       />
 
-      <Dialog open={authPromptOpen} onOpenChange={setAuthPromptOpen}>
-        <DialogContent className="sm:max-w-md" hideClose aria-describedby={undefined}>
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
-              <PenLine size={24} />
-            </div>
-            <DialogTitle className="leading-snug!">
-              {COMMUNITY_COMPOSE_FAB_COPY.guestTitle}
-            </DialogTitle>
-          </div>
-
-          <DialogActions onCancel={() => setAuthPromptOpen(false)}>
-            <SignInCta
-              href={loginHref}
-              dismiss={() => setAuthPromptOpen(false)}
-              className="w-full sm:w-auto"
-            />
-          </DialogActions>
-        </DialogContent>
-      </Dialog>
+      {signInPrompt}
     </>
   );
 }

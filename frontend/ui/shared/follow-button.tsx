@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { followMember, unblockMember, unfollowMember } from '@/frontend/api/follows';
 import { publishFollowCounts } from '@/frontend/shared/follow-live';
 import { cn } from '@/frontend/shared/cn';
@@ -13,6 +12,7 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
+import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
 import type { FollowState } from '@/shared/contracts/follows';
 import { FOLLOW_BUTTON_COPY } from './follow-button-copy';
 
@@ -61,7 +61,8 @@ type PendingAction = 'follow' | 'unfollow' | 'unblock';
  * - `following`: unfollow, behind a confirmation dialogue - the one action here
  *   that loses something, so it is the one that asks twice;
  * - `not_following`: follow;
- * - a guest: follow, linked to the sign-in page rather than answering 401 later.
+ * - a guest: follow, opening the site's sign-in prompt rather than answering 401
+ *   later or sending them off the profile.
  *
  * After a press the state is whatever the write answered, and the numbers above
  * the header are updated from the same answer. While a write is in flight the
@@ -82,6 +83,7 @@ export function FollowButton({
   const [pending, setPending] = useState<PendingAction | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt();
 
   // The hero variant carries the colour and the shadow; the size stays this
   // control's own, so a list row does not grow a landing-page call to action.
@@ -140,11 +142,17 @@ export function FollowButton({
 
   if (!signedIn) {
     return (
-      <Link href={`/auth/login?redirect=${encodeURIComponent(`/u/${username}`)}`}>
-        <Button variant="hero" size="sm" className={cn(buttonClass, className)}>
+      <>
+        <Button
+          variant="hero"
+          size="sm"
+          className={cn(buttonClass, className)}
+          onClick={() => requireSignIn(`/u/${username}`)}
+        >
           {FOLLOW_BUTTON_COPY.follow}
         </Button>
-      </Link>
+        {signInPrompt}
+      </>
     );
   }
 

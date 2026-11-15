@@ -82,7 +82,7 @@ describe('handleAuthenticated', () => {
 
   it('lets the policy distinguish unauthenticated from forbidden', async () => {
     const policy = {
-      whenUnauthenticated: () => jsonResult(401, { error: 'سجّل الدخول' }),
+      whenUnauthenticated: () => jsonResult(401, { error: 'سجِّل الدُّخول' }),
       whenForbidden: () => jsonResult(403, { error: 'لست مشرفاً' }),
     };
 
@@ -98,7 +98,7 @@ describe('handleAuthenticated', () => {
     );
 
     expect(signedOut).toEqual(
-      expect.objectContaining({ status: 401, body: { error: 'سجّل الدخول' } })
+      expect.objectContaining({ status: 401, body: { error: 'سجِّل الدُّخول' } })
     );
     expect(nonAdmin).toEqual(
       expect.objectContaining({ status: 403, body: { error: 'لست مشرفاً' } })
@@ -338,7 +338,7 @@ describe('withAdminUser', () => {
     expect(result).toEqual(
       expect.objectContaining({
         status: 401,
-        body: { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' },
+        body: { success: false, error: 'غير مصرح. يرجى تسجيل الدُّخول.' },
       })
     );
     expect(run).not.toHaveBeenCalled();

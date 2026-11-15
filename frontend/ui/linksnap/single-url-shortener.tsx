@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useReducer } from 'react';
-import NextLink from 'next/link';
+import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Copy, Check, Share2, QrCode, RotateCcw, LockOpen, CloudOff } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
@@ -34,6 +34,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
   const [form, dispatch] = useReducer(shortenerReducer, undefined, shortenerInitialState);
   const { originalUrl, customCode, password, shortenedUrl, copied, showQr, qrDataUrl } = form;
   const { status: slugStatus, error: slugError } = useSlugAvailability(customCode, token);
+  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt();
 
   const handleShorten = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -162,12 +163,13 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           {!token && (
             <p data-visual="hint" className="text-xs text-muted-foreground font-medium">
               {SINGLE_URL_SHORTENER_COPY.guestHint}{' '}
-              <NextLink
-                href="/auth/login?redirect=%2Flinksnap"
+              <button
+                type="button"
+                onClick={() => requireSignIn('/linksnap')}
                 className="font-bold text-primary hover:underline"
               >
                 {SINGLE_URL_SHORTENER_COPY.guestSignIn}
-              </NextLink>
+              </button>
             </p>
           )}
 
@@ -421,6 +423,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           </button>
         </m.div>
       )}
+      {signInPrompt}
     </AnimatePresence>
   );
 }

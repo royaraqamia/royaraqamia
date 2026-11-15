@@ -247,7 +247,7 @@ export function ProjectRequestsList({
                 maxLength={2000}
                 value={notes}
                 disabled={isSaving}
-                placeholder="سجّل ما حدث في المتابعة: متى تمَّ التَّواصل، ماذا طُلب، وما تمَّ عرضه..."
+                placeholder="سجِّل ما حدث في المتابعة: متى تمَّ التَّواصل، ماذا طُلب، وما تمَّ عرضه..."
                 onChange={(event) =>
                   setDrafts((current) => ({ ...current, [request.id]: event.target.value }))
                 }

@@ -136,8 +136,8 @@ export function AccountRows({ onSignOut, children }: AccountRowsProps) {
         variant="danger"
       />
 
-      {/* The guest gate for the rows above — the same nudge the community FAB and
-          the notification bell give, aimed at the page they picked. */}
+      {/* The guest gate for the rows above — the same nudge every other control
+          on a public page gives, aimed at the page they picked. */}
       <SignInPromptDialog
         open={promptHref !== null}
         onDismiss={() => setPromptHref(null)}

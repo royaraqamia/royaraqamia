@@ -105,7 +105,7 @@ describe('chunkMarkdown', () => {
 describe('languageOf', () => {
   it('mirrors the language of the message', () => {
     expect(languageOf('fix the login page')).toBe('en');
-    expect(languageOf('أصلح صفحة الدخول')).toBe('ar');
+    expect(languageOf('أصلح صفحة الدُّخول')).toBe('ar');
   });
 
   it('ignores file names, paths and code spans, which are names not prose', () => {
@@ -116,7 +116,7 @@ describe('languageOf', () => {
 
   it('follows the first sentence of a mixed message', () => {
     expect(languageOf('fix the login page. أيضاً أضف زراً')).toBe('en');
-    expect(languageOf('أصلح صفحة الدخول. Also add a button')).toBe('ar');
+    expect(languageOf('أصلح صفحة الدُّخول. Also add a button')).toBe('ar');
   });
 
   it('answers Arabic for a message with no letters at all', () => {
