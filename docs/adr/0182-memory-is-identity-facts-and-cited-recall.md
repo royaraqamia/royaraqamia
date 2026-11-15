@@ -80,3 +80,50 @@ text, source_turn_id, confidence, created_at, updated_at, deleted_at)` with
   "what the agent knows" page in phase 6 starts here.
 - The `remember` tool is the promise; a model that says "I will remember" without calling it is
   wrong, and the eval suite has a fixture for it.
+
+## Amendment (2026-11-15, #1529): the summary is not a recall source
+
+Decision 3 names three sources for `agent_memory_embeddings`: turn pairs, saved facts and thread
+summaries. Only the second exists, and the third should not. This amendment takes the summary out
+of the list; the turn pair stays out until its cost is measured, in the direction described below.
+
+What landed instead is decision 4's summary: a block in every turn's prompt, read from the
+conversation row and regenerated every ten new messages past a message-id cursor
+(`backend/shared/domain/conversation-summary.ts`, #1512). It is **context**, not memory, and the
+distinction is the decision.
+
+**Why a vector of it cannot be a recall source.**
+
+1. **It is derived from the thing already in the prompt.** A similarity search over summaries
+   returns the summary — content the turn already holds, ranked. Compression that dropped a
+   decision cannot be undone by indexing what survived it; the index adds no information to the
+   block, only a second copy of it.
+2. **A summary is a state; an index wants events.** Each regeneration replaces the text, so the
+   table would hold superseded states at equal confidence: "the budget moved to the 15th", and four
+   hundred messages later "the budget moved to the 1st". Similarity cannot tell which is current,
+   the floor cannot, and the recency decay only tilts a ranking — it cannot suppress a reversed
+   decision that matches the question better. Recall would then cite the older one, which is worse
+   than citing nothing.
+3. **There is nowhere to recall it from.** A member has one assistant conversation
+   (`private.enforce_one_agent_thread()`, `20261112160000`), so every summary in the deployment
+   belongs to the thread the turn already has open. A cross-conversation read would need many
+   topical threads, or summaries over human conversations — a product change, not an embedding one.
+4. **Prose is not citable.** Decision 5 and #1512 both draw the line, and it is the same line: a
+   cited item never comes from prose. A paraphrase the server wrote must not become the source of a
+   decision.
+
+**The cost the program stops carrying.** `agent_memory_embeddings.memory_id` stays `not null` with
+its `unique (memory_id)`: no nullable foreign key on a table that already holds live rows, no second
+`conversation_id` FK, no exactly-one-source check, no second cascade for "forget this conversation"
+and account deletion, and no HNSW insert-and-delete churn every ten messages for a row derived from
+one the turn already read. `agent_embedding_pending` keeps one branch and `EmbeddingSourceKind`
+keeps one member. The comment in `20261203120000_agent_memory_embeddings.sql` that names the summary
+as the next source is superseded here; the file itself stays as applied.
+
+**What would reopen it, and in which direction.** Long-thread memory past the summary's ceiling is
+a real limit. The unit that can answer it is the **turn pair** — an exchange that keeps its own text
+and its own date — not a summary version that supersedes itself. If a measurement ever shows the
+ceiling being hit (a member asking for something the summary dropped), the source is the exchange,
+embedded when it is written and cited as «من محادثتنا في 3 أكتوبر». That is a cost decision of its
+own — one vector per exchange instead of one per ten messages — and it needs the eval before it
+needs the table.
