@@ -140,7 +140,14 @@ export function registrations(root = ROOT) {
       for (const id of ids) found.push({ id, path: relativePath });
     }
   }
-  return found;
+  // Deterministic across filesystems: the directory walk's own order differs
+  // between Windows and Linux, and a check whose output moves is a check nobody
+  // can read a diff of.
+  return found.sort((a, b) => {
+    if (a.path !== b.path) return a.path < b.path ? -1 : 1;
+    if (a.id === b.id) return 0;
+    return a.id < b.id ? -1 : 1;
+  });
 }
 
 /** Every problem, not just the first: a half-listed screen is a discovery waiting to happen. */

@@ -267,8 +267,8 @@ describe('the registrations the assistant reads', () => {
     });
 
     expect(registrations(repo.root)).toEqual([
-      { id: 'news.page', path: 'frontend/ui/news/news-screen-scope.ts' },
       { id: 'news.page', path: 'frontend/ui/news/NewsBoard.tsx' },
+      { id: 'news.page', path: 'frontend/ui/news/news-screen-scope.ts' },
     ]);
   });
 
