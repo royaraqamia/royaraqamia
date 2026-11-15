@@ -5,6 +5,7 @@ import { loadCommunityMember } from '@/backend/loaders/community';
 import { identity } from '@/backend/config/identity';
 import { createFollowsService } from '@/backend/config/follows';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { FollowButton } from '@/frontend/ui/shared/follow-button';
 import { FollowCountsBar } from '@/frontend/ui/shared/follow-counts';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
@@ -114,7 +115,7 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
                 data-visual="profile-bio"
                 className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground"
               >
-                {member.bio}
+                <LinkifiedText text={member.bio} />
               </p>
             )}
             {/* The button and the chat door sit on one line: both are "what you

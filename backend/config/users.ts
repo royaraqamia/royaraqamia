@@ -18,6 +18,7 @@ import {
 import { AdminUsersService } from '@/backend/services/users/admin-users-service';
 import { ProfileService } from '@/backend/services/users/profile-service';
 import { HomeServicesService } from '@/backend/services/users/home-services-service';
+import { MentionsService } from '@/backend/services/users/mentions-service';
 
 export function createAdminUsersService(supabase?: SupabaseClient<Database>): AdminUsersService {
   return new AdminUsersService(createAdminUsersRepository(supabase ?? getAdminSupabase()));
@@ -34,6 +35,15 @@ export function createPublicUsersRepositoryServer(
   supabase?: SupabaseClient<Database>
 ): PublicUsersRepository {
   return createPublicUsersRepository(supabase ?? getAdminSupabase());
+}
+
+/**
+ * Mentions resolved to real members (ADR-0192). Also the server-side door: the
+ * post page answers its `@handles` from this service during its own render, the
+ * same read the browser makes in a batch.
+ */
+export function createMentionsService(supabase?: SupabaseClient<Database>): MentionsService {
+  return new MentionsService(createPublicUsersRepositoryServer(supabase));
 }
 
 export function createProfileService(supabase?: SupabaseClient<Database>): ProfileService {
