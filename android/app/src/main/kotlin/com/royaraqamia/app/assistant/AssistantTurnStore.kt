@@ -60,10 +60,15 @@ class AssistantTurnStore(
         if (isAsking(conversationId)) return
         update(conversationId) { AssistantTurn(phase = AssistantPhase.Thinking) }
 
+        // The screen is read here, at send, exactly as the site's composer reads
+        // it (ADR-0181, decision 6): a navigation after this point does not change
+        // where this question came from.
+        val screen = PublishedScreen.current()
+
         scope.launch {
             var notice: String? = null
             val result =
-                repository.streamAssistant(conversationId, body, files) { event ->
+                repository.streamAssistant(conversationId, body, files, screen) { event ->
                     when (event) {
                         is AssistantEvent.Delta ->
                             if (event.text.isNotEmpty()) {

@@ -144,6 +144,31 @@ without the owned-item caps — a client that assembles its own subset of a surf
 less than the design. Where the app needs a body the app can decode, that is a schema to add, not a
 narrower route to read.
 
+## 5a. A pair that draws nothing is a fixture, not a row
+
+The assistant's eyes (ADR-0181) are the first pair with no pixels: the app publishes the same screen
+snapshot as the site, and neither side draws it. `parity.json` is the wrong list for it — every row
+there owes a copy source, a state list both components render and a drawn surface or frame, and one
+row type with four optional fields would weaken the check for all the others. The fixture set is the
+right one, and it is the stronger evidence anyway: it compares outputs rather than file text.
+
+- `shared/fixtures/parity/screen-snapshot.json` carries one snapshot and the resolver rows. The web
+  test asserts the snapshot against `ScreenContextSnapshotSchema` and each row against
+  `resolveScreen`; `ScreenSnapshotFixtureTest` decodes the same snapshot into the generated type,
+  re-encodes it and resolves the same rows. A field named `screenId` on one side and `screen_id` on
+  the other is a red test, not a snapshot the model never sees.
+- The Kotlin type is generated from the schema (`npm run contracts:generate`), so the field names are
+  the server's own.
+- The route table is generated twice from `perf/surfaces.json` — `shared/contracts/screens.generated.ts`
+  for the site and `Screens.kt` for the app — by one `npm run check:screens` run. A route the matrix
+  carries cannot be placed on one client and not the other.
+- The title is what the screen draws: the site's `document.title`, the app's drawn copy constant
+  (`ScreenTitles`). A route whose screen has no heading is listed as untitled with its reason, and a
+  test requires every route the app draws to be in one table or the other.
+
+[ADR-0194](../adr/0194-the-app-s-eyes-are-generated-and-the-pair-is-a-fixture.md) records both
+decisions.
+
 ## What the checks do not cover
 
 - **Pixel-level drift.** Closed for a surface that is under the visual gate (#874,

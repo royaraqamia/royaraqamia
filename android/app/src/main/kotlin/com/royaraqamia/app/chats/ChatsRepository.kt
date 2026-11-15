@@ -1,6 +1,7 @@
 package com.royaraqamia.app.chats
 
 import com.royaraqamia.app.api.ApiClient
+import com.royaraqamia.app.assistant.ScreenContextInput
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.ContractCodec
@@ -596,6 +597,7 @@ class ChatsRepository(
         conversationId: String,
         body: String,
         files: List<ChatComposeFile>,
+        screen: ScreenContextInput?,
         onEvent: (com.royaraqamia.app.assistant.AssistantEvent) -> Unit,
     ): ApiResult<Unit> =
         withContext(Dispatchers.IO) {
@@ -618,6 +620,11 @@ class ChatsRepository(
             val payload =
                 buildJsonObject {
                         put("body", body)
+                        // Where the question was asked from (ADR-0181, decision 6),
+                        // on the same field the site's composer sends. A client with
+                        // no eyes for this screen sends nothing at all, and the turn
+                        // answers exactly as it did before the eyes existed.
+                        screen?.let { put("screen", it.toJsonObject()) }
                         if (uploaded.isNotEmpty()) {
                             put(
                                 "attachments",

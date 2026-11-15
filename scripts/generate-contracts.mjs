@@ -290,6 +290,18 @@ export const CONTRACTS = [
       'ChatAttachmentUrlResponseSchema',
     ],
   },
+  // The screen a question is asked from (#1422, ADR-0181 decision 6). The app is a
+  // publisher here, not a reader: the body it adds to a turn has to name the fields
+  // the server's own schema names, and a snapshot with `screen_id` where the site
+  // wrote `screenId` is a screen the model never sees. One schema, one generated
+  // type, one set of field names. The `{ blind: true }` arm is the client saying it
+  // cannot show this screen - a second shape a client sends, not a shape it reads,
+  // so it lives with the publisher rather than in the generated file.
+  {
+    module: 'shared/contracts/screen-context-schema',
+    file: 'ScreenContextContracts.kt',
+    schemas: ['ScreenContextSnapshotSchema'],
+  },
   // The lead forms and consultation booking left with their ports (#929, #930,
   // ADR-0178): the site links neither form anywhere (ADR-0148), so the app has no
   // screen to decode these bodies for and the contracts left with the screens.

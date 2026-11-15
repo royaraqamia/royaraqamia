@@ -103,4 +103,15 @@ object NativeSurfaces {
             ProfileRoutes.matches(route) ||
             QuranRoutes.matches(route) ||
             LinksnapRoutes.codeOf(route) != null
+
+    /**
+     * The routes the shell draws itself, whole-string ones only.
+     *
+     * The list is private because [isNative] is the one question the shell asks;
+     * this is the same list for the checks that have to see all of it at once -
+     * the assistant's title table owes a row for every route here (#1422) - so a
+     * port that adds a route cannot skip the question by adding one nobody
+     * enumerated.
+     */
+    internal fun declaredRoutes(): Set<String> = routes
 }

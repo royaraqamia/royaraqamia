@@ -1,0 +1,81 @@
+{
+  "notes": "The screen snapshot and the route table, as the site computes them (#1422, ADR-0181). The web test asserts the snapshot against `ScreenContextSnapshotSchema` and every resolver row against `resolveScreen`; the Kotlin test decodes the same snapshot into the generated type, re-encodes it, and resolves the same rows with `Screens.resolve`. A field the schema names and the app's type does not - or a route the two resolvers place differently - is a red test on both sides rather than a screen the assistant is told about twice.",
+  "contract": "ScreenContextSnapshotSchema",
+  "snapshot": {
+    "route": "/spendtrack",
+    "product": "spendtrack",
+    "screenId": "spendtrack",
+    "title": "المصاريف",
+    "overlays": [{ "id": "spendtrack.expense", "kind": "dialog" }],
+    "focus": { "kind": "expense", "id": "e-1" },
+    "tab": null,
+    "fields": { "amount": "12.50" },
+    "text": "مصروفات هذا الشهر",
+    "updatedAt": "2026-11-15T09:00:00Z"
+  },
+  "resolver": [
+    {
+      "name": "the root with no tab is home",
+      "route": "/",
+      "tab": null,
+      "screenId": "home",
+      "product": "home"
+    },
+    {
+      "name": "the root with a tab is that tab's own surface",
+      "route": "/",
+      "tab": "/notes",
+      "screenId": "notes",
+      "product": "notes"
+    },
+    {
+      "name": "a trailing slash is the same route",
+      "route": "/notes/",
+      "tab": null,
+      "screenId": "notes",
+      "product": "notes"
+    },
+    {
+      "name": "a plain route the matrix carries",
+      "route": "/habitflow",
+      "tab": null,
+      "screenId": "habitflow",
+      "product": "habitflow"
+    },
+    {
+      "name": "a dynamic segment matches exactly one segment",
+      "route": "/verify/ABC-123",
+      "tab": null,
+      "screenId": "verify-code",
+      "product": "verify"
+    },
+    {
+      "name": "a row's own surface, not its product's",
+      "route": "/spendtrack/categories",
+      "tab": null,
+      "screenId": "spendtrack-categories",
+      "product": "spendtrack"
+    },
+    {
+      "name": "a whole subtree one surface owns",
+      "route": "/admin/members",
+      "tab": null,
+      "screenId": "admin",
+      "product": "admin"
+    },
+    {
+      "name": "a prefix is matched at a segment boundary, not inside a word",
+      "route": "/administer",
+      "tab": null,
+      "screenId": "",
+      "product": ""
+    },
+    {
+      "name": "a route the matrix does not carry resolves to nothing",
+      "route": "/nowhere/at/all",
+      "tab": null,
+      "screenId": "",
+      "product": ""
+    }
+  ]
+}
