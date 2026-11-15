@@ -108,7 +108,8 @@ The foundation. Nothing else is safe to build on two registries.
 - Read `permissionLevel: 'all'` as the app's tier 0 and 1 tools; keep the column, change what it
   means, and migrate nothing (ADR-0180, decision 6).
 - Parity test: every entry projects to both doors, or carries a documented exemption.
-- One file lists the coverage matrix above, generated from the registry so it cannot be stale.
+- One file lists the coverage matrix above, generated from the registry so it cannot be stale
+  ([capabilities.md](capabilities.md), `npm run check:capabilities`).
 
 **Exit:** `npm run check:tools` proves both projections exist; the turn behaves identically for
 a member with no grants.

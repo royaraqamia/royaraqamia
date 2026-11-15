@@ -71,6 +71,12 @@ jobs:
       - name: Generated Contracts Are Current
         run: npm run check:contracts
 
+      # The coverage report is generated from the capability registry, so a
+      # pull request that adds a tool without regenerating it fails here
+      # rather than leaving the roadmap's table describing an older program.
+      - name: Capability Coverage Report Is Current
+        run: npm run check:capabilities
+
       - name: Generated Copy Is Current
         run: npm run check:copy
 
