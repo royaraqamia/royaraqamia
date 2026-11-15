@@ -271,6 +271,39 @@ describe('the assistant turn', () => {
     expect(agent.insertAgentMessage).toHaveBeenCalledWith('conversation-1', 'مرحبا بك');
   });
 
+  it('opens the turn with the member’s identity, ahead of the standing prompt', async () => {
+    const client = scriptedClient([textStream('ريم')]);
+    const identity = vi.fn(async () => ({
+      displayName: 'ريم',
+      username: 'reem',
+      avatarUrl: null,
+      hasEmail: true,
+      plan: 'pro' as const,
+      connectedApps: 2,
+    }));
+    const { service } = makeService({ client, identity });
+
+    await collect(service.turn('user-1', 'conversation-1', 'من أنا؟', TURN_CONTEXT));
+
+    const [block, prompt] = client.calls[0] ?? [];
+    // The plan is the one the gate read, so the block and the allowance agree.
+    expect(identity).toHaveBeenCalledWith('user-1', 'pro');
+    expect(block).toMatchObject({ role: 'system' });
+    expect(String(block?.content)).toContain('ريم');
+    expect(String(block?.content)).toContain('وصلت من الخادم');
+    expect(prompt).toEqual({ role: 'system', content: SYSTEM_PROMPT });
+  });
+
+  it('opens with the standing prompt alone when there is no identity to project', async () => {
+    // What a read that answered nothing looks like — a session with no row.
+    const client = scriptedClient([textStream('أهلاً')]);
+    const { service } = makeService({ client, identity: vi.fn(async () => null) });
+
+    await collect(service.turn('user-1', 'conversation-1', 'مرحبا', TURN_CONTEXT));
+
+    expect(client.calls[0]?.[0]).toEqual({ role: 'system', content: SYSTEM_PROMPT });
+  });
+
   it('is unavailable when no provider key is configured', async () => {
     const { service } = makeService({ client: null });
 
@@ -728,6 +761,52 @@ describe('the assistant turn', () => {
     expect(agent.startTurn).not.toHaveBeenCalled();
     expect(agent.settleTurn).toHaveBeenCalledWith('turn-1');
     expect(release).not.toHaveBeenCalled();
+  });
+
+  it('resumes with the same identity block the member was watching', async () => {
+    const client = scriptedClient([textStream('نعم')]);
+    const identity = vi.fn(async () => ({
+      displayName: 'ريم',
+      username: 'reem',
+      avatarUrl: null,
+      hasEmail: true,
+      plan: 'pro' as const,
+      connectedApps: 0,
+    }));
+    const { service } = makeService({ client, identity });
+
+    await collect(
+      service.resume(
+        {
+          id: 'turn-1',
+          conversationId: 'conversation-1',
+          memberId: 'user-1',
+          question: 'سؤال',
+          resumes: 1,
+        },
+        TURN_CONTEXT
+      )
+    );
+
+    // The request is gone; the account row is not, and the plan is read back
+    // rather than guessed.
+    expect(identity).toHaveBeenCalledWith('user-1', 'pro');
+    expect(String(client.calls[0]?.[0]?.content)).toContain('ريم');
+  });
+
+  it('answers without a block when the identity read fails', async () => {
+    const client = scriptedClient([textStream('أهلاً')]);
+    const { service } = makeService({
+      client,
+      identity: vi.fn(async () => {
+        throw new Error('users is down');
+      }),
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'مرحبا', TURN_CONTEXT));
+
+    expect(events.at(-1)).toMatchObject({ type: 'done' });
+    expect(client.calls[0]?.[0]).toEqual({ role: 'system', content: SYSTEM_PROMPT });
   });
 
   it('answers even when the turn record cannot be opened, and spends nothing extra', async () => {

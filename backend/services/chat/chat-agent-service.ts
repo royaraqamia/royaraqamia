@@ -23,6 +23,7 @@ import {
 } from '@/backend/services/chat/chat-app-tools';
 import type { McpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
 import type { ChatService } from '@/backend/services/chat/chat-service';
+import { turnContextMessages, type TurnIdentity } from '@/backend/services/chat/turn-identity';
 import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import type { Database } from '@/backend/models/database.types';
 import type { Reservation } from '@/backend/services/plans/plan-gate';
@@ -55,7 +56,7 @@ import {
   type ChatAttachmentInput,
   type ChatMessage,
 } from '@/shared/contracts/chat';
-import { USAGE_COUNTERS, type UsageState } from '@/shared/contracts/plans';
+import { USAGE_COUNTERS, type PlanId, type UsageState } from '@/shared/contracts/plans';
 import { CHAT_AGENT_TOOLS } from '@/shared/contracts/chat-agent-actions';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
 
@@ -294,6 +295,13 @@ export interface ChatAgentServiceDeps {
   reserveAppCall(userId: string): Promise<Reservation>;
   /** The account's counters, so the composer draws the app meter (ADR-0093). */
   usageState(userId: string): Promise<UsageState>;
+  /**
+   * Who the turn is talking to, projected from the account row (ADR-0182,
+   * decision 1). The plan is the one the gate read, so the block and the
+   * allowance cannot disagree. Absent in a test and in a deployment without the
+   * read, and the turn then opens with the standing prompt alone.
+   */
+  identity?(userId: string, plan: PlanId): Promise<TurnIdentity | null>;
   /** The configured provider, or null when no key is set. */
   client: AiChatClient | null;
   /** The proposals a write tool leaves, and the member's own resolution. */
@@ -359,6 +367,41 @@ export class ChatAgentService {
   }
 
   /**
+   * The identity layer of a turn, read before the provider is called.
+   *
+   * It is assembled from a read that must never refuse the member an answer: a
+   * projection that fails is a turn without the block, not a turn without an
+   * answer, exactly like the app meter above.
+   */
+  private async turnIdentity(userId: string, plan: PlanId): Promise<TurnIdentity | null> {
+    if (!this.deps.identity) return null;
+    try {
+      return await this.deps.identity(userId, plan);
+    } catch (error) {
+      logger.warn('Assistant identity block unavailable', { error: String(error) });
+      return null;
+    }
+  }
+
+  /**
+   * The plan a resumed turn is on. The request that started it reserved the
+   * allowance, so the row keeps no plan of its own and this is read back rather
+   * than trusted — and a read that fails leaves the block without a plan line
+   * instead of failing the turn.
+   */
+  private async planOf(userId: string): Promise<PlanId | null> {
+    try {
+      const allowance = await this.deps.agent.allowance(userId);
+      return allowance.plan;
+    } catch (error) {
+      logger.warn('Assistant plan could not be read for a resumed turn', {
+        error: String(error),
+      });
+      return null;
+    }
+  }
+
+  /**
    * One turn, streamed. The member's message is written first (so the thread
    * shows it immediately and the answer lands beneath it), the count is taken
    * before the provider is called, and the count is given back when anything
@@ -420,11 +463,13 @@ export class ChatAgentService {
       });
 
     try {
-      // A voice note is transcribed, an image reaches the model as an image part,
-      // a text file as text, and a document as the words its reader extracts —
-      // while the recording and the file stay attached, so the member still hears
-      // (and sees) what they sent (ADR-0126, ADR-0127, ADR-0140).
-      const read = await this.readAttachments(attachments);
+      // The turn reads its two context layers at once: the files (ADR-0127,
+      // ADR-0139, ADR-0140) and the account row behind the identity block
+      // (ADR-0182). A failed projection leaves the block out, never the answer.
+      const [read, identity] = await Promise.all([
+        this.readAttachments(attachments),
+        this.turnIdentity(userId, allowance.plan),
+      ]);
       const question = [typed, read.words].filter(Boolean).join('\n');
       if (!question && read.parts.length === 0) throw new ChatAgentError(422, COULD_NOT_READ);
 
@@ -455,6 +500,7 @@ export class ChatAgentService {
         turnId,
         context,
         messages: [
+          ...turnContextMessages(identity),
           { role: 'system', content: SYSTEM_PROMPT },
           ...(read.spoken ? [{ role: 'system' as const, content: SPOKEN_NOTE }] : []),
           // The line just stored is replaced by its own reading, so an image or a
@@ -604,13 +650,23 @@ export class ChatAgentService {
     if (!this.deps.client) throw new ChatAgentError(503, UNAVAILABLE);
 
     const page = await this.deps.chats.listMessages(turn.memberId, turn.conversationId, null);
+    // A resumed turn opens exactly like the one the member was watching. The
+    // request that started it is gone; the account row is not, and a turn that
+    // lost the block would reintroduce itself in the middle of a thread
+    // (ADR-0182).
+    const plan = await this.planOf(turn.memberId);
+    const identity = plan ? await this.turnIdentity(turn.memberId, plan) : null;
     try {
       yield* this.answer({
         userId: turn.memberId,
         conversationId: turn.conversationId,
         turnId: turn.id,
         context,
-        messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...trimHistory(page.messages)],
+        messages: [
+          ...turnContextMessages(identity),
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...trimHistory(page.messages),
+        ],
       });
     } catch (error) {
       await this.deps.agent

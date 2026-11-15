@@ -27,7 +27,7 @@ Verified against this checkout, not estimated.
 | Memory            | the last 20 messages, trimmed to a token budget. Nothing else                                             |
 | Page awareness    | none. The panel is on every screen (ADR-0143) and knows nothing about it                                  |
 | Scheduling        | none on the agent. Cron exists only for sweeps                                                            |
-| Account awareness | name only, through `change_display_name`. No profile read                                                 |
+| Account awareness | identity block every turn (name, handle, plan, apps). No profile read tool                                |
 | Plans             | paid-only, member and project counters, per-day reset at Damascus midnight                                |
 
 ### The coverage table
