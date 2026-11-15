@@ -16,6 +16,7 @@ import {
   type ChatAgentServiceDeps,
 } from '@/backend/services/chat/chat-agent-service';
 import type { ChatAgentTool } from '@/backend/services/chat/chat-agent-tools';
+import { logger } from '@/backend/shared/logger';
 import type { McpAppTool } from '@/backend/services/mcp/marketplace/app-tools-service';
 import { DOCUMENT_PAGES_MAX } from '@/backend/services/chat/document-text';
 import type { ChatService } from '@/backend/services/chat/chat-service';
@@ -140,6 +141,7 @@ function scriptedClient(rounds: AiChatStreamEvent[][]): AiChatClient & {
     offered,
 
     async *streamReply() {},
+    reply: async () => '',
     transcribe: async () => null,
     async *streamWithTools(messages, tools) {
       calls.push(messages);
@@ -451,6 +453,7 @@ describe('the assistant turn', () => {
         model: 'deepseek-v4.1-flash',
 
         async *streamReply() {},
+        reply: async () => '',
         transcribe: async () => null,
         // eslint-disable-next-line require-yield -- the failure is the point of this fixture
         async *streamWithTools() {
@@ -471,6 +474,7 @@ describe('the assistant turn', () => {
       client: {
         model: 'deepseek-v4.1-flash',
         async *streamReply() {},
+        reply: async () => '',
         transcribe: async () => null,
         async *streamWithTools() {
           attempts += 1;
@@ -494,6 +498,7 @@ describe('the assistant turn', () => {
     const client: AiChatClient = {
       model: 'deepseek-v4.1-flash',
       async *streamReply() {},
+      reply: async () => '',
       transcribe: async () => null,
       async *streamWithTools() {
         yield { type: 'text' as const, text: 'بدأت أشرح' };
@@ -528,6 +533,7 @@ describe('the assistant turn', () => {
     const client: AiChatClient = {
       model: 'deepseek-v4.1-flash',
       async *streamReply() {},
+      reply: async () => '',
       transcribe: async () => null,
       // eslint-disable-next-line require-yield -- the refusal is the point of this fixture
       async *streamWithTools() {
@@ -548,6 +554,7 @@ describe('the assistant turn', () => {
       client: {
         model: 'deepseek-v4.1-flash',
         async *streamReply() {},
+        reply: async () => '',
         transcribe,
         async *streamWithTools() {
           yield { type: 'text' as const, text: 'تم.' };
@@ -579,6 +586,7 @@ describe('the assistant turn', () => {
       client: {
         model: 'deepseek-v4.1-flash',
         async *streamReply() {},
+        reply: async () => '',
         transcribe: async () => null,
         async *streamWithTools() {
           yield { type: 'text' as const, text: 'unreachable' };
@@ -1474,5 +1482,85 @@ describe('the assistant turn, with a connected app', () => {
     // Each app reaches its own two-call limit, and the fourth call is the
     // turn's ceiling rather than either wall.
     expect(apps.call).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('memory extraction after the answer', () => {
+  const SCREEN: ScreenContext = {
+    route: '/spendtrack/expenses',
+    product: 'spendtrack',
+    screenId: 'spendtrack',
+    title: 'المصروفات',
+    overlays: [],
+    focus: null,
+    tab: null,
+    fields: {},
+    text: '',
+    updatedAt: '2026-11-15T09:00:00.000Z',
+  };
+
+  it('schedules the settled turn behind the answer, and never waits for it', async () => {
+    const extract = vi.fn(() => new Promise<void>(() => undefined));
+    const defer = vi.fn();
+    const { service, agent } = makeService({ extraction: { extract }, defer });
+
+    const events = await collect(
+      service.turn('user-1', 'conversation-1', 'أفضّل أن يبدأ التقرير بالملخص.', TURN_CONTEXT)
+    );
+
+    expect(agent.settleTurn).toHaveBeenCalledWith('turn-1');
+    expect(events.at(-1)).toMatchObject({ type: 'done' });
+    expect(extract).toHaveBeenCalledWith({
+      turnId: 'turn-1',
+      userId: 'user-1',
+      conversationId: 'conversation-1',
+      question: 'أفضّل أن يبدأ التقرير بالملخص.',
+      answer: 'مرحبا بك',
+      product: null,
+    });
+    expect(defer).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads the product of the page the question was asked from', async () => {
+    const extract = vi.fn(async () => undefined);
+    const { service } = makeService({ extraction: { extract }, defer: (promise) => void promise });
+
+    await collect(
+      service.turn('user-1', 'conversation-1', 'ما مجموع مصروفاتي؟', TURN_CONTEXT, [], SCREEN)
+    );
+
+    expect(extract).toHaveBeenCalledWith(expect.objectContaining({ product: 'spendtrack' }));
+  });
+
+  it('turns an extraction that throws into a warning, not into a failed turn', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => undefined);
+    const scheduled: Array<Promise<unknown>> = [];
+    const { service } = makeService({
+      extraction: {
+        extract: async () => {
+          throw new Error('boom');
+        },
+      },
+      defer: (promise) => scheduled.push(promise),
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+    await Promise.allSettled(scheduled);
+
+    expect(events.at(-1)).toMatchObject({ type: 'done' });
+    expect(events.some((event) => event.type === 'error')).toBe(false);
+    expect(warn).toHaveBeenCalledWith('Memory extraction threw for this turn', {
+      error: expect.stringContaining('boom'),
+    });
+    warn.mockRestore();
+  });
+
+  it('does not schedule anything when the deployment has extraction off', async () => {
+    const defer = vi.fn();
+    const { service } = makeService({ defer });
+
+    await collect(service.turn('user-1', 'conversation-1', 'سؤال', TURN_CONTEXT));
+
+    expect(defer).not.toHaveBeenCalled();
   });
 });

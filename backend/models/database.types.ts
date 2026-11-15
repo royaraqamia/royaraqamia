@@ -108,6 +108,7 @@ export type Database = {
           conversation_id: string;
           created_at: string;
           error: string | null;
+          extracted_at: string | null;
           id: string;
           member_id: string;
           partial_text: string | null;
@@ -122,6 +123,7 @@ export type Database = {
           conversation_id: string;
           created_at?: string;
           error?: string | null;
+          extracted_at?: string | null;
           id?: string;
           member_id: string;
           partial_text?: string | null;
@@ -136,6 +138,7 @@ export type Database = {
           conversation_id?: string;
           created_at?: string;
           error?: string | null;
+          extracted_at?: string | null;
           id?: string;
           member_id?: string;
           partial_text?: string | null;

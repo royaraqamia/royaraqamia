@@ -105,6 +105,12 @@ export interface AiChatClient {
   readonly model: string;
   streamReply(messages: AiChatMessage[], signal: AbortSignal): AsyncGenerator<string, void, void>;
   /**
+   * One answer, awaited rather than streamed. The turn never uses it; a
+   * background step that reads a finished exchange does, because it has nobody
+   * watching the words arrive and would only parse the frames back together.
+   */
+  reply(messages: AiChatMessage[], signal: AbortSignal): Promise<string>;
+  /**
    * The same stream, with the tools the model may call. Text arrives as it is
    * written; a call arrives once its arguments are whole, which is why it is
    * emitted at the end of the frame rather than per fragment.
@@ -311,6 +317,19 @@ export function createAiChatClient(): AiChatClient | null {
     async *streamWithTools(messages, tools, signal) {
       const response = await open({ model, messages, tools, stream: true }, signal);
       yield* readEvents(response.body as ReadableStream<Uint8Array>);
+    },
+
+    async reply(messages, signal) {
+      const response = await open({ model, messages, stream: false }, signal);
+      const payload = (await response.json().catch(() => null)) as {
+        choices?: Array<{ message?: { content?: unknown } }>;
+      } | null;
+      const text = String(payload?.choices?.[0]?.message?.content ?? '').trim();
+      // An answer with no words is a failed call, not an empty one: the caller
+      // cannot tell the difference between "nothing to say" and "nothing came
+      // back", so it is refused here like a bodyless stream.
+      if (!text) throw new AiChatProviderError(502);
+      return text;
     },
 
     async transcribe(audio, mimeType) {

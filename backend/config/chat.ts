@@ -30,7 +30,9 @@ import {
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { createDefaultMcpAppToolsService } from '@/backend/config/mcp';
 import { createPlanGate, createUsageService } from '@/backend/config/plans';
-import { createAgentRecallFor } from '@/backend/config/agent-memory';
+import { createAgentRecallFor, createMemoryExtractionFor } from '@/backend/config/agent-memory';
+import { deferredAfter } from '@/backend/config/after';
+import { env } from '@/backend/config/env';
 import { projectIdentity } from '@/backend/services/chat/turn-identity';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createAiChatClient } from '@/backend/clients/ai-chat';
@@ -123,6 +125,10 @@ export function createSupabaseChatAgentService(
   // The member's own client: `/api/me` and the profile editor read the same
   // repository, so the block and the header menu cannot disagree about a name.
   const profiles = createServerUserProfileRepository(supabase);
+  // One provider instance for the service: the turn streams through it and the
+  // extraction behind the turn answers with it, so the deployment has one key,
+  // one model and one place to change either.
+  const client = createAiChatClient();
 
   return new ChatAgentService({
     agent: createSupabaseChatAgentRepository(getAdminSupabase()),
@@ -134,7 +140,15 @@ export function createSupabaseChatAgentService(
     // The composer's app meter reads the same catalogue the pricing page does
     // (ADR-0093), so the number on screen and the number enforced are one.
     usageState: (userId) => usage.state(userId),
-    client: createAiChatClient(),
+    client,
+    // Facts nobody typed, written after the answer (ADR-0182 decision 2,
+    // #1511). Off unless `MEMORY_EXTRACTION` says otherwise: it is one provider
+    // call per turn and a row on the member's behalf, so switching it on is a
+    // decision that can point at a measurement.
+    extraction: env.memoryExtractionEnabled ? createMemoryExtractionFor(client) : undefined,
+    // The extraction must outlive the response that triggered it: `after()`
+    // keeps the instance alive until it settles, which a bare promise cannot.
+    defer: deferredAfter,
     // The voice note's bytes are read back through the member's own session, so
     // the bucket's policy is what decides whether a turn may hear it.
     attachments: createChatAttachmentStorage(supabase),

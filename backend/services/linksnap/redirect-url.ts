@@ -2,6 +2,7 @@ import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-
 import type { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { logger } from '@/backend/shared/logger';
+import { fireAndForget, type DeferredWork } from '@/backend/shared/deferred-work';
 
 /**
  * Every first path segment Next serves from a static directory in `app/`. A
@@ -63,13 +64,12 @@ export function isReservedShortCode(code: string): boolean {
  */
 const SHORT_CODE_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
 
-/** Executes work after the response without awaiting it on the request path. */
-export type DeferredWork = (promise: Promise<unknown>) => void;
-
-/** Default: fire and forget. Fluid compute may cut an instance as soon as the
- * response is sent, so the routes pass `after()` here to keep it alive until
- * the write settles instead of silently losing clicks. */
-export const fireAndForget: DeferredWork = (promise) => void promise;
+/**
+ * Executes work after the response without awaiting it on the request path.
+ * Re-exported from `shared` so the link's callers keep their import, and the
+ * chat turn can name the same seam without importing this product (ADR-0182).
+ */
+export { fireAndForget, type DeferredWork } from '@/backend/shared/deferred-work';
 
 export class ShortLinkRedirectError extends Error {
   constructor(

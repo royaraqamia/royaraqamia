@@ -169,6 +169,18 @@ export const env = {
   get aiEmbeddingModel(): string | undefined {
     return read('AI_EMBEDDING_MODEL')?.trim() || undefined;
   },
+  /**
+   * Whether a settled turn is read for facts worth saving (ADR-0182 decision 2,
+   * #1511). Off unless a deployment says otherwise.
+   *
+   * Extraction is a provider call on every turn that no member asked for and
+   * nothing else pays, and it writes rows on the member's behalf — so it is
+   * switched on by a decision that can point at a measurement, not by a merge.
+   */
+  get memoryExtractionEnabled(): boolean {
+    const raw = read('MEMORY_EXTRACTION')?.trim().toLowerCase();
+    return raw === '1' || raw === 'true' || raw === 'on' || raw === 'yes';
+  },
   get aiEmbeddingDimensions(): number | undefined {
     const raw = read('AI_EMBEDDING_DIMENSIONS')?.trim();
     if (!raw) return undefined;

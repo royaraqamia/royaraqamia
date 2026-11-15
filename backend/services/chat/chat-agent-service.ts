@@ -24,8 +24,11 @@ import {
 import type { McpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import type { AgentRecallService } from '@/backend/services/agent/agent-recall-service';
+import type { MemoryExtractionService } from '@/backend/services/agent/memory-extraction-service';
 import { turnContextMessages, type TurnIdentity } from '@/backend/services/chat/turn-identity';
 import type { RecalledMemory } from '@/backend/shared/domain/agent-memory';
+import { settledTurn } from '@/backend/shared/domain/memory-extraction';
+import { fireAndForget, type DeferredWork } from '@/backend/shared/deferred-work';
 import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import type { Database } from '@/backend/models/database.types';
 import type { Reservation } from '@/backend/services/plans/plan-gate';
@@ -298,6 +301,18 @@ export interface ChatAgentServiceDeps {
    * read, and the turn then carries no recall block — never a changed answer.
    */
   recall?: Pick<AgentRecallService, 'recall'>;
+  /**
+   * What this exchange states, extracted after the answer is stored (ADR-0182
+   * decision 2, #1511). Absent unless the deployment switched it on, and the
+   * turn is then exactly the turn it was before extraction existed.
+   */
+  extraction?: Pick<MemoryExtractionService, 'extract'>;
+  /**
+   * Where the extraction is put so the response never waits for it. Defaults to
+   * fire-and-forget; the composition root passes `after()`, which keeps the
+   * instance alive until the background work settles.
+   */
+  defer?: DeferredWork;
   /** The configured provider, or null when no key is set. */
   client: AiChatClient | null;
   /** The proposals a write tool leaves, and the member's own resolution. */
@@ -428,6 +443,42 @@ export class ChatAgentService {
     }
   }
 
+  /** The product the page said it was on; a blind page has no eyes, not a guess. */
+  private visibleProduct(screen?: ScreenContextInput): string | null {
+    return screen !== undefined && !isScreenContextBlind(screen) ? screen.product : null;
+  }
+
+  /**
+   * The facts this exchange states, offered to the one door after the answer.
+   *
+   * The turn builds the record itself, from what it already holds: the settled
+   * turn is branded, so nothing from a request can name a member, a thread or a
+   * question that the turn did not own. `defer` is where "never awaited" lives
+   * — a bare promise starts now and dies with the instance, `after()` starts now
+   * and is kept alive.
+   */
+  private scheduleExtraction(parts: {
+    turnId: string | null;
+    userId: string;
+    conversationId: string;
+    question: string;
+    answer: string;
+    product: string | null;
+  }): void {
+    const extraction = this.deps.extraction;
+    if (!extraction || !parts.turnId) return;
+
+    const turn = settledTurn({ ...parts, turnId: parts.turnId });
+    const defer = this.deps.defer ?? fireAndForget;
+    defer(
+      extraction.extract(turn).catch((error: unknown) => {
+        // The service catches its own failures; this is the seam's own promise,
+        // and it must not become an unhandled rejection either.
+        logger.warn('Memory extraction threw for this turn', { error: String(error) });
+      })
+    );
+  }
+
   /**
    * One turn, streamed. The member's message is written first (so the thread
    * shows it immediately and the answer lands beneath it), the count is taken
@@ -511,8 +562,7 @@ export class ChatAgentService {
         userId,
         question,
         conversationId,
-        // A blind page says it has no eyes, not what product it is on.
-        screen !== undefined && !isScreenContextBlind(screen) ? screen.product : null
+        this.visibleProduct(screen)
       );
 
       // A voice note's words are only known now, and the row should say what the
@@ -540,6 +590,7 @@ export class ChatAgentService {
         userId,
         conversationId,
         turnId,
+        question,
         context,
         screen,
         messages: [
@@ -711,6 +762,7 @@ export class ChatAgentService {
         userId: turn.memberId,
         conversationId: turn.conversationId,
         turnId: turn.id,
+        question: turn.question ?? '',
         context,
         messages: [
           ...turnContextMessages(identity, undefined, recalled),
@@ -737,6 +789,7 @@ export class ChatAgentService {
     userId,
     conversationId,
     turnId,
+    question,
     messages,
     context,
     screen,
@@ -744,6 +797,8 @@ export class ChatAgentService {
     userId: string;
     conversationId: string;
     turnId: string | null;
+    /** What the member said, without the history: extraction reads only this. */
+    question: string;
     messages: AiChatWireMessage[];
     context: ChatAgentTurnContext;
     /** The snapshot the request brought, or absent for a client with no eyes. */
@@ -1099,6 +1154,19 @@ export class ChatAgentService {
     const text = answerText.trim() || ROUNDS_EXHAUSTED;
     const record = await this.deps.agent.insertAgentMessage(conversationId, text);
     if (turnId) await this.deps.agent.settleTurn(turnId);
+
+    // Behind the answer, never in front of it (ADR-0182 decision 2, #1511):
+    // the row is stored and the turn is settled, so extraction may now read the
+    // exchange. It is scheduled rather than awaited, and a failure is a warning
+    // in the operator's log — the member's answer is already theirs.
+    this.scheduleExtraction({
+      turnId,
+      userId,
+      conversationId,
+      question,
+      answer: text,
+      product: this.visibleProduct(screen),
+    });
 
     yield {
       type: 'done',
