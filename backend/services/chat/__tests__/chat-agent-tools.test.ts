@@ -123,4 +123,22 @@ describe('the assistant’s tool registry (#818)', () => {
     expect(chatAgentActionSentence('record_expense', null)).toBe('تسجيل مصروف');
     expect(chatAgentActionSentence('nonsense', {})).toBe('إجراء');
   });
+
+  it('shows the fact on a remember card, so the member confirms what will be kept', () => {
+    expect(chatAgentActionSentence('remember', { text: 'أحبّ القهوة السادة' })).toBe(
+      'حفظ ما أوصيت به — «أحبّ القهوة السادة»'
+    );
+    expect(chatAgentActionSentence('remember', {})).toBe('حفظ ما أوصيت به');
+  });
+
+  it('refuses a fact the row cannot hold, and one that names another member', () => {
+    const remember = chatAgentTool('remember');
+    expect(remember).not.toBeNull();
+
+    expect(remember!.schema.safeParse({ text: 'ا'.repeat(501) }).success).toBe(false);
+    expect(remember!.schema.safeParse({ text: 'تذكّر أنني أحبّ القهوة' }).success).toBe(true);
+    expect(
+      remember!.schema.safeParse({ text: 'أحبّ القهوة', user_id: 'someone-else' }).success
+    ).toBe(false);
+  });
 });

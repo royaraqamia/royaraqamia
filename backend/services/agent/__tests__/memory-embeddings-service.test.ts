@@ -26,6 +26,7 @@ function source(id: string, text = `fact ${id}`): EmbeddingSource {
 class FakeRepository implements MemoryEmbeddingsRepository {
   queued: EmbeddingSource[];
   written: EmbeddingWrite[] = [];
+  removed: string[] = [];
   nearestCalls: { userId: string; limit: number }[] = [];
   failWrites = false;
 
@@ -53,6 +54,11 @@ class FakeRepository implements MemoryEmbeddingsRepository {
     return [
       { memoryId: 'fact-1', text: 'أنت تحب القهوة', similarity: 0.9, updatedAt: '2026-11-01' },
     ];
+  }
+
+  async remove(memoryId: string) {
+    this.removed.push(memoryId);
+    return true;
   }
 
   async counts() {
@@ -171,5 +177,21 @@ describe('the memory embedding service', () => {
     expect(recalled).toHaveLength(1);
     expect(client.embed).not.toHaveBeenCalled();
     expect(repository.nearestCalls).toEqual([{ userId: 'member-1', limit: 6 }]);
+  });
+
+  it('deletes the vector of a forgotten fact, and swallows a failed delete', async () => {
+    const repository = new FakeRepository([]);
+    const service = createMemoryEmbeddingsService({ repository, client: fakeClient() });
+
+    expect(await service.forget('fact-1')).toBe(true);
+    expect(repository.removed).toEqual(['fact-1']);
+
+    repository.remove = async () => {
+      throw new Error('42501 permission denied');
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    // The fact is already unrecallable; a stale vector is the operator's line.
+    expect(await service.forget('fact-2')).toBe(false);
+    expect(warn).toHaveBeenCalledTimes(1);
   });
 });

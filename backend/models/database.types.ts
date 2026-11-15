@@ -8,6 +8,51 @@ export type Database = {
   };
   public: {
     Tables: {
+      agent_memories: {
+        Row: {
+          confidence: number;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          kind: string;
+          product: string | null;
+          scope: string;
+          source_turn_id: string | null;
+          text: string;
+          thread_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          confidence?: number;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          kind?: string;
+          product?: string | null;
+          scope?: string;
+          source_turn_id?: string | null;
+          text: string;
+          thread_id?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          confidence?: number;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          kind?: string;
+          product?: string | null;
+          scope?: string;
+          source_turn_id?: string | null;
+          text?: string;
+          thread_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       agent_memory_embeddings: {
         Row: {
           created_at: string;

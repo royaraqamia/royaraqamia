@@ -60,6 +60,8 @@ export interface MemoryEmbeddingsRepository {
   write(rows: EmbeddingWrite[]): Promise<number>;
   /** The k nearest active facts for one member, with cosine similarity. */
   nearest(userId: string, embedding: number[], limit: number): Promise<RecalledMemory[]>;
+  /** Deletes the vector a forgotten fact left behind; a soft delete cascades nothing. */
+  remove(memoryId: string): Promise<boolean>;
   /** What a backfill reports: rows held, and rows still queued. */
   counts(): Promise<EmbeddingCounts>;
 }
@@ -121,6 +123,18 @@ export function createSupabaseMemoryEmbeddingsRepository(
         similarity: Number(row.similarity),
         updatedAt: row.updated_at,
       }));
+    },
+
+    async remove(memoryId) {
+      const { data, error } = await supabase
+        .from('agent_memory_embeddings')
+        .delete()
+        .eq('memory_id', memoryId)
+        .select('id')
+        .maybeSingle();
+
+      if (error) throw repositoryFailure('memory.embeddings.remove', error);
+      return data !== null;
     },
 
     async counts() {

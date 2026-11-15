@@ -65,6 +65,9 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'apply_training',
   'submit_project_request',
   'change_display_name',
+  // What the member asks to be remembered (ADR-0182 decision 2): a card until
+  // they grant it, and the card is the consent decision 5 wants.
+  'remember',
   'list_specialists',
   'load_specialist',
   // The recovery path for an app tool the router missed (ADR-0155, decision 7).
@@ -156,6 +159,11 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     kind: 'write',
     label: 'تغيير اسم العرض',
     activity: 'تغيّر اسم العرض',
+  },
+  remember: {
+    kind: 'write',
+    label: 'حفظ ما أوصيت به',
+    activity: 'تحفظ ما أوصيت به',
   },
   list_specialists: {
     kind: 'read',
@@ -298,6 +306,12 @@ export function chatAgentActionSentence(
     }
     case 'get_post_by_slug':
       return text(values.slug) ? `${label} «${text(values.slug)}»` : label;
+    case 'remember': {
+      // The fact is the card: the member reads what will be kept before saying
+      // yes, which is the whole point of a write that is a proposal.
+      const fact = text(values.text);
+      return fact ? `${label} — «${fact.slice(0, 60)}»` : label;
+    }
     default:
       return parts.length > 0 ? `${label} — ${parts[0]}` : label;
   }

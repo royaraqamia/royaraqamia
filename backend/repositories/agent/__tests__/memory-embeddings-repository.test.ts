@@ -41,6 +41,9 @@ class Builder {
   upsert(rows: unknown, options?: { onConflict?: string }) {
     return this.log(`upsert ${JSON.stringify(rows)} onConflict=${String(options?.onConflict)}`);
   }
+  delete() {
+    return this.log('delete');
+  }
   maybeSingle() {
     this.log('maybeSingle');
     return Promise.resolve(this.next());
@@ -176,6 +179,23 @@ describe('the embeddings repository', () => {
     ]);
     expect(recalled).toEqual([
       { memoryId: 'memory-1', text: 'أحب القهوة', similarity: 0.87, updatedAt: '2026-11-01' },
+    ]);
+  });
+
+  it('deletes the vector a forgotten fact left behind, by the fact it describes', async () => {
+    const { client, calls } = makeClient({
+      agent_memory_embeddings: [
+        { data: { id: 'vector-1' }, error: null },
+        { data: null, error: null },
+      ],
+    });
+    const repository = createSupabaseMemoryEmbeddingsRepository(client);
+
+    expect(await repository.remove('memory-1')).toBe(true);
+    expect(await repository.remove('memory-2')).toBe(false);
+    expect(calls.slice(0, 2)).toEqual([
+      'agent_memory_embeddings:delete',
+      'agent_memory_embeddings:eq memory_id=memory-1',
     ]);
   });
 
