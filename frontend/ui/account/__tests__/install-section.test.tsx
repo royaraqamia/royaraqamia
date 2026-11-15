@@ -3,9 +3,20 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
 import type { ShellManifest } from '@/frontend/shared/shell-update';
 
-const BROWSER_UA =
+const ANDROID_UA =
   'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36';
-const SHELL_UA = `${BROWSER_UA} RoyaraqamiaShell/20000`;
+const SHELL_UA = `${ANDROID_UA} RoyaraqamiaShell/20000`;
+const DESKTOP_CHROME_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const IOS_SAFARI_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+const IOS_CHROME_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.6099.119 Mobile/15E148 Safari/604.1';
+/** iPadOS reports the Macintosh agent; only the touch points tell it apart. */
+const MAC_SAFARI_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
+const FIREFOX_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0';
 
 const APK_URL = 'https://example.test/royaraqamia-1.0.4.apk';
 
@@ -38,96 +49,152 @@ vi.mock('@/frontend/shared/shell-update', async (importOriginal) => {
 
 import { InstallSection } from '../install-section';
 
-function setUserAgent(value: string) {
-  Object.defineProperty(navigator, 'userAgent', { value, configurable: true });
+function setDevice(userAgent: string, maxTouchPoints = 0) {
+  Object.defineProperty(navigator, 'userAgent', { value: userAgent, configurable: true });
+  Object.defineProperty(navigator, 'maxTouchPoints', {
+    value: maxTouchPoints,
+    configurable: true,
+  });
 }
 
 beforeEach(() => {
   mocks.pwa.canInstall = true;
   mocks.pwa.isInstalled = false;
   mocks.manifest = manifest;
-  setUserAgent(BROWSER_UA);
+  setDevice(ANDROID_UA);
   vi.clearAllMocks();
 });
 
 afterEach(cleanup);
 
-describe('InstallSection on the web', () => {
-  it('expands into the two installs', async () => {
+describe('InstallSection on Android', () => {
+  it('offers the APK alone, as the row itself', async () => {
     render(<InstallSection />);
 
-    const row = await screen.findByRole('button', { name: /تثبيت التَّطبيق/ });
-    expect(row).toHaveAttribute('aria-expanded', 'false');
-    expect(screen.queryByText('تثبيت تطبيق الويب')).not.toBeInTheDocument();
+    const apk = await screen.findByRole('link', { name: /تنزيل تطبيق الأندرويد/ });
+    expect(apk).toHaveAttribute('href', APK_URL);
+    expect(apk).toHaveTextContent('1.93.0+shell.20001');
 
-    fireEvent.click(row);
-
-    expect(row).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByText('تثبيت تطبيق الويب')).toBeInTheDocument();
-    expect(screen.getByText('تنزيل تطبيق الأندرويد')).toBeInTheDocument();
-    // The APK points at the version the manifest publishes, not a hard-coded URL.
-    expect(screen.getByRole('link', { name: /تنزيل تطبيق الأندرويد/ })).toHaveAttribute(
-      'href',
-      APK_URL
-    );
-    expect(screen.getByText(/1\.93\.0\+shell\.20001/)).toBeInTheDocument();
+    // The PWA is not a second channel here: no prompt and no browser row.
+    expect(screen.queryByText('تثبيت التَّطبيق')).not.toBeInTheDocument();
+    expect(screen.queryByText(/تطبيق الويب/)).not.toBeInTheDocument();
   });
 
-  it('asks the browser to install the PWA', async () => {
+  it('offers no install prompt even when the browser can install the PWA', async () => {
     render(<InstallSection />);
-    fireEvent.click(await screen.findByRole('button', { name: /تثبيت التَّطبيق/ }));
-    fireEvent.click(screen.getByRole('button', { name: /تثبيت تطبيق الويب/ }));
 
-    expect(mocks.pwa.promptInstall).toHaveBeenCalledTimes(1);
+    await screen.findByRole('link', { name: /تنزيل تطبيق الأندرويد/ });
+    expect(mocks.pwa.promptInstall).not.toHaveBeenCalled();
   });
 
-  it('drops the PWA sub-row when the browser cannot offer one', async () => {
-    mocks.pwa.canInstall = false;
-    render(<InstallSection />);
-    fireEvent.click(await screen.findByRole('button', { name: /تثبيت التَّطبيق/ }));
-
-    expect(screen.queryByText('تثبيت تطبيق الويب')).not.toBeInTheDocument();
-    expect(screen.getByText('تنزيل تطبيق الأندرويد')).toBeInTheDocument();
-  });
-
-  it('drops the PWA sub-row once the app is installed', async () => {
-    mocks.pwa.canInstall = false;
-    mocks.pwa.isInstalled = true;
-    render(<InstallSection />);
-    fireEvent.click(await screen.findByRole('button', { name: /تثبيت التَّطبيق/ }));
-
-    expect(screen.queryByText('تثبيت تطبيق الويب')).not.toBeInTheDocument();
-  });
-
-  it('renders nothing when there is no manifest and no install prompt', async () => {
-    mocks.pwa.canInstall = false;
+  it('renders nothing when the manifest cannot be read', async () => {
     mocks.manifest = null;
     render(<InstallSection />);
 
     await Promise.resolve();
-    expect(screen.queryByText(/تثبيت التَّطبيق/)).not.toBeInTheDocument();
+    await Promise.resolve();
+    expect(screen.queryByText(/تنزيل تطبيق الأندرويد/)).not.toBeInTheDocument();
+    expect(screen.queryByText('تثبيت التَّطبيق')).not.toBeInTheDocument();
+  });
+});
+
+describe('InstallSection on a desktop', () => {
+  beforeEach(() => {
+    setDevice(DESKTOP_CHROME_UA);
+  });
+
+  it('offers one row that asks the browser to install the PWA', async () => {
+    render(<InstallSection />);
+
+    const row = await screen.findByRole('button', { name: /تثبيت التَّطبيق/ });
+    expect(screen.queryByText(/تنزيل تطبيق الأندرويد/)).not.toBeInTheDocument();
+
+    fireEvent.click(row);
+    expect(mocks.pwa.promptInstall).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops the row when the browser has no prompt to offer', async () => {
+    mocks.pwa.canInstall = false;
+    render(<InstallSection />);
+
+    await Promise.resolve();
+    expect(screen.queryByText('تثبيت التَّطبيق')).not.toBeInTheDocument();
+  });
+
+  it('drops the row once the app is installed', async () => {
+    mocks.pwa.isInstalled = true;
+    render(<InstallSection />);
+
+    await Promise.resolve();
+    expect(screen.queryByText('تثبيت التَّطبيق')).not.toBeInTheDocument();
+  });
+
+  it('writes Safari’s own steps instead of a button it cannot press', async () => {
+    setDevice(MAC_SAFARI_UA);
+    render(<InstallSection />);
+
+    expect(await screen.findByText(/من قائمة ملف ← إضافة إلى Dock/)).toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('renders nothing on Firefox, which has no install path at all', async () => {
+    setDevice(FIREFOX_UA);
+    render(<InstallSection />);
+
+    await Promise.resolve();
+    expect(screen.queryByText('تثبيت التَّطبيق')).not.toBeInTheDocument();
+  });
+});
+
+describe('InstallSection on iOS', () => {
+  it('writes the Share steps for Safari', async () => {
+    setDevice(IOS_SAFARI_UA, 5);
+    render(<InstallSection />);
+
+    expect(
+      await screen.findByText(/من زر المشاركة ← إضافة إلى الشَّاشة الرَّئيسيَّة/)
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it('treats an iPad, which reports a Mac agent, as iOS rather than desktop', async () => {
+    setDevice(MAC_SAFARI_UA, 5);
+    render(<InstallSection />);
+
+    expect(
+      await screen.findByText(/من زر المشاركة ← إضافة إلى الشَّاشة الرَّئيسيَّة/)
+    ).toBeInTheDocument();
+  });
+
+  it('renders nothing in Chrome on iOS, which cannot add to the home screen', async () => {
+    setDevice(IOS_CHROME_UA, 5);
+    render(<InstallSection />);
+
+    await Promise.resolve();
+    expect(screen.queryByText('تثبيت التَّطبيق')).not.toBeInTheDocument();
   });
 });
 
 describe('InstallSection inside the Android shell', () => {
   beforeEach(() => {
-    setUserAgent(SHELL_UA);
+    setDevice(SHELL_UA);
   });
 
   it('names the installed version under the check', async () => {
-    setUserAgent(`${BROWSER_UA} RoyaraqamiaShell/1.0.7+20000`);
+    setDevice(`${ANDROID_UA} RoyaraqamiaShell/1.0.7+20000`);
     render(<InstallSection />);
 
     const check = await screen.findByRole('button', { name: /التَّحقُّق من وجود تحديث/ });
     expect(check).toHaveTextContent('الإصدار 1.0.7');
   });
 
-  it('offers a check instead of an install, with no sub-rows', async () => {
+  it('offers a check instead of an install', async () => {
     render(<InstallSection />);
 
-    const check = await screen.findByRole('button', { name: 'التَّحقُّق من وجود تحديث' });
+    await screen.findByRole('button', { name: 'التَّحقُّق من وجود تحديث' });
     expect(screen.queryByText('تثبيت التَّطبيق')).not.toBeInTheDocument();
-    expect(check).not.toHaveAttribute('aria-expanded');
+    expect(screen.queryByText(/تنزيل تطبيق الأندرويد/)).not.toBeInTheDocument();
   });
 
   it('reports a published APK newer than the one it is running', async () => {

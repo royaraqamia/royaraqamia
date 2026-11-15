@@ -4,7 +4,7 @@ import { AccountPostsView } from '@/frontend/ui/account/account-posts-view';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
-  title: 'المنشورات',
+  title: 'منشوراتي',
   description: 'منشوراتك على مجتمع رؤيَة رَقَميَّة.',
 };
 
@@ -20,7 +20,7 @@ export default function AccountPostsPage() {
     <div className="space-y-6">
       <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
         <SectionTitle as="h1">
-          <SectionTitleHighlight>المنشورات</SectionTitleHighlight>
+          <SectionTitleHighlight>منشوراتي</SectionTitleHighlight>
         </SectionTitle>
       </div>
 

@@ -11,8 +11,8 @@
  */
 export const ACCOUNT_ROWS_COPY = {
   navLabel: 'إجراءات الحساب',
-  submissions: 'الطَّلبات',
-  posts: 'المنشورات',
+  submissions: 'طلباتي',
+  posts: 'منشوراتي',
   blocked: 'الأعضاء المحظورون',
   pricing: 'خطط التَّسعير',
   admin: 'الإدارة',
