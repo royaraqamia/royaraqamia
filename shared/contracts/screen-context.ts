@@ -13,6 +13,14 @@
  * the surface, so the eyes and the two-client registry are one list rather than
  * two names for one page. The same list is what `perf/surfaces.json` routes to,
  * and `shared/contracts/screens.generated.ts` is that mapping, generated.
+ *
+ * A registration names itself `<surface>.<name>`: the part before the first dot
+ * is that same surface id, and the name says which box registered — `news.page`
+ * for the page, `spendtrack.expense` for its dialog, `quran-surah.tafsir` for the
+ * panel beside an Ayah. The id is stable across a redraw, so the record in hand
+ * goes in `focus`, never in the id. `npm run check:screens` reads the same
+ * convention from the source: a registration that names a screen the registry
+ * does not have fails there instead of reaching the model.
  */
 
 /** A sheet, dialog or popover open above the screen. */

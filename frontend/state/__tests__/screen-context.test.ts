@@ -105,6 +105,13 @@ describe('composeScreenContext', () => {
     expect(snapshot.focus).toEqual({ kind: 'expense', id: 'row-1' });
   });
 
+  it('lets a surface name the tab the route cannot', () => {
+    expect(composeScreenContext({ ...BASE, tab: '/news' }, [])).toMatchObject({ tab: '/news' });
+    expect(
+      composeScreenContext({ ...BASE, tab: '/news' }, [{ ...page, tab: 'mine' }])
+    ).toMatchObject({ tab: 'mine' });
+  });
+
   it('lists the open overlays topmost last, and only the ones that fit', () => {
     const many: ScreenScope[] = Array.from({ length: 8 }, (_, index) => ({
       id: `sheet.${index}`,

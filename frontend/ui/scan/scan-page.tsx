@@ -20,6 +20,8 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 import { cn } from '@/frontend/shared/cn';
 import { shellVersionFromUserAgent } from '@/frontend/shared/shell-update';
 import { useSession } from '@/frontend/state/session-provider';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { scanScreenScope } from './scan-screen-scope';
 import { identityFromUser } from '@/frontend/shared/local-store/identity';
 import { canRecordLocalUsage, recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
 import { useScannedCertificate } from '@/frontend/state/scan/use-scanned-certificate';
@@ -126,6 +128,10 @@ export function ScanPage() {
   const [hit, setHit] = useState<{ rawValue: string; format: string } | null>(null);
   const [limitReached, setLimitReached] = useState(false);
   const { user } = useSession();
+
+  // The scanner registers its screen and nothing else: a decoded code can be
+  // another member's row, so it never becomes a snapshot (ADR-0181, #1420).
+  useScreenScope(scanScreenScope());
 
   const classification = hit ? classifyScanPayload(hit.rawValue) : null;
   const certificate = useScannedCertificate(hit?.rawValue ?? null);

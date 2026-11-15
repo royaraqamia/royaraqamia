@@ -5,6 +5,8 @@ import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Search, X } from 'lucide-react';
 
 import { loadSearchCorpus } from '@/frontend/api/quran/search';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { quranScreenScope } from './quran-screen-scope';
 import { QURAN_INDEX_COPY } from './quran-index-copy';
 import { SurahIndexList } from './surah-index-list';
 import {
@@ -94,6 +96,12 @@ export function QuranSearch({ surahs, search, copy = DEFAULT_COPY }: QuranSearch
   const [shown, setShown] = useState(QURAN_SEARCH_PAGE_SIZE);
   // One request per asset version, however many times focus and typing arrive.
   const requested = useRef(false);
+
+  // The index's own registration. This is the client half the index always
+  // mounts (`QuranIndexPage` is a server component), so both `/quran` and the
+  // homepage tab name the screen without either paying for a wrapper
+  // (ADR-0181, #1420).
+  useScreenScope(quranScreenScope());
 
   const ensureCorpus = useCallback(() => {
     if (!search || requested.current) return;

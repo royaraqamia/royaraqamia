@@ -1,11 +1,16 @@
 'use client';
 
 import { useState, memo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { updateCategory, deleteCategory } from '@/frontend/api/spendtrack';
 import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import {
+  spendtrackCategoriesScreenScope,
+  spendtrackCategoryScope,
+} from '@/frontend/ui/spendtrack/spendtrack-screen-scope';
 import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
@@ -41,6 +46,10 @@ export const CategoryList = memo(function CategoryList({
   const context = useSpendtrackContext();
   const store = context?.store ?? null;
   const list = store ? context!.categories : categories;
+
+  // The list's own screen; the edit dialog below registers the row it holds
+  // (ADR-0181, #1420).
+  useScreenScope(spendtrackCategoriesScreenScope());
 
   if (list.length === 0) {
     return (
@@ -114,6 +123,7 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -123,6 +133,11 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
       colorHex: category.colorHex,
     },
   });
+
+  // The category in hand, with the two values the edit form holds for it
+  // (ADR-0181, #1420).
+  const values = useWatch({ control });
+  useScreenScope(open ? spendtrackCategoryScope(values, category.id) : null);
 
   const [colorValue, setColorValue] = useState(category.colorHex);
   const { onChange: rhfColorOnChange, ...colorRegister } = register('colorHex');

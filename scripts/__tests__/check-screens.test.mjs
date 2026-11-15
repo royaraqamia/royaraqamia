@@ -6,8 +6,10 @@ import { join } from 'node:path';
 import {
   nativeScreens,
   productOf,
+  registrations,
   renderMarkdown,
   renderRoutes,
+  scopeIds,
   splitRoute,
   validate,
 } from '../check-screens.mjs';
@@ -228,6 +230,85 @@ describe('the generated route table', () => {
       "  { pattern: '/notes', surface: 'notes', product: 'notes', tab: null },"
     );
     expect(routes).toContain("    pattern: '/spendtrack/categories',");
+  });
+});
+
+describe('the registrations the assistant reads', () => {
+  const register = (id) => `useScreenScope({ id: '${id}', kind: 'screen' });`;
+  const checkRegistered = (repo, screens, registered) =>
+    validate({
+      inventory: inventory(...screens),
+      matrix,
+      repoRoot: repo.root,
+      nativeRoot: repo.nativeRoot,
+      registered,
+    });
+  const twoRows = [
+    { surface: 'home', reason: 'web only' },
+    { surface: 'notes', reason: 'web only' },
+  ];
+
+  it('reads the literal id of a registration and ignores the hook’s own declaration', () => {
+    expect(scopeIds('export function useScreenScope(scope) { return scope; }')).toEqual([]);
+    expect(scopeIds(register('news.page'))).toEqual(['news.page']);
+    expect(scopeIds("useScreenScope({ id: name, kind: 'screen' });")).toEqual([]);
+  });
+
+  it('finds registrations in the site’s source and skips its tests', () => {
+    const repo = makeRepo({
+      'frontend/ui/news/NewsBoard.tsx': register('news.page'),
+      'frontend/ui/news/news-screen-scope.ts': [
+        'export function newsScreenScope(view) {',
+        "  return { id: 'news.page', kind: 'screen', tab: view };",
+        '}',
+      ].join('\n'),
+      'frontend/ui/news/__tests__/NewsBoard.test.tsx': register('made.up'),
+      'frontend/ui/news/news-copy.ts': 'export const title = "أخبار";',
+    });
+
+    expect(registrations(repo.root)).toEqual([
+      { id: 'news.page', path: 'frontend/ui/news/NewsBoard.tsx' },
+      { id: 'news.page', path: 'frontend/ui/news/news-screen-scope.ts' },
+    ]);
+  });
+
+  it('accepts a registration that names a surface in the registry', () => {
+    const repo = makeRepo();
+
+    expect(
+      checkRegistered(repo, twoRows, [{ id: 'notes.editor', path: 'frontend/ui/notes/x.tsx' }])
+    ).toEqual([]);
+  });
+
+  it('refuses a registration that names no surface or no name', () => {
+    const repo = makeRepo();
+
+    expect(
+      checkRegistered(repo, twoRows, [{ id: 'notes', path: 'frontend/ui/notes/x.tsx' }])
+    ).toEqual([
+      'registration "notes" in frontend/ui/notes/x.tsx must name a screen as "<surface>.<name>"',
+    ]);
+  });
+
+  it('refuses a registration for a surface the registry does not have', () => {
+    const repo = makeRepo();
+
+    expect(
+      checkRegistered(repo, twoRows, [{ id: 'gone.page', path: 'frontend/ui/x.tsx' }])
+    ).toEqual([
+      'registration "gone.page" in frontend/ui/x.tsx names surface "gone" that docs/mobile/screens.json does not have',
+    ]);
+  });
+
+  it('refuses the same id registered in two places', () => {
+    const repo = makeRepo();
+
+    expect(
+      checkRegistered(repo, twoRows, [
+        { id: 'notes.page', path: 'frontend/ui/a.tsx' },
+        { id: 'notes.page', path: 'frontend/ui/b.tsx' },
+      ])
+    ).toEqual(['registration "notes.page" appears in frontend/ui/a.tsx and frontend/ui/b.tsx']);
   });
 });
 

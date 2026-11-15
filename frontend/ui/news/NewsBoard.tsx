@@ -23,6 +23,8 @@ import {
   type NewsDigestSnapshot,
 } from '@/frontend/ui/news/news-snapshot';
 import { newsHref, newsViewFrom, type NewsView } from '@/frontend/ui/news/news-url';
+import { newsScreenScope } from '@/frontend/ui/news/news-screen-scope';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { HeroCtaButton, HeroCtaSheen } from '@/frontend/ui/shared/hero-cta-button';
 import {
@@ -179,6 +181,10 @@ export function NewsBoard() {
     [searchParams]
   );
   const digestView = useMemo(() => newsViewFrom(searchParams.get('view')), [searchParams]);
+
+  // The one thing this path cannot name is which digest is drawn: `?view=mine`
+  // and the public board are one route (ADR-0181, #1420).
+  useScreenScope(newsScreenScope(digestView));
 
   if (!view) {
     return (

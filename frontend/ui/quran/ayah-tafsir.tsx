@@ -13,6 +13,8 @@ import {
 
 import type { QuranSurahTafsir, SurahTafsirRef } from '@/shared/contracts/quran-tafsir';
 import { replaceSearch } from '@/frontend/shared/replace-search';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { quranTafsirScope } from './quran-screen-scope';
 
 /**
  * The Tafsir, read beside an Ayah (ADR-0057, P3).
@@ -62,6 +64,10 @@ export function QuranTafsirProvider({
   const [failed, setFailed] = useState(false);
   // One request per sura, however many times the reader toggles.
   const inFlight = useRef<Promise<void> | null>(null);
+
+  // The panel is an overlay above the reader, so its Ayah wins the focus while
+  // it is open (ADR-0181, #1420).
+  useScreenScope(quranTafsirScope(openAyah));
 
   const load = useCallback(() => {
     if (inFlight.current || !tafsir) return inFlight.current ?? Promise.resolve();

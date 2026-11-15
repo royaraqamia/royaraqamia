@@ -20,6 +20,11 @@ import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { useDashboard } from '@/frontend/state/habitflow/use-dashboard';
 import { useLogout } from '@/frontend/state/use-logout';
 import { useSession } from '@/frontend/state/session-provider';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import {
+  habitflowHabitScope,
+  habitflowScreenScope,
+} from '@/frontend/ui/habitflow/habitflow-screen-scope';
 import { Button } from '@/frontend/ui/primitives/button';
 import { StatsCard } from '@/frontend/ui/habitflow/components/stats-card';
 import { HabitCard } from '@/frontend/ui/habitflow/components/habit-card';
@@ -110,6 +115,11 @@ export function DashboardShell({
     if (autoOpenCreate) setIsAddModalOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoOpenCreate]);
+
+  // The habit in hand is the record, and the dialog above the dashboard is the
+  // overlay that holds it (ADR-0181, #1420).
+  useScreenScope(habitflowScreenScope(isEditModalOpen ? (selectedHabit?.id ?? null) : null));
+  useScreenScope(habitflowHabitScope(isAddModalOpen || isEditModalOpen, selectedHabit?.id ?? null));
 
   const shouldReduce = useReducedMotion();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
