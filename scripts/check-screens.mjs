@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
  * make on a device — it is a row here, with the ticket that lands it or the
  * reason it never will.
  *
- * `docs/mobile/screens.json` is the row list; this script answers four
+ * `docs/mobile/screens.json` is the row list; this script answers six
  * questions from the working tree, with no build:
  *
  * 1. Does every surface in `perf/surfaces.json` have a row? `check:surfaces`
@@ -27,6 +27,10 @@ import { fileURLToPath } from 'node:url';
  *    registers itself as `<surface>.<name>` for the assistant's eyes
  *    (ADR-0181), and a registration that names a screen the registry does not
  *    have is a snapshot the model can never be given.
+ * 6. Is every surface either registered or written down as silent, with its
+ *    reason? A route is visible without a registration (decision 2), so a
+ *    surface that publishes nothing is a decision, and an unrecorded one is the
+ *    gap this check names (#1421).
  *
  * The same rows are what the assistant's eyes read (ADR-0181): a turn knows
  * which screen it is on because a route maps to a surface id, and that mapping
@@ -150,6 +154,51 @@ export function registrations(root = ROOT) {
   });
 }
 
+/**
+ * The surfaces written down as publishing nothing, with their reasons.
+ *
+ * The list lives in TypeScript, where the fixture test reads it too, so the check
+ * reads it the way it reads a registration: narrowly, from the source, with the
+ * keys as the only thing it takes. A reason is prose and is never parsed.
+ */
+export function silentSurfaces(root = ROOT) {
+  const path = join(root, 'shared', 'contracts', 'screen-context-silence.ts');
+  if (!existsSync(path)) return [];
+  const text = readFileSync(path, 'utf8');
+  return [...text.matchAll(/^ {2}'?([a-z0-9-]+)'?: ['"]/gm)].map((match) => match[1]);
+}
+
+/**
+ * Every surface is either registered or silent — the rule ADR-0181 decision 2
+ * leaves open, and #1421 closes.
+ *
+ * Two mistakes, and both are the same mistake seen from a side: a surface that
+ * registers nothing and says nothing is a snapshot nobody can be given, and a
+ * surface that is listed as silent while a registration names it is a decision
+ * that has already been reversed.
+ */
+export function uncovered(rows, registered, silent) {
+  const errors = [];
+  const registering = new Set(registered.map(({ id }) => String(id).split('.')[0]));
+  const quiet = new Set(silent);
+
+  for (const row of rows) {
+    const id = row.surface;
+    if (!id) continue;
+    if (registering.has(id) && quiet.has(id)) {
+      errors.push(
+        `surface "${id}" is listed as silent but a registration names it - keep one of the two`
+      );
+    } else if (!registering.has(id) && !quiet.has(id)) {
+      errors.push(
+        `surface "${id}" registers nothing and is not listed in shared/contracts/screen-context-silence.ts`
+      );
+    }
+  }
+
+  return errors;
+}
+
 /** Every problem, not just the first: a half-listed screen is a discovery waiting to happen. */
 export function validate({
   inventory,
@@ -157,6 +206,7 @@ export function validate({
   repoRoot = ROOT,
   nativeRoot = NATIVE_ROOT,
   registered,
+  silent,
 }) {
   const errors = [];
   const rows = inventory.screens ?? [];
@@ -235,9 +285,9 @@ export function validate({
 
   // A registration names `<surface>.<name>`, and the surface is a row in this
   // same registry: a screen the assistant can be told about is a screen the two
-  // clients know (ADR-0181). The reverse — a surface with no registration — is
-  // not an error yet: #1421 registers the rest, and the day it lands this check
-  // names the gap instead of leaving it silent.
+  // clients know (ADR-0181). The reverse is the second half of the rule: a
+  // surface that registers nothing is either written down as silent, with its
+  // reason, or it is the gap this check names (#1421).
   const found = registered ?? registrations(repoRoot);
   const seen = new Map();
   for (const { id, path } of found) {
@@ -258,6 +308,12 @@ export function validate({
       seen.set(id, path);
     }
   }
+
+  // The reverse rule is enforced where the silence list is readable, which is
+  // this working tree. A caller that passes its own `registered` (a test with a
+  // throwaway repo) opts out by leaving `silent` undefined, so the rule cannot
+  // report a surface silent for the wrong reason.
+  if (Array.isArray(silent)) errors.push(...uncovered(rows, found, silent));
 
   return errors;
 }
@@ -438,7 +494,7 @@ export function main(argv = process.argv.slice(2)) {
 
   const inventory = JSON.parse(readFileSync(INVENTORY, 'utf8'));
   const matrix = JSON.parse(readFileSync(MATRIX, 'utf8'));
-  const errors = validate({ inventory, matrix });
+  const errors = validate({ inventory, matrix, silent: silentSurfaces() });
   const write = argv.includes('--write');
 
   // Two generated artifacts, one list: the table a person reads and the route
@@ -476,7 +532,8 @@ export function main(argv = process.argv.slice(2)) {
   const named = new Set(found.map(({ id }) => id.split('.')[0]));
   console.log(
     `  ok ${screens.length} screens, ${on} drawn natively, ${ported.length - on} ported but off, ` +
-      `${found.length} registrations over ${named.size} surfaces`
+      `${found.length} registrations over ${named.size} surfaces, ` +
+      `${silentSurfaces().length} silent by decision`
   );
   return 0;
 }

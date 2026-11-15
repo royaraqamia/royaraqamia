@@ -35,6 +35,26 @@ export function screenIsBlind(screenId: string): boolean {
   return SCREEN_CONTEXT_BLIND_SURFACES.includes(screenId);
 }
 
+/**
+ * The surface a registration belongs to: the part before its first dot
+ * (ADR-0181). `community.composer` is a `community` dialog.
+ */
+export function surfaceOfScreenId(id: string): string {
+  return id.split('.')[0] ?? '';
+}
+
+/**
+ * A registration that names a blind surface.
+ *
+ * The route is not the only way to stand on an admin screen: a dialog is a scope
+ * of its own, and an admin dialog opened over a member page must close the eyes
+ * just as the route does (ADR-0181, decision 8). The registration loses — there
+ * is no snapshot to fall back to, not even a route-only one.
+ */
+export function scopeIsBlind(id: string): boolean {
+  return screenIsBlind(surfaceOfScreenId(id));
+}
+
 /** `/notes/` is `/notes`; `/` stays `/`. */
 function normalize(pathname: string): string {
   const trimmed = pathname.replace(/\/+$/, '');

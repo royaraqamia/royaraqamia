@@ -5,6 +5,12 @@ import type { ScreenScope } from '@/frontend/state/screen-scopes';
 import type { ScreenContext } from '@/shared/contracts/screen-context';
 import { resolveScreen } from '@/shared/contracts/screens';
 import { athkarScreenScope } from '@/frontend/ui/athkar/athkar-screen-scope';
+import { accountScreenScope } from '@/frontend/ui/account/account-screen-scope';
+import {
+  communityComposerScope,
+  communityFeedScope,
+  communityPostScope,
+} from '@/app/community/_components/community-screen-scope';
 import {
   habitflowHabitScope,
   habitflowScreenScope,
@@ -50,6 +56,13 @@ interface AppFixture {
   title: string;
   scopes: ScreenScope[];
   expect: Partial<Pick<ScreenContext, 'tab' | 'focus' | 'fields' | 'overlays'>>;
+}
+
+/** The account subtree's scope for a path, as the layout registers it. */
+function accountScope(path: string): ScreenScope {
+  const scope = accountScreenScope(path);
+  if (!scope) throw new Error(`no account screen scope for ${path}`);
+  return scope;
 }
 
 const APPS: readonly AppFixture[] = [
@@ -149,6 +162,38 @@ const APPS: readonly AppFixture[] = [
     title: 'الملاحظات',
     scopes: [notesScreenScope()],
     expect: { tab: null, focus: null, fields: {}, overlays: [] },
+  },
+  {
+    app: 'community',
+    route: '/community',
+    screenId: 'community',
+    title: 'المجتمع',
+    scopes: [communityFeedScope('following')],
+    expect: { tab: 'following', focus: null, fields: {} },
+  },
+  {
+    app: 'community-post',
+    route: '/community/hello-world',
+    screenId: 'community-post',
+    title: 'منشور',
+    scopes: [communityPostScope('post-1')],
+    expect: { focus: { kind: 'post', id: 'post-1' }, fields: {} },
+  },
+  {
+    app: 'account',
+    route: '/account',
+    screenId: 'account',
+    title: 'حسابي',
+    scopes: [accountScope('/account')],
+    expect: { focus: null, fields: {}, overlays: [] },
+  },
+  {
+    app: 'account-posts',
+    route: '/account/posts',
+    screenId: 'account-posts',
+    title: 'منشوراتي',
+    scopes: [accountScope('/account/posts')],
+    expect: { focus: null, fields: {} },
   },
 ];
 
@@ -257,5 +302,34 @@ describe('the records a surface puts in hand', () => {
 
     expect(snapshot.focus).toEqual({ kind: 'ayah', id: '10' });
     expect(snapshot.overlays).toEqual([{ id: 'quran-surah.tafsir', kind: 'dialog' }]);
+  });
+
+  it('reports the post being read, by id, and never its words', () => {
+    const snapshot = composeScreenContext(
+      baseOf(APPS.find(({ app }) => app === 'community-post') as AppFixture),
+      [communityPostScope('post-1')]
+    );
+
+    expect(snapshot.focus).toEqual({ kind: 'post', id: 'post-1' });
+    expect(snapshot.fields).toEqual({});
+    expect(snapshot.text).toBe('');
+  });
+
+  it('names the composer and refuses the draft nobody has sent', () => {
+    const scope = communityComposerScope(true, 'مسودَّة لم تُرسل', 'post-1');
+    const snapshot = composeScreenContext(
+      baseOf(APPS.find(({ app }) => app === 'community') as AppFixture),
+      [communityFeedScope('following'), scope as ScreenScope]
+    );
+
+    expect(snapshot.overlays).toEqual([{ id: 'community.composer', kind: 'dialog' }]);
+    expect(snapshot.focus).toEqual({ kind: 'post', id: 'post-1' });
+    expect(snapshot.fields).toEqual({});
+    expect(snapshot.text).toBe('');
+    expect(JSON.stringify(snapshot)).not.toContain('مسودَّة');
+  });
+
+  it('registers nothing while the composer is closed', () => {
+    expect(communityComposerScope(false, 'مسودَّة')).toBeNull();
   });
 });

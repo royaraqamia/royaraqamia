@@ -10,7 +10,7 @@ import {
   subscribeScreenScopes,
 } from '@/frontend/state/screen-context';
 import { SITE_NAME } from '@/frontend/shared/metadata';
-import { resolveScreen, screenIsBlind } from '@/shared/contracts/screens';
+import { resolveScreen, scopeIsBlind, screenIsBlind } from '@/shared/contracts/screens';
 import { plainText, SCREEN_CONTEXT_SETTLE_MS } from '@/shared/contracts/screen-context';
 
 /**
@@ -66,10 +66,17 @@ export function ScreenContextPublisher() {
     // never publishes.
     const timer = window.setTimeout(() => {
       const resolved = resolveScreen(pathname, search);
+      const registered = screenScopes();
 
       // The admin area is not an observed surface (decision 8): no route, no
-      // fields, no text. The turn is told it cannot see the screen and asks.
-      if (resolved && screenIsBlind(resolved.screenId)) {
+      // fields, no text. The same is true of an admin dialog opened over a
+      // member page, so the check is on the route and on every registration the
+      // stack holds — the opt-out wins, and no registration is composed. The
+      // turn is told it cannot see the screen and asks.
+      if (
+        (resolved !== null && screenIsBlind(resolved.screenId)) ||
+        registered.some((scope) => scopeIsBlind(scope.id))
+      ) {
         publishScreen({ blind: true });
         return;
       }
@@ -83,7 +90,7 @@ export function ScreenContextPublisher() {
             title: screenTitle(),
             tab: resolved?.tab ?? null,
           },
-          screenScopes()
+          registered
         )
       );
     }, SCREEN_CONTEXT_SETTLE_MS);

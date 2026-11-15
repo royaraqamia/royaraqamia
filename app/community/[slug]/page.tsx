@@ -20,6 +20,7 @@ import { PostTableOfContents } from './_components/post-table-of-contents';
 import { COMMUNITY_POST_COPY } from './community-post-copy';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { PostViewTracker } from '../_components/post-view-tracker';
+import { CommunityPostScope } from '../_components/community-post-scope';
 import { PostOwnerActions } from '../_components/post-owner-actions';
 import { PostPublishedAt } from '../_components/post-published-at';
 import {
@@ -157,6 +158,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
   return (
     <>
       <PostViewTracker slug={p.slug} />
+      <CommunityPostScope postId={p.id} />
       <CodeBlockEnhancer />
 
       <div className="max-w-7xl mx-auto">

@@ -13,12 +13,14 @@ import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import { createPost, updatePost } from '@/frontend/api/blogpress';
 import { showActionError } from '@/frontend/ui/plans/show-plan-error';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { useComposerDrafts } from '@/frontend/state/blogpress/use-composer-drafts';
 import { formatHijriDate } from '@/frontend/shared/format';
 import { stripMarkdown } from '@/shared/reading-time';
 import type { PostStatus } from '@/shared/contracts/blogpress';
 import { COMMUNITY_EDITOR_COPY } from './community-editor-copy';
 import { COMMUNITY_COMPOSER_COPY } from './community-composer-copy';
+import { communityComposerScope } from './community-screen-scope';
 
 const BODY_MAX = 20000;
 const DESCRIPTION_PREVIEW = 160;
@@ -151,6 +153,10 @@ export function PostComposerDialog({
   const [publishState, setPublishState] = useState<PublishState>('atRest');
   const [pending, startTransition] = useTransition();
   const [draftId, setDraftId] = useState(postId ?? null);
+  // The dialog and the draft it holds, for the turn asked from it: the record in
+  // hand is the post being edited, and the body is a candidate the community
+  // policy refuses (ADR-0181, #1421).
+  useScreenScope(communityComposerScope(open, body, draftId));
   const [draftSlug, setDraftSlug] = useState(slug ?? null);
   const [draftStatus, setDraftStatus] = useState<PostStatus>(isEdit ? initialStatus : 'draft');
   const [publishAt, setPublishAt] = useState<string | null>(initialPublishAt);
