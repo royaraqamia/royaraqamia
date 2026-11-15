@@ -22,6 +22,29 @@ vi.mock('@/frontend/state/session-provider', () => ({
   useSession: () => ({ user: { id: 'peer-1' } }),
 }));
 
+/**
+ * The message field is a rich editor (ADR-0193); this file tests the thread
+ * around it, so the field arrives as a plain input with the same contract.
+ */
+vi.mock('@/frontend/ui/chats/chat-field', () => ({
+  CHAT_FIELD_MAX: 4000,
+  ChatField: ({
+    value,
+    onChange,
+    ariaLabel,
+  }: {
+    value: string;
+    onChange: (value: string) => void;
+    ariaLabel: string;
+  }) => (
+    <textarea
+      aria-label={ariaLabel}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ),
+}));
+
 /** The thread's own back control runs the app's shared back decision; the seam
  *  records what it asked the router to do. */
 const nav = vi.hoisted(() => ({
@@ -822,9 +845,9 @@ describe('ChatThreadView direction', () => {
   it('lets the field follow the language being typed, per line', () => {
     render(<ChatThreadView conversationId="c-1" />);
 
-    const field = screen.getByRole('textbox', { name: 'نص الرسالة' });
-    expect(field).toHaveAttribute('dir', 'auto');
-    expect(field).toHaveClass('bidi-lines');
+    // The field's own direction lives in `ChatField` (ADR-0190/0193); what the
+    // thread owns is that the row still draws one, named for the member.
+    expect(screen.getByRole('textbox', { name: 'نص الرسالة' })).toBeInTheDocument();
   });
 
   it('gives the bubble and the reply it quotes the same rule', () => {

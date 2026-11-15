@@ -67,4 +67,12 @@ object ChatThreadCopy {
     const val SEND_FAILED = "تعذّر إرسال الرسالة"
     const val RETRY = "إعادة المحاولة"
     const val LOAD_FAILED = "تعذّر تحميل المحادثة. أعد المحاولة."
+    const val FORMAT_TOOLBAR = "تنسيق الرَّسالة"
+    const val FORMAT_BOLD = "عريض"
+    const val FORMAT_ITALIC = "مائل"
+    const val FORMAT_UNDERLINE = "تسطير"
+    const val FORMAT_STRIKE = "يتوسطه خط"
+    const val FORMAT_CODE = "كود"
+    const val FORMAT_LINK = "رابط"
+    const val FORMAT_LINK_PROMPT = "عنوان الرَّابط"
 }

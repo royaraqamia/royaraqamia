@@ -50,7 +50,8 @@ import { ChatComposer } from './chat-composer';
 import { VoiceNotePlayer } from './voice-note-player';
 import { AttachmentChip } from './attachment-chip';
 import { ChatImage } from './chat-image';
-import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
+import { ChatBody } from './chat-body';
+import { ChatField, type ChatFieldLabels } from './chat-field';
 import { stageFiles } from './attachment-quota';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
@@ -66,6 +67,18 @@ import {
   type ChatThread,
 } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+
+/** The field's six marks in the thread's own words (ADR-0193). */
+export const CHAT_FIELD_LABELS: ChatFieldLabels = {
+  toolbar: CHAT_THREAD_COPY.formatToolbar,
+  bold: CHAT_THREAD_COPY.formatBold,
+  italic: CHAT_THREAD_COPY.formatItalic,
+  underline: CHAT_THREAD_COPY.formatUnderline,
+  strike: CHAT_THREAD_COPY.formatStrike,
+  code: CHAT_THREAD_COPY.formatCode,
+  link: CHAT_THREAD_COPY.formatLink,
+  linkPrompt: CHAT_THREAD_COPY.formatLinkPrompt,
+};
 
 /**
  * What the bottom of the screen offers, derived from the thread's own state:
@@ -439,7 +452,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
                 <p className="whitespace-pre-wrap break-words bidi-lines" dir="auto">
-                  <LinkifiedText text={assistant.streamingText} />
+                  <ChatBody text={assistant.streamingText} />
                 </p>
               </div>
             </div>
@@ -451,7 +464,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted/60 px-3 py-2 text-sm leading-relaxed text-foreground/80">
                 <p className="whitespace-pre-wrap break-words bidi-lines" dir="auto">
-                  <LinkifiedText text={assistant.interrupted} />
+                  <ChatBody text={assistant.interrupted} />
                 </p>
               </div>
               <p className="text-[11px] italic text-muted-foreground">
@@ -861,6 +874,7 @@ function ThreadFooter({
           recordLabel={CHAT_THREAD_COPY.recordLabel}
           stopLabel={CHAT_THREAD_COPY.stopRecording}
           cancelLabel={CHAT_THREAD_COPY.cancelRecording}
+          fieldLabels={CHAT_FIELD_LABELS}
         />
       </form>
     );
@@ -995,7 +1009,7 @@ function MessageRow({
         >
           {message.replyTo.deletedAt ? CHAT_THREAD_COPY.deletedReply : null}
           {!message.replyTo.deletedAt && message.replyTo.body ? (
-            <LinkifiedText text={message.replyTo.body} />
+            <ChatBody text={message.replyTo.body} />
           ) : null}
         </p>
       )}
@@ -1015,14 +1029,16 @@ function MessageRow({
             <span className="text-xs italic opacity-70">{CHAT_THREAD_COPY.deletedMessage}</span>
           ) : editing ? (
             <div className="space-y-2">
-              <textarea
+              {/* The same field the composer is: a message is edited with the
+                  marks it was written in, not with its markdown showing
+                  (ADR-0193). */}
+              <ChatField
+                compact
                 value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                rows={2}
-                maxLength={4000}
-                dir="auto"
-                className="bidi-lines w-full resize-none rounded-lg bg-background/90 px-2 py-1 text-sm text-foreground outline-none"
-                aria-label={CHAT_THREAD_COPY.editLabel}
+                onChange={setDraft}
+                ariaLabel={CHAT_THREAD_COPY.editLabel}
+                labels={CHAT_FIELD_LABELS}
+                className="w-full rounded-lg bg-background/90 px-2 py-1 text-foreground"
               />
               <div className="flex justify-end gap-2">
                 <button
@@ -1046,7 +1062,7 @@ function MessageRow({
           ) : (
             message.body && (
               <p dir="auto" className="whitespace-pre-wrap break-words bidi-lines">
-                <LinkifiedText text={message.body} />
+                <ChatBody text={message.body} />
               </p>
             )
           )}
