@@ -3,6 +3,8 @@ package com.royaraqamia.app.contracts
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializer
 
 /**
@@ -66,6 +68,18 @@ object ContractCodec {
     /** [encode] with `null` fields written out, for a body that is read back. */
     inline fun <reified T> encodeForStorage(value: T): String =
         storage.encodeToString(serializer<T>(), value)
+
+    /**
+     * A generated type as the object a caller merges into a larger body (#1422).
+     *
+     * The assistant's turn carries the message and, beside it, the screen it was
+     * asked from. That screen is a generated type of its own, written with
+     * [storage]'s rules because its schema makes `focus` and `tab` present and
+     * nullable: a body that omitted them would be refused rather than read as
+     * shorter.
+     */
+    fun <T> objectOf(value: T, serializer: KSerializer<T>): JsonObject =
+        storage.encodeToJsonElement(serializer, value).jsonObject
 
     /**
      * The field the decoder objected to, when it names one. A missing field

@@ -27,6 +27,7 @@ import androidx.lifecycle.lifecycleScope
 import com.royaraqamia.app.AppGraph
 import com.royaraqamia.app.assistant.AssistantSheet
 import com.royaraqamia.app.assistant.AssistantSnapshot
+import com.royaraqamia.app.assistant.PublishedScreen
 import com.royaraqamia.app.account.AccountScreen
 import com.royaraqamia.app.account.AccountUiState
 import com.royaraqamia.app.accountnews.NewsScreen
@@ -278,6 +279,13 @@ class ShellActivity : ComponentActivity() {
                     LocalLayoutDirection provides LayoutDirection.Rtl,
                     LocalFontFamilyResolver provides fonts,
                 ) {
+                    // Where the member is, for the assistant's eyes (ADR-0181,
+                    // decision 6). One hook covers every way the shell moves - a
+                    // tap, a back, a deep link, a sign-out - because `current` is
+                    // the shell's only idea of a route. The turn reads it when it
+                    // sends, never before.
+                    LaunchedEffect(current) { PublishedScreen.follow(current) }
+
                     ShellFrame(
                         currentRoute = current,
                         unreadCount = unreadCount,
@@ -891,6 +899,8 @@ class ShellActivity : ComponentActivity() {
             unreadCount = null
             assistantOpen = false
             assistantSnapshot = null
+            // The next turn is the next member's screen, not this one's (ADR-0181).
+            PublishedScreen.clear()
             stack.reset(Routes.HOME)
             current = stack.route
             handOver()
