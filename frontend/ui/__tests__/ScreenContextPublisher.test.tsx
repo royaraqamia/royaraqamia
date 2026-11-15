@@ -37,6 +37,12 @@ function FakeSheet({
   return null;
 }
 
+/** An admin dialog: the second way to stand on an operator surface (decision 8). */
+function FakeAdminDialog({ open }: { open: boolean }) {
+  useScreenScope(open ? { id: 'admin.member', kind: 'dialog' } : null);
+  return null;
+}
+
 /** The snapshot as the composer would send it. */
 function snapshot(): ScreenContext {
   return publishedScreen() as ScreenContext;
@@ -118,6 +124,58 @@ describe('ScreenContextPublisher', () => {
     settle();
 
     expect(publishedScreen()).toEqual({ blind: true });
+  });
+
+  it('does not let a registration reopen an admin route', () => {
+    navigation.pathname = '/admin/members';
+
+    render(
+      <>
+        <ScreenContextPublisher />
+        <FakeSheet open />
+      </>
+    );
+    settle();
+
+    expect(publishedScreen()).toEqual({ blind: true });
+  });
+
+  it('closes the eyes on an admin dialog opened over a member screen', () => {
+    navigation.pathname = '/spendtrack';
+
+    render(
+      <>
+        <ScreenContextPublisher />
+        <FakeSheet open />
+        <FakeAdminDialog open />
+      </>
+    );
+    settle();
+
+    expect(publishedScreen()).toEqual({ blind: true });
+  });
+
+  it('opens them again when the admin dialog closes', () => {
+    navigation.pathname = '/spendtrack';
+
+    const { rerender } = render(
+      <>
+        <ScreenContextPublisher />
+        <FakeAdminDialog open />
+      </>
+    );
+    settle();
+    expect(publishedScreen()).toEqual({ blind: true });
+
+    rerender(
+      <>
+        <ScreenContextPublisher />
+        <FakeAdminDialog open={false} />
+      </>
+    );
+    settle();
+
+    expect(publishedScreen()).toMatchObject({ screenId: 'spendtrack' });
   });
 
   it('replaces the snapshot when the member moves to another screen', () => {

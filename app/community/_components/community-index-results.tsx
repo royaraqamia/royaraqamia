@@ -10,9 +10,11 @@ import {
   usePublicSnapshotRecorder,
 } from '@/frontend/shared/local-store/snapshot';
 import { normaliseSnapshotRoute } from '@/frontend/shared/local-store/snapshot-route';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { requestWithMeta } from '@/frontend/transport/http';
 import { CommunityResults } from './community-results';
 import { CommunitySearchSummary } from './community-search-summary';
+import { communityFeedScope } from './community-screen-scope';
 import {
   communityFeedInitialState,
   communityFeedReducer,
@@ -110,6 +112,9 @@ export function CommunityIndexResults({
   const cursor = searchParams.get('cursor');
   const query = searchParams.get('q')?.trim() ?? '';
   const isDefault = !cursor && !query;
+  // The feed the member is reading is the one thing this path does not carry
+  // once the island is reused for the other route (ADR-0181, #1421).
+  useScreenScope(communityFeedScope(source));
   // The snapshot is the public store: a device keeps one copy per route, and the
   // personal feed's rows are one member's follows. Recording them would hand the
   // next member on this device the previous member's feed, so the personal route

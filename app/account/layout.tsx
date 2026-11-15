@@ -1,6 +1,7 @@
 import './app.css';
 import type { Metadata } from 'next';
 
+import { AccountScreenScope } from '@/app/account/_components/account-screen-scope';
 import { AccountSiteFooter } from '@/frontend/ui/account/account-site-footer';
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[var(--roy-page-height)] bg-background text-foreground flex flex-col">
+      <AccountScreenScope />
       <main id="main-content" className="flex-1 pt-6">
         <div className="mx-auto w-full max-w-3xl px-4 pb-16">{children}</div>
       </main>

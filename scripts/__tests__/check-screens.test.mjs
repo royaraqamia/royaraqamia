@@ -10,7 +10,9 @@ import {
   renderMarkdown,
   renderRoutes,
   scopeIds,
+  silentSurfaces,
   splitRoute,
+  uncovered,
   validate,
 } from '../check-screens.mjs';
 
@@ -309,6 +311,46 @@ describe('the registrations the assistant reads', () => {
         { id: 'notes.page', path: 'frontend/ui/b.tsx' },
       ])
     ).toEqual(['registration "notes.page" appears in frontend/ui/a.tsx and frontend/ui/b.tsx']);
+  });
+});
+
+describe('the silence list', () => {
+  it('reads the keys of the list, quoted or not, and never a comment', () => {
+    const repo = makeRepo({
+      'shared/contracts/screen-context-silence.ts': [
+        'export const SCREEN_CONTEXT_SILENT_SURFACES = {',
+        "  admin: 'an operator screen publishes nothing',",
+        "  'mcp-apps': 'the catalogue is public',",
+        '};',
+        '// notes: a comment is not a row',
+      ].join('\n'),
+    });
+
+    expect(silentSurfaces(repo.root)).toEqual(['admin', 'mcp-apps']);
+  });
+
+  it('reports nothing when the list is not there at all', () => {
+    expect(silentSurfaces(makeRepo().root)).toEqual([]);
+  });
+});
+
+describe('every surface is registered or silent', () => {
+  const rows = [{ surface: 'home' }, { surface: 'notes' }];
+
+  it('accepts one surface that registers and one that is written down as silent', () => {
+    expect(uncovered(rows, [{ id: 'home.page' }], ['notes'])).toEqual([]);
+  });
+
+  it('names a surface that does neither', () => {
+    expect(uncovered(rows, [{ id: 'home.page' }], [])).toEqual([
+      'surface "notes" registers nothing and is not listed in shared/contracts/screen-context-silence.ts',
+    ]);
+  });
+
+  it('refuses a silent row a registration has already reversed', () => {
+    expect(uncovered(rows, [{ id: 'home.page' }], ['home', 'notes'])).toEqual([
+      'surface "home" is listed as silent but a registration names it - keep one of the two',
+    ]);
   });
 });
 

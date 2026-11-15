@@ -139,6 +139,12 @@ export const SCREEN_CONTENT_POLICIES: Readonly<Record<string, ScreenContentPolic
   'quran-surah': { fields: [], text: true },
   chats: { fields: [], text: false },
   notes: { fields: [], text: false },
+  // A post is published words, and a composer holds words nobody has sent yet:
+  // the post is named by id in `focus`, and neither its body nor the draft
+  // travels (#1421). The default would deny both anyway; the row is the
+  // decision written down.
+  community: { fields: [], text: false },
+  'community-post': { fields: [], text: false },
   auth: { fields: [], text: false },
   'verify-code': { fields: [], text: false },
   'linksnap-unlock': { fields: [], text: false },
