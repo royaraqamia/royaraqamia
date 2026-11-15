@@ -12,7 +12,9 @@ import { createDefaultProjectRequestService } from '@/backend/config/project-req
 import { createProfileService } from '@/backend/config/users';
 import { createUsageService } from '@/backend/config/plans';
 import { listAgencySkills, loadAgencySkill } from '@/backend/services/chat/agency-skills';
+import { screenContextAnswer } from '@/backend/services/chat/turn-screen';
 import type { CapabilityOwner, ToolTier } from '@/backend/services/tools/registry';
+import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 import { toPublicCertificate } from '@/shared/contracts/certificates';
 import { PostSlugSchema } from '@/shared/contracts/community';
 import { COURSE_SLUGS } from '@/shared/contracts/training';
@@ -56,6 +58,13 @@ export interface ChatAgentToolContext {
   findAppTools?: (
     query: string
   ) => Promise<Array<{ name: string; appName: string; description: string; readOnly: boolean }>>;
+  /**
+   * The snapshot the request carried (ADR-0181, decision 7). It is the turn's
+   * own copy, not a cache: the server has no channel to the page while it
+   * answers, so a newer one cannot exist, and returning another turn's would be
+   * a page the member has left. Absent when the client has no eyes here.
+   */
+  screen?: ScreenContextInput;
 }
 
 export interface ChatAgentTool {
@@ -634,6 +643,21 @@ const tools: ChatAgentTool[] = [
       return { tools: await context.findAppTools(input.query) };
     },
   },
+  {
+    name: 'get_screen_context',
+    kind: 'read',
+    product: 'assistant',
+    tier: 0,
+    description:
+      'حالة الشاشة التي يسأل منها العضو، كما وصلت من صفحته مع سؤاله. الحالة التي في أول المحادثة هي الأصل؛ استخدمها حين تحتاج تفصيلاً لم يعد أمامك فيه، ولا تسألي العضو أين هو.',
+    schema: NoArgs,
+    async run(_args, context) {
+      // No snapshot, no answer: the tool is not declared without one, so this
+      // is a caller that asked anyway rather than a page with nothing to say.
+      if (!context.screen) return { screen: null, updatedAt: null };
+      return screenContextAnswer(context.screen);
+    },
+  },
 ];
 
 const byName = new Map<string, ChatAgentTool>(tools.map((tool) => [tool.name, tool]));
@@ -664,16 +688,24 @@ export function chatAgentToolDefinitions(): Array<{
 /**
  * The first-party declarations a turn carries.
  *
- * `find_app_tools` is the one that is conditional: a member with no connected
- * app has nothing to find, and a tool that promises a search over nothing is an
- * invitation to waste a round. Every other tool is always declared.
+ * Two are conditional, for the same reason: a tool that promises something the
+ * turn does not have is an invitation to waste a round.
+ *
+ * `find_app_tools` needs a connected app, because a member with no app has
+ * nothing to find. `get_screen_context` needs the snapshot the request brought
+ * (ADR-0181, decision 7): a client with no eyes — an older tab, an opted-out
+ * surface, the admin area — is a turn where the tool would answer "nothing"
+ * after costing a round. Every other tool is always declared.
  */
 export function chatAgentToolDefinitionsForTurn(input: {
   hasApps: boolean;
+  hasScreen: boolean;
 }): ReturnType<typeof chatAgentToolDefinitions> {
-  return chatAgentToolDefinitions().filter(
-    (definition) => input.hasApps || definition.function.name !== 'find_app_tools'
-  );
+  return chatAgentToolDefinitions().filter((definition) => {
+    if (definition.function.name === 'find_app_tools') return input.hasApps;
+    if (definition.function.name === 'get_screen_context') return input.hasScreen;
+    return true;
+  });
 }
 
 /**
