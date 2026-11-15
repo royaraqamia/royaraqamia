@@ -66,6 +66,9 @@ const filters: { label: string; value: PostStatus | 'all' }[] = [
   { label: 'منشورة', value: 'published' },
 ];
 
+/** The one panel the filter chips control; the chips name it, the panel names them back. */
+const PANEL_ID = 'account-posts-panel';
+
 function fill(value: string, values: Record<string, string | number>): string {
   return Object.entries(values).reduce(
     (text, [key, replacement]) => text.split(`{${key}}`).join(String(replacement)),
@@ -163,13 +166,16 @@ export function PostList({
           activeId={activeFilter}
           onSelect={(id) => setActiveFilter(id as PostStatus | 'all')}
           idPrefix="account-posts"
+          panelId={PANEL_ID}
         />
 
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             ref={searchRef}
-            type="search"
+            type="text"
+            role="searchbox"
+            inputMode="search"
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="ابحث في منشوراتك"
@@ -203,7 +209,12 @@ export function PostList({
         />
       ) : null}
 
-      <div className="space-y-2.5" role="tabpanel">
+      <div
+        id={PANEL_ID}
+        role="tabpanel"
+        aria-labelledby={`account-posts-tab-${activeFilter}`}
+        className="space-y-2.5"
+      >
         {rows.length === 0 ? (
           <EmptyState
             icon={FileText}
@@ -289,11 +300,22 @@ function BulkBar({
 
   return (
     <>
-      <div className="sticky top-3 z-20 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/95 p-3 shadow-sm">
+      <div
+        className={cn(
+          'flex flex-wrap items-center gap-2',
+          // The bar is furniture only while it has work to do. With nothing
+          // selected it is one quiet line — select-all and the count — instead
+          // of a bordered toolbar holding three dead buttons.
+          selected.size > 0
+            ? 'sticky top-[calc(var(--roy-navbar-space)_+_0.75rem)] z-20 rounded-2xl border border-border bg-card/95 p-3 shadow-sm'
+            : 'py-1'
+        )}
+      >
         <button
           type="button"
+          role="checkbox"
+          aria-checked={allSelected}
           onClick={onToggleAll}
-          aria-pressed={allSelected}
           className="inline-flex items-center gap-2 p-1 text-xs font-bold text-foreground"
         >
           <span
@@ -311,34 +333,33 @@ function BulkBar({
             ? fill('{selected} من {total}', { selected: selected.size, total: rows.length })
             : fill('{total} منشور', { total: rows.length })}
         </span>
-        <div className="flex-1" />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={selected.size === 0 || busy}
-          onClick={() => void run('publish')}
-        >
-          <Eye className="me-1.5 size-3.5" />
-          نشر
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={selected.size === 0 || busy}
-          onClick={() => void run('unpublish')}
-        >
-          <EyeOff className="me-1.5 size-3.5" />
-          إلغاء النَّشر
-        </Button>
-        <Button
-          size="sm"
-          variant="destructive"
-          disabled={selected.size === 0 || busy}
-          onClick={() => setConfirmOpen(true)}
-        >
-          <Trash className="me-1.5 size-3.5" />
-          حذف
-        </Button>
+        {selected.size > 0 ? (
+          <>
+            <div className="flex-1" />
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => void run('publish')}>
+              <Eye className="me-1.5 size-3.5" />
+              نشر
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => void run('unpublish')}
+            >
+              <EyeOff className="me-1.5 size-3.5" />
+              إلغاء النَّشر
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={busy}
+              onClick={() => setConfirmOpen(true)}
+            >
+              <Trash className="me-1.5 size-3.5" />
+              حذف
+            </Button>
+          </>
+        ) : null}
       </div>
 
       <ConfirmDialog
@@ -392,9 +413,10 @@ function PostRow({
       <div className="flex min-w-0 flex-1 items-start gap-3.5 sm:items-center">
         <button
           type="button"
+          role="checkbox"
+          aria-checked={isSelected}
           onClick={() => onToggleSelect(post.id)}
-          aria-pressed={isSelected}
-          aria-label={isSelected ? 'إلغاء تحديد المنشور' : 'تحديد المنشور'}
+          aria-label="تحديد المنشور"
           className="shrink-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <span
@@ -483,7 +505,7 @@ function PostRow({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border/60 pt-2 sm:justify-end sm:border-0 sm:pt-0">
+      <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border/60 pt-2 sm:border-0 sm:pt-0">
         <span
           className={cn(
             'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold',

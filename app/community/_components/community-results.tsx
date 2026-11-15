@@ -3,10 +3,9 @@
 import Link from 'next/link';
 import { FileText } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
-import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
-import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
+import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { COMMUNITY_FEED_COPY } from './community-feed-copy';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { PostCard } from './post-card';
@@ -69,7 +68,6 @@ export function CommunityResults({
     pageError == null ? null : toReadFailure(pageError, COMMUNITY_FEED_COPY.pageError);
   const loadFailure =
     loadMoreError == null ? null : toReadFailure(loadMoreError, COMMUNITY_FEED_COPY.loadMoreError);
-  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt();
 
   // A failed read with nothing kept is the whole answer; with a snapshot it is a
   // banner over the rows this device last showed.
@@ -119,9 +117,12 @@ export function CommunityResults({
                   : COMMUNITY_FEED_COPY.emptyBody}
           </p>
           {emptyKind === 'guest' ? (
-            <HeroCtaButton type="button" onClick={() => requireSignIn('/community')}>
+            // The guest state's one action is the whole page's next step, so it
+            // goes to the sign-in page with the feed as its destination rather
+            // than asking the question in a dialogue first.
+            <SignInCta href="/auth/login?redirect=/community">
               {COMMUNITY_FEED_COPY.guestSignIn}
-            </HeroCtaButton>
+            </SignInCta>
           ) : (
             query && (
               <Link href="/community/explore">
@@ -164,8 +165,6 @@ export function CommunityResults({
             ))}
         </>
       )}
-
-      {signInPrompt}
     </>
   );
 }

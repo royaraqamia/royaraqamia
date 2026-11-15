@@ -30,6 +30,13 @@ const { nativeMocks } = vi.hoisted(() => ({
 vi.mock('@/frontend/api/push', () => mocks);
 vi.mock('@/frontend/api/push-native', () => nativeMocks);
 
+/* The row is a switch only for a member; a guest gets the account page's gate. */
+const session = vi.hoisted(() => ({
+  user: { id: 'u1' } as { id: string } | null,
+  isLoading: false,
+}));
+vi.mock('@/frontend/state/session-provider', () => ({ useSession: () => session }));
+
 function installGlobals({ existing = false } = {}) {
   const subscription = {
     endpoint: 'https://push.example.com/sub-id',
@@ -56,6 +63,7 @@ function installGlobals({ existing = false } = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  session.user = { id: 'u1' };
   mocks.isPushSupported.mockReturnValue(true);
   mocks.isPushDisabledByUser.mockReturnValue(false);
   mocks.isPushSubscriptionPendingSync.mockReturnValue(false);
@@ -74,7 +82,7 @@ beforeEach(() => {
 describe('PushNotificationToggle auto-heal', () => {
   it('does not auto-re-subscribe when the user has explicitly disabled push', async () => {
     mocks.isPushDisabledByUser.mockReturnValue(true);
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
     await waitFor(() => {
       expect(mocks.subscribeToPush).not.toHaveBeenCalled();
     });
@@ -85,14 +93,14 @@ describe('PushNotificationToggle auto-heal', () => {
   it('shows push as disabled even when a browser-side subscription exists but the preference is off', async () => {
     mocks.isPushDisabledByUser.mockReturnValue(true);
     installGlobals({ existing: true });
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
     const button = await screen.findByRole('switch');
     expect(button).toHaveAttribute('aria-checked', 'false');
     expect(mocks.subscribeToPush).not.toHaveBeenCalled();
   });
 
   it('auto-heals a dropped subscription when the user has not disabled push', async () => {
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
     await waitFor(() => {
       expect(mocks.subscribeToPush).toHaveBeenCalledTimes(1);
     });
@@ -100,7 +108,7 @@ describe('PushNotificationToggle auto-heal', () => {
 
   it('keeps a subscription whose application server key still matches and refreshes its liveness', async () => {
     const { subscription } = installGlobals({ existing: true });
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
     await waitFor(() => {
       expect(mocks.applicationServerKeyMatches).toHaveBeenCalled();
     });
@@ -116,7 +124,7 @@ describe('PushNotificationToggle auto-heal', () => {
   it('re-subscribes automatically after a VAPID key rotation', async () => {
     const { subscription } = installGlobals({ existing: true });
     mocks.applicationServerKeyMatches.mockReturnValue(false);
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
     await waitFor(() => {
       expect(subscription.unsubscribe).toHaveBeenCalledTimes(1);
     });
@@ -127,7 +135,7 @@ describe('PushNotificationToggle auto-heal', () => {
 
   it('disables push through unsubscribeFromPush when toggled off', async () => {
     installGlobals({ existing: true });
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
     await waitFor(() => {
       expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
     });
@@ -145,7 +153,7 @@ describe('PushNotificationToggle auto-heal', () => {
    */
   it('names the connection when the server cannot be reached, and stays retryable', async () => {
     mocks.subscribeToPush.mockResolvedValue('unreachable');
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
 
     await waitFor(() => {
       expect(screen.getByText(/تعذَّر تفعيل الإشعارات/)).toBeInTheDocument();
@@ -168,7 +176,7 @@ describe('PushNotificationToggle auto-heal', () => {
    */
   it('names the rate limit instead of the connection, and stops auto-retrying', async () => {
     mocks.subscribeToPush.mockResolvedValue('rateLimited');
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
 
     expect(await screen.findByText(/تجاوزتَ حدَّ محاولات/)).toBeInTheDocument();
     expect(screen.queryByText(/تحقَّق من اتِّصالك/)).not.toBeInTheDocument();
@@ -177,7 +185,7 @@ describe('PushNotificationToggle auto-heal', () => {
 
   it('shows the remembered refusal on the next visit without asking again', async () => {
     mocks.pushRetryKind.mockReturnValue('rateLimited');
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
 
     expect(await screen.findByText(/تجاوزتَ حدَّ محاولات/)).toBeInTheDocument();
     expect(mocks.subscribeToPush).not.toHaveBeenCalled();
@@ -186,7 +194,7 @@ describe('PushNotificationToggle auto-heal', () => {
 
   it('asks for a fresh session when the server answers 401', async () => {
     mocks.subscribeToPush.mockResolvedValue('unauthorized');
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
 
     expect(await screen.findByText(/انتهت جلستك/)).toBeInTheDocument();
   });
@@ -196,7 +204,7 @@ describe('PushNotificationToggle auto-heal', () => {
     mocks.isPushSubscriptionPendingSync.mockReturnValue(true);
     mocks.refreshSubscriptionLiveness.mockResolvedValue('unreachable');
 
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
 
     await waitFor(() => {
       expect(screen.getByText(/تعذَّر تفعيل الإشعارات/)).toBeInTheDocument();
@@ -211,7 +219,7 @@ describe('PushNotificationToggle inside the native shell', () => {
   });
 
   it('never touches the browser push path', async () => {
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
 
     const button = await screen.findByRole('switch');
     expect(button).toHaveAttribute('aria-checked', 'false');
@@ -221,7 +229,7 @@ describe('PushNotificationToggle inside the native shell', () => {
   });
 
   it('registers the device token through the native transport', async () => {
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
     const button = await screen.findByRole('switch');
 
     fireEvent.click(button);
@@ -236,7 +244,7 @@ describe('PushNotificationToggle inside the native shell', () => {
 
   it('shows the native blocked message when the permission is refused', async () => {
     nativeMocks.registerNativePush.mockResolvedValue('denied');
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
     fireEvent.click(await screen.findByRole('switch'));
 
     await waitFor(() => {
@@ -246,7 +254,7 @@ describe('PushNotificationToggle inside the native shell', () => {
 
   it('unregisters a device that already has a token', async () => {
     nativeMocks.hasNativePushToken.mockReturnValue(true);
-    render(<PushNotificationToggle />);
+    render(<PushNotificationToggle onRequireAuth={() => {}} />);
 
     const button = await screen.findByRole('switch');
     expect(button).toHaveAttribute('aria-checked', 'true');
@@ -259,5 +267,23 @@ describe('PushNotificationToggle inside the native shell', () => {
     await waitFor(() => {
       expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
     });
+  });
+});
+
+describe('PushNotificationToggle for a guest', () => {
+  it('draws the account page gate instead of a switch that cannot work', async () => {
+    session.user = null;
+    const onRequireAuth = vi.fn();
+
+    render(<PushNotificationToggle onRequireAuth={onRequireAuth} />);
+
+    // No switch, and no subscribe attempt either: there is no account to attach a
+    // device to, so the only answer the server has is 401.
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(mocks.subscribeToPush).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /إشعارات الجهاز/ }));
+
+    expect(onRequireAuth).toHaveBeenCalledTimes(1);
   });
 });

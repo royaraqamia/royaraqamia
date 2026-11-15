@@ -59,8 +59,11 @@ export function AccountRows({ onSignOut, children }: AccountRowsProps) {
       <nav aria-label={ACCOUNT_ROWS_COPY.navLabel} className="flex flex-col gap-2.5">
         {/* The device's notification switch is a setting, not a destination, so it
             sits above the rows that navigate: it applies to the whole account and
-            decides whether the device alerts at all (#1023). */}
-        <PushNotificationToggle />
+            decides whether the device alerts at all (#1023). It owns its own guest
+            state — a guest has no account for the server to attach a device to, so
+            the component draws this page's gated row instead of a switch whose
+            only reachable answer is "انتهت جلستك". */}
+        <PushNotificationToggle onRequireAuth={() => setPromptHref('/account')} />
 
         <AccountRow
           href="/account/submissions"

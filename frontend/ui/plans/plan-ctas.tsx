@@ -54,22 +54,21 @@ function usePlanViewer(): Viewer {
 
 export function FreePlanCta() {
   const viewer = usePlanViewer();
-  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt();
 
   if (viewer.status === 'pending') return <PendingPill className="h-12" />;
 
   if (viewer.status === 'guest') {
+    // A guest's free card is a door into the product, not a control that needs a
+    // session mid-task: it goes straight to the sign-in page, and the plans are
+    // where the sign-in page returns them. The paid pill keeps the prompt
+    // because its destination is the subscribe form, one decision later.
     return (
-      <>
-        <button
-          type="button"
-          onClick={() => requireSignIn('/pricing')}
-          className="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-input/80 bg-background/80 px-6 text-sm font-bold text-foreground transition-safe hover:bg-accent/80"
-        >
-          ابدأ مجَّانًا
-        </button>
-        {signInPrompt}
-      </>
+      <Link
+        href="/auth/login?redirect=/pricing"
+        className="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-input/80 bg-background/80 px-6 text-sm font-bold text-foreground transition-safe hover:bg-accent/80"
+      >
+        ابدأ مجَّانًا
+      </Link>
     );
   }
 

@@ -167,16 +167,17 @@ describe('PricingView', () => {
     expect(screen.queryByText(/تحسين خدمات Google/)).not.toBeInTheDocument();
   });
 
-  it('asks a guest to sign in where they are, then returns them to the plans', () => {
+  it('sends a guest from the free card straight to the sign-in page', () => {
     render(<PricingView catalog={catalog} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'ابدأ مجَّانًا' }));
+    // The free card is a door into the product, so it does not spend a dialogue
+    // asking the question first; the plans are where signing in returns them.
+    const cta = screen.getByRole('link', { name: 'ابدأ مجَّانًا' });
+    expect(cta).toHaveAttribute('href', '/auth/login?redirect=/pricing');
 
-    expect(screen.getByText('سجِّل الدُّخول للمتابعة')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'تسجيل الدُّخول' })).toHaveAttribute(
-      'href',
-      '/auth/login?redirect=%2Fpricing'
-    );
+    fireEvent.click(cta);
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('sends the paid pill to the subscribe form through the same prompt', () => {

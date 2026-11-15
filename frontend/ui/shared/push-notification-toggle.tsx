@@ -23,6 +23,8 @@ import {
 } from '@/frontend/api/push-native';
 import { VAPID_PUBLIC_KEY } from '@/frontend/shared/constants';
 import { cn } from '@/frontend/shared/cn';
+import { useSession } from '@/frontend/state/session-provider';
+import { AccountRow } from '@/frontend/ui/account/account-row';
 
 type PushToggleState =
   | { kind: 'checking' }
@@ -65,7 +67,21 @@ function toResultState(result: PushSubscribeResult): PushToggleState {
   return result === 'subscribed' ? { kind: 'enabled' } : toFailureState(result);
 }
 
-export function PushNotificationToggle() {
+/** The switch's own name; the guest's gated row draws the same words. */
+export const DEVICE_NOTIFICATIONS_LABEL = 'إشعارات الجهاز';
+
+/**
+ * The device's notification row: the switch for a member, this page's sign-in gate
+ * for a guest.
+ *
+ * The session check lives here rather than in `AccountRows` because the row is the
+ * component's own output — the same glyph, the same label and the same placement —
+ * and because a guest's request would only ever come back `unauthorized`
+ * (ADR-0195). `onRequireAuth` is the account page's prompt, so the guest lands back
+ * on this page after signing in.
+ */
+export function PushNotificationToggle({ onRequireAuth }: { onRequireAuth: () => void }) {
+  const { user, isLoading } = useSession();
   const [state, setState] = useState<PushToggleState>({ kind: 'checking' });
   const [busy, setBusy] = useState(false);
   // The shell and the browser reach push through different transports, and the
@@ -114,6 +130,9 @@ export function PushNotificationToggle() {
   }, []);
 
   useEffect(() => {
+    // A guest has no account for the server to attach a device to, so there is no
+    // state to read and nothing to subscribe: the row below is the sign-in gate.
+    if (!user) return;
     const isNative = isNativePushSupported();
     setNative(isNative);
     if (isNative) {
@@ -122,7 +141,7 @@ export function PushNotificationToggle() {
       healNativePushRegistration();
     }
     void refreshState(isNative);
-  }, [refreshState]);
+  }, [refreshState, user]);
 
   // Auto-heal: permission already granted but no subscription yet, or the
   // existing subscription was bound to a rotated application server key
@@ -138,6 +157,7 @@ export function PushNotificationToggle() {
   // refusal is not repeated on every mount, which is what turned one rate limit
   // into a permanent one.
   useEffect(() => {
+    if (!user) return;
     if (isNativePushSupported()) return;
     if (!isPushSupported()) return;
     if (Notification.permission !== 'granted') return;
@@ -157,7 +177,7 @@ export function PushNotificationToggle() {
       }
       setState(toResultState(await subscribeToPush()));
     })();
-  }, []);
+  }, [user]);
 
   const handleToggle = async () => {
     if (busy) return;
@@ -186,6 +206,22 @@ export function PushNotificationToggle() {
       setBusy(false);
     }
   };
+
+  // A guest has no account for the server to attach a device to, so the row is
+  // the account page's own gate — the same row as the links around it — and
+  // signing in returns here, where the switch is theirs to flip. Drawn before
+  // the state checks below because "checking" is not a state a guest can reach:
+  // the effects above stop at the session.
+  if (!isLoading && !user) {
+    return (
+      <AccountRow
+        href="/account"
+        icon={Bell}
+        label={DEVICE_NOTIFICATIONS_LABEL}
+        onRequireAuth={onRequireAuth}
+      />
+    );
+  }
 
   // Nothing to render until the bridge question is answered, so the browser-only
   // "unsupported" message never flashes inside the app.
@@ -226,7 +262,9 @@ export function PushNotificationToggle() {
         <Bell aria-hidden="true" className="w-4 h-4 shrink-0 text-primary" />
 
         <div className="min-w-0">
-          <p className="max-sm:text-sm font-bold text-foreground sm:text-base">إشعارات الجهاز</p>
+          <p className="max-sm:text-sm font-bold text-foreground sm:text-base">
+            {DEVICE_NOTIFICATIONS_LABEL}
+          </p>
           {statusMessage ? (
             <p
               role="status"
@@ -243,7 +281,7 @@ export function PushNotificationToggle() {
         type="button"
         role="switch"
         aria-checked={isEnabled}
-        aria-label="إشعارات الجهاز"
+        aria-label={DEVICE_NOTIFICATIONS_LABEL}
         disabled={busy || blocked}
         onClick={() => void handleToggle()}
         dir="ltr"
