@@ -39,6 +39,16 @@ describe('readableFields', () => {
     expect(readableFields('home', [field('amount', '12.50')])).toEqual({});
   });
 
+  it('publishes nothing for an id that names a member of Object.prototype', () => {
+    // The id is client-supplied, so the lookup must not fall through to the
+    // prototype: `SCREEN_CONTENT_POLICIES['constructor']` is a function, which
+    // reads as a policy until `.fields` is asked for (#1499).
+    for (const screenId of ['constructor', 'toString', '__proto__', 'valueOf', 'hasOwnProperty']) {
+      expect(readableFields(screenId, [field('amount', '12.50')]), screenId).toEqual({});
+      expect(readableText(screenId, 'مبلغ 12.50'), screenId).toBe('');
+    }
+  });
+
   it('publishes nothing for a surface that opted out, whatever it asks for', () => {
     const fields = readableFields('chats', [
       field('amount', '12.50'),
