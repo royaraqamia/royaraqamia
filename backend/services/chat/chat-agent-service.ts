@@ -23,7 +23,9 @@ import {
 } from '@/backend/services/chat/chat-app-tools';
 import type { McpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
 import type { ChatService } from '@/backend/services/chat/chat-service';
+import type { AgentRecallService } from '@/backend/services/agent/agent-recall-service';
 import { turnContextMessages, type TurnIdentity } from '@/backend/services/chat/turn-identity';
+import type { RecalledMemory } from '@/backend/shared/domain/agent-memory';
 import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import type { Database } from '@/backend/models/database.types';
 import type { Reservation } from '@/backend/services/plans/plan-gate';
@@ -290,6 +292,12 @@ export interface ChatAgentServiceDeps {
    * read, and the turn then opens with the standing prompt alone.
    */
   identity?(userId: string, plan: PlanId): Promise<TurnIdentity | null>;
+  /**
+   * What the member already asked to be remembered, recalled for this message
+   * (ADR-0182, decision 3). Absent in a test and in a deployment without the
+   * read, and the turn then carries no recall block — never a changed answer.
+   */
+  recall?: Pick<AgentRecallService, 'recall'>;
   /** The configured provider, or null when no key is set. */
   client: AiChatClient | null;
   /** The proposals a write tool leaves, and the member's own resolution. */
@@ -390,6 +398,37 @@ export class ChatAgentService {
   }
 
   /**
+   * What the member already asked to be remembered, for this message.
+   *
+   * Absent wiring is not an error: a test, or a deployment whose recall read
+   * failed to build, runs the turn it always ran. The recall service itself
+   * answers `[]` for every failure it can see, so this call never refuses an
+   * answer — a missing block is the whole degradation story.
+   */
+  private async remembered(
+    userId: string,
+    question: string,
+    threadId: string,
+    product: string | null | undefined
+  ): Promise<RecalledMemory[]> {
+    if (!this.deps.recall) return [];
+    try {
+      return await this.deps.recall.recall({
+        userId,
+        question,
+        threadId,
+        product: product ?? null,
+      });
+    } catch (error) {
+      // The service is written never to throw, and this is the second half of
+      // that promise: an unwired or broken implementation costs the memory,
+      // never the answer.
+      logger.warn('Recall was skipped for this turn', { error: String(error) });
+      return [];
+    }
+  }
+
+  /**
    * One turn, streamed. The member's message is written first (so the thread
    * shows it immediately and the answer lands beneath it), the count is taken
    * before the provider is called, and the count is given back when anything
@@ -465,6 +504,17 @@ export class ChatAgentService {
       const question = [typed, read.words].filter(Boolean).join('\n');
       if (!question && read.parts.length === 0) throw new ChatAgentError(422, COULD_NOT_READ);
 
+      // What the member asked to be remembered, once, from their own message.
+      // It is read before the provider is called and never in front of the
+      // stream: a recall that fails is an empty list, not a failed turn.
+      const recalled = await this.remembered(
+        userId,
+        question,
+        conversationId,
+        // A blind page says it has no eyes, not what product it is on.
+        screen !== undefined && !isScreenContextBlind(screen) ? screen.product : null
+      );
+
       // A voice note's words are only known now, and the row should say what the
       // turn actually answered. Best effort: the recording still runs the turn.
       if (turnId && question !== typed) {
@@ -493,7 +543,7 @@ export class ChatAgentService {
         context,
         screen,
         messages: [
-          ...turnContextMessages(identity, screen),
+          ...turnContextMessages(identity, screen, recalled),
           { role: 'system', content: SYSTEM_PROMPT },
           ...(read.spoken ? [{ role: 'system' as const, content: SPOKEN_NOTE }] : []),
           // The line just stored is replaced by its own reading, so an image or a
@@ -651,6 +701,11 @@ export class ChatAgentService {
     // (ADR-0181, decision 5), so a resumed turn answers without it.
     const plan = await this.planOf(turn.memberId);
     const identity = plan ? await this.turnIdentity(turn.memberId, plan) : null;
+    // The same memory the watched turn had, from the question it was asked. The
+    // page does not come back with a resumed turn (ADR-0181, decision 5), so a
+    // product-scoped fact stays out: the turn no longer knows which product it
+    // is about, and guessing one is worse than a quieter answer.
+    const recalled = await this.remembered(turn.memberId, turn.question, turn.conversationId, null);
     try {
       yield* this.answer({
         userId: turn.memberId,
@@ -658,7 +713,7 @@ export class ChatAgentService {
         turnId: turn.id,
         context,
         messages: [
-          ...turnContextMessages(identity),
+          ...turnContextMessages(identity, undefined, recalled),
           { role: 'system', content: SYSTEM_PROMPT },
           ...trimHistory(page.messages),
         ],

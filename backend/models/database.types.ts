@@ -3269,7 +3269,13 @@ export type Database = {
     };
     Functions: {
       agent_memory_nearest: {
-        Args: { p_limit?: number; p_query: string; p_user_id: string };
+        Args: {
+          p_limit?: number;
+          p_product?: string | null;
+          p_query: string;
+          p_thread_id?: string | null;
+          p_user_id: string;
+        };
         Returns: {
           memory_id: string;
           similarity: number;

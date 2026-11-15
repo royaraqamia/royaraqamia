@@ -1,6 +1,7 @@
 import type { AiChatMessage } from '@/backend/clients/ai-chat';
 import type { UserProfile } from '@/backend/repositories/users/user-profile-repository';
 import { screenContextMessages } from '@/backend/services/chat/turn-screen';
+import { recallBlock, type RecalledMemory } from '@/backend/shared/domain/agent-memory';
 import type { PlanId } from '@/shared/contracts/plans';
 import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 
@@ -118,16 +119,24 @@ export function identityBlock(identity: TurnIdentity): string {
 
 /**
  * The context layers a turn opens with, in the order ADR-0182 fixes: identity
- * first, then the page's own state, then the standing prompt, then the thread.
- * Recall, the rolling summary and the tools' own declarations join this list as
- * their phases land, so the two call sites in the service stay one call.
+ * first, then the page's own state, then recall, then the standing prompt, then
+ * the thread. The rolling summary and the tools' own declarations join this list
+ * as their phases land, so the two call sites in the service stay one call.
+ *
+ * Recall is a block of its own, never a line inside the history: the member's
+ * own messages are theirs, and a recalled fact is the assistant's working
+ * context — mixing them would put words in the member's mouth, and a bad recall
+ * would read as something they said.
  */
 export function turnContextMessages(
   identity: TurnIdentity | null,
-  screen?: ScreenContextInput
+  screen?: ScreenContextInput,
+  recalled: readonly RecalledMemory[] = []
 ): AiChatMessage[] {
+  const memory = recallBlock(recalled);
   return [
     ...(identity ? [{ role: 'system' as const, content: identityBlock(identity) }] : []),
     ...screenContextMessages(screen),
+    ...(memory ? [{ role: 'system' as const, content: memory }] : []),
   ];
 }

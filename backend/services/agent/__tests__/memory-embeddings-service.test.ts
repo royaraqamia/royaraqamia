@@ -49,7 +49,12 @@ class FakeRepository implements MemoryEmbeddingsRepository {
     return rows.length;
   }
 
-  async nearest(userId: string, _embedding: number[], limit: number): Promise<RecalledMemory[]> {
+  async nearest(
+    userId: string,
+    _embedding: number[],
+    limit: number,
+    _scope: { threadId: string; product: string | null }
+  ): Promise<RecalledMemory[]> {
     this.nearestCalls.push({ userId, limit });
     return [
       { memoryId: 'fact-1', text: 'أنت تحب القهوة', similarity: 0.9, updatedAt: '2026-11-01' },
@@ -172,11 +177,18 @@ describe('the memory embedding service', () => {
 
     // The query vector is the caller's. A turn's read path pays one query, not
     // one embedding call (ADR-0185 decision 5).
-    const recalled = await service.nearest('member-1', [0.1, 0.2], 99);
+    const recalled = await service.nearest(
+      'member-1',
+      [0.1, 0.2],
+      { threadId: 'conversation-1', product: null },
+      99
+    );
 
     expect(recalled).toHaveLength(1);
     expect(client.embed).not.toHaveBeenCalled();
-    expect(repository.nearestCalls).toEqual([{ userId: 'member-1', limit: 6 }]);
+    // 99 is a candidate request, not an injection: the cap here is the depth the
+    // floor and the six-item cap choose from.
+    expect(repository.nearestCalls).toEqual([{ userId: 'member-1', limit: 24 }]);
   });
 
   it('deletes the vector of a forgotten fact, and swallows a failed delete', async () => {

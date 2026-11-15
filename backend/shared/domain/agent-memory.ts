@@ -31,6 +31,37 @@ export const EMBEDDING_BATCH_SIZE = 32;
 /** Recall takes at most six items, with their source (ADR-0182 decision 3). */
 export const RECALL_MAX_ITEMS = 6;
 
+/**
+ * The cosine similarity a candidate must clear to be injected at all.
+ *
+ * A floor is what makes "unrelated message injects nothing" true rather than
+ * hopeful: the nearest six of any member always exist, and a top-k without a
+ * floor is a confident answer built on the wrong facts. The number is a starting
+ * measurement, not a tuning knob for a prompt; the six-item cap and this floor
+ * are what #1455 costs, and a change to either is a measurement.
+ */
+export const RECALL_SIMILARITY_FLOOR = 0.35;
+
+/** A fact's ranking weight halves every this many days. */
+export const RECALL_HALF_LIFE_DAYS = 30;
+
+/**
+ * Candidate rows asked of the function before the floor and the decay choose.
+ *
+ * Six is the cap on what is *injected*, not on what is *read*: filtering a
+ * six-row answer by a floor would leave an injected set that depends on which
+ * unrelated facts happened to rank first. The function clamps to this same
+ * number (24), so the two cannot drift apart.
+ */
+export const RECALL_CANDIDATES = 24;
+
+/**
+ * The read path's own provider budget. Past this the turn answers without
+ * recall: recall sits in front of the stream, so a hanging embeddings provider
+ * must cost a bounded pause, not the member's turn.
+ */
+export const RECALL_QUERY_TIMEOUT_MS = 2500;
+
 /** A fact is 1–500 characters, so this only guards a provider's own limit. */
 export const EMBEDDING_MAX_INPUT_CHARS = 2000;
 
@@ -88,6 +119,86 @@ export interface RecalledMemory {
   /** Cosine similarity in 0–1; the floor and the recency decay are #1426's. */
   similarity: number;
   updatedAt: string;
+}
+
+/** What a recall query is scoped to: the thread it is asked in, and its product. */
+export interface RecallScope {
+  threadId: string;
+  /** The product the member is looking at, when the turn knows it. */
+  product: string | null;
+}
+
+/**
+ * A candidate's ranking weight: the similarity, aged by the half-life.
+ *
+ * The floor is applied to `similarity` alone; this only orders the survivors, so
+ * an old fact is not dropped for being old. It is not a probability and not a
+ * score the model sees — it decides which six of the survivors are injected.
+ */
+export function recallScore(item: RecalledMemory, now: number): number {
+  const at = Date.parse(item.updatedAt);
+  const ageDays = Number.isFinite(at) ? Math.max(0, (now - at) / 86_400_000) : 0;
+  const decay = Math.pow(0.5, ageDays / RECALL_HALF_LIFE_DAYS);
+  return item.similarity * decay;
+}
+
+/**
+ * The items a turn injects: below the floor dropped, the rest ordered by decayed
+ * similarity, and never more than the cap however many the function answered.
+ */
+export function rankRecall(
+  candidates: readonly RecalledMemory[],
+  now: number = Date.now(),
+  max: number = RECALL_MAX_ITEMS
+): RecalledMemory[] {
+  const cap = Math.min(Math.max(0, Math.floor(max)), RECALL_MAX_ITEMS);
+  if (cap === 0) return [];
+
+  return candidates
+    .filter(
+      (item) => Number.isFinite(item.similarity) && item.similarity >= RECALL_SIMILARITY_FLOOR
+    )
+    .sort((left, right) => {
+      const byScore = recallScore(right, now) - recallScore(left, now);
+      if (byScore !== 0) return byScore;
+      const bySimilarity = right.similarity - left.similarity;
+      if (bySimilarity !== 0) return bySimilarity;
+      return (Date.parse(right.updatedAt) || 0) - (Date.parse(left.updatedAt) || 0);
+    })
+    .slice(0, cap);
+}
+
+/**
+ * The line above each injected item, so the model can attribute it and a bad
+ * recall is visible rather than silent (ADR-0182 decision 3).
+ */
+export const RECALL_BLOCK_HEADER =
+  'هذه محفوظات العضو التي اخترتها لأنها تتصل بسؤاله. استخدمي منها ما يخصّه فقط، وانسبي كل بند إلى مصدره كما هو مكتوب.';
+
+/** A fact's date as the member reads dates: «3 أكتوبر», never a raw timestamp. */
+const RECALL_DATE = new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
+  day: 'numeric',
+  month: 'long',
+  calendar: 'gregory',
+  timeZone: 'UTC',
+});
+
+export function formatMemoryDate(value: string): string {
+  const at = Date.parse(value);
+  return Number.isFinite(at) ? RECALL_DATE.format(at) : '';
+}
+
+/** One injected item: the fact, then where it came from and when it was saved. */
+export function recallLine(item: RecalledMemory): string {
+  const date = formatMemoryDate(item.updatedAt);
+  const source = date ? `من محادثتنا في ${date}` : 'من محفوظاتك';
+  return `- «${item.text}» — ${source}`;
+}
+
+/** The one system block recall injects, or the empty string when it has nothing. */
+export function recallBlock(items: readonly RecalledMemory[]): string {
+  if (items.length === 0) return '';
+  return [RECALL_BLOCK_HEADER, ...items.map(recallLine)].join('\n');
 }
 
 /**

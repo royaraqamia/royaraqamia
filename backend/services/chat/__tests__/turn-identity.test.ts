@@ -131,4 +131,28 @@ describe('turnContextMessages', () => {
   it('adds nothing at all when there is no identity to project', () => {
     expect(turnContextMessages(null)).toEqual([]);
   });
+
+  it('opens recall as its own block, after identity and before the prompt', () => {
+    const messages = turnContextMessages(identity(), undefined, [
+      {
+        memoryId: 'memory-1',
+        text: 'أحب القهوة السادة',
+        similarity: 0.82,
+        updatedAt: '2026-10-03T09:00:00.000Z',
+      },
+    ]);
+
+    expect(messages).toHaveLength(2);
+    expect(messages[0]?.role).toBe('system');
+    expect(messages[1]?.role).toBe('system');
+
+    // The fact, its source sentence, and the date it was saved — one line each.
+    expect(String(messages[1]?.content)).toContain('أحب القهوة السادة');
+    expect(String(messages[1]?.content)).toContain('من محادثتنا في');
+    expect(String(messages[1]?.content)).toMatch(/3 أكتوبر/);
+  });
+
+  it('injects no recall block when recall found nothing', () => {
+    expect(turnContextMessages(null, undefined, [])).toEqual([]);
+  });
 });

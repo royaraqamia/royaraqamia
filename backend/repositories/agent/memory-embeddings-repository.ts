@@ -6,6 +6,7 @@ import type {
   EmbeddingCounts,
   EmbeddingSource,
   EmbeddingWrite,
+  RecallScope,
   RecalledMemory,
 } from '@/backend/shared/domain/agent-memory';
 
@@ -48,8 +49,10 @@ function toSource(row: PendingRow): EmbeddingSource | null {
  * two places they meet are the write path and the backfill.
  *
  * `nearest` is the only read of the index: it hands PostgREST a query vector the
- * caller already has and asks the function for the k nearest facts. A turn's
- * read path therefore spends one query, not one provider call (decision 5).
+ * caller already has and asks the function for the k nearest facts in the
+ * caller's thread and product — a thread-scoped fact is not another thread's
+ * memory (ADR-0182 decision 3). A turn's read path therefore spends one query,
+ * not one provider call (decision 5).
  */
 export interface MemoryEmbeddingsRepository {
   /** Facts with no vector, or a vector older than the fact. Oldest first. */
@@ -58,8 +61,13 @@ export interface MemoryEmbeddingsRepository {
   pendingFor(memoryId: string): Promise<EmbeddingSource | null>;
   /** Upserts by `memory_id`, so a re-run replaces instead of adding. */
   write(rows: EmbeddingWrite[]): Promise<number>;
-  /** The k nearest active facts for one member, with cosine similarity. */
-  nearest(userId: string, embedding: number[], limit: number): Promise<RecalledMemory[]>;
+  /** The k nearest active facts for one member in this thread and product. */
+  nearest(
+    userId: string,
+    embedding: number[],
+    limit: number,
+    scope: RecallScope
+  ): Promise<RecalledMemory[]>;
   /** Deletes the vector a forgotten fact left behind; a soft delete cascades nothing. */
   remove(memoryId: string): Promise<boolean>;
   /** What a backfill reports: rows held, and rows still queued. */
@@ -109,11 +117,13 @@ export function createSupabaseMemoryEmbeddingsRepository(
       return rows.length;
     },
 
-    async nearest(userId, embedding, limit) {
+    async nearest(userId, embedding, limit, scope) {
       const { data, error } = await supabase.rpc('agent_memory_nearest', {
         p_user_id: userId,
         p_query: toVectorLiteral(embedding),
         p_limit: limit,
+        p_thread_id: scope.threadId,
+        p_product: scope.product,
       });
 
       if (error) throw repositoryFailure('memory.embeddings.nearest', error);
