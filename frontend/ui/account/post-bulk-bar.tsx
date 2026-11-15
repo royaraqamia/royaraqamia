@@ -21,6 +21,32 @@ interface PostBulkBarProps {
   onChanged: () => Promise<void> | void;
 }
 
+/** What the bar offers for a selection, or null when the selection has no such move. */
+interface SelectionVerbs {
+  publish: string | null;
+  unpublish: string | null;
+}
+
+/**
+ * The verbs the selection can actually use.
+ *
+ * A publish leaves an already-published row where it is and an unpublish leaves
+ * a draft, so the server reports `0 affected` for that half ([#1519](https://github.com/royaraqamia/royaraqamia/issues/1519)).
+ * The bar offers only the moves the selection has, and when it has both, names
+ * each by what it will do — so the count in the toast is the count on the
+ * button. The per-row menu has said this all along; this is the same rule for
+ * the whole selection.
+ */
+function selectionVerbs(posts: Post[]): SelectionVerbs {
+  const published = posts.filter((post) => post.status === 'published').length;
+  const unpublished = posts.length - published;
+
+  if (posts.length === 0) return { publish: null, unpublish: null };
+  if (unpublished === 0) return { publish: null, unpublish: 'إلغاء النَّشر' };
+  if (published === 0) return { publish: 'نشر', unpublish: null };
+  return { publish: 'نشر المسودَّات', unpublish: 'إلغاء نشر المنشورة' };
+}
+
 function requireConnection(action: string): boolean {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     toast.error(`${action} يتطلَّب اتصالاً بالإنترنت`);
@@ -30,7 +56,8 @@ function requireConnection(action: string): boolean {
 }
 
 /**
- * Select-all, the count, and the three verbs that reach more than one post.
+ * Select-all, the count, and the verbs that reach more than one post — only
+ * the ones the selection can use.
  *
  * The bar is furniture only while it has work to do: with nothing selected it
  * is one quiet line — select-all and the count — instead of a bordered toolbar
@@ -46,6 +73,7 @@ export function PostBulkBar({
 }: PostBulkBarProps) {
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const verbs = selectionVerbs(rows.filter((row) => selected.has(row.id)));
 
   const run = async (action: 'publish' | 'unpublish' | 'delete') => {
     if (
@@ -107,19 +135,28 @@ export function PostBulkBar({
         {selected.size > 0 ? (
           <>
             <div className="flex-1" />
-            <Button size="sm" variant="outline" disabled={busy} onClick={() => void run('publish')}>
-              <Eye className="me-1.5 size-3.5" />
-              نشر
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              onClick={() => void run('unpublish')}
-            >
-              <EyeOff className="me-1.5 size-3.5" />
-              إلغاء النَّشر
-            </Button>
+            {verbs.publish ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void run('publish')}
+              >
+                <Eye className="me-1.5 size-3.5" />
+                {verbs.publish}
+              </Button>
+            ) : null}
+            {verbs.unpublish ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy}
+                onClick={() => void run('unpublish')}
+              >
+                <EyeOff className="me-1.5 size-3.5" />
+                {verbs.unpublish}
+              </Button>
+            ) : null}
             <Button
               size="sm"
               variant="destructive"
