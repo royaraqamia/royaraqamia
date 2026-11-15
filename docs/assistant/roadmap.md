@@ -118,8 +118,11 @@ a member with no grants.
 
 ### Phase 1 — Eyes
 
-- `shared/contracts/screen-context.ts`: the snapshot type, the redaction list, the token cap.
-- A route provider and an overlay registry in the site shell; a settle debounce; a session store.
+- `shared/contracts/screen-context.ts`: the snapshot type and the token cap;
+  `screen-context-fields.ts` holds the per-surface allowlist and the structural denylist
+  (`#1419`).
+- A route provider and an overlay registry beside the assistant panel; a settle debounce; a
+  session store.
 - The turn carries the snapshot as a system block and says it cannot see a surface that opted
   out.
 - Compose publishes the same snapshot; `docs/mobile/parity.json` gains the row; the visual gate

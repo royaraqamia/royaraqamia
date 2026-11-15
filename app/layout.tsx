@@ -27,8 +27,6 @@ import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
 import { AppPerfObserver } from '@/frontend/ui/AppPerfObserver';
 import { ScrollbarReveal } from '@/frontend/ui/ScrollbarReveal';
 import { AssistantLauncher } from '@/frontend/ui/assistant/assistant-launcher';
-import { ScreenContextPublisher } from '@/frontend/ui/ScreenContextPublisher';
-import { Suspense } from 'react';
 
 const designTokensCss = (() => {
   try {
@@ -187,13 +185,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         nav + bottom tab bar, secondary pages swap both for a
                         floating back control. */}
                         <NavHistoryTracker />
-                        {/* Where the member is, published to the assistant once
-                            the page settles (ADR-0181). It draws nothing, and
-                            the boundary is what keeps `useSearchParams` out of
-                            the static render of every page. */}
-                        <Suspense fallback={null}>
-                          <ScreenContextPublisher />
-                        </Suspense>
                         {/* The top nav is shell chrome, not a page's: one mount
                             here puts it on every page that wears the app chrome
                             (ADR-0149), and `/` reserves the same band it always

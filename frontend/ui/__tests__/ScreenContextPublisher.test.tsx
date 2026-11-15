@@ -10,7 +10,37 @@ vi.mock('next/navigation', () => ({
 
 import { ScreenContextPublisher } from '@/frontend/ui/ScreenContextPublisher';
 import { publishScreen, publishedScreen } from '@/frontend/state/screen-context';
-import { SCREEN_CONTEXT_SETTLE_MS } from '@/shared/contracts/screen-context';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { SCREEN_CONTEXT_SETTLE_MS, type ScreenContext } from '@/shared/contracts/screen-context';
+
+/** A sheet opened over the page, registering what the model should see. */
+function FakeSheet({
+  open,
+  fields = [{ name: 'description', value: 'قهوة' }],
+  text = '',
+}: {
+  open: boolean;
+  fields?: Array<{ name: string; value: string; type?: string; autocomplete?: string }>;
+  text?: string;
+}) {
+  useScreenScope(
+    open
+      ? {
+          id: 'spendtrack.expense.edit',
+          kind: 'dialog',
+          focus: { kind: 'expense', id: '8f2c1a70-0000-4000-8000-000000000000' },
+          fields,
+          text,
+        }
+      : null
+  );
+  return null;
+}
+
+/** The snapshot as the composer would send it. */
+function snapshot(): ScreenContext {
+  return publishedScreen() as ScreenContext;
+}
 
 /**
  * The route provider (ADR-0181, decision 2 and 3).
@@ -100,5 +130,89 @@ describe('ScreenContextPublisher', () => {
     settle();
 
     expect(publishedScreen()).toMatchObject({ screenId: 'notes' });
+  });
+
+  it('carries an open sheet and the focused record to the model', () => {
+    navigation.pathname = '/spendtrack';
+
+    render(
+      <>
+        <ScreenContextPublisher />
+        <FakeSheet open />
+      </>
+    );
+    settle();
+
+    expect(snapshot()).toMatchObject({
+      screenId: 'spendtrack',
+      overlays: [{ id: 'spendtrack.expense.edit', kind: 'dialog' }],
+      focus: { kind: 'expense', id: '8f2c1a70-0000-4000-8000-000000000000' },
+      fields: { description: 'قهوة' },
+    });
+  });
+
+  it('keeps what a closed sheet had out of the next snapshot', () => {
+    navigation.pathname = '/spendtrack';
+
+    const { rerender } = render(
+      <>
+        <ScreenContextPublisher />
+        <FakeSheet open />
+      </>
+    );
+    settle();
+    expect(snapshot().overlays).toHaveLength(1);
+
+    rerender(
+      <>
+        <ScreenContextPublisher />
+        <FakeSheet open={false} />
+      </>
+    );
+    settle();
+
+    expect(snapshot()).toMatchObject({ overlays: [], focus: null });
+  });
+
+  it('never lets a password, an OTP or a card number into the turn', () => {
+    navigation.pathname = '/spendtrack';
+
+    render(
+      <>
+        <ScreenContextPublisher />
+        <FakeSheet
+          open
+          fields={[
+            { name: 'password', value: 'hunter2-secret', type: 'password' },
+            { name: 'amount', value: '9999.99', type: 'password' },
+            { name: 'code', value: '482913', autocomplete: 'one-time-code' },
+            { name: 'description', value: '482913', autocomplete: 'one-time-code' },
+            { name: 'card_number', value: '4111 1111 1111 1111', autocomplete: 'cc-number' },
+            { name: 'currency', value: '4111 1111 1111 1111', autocomplete: 'cc-number' },
+            { name: 'category_id', value: 'groceries' },
+          ]}
+        />
+      </>
+    );
+    settle();
+
+    expect(snapshot().fields).toEqual({ category_id: 'groceries' });
+    expect(JSON.stringify(snapshot())).not.toContain('hunter2-secret');
+    expect(JSON.stringify(snapshot())).not.toContain('482913');
+    expect(JSON.stringify(snapshot())).not.toContain('4111');
+  });
+
+  it('publishes no fields and no text on a surface that opted out', () => {
+    navigation.pathname = '/chats/new';
+
+    render(
+      <>
+        <ScreenContextPublisher />
+        <FakeSheet open text="رسالة لم تُرسل بعد" />
+      </>
+    );
+    settle();
+
+    expect(snapshot()).toMatchObject({ screenId: 'chats', fields: {}, text: '' });
   });
 });
