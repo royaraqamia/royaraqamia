@@ -30,7 +30,11 @@ import {
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { createDefaultMcpAppToolsService } from '@/backend/config/mcp';
 import { createPlanGate, createUsageService } from '@/backend/config/plans';
-import { createAgentRecallFor, createMemoryExtractionFor } from '@/backend/config/agent-memory';
+import {
+  createAgentRecallFor,
+  createConversationSummaryFor,
+  createMemoryExtractionFor,
+} from '@/backend/config/agent-memory';
 import { deferredAfter } from '@/backend/config/after';
 import { env } from '@/backend/config/env';
 import { projectIdentity } from '@/backend/services/chat/turn-identity';
@@ -172,6 +176,12 @@ export function createSupabaseChatAgentService(
     // fact they deleted is unreachable even with a stale vector; the query
     // vector is the one embedding call a turn's read path spends.
     recall: createAgentRecallFor(supabase),
+    // The beginning of a thread the window has already dropped (ADR-0182,
+    // decision 4): read on the member's session and injected as its own block,
+    // regenerated behind the answer once ten more messages have arrived. The
+    // service applies both gates, so a turn that does not clear them spends
+    // nothing.
+    summary: createConversationSummaryFor(supabase, client),
     // The apps the member connected, when the marketplace is configured: the
     // turn declares at most sixteen of their tools, and a write among them is a
     // card like any other (ADR-0155, decision 7).

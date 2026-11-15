@@ -457,6 +457,9 @@ export type Database = {
           kind: string;
           last_message_at: string | null;
           status: string;
+          summary: string | null;
+          summary_through_message_id: string | null;
+          summary_updated_at: string | null;
           title: string | null;
           updated_at: string;
         };
@@ -469,6 +472,9 @@ export type Database = {
           kind?: string;
           last_message_at?: string | null;
           status?: string;
+          summary?: string | null;
+          summary_through_message_id?: string | null;
+          summary_updated_at?: string | null;
           title?: string | null;
           updated_at?: string;
         };
@@ -481,10 +487,21 @@ export type Database = {
           kind?: string;
           last_message_at?: string | null;
           status?: string;
+          summary?: string | null;
+          summary_through_message_id?: string | null;
+          summary_updated_at?: string | null;
           title?: string | null;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'chat_conversations_summary_through_message_id_fkey';
+            columns: ['summary_through_message_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_messages';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       chat_messages: {
         Row: {
