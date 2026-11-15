@@ -805,3 +805,41 @@ describe('ChatThreadView proposals', () => {
     expect(screen.queryByRole('button', { name: 'تأكيد' })).toBeNull();
   });
 });
+
+/**
+ * The page is Arabic, so a line has to say which edge it starts from: the field
+ * takes its direction from what is typed, and every line of a mixed message
+ * takes its own (ADR-0190).
+ */
+describe('ChatThreadView direction', () => {
+  beforeEach(() => {
+    hook.messages.current = [];
+    hook.actions.current = [];
+    hook.loading.current = false;
+    thread.current = makeThread('direct');
+  });
+
+  it('lets the field follow the language being typed, per line', () => {
+    render(<ChatThreadView conversationId="c-1" />);
+
+    const field = screen.getByRole('textbox', { name: 'نص الرسالة' });
+    expect(field).toHaveAttribute('dir', 'auto');
+    expect(field).toHaveClass('bidi-lines');
+  });
+
+  it('gives the bubble and the reply it quotes the same rule', () => {
+    hook.messages.current = [
+      {
+        ...mineMessage(),
+        body: 'Hey there',
+        replyTo: { ...mineMessage(), id: 'm-0', body: 'الرسالة الأصلية' },
+      },
+    ];
+
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByText('Hey there')).toHaveAttribute('dir', 'auto');
+    expect(screen.getByText('Hey there')).toHaveClass('bidi-lines');
+    expect(screen.getByText('الرسالة الأصلية')).toHaveAttribute('dir', 'auto');
+  });
+});

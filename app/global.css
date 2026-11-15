@@ -1601,6 +1601,24 @@ select,
   }
 }
 
+/* Each line of a conversation finds its own edge (#1492).
+ *
+ * The page is Arabic, so a field or a bubble that inherits its direction puts an
+ * English sentence against the right edge and reads it backwards. `dir="auto"`
+ * alone fixes a *document* whose first character is Latin and still misplaces
+ * the second line of a mixed one — and in this product a single message holding
+ * an English line and an Arabic line is ordinary, not an edge case.
+ *
+ * `plaintext` is what makes the browser apply the bidi algorithm per paragraph:
+ * every line takes its base direction from its own first strong character, the
+ * way Telegram and WhatsApp have read mixed text for years. It is written once,
+ * unlayered and in the shell, because the chat bubbles and their editor live on
+ * two surfaces (`/chats` and the floating assistant) and neither may be the one
+ * that owns the rule. */
+.bidi-lines {
+  unicode-bidi: plaintext;
+}
+
 /* The empty rich-text surface says what it is for.
  *
  * Tiptap's `Placeholder` extension only decorates the empty block: it puts
