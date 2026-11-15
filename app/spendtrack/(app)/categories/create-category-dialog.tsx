@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, memo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createCategory } from '@/frontend/api/spendtrack';
 import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { spendtrackCategoryScope } from '@/frontend/ui/spendtrack/spendtrack-screen-scope';
 import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
@@ -51,6 +53,7 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm<CategoryFormValues>({
@@ -61,6 +64,11 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
       colorHex: '#8f6fe5',
     },
   });
+
+  // The dialog's own two fields, as candidates: the category surface's allowlist
+  // names them, and nothing else about the store travels (ADR-0181, #1420).
+  const values = useWatch({ control });
+  useScreenScope(open ? spendtrackCategoryScope(values) : null);
 
   const [colorValue, setColorValue] = useState('#8f6fe5');
   const { onChange: rhfColorOnChange, ...colorRegister } = register('colorHex');

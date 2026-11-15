@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import type { Note } from '@/shared/contracts/notes';
 import { noteName, noteSearchText, normalizeForSearch } from '@/frontend/shared/notes/text';
 import { useNotes } from '@/frontend/state/notes/use-notes';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { notesEditorScope, notesScreenScope } from './notes-screen-scope';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SyncStatusPill } from '@/frontend/ui/shared/sync-status-pill';
 import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
@@ -158,6 +160,12 @@ function NotesContent({ embedded }: { embedded: boolean }) {
     () => (selectedId ? (notes.find((note) => note.id === selectedId) ?? null) : null),
     [notes, selectedId]
   );
+
+  // The list registers itself, and the open editor registers the note it has in
+  // hand. Its body is handed over as a candidate and the surface's allowlist
+  // refuses it: an unsent draft is invisible by decision (ADR-0181, #1420).
+  useScreenScope(notesScreenScope());
+  useScreenScope(notesEditorScope(selected));
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4" data-notes-ready={ready ? 'true' : 'false'}>

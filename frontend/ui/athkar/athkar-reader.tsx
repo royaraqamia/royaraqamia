@@ -9,7 +9,9 @@ import {
   type AthkarPeriod,
 } from '@/shared/contracts/athkar';
 import { TabChips } from '@/frontend/ui/primitives/tab-chips';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { AthkarCard } from './athkar-card';
+import { athkarScreenScope } from './athkar-screen-scope';
 import { ATHKAR_PAGE_COPY } from './athkar-page-copy';
 import { countFor } from './count-store';
 import { useAthkarCounts } from './use-athkar-counts';
@@ -50,6 +52,10 @@ export function AthkarReader({
   const baseId = useId();
 
   const collection = collections[period];
+
+  // The sitting is the tab: the route names it on `/athkar` and `/athkar/evening`,
+  // and the homepage keeps it in state (ADR-0181, #1420).
+  useScreenScope(athkarScreenScope(period));
 
   const select = (next: AthkarPeriod) => {
     if (next === period) return;

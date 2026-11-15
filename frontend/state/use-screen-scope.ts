@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 
-import { registerScreenScope, type ScreenScope } from './screen-context';
+import { registerScreenScope, type ScreenScope } from './screen-scopes';
 
 /** Everything that makes one registration different from the last. */
 function scopeKey(scope: ScreenScope): string {
@@ -14,6 +14,7 @@ function scopeKey(scope: ScreenScope): string {
     scope.kind,
     scope.focus?.kind ?? '',
     scope.focus?.id ?? '',
+    scope.tab ?? '',
     fields,
     scope.text ?? '',
   ].join('\u0000');

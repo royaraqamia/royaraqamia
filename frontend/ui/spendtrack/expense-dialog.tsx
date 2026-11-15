@@ -5,6 +5,8 @@ import { useForm, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSaveExpense } from '@/frontend/state/spendtrack/use-expenses';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { spendtrackExpenseScope } from '@/frontend/ui/spendtrack/spendtrack-screen-scope';
 import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
@@ -128,6 +130,12 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
     defaultValues: emptyExpenseForm(),
   });
 
+  // The form the member is filling in, as candidates: the surface's allowlist
+  // names the five fields it may show, and the rest of what this component
+  // holds (the store, the account) never travels (ADR-0181, #1420).
+  const values = useWatch({ control });
+  useScreenScope(isOpen ? spendtrackExpenseScope(values) : null);
+
   async function onSubmit(data: ExpenseFormValues) {
     const ok = await submit({
       ...data,
@@ -216,6 +224,11 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
     mode: 'onBlur',
     defaultValues: expenseFormValues(expense),
   });
+
+  // The row in hand, and the values the form holds for it: the edit dialog is
+  // what "this expense is wrong" is about (ADR-0181, #1420).
+  const values = useWatch({ control });
+  useScreenScope(isOpen ? spendtrackExpenseScope(values, expense.id) : null);
 
   async function onSubmit(data: ExpenseFormValues) {
     const ok = await submit({

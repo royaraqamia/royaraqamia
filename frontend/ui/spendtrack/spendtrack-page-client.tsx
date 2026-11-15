@@ -6,6 +6,8 @@ import { endOfMonth, format, startOfMonth, subDays } from 'date-fns';
 import { DEFAULT_CURRENCY } from '@/shared/currency';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { identityUserId } from '@/frontend/shared/local-store/identity';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { spendtrackScreenScope } from '@/frontend/ui/spendtrack/spendtrack-screen-scope';
 import { SpendtrackProvider } from '@/frontend/state/spendtrack/spendtrack-context';
 import type { SpendtrackSeed } from '@/frontend/state/spendtrack/use-spendtrack';
 import type { Category } from '@/shared/contracts/spendtrack';
@@ -135,6 +137,10 @@ function SpendtrackPageContent() {
     searchParams.get('from') ?? undefined,
     searchParams.get('to') ?? undefined
   );
+
+  // The range chip the totals are counted over, and the one part of the
+  // dashboard's state the path does not name (ADR-0181, #1420).
+  useScreenScope(spendtrackScreenScope(range));
 
   return (
     <SpendtrackProvider seed={seed}>

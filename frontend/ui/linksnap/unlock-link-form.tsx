@@ -6,6 +6,8 @@ import { unlockLink } from '@/frontend/api/linksnap';
 import { ApiError } from '@/frontend/transport/http';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { homeTabHref } from '@/shared/contracts/home-services-catalog';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { linksnapUnlockScope } from './linksnap-screen-scope';
 import { LINKSNAP_UNLOCK_COPY } from './linksnap-unlock-copy';
 
 /** The status the server answered with, in the sentence both clients draw (#919). */
@@ -30,6 +32,10 @@ export function UnlockLinkForm({ code }: { code: string }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // The unlock page registers itself and not the password: its allowlist has no
+  // fields at all, so a credential cannot be a candidate (ADR-0181, #1420).
+  useScreenScope(linksnapUnlockScope());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

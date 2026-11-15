@@ -23,6 +23,10 @@ import { fileURLToPath } from 'node:url';
  *    Kotlin screen twice?
  * 4. Does every `*Screen.kt` in the app belong to a row? A native screen added
  *    without a row is exactly the gap this exists to list.
+ * 5. Does every registration name a surface this registry has? A surface
+ *    registers itself as `<surface>.<name>` for the assistant's eyes
+ *    (ADR-0181), and a registration that names a screen the registry does not
+ *    have is a snapshot the model can never be given.
  *
  * The same rows are what the assistant's eyes read (ADR-0181): a turn knows
  * which screen it is on because a route maps to a surface id, and that mapping
@@ -39,6 +43,7 @@ const INVENTORY = join(ROOT, 'docs', 'mobile', 'screens.json');
 const RENDERED = join(ROOT, 'docs', 'mobile', 'screens.md');
 const MATRIX = join(ROOT, 'perf', 'surfaces.json');
 const ROUTES = join(ROOT, 'shared', 'contracts', 'screens.generated.ts');
+const SOURCE_ROOTS = ['frontend', 'app'];
 const NATIVE_ROOT = join(
   ROOT,
   'android',
@@ -64,8 +69,88 @@ export function nativeScreens(root = NATIVE_ROOT) {
     .sort();
 }
 
+/**
+ * The arguments of one call, from its opening parenthesis to its closing one.
+ *
+ * A registration is read from the source rather than from a second list, so a
+ * surface that registers a screen the registry does not have is found where it
+ * is written. The scan is deliberately narrow: the id must be a string literal
+ * in the call, which is what makes the convention checkable at all.
+ */
+function callArguments(text, start) {
+  let depth = 0;
+  let quote = '';
+  for (let index = start; index < text.length; index += 1) {
+    const character = text[index];
+    if (quote) {
+      if (character === '\\') index += 1;
+      else if (character === quote) quote = '';
+      continue;
+    }
+    if (character === "'" || character === '"' || character === '`') {
+      quote = character;
+    } else if (character === '(') {
+      depth += 1;
+    } else if (character === ')') {
+      depth -= 1;
+      if (depth === 0) return text.slice(start, index + 1);
+    }
+  }
+  return '';
+}
+
+/** The scope ids one file registers: `useScreenScope({ id: 'news.page', … })`. */
+export function scopeIds(text) {
+  const ids = [];
+  for (const match of text.matchAll(/\buseScreenScope\s*\(/g)) {
+    const call = callArguments(text, match.index + match[0].length - 1);
+    const id = /id:\s*'([^']+)'/.exec(call);
+    if (id) ids.push(id[1]);
+  }
+  return ids;
+}
+
+/**
+ * Every registration in the site's source, by the id it names.
+ *
+ * Two shapes count, because a surface writes its scope in one of two ways: an
+ * inline object at the call site (`useScreenScope({ id: 'news.page', … })`), or
+ * a builder in a `*-screen-scope.ts` module that the component calls with the
+ * state it holds. Both name the id literally, which is what the scan reads.
+ *
+ * The part before the first dot is the surface id (ADR-0181's convention), so a
+ * registration and the two-client registry are one list: `news.page` is the
+ * `news` surface, `spendtrack.expense` is `spendtrack`. Tests are skipped — a
+ * fixture that registers a made-up id is a fixture, not a screen.
+ */
+export function registrations(root = ROOT) {
+  const found = [];
+  for (const dir of SOURCE_ROOTS) {
+    const base = join(root, dir);
+    if (!existsSync(base)) continue;
+    for (const entry of readdirSync(base, { recursive: true })) {
+      const path = join(base, String(entry));
+      if (!/\.(ts|tsx)$/.test(path)) continue;
+      if (path.split(/[\\/]/).includes('__tests__')) continue;
+      const relativePath = relative(root, path).split('\\').join('/');
+      const text = readFileSync(path, 'utf8');
+      const ids = path.endsWith('-screen-scope.ts')
+        ? [...text.matchAll(/\bid:\s*'([^']+)'/g)].map((match) => match[1])
+        : scopeIds(text);
+      for (const id of ids) found.push({ id, path: relativePath });
+    }
+  }
+  return found;
+}
+
 /** Every problem, not just the first: a half-listed screen is a discovery waiting to happen. */
-export function validate({ inventory, matrix, repoRoot = ROOT, nativeRoot = NATIVE_ROOT }) {
+export function validate({
+  inventory,
+  matrix,
+  repoRoot = ROOT,
+  nativeRoot = NATIVE_ROOT,
+  registered,
+}) {
   const errors = [];
   const rows = inventory.screens ?? [];
   const surfaces = (matrix.surfaces ?? []).map((surface) => surface.id);
@@ -139,6 +224,32 @@ export function validate({ inventory, matrix, repoRoot = ROOT, nativeRoot = NATI
     errors.push(
       `native screens with no row: ${unlisted.map((path) => relative(repoRoot, path).split('\\').join('/')).join(', ')}`
     );
+  }
+
+  // A registration names `<surface>.<name>`, and the surface is a row in this
+  // same registry: a screen the assistant can be told about is a screen the two
+  // clients know (ADR-0181). The reverse — a surface with no registration — is
+  // not an error yet: #1421 registers the rest, and the day it lands this check
+  // names the gap instead of leaving it silent.
+  const found = registered ?? registrations(repoRoot);
+  const seen = new Map();
+  for (const { id, path } of found) {
+    const surface = String(id).split('.')[0];
+    const name = String(id).slice(surface.length + 1);
+    if (!surface || !name || !/^[a-z0-9-]+$/.test(surface)) {
+      errors.push(`registration "${id}" in ${path} must name a screen as "<surface>.<name>"`);
+      continue;
+    }
+    if (!listed.has(surface)) {
+      errors.push(
+        `registration "${id}" in ${path} names surface "${surface}" that docs/mobile/screens.json does not have`
+      );
+    }
+    if (seen.has(id)) {
+      errors.push(`registration "${id}" appears in ${seen.get(id)} and ${path}`);
+    } else {
+      seen.set(id, path);
+    }
   }
 
   return errors;
@@ -354,8 +465,11 @@ export function main(argv = process.argv.slice(2)) {
   const screens = inventory.screens ?? [];
   const ported = screens.filter((row) => typeof row.native === 'string');
   const on = ported.filter((row) => row.enabled !== false).length;
+  const found = registrations();
+  const named = new Set(found.map(({ id }) => id.split('.')[0]));
   console.log(
-    `  ok ${screens.length} screens, ${on} drawn natively, ${ported.length - on} ported but off`
+    `  ok ${screens.length} screens, ${on} drawn natively, ${ported.length - on} ported but off, ` +
+      `${found.length} registrations over ${named.size} surfaces`
   );
   return 0;
 }

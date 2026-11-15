@@ -7,7 +7,9 @@ import { RedirectErrorBanner } from '@/frontend/ui/linksnap/redirect-error-banne
 import { LinksnapSyncStatus } from '@/frontend/ui/linksnap/linksnap-sync-status';
 import { useSession } from '@/frontend/state/session-provider';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { LinksnapProvider } from '@/frontend/state/linksnap/linksnap-context';
+import { linksnapScreenScope } from './linksnap-screen-scope';
 
 interface RedirectError {
   type: string;
@@ -29,6 +31,10 @@ export function LinkSnapAppView() {
   const { identity } = useLocalIdentity();
   const [redirectError, setRedirectError] = useState<RedirectError | null>(null);
   const token = session?.access_token ?? null;
+
+  // The root registers its screen; the URL being typed and the links in the
+  // store are the member's own rows and stay out (ADR-0181, #1420).
+  useScreenScope(linksnapScreenScope());
 
   const parsedParams = useRef(false);
   useEffect(() => {

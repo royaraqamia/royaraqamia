@@ -2,6 +2,8 @@
 
 import type { ReactNode } from 'react';
 import { useQuranPlayer } from '@/frontend/state/quran/player-context';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { quranSurahScreenScope } from './quran-screen-scope';
 import { ReadingSession } from './reading-session';
 import { PlayerFloat } from './player-float';
 
@@ -24,6 +26,10 @@ export function QuranReadingClient({ surah, bismillah, audio, children }: QuranR
   const isThisSurah = state.surah === surah;
   const playingAyah =
     isThisSurah && (state.status === 'playing' || state.status === 'paused') ? state.ayah : null;
+
+  // Which sura is open is the record this screen holds; the reading position
+  // itself stays device-local (ADR-0181, #1420).
+  useScreenScope(quranSurahScreenScope(surah));
 
   return (
     <>

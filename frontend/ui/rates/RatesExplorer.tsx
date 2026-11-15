@@ -9,6 +9,8 @@ import { MetalConverter } from '@/frontend/ui/rates/MetalConverter';
 import { buildLookup, marketOptionsFor, oldestParallelAsOf } from '@/frontend/ui/rates/rate-lookup';
 import { resolveDefaultPair } from '@/frontend/ui/rates/rates-defaults';
 import { SegmentedControl, type SegmentedOption } from '@/frontend/ui/rates/SegmentedControl';
+import { ratesScreenScope } from '@/frontend/ui/rates/rates-screen-scope';
+import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { useDefaultCountry } from '@/frontend/ui/shared/default-country';
 import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
 import { replaceSearch } from '@/frontend/shared/replace-search';
@@ -93,6 +95,11 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   const basisRelevant = isParallelRate(lookup, from) || isParallelRate(lookup, to);
   const effectiveBasis: RateBasis = basisRelevant ? basis : 'official';
   const marketRelevant = basisRelevant && basis === 'parallel' && marketOptions.length > 1;
+
+  // The basis is the chip the member chose, and the result card already names
+  // it: the same pair at two rates is two answers to one question (ADR-0181,
+  // #1420).
+  useScreenScope(ratesScreenScope(effectiveBasis));
 
   const numericAmount = Number(amount);
   const conversion = useMemo(() => {
