@@ -129,6 +129,23 @@ describe('AccountView', () => {
     );
   });
 
+  it('gates the device notification row for a guest instead of a switch that cannot work', async () => {
+    render(<AccountView />);
+
+    // A guest has no account for the server to attach a device to, so the switch
+    // is the same gated row as the links below it: a button, not a dead toggle.
+    const row = screen.getByRole('button', { name: /إشعارات الجهاز/ });
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+
+    fireEvent.click(row);
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /تسجيل الدُّخول/ })).toHaveAttribute(
+      'href',
+      '/auth/login?redirect=%2Faccount'
+    );
+  });
+
   it('asks a guest to sign in for تواصل معنا and returns them to the support chat', async () => {
     render(<AccountView />);
 

@@ -113,10 +113,7 @@ function AccountPostsContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-muted-foreground">
-          كل ما كتبته، في مكان واحد: مسودَّاتك، ما جدولته، وما نشره الآخرون يقرؤونه.
-        </p>
+      <div className="flex justify-end">
         <SyncStatusPill status={sync} />
       </div>
 
