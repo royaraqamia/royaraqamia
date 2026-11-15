@@ -1,7 +1,7 @@
 'use client';
 
 import { useScreenScope } from '@/frontend/state/use-screen-scope';
-import { communityPostScope } from './community-screen-scope';
+import { communityPostScope } from '@/frontend/ui/community/community-screen-scope';
 
 /**
  * The post a turn is asked from, by id (ADR-0181, #1421).

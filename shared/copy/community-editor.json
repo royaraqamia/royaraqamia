@@ -2,7 +2,7 @@
   "surface": "community",
   "component": "community-editor",
   "web": {
-    "file": "app/community/_components/community-editor-copy.ts",
+    "file": "frontend/ui/community/community-editor-copy.ts",
     "export": "COMMUNITY_EDITOR_COPY"
   },
   "native": {

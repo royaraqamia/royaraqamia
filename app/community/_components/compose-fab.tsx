@@ -6,7 +6,7 @@ import { PenLine } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
 import { useUI } from '@/frontend/state/UIContext';
 import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
-import { PostComposerDialog } from './post-composer-dialog';
+import { PostComposerDialog } from '@/frontend/ui/community/post-composer-dialog';
 import { COMMUNITY_COMPOSE_FAB_COPY } from './community-compose-fab-copy';
 
 /**

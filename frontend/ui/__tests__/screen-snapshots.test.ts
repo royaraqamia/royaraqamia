@@ -10,7 +10,7 @@ import {
   communityComposerScope,
   communityFeedScope,
   communityPostScope,
-} from '@/app/community/_components/community-screen-scope';
+} from '@/frontend/ui/community/community-screen-scope';
 import {
   habitflowHabitScope,
   habitflowScreenScope,
