@@ -33,9 +33,13 @@ Next.js 16 renamed the edge middleware file `middleware.ts` → `proxy.ts` (the 
 Product code follows this structure:
 
 - `app/<product>/` — routes/pages
-- `frontend/ui/<product>/` — UI components
+- `app/<product>/_components/` — components private to that route, and nothing else may import them
+- `frontend/ui/<product>/` — UI components; anything a second caller draws
 - `backend/services/<product>/` — business logic
 - `backend/repositories/<product>/` — data access
+
+`layers/no-cross-layer-import` refuses a `frontend/**` import of `app/**/_components/**`
+([ADR-0196](adr/0196-a-ui-component-is-not-a-routes-private-file.md)).
 
 ## Shared contracts
 

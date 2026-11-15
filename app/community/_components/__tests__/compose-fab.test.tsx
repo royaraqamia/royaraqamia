@@ -19,7 +19,7 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/community',
 }));
 
-vi.mock('../post-composer-dialog', () => ({
+vi.mock('@/frontend/ui/community/post-composer-dialog', () => ({
   PostComposerDialog: ({ open }: { open: boolean }) => (open ? <div>composer</div> : null),
 }));
 

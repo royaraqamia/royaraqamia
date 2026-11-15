@@ -16,7 +16,7 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { useSession } from '@/frontend/state/session-provider';
 import { deletePost, restorePost } from '@/frontend/api/blogpress';
 import { postExcerpt } from '@/shared/reading-time';
-import { PostComposerDialog } from './post-composer-dialog';
+import { PostComposerDialog } from '@/frontend/ui/community/post-composer-dialog';
 import type { PostStatus } from '@/shared/contracts/blogpress';
 
 /** Minimal post shape the owner actions need; both `Post` and `PostSummary` satisfy it. */

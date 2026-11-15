@@ -2,7 +2,7 @@
   "surface": "community",
   "component": "community-composer",
   "web": {
-    "file": "app/community/_components/community-composer-copy.ts",
+    "file": "frontend/ui/community/community-composer-copy.ts",
     "export": "COMMUNITY_COMPOSER_COPY"
   },
   "native": {

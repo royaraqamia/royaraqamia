@@ -11,9 +11,9 @@ import { SyncStatusPill } from '@/frontend/ui/shared/sync-status-pill';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
-import { PostList } from '@/app/account/posts/_components/post-list';
-import { PostComposerDialog } from '@/app/community/_components/post-composer-dialog';
+import { PostComposerDialog } from '@/frontend/ui/community/post-composer-dialog';
 import { formatCount } from '@/frontend/shared/format';
+import { PostList } from './post-list';
 import type { Post } from '@/shared/contracts/blogpress';
 
 function PostsSkeleton() {

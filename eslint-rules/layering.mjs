@@ -5,7 +5,7 @@
  * pull request that broke it: an unattended agent can put a `.from('chat_reports')` in a
  * component and every gate stays green. This rule is the mechanical half.
  *
- * It is deliberately narrow — four crossings, each already true of the codebase — so it
+ * It is deliberately narrow — five crossings, each already true of the codebase — so it
  * fails a new violation and no existing file:
  *
  * - `backend/**` may not reach into `frontend/**`.
@@ -14,6 +14,9 @@
  * - `app/**` and `frontend/ui/**` may not import a Supabase client — SDK isolation.
  * - `backend/services/**` may not import a repository or client *value*: a service depends
  *   on the interface, and the wiring is `backend/config`'s job.
+ * - `frontend/**` may not import a route's `_components/` folder: that folder is private to
+ *   the route that owns it, and a component another layer wants belongs in `frontend/ui/`
+ *   (ADR-0196 — `PostList` used to be reachable only through `/account/posts`).
  *
  * Type-only imports are allowed everywhere: a service importing `type OtpRepository` is
  * following the rule, not breaking it, and `import type` is how the repo already says so.
@@ -24,6 +27,12 @@
 import path from 'node:path';
 
 const alias = (suffix) => new RegExp('^@/' + suffix + '/');
+
+/** A route's private component folder, reached by alias or by a relative walk. */
+const ROUTE_COMPONENTS = [
+  /^@\/app\/.*\/_components\//,
+  /(^|\/)\.\.?\/(.*\/)?app\/.*\/_components\//,
+];
 
 const ZONES = [
   {
@@ -48,6 +57,11 @@ const ZONES = [
     importer: /^backend\/services\//,
     forbidden: [alias('backend/(repositories|clients)')],
     why: 'a service depends on the interface it declares, and `backend/config` wires it',
+  },
+  {
+    importer: /^frontend\//,
+    forbidden: ROUTE_COMPONENTS,
+    why: "a route's `_components` folder is that route's, so a shared component belongs in `frontend/ui/`",
   },
 ];
 

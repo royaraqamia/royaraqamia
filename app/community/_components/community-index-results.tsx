@@ -14,7 +14,7 @@ import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { requestWithMeta } from '@/frontend/transport/http';
 import { CommunityResults } from './community-results';
 import { CommunitySearchSummary } from './community-search-summary';
-import { communityFeedScope } from './community-screen-scope';
+import { communityFeedScope } from '@/frontend/ui/community/community-screen-scope';
 import {
   communityFeedInitialState,
   communityFeedReducer,
