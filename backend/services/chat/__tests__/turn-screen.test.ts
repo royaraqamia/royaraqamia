@@ -91,9 +91,7 @@ describe('screenContextBlock', () => {
   });
 
   it('quotes the fields and the excerpt the surface allowed', () => {
-    const block = screenContextBlock(
-      screen({ fields: { amount: '12.50', description: 'قهوة' } })
-    );
+    const block = screenContextBlock(screen({ fields: { amount: '12.50', description: 'قهوة' } }));
 
     expect(block).toContain('الحقول: amount=12.50 · description=قهوة');
   });
