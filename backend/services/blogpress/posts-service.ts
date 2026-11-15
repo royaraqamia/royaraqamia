@@ -38,27 +38,20 @@ export class BlogpressPostsService {
     return this.repository.publishPost(postId, authorId);
   }
 
-  async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
-    if (!snapshot.slug || !snapshot.slug.trim()) {
-      throw new Error('المعرِّف (slug) مطلوب');
+  async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ slug: string }> {
+    const slug = snapshot.slug?.trim();
+    if (!snapshot.id && !slug) {
+      throw new Error('معرِّف المنشور أو رابطه مطلوب');
     }
 
-    // Only the content fields cross the seam. The repository revives the
-    // tombstone, so the status and publication columns keep the values the
-    // deleted row already had (#528).
-    const { id } = await this.repository.restorePost(authorId, {
+    // Only the tombstone's handle and its stamp cross the seam (#1518). The
+    // body, the metadata and the tags are already on the row the request
+    // revives, so nothing the editor sent earlier travels back with the undo.
+    return this.repository.restorePost(authorId, {
       ...(snapshot.id ? { id: snapshot.id } : {}),
-      slug: snapshot.slug.trim(),
-      content: snapshot.content,
-      cover_image: snapshot.cover_image,
-      meta_title: snapshot.meta_title,
-      meta_desc: snapshot.meta_desc,
-      ...(snapshot.tagIds ? { tagIds: snapshot.tagIds } : {}),
+      ...(slug ? { slug } : {}),
+      ...(snapshot.updatedAt ? { updatedAt: snapshot.updatedAt } : {}),
     });
-    if (snapshot.tagIds && snapshot.tagIds.length > 0) {
-      await this.repository.setPostTags(id, authorId, snapshot.tagIds);
-    }
-    return { id };
   }
 
   async duplicatePost(postId: string, authorId: string): Promise<{ id: string }> {

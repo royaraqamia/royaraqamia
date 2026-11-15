@@ -79,7 +79,10 @@ describe('blogpress controller', () => {
     mockRepository.createPost.mockResolvedValue({ id: 'p-1' });
     mockRepository.getPostByClientId.mockResolvedValue(null);
     mockRepository.updatePost.mockResolvedValue(undefined);
-    mockRepository.deletePost.mockResolvedValue({ slug: 'hello' });
+    mockRepository.deletePost.mockResolvedValue({
+      slug: 'hello',
+      updatedAt: '2026-10-18T09:00:00.000Z',
+    });
     mockRepository.unpublishPost.mockResolvedValue({ slug: 'hello' });
     mockRepository.countPostsInStatus.mockResolvedValue(0);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
@@ -91,7 +94,7 @@ describe('blogpress controller', () => {
       alreadyPublishedIds: [],
     });
     mockRepository.bulkSetPostCategories.mockResolvedValue(undefined);
-    mockPosts.restorePost.mockResolvedValue({ id: 'p-1' });
+    mockPosts.restorePost.mockResolvedValue({ slug: 'hello' });
     planMocks.cap.mockResolvedValue(undefined);
   });
 
@@ -226,7 +229,7 @@ describe('blogpress controller', () => {
     );
     expect(result).toMatchObject({
       status: 200,
-      body: { success: true },
+      body: { success: true, updatedAt: '2026-10-18T09:00:00.000Z' },
       revalidate: [
         { path: '/account/posts' },
         { path: '/community/hello' },
@@ -236,11 +239,15 @@ describe('blogpress controller', () => {
   });
 
   it('replays an already-gone delete as success without a revalidation target', async () => {
-    mockRepository.deletePost.mockResolvedValue({ slug: null });
+    mockRepository.deletePost.mockResolvedValue({ slug: null, updatedAt: null });
 
     const result = await deletePost('p-1', { updatedAt: '2026-10-18T09:00:00.000Z' });
 
-    expect(result).toMatchObject({ status: 200, body: { success: true }, revalidate: [] });
+    expect(result).toMatchObject({
+      status: 200,
+      body: { success: true, updatedAt: null },
+      revalidate: [],
+    });
   });
 
   it('maps a delete failure to 500', async () => {
@@ -253,10 +260,11 @@ describe('blogpress controller', () => {
     );
   });
 
-  it('restores with only the content fields, dropping forged server-owned values', async () => {
+  it('restores with the tombstone handle and its stamp, dropping forged values', async () => {
     const result = await restorePost({
       id: '11111111-1111-4111-8111-111111111111',
       slug: 'hello',
+      updatedAt: '2026-10-18T09:00:00.000Z',
       content: 'body',
       cover_image: null,
       meta_title: null,
@@ -272,29 +280,53 @@ describe('blogpress controller', () => {
     expect(mockPosts.restorePost).toHaveBeenCalledWith('u-1', {
       id: '11111111-1111-4111-8111-111111111111',
       slug: 'hello',
-      content: 'body',
-      cover_image: null,
-      meta_title: null,
-      meta_desc: null,
+      updatedAt: '2026-10-18T09:00:00.000Z',
     });
-    expect(result).toMatchObject({ status: 200, body: { success: true, id: 'p-1' } });
+    expect(result).toMatchObject({
+      status: 200,
+      body: { success: true, slug: 'hello' },
+      revalidate: [
+        { path: '/account/posts' },
+        { path: '/community/hello' },
+        { path: '/community' },
+      ],
+    });
   });
 
   it('maps a restore with no owned tombstone to 404', async () => {
     mockPosts.restorePost.mockRejectedValue(new AppError('المنشور المحذوف غير موجود', 404));
 
-    const result = await restorePost({
-      slug: 'hello',
-      content: 'body',
-      cover_image: null,
-      meta_title: null,
-      meta_desc: null,
-    });
+    const result = await restorePost({ slug: 'hello' });
 
     expect(result).toEqual(
       expect.objectContaining({
         status: 404,
         body: { error: 'المنشور المحذوف غير موجود' },
+      })
+    );
+  });
+
+  it('passes a tombstone that moved on through as 412, not a server fault', async () => {
+    mockPosts.restorePost.mockRejectedValue(
+      new AppError(
+        'تغيَّر المنشور بعد الحذف، فأعِد تحميل الصَّفحة لتستعيد أحدث نُسخة.',
+        412,
+        'POST_CHANGED'
+      )
+    );
+
+    const result = await restorePost({
+      id: '11111111-1111-4111-8111-111111111111',
+      updatedAt: '2026-10-18T09:00:00.000Z',
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 412,
+        body: {
+          error: 'تغيَّر المنشور بعد الحذف، فأعِد تحميل الصَّفحة لتستعيد أحدث نُسخة.',
+          code: 'POST_CHANGED',
+        },
       })
     );
   });

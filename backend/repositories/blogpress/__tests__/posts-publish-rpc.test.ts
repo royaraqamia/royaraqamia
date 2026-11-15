@@ -92,23 +92,38 @@ describe('blogpress post transitions go through the gated RPCs', () => {
   });
 
   it('restorePost revives the tombstone through restore_post, never as a client insert', async () => {
-    const { client, rpc, from } = rpcClient({ data: 'post-id', error: null });
+    const { client, rpc, from } = rpcClient({ data: 'revived-slug', error: null });
 
     const snapshot = {
       id: 'post-id',
       slug: 'hello',
-      content: 'body',
-      cover_image: null,
-      meta_title: null,
-      meta_desc: null,
+      updatedAt: '2026-11-15T09:00:00.000Z',
     };
 
     await expect(createPostsRepository(client).restorePost('u1', snapshot)).resolves.toEqual({
-      id: 'post-id',
+      slug: 'revived-slug',
     });
 
     expect(rpc).toHaveBeenCalledWith('restore_post', { p_snapshot: snapshot });
     expect(from).not.toHaveBeenCalled();
+  });
+
+  it('a restore whose tombstone moved on is a 412, not an overwrite', async () => {
+    const { client } = rpcClient({
+      data: null,
+      error: { message: 'post changed since it was deleted', code: 'P0004' },
+    });
+
+    await expect(
+      createPostsRepository(client).restorePost('u1', {
+        id: 'post-id',
+        updatedAt: '2026-11-15T09:00:00.000Z',
+      })
+    ).rejects.toMatchObject({
+      statusCode: 412,
+      code: 'POST_CHANGED',
+      message: 'تغيَّر المنشور بعد الحذف، فأعِد تحميل الصَّفحة لتستعيد أحدث نُسخة.',
+    });
   });
 
   it('a restore with no owned tombstone is a 404, not an infrastructure failure', async () => {
@@ -118,13 +133,7 @@ describe('blogpress post transitions go through the gated RPCs', () => {
     });
 
     await expect(
-      createPostsRepository(client).restorePost('u1', {
-        slug: 'hello',
-        content: 'body',
-        cover_image: null,
-        meta_title: null,
-        meta_desc: null,
-      })
+      createPostsRepository(client).restorePost('u1', { slug: 'hello' })
     ).rejects.toMatchObject({ statusCode: 404, message: 'المنشور المحذوف غير موجود' });
   });
 

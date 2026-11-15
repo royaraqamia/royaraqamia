@@ -70,10 +70,6 @@ data class BlogpressPostSave(
 @Serializable
 data class RestorePostSnapshot(
     val id: String? = null,
-    val slug: String,
-    val content: String?,
-    val cover_image: String?,
-    val meta_title: String?,
-    val meta_desc: String?,
-    val tagIds: List<String>? = null,
+    val slug: String? = null,
+    val updatedAt: String? = null,
 )

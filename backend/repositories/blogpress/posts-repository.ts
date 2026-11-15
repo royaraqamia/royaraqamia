@@ -68,12 +68,17 @@ export interface PostsRepository {
   publishPost(postId: string, authorId: string): Promise<{ slug: string }>;
   unpublishPost(postId: string, authorId: string): Promise<{ slug: string }>;
   schedulePost(postId: string, authorId: string, publishAt: string): Promise<{ slug: string }>;
+  /**
+   * Tombstones the row. `updatedAt` is the stamp the tombstone carries when the
+   * delete took effect — null when it was already gone or a newer write won —
+   * and it is the token the undo hands back (#1518).
+   */
   deletePost(
     postId: string,
     authorId: string,
     updatedAt?: string
-  ): Promise<{ slug: string | null }>;
-  restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }>;
+  ): Promise<{ slug: string | null; updatedAt: string | null }>;
+  restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ slug: string }>;
   setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void>;
   bulkActionPosts(
     postIds: string[],

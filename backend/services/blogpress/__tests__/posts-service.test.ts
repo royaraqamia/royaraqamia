@@ -79,10 +79,7 @@ const postData = { slug: 'post-1' };
 const snapshotBase = {
   id: 'p-1',
   slug: 'post-1',
-  content: null,
-  cover_image: null,
-  meta_title: null,
-  meta_desc: null,
+  updatedAt: '2026-08-02T09:00:00.000Z',
 };
 
 describe('BlogpressPostsService publish visibility', () => {
@@ -144,56 +141,50 @@ describe('BlogpressPostsService publish visibility', () => {
 });
 
 describe('BlogpressPostsService.restorePost', () => {
-  it('rejects a snapshot without a slug', async () => {
+  it('rejects a snapshot that names no tombstone', async () => {
     const { repository, service } = makeRepo();
 
-    await expect(service.restorePost('u-1', { ...snapshotBase, slug: ' ' })).rejects.toThrow(
-      'المعرِّف (slug) مطلوب'
-    );
+    await expect(service.restorePost('u-1', {})).rejects.toThrow('معرِّف المنشور أو رابطه مطلوب');
     expect(repository.restorePost).not.toHaveBeenCalled();
   });
 
-  it('revives through the repository and re-attaches the snapshot tags', async () => {
+  it('revives through the repository with the handle and the stamp only', async () => {
     const { repository, service } = makeRepo();
-    (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-2' });
-    (repository.setPostTags as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
 
-    await expect(
-      service.restorePost('u-1', { ...snapshotBase, tagIds: ['t-1', 't-2'] })
-    ).resolves.toEqual({ id: 'p-2' });
+    await expect(service.restorePost('u-1', snapshotBase)).resolves.toEqual({ slug: 'post-1' });
 
-    expect(repository.restorePost).toHaveBeenCalledWith('u-1', {
-      ...snapshotBase,
-      tagIds: ['t-1', 't-2'],
-    });
-    expect(repository.setPostTags).toHaveBeenCalledWith('p-2', 'u-1', ['t-1', 't-2']);
+    expect(repository.restorePost).toHaveBeenCalledWith('u-1', snapshotBase);
   });
 
-  it('never forwards server-owned fields a caller tries to forge', async () => {
+  it('never forwards a body a caller tries to send back', async () => {
     const { repository, service } = makeRepo();
-    (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-2' });
+    (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
     const forged = {
       ...snapshotBase,
+      content: 'نصٌّ قديم كُتب قبل الحذف',
+      cover_image: 'https://example.test/old.png',
+      meta_title: 'عنوانٌ قديم',
+      meta_desc: 'وصفٌ قديم',
+      tagIds: ['t-1'],
       status: 'published',
-      published_at: '2026-10-01T09:00:00.000Z',
       view_count: 999,
       featured: true,
-      community_visible: true,
-      reading_time_minutes: 99,
     } as unknown as RestorePostSnapshot;
 
     await service.restorePost('u-1', forged);
 
     expect(repository.restorePost).toHaveBeenCalledWith('u-1', snapshotBase);
+    expect(repository.setPostTags).not.toHaveBeenCalled();
   });
 
-  it('skips tag re-attachment when the snapshot has no tags', async () => {
+  it('finds the tombstone by slug when the caller has no id', async () => {
     const { repository, service } = makeRepo();
-    (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-2' });
+    (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
 
-    await service.restorePost('u-1', snapshotBase);
+    await service.restorePost('u-1', { slug: ' post-1 ' });
 
-    expect(repository.setPostTags).not.toHaveBeenCalled();
+    expect(repository.restorePost).toHaveBeenCalledWith('u-1', { slug: 'post-1' });
   });
 
   it('propagates a repository failure', async () => {

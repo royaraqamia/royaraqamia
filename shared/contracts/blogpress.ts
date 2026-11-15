@@ -123,22 +123,24 @@ export const BlogpressPostSaveSchema = z.object({
 export type BlogpressPostSave = z.infer<typeof BlogpressPostSaveSchema>;
 
 /**
- * The content half of a deleted post, re-sent by the client to undo a delete.
+ * Which tombstone an undo revives — never the post's body (#1518).
  *
- * Only editor-owned fields are accepted: `status`, the publication dates,
- * `view_count`, `featured`, `community_visible` and `reading_time_minutes` stay
- * on the tombstoned row the server revives, never on the request (#528). `id`
- * is an optional lookup hint; the server also finds the tombstone by slug, and
- * refuses both when the row is not the caller's.
+ * The row the delete tombstoned still holds its content, its metadata and its
+ * tags, so the revive has nothing to copy back: it clears `deleted_at` and keeps
+ * every other column the row already has. A request that carried the body
+ * instead could only overwrite the newer text another device synced between the
+ * page's last read and the undo.
+ *
+ * `updatedAt` is the token the delete answered with. When it is sent it must
+ * match the tombstone's stamp, so an undo whose row has moved on is refused
+ * rather than applied to a post the member is no longer looking at. `id` is the
+ * precise handle and `slug` the older one: at least one of them is required, and
+ * neither reaches another account's row.
  */
 export const RestorePostSnapshotSchema = z.object({
   id: z.string().uuid('معرِّف منشور غير صالح').optional(),
-  slug: z.string().min(1, 'الرَّابط مطلوب'),
-  content: z.string().nullable(),
-  cover_image: z.string().nullable(),
-  meta_title: z.string().nullable(),
-  meta_desc: z.string().nullable(),
-  tagIds: z.array(z.string().uuid('معرِّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم').optional(),
+  slug: z.string().min(1).optional(),
+  updatedAt: z.string().datetime().optional(),
 });
 
 export type RestorePostSnapshot = z.infer<typeof RestorePostSnapshotSchema>;

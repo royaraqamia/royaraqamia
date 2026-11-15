@@ -128,11 +128,14 @@ export async function deletePost(
       // tombstone keeps write order (ADR-0029); an online delete has none and
       // the repository stamps it with now.
       const updatedAt = typeof body?.updatedAt === 'string' ? body.updatedAt : undefined;
-      const { slug } = await repository.deletePost(id, userId, updatedAt);
+      const { slug, updatedAt: stamped } = await repository.deletePost(id, userId, updatedAt);
 
       return jsonResult(
         200,
-        { success: true },
+        // The stamp the tombstone carries is the token the undo hands back
+        // (#1518): the client needs no copy of the body to send with it, and a
+        // restore that finds the row moved on can refuse instead of overwriting.
+        { success: true, updatedAt: stamped },
         {
           // A replay of an already-tombstoned row resolves without a slug;
           // there is nothing left to revalidate then.
@@ -167,13 +170,13 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
       }
 
       const { posts } = createBlogpressPostsModule(supabase);
-      const { id } = await posts.restorePost(userId, validated.data);
+      const { slug } = await posts.restorePost(userId, validated.data);
 
       return jsonResult(
         200,
-        { success: true, id },
+        { success: true, slug },
         {
-          revalidate: postRevalidation(validated.data.slug),
+          revalidate: postRevalidation(slug),
           tags: COMMUNITY_MUTATION_TAGS,
         }
       );
