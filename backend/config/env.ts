@@ -156,6 +156,26 @@ export const env = {
     // variable and the test suite both produce.
     return read('AI_CHAT_API_KEY')?.trim() || read('OPENCODE_API_KEY')?.trim() || undefined;
   },
+  /**
+   * The assistant's embeddings (ADR-0185 decision 1): a model of its own, on the
+   * same OpenAI-compatible endpoint and key as the turns, never the chat model.
+   *
+   * Empty is a supported state, not a misconfiguration — recall falls back to
+   * lexical and a turn still answers. `AI_EMBEDDING_DIMENSIONS` must equal the
+   * index generation (`EMBEDDING_GENERATION.dimensions`); a different width is a
+   * new table and a backfill, and until that exists the client reports the
+   * mismatch and stays off rather than writing vectors that cannot be compared.
+   */
+  get aiEmbeddingModel(): string | undefined {
+    return read('AI_EMBEDDING_MODEL')?.trim() || undefined;
+  },
+  get aiEmbeddingDimensions(): number | undefined {
+    const raw = read('AI_EMBEDDING_DIMENSIONS')?.trim();
+    if (!raw) return undefined;
+
+    const dimensions = Number(raw);
+    return Number.isInteger(dimensions) && dimensions > 0 ? dimensions : undefined;
+  },
   get pushEndpointAllowlist(): string[] {
     const raw = read('PUSH_ENDPOINT_ALLOWLIST')?.trim();
     return (raw && raw.length > 0 ? raw : DEFAULT_PUSH_ENDPOINT_ALLOWLIST)
