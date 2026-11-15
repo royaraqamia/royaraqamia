@@ -437,7 +437,9 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           {assistant.isStreaming && assistant.streamingText && (
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
-                <p className="whitespace-pre-wrap break-words">{assistant.streamingText}</p>
+                <p className="whitespace-pre-wrap break-words bidi-lines" dir="auto">
+                  {assistant.streamingText}
+                </p>
               </div>
             </div>
           )}
@@ -447,7 +449,9 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
           {!assistant.isStreaming && assistant.interrupted && (
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted/60 px-3 py-2 text-sm leading-relaxed text-foreground/80">
-                <p className="whitespace-pre-wrap break-words">{assistant.interrupted}</p>
+                <p className="whitespace-pre-wrap break-words bidi-lines" dir="auto">
+                  {assistant.interrupted}
+                </p>
               </div>
               <p className="text-[11px] italic text-muted-foreground">
                 {ASSISTANT_COPY.interrupted}
@@ -984,7 +988,10 @@ function MessageRow({
       className={cn('flex w-full flex-col gap-1', mine ? 'items-end' : 'items-start')}
     >
       {message.replyTo && (
-        <p className="max-w-[85%] truncate rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground">
+        <p
+          dir="auto"
+          className="bidi-lines max-w-[85%] truncate rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground"
+        >
           {message.replyTo.deletedAt ? CHAT_THREAD_COPY.deletedReply : (message.replyTo.body ?? '')}
         </p>
       )}
@@ -1009,7 +1016,8 @@ function MessageRow({
                 onChange={(event) => setDraft(event.target.value)}
                 rows={2}
                 maxLength={4000}
-                className="w-full resize-none rounded-lg bg-background/90 px-2 py-1 text-sm text-foreground outline-none"
+                dir="auto"
+                className="bidi-lines w-full resize-none rounded-lg bg-background/90 px-2 py-1 text-sm text-foreground outline-none"
                 aria-label={CHAT_THREAD_COPY.editLabel}
               />
               <div className="flex justify-end gap-2">
@@ -1032,7 +1040,11 @@ function MessageRow({
               </div>
             </div>
           ) : (
-            message.body && <p className="whitespace-pre-wrap break-words">{message.body}</p>
+            message.body && (
+              <p dir="auto" className="whitespace-pre-wrap break-words bidi-lines">
+                {message.body}
+              </p>
+            )
           )}
 
           {message.attachments.length > 0 && !deleted && (

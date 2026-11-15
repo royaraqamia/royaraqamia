@@ -135,3 +135,18 @@ describe('ChatComposer height', () => {
     expect(field.style.overflowY).toBe('hidden');
   });
 });
+
+/**
+ * The page is Arabic; a draft is not. The field follows the first strong
+ * character it holds and every line follows its own, so «Hey» starts on the
+ * left and «سلام» on the right (ADR-0190).
+ */
+describe('ChatComposer direction', () => {
+  it('takes its direction from the text, per line', () => {
+    render(<Composer value="Hey" onSend={() => undefined} />);
+
+    const field = screen.getByRole('textbox');
+    expect(field).toHaveAttribute('dir', 'auto');
+    expect(field).toHaveClass('bidi-lines');
+  });
+});

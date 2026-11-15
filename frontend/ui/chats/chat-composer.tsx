@@ -392,13 +392,24 @@ export function ChatComposer({
                 aria-label={ariaLabel}
                 // Return is a line, not a send: the button is the only send path.
                 enterKeyHint="enter"
+                // The page is Arabic; the line is whatever the member is writing.
+                // `dir="auto"` takes the direction from the first strong
+                // character and `bidi-lines` does it per line, so an English
+                // message starts on the left and an Arabic one on the right —
+                // the composer reads like the bubbles it fills (ADR-0190).
+                dir="auto"
                 // The clip lives inside the field, so the text keeps clear of it.
-                className="max-h-32 min-h-10 w-full resize-none rounded-xl border border-border/70 bg-background py-2 pe-10 ps-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+                // Both the clip's offset and this padding are physical (`left`,
+                // `pl`) on purpose: the clip is pinned to the field's box while
+                // the field's own direction follows the draft, so logical
+                // padding would slide away from the clip the moment the member
+                // typed English and the first line would start under it.
+                className="bidi-lines max-h-32 min-h-10 w-full resize-none rounded-xl border border-border/70 bg-background py-2 pl-10 pr-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
               />
               <ChatAttachButton
                 onAddFiles={onAddFiles}
                 disabled={disabled}
-                className="absolute bottom-1 end-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+                className="absolute bottom-1 left-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
               />
             </div>
 
