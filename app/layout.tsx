@@ -10,8 +10,6 @@ import { NotificationProvider } from '../frontend/state/NotificationContext';
 import { SessionProvider } from '../frontend/state/session-provider';
 import { HomeServicesProvider } from '../frontend/state/home-services-provider';
 import { DirectionProvider } from '@radix-ui/react-direction';
-import { SpeedInsights } from '@vercel/speed-insights/react';
-import { Analytics } from '@vercel/analytics/react';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
 import { Navbar } from '../frontend/ui/Navbar';
 import { QuranPlayerProvider } from '@/frontend/state/quran/player-context';
@@ -175,8 +173,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <HomeServicesProvider>
                   <UIProvider>
                     <NotificationProvider>
-                      <SpeedInsights />
-                      <Analytics />
+                      {/* No Vercel beacons: the origin is Render (ADR-0174), where
+                          their endpoints 404 and the CSP never allowed the ingest
+                          host, so each visit paid two failed requests (#1498). */}
                       <PWAProvider>
                         <RouteChangeFocus />
                         <AppPerfObserver />
