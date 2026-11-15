@@ -22,89 +22,16 @@
  * - No hashtags. The product has no route behind one.
  */
 
-/** A known top-level domain, the only domains a bare `host.tld` may end in. */
-const BARE_DOMAIN_TLDS = new Set([
-  'ae',
-  'ai',
-  'app',
-  'at',
-  'au',
-  'be',
-  'bh',
-  'blog',
-  'ca',
-  'cc',
-  'ch',
-  'cn',
-  'co',
-  'com',
-  'cz',
-  'de',
-  'dev',
-  'dk',
-  'dz',
-  'edu',
-  'eg',
-  'es',
-  'fi',
-  'fm',
-  'fr',
-  'gov',
-  'gr',
-  'hk',
-  'id',
-  'ie',
-  'in',
-  'info',
-  'io',
-  'iq',
-  'ir',
-  'it',
-  'jo',
-  'jp',
-  'ke',
-  'kw',
-  'lb',
-  'live',
-  'ly',
-  'ma',
-  'me',
-  'media',
-  'mx',
-  'my',
-  'net',
-  'news',
-  'ng',
-  'nl',
-  'no',
-  'nz',
-  'om',
-  'online',
-  'org',
-  'pk',
-  'pl',
-  'pt',
-  'qa',
-  'ru',
-  'sa',
-  'se',
-  'sg',
-  'sh',
-  'shop',
-  'site',
-  'store',
-  'sd',
-  'tech',
-  'tn',
-  'to',
-  'tr',
-  'tv',
-  'uk',
-  'us',
-  'xyz',
-  'ye',
-  'za',
-]);
+/**
+ * A known top-level domain, the only domains a bare `host.tld` may end in. One
+ * string rather than a literal array: this list ships to every route that can
+ * show a card, and its punctuation is weight.
+ */
+const BARE_DOMAIN_TLDS = new Set(
+  'ae ai app at au be bh blog ca cc ch cn co com cz de dev dk dz edu eg es fi fm fr gov gr hk id ie in info io iq ir it jo jp ke kw lb live ly ma me media mx my net news ng nl no nz om online org pk pl pt qa ru sa se sg sh shop site store sd tech tn to tr tv uk us xyz ye za'.split(
+    ' '
+  )
+);
 
 /** What may trail a URL without belonging to it. */
 const TRAILING_PUNCTUATION = '.,;:!?؟،؛»«"\'…';

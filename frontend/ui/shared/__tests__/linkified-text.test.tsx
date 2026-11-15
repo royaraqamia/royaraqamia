@@ -19,7 +19,7 @@ describe('LinkifiedText', () => {
     expect(link).toHaveAttribute('href', 'https://example.com/x');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow ugc');
     // The sentence's full stop stays with the sentence.
-    expect(screen.getByText(/\.$/)).toBeInTheDocument();
+    expect(document.body.textContent?.endsWith('.')).toBe(true);
   });
 
   it('keeps the writer’s line breaks: it renders inline, not as a block', () => {
@@ -44,7 +44,7 @@ describe('LinkifiedText', () => {
     expect(link).toHaveAttribute('href', '/u/sara');
     // A handle with nobody behind it is never a link to a 404.
     expect(screen.queryByRole('link', { name: '@nobody' })).toBeNull();
-    expect(screen.getByText(/@nobody/)).toBeInTheDocument();
+    expect(screen.getByText('@nobody')).toBeInTheDocument();
   });
 
   it('asks once for the handles it shows, not once per render', async () => {
@@ -60,7 +60,7 @@ describe('LinkifiedText', () => {
     render(<LinkifiedText text="تفاصيل https://example.com/very/long…" truncated />);
 
     expect(screen.queryByRole('link')).toBeNull();
-    expect(screen.getByText(/https:\/\/example\.com/)).toBeInTheDocument();
+    expect(screen.getByText('https://example.com/very/long', { exact: false })).toBeInTheDocument();
   });
 
   it('still links a short excerpt that fits whole', () => {

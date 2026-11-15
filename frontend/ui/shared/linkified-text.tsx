@@ -3,9 +3,12 @@
 import { Fragment, useMemo } from 'react';
 import Link from 'next/link';
 
-import { cn } from '@/frontend/shared/cn';
 import { tokenizeText } from '@/shared/text/linkify';
 import { useMentionHandles } from '@/frontend/state/usernames/use-mention-handles';
+
+/** The one anchor style, written once: this file carries no class-merge helper. */
+const ANCHOR =
+  'font-medium underline underline-offset-2 decoration-1 break-words [overflow-wrap:anywhere]';
 
 /**
  * Written text with its links and its handles pressable (ADR-0192).
@@ -21,13 +24,11 @@ import { useMentionHandles } from '@/frontend/state/usernames/use-mention-handle
  */
 export function LinkifiedText({
   text,
-  className,
   linkClassName,
   /** The text is an excerpt cut with `…`: a link cut in half is not a link. */
   truncated = false,
 }: {
   text: string;
-  className?: string;
   /** Applied to every anchor, for a surface that stacks above an overlay link. */
   linkClassName?: string;
   truncated?: boolean;
@@ -62,10 +63,7 @@ export function LinkifiedText({
     [last, text, tokens, truncated]
   );
 
-  const anchorClass = cn(
-    'font-medium underline underline-offset-2 decoration-1 break-words [overflow-wrap:anywhere]',
-    linkClassName
-  );
+  const anchorClass = linkClassName ? `${ANCHOR} ${linkClassName}` : ANCHOR;
 
   return (
     <>
@@ -107,7 +105,7 @@ export function LinkifiedText({
             key={index}
             href={`/u/${encodeURIComponent(token.handle)}`}
             dir="ltr"
-            className={cn(anchorClass, className)}
+            className={anchorClass}
           >
             {token.value}
           </Link>
