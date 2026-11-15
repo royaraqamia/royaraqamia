@@ -34,7 +34,32 @@ test('a guest writes, searches, reloads and undoes a note', async ({ page }) => 
   // so it is the line this test searches and deletes by.
   await page.keyboard.type('ملاحظة اختبار');
   await expect(page.locator('#composer-note-body [data-placeholder]')).toHaveCount(0);
+
+  // Enter is a paragraph, and the hint belongs to an empty document (ADR-0191).
+  // The empty second line used to paint the hint again — a composer that looked
+  // like two fields — and prose's paragraph margins turned each Enter into a
+  // block-sized gap. Both are measured on the real surface.
   await page.keyboard.press('Enter');
+  const afterEnter = await page.evaluate(() => {
+    const surface = document.querySelector('#composer-note-body');
+    if (!surface) throw new Error('no composer surface');
+    const painted = Array.from(surface.querySelectorAll('[data-placeholder]')).filter(
+      (block) => getComputedStyle(block, '::before').content !== 'none'
+    ).length;
+    const paragraphs = Array.from(surface.querySelectorAll('p')) as HTMLElement[];
+    const first = paragraphs[0];
+    const second = paragraphs[1];
+    if (!first || !second) throw new Error('the composer did not split into two paragraphs');
+    const lineHeight = parseFloat(getComputedStyle(first).lineHeight);
+    return {
+      painted,
+      gap: second.getBoundingClientRect().top - first.getBoundingClientRect().bottom,
+      lineHeight,
+    };
+  });
+  expect(afterEnter.painted).toBe(0);
+  expect(afterEnter.gap).toBeLessThan(afterEnter.lineHeight);
+
   await page.keyboard.type('محتوى يُحفظ تلقائيًّا.');
   await page.getByRole('button', { name: 'إنشاء الملاحظة' }).click();
   await expect(page.locator('#note-body')).toContainText('محتوى يُحفظ تلقائيًّا.');
