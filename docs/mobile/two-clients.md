@@ -92,7 +92,9 @@ upgrade that moves the encoding is otherwise a member signed out on one client w
 
 `docs/mobile/screens.json` has one row per surface in `perf/surfaces.json`: either the Kotlin screen
 that draws it, or the reason the app does not have one and, where there is one, the ticket.
-`npm run check:screens -- --write` regenerates [screens.md](screens.md), and the check fails when:
+`npm run check:screens -- --write` regenerates [screens.md](screens.md) and
+`shared/contracts/screens.generated.ts` — the route table the site's shell publishes from, so a route
+the matrix carries and the shell cannot place cannot exist (ADR-0181). The check fails when:
 
 - a surface has no row — `check:surfaces` already forces a decision for a new route, and this forces
   the other half of it, which client draws the screen;

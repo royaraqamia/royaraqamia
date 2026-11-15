@@ -8,6 +8,7 @@ import {
   uploadChatAttachment,
 } from '@/frontend/transport/supabase/chat-attachments';
 import type { ChatAgentAllowance, ChatAgentEvent, ChatAgentPhase } from '@/shared/contracts/chat';
+import { publishedScreen } from '@/frontend/state/screen-context';
 import { beginAssistantTurn, endAssistantTurn, setAssistantPhase } from './assistant-turn';
 import { chatAssistantInitialState, chatAssistantReducer } from './use-chat-assistant.reducer';
 
@@ -110,7 +111,10 @@ export function useChatAssistant(
                 setAssistantPhase(conversationId, { kind: 'proposal' });
               }
             },
-            attachments
+            attachments,
+            // Read at send time rather than at render time: the page may have
+            // settled after the composer was drawn (ADR-0181).
+            publishedScreen()
           );
         } catch (caught) {
           // The objects are already in the bucket and no message will ever name
