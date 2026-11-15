@@ -30,6 +30,7 @@ import {
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { createDefaultMcpAppToolsService } from '@/backend/config/mcp';
 import { createPlanGate, createUsageService } from '@/backend/config/plans';
+import { createAgentRecallFor } from '@/backend/config/agent-memory';
 import { projectIdentity } from '@/backend/services/chat/turn-identity';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createAiChatClient } from '@/backend/clients/ai-chat';
@@ -152,6 +153,11 @@ export function createSupabaseChatAgentService(
       ]);
       return projectIdentity({ profile, plan, connectedApps: connected });
     },
+    // What the member asked to be remembered, recalled for this message
+    // (ADR-0182, decision 3). The search runs on the member's own client, so a
+    // fact they deleted is unreachable even with a stale vector; the query
+    // vector is the one embedding call a turn's read path spends.
+    recall: createAgentRecallFor(supabase),
     // The apps the member connected, when the marketplace is configured: the
     // turn declares at most sixteen of their tools, and a write among them is a
     // card like any other (ADR-0155, decision 7).

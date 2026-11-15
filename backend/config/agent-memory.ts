@@ -13,6 +13,10 @@ import {
   createMemoryEmbeddingsService,
   type MemoryEmbeddingsService,
 } from '@/backend/services/agent/memory-embeddings-service';
+import {
+  createAgentRecallService,
+  type AgentRecallService,
+} from '@/backend/services/agent/agent-recall-service';
 
 /**
  * Wire the memory embedding service for one client (ADR-0185, #1425).
@@ -52,5 +56,31 @@ export function createAgentMemoryFor(
   return createAgentMemoryService({
     repository: createSupabaseAgentMemoriesRepository(supabase),
     embeddings: options.embeddings ?? createMemoryEmbeddingsFor(getAdminSupabase()),
+  });
+}
+
+/**
+ * Wire the turn's recall (ADR-0182 decision 3, #1510).
+ *
+ * The query vector is embedded by the deployment's embedding client, and the
+ * search runs on the caller's own session: `agent_memory_nearest` is `security
+ * invoker`, so the member's policies are the boundary and recall cannot read a
+ * row the member cannot read. `client` is a parameter for the same reason the
+ * embedding service takes one — a deployment with no key, or a test, passes
+ * `null` and gets no recall block rather than a failed turn.
+ */
+export function createAgentRecallFor(
+  supabase: SupabaseClient<Database>,
+  options: { embeddings?: MemoryEmbeddingsService; client?: AiEmbeddingsClient | null } = {}
+): AgentRecallService {
+  // One provider instance for both halves: the query vector and the fact
+  // vectors come from the same model, and the "one warning per reason" the
+  // client keeps is then one warning, not two.
+  const client = options.client === undefined ? createAiEmbeddingsClient() : options.client;
+  const embeddings = options.embeddings ?? createMemoryEmbeddingsFor(supabase, client);
+  return createAgentRecallService({
+    nearest: (userId, embedding, scope, limit) =>
+      embeddings.nearest(userId, embedding, scope, limit),
+    client,
   });
 }

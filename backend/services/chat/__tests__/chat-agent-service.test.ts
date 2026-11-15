@@ -312,6 +312,82 @@ describe('the assistant turn', () => {
     expect(client.calls[0]?.[0]).toEqual({ role: 'system', content: SYSTEM_PROMPT });
   });
 
+  it('recalls what the member asked to remember, once, from their own message', async () => {
+    const client = scriptedClient([textStream('نعم')]);
+    const recall = {
+      recall: vi.fn(async () => [
+        {
+          memoryId: 'memory-1',
+          text: 'قهوتي سادة',
+          similarity: 0.81,
+          updatedAt: '2026-10-03T09:00:00.000Z',
+        },
+      ]),
+    };
+    const screen: ScreenContext = {
+      route: '/spendtrack/expenses',
+      product: 'spendtrack',
+      screenId: 'spendtrack',
+      title: 'المصروفات',
+      overlays: [],
+      focus: null,
+      tab: null,
+      fields: {},
+      text: '',
+      updatedAt: '2026-11-15T09:00:00.000Z',
+    };
+    const { service } = makeService({ client, recall });
+
+    await collect(
+      service.turn('user-1', 'conversation-1', 'ما قهوتي المفضلة؟', TURN_CONTEXT, [], screen)
+    );
+
+    // Once per turn, from the member's message, scoped to this thread and page.
+    expect(recall.recall).toHaveBeenCalledTimes(1);
+    expect(recall.recall).toHaveBeenCalledWith({
+      userId: 'user-1',
+      question: 'ما قهوتي المفضلة؟',
+      threadId: 'conversation-1',
+      product: 'spendtrack',
+    });
+
+    const messages = client.calls[0] ?? [];
+    // Screen, then recall, then the standing prompt, then the member's words.
+    expect(String(messages[0]?.content)).toContain('/spendtrack/expenses');
+    expect(String(messages[1]?.content)).toContain('قهوتي سادة');
+    expect(String(messages[1]?.content)).toContain('من محادثتنا في');
+    expect(messages[2]).toEqual({ role: 'system', content: SYSTEM_PROMPT });
+  });
+
+  it('answers exactly as before when recall finds nothing or is not wired', async () => {
+    const client = scriptedClient([textStream('أهلاً')]);
+    const recall = { recall: vi.fn(async () => []) };
+    const { service } = makeService({ client, recall, identity: vi.fn(async () => null) });
+
+    await collect(service.turn('user-1', 'conversation-1', 'مرحبا', TURN_CONTEXT));
+
+    expect(client.calls[0]).toHaveLength(2);
+    expect(client.calls[0]?.[0]).toEqual({ role: 'system', content: SYSTEM_PROMPT });
+  });
+
+  it('answers without a block when the recall call itself fails', async () => {
+    const client = scriptedClient([textStream('أهلاً')]);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    // The service promises never to throw; the turn survives one that does.
+    const recall = {
+      recall: vi.fn(async () => {
+        throw new Error('memories unavailable');
+      }),
+    };
+    const { service } = makeService({ client, recall, identity: vi.fn(async () => null) });
+
+    await collect(service.turn('user-1', 'conversation-1', 'مرحبا', TURN_CONTEXT));
+
+    expect(client.calls[0]).toHaveLength(2);
+    expect(client.calls[0]?.[0]).toEqual({ role: 'system', content: SYSTEM_PROMPT });
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it('is unavailable when no provider key is configured', async () => {
     const { service } = makeService({ client: null });
 

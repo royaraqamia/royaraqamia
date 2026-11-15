@@ -3,10 +3,11 @@ import type { MemoryEmbeddingsRepository } from '@/backend/repositories/agent/me
 import { logger } from '@/backend/shared/logger';
 import {
   EMBEDDING_BATCH_SIZE,
-  RECALL_MAX_ITEMS,
+  RECALL_CANDIDATES,
   type BackfillReport,
   type EmbeddingSource,
   type EmbeddingWrite,
+  type RecallScope,
   type RecalledMemory,
 } from '@/backend/shared/domain/agent-memory';
 
@@ -34,7 +35,12 @@ export interface MemoryEmbeddingsService {
   /** The write path: one fact, right after it was written. Never throws. */
   embedFact(memoryId: string, signal?: AbortSignal): Promise<boolean>;
   /** The read path: the k nearest facts for one member, from a given vector. */
-  nearest(userId: string, embedding: number[], limit?: number): Promise<RecalledMemory[]>;
+  nearest(
+    userId: string,
+    embedding: number[],
+    scope: RecallScope,
+    limit?: number
+  ): Promise<RecalledMemory[]>;
   /**
    * The delete path: the vector over a fact the member forgot. The row is
    * soft-deleted, so no foreign key reaches this copy; it is deleted here to
@@ -154,9 +160,12 @@ export function createMemoryEmbeddingsService({
       }
     },
 
-    async nearest(userId, embedding, limit = RECALL_MAX_ITEMS) {
-      const wanted = Math.min(Math.max(1, limit), RECALL_MAX_ITEMS);
-      return repository.nearest(userId, embedding, wanted);
+    async nearest(userId, embedding, scope, limit = RECALL_CANDIDATES) {
+      // The cap here is the candidate depth, not what a turn injects: the floor
+      // and the six-item cap are the recall service's, so asking for six here
+      // would let unrelated facts occupy the slots the floor should drop.
+      const wanted = Math.min(Math.max(1, limit), RECALL_CANDIDATES);
+      return repository.nearest(userId, embedding, wanted, scope);
     },
 
     async forget(memoryId) {

@@ -158,7 +158,7 @@ describe('the embeddings repository', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('asks the function for the nearest facts with the caller’s vector', async () => {
+  it('asks the function for the nearest facts with the caller’s vector and scope', async () => {
     const { client, rpcCalls } = makeClient({
       'rpc:agent_memory_nearest': {
         data: [
@@ -169,12 +169,21 @@ describe('the embeddings repository', () => {
     });
     const repository = createSupabaseMemoryEmbeddingsRepository(client);
 
-    const recalled = await repository.nearest('member-1', [0.5, 0.25], 6);
+    const recalled = await repository.nearest('member-1', [0.5, 0.25], 24, {
+      threadId: 'conversation-1',
+      product: 'spendtrack',
+    });
 
     expect(rpcCalls).toEqual([
       {
         name: 'agent_memory_nearest',
-        args: { p_user_id: 'member-1', p_query: '[0.5,0.25]', p_limit: 6 },
+        args: {
+          p_user_id: 'member-1',
+          p_query: '[0.5,0.25]',
+          p_limit: 24,
+          p_thread_id: 'conversation-1',
+          p_product: 'spendtrack',
+        },
       },
     ]);
     expect(recalled).toEqual([
