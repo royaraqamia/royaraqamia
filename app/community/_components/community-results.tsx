@@ -1,8 +1,12 @@
+'use client';
+
 import Link from 'next/link';
 import { FileText } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
+import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
 import { COMMUNITY_FEED_COPY } from './community-feed-copy';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { PostCard } from './post-card';
@@ -65,6 +69,7 @@ export function CommunityResults({
     pageError == null ? null : toReadFailure(pageError, COMMUNITY_FEED_COPY.pageError);
   const loadFailure =
     loadMoreError == null ? null : toReadFailure(loadMoreError, COMMUNITY_FEED_COPY.loadMoreError);
+  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt();
 
   // A failed read with nothing kept is the whole answer; with a snapshot it is a
   // banner over the rows this device last showed.
@@ -114,9 +119,9 @@ export function CommunityResults({
                   : COMMUNITY_FEED_COPY.emptyBody}
           </p>
           {emptyKind === 'guest' ? (
-            <Link href="/auth/login?redirect=%2Fcommunity">
-              <Button className="rounded-full px-6">{COMMUNITY_FEED_COPY.guestSignIn}</Button>
-            </Link>
+            <HeroCtaButton type="button" onClick={() => requireSignIn('/community')}>
+              {COMMUNITY_FEED_COPY.guestSignIn}
+            </HeroCtaButton>
           ) : (
             query && (
               <Link href="/community/explore">
@@ -159,6 +164,8 @@ export function CommunityResults({
             ))}
         </>
       )}
+
+      {signInPrompt}
     </>
   );
 }

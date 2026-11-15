@@ -130,7 +130,11 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
                 signedIn={Boolean(viewerId)}
                 size="md"
               />
-              <MemberChatCta username={member.username} isSelf={follow.state === 'self'} />
+              <MemberChatCta
+                username={member.username}
+                isSelf={follow.state === 'self'}
+                signedIn={Boolean(viewerId)}
+              />
             </div>
           </div>
         </div>

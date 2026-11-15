@@ -4,6 +4,7 @@ import { createContext, useContext, useMemo } from 'react';
 import Link from 'next/link';
 
 import { HeroCtaButton, HeroCtaSheen } from '@/frontend/ui/shared/hero-cta-button';
+import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
 import { useMyUsage } from '@/frontend/state/plans/use-my-plan';
 import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
@@ -53,17 +54,22 @@ function usePlanViewer(): Viewer {
 
 export function FreePlanCta() {
   const viewer = usePlanViewer();
+  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt();
 
   if (viewer.status === 'pending') return <PendingPill className="h-12" />;
 
   if (viewer.status === 'guest') {
     return (
-      <Link
-        href="/auth/login"
-        className="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-input/80 bg-background/80 px-6 text-sm font-bold text-foreground transition-safe hover:bg-accent/80"
-      >
-        ابدأ مجَّانًا
-      </Link>
+      <>
+        <button
+          type="button"
+          onClick={() => requireSignIn('/pricing')}
+          className="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-input/80 bg-background/80 px-6 text-sm font-bold text-foreground transition-safe hover:bg-accent/80"
+        >
+          ابدأ مجَّانًا
+        </button>
+        {signInPrompt}
+      </>
     );
   }
 
@@ -83,12 +89,30 @@ export function FreePlanCta() {
  */
 export function PaidPlanCta() {
   const viewer = usePlanViewer();
+  const { requireSignIn, dialog: signInPrompt } = useSignInPrompt();
 
   if (viewer.status === 'pending') return <PendingPill className="h-13 sm:h-14" />;
 
   if (viewer.status === 'member' && (viewer.unlimited || viewer.plan === 'pro')) {
     return (
       <CurrentPlanPill className="h-13 text-base sm:h-14">{CURRENT_PLAN_LABEL}</CurrentPlanPill>
+    );
+  }
+
+  // A guest is asked here, with the subscribe form as the destination, instead
+  // of being sent to the login page mid-decision.
+  if (viewer.status === 'guest') {
+    return (
+      <>
+        <HeroCtaButton
+          type="button"
+          onClick={() => requireSignIn('/pricing/subscribe')}
+          className="mt-6 w-full"
+        >
+          اشترِك الآن
+        </HeroCtaButton>
+        {signInPrompt}
+      </>
     );
   }
 

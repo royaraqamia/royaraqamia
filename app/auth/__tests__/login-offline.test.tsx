@@ -9,12 +9,25 @@ vi.mock('@/frontend/ui/shared/turnstile', () => ({ Turnstile: () => null }));
 
 import LoginPage from '../login/page';
 
-// #368: the login form names the connection at the point of failure instead of
-// showing a failed sign-in in the same banner as a wrong password.
+/**
+ * #368: the login form names the connection at the point of failure instead of
+ * showing a failed sign-in in the same banner as a wrong password.
+ *
+ * #1500: the email form is the second door on the page — Google is the first —
+ * so every case here opens it before submitting.
+ */
 describe('LoginPage offline submit', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
+  async function openEmailForm() {
+    const { container } = render(<LoginPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'الدُّخول بالبريد الإلكتروني' }));
+    // The form's own submit is what proves the second door actually opened.
+    await screen.findByRole('button', { name: 'تسجيل الدُّخول' });
+    return container;
+  }
 
   it('shows the needs-connection state, not a credential error', async () => {
     mocks.login.mockResolvedValue({
@@ -23,8 +36,7 @@ describe('LoginPage offline submit', () => {
       message: 'تعذّر الاتصال بالخادم. تحقّق من اتصالك ثم أعد المحاولة.',
     });
 
-    const { container } = render(<LoginPage />);
-    await screen.findByRole('button', { name: 'تسجيل الدُّخول' });
+    const container = await openEmailForm();
     fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
     const state = await screen.findByRole('status');
@@ -40,8 +52,7 @@ describe('LoginPage offline submit', () => {
       message: 'بيانات الدُّخول غير صحيحة.',
     });
 
-    const { container } = render(<LoginPage />);
-    await screen.findByRole('button', { name: 'تسجيل الدُّخول' });
+    const container = await openEmailForm();
     fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('بيانات الدُّخول غير صحيحة.');
