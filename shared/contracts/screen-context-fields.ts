@@ -150,9 +150,17 @@ export const SCREEN_CONTENT_POLICIES: Readonly<Record<string, ScreenContentPolic
  *
  * `null` is not an error and not a gap to fill at runtime: it means nothing is
  * readable here, which is the same answer an opted-out row gives.
+ *
+ * The lookup is own-property only, because the id is client-supplied: `screenId:
+ * "constructor"` indexes `Object.prototype`, which is truthy, so a plain lookup
+ * returns a function where a policy should be and `readableFields` throws on it
+ * instead of publishing nothing. A guard here is the one place that covers every
+ * caller (ADR-0181, decision 4).
  */
 export function screenContentPolicy(screenId: string): ScreenContentPolicy | null {
-  return SCREEN_CONTENT_POLICIES[screenId] ?? null;
+  return Object.hasOwn(SCREEN_CONTENT_POLICIES, screenId)
+    ? SCREEN_CONTENT_POLICIES[screenId]!
+    : null;
 }
 
 /** `card_number`, `cardNumber` and `cardnumber` are one name for this check. */
