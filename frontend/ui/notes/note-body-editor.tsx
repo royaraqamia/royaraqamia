@@ -103,7 +103,14 @@ export function NoteBodyEditor({
           // `h-full` makes the whole box the field: without it the editable
           // element stops at its last line and a tap below it lands on nothing,
           // which on a phone is most of the screen.
-          'prose prose-sm dark:prose-invert h-full max-w-none w-full rounded-xl p-4 sm:p-5 selection:bg-primary/20 focus:outline-none',
+          //
+          // `prose-p:my-1.5` is what makes Enter read as a new line rather than
+          // a new block: the stored format is Markdown, so Enter is a paragraph
+          // and must stay one (a soft break collapses to a space on the post
+          // page, which reads Markdown without `remark-breaks`), but prose's
+          // 1.14em either side turned every one of them into a visible gap. The
+          // line, the list and the heading keep prose's own spacing.
+          'prose prose-sm dark:prose-invert h-full max-w-none w-full rounded-xl p-4 sm:p-5 selection:bg-primary/20 focus:outline-none prose-p:my-1.5',
           surfaceClassName
         ),
         dir: 'auto',

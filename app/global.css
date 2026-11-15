@@ -1639,10 +1639,15 @@ select,
  * Tiptap's `Placeholder` extension only decorates the empty block: it puts
  * `data-placeholder` on it and expects the stylesheet to draw the words — the
  * attribute alone renders nothing, which is why an empty note used to open on a
- * blank box. Selecting by the attribute rather than by `is-editor-empty`/
- * `is-empty` means any block the extension decorates (the document's first, or
- * an emptied paragraph further down) is covered without depending on which of
- * its two classes the version applies.
+ * blank box.
+ *
+ * The selector is `is-editor-empty`, which the extension adds only while the
+ * whole document is one empty block. It used to be the bare attribute, and that
+ * is what put the hint back under the writer's own sentence: Enter creates a
+ * paragraph, the caret is in it, so the extension decorates *that* block too and
+ * the composer read as if a second field had opened mid-note. An empty paragraph
+ * with text above it is a line the writer asked for; the hint belongs to an
+ * empty document, not to every empty block.
  *
  * The float is what keeps it from taking a line of its own: a zero-height box
  * painted in the gap above the text, at the inline start, and out of the way of
@@ -1659,7 +1664,7 @@ select,
   direction: rtl;
 }
 
-.tiptap [data-placeholder]::before {
+.tiptap [data-placeholder].is-editor-empty::before {
   content: attr(data-placeholder);
   float: inline-start;
   height: 0;
