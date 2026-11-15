@@ -17,6 +17,12 @@ import {
   createAgentRecallService,
   type AgentRecallService,
 } from '@/backend/services/agent/agent-recall-service';
+import type { AiChatClient } from '@/backend/clients/ai-chat';
+import { createSupabaseMemoryExtractionRepository } from '@/backend/repositories/agent/memory-extraction-repository';
+import {
+  createMemoryExtractionService,
+  type MemoryExtractionService,
+} from '@/backend/services/agent/memory-extraction-service';
 
 /**
  * Wire the memory embedding service for one client (ADR-0185, #1425).
@@ -81,6 +87,31 @@ export function createAgentRecallFor(
   return createAgentRecallService({
     nearest: (userId, embedding, scope, limit) =>
       embeddings.nearest(userId, embedding, scope, limit),
+    client,
+  });
+}
+
+/**
+ * Wire the extraction that runs behind a settled turn (ADR-0182 decision 2,
+ * #1511).
+ *
+ * On the service role, and only here: a background task has no member session,
+ * so the `agent_memories` insert policy cannot answer for it. What keeps that
+ * from becoming a way to name somebody else is the input — the task takes a
+ * *settled turn*, built inside the turn itself, and `source_turn_id` is the
+ * citation. The write path is still the one door: this service never inserts a
+ * fact, it offers one to `remember`.
+ */
+export function createMemoryExtractionFor(
+  client: Pick<AiChatClient, 'reply'> | null,
+  options: { supabase?: SupabaseClient<Database> } = {}
+): MemoryExtractionService {
+  const supabase = options.supabase ?? getAdminSupabase();
+  const turns = createSupabaseMemoryExtractionRepository(supabase);
+
+  return createMemoryExtractionService({
+    memories: createAgentMemoryFor(supabase),
+    claim: (turnId, at) => turns.claim(turnId, at),
     client,
   });
 }
