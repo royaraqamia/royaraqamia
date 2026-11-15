@@ -3,7 +3,14 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { nativeScreens, renderMarkdown, validate } from '../check-screens.mjs';
+import {
+  nativeScreens,
+  productOf,
+  renderMarkdown,
+  renderRoutes,
+  splitRoute,
+  validate,
+} from '../check-screens.mjs';
 
 const NATIVE = 'android/app/src/main/kotlin/com/royaraqamia/app';
 
@@ -175,6 +182,52 @@ describe('the screen inventory', () => {
         { surface: 'notes', native: `${NATIVE}/ui/HomeScreen.kt` },
       ])
     ).toEqual([`${NATIVE}/ui/HomeScreen.kt is claimed by "home" and "notes"`]);
+  });
+});
+
+describe('the generated route table', () => {
+  const routed = {
+    schemaVersion: 1,
+    surfaces: [
+      { id: 'home', routes: ['/'] },
+      { id: 'notes', routes: ['/?tab=/notes', '/notes'] },
+      { id: 'spendtrack-categories', routes: ['/spendtrack/categories'] },
+      { id: 'admin', prefix: '/admin' },
+    ],
+  };
+
+  it('splits a tab route into the path it shares and the tab it reads', () => {
+    expect(splitRoute('/?tab=/notes')).toEqual({ pattern: '/', tab: '/notes' });
+    expect(splitRoute('/notes')).toEqual({ pattern: '/notes', tab: null });
+  });
+
+  it('names the product by the surface id’s own first segment', () => {
+    expect(productOf('spendtrack-categories')).toBe('spendtrack');
+    expect(productOf('notes')).toBe('notes');
+  });
+
+  it('puts the tab routes first, so `/` alone is still the home screen', () => {
+    const routes = renderRoutes(routed);
+    const tab = routes.indexOf("surface: 'notes', product: 'notes', tab: '/notes'");
+    const home = routes.indexOf("pattern: '/', surface: 'home'");
+
+    expect(tab).toBeGreaterThan(-1);
+    expect(home).toBeGreaterThan(tab);
+  });
+
+  it('writes a prefix subtree as its own row, with the matrix’s own ids', () => {
+    expect(renderRoutes(routed)).toContain(
+      "{ prefix: '/admin', surface: 'admin', product: 'admin' },"
+    );
+  });
+
+  it('keeps a long row on one line only when it fits, the way Prettier lays it out', () => {
+    const routes = renderRoutes(routed);
+
+    expect(routes).toContain(
+      "  { pattern: '/notes', surface: 'notes', product: 'notes', tab: null },"
+    );
+    expect(routes).toContain("    pattern: '/spendtrack/categories',");
   });
 });
 

@@ -204,6 +204,58 @@ describe('ChatAgentTurnSchema', () => {
       }).success
     ).toBe(true);
   });
+
+  /**
+   * The page a question came from rides with it (ADR-0181): a snapshot, or the
+   * client saying it has no eyes here, or nothing at all from an older tab.
+   */
+  describe('the screen the question was asked from', () => {
+    function screen(overrides: Record<string, unknown> = {}) {
+      return {
+        route: '/notes',
+        product: 'notes',
+        screenId: 'notes',
+        title: 'الملاحظات',
+        overlays: [],
+        focus: null,
+        tab: null,
+        fields: {},
+        text: '',
+        updatedAt: '2026-11-15T09:00:00.000Z',
+        ...overrides,
+      };
+    }
+
+    it('accepts a snapshot with the question', () => {
+      const parsed = ChatAgentTurnSchema.safeParse({ body: 'ما هذا الخطأ؟', screen: screen() });
+
+      expect(parsed.success).toBe(true);
+      expect(parsed.data?.screen).toMatchObject({ screenId: 'notes' });
+    });
+
+    it('accepts a client that says it cannot see the screen', () => {
+      expect(
+        ChatAgentTurnSchema.safeParse({ body: 'ساعدني', screen: { blind: true } }).success
+      ).toBe(true);
+    });
+
+    it('accepts a turn with no snapshot at all, for a tab older than the eyes', () => {
+      expect(ChatAgentTurnSchema.safeParse({ body: 'ساعدني' }).success).toBe(true);
+    });
+
+    it('refuses a snapshot that is neither one nor an opt-out', () => {
+      expect(ChatAgentTurnSchema.safeParse({ body: 'ساعدني', screen: {} }).success).toBe(false);
+    });
+
+    it('refuses a screen id longer than the contract allows', () => {
+      const parsed = ChatAgentTurnSchema.safeParse({
+        body: 'ساعدني',
+        screen: screen({ screenId: 'x'.repeat(81) }),
+      });
+
+      expect(parsed.success).toBe(false);
+    });
+  });
 });
 
 describe('CreateGroupChatSchema', () => {

@@ -10,6 +10,7 @@ const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(
 vi.mock('next/navigation', () => ({
   useRouter: () => router,
   usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // The history entry an open dialogue pushes is how the back button closes it.

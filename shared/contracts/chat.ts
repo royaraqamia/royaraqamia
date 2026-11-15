@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import type { PlanId } from '@/shared/contracts/plans.constants';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+import { ScreenContextInputSchema } from '@/shared/contracts/screen-context-schema';
 import { toLatinDigits } from '@/shared/contracts/text';
 
 /** A message body's ceiling. Long enough for a real answer, still one row. */
@@ -531,6 +532,16 @@ export const ChatAgentTurnSchema = z
       .array(ChatAttachmentInputSchema)
       .max(CHAT_ATTACHMENTS_PER_MESSAGE_MAX, 'خمسة مرفقات في الرسالة الواحدة')
       .optional(),
+    /**
+     * The page the member is asking from (ADR-0181). It rides with the question
+     * rather than a tool call, so the model does not spend a round discovering
+     * where it is — and it is dropped by the turn, never stored.
+     *
+     * A tab that has no eyes sends no field; one on a screen it may not show
+     * sends `{ blind: true }`, which is how the turn tells "opted out" from
+     * "this client is older than the eyes".
+     */
+    screen: ScreenContextInputSchema.optional(),
   })
   .refine((value) => Boolean(value.body) || (value.attachments?.length ?? 0) > 0, {
     message: 'اكتب سؤالك أو أرسل ملفاً',

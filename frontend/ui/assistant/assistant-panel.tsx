@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
 
 import {
@@ -47,6 +47,7 @@ import {
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import { AssistantOrb } from './assistant-orb';
 import { ASSISTANT_PANEL_COPY } from './assistant-panel-copy';
+import { ScreenContextPublisher } from '@/frontend/ui/ScreenContextPublisher';
 import './assistant.css';
 
 /** The faces the panel can wear before a single word is sent. */
@@ -361,6 +362,13 @@ export function AssistantPanel({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onDismiss()}>
+      {/* Where the member is, published for the turn (ADR-0181). It lives in the
+          panel's own chunk rather than the site's shell: the eyes are only ever
+          spent on a question, so a page that never asks pays nothing for them.
+          The boundary is what keeps `useSearchParams` out of any static render. */}
+      <Suspense fallback={null}>
+        <ScreenContextPublisher />
+      </Suspense>
       <DialogContent
         data-assistant-panel
         className={cn(

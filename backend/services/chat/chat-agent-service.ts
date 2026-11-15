@@ -57,6 +57,7 @@ import {
   type ChatMessage,
 } from '@/shared/contracts/chat';
 import { USAGE_COUNTERS, type PlanId, type UsageState } from '@/shared/contracts/plans';
+import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 import { CHAT_AGENT_TOOLS } from '@/shared/contracts/chat-agent-actions';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
 
@@ -407,13 +408,18 @@ export class ChatAgentService {
    * before the provider is called, and the count is given back when anything
    * after it fails — a turn that produced no answer must not spend the day's
    * allowance.
+   *
+   * `screen` is the page the question was asked from (ADR-0181). It is the one
+   * layer that only exists for this request: it is read from the body, spent on
+   * the prompt, and never written to a row, a log or the thread.
    */
   async *turn(
     userId: string,
     conversationId: string,
     body: string,
     context: ChatAgentTurnContext,
-    attachments: ChatAttachmentInput[] = []
+    attachments: ChatAttachmentInput[] = [],
+    screen?: ScreenContextInput
   ): AsyncGenerator<ChatAgentEvent, void, void> {
     const typed = normalizeChatBody(body);
     // A file may carry the question alone; what it says is checked once it has
@@ -500,7 +506,7 @@ export class ChatAgentService {
         turnId,
         context,
         messages: [
-          ...turnContextMessages(identity),
+          ...turnContextMessages(identity, screen),
           { role: 'system', content: SYSTEM_PROMPT },
           ...(read.spoken ? [{ role: 'system' as const, content: SPOKEN_NOTE }] : []),
           // The line just stored is replaced by its own reading, so an image or a
@@ -653,7 +659,9 @@ export class ChatAgentService {
     // A resumed turn opens exactly like the one the member was watching. The
     // request that started it is gone; the account row is not, and a turn that
     // lost the block would reintroduce itself in the middle of a thread
-    // (ADR-0182).
+    // (ADR-0182). The page is the layer that does not come back: a screen is
+    // where the member is, not where they were when the turn was written
+    // (ADR-0181, decision 5), so a resumed turn answers without it.
     const plan = await this.planOf(turn.memberId);
     const identity = plan ? await this.turnIdentity(turn.memberId, plan) : null;
     try {

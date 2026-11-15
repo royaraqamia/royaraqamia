@@ -688,7 +688,8 @@ describe('ChatThreadView assistant', () => {
         'c-1',
         'ما هو الذكاء الاصطناعي؟',
         expect.any(Function),
-        []
+        [],
+        null
       )
     );
     await waitFor(() => expect(box).toHaveValue(''));

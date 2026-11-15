@@ -16,6 +16,7 @@ import {
   type ChatThread,
 } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 import { ApiError, request } from '@/frontend/transport/http';
 import {
   joinBroadcastChannel,
@@ -318,7 +319,8 @@ export async function streamChatAgentTurn(
   id: string,
   body: string,
   onEvent: (event: ChatAgentEvent) => void,
-  attachments?: ChatAttachmentInput[] | null
+  attachments?: ChatAttachmentInput[] | null,
+  screen?: ScreenContextInput | null
 ): Promise<void> {
   let response: Response;
   try {
@@ -328,6 +330,9 @@ export async function streamChatAgentTurn(
       body: JSON.stringify({
         body,
         ...(attachments && attachments.length > 0 ? { attachments } : {}),
+        // Where the question was asked from (ADR-0181). Sent with the question,
+        // so the model does not spend a round discovering the screen.
+        ...(screen ? { screen } : {}),
       }),
     });
   } catch (cause) {

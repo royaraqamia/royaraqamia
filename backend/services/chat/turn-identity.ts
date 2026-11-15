@@ -1,6 +1,8 @@
 import type { AiChatMessage } from '@/backend/clients/ai-chat';
 import type { UserProfile } from '@/backend/repositories/users/user-profile-repository';
+import { screenContextMessages } from '@/backend/services/chat/turn-screen';
 import type { PlanId } from '@/shared/contracts/plans';
+import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 
 /**
  * The first context layer of a turn: who the member is (ADR-0182, decision 1).
@@ -116,10 +118,16 @@ export function identityBlock(identity: TurnIdentity): string {
 
 /**
  * The context layers a turn opens with, in the order ADR-0182 fixes: identity
- * first, then the standing prompt, then the thread. Recall, the rolling summary
- * and the page's own state join this list as their phases land, so the two call
- * sites in the service stay one call.
+ * first, then the page's own state, then the standing prompt, then the thread.
+ * Recall, the rolling summary and the tools' own declarations join this list as
+ * their phases land, so the two call sites in the service stay one call.
  */
-export function turnContextMessages(identity: TurnIdentity | null): AiChatMessage[] {
-  return identity ? [{ role: 'system', content: identityBlock(identity) }] : [];
+export function turnContextMessages(
+  identity: TurnIdentity | null,
+  screen?: ScreenContextInput
+): AiChatMessage[] {
+  return [
+    ...(identity ? [{ role: 'system' as const, content: identityBlock(identity) }] : []),
+    ...screenContextMessages(screen),
+  ];
 }
