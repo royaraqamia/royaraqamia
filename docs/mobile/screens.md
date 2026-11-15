@@ -44,7 +44,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `downloader` | `/downloader` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
 | `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | _web only_ | Sign-in moves to the app with the cutover, not before: once the WebView leaves, a Custom Tab cannot set the app's session, so the native flow is what makes the cutover possible (ADR-0178). The plan row is `blocked` on it. |
 | `mcp-guide` | `/mcp/guide` | _web only_ | The page is the deliverable (ADR-0178): a guide whose prose and snippet belong to the server's MCP surface, so a native copy would go stale before it shipped. |
-| `mcp-connect` | `/mcp/connect` | _web only_ | The page is the deliverable (ADR-0178): a one-time setup whose whole value is the snippet the server currently accepts. |
+| `mcp-connect` | `/mcp/connect` | _web only_ | The OAuth consent page is the deliverable (ADR-0178, ADR-0193): its code is minted server-side under a same-origin check and a PKCE challenge, and the client's callback is a web address. |
 | `mcp-apps` | `/mcp/apps` | _web only_ | The sheet is the app's apps surface (ADR-0159), and `/mcp/apps` stays the page: a callback, a bookmark and a deep link need an address a sheet cannot carry, so the shell opens it in the document. |
 | `mcp-app-detail` | `/mcp/apps/[id]` | `ConnectionScreen.kt` |  |
-| `admin` | `/admin/**` | _web only_ | The app opens the web surface in the shell; native screens land in phase 4 (#646). |
+| `admin` | `/admin/**` | _web only_ | The console's server-authorized reads and reversible or internal moderation may be drawn natively (ADR-0193); its irreversible, money, public-copy and deletion actions stay the page. #974 |

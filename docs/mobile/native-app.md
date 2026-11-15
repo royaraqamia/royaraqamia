@@ -450,7 +450,11 @@ worse in an APK, not merely harder to write. Sign-in is the exception and is not
 
 `/admin` and MCP are ported last in this phase and gated on the security review: the APK is a
 distributed binary, so the operator UI is readable by anyone who unpacks it. Nothing in it may be a
-capability the server does not re-check.
+capability the server does not re-check. The review is
+[ADR-0193](../adr/0193-a-native-operator-surface-is-a-projection-the-server-authorizes.md): the
+console's server-authorized reads and reversible moderation may be drawn natively, its irreversible,
+money, public-copy and deletion actions stay the page, and the inbound MCP consent stays the
+document.
 
 **Wired today (#658).** `/verify` is the first public surface drawn natively, and it is the shape the
 rest of this phase copies. The check is the site's own anonymous route
