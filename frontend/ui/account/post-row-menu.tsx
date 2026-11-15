@@ -72,21 +72,20 @@ export function PostRowMenu({ post, title, onEdit, onChanged }: PostRowMenuProps
     setDeleteOpen(false);
     setBusy(true);
     void deletePost(post.id)
-      .then(() => {
+      .then(({ updatedAt }) => {
         toast.success('تمَّ حذف المنشور', {
           action: {
             label: 'تراجع',
             onClick: () => {
-              void restorePost({
-                id: post.id,
-                slug: post.slug,
-                content: post.content,
-                cover_image: post.cover_image,
-                meta_title: post.meta_title,
-                meta_desc: post.meta_desc,
-              })
+              // The undo carries the tombstone's stamp, never the body the row
+              // was painted from (#1518): the server keeps whatever it holds,
+              // and refuses the undo outright when that is no longer this
+              // member's delete.
+              void restorePost({ id: post.id, ...(updatedAt ? { updatedAt } : {}) })
                 .then(() => onChanged())
-                .catch(() => toast.error('فشل استرجاع المنشور'));
+                .catch((error: unknown) =>
+                  toast.error(error instanceof Error ? error.message : 'فشل استرجاع المنشور')
+                );
             },
           },
         });

@@ -154,13 +154,16 @@ class BlogpressRepository(
 
     /**
      * Undo of a delete: clears the tombstone locally and queues the server's
-     * restore route with the content half of the row (#528).
+     * restore route with the tombstone's id and its stamp (#1518).
+     *
+     * The row is not given a new `updatedAt`: the server's revive is the newer
+     * write and its copy of the body is the one the pull should keep, so the
+     * local timestamp stays at the delete's and the merge can choose the server.
      */
     suspend fun restorePost(clientId: String): BlogpressPostRow? = withContext(Dispatchers.IO) {
         val dao = dao()
         val existing = dao.post(clientId) ?: return@withContext null
-        val now = clock.nowIso()
-        val row = existing.copy(deletedAt = null, updatedAt = now)
+        val row = existing.copy(deletedAt = null)
         dao.commitPost(
             row,
             intent(

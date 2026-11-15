@@ -100,7 +100,7 @@ describe('PostActionsMenu', () => {
 
   it('deletes the post after confirmation and offers an undo', async () => {
     mocks.user = { id: 'a1' };
-    mocks.deletePost.mockResolvedValue(undefined);
+    mocks.deletePost.mockResolvedValue({ updatedAt: '2026-11-15T09:00:00.000Z' });
     const onRemoved = vi.fn();
     const onRestored = vi.fn();
 
@@ -117,6 +117,62 @@ describe('PostActionsMenu', () => {
     expect(onRemoved).toHaveBeenCalledTimes(1);
     expect(onRestored).not.toHaveBeenCalled();
     expect(mocks.toastSuccess).toHaveBeenCalled();
+  });
+
+  it('sends the delete stamp on undo, never the body the row was painted from', async () => {
+    mocks.user = { id: 'a1' };
+    mocks.deletePost.mockResolvedValue({ updatedAt: '2026-11-15T09:00:00.000Z' });
+    mocks.restorePost.mockResolvedValue(undefined);
+    const onRestored = vi.fn();
+
+    render(<PostActionsMenu post={post} onRemoved={vi.fn()} onRestored={onRestored} />);
+
+    openMenu();
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'حذف' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'حذف' }));
+
+    await waitFor(() => expect(mocks.deletePost).toHaveBeenCalled());
+    const options = mocks.toastSuccess.mock.calls[0]?.[1] as {
+      action: { label: string; onClick: () => Promise<void> };
+    };
+    expect(options.action.label).toBe('تراجع');
+
+    await options.action.onClick();
+
+    expect(mocks.restorePost).toHaveBeenCalledWith({
+      id: 'p1',
+      updatedAt: '2026-11-15T09:00:00.000Z',
+    });
+    expect(onRestored).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the server's refusal when the tombstone moved on", async () => {
+    mocks.user = { id: 'a1' };
+    mocks.deletePost.mockResolvedValue({ updatedAt: '2026-11-15T09:00:00.000Z' });
+    mocks.restorePost.mockRejectedValue(
+      new Error('تغيَّر المنشور بعد الحذف، فأعِد تحميل الصَّفحة لتستعيد أحدث نُسخة.')
+    );
+    const onRestored = vi.fn();
+
+    render(<PostActionsMenu post={post} onRemoved={vi.fn()} onRestored={onRestored} />);
+
+    openMenu();
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'حذف' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'حذف' }));
+
+    await waitFor(() => expect(mocks.deletePost).toHaveBeenCalled());
+    const options = mocks.toastSuccess.mock.calls[0]?.[1] as {
+      action: { onClick: () => Promise<void> };
+    };
+
+    await options.action.onClick();
+
+    expect(mocks.toastError).toHaveBeenCalledWith(
+      'تغيَّر المنشور بعد الحذف، فأعِد تحميل الصَّفحة لتستعيد أحدث نُسخة.'
+    );
+    expect(onRestored).not.toHaveBeenCalled();
   });
 
   it('opens the edit composer prefilled with the post content', async () => {

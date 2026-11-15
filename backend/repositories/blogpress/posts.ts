@@ -661,7 +661,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       postId: string,
       authorId: string,
       updatedAt?: string
-    ): Promise<{ slug: string | null }> {
+    ): Promise<{ slug: string | null; updatedAt: string | null }> {
       // Tombstone, not a hard delete (ADR-0029): a replayed delete resolves as
       // success instead of PGRST116 → 500 → an Outbox entry that retries
       // forever, and the row identity survives so the write stays replayable.
@@ -680,33 +680,46 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       if (error) throw new Error('فشل حذف المنشور');
 
       // Already gone, or beaten by a newer write: the delete still succeeded and
-      // there is no slug left to revalidate.
-      return { slug: data?.slug ?? null };
+      // there is no slug left to revalidate, and no stamp the tombstone carries
+      // (an undo that handed this back would name a version it never wrote).
+      return { slug: data?.slug ?? null, updatedAt: data ? stamp : null };
     },
 
     /**
-     * Undo a delete by reviving its tombstone (#528).
+     * Undo a delete by reviving its tombstone (#528, #1518).
      *
      * `public.restore_post` looks the row up by id or slug under
-     * `auth.uid()`, clears `deleted_at` and applies only the content fields, so
-     * the server-owned columns keep what they had before the delete. A missing
-     * tombstone writes nothing and answers `P0002`, which surfaces as a 404
-     * instead of the 500 an infrastructure failure would get.
+     * `auth.uid()`, clears `deleted_at` and keeps every other column the row
+     * already has — the body included, which is why the request carries no
+     * content any more. `updatedAt` is the tombstone's stamp when the caller has
+     * one: a row that moved on since refuses with `P0004`, which becomes a 412
+     * rather than an overwrite. A missing tombstone answers `P0002`, which
+     * surfaces as a 404 instead of the 500 an infrastructure failure would get.
      */
-    async restorePost(_authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
-      const { data: id, error } = await supabase.rpc('restore_post', {
+    async restorePost(_authorId: string, snapshot: RestorePostSnapshot): Promise<{ slug: string }> {
+      const { data: slug, error } = await supabase.rpc('restore_post', {
         p_snapshot: snapshot,
       });
 
       if (error) {
-        if ((error as { code?: string }).code === 'P0002') {
+        const code = (error as { code?: string }).code;
+        if (code === 'P0002') {
           throw new AppError('المنشور المحذوف غير موجود', 404);
+        }
+        if (code === 'P0004') {
+          // 412, not 409: both clients treat 409 as "later" and would replay an
+          // undo that can never apply (ADR-0029's retryable set).
+          throw new AppError(
+            'تغيَّر المنشور بعد الحذف، فأعِد تحميل الصَّفحة لتستعيد أحدث نُسخة.',
+            412,
+            'POST_CHANGED'
+          );
         }
         throw new Error('فشل استرجاع المنشور');
       }
-      if (!id) throw new Error('فشل استرجاع المنشور');
+      if (!slug) throw new Error('فشل استرجاع المنشور');
 
-      return { id };
+      return { slug };
     },
 
     async setPostFeatured(postId: string, _authorId: string, featured: boolean): Promise<void> {

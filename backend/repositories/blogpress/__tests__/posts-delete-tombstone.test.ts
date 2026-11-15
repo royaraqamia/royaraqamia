@@ -70,7 +70,10 @@ describe('blogpress post delete tombstones instead of removing the row', () => {
     const { client, calls, updates } = createClient({ data: { slug: 'hello' }, error: null });
     const repo = createPostsRepository(client);
 
-    await expect(repo.deletePost('p-1', 'u-1', STAMP)).resolves.toEqual({ slug: 'hello' });
+    await expect(repo.deletePost('p-1', 'u-1', STAMP)).resolves.toEqual({
+      slug: 'hello',
+      updatedAt: STAMP,
+    });
 
     expect(updates).toEqual([{ deleted_at: STAMP, updated_at: STAMP }]);
     expect(calls).toContain('eq id=p-1');
@@ -98,7 +101,12 @@ describe('blogpress post delete tombstones instead of removing the row', () => {
     const { client } = createClient({ data: null, error: null });
     const repo = createPostsRepository(client);
 
-    await expect(repo.deletePost('p-1', 'u-1', STAMP)).resolves.toEqual({ slug: null });
+    // No stamp either: the row's tombstone is not this delete's, so the answer
+    // must not hand back a version the undo never wrote (#1518).
+    await expect(repo.deletePost('p-1', 'u-1', STAMP)).resolves.toEqual({
+      slug: null,
+      updatedAt: null,
+    });
   });
 
   it('still throws when the tombstone write itself fails', async () => {

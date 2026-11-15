@@ -47,15 +47,10 @@ interface PostActionsMenuProps {
   onRestored: () => void;
 }
 
-function buildSnapshot(post: ActionablePost) {
-  return {
-    id: post.id,
-    slug: post.slug,
-    content: post.content,
-    cover_image: post.cover_image,
-    meta_title: post.meta_title,
-    meta_desc: post.meta_desc,
-  };
+function buildRestore(post: ActionablePost, updatedAt: string | null) {
+  // Only the handle and the stamp the delete answered with (#1518). The row the
+  // delete tombstoned still holds its body, so the undo has no copy to resend.
+  return { id: post.id, ...(updatedAt ? { updatedAt } : {}) };
 }
 
 /**
@@ -79,7 +74,7 @@ export function PostActionsMenu({
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await deletePost(post.id);
+      const { updatedAt } = await deletePost(post.id);
       setConfirmOpen(false);
       onRemoved();
       router.refresh();
@@ -88,12 +83,14 @@ export function PostActionsMenu({
           label: 'تراجع',
           onClick: async () => {
             try {
-              await restorePost(buildSnapshot(post));
+              await restorePost(buildRestore(post, updatedAt));
               onRestored();
               router.refresh();
               toast.success('تمَّ استرجاع المنشور');
-            } catch {
-              toast.error('فشل استرجاع المنشور');
+            } catch (error) {
+              // The server's refusal says why ("تغيَّر المنشور…"), and that is
+              // the sentence the member can act on (#1518).
+              toast.error(error instanceof Error ? error.message : 'فشل استرجاع المنشور');
             }
           },
         },

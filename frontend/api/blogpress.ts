@@ -13,8 +13,12 @@ export interface PostFields {
   updatedAt?: string;
 }
 
-export async function restorePost(snapshot: RestorePostSnapshot): Promise<{ id: string }> {
-  return request<{ success: boolean; id: string }>('/api/community/posts/restore', {
+/**
+ * Revives a tombstone by its id and the stamp the delete answered with (#1518).
+ * The body does not travel: the row the delete tombstoned still holds it.
+ */
+export async function restorePost(snapshot: RestorePostSnapshot): Promise<void> {
+  await request('/api/community/posts/restore', {
     method: 'POST',
     body: JSON.stringify(snapshot),
   });
@@ -82,8 +86,18 @@ export async function schedulePost(postId: string, publishAt: string): Promise<v
   });
 }
 
-export async function deletePost(postId: string): Promise<void> {
-  await request(`/api/community/posts/${encodeURIComponent(postId)}`, { method: 'DELETE' });
+/**
+ * Tombstones a post. The response carries the stamp the tombstone now holds —
+ * the token an undo hands back, so the client never re-sends the body it read
+ * before the delete (#1518). Null when the delete was a replay of a row that had
+ * already moved on.
+ */
+export async function deletePost(postId: string): Promise<{ updatedAt: string | null }> {
+  const { updatedAt } = await request<{ success: boolean; updatedAt?: string | null }>(
+    `/api/community/posts/${encodeURIComponent(postId)}`,
+    { method: 'DELETE' }
+  );
+  return { updatedAt: updatedAt ?? null };
 }
 
 export async function duplicatePost(postId: string): Promise<{ id: string }> {

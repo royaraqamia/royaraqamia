@@ -19,7 +19,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * disagree about what a delete is. A delete is a `DELETE` whose id rides in the
  * path and whose body carries only the write time, which is the shape the route
  * reads for its tombstone. An undo is the restore route the web calls, carrying
- * the content half of the tombstoned row.
+ * the tombstone's id and the stamp the delete wrote — never the body (#1518).
  */
 object BlogpressWriteTransport {
     const val POSTS_PATH = "/api/community/posts"
@@ -81,11 +81,10 @@ object BlogpressWriteTransport {
  *
  * The payload is a generated contract type, so a field the server stops
  * accepting is a compile error in the app rather than a queued write that can
- * never drain. `explicitNulls` is on because the restore route reads every key:
- * an omitted `content` would be a body the schema refuses, not "leave it alone".
- * `encodeDefaults` is off so the optional `tagIds` the app cannot read is left
- * out of the body instead of travelling as an explicit `null` the schema does
- * not accept; the server keeps the tags the tombstone already carries.
+ * never drain. `explicitNulls` is on so a save's `null`-able editor field
+ * travels as the `null` the schema accepts rather than vanishing from the body.
+ * `encodeDefaults` is off so an optional key the app has no value for is left
+ * out instead of travelling as an explicit `null`.
  */
 object BlogpressPayloads {
     /** The encoder both the payloads and the delete body use. */
@@ -113,24 +112,22 @@ object BlogpressPayloads {
         )
 
     /**
-     * The content half of a deleted post, re-sent by undo.
+     * Which tombstone an undo revives, and the stamp the delete wrote (#1518).
      *
-     * Only editor-owned fields travel: `status`, the publication dates,
-     * `view_count`, `featured`, `community_visible` and `reading_time_minutes`
-     * stay on the tombstoned row the server revives, never on the request
-     * (#528). `tagIds` is left null because the app has no tag read yet; the
-     * server keeps the tags the tombstone already carries.
+     * The body does not travel: the row the delete tombstoned still holds it,
+     * along with its metadata, its tags and every server-owned column, so the
+     * revive has nothing to copy back. `updatedAt` is the tombstone's stamp —
+     * the same one the delete intent sent — so the server can refuse an undo
+     * whose row has moved on instead of reviving a post the member is no longer
+     * looking at. Sending it also keeps this client off the "no token" path an
+     * older bundle takes.
      */
     fun restore(row: BlogpressPostRow): String =
         withNulls.encodeToString(
             RestorePostSnapshot(
                 id = row.id,
                 slug = row.slug,
-                content = row.content,
-                cover_image = row.coverImage.takeIf { it.isNotEmpty() },
-                meta_title = row.metaTitle.takeIf { it.isNotEmpty() },
-                meta_desc = row.metaDesc.takeIf { it.isNotEmpty() },
-                tagIds = null,
+                updatedAt = row.updatedAt,
             )
         )
 }

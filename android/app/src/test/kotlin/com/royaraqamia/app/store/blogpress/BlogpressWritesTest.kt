@@ -127,7 +127,11 @@ class BlogpressWritesTest {
         )
         val restore = transport.requests[1].body.orEmpty()
         assertTrue(restore, restore.contains("\"slug\":\"hello\""))
-        assertTrue("the optional tag list is omitted, not null: $restore", !restore.contains("tagIds"))
+        assertTrue(
+            "the undo carries the tombstone's stamp, not a new one: $restore",
+            restore.contains("\"updatedAt\""),
+        )
+        assertTrue("the body does not travel back with the undo: $restore", !restore.contains("\"content\""))
     }
 
     @Test
