@@ -46,15 +46,9 @@ news sources lands — `gh workflow run 'News Source Smoke' -f confirm=run` (ADR
 
 ## Runtime metrics
 
-Field Web Vitals from Vercel Speed Insights (p75, last 7 days). Budget and
-ceilings: `perf/runtime-budget.json`, explained in `docs/performance.md`.
-
-```bash
-npx vercel metrics vercel.speed_insights.inp_ms  --aggregation p75 --since 7d --project royaraqamia --prod
-npx vercel metrics vercel.speed_insights.lcp_ms  --aggregation p75 --since 7d --project royaraqamia --prod
-npx vercel metrics vercel.speed_insights.cls     --aggregation p75 --since 7d --project royaraqamia --prod
-npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --project royaraqamia --prod
-```
+Field Web Vitals have no reporter at the moment: Vercel Speed Insights went with
+the origin move to Render (ADR-0174, #1498). Budget and ceilings stay where they
+were — `perf/runtime-budget.json`, explained in `docs/performance.md`.
 
 ## E2E tests
 

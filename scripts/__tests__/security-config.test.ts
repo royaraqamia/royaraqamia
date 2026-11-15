@@ -126,4 +126,17 @@ describe('security configuration', () => {
       expect(policy).toMatch(/`tsc --noEmit`/);
     }
   });
+
+  it('ships no Vercel beacons from the root layout', () => {
+    // ADR-0174 moved the origin to Render, where the beacon endpoints 404 and
+    // the CSP never allowed Vercel's ingest host — so both were two failed
+    // requests and two console errors per page, for no data (#1498). A target
+    // that can report them again adds the imports, the packages and the CSP
+    // host together; this test is what makes that a decision, not a re-add.
+    const layout = read('app/layout.tsx');
+    const pkg = read('package.json');
+    expect(layout).not.toMatch(/@vercel\/(analytics|speed-insights)/);
+    expect(layout).not.toContain('/_vercel/');
+    expect(pkg).not.toMatch(/"@vercel\/(analytics|speed-insights)"/);
+  });
 });

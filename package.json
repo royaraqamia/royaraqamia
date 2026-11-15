@@ -133,8 +133,6 @@
     "@types/turndown": "^5.0.6",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.41.0",
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.1.0",
     "barcode-detector": "^3.2.3",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",

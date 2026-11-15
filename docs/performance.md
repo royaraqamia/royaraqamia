@@ -188,22 +188,18 @@ The ceilings are the Web Vitals "good" thresholds. `perf/runtime-budget.json` is
 the single source of truth: it holds the ceilings, the aggregation (`p75`), the
 window (`7d`) and the recorded baseline, so this page cannot drift from it.
 
-**Source.** Vercel Speed Insights, reported by `<SpeedInsights />` in the root
-layout and aggregated as the 75th percentile over a rolling 7-day window. The
-percentile is deliberate: a mean would hide the slow tail this program targets.
+**Source.** Nothing reports field Web Vitals today. Vercel Speed Insights was
+the source, reported by `<SpeedInsights />` in the root layout and aggregated as
+the 75th percentile over a rolling 7-day window; the origin moved to Render
+(ADR-0174) and the beacon left with its package, because it 404s there and the
+CSP never allowed Vercel's ingest host (#1498). The percentile is still the
+aggregation a reporter has to produce: a mean would hide the slow tail this
+program targets.
 
-**Reading it.** The dashboard is the primary view. For a scripted check the
-Vercel CLI queries the same data:
-
-```bash
-npx vercel metrics vercel.speed_insights.inp_ms  --aggregation p75 --since 7d --project royaraqamia --prod
-npx vercel metrics vercel.speed_insights.lcp_ms  --aggregation p75 --since 7d --project royaraqamia --prod
-npx vercel metrics vercel.speed_insights.cls     --aggregation p75 --since 7d --project royaraqamia --prod
-npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --project royaraqamia --prod
-```
-
-The matching `*_count` metrics show how many datapoints each value rests on;
-treat a value backed by a handful of samples as noise, not a signal.
+**Reading it.** A field number needs a reporter again, and whatever reports has
+to be allowed by `connect-src` in `next.config.js`. Until then the dashboard and
+the Vercel CLI hold only what was collected before the move — history, not the
+current state.
 
 **Not CI-gated.** Runtime is real-user data, not a build artifact, so it cannot
 fail a pull request. It is a monitoring budget: review it after a change lands
