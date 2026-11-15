@@ -55,7 +55,7 @@ export function McpGuideSurface({ serverUrl }: { serverUrl: string }) {
         <StepCard id="install" step={1} title="عنوان الخادم">
           <p>
             جميع وكلاء البرمجة تحتاج إلى عنوان URL واحد. أضِفه إلى العميل مرة واحدة، وسيهتم العميل
-            بكل الباقي — بما فيه فتح المتصفح لتسجيل الدخول أول مرة.
+            بكل الباقي — بما فيه فتح المتصفح لتسجيل الدُّخول أول مرة.
           </p>
           <CodeSnippet code={serverUrl} label="عنوان الخادم" copyLabel="نسخ عنوان الخادم" />
         </StepCard>

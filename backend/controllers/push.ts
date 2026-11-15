@@ -53,7 +53,7 @@ export async function subscribePush(body: unknown, headers: Headers): Promise<Ht
       return jsonResult(401, {
         success: false,
         code: 'session_expired',
-        error: 'غير مصرح. يرجى تسجيل الدخول.',
+        error: 'غير مصرح. يرجى تسجيل الدُّخول.',
       });
     }
     if (!isSameOrigin(headers)) {
@@ -98,7 +98,7 @@ export async function unsubscribePush(body: unknown, headers: Headers): Promise<
   try {
     const { user, supabase } = await getAuthUser();
     if (!user) {
-      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
+      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدُّخول.' });
     }
     if (!isSameOrigin(headers)) {
       return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
@@ -132,7 +132,7 @@ export async function registerDeviceToken(body: unknown, headers: Headers): Prom
   try {
     const { user } = await getAuthUser();
     if (!user) {
-      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
+      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدُّخول.' });
     }
     if (!isSameOrigin(headers)) {
       return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
@@ -173,7 +173,7 @@ export async function unregisterDeviceToken(body: unknown, headers: Headers): Pr
   try {
     const { user, supabase } = await getAuthUser();
     if (!user) {
-      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
+      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدُّخول.' });
     }
     if (!isSameOrigin(headers)) {
       return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
@@ -205,7 +205,7 @@ export async function wakeDevices(body: unknown, headers: Headers): Promise<Http
   try {
     const { user } = await getAuthUser();
     if (!user) {
-      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
+      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدُّخول.' });
     }
     if (!isSameOrigin(headers)) {
       return jsonResult(403, { success: false, error: 'طلب غير مسموح' });

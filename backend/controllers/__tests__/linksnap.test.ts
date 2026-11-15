@@ -121,7 +121,7 @@ describe('linksnap controller', () => {
     expect(result).toEqual(
       expect.objectContaining({
         status: 401,
-        body: { success: false, error: 'غير مصرح. يرجى تسجيل الدخول أولاً.' },
+        body: { success: false, error: 'غير مصرح. يرجى تسجيل الدُّخول أولاً.' },
       })
     );
     expect(mockListLinks.execute).not.toHaveBeenCalled();
@@ -170,7 +170,7 @@ describe('linksnap controller', () => {
     expect(result).toEqual(
       expect.objectContaining({
         status: 401,
-        body: { success: false, error: 'غير مصرح. يرجى تسجيل الدخول أولاً.' },
+        body: { success: false, error: 'غير مصرح. يرجى تسجيل الدُّخول أولاً.' },
       })
     );
     expect(mockListLinks.execute).not.toHaveBeenCalled();

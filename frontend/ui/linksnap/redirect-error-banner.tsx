@@ -30,7 +30,7 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
             <p className="text-sm font-bold text-foreground">فشل إعادة التوجيه</p>
             <p className="text-xs text-muted-foreground">
               {error.type === 'oauth_failed'
-                ? `فشل تسجيل الدخول عبر Google. حاول مرة أخرى أو استخدم البريد الإلكتروني.${error.code ? ` (${error.code})` : ''}`
+                ? `فشل تسجيل الدُّخول عبر Google. حاول مرة أخرى أو استخدم البريد الإلكتروني.${error.code ? ` (${error.code})` : ''}`
                 : error.type === 'blocked'
                   ? `الرمز المختصر /${error.code} تم إلغاء تنشيطه بسبب انتهاك إرشادات المجتمع.`
                   : error.type === 'expired'

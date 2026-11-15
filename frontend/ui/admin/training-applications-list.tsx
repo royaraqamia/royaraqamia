@@ -197,7 +197,7 @@ export function TrainingApplicationsList({
                 maxLength={2000}
                 value={notes}
                 disabled={isSaving}
-                placeholder="سجّل ما حدث في المتابعة: متى تمَّ التَّواصل، ماذا طلب..."
+                placeholder="سجِّل ما حدث في المتابعة: متى تمَّ التَّواصل، ماذا طلب..."
                 onChange={(event) =>
                   setDrafts((current) => ({ ...current, [application.id]: event.target.value }))
                 }

@@ -15,7 +15,7 @@ import { expect, type APIResponse, type BrowserContext } from '@playwright/test'
  * is what the retry is for. Matching the product's own message (not the status
  * alone) keeps a wrong password from waiting a minute before failing.
  */
-const RATE_LIMIT_MESSAGE = 'تم تجاوز الحد الأقصى لمحاولات الدخول. يرجى المحاولة بعد دقيقة';
+const RATE_LIMIT_MESSAGE = 'تم تجاوز الحد الأقصى لمحاولات الدُّخول. يرجى المحاولة بعد دقيقة';
 
 const WINDOW_MS = 60_000;
 const ATTEMPTS_PER_WINDOW = 5;

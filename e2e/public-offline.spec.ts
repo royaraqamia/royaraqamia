@@ -130,13 +130,14 @@ test('a visited public page paints from cache offline and shows its age', async 
   await expect(page.locator('#main-content').getByRole('button', { name: /تحديث/ })).toHaveCount(0);
 
   // The visited auth shell answers offline too (#447): the reload paints the
-  // login form. The submit — which still needs Turnstile
-  // and Supabase — answers with the inline needs-connection state instead of a
-  // credential error.
+  // login page. The email form is the second door on it (#1500), so it is opened
+  // first; its submit — which still needs Turnstile and Supabase — answers with
+  // the inline needs-connection state instead of a credential error.
   await page.goto(`${baseURL}/auth/login`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/auth\/login$/);
   await expect(page.getByRole('heading', { name: 'تسجيل الدُّخول' })).toBeVisible();
 
+  await page.getByRole('button', { name: 'الدُّخول بالبريد الإلكتروني' }).click();
   await page.fill('#login-email', 'someone@example.com');
   await page.fill('#login-password', 'not-the-password');
   await page.getByRole('button', { name: 'تسجيل الدُّخول' }).click();

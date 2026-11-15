@@ -991,7 +991,7 @@ describe('the assistant’s tools (#818)', () => {
     });
 
     const events = await collect(
-      service.turn('user-1', 'conversation-1', 'سجّل مصروفاً', TURN_CONTEXT)
+      service.turn('user-1', 'conversation-1', 'سجِّل مصروفاً', TURN_CONTEXT)
     );
 
     expect(actions.propose).toHaveBeenCalledWith('conversation-1', 'record_expense', { amount: 5 });

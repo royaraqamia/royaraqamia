@@ -13,7 +13,7 @@ export const HABITFLOW_COPY = {
   listTitle: 'العادات',
   emptyTitle: 'لا توجد عادات بعد',
   emptyBody:
-    'لم تُسجَّل أي عادة في هذا اليوم. سجّل عادتك الأولى ثم ابدأ البناء عليها يومًا بعد يوم.',
+    'لم تُسجَّل أي عادة في هذا اليوم. سجِّل عادتك الأولى ثم ابدأ البناء عليها يومًا بعد يوم.',
 } as const;
 
 export type HabitflowCopyStrings = typeof HABITFLOW_COPY;
