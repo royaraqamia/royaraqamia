@@ -1619,6 +1619,21 @@ select,
   unicode-bidi: plaintext;
 }
 
+/* A rich-text block reads in its own direction too (ADR-0190).
+ *
+ * The editable surface's `dir="auto"` takes its direction from the document's
+ * first strong character, so an English paragraph typed after an Arabic one sat
+ * against the right edge — the same bug, one level down. `plaintext` on the
+ * surface does not reach its blocks, because each paragraph is its own bidi
+ * paragraph; the rule has to name them.
+ *
+ * An empty block has no strong character to read, and Chromium then keeps the
+ * `direction` the rule below declares for the hint — measured, not assumed: the
+ * empty note composer still opens with its hint on the right. */
+.tiptap :is(p, h1, h2, h3, li, blockquote) {
+  unicode-bidi: plaintext;
+}
+
 /* The empty rich-text surface says what it is for.
  *
  * Tiptap's `Placeholder` extension only decorates the empty block: it puts
