@@ -26,8 +26,6 @@ object AssistantPanelCopy {
     const val LOADING = "جاري فتح المحادثة..."
     const val FAILED = "تعذّر فتح المحادثة. حاول مرة أخرى."
     const val RETRY = "إعادة المحاولة"
-    const val LOCKED = "نور متاحة لمشتركي الخطة المدفوعة."
-    const val UPGRADE = "ترقية الخطة"
     const val UNAVAILABLE = "نور غير متاحة حالياً."
     const val SUGGESTIONS_LABEL = "جرّب أن تسأل"
     const val SUGGEST_SERVICE = "ما الخدمات التي تقدّمونها؟"

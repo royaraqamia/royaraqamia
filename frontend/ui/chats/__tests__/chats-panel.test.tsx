@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 import type { ChatAgentPhase, ChatConversationSummary, ChatPeer } from '@/shared/contracts/chat';
 
@@ -47,13 +47,11 @@ vi.mock('@/frontend/state/chats/assistant-turn', () => ({
 
 const api = vi.hoisted(() => ({
   searchChatMembers: vi.fn(),
-  getChatAssistant: vi.fn(),
   startAssistantChat: vi.fn(),
 }));
 
 vi.mock('@/frontend/api/chats', () => ({
   searchChatMembers: api.searchChatMembers,
-  getChatAssistant: api.getChatAssistant,
   startAssistantChat: api.startAssistantChat,
 }));
 
@@ -109,14 +107,6 @@ const ASSISTANT: ChatConversationSummary = {
   createdAt: '2026-11-01T00:00:00.000Z',
 };
 
-const PRO_ALLOWANCE = {
-  plan: 'pro' as const,
-  member: { used: 2, cap: 40 },
-  project: { used: 60, limit: 900 },
-  resetsAt: '2026-11-04T00:00:00.000Z',
-  apps: { used: 0, cap: 0, connected: 0 },
-};
-
 /**
  * The member's own picture is the row's identity: the directory hands it over as
  * `avatarUrl` (ADR-0088), so a list that only draws initials has dropped half of
@@ -129,11 +119,6 @@ describe('ChatsPanel', () => {
     hooks.respond.mockReset().mockResolvedValue(null);
     api.searchChatMembers.mockReset().mockResolvedValue([PEER]);
     api.startAssistantChat.mockReset().mockResolvedValue({ success: true, conversationId: 'a-1' });
-    // A Pro member by default: the row is offered, which is what the other tests
-    // here assume. The lock has its own test below.
-    api.getChatAssistant
-      .mockReset()
-      .mockResolvedValue({ available: true, allowance: PRO_ALLOWANCE });
     navigation.push.mockReset();
     live.presence = {};
     live.assistantPhase = null;
@@ -244,17 +229,12 @@ describe('ChatsPanel', () => {
     expect(rows.map((row) => row.getAttribute('href'))).toContain('/chats/c-1');
   });
 
-  it('offers the assistant locked when the plan allows no turn', async () => {
-    api.getChatAssistant.mockResolvedValue({
-      available: true,
-      allowance: { ...PRO_ALLOWANCE, member: { used: 0, cap: 0 } },
-    });
-
+  it('offers the assistant row to every plan, free included', async () => {
     render(<ChatsPanel />);
 
-    expect(await screen.findByText('نور متاحة لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'ترقية الخطة' })).toHaveAttribute('href', '/pricing');
-    expect(screen.queryByRole('button', { name: /نور/ })).not.toBeInTheDocument();
-    expect(api.startAssistantChat).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole('button', { name: /نور/ }));
+
+    await waitFor(() => expect(api.startAssistantChat).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(navigation.push).toHaveBeenCalledWith('/chats/a-1'));
   });
 });

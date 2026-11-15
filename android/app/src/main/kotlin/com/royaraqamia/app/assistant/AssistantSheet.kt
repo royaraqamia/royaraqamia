@@ -73,11 +73,10 @@ const val ASSISTANT_SHEET_TAG = "assistant-sheet"
  * نور's floating conversation, on the app's own frame (ADR-0143).
  *
  * It is the sheet the corner's door opens: the member's thread, streamed a frame
- * at a time, with the same states the site's panel draws — guest, locked, no
- * provider, loading, failed, ready, asking — and the same words from
- * `AssistantPanelCopy`. The thread is created on open (`startAssistant` is
- * idempotent), read through the chats repository, and written through the
- * assistant's streamed turn.
+ * at a time, with the same states the site's panel draws — guest, no provider,
+ * loading, failed, ready, asking — and the same words from `AssistantPanelCopy`.
+ * The thread is created on open (`startAssistant` is idempotent), read through
+ * the chats repository, and written through the assistant's streamed turn.
  *
  * **What this sheet does not do yet:** a proposal is not confirmed here. The
  * card's contract is not generated for Kotlin, and the native chats port is still
@@ -98,7 +97,6 @@ fun AssistantSheet(
     onSnapshot: (AssistantSnapshot) -> Unit,
     onDismiss: () -> Unit,
     onSignIn: () -> Unit,
-    onUpgrade: () -> Unit,
     onOpenAttachment: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -232,7 +230,6 @@ fun AssistantSheet(
             state =
                 when {
                     !available -> AssistantUiState.Unavailable
-                    allowance?.member?.cap == 0.0 -> AssistantUiState.Locked
                     readFailed && messages.isEmpty() && snapshot == null -> AssistantUiState.Failed
                     else -> AssistantUiState.Ready
                 }
@@ -254,7 +251,6 @@ fun AssistantSheet(
                     when {
                         readFailed && messages.isEmpty() -> AssistantUiState.Failed
                         !available -> AssistantUiState.Unavailable
-                        allowance?.member?.cap == 0.0 -> AssistantUiState.Locked
                         else -> AssistantUiState.Ready
                     }
                 publish()
@@ -273,7 +269,6 @@ fun AssistantSheet(
         state =
             when {
                 !available -> AssistantUiState.Unavailable
-                allowance?.member?.cap == 0.0 -> AssistantUiState.Locked
                 else -> AssistantUiState.Ready
             }
         publish()
@@ -383,14 +378,6 @@ fun AssistantSheet(
                             body = AssistantPanelCopy.GUEST_BODY,
                             action = AssistantPanelCopy.SIGN_IN,
                             onAction = onSignIn,
-                            orb = true,
-                        )
-                    AssistantUiState.Locked ->
-                        AssistantStatePanel(
-                            title = AssistantPanelCopy.LOCKED,
-                            body = null,
-                            action = AssistantPanelCopy.UPGRADE,
-                            onAction = onUpgrade,
                             orb = true,
                         )
                     AssistantUiState.Unavailable ->

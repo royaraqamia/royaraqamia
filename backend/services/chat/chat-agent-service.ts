@@ -44,6 +44,7 @@ import {
   CHAT_AGENT_TOKEN_BUDGET,
   CHAT_AGENT_TURN_TIMEOUT_MS,
   CHAT_APP_CALLS_SPENT,
+  allowanceSpentSentence,
   chatAttachmentIsAudio,
   chatAttachmentIsDocument,
   chatAttachmentIsInlineImage,
@@ -64,10 +65,10 @@ import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
  * The assistant's turn (ADR-0113, #817, #818).
  *
  * It composes the thread, the member's own message, the counted allowance and
- * the provider's stream, and decides the two states the composer draws: a Free
- * member's locked assistant, and an allowance that is spent for today. Neither
- * is an error: the thread stays readable and the composer says which sentence
- * applies.
+ * the provider's stream. Every plan has an allowance — a small free one and the
+ * paid day beside it (#1456) — so the one state it decides is an allowance that
+ * is spent for today. That is not an error: the thread stays readable and the
+ * composer says when the allowance returns.
  *
  * A turn may call the assistant's **read** tools, whose answers reach the model
  * inside the same turn. It never calls a **write** tool: a write is proposed —
@@ -179,20 +180,6 @@ const SPOKEN_NOTE = [
   'لا تعلّق على أنها نص، وتعامل معها ككلام العضو.',
 ].join(' ');
 
-/** The sentence a spent allowance answers with, naming when it comes back. */
-export function allowanceSpentSentence(resetsAt: string): string {
-  const reset = new Date(resetsAt);
-  const time = Number.isNaN(reset.getTime())
-    ? 'منتصف الليل'
-    : new Intl.DateTimeFormat('ar-u-nu-latn', {
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'Asia/Damascus',
-      }).format(reset);
-  return `وصلت إلى حد اليوم. يعود الحد بعد ${time}.`;
-}
-
-const PLAN_LOCKED = 'نور متاحة لمشتركي الخطة المدفوعة.';
 const UNAVAILABLE = 'نور غير متاحة حالياً.';
 const COULD_NOT_ANSWER = 'تعذّر الحصول على ردّ من نور. حاول مرّة أخرى.';
 /** A recording no model would transcribe. */
@@ -428,7 +415,6 @@ export class ChatAgentService {
     if (thread.kind !== 'agent') throw new ChatAgentError(400, 'هذه المحادثة ليست مع نور');
 
     const allowance = await this.deps.agent.allowance(userId);
-    if (allowance.member.cap === 0) throw new ChatAgentError(402, PLAN_LOCKED);
     if (
       allowance.member.used >= allowance.member.cap ||
       allowance.project.used >= allowance.project.limit

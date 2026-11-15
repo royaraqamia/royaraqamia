@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 
 import type { ChatThread } from '@/shared/contracts/chat';
 
@@ -136,18 +136,18 @@ describe('AssistantPanel', () => {
     expect(api.startAssistantChat).not.toHaveBeenCalled();
   });
 
-  it('shows the upgrade when the plan allows no turn', async () => {
+  it('gives a Free member the composer, from the plan gate’s own numbers', async () => {
     assistant.allowance = {
       plan: 'free',
-      member: { used: 0, cap: 0 },
+      member: { used: 9, cap: 10 },
       project: { used: 0, limit: 900 },
       resetsAt: '2026-11-10T00:00:00.000Z',
       apps: { used: 0, cap: 0, connected: 0 },
     };
     render(<AssistantPanel open onDismiss={vi.fn()} />);
 
-    expect(await screen.findByText('نور متاحة لمشتركي الخطة المدفوعة.')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'ترقية الخطة' })).toHaveAttribute('href', '/pricing');
+    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'ترقية الخطة' })).toBeNull();
   });
 
   it('says the assistant is unavailable when no provider key is configured', async () => {
@@ -168,23 +168,6 @@ describe('AssistantPanel', () => {
     expect(screen.getByText('ما الخدمات التي تقدّمونها؟')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'فتح المحادثة كاملة' })).not.toBeInTheDocument();
-  });
-
-  it('dismisses before it upgrades, so the navigation is not lost', async () => {
-    assistant.allowance = {
-      plan: 'free',
-      member: { used: 0, cap: 0 },
-      project: { used: 0, limit: 900 },
-      resetsAt: '2026-11-10T00:00:00.000Z',
-      apps: { used: 0, cap: 0, connected: 0 },
-    };
-    const onDismiss = vi.fn();
-    render(<AssistantPanel open onDismiss={onDismiss} />);
-
-    fireEvent.click(await screen.findByRole('link', { name: 'ترقية الخطة' }));
-
-    expect(onDismiss).toHaveBeenCalled();
-    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/pricing'));
   });
 
   it('revalidates on reopen without creating a second thread', async () => {

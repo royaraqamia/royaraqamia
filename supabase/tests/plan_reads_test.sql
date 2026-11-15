@@ -98,8 +98,8 @@ select results_eq(
 
 select results_eq(
   $$ select plan, member_cap from public.chat_agent_allowance('00000000-0000-0000-0000-00000000dd01'::uuid) $$,
-  $$ values ('free'::text, 0) $$,
-  'a Free member still reads as Free, with no assistant allowance'
+  $$ values ('free'::text, 10) $$,
+  'a Free member reads as Free, with the free day''s ten turns (#1456)'
 );
 
 -- ---------------------------------------------------------------------------
@@ -112,8 +112,8 @@ select ok(
 );
 
 select ok(
-  not (public.record_usage('chat.agent.turn', '00000000-0000-0000-0000-00000000dd01'::uuid) ->> 'allowed')::boolean,
-  'record_usage still refuses a Free member''s turn'
+  (public.record_usage('chat.agent.turn', '00000000-0000-0000-0000-00000000dd01'::uuid) ->> 'allowed')::boolean,
+  'record_usage lets a Free member''s turn through, inside the free allowance'
 );
 
 select * from finish();

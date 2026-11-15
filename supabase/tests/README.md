@@ -84,8 +84,9 @@ test here.
 - An Admin's owned-item caps read as the unlimited placeholder and `get_usage_counters` reports
   `unlimited`.
 - `chat_agent_allowance` answers an Admin as `pro` with the Pro cap, a live Pro activation as
-  `pro`, and a Free member as `free` with no allowance.
-- `record_usage` lets an Admin's assistant turn through and still refuses a Free member's.
+  `pro`, and a Free member as `free` with the free day's ten turns (#1456).
+- `record_usage` lets an Admin's assistant turn through and lets a Free member's first turn of the
+  day through too, inside that allowance.
 
 `mcp_call_counter_test.sql` (#1226, ADR-0155):
 

@@ -32,8 +32,8 @@ import com.royaraqamia.app.theme.Recipes
  * the same shape inline for the same reason (an SVG source is not a photograph).
  */
 @Composable
-fun AssistantMark(size: Dp = 36.dp, dimmed: Boolean = false) {
-    val glyph = if (dimmed) Color.White.copy(alpha = 0.75f) else Color.White
+fun AssistantMark(size: Dp = 36.dp) {
+    val glyph = Color.White
 
     Box(
         modifier =

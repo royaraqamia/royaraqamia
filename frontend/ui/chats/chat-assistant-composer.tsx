@@ -1,12 +1,15 @@
 'use client';
 
-import Link from 'next/link';
 import { Send } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assistant';
-import { CHAT_APP_CALLS_SPENT, type ChatAttachmentQuota } from '@/shared/contracts/chat';
+import {
+  CHAT_APP_CALLS_SPENT,
+  allowanceSpentSentence,
+  type ChatAttachmentQuota,
+} from '@/shared/contracts/chat';
 import {
   ATTACHMENT_REFUSALS,
   exceedsDocumentLimit,
@@ -16,12 +19,6 @@ import {
 import { ASSISTANT_COPY } from './assistant-copy';
 import { ChatComposer } from './chat-composer';
 import { shrinkChatImage } from './image-downscale';
-
-const RESET_TIME_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
-  hour: 'numeric',
-  minute: '2-digit',
-  timeZone: 'Asia/Damascus',
-});
 
 /**
  * When the turn count is worth a line.
@@ -35,24 +32,17 @@ const RESET_TIME_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
  */
 const TURNS_WORTH_SAYING = 5;
 
-/** The spent-day sentence, from the server's own reset instant. */
-function limitReachedSentence(resetsAt: string): string {
-  const reset = new Date(resetsAt);
-  const time = Number.isNaN(reset.getTime())
-    ? ASSISTANT_COPY.midnight
-    : RESET_TIME_FORMAT.format(reset);
-  return ASSISTANT_COPY.limitReached.replace('{time}', time);
-}
-
 /**
  * The assistant's composer (ADR-0113, #817; ADR-0126 for the voice note,
  * ADR-0127 for the row it now shares with the member thread).
  *
- * Three states come before the input and each names its own remedy: no provider
- * key, a Free member, or a day whose allowance is spent. The row itself is
- * `ChatComposer`, the same control the member's thread draws — the paperclip
- * inside the field, the microphone-or-send slot at its end — so the two threads
- * cannot drift apart.
+ * It keeps the three states the issue names (#1456): available, a spent day with
+ * its reset time, and a provider that is unavailable. Every plan has an allowance
+ * — a small free one and the paid day beside it — so there is no paid-only wall
+ * to draw; the spent sentence is the server's own, from
+ * `allowanceSpentSentence`. The row itself is `ChatComposer`, the same control
+ * the member's thread draws — the paperclip inside the field, the
+ * microphone-or-send slot at its end — so the two threads cannot drift apart.
  */
 export function AssistantComposer({
   assistant,
@@ -108,9 +98,7 @@ export function AssistantComposer({
   // there. One `id` per subject, so each step down replaces the last instead of
   // stacking.
   useEffect(() => {
-    // A plan that allows no turn has no allowance to count down: the locked
-    // panel below is the whole answer, and "0 من 0" would read as a spent day.
-    if (remaining === null || !allowance || allowance.member.cap === 0) return;
+    if (remaining === null || !allowance) return;
     if (remaining > TURNS_WORTH_SAYING) return;
     toast.info(
       ASSISTANT_COPY.remaining
@@ -172,20 +160,6 @@ export function AssistantComposer({
     );
   }
 
-  if (allowance && allowance.member.cap === 0) {
-    return (
-      <div className="shrink-0 space-y-1.5 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-center">
-        <p className="text-xs text-muted-foreground">{ASSISTANT_COPY.locked}</p>
-        <Link
-          href="/pricing"
-          className="inline-block text-xs font-bold text-primary hover:underline"
-        >
-          {ASSISTANT_COPY.upgrade}
-        </Link>
-      </div>
-    );
-  }
-
   const spent = allowance
     ? allowance.member.used >= allowance.member.cap ||
       allowance.project.used >= allowance.project.limit
@@ -194,7 +168,7 @@ export function AssistantComposer({
   if (allowance && spent) {
     return (
       <p className="shrink-0 border-t border-border/40 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-center text-xs font-medium text-muted-foreground">
-        {limitReachedSentence(allowance.resetsAt)}
+        {allowanceSpentSentence(allowance.resetsAt)}
       </p>
     );
   }

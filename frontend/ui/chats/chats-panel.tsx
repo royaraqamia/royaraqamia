@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, MessagesSquare, Plus, X } from 'lucide-react';
@@ -9,7 +9,7 @@ import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
 import { useChatPresenceList } from '@/frontend/state/chats/use-chat-presence-list';
 import { useAssistantPhase } from '@/frontend/state/chats/assistant-turn';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
-import { getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
+import { startAssistantChat } from '@/frontend/api/chats';
 import { identityUserId } from '@/frontend/shared/local-store/identity';
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
@@ -60,10 +60,9 @@ export function chatTimeAgo(iso: string): string {
  * never draws `<main>`.
  *
  * The assistant's row is drawn only while this member has no assistant thread
- * yet, and it is *locked* rather than offered when the plan allows no turn
- * (`allowance.member.cap === 0`): a row that opens a thread that refuses every
- * question is a control that lies (#819). The same sentence is the thread's,
- * from one copy source, so the two screens cannot word the lock differently.
+ * yet, and it is offered like any other row: every plan has an allowance, a small
+ * free one and the paid day beside it (#1456), so there is no lock to draw. The
+ * thread itself says when a spent day returns.
  */
 export function ChatsPanel() {
   const router = useRouter();
@@ -80,7 +79,6 @@ export function ChatsPanel() {
   } | null>(null);
   const [isAnswering, setIsAnswering] = useState(false);
   const [assistantBusy, setAssistantBusy] = useState(false);
-  const [assistantLocked, setAssistantLocked] = useState(false);
 
   const pending = threads.filter(
     (thread) =>
@@ -101,21 +99,6 @@ export function ChatsPanel() {
   );
   const hasAssistant = assistant !== null;
   const visibleCount = threads.filter((thread) => thread.kind !== 'group').length;
-
-  // The lock is the server's answer, not a guess: one read says what today's
-  // allowance is, and a failed read leaves the row offered (the thread's own
-  // refusal is then the sentence the member sees).
-  useEffect(() => {
-    let alive = true;
-    void getChatAssistant()
-      .then((state) => {
-        if (alive) setAssistantLocked(state.allowance.member.cap === 0);
-      })
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   /**
    * The assistant's thread is created on first open, so the tab offers it once
@@ -196,43 +179,24 @@ export function ChatsPanel() {
 
       {panel && <NewConversationPanel onPick={openWith} onClose={() => setPanel(false)} />}
 
-      {!hasAssistant &&
-        (assistantLocked ? (
-          <div className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card/60 px-4 py-3.5 text-start shadow-xs">
-            <AssistantMark className="size-9 opacity-80" />
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-bold text-foreground">
-                {CHATS_LIST_COPY.assistantTitle}
-              </span>
-              <span className="mt-0.5 block text-xs text-muted-foreground/80">
-                {CHATS_LIST_COPY.assistantLocked}
-              </span>
+      {!hasAssistant && (
+        <button
+          type="button"
+          onClick={() => void openAssistant()}
+          disabled={assistantBusy}
+          className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card/60 px-4 py-3.5 text-start shadow-xs transition-safe hover:bg-muted/50 disabled:opacity-60"
+        >
+          <AssistantMark className="size-9" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold text-foreground">
+              {CHATS_LIST_COPY.assistantTitle}
             </span>
-            <Link
-              href="/pricing"
-              className="shrink-0 text-xs font-bold text-primary hover:underline"
-            >
-              {CHATS_LIST_COPY.assistantUpgrade}
-            </Link>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => void openAssistant()}
-            disabled={assistantBusy}
-            className="flex w-full items-center gap-3.5 rounded-2xl border border-border/70 bg-card/60 px-4 py-3.5 text-start shadow-xs transition-safe hover:bg-muted/50 disabled:opacity-60"
-          >
-            <AssistantMark className="size-9" />
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-bold text-foreground">
-                {CHATS_LIST_COPY.assistantTitle}
-              </span>
-              <span className="mt-0.5 block text-xs text-muted-foreground/80">
-                {CHATS_LIST_COPY.assistantBody}
-              </span>
+            <span className="mt-0.5 block text-xs text-muted-foreground/80">
+              {CHATS_LIST_COPY.assistantBody}
             </span>
-          </button>
-        ))}
+          </span>
+        </button>
+      )}
 
       {assistant || open.length > 0 ? (
         <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">

@@ -24,8 +24,6 @@ export const ASSISTANT_PANEL_COPY = {
   loading: 'جاري فتح المحادثة...',
   failed: 'تعذّر فتح المحادثة. حاول مرة أخرى.',
   retry: 'إعادة المحاولة',
-  locked: 'نور متاحة لمشتركي الخطة المدفوعة.',
-  upgrade: 'ترقية الخطة',
   unavailable: 'نور غير متاحة حالياً.',
   suggestionsLabel: 'جرّب أن تسأل',
   suggestService: 'ما الخدمات التي تقدّمونها؟',

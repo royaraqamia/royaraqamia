@@ -431,6 +431,28 @@ export interface ChatAgentAllowance extends ChatAgentMeters {
 export const CHAT_APP_CALLS_SPENT =
   'انتهى حدّ استدعاءات التطبيقات لليوم. يعود الحد بعد منتصف الليل.';
 
+/** The Damascus wall clock, the one place a daily reset is read as a time. */
+const ALLOWANCE_RESET_FORMAT = new Intl.DateTimeFormat('ar-u-nu-latn', {
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZone: 'Asia/Damascus',
+});
+
+/**
+ * The sentence a spent day answers with, naming when the allowance returns.
+ *
+ * One wording, and the only one (#1456): the turn's refusal, the site's composer
+ * and — through that refusal — the app all read this function, so a free day and
+ * a paid day cannot be told apart by the sentence they end on. The reset instant
+ * is the plan gate's own (`chat_agent_allowance.resets_at`), never a clock the
+ * client reads.
+ */
+export function allowanceSpentSentence(resetsAt: string): string {
+  const reset = new Date(resetsAt);
+  const time = Number.isNaN(reset.getTime()) ? 'منتصف الليل' : ALLOWANCE_RESET_FORMAT.format(reset);
+  return `وصلت إلى حد اليوم. يعود الحد بعد ${time}.`;
+}
+
 /**
  * What the thread needs before it draws a composer: whether a provider key is
  * configured at all, and the allowance that bounds the turn. An environment
