@@ -212,6 +212,13 @@ private val sections: List<AdminSection> =
             description = AdminConsoleCopy.REPORTS_DESCRIPTION,
             route = "/admin/reports",
         ),
+        AdminSection(
+            id = "skills",
+            icon = LucideVectors.Sparkles,
+            label = AdminConsoleCopy.SKILLS_LABEL,
+            description = AdminConsoleCopy.SKILLS_DESCRIPTION,
+            route = "/admin/agent/skills",
+        ),
     )
 
 /** One card: the section's glyph, its label and its sentence, and the way in. */

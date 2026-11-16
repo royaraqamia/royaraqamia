@@ -29,6 +29,8 @@ export const ADMIN_CONSOLE_COPY = {
   marketplaceDescription: 'إيقاف تطبيق خارجي بسبب، وتعريب ما يقرأه الأعضاء من وصفه',
   reportsLabel: 'إبلاغات المحادثات',
   reportsDescription: 'مراجعة بلاغات المحادثات ومقتطفاتها المجمّدة',
+  skillsLabel: 'المتخصصون',
+  skillsDescription: 'كم مرة عرضت القائمة متخصصاً، وكم مرة قرأ الجواب نصه',
 } as const;
 
 export type AdminConsoleCopyStrings = typeof ADMIN_CONSOLE_COPY;

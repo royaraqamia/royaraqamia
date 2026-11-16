@@ -15,20 +15,20 @@ Status: accepted program, phases land as separate pull requests. Decisions:
 
 Verified against this checkout, not estimated.
 
-| Piece             | Today                                                                                                     |
-| ----------------- | --------------------------------------------------------------------------------------------------------- |
-| Turn              | `ChatAgentService.turn` streams over SSE, bounded rounds, one clean retry, a turn row, a resumable runner |
-| Tools             | 22 first-party declarations (11 read, 11 write); 21 on a turn with no connected app                       |
-| Writes            | proposed as a card, executed only by the member's confirm on their own session                            |
-| External apps     | router + `find_app_tools`; `readOnlyHint` runs, the rest cards; 3 calls per turn, 2 per connection        |
-| Own MCP server    | 37 tools over 7 products, OAuth, scopes, plan caps, user-scoped client                                    |
-| Skills            | 283 vendored specialists: a semantic shortlist per turn, then `load_specialist` for one body              |
-| Attachments       | image, PDF, document, text, voice — read inside the turn                                                  |
-| Memory            | the last 20 messages, trimmed to a token budget. Nothing else                                             |
-| Page awareness    | none. The panel is on every screen (ADR-0143) and knows nothing about it                                  |
-| Scheduling        | none on the agent. Cron exists only for sweeps                                                            |
-| Account awareness | identity block every turn (name, handle, plan, apps). No profile read tool                                |
-| Plans             | free 10 turns a day, Pro 40, member and project counters, per-day reset at Damascus midnight              |
+| Piece             | Today                                                                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Turn              | `ChatAgentService.turn` streams over SSE, bounded rounds, one clean retry, a turn row, a resumable runner                             |
+| Tools             | 22 first-party declarations (11 read, 11 write); 21 on a turn with no connected app                                                   |
+| Writes            | proposed as a card, executed only by the member's confirm on their own session                                                        |
+| External apps     | router + `find_app_tools`; `readOnlyHint` runs, the rest cards; 3 calls per turn, 2 per connection                                    |
+| Own MCP server    | 37 tools over 7 products, OAuth, scopes, plan caps, user-scoped client                                                                |
+| Skills            | 283 vendored specialists: a semantic shortlist per turn, then `load_specialist` for one body; a row per turn for the operator (#1449) |
+| Attachments       | image, PDF, document, text, voice — read inside the turn                                                                              |
+| Memory            | the last 20 messages, trimmed to a token budget. Nothing else                                                                         |
+| Page awareness    | none. The panel is on every screen (ADR-0143) and knows nothing about it                                                              |
+| Scheduling        | none on the agent. Cron exists only for sweeps                                                                                        |
+| Account awareness | identity block every turn (name, handle, plan, apps). No profile read tool                                                            |
+| Plans             | free 10 turns a day, Pro 40, member and project counters, per-day reset at Damascus midnight                                          |
 
 ### The coverage table
 
@@ -180,6 +180,9 @@ or message a third party, and leaves one digest line with an undo that works.
   turn by default, with `maxResultChars` honoured. **Landed** (#1448): a shortlist of five, the
   committed artifact, the lexical fallback, and one body per turn enforced in code.
 - Per-skill outcome telemetry: did the answer that loaded it score better on the eval suite?
+  **Landed** (#1449): a row per offered specialist and the one body the turn read, joined to that
+  turn's own ending, and a read in the console carrying load counts with no member-facing score.
+  The eval-suite comparison waits for phase 6's suite; until then the signal is the turn's.
 - A skill the answer never used costs nothing and is not loaded.
 
 **Exit:** a routing fixture set of 60 questions lands on the right specialist at least 80% of the

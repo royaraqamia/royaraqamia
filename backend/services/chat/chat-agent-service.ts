@@ -25,6 +25,10 @@ import type { McpAppToolsService } from '@/backend/services/mcp/marketplace/app-
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import type { AgentRecallService } from '@/backend/services/agent/agent-recall-service';
 import { routeSkills } from '@/backend/services/chat/skill-router';
+import type {
+  SkillTelemetryRepository,
+  TurnSkillUse,
+} from '@/backend/repositories/chat/skill-telemetry-repository';
 import { SKILL_ALREADY_LOADED, type SkillHit } from '@/backend/shared/domain/agent-skills';
 import type { ConversationSummaryService } from '@/backend/services/agent/conversation-summary-service';
 import type { MemoryExtractionService } from '@/backend/services/agent/memory-extraction-service';
@@ -285,6 +289,12 @@ export function trimHistory(
 
 export interface ChatAgentServiceDeps {
   agent: ChatAgentRepository;
+  /**
+   * The specialists a turn was offered and the one it read, written when the
+   * turn ends (#1449). It is a measurement, never an input: the member's answer
+   * does not change because a row could not be stored.
+   */
+  telemetry: SkillTelemetryRepository;
   chats: ChatService;
   /** The bucket, to read a voice note's bytes back for transcription. */
   attachments: Pick<ChatAttachmentStorage, 'download'>;
@@ -495,6 +505,38 @@ export class ChatAgentService {
     }
   }
 
+  /**
+   * The specialist rows for a turn that has ended (#1449).
+   *
+   * Written once, at the ending, so the row can carry what the turn actually
+   * reached: every id the shortlist offered, and the one body the model read.
+   * A loaded id the shortlist did not offer is kept too - `list_specialists`
+   * can name one, and "read something we did not suggest" is the measurement
+   * the table exists for. The outcome is not copied here: the turn row already
+   * records whether it settled, retried or failed.
+   *
+   * Best effort on purpose: an answer that landed is not retracted because a
+   * measurement could not be stored.
+   */
+  private async recordSkills(
+    turnId: string | null,
+    skills: readonly SkillHit[],
+    loadedSkill: string | null
+  ): Promise<void> {
+    if (!turnId) return;
+
+    const uses = new Map<string, TurnSkillUse>();
+    for (const skill of skills) uses.set(skill.id, { skillId: skill.id, loaded: false });
+    if (loadedSkill) uses.set(loadedSkill, { skillId: loadedSkill, loaded: true });
+    if (uses.size === 0) return;
+
+    try {
+      await this.deps.telemetry.record(turnId, [...uses.values()]);
+    } catch (error) {
+      logger.warn('The specialists this turn used were not stored', { error: String(error) });
+    }
+  }
+
   /** The product the page said it was on; a blind page has no eyes, not a guess. */
   private visibleProduct(screen?: ScreenContextInput): string | null {
     return screen !== undefined && !isScreenContextBlind(screen) ? screen.product : null;
@@ -698,6 +740,7 @@ export class ChatAgentService {
         question,
         context,
         screen,
+        skills,
         messages: [
           ...turnContextMessages(identity, screen, recalled, summary, skills),
           { role: 'system', content: SYSTEM_PROMPT },
@@ -882,6 +925,7 @@ export class ChatAgentService {
         turnId: turn.id,
         question: turn.question ?? '',
         context,
+        skills,
         messages: [
           ...turnContextMessages(identity, undefined, recalled, summary, skills),
           { role: 'system', content: SYSTEM_PROMPT },
@@ -911,6 +955,7 @@ export class ChatAgentService {
     messages,
     context,
     screen,
+    skills,
   }: {
     userId: string;
     conversationId: string;
@@ -921,6 +966,8 @@ export class ChatAgentService {
     context: ChatAgentTurnContext;
     /** The snapshot the request brought, or absent for a client with no eyes. */
     screen?: ScreenContextInput;
+    /** The specialists this question cleared the floor for (#1449). */
+    skills: readonly SkillHit[];
   }): AsyncGenerator<ChatAgentEvent, void, void> {
     const client = this.deps.client;
     if (!client) throw new ChatAgentError(503, UNAVAILABLE);
@@ -1281,12 +1328,17 @@ export class ChatAgentService {
       const line = { error: String(error), turn: turnId };
       if (refused) logger.error('Assistant turn refused a credential', line);
       else logger.warn('Assistant turn failed', line);
+      // The skill rows are written whatever the ending is (#1449): a specialist
+      // whose turns fail is the one the operator most needs to see, and the
+      // turn row this points at already says it failed.
+      await this.recordSkills(turnId, skills, loadedSkill);
       throw failure;
     }
 
     const text = answerText.trim() || ROUNDS_EXHAUSTED;
     const record = await this.deps.agent.insertAgentMessage(conversationId, text);
     if (turnId) await this.deps.agent.settleTurn(turnId);
+    await this.recordSkills(turnId, skills, loadedSkill);
 
     // Behind the answer, never in front of it (ADR-0182 decision 2, #1511):
     // the row is stored and the turn is settled, so extraction may now read the

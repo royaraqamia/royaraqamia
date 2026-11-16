@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createSupabaseChatRepository } from '@/backend/repositories/chat/supabase-chat-repository';
 import { createSupabaseChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
+import { createSupabaseSkillTelemetryRepository } from '@/backend/repositories/chat/skill-telemetry-repository';
 import { createSupabaseChatAgentActionRepository } from '@/backend/repositories/chat/chat-agent-action-repository';
 import {
   ChatAgentActionService,
@@ -148,6 +149,9 @@ export function createSupabaseChatAgentService(
 
   return new ChatAgentService({
     agent: createSupabaseChatAgentRepository(getAdminSupabase()),
+    // Which specialists a turn was offered and read (#1449). Service role like
+    // the turn row it points at: the member reads their answer, never this.
+    telemetry: createSupabaseSkillTelemetryRepository(getAdminSupabase()),
     chats: createSupabaseChatService(supabase),
     reserve: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.chatAgentTurns),
     // Every remote call a turn makes is its own counted action (#1226): one

@@ -8,6 +8,7 @@ import {
   Link2,
   Newspaper,
   ShieldCheck,
+  Sparkles,
   Store,
   Wallet,
 } from 'lucide-react';
@@ -78,6 +79,12 @@ const SECTIONS = [
     label: ADMIN_CONSOLE_COPY.reportsLabel,
     description: ADMIN_CONSOLE_COPY.reportsDescription,
     icon: Flag,
+  },
+  {
+    href: '/admin/agent/skills',
+    label: ADMIN_CONSOLE_COPY.skillsLabel,
+    description: ADMIN_CONSOLE_COPY.skillsDescription,
+    icon: Sparkles,
   },
 ];
 
