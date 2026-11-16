@@ -4,6 +4,11 @@
 > is state on the door, not a link to the app's route: the selected app renders
 > under the strip and the address stays `/`. The eleven routes still exist for a
 > direct visit and a shared link.
+>
+> **Amended by [ADR-0202](0202-the-homepage-strip-is-the-members-to-arrange.md).**
+> The strip's order is the member's, not only add order: an explicit «ترتيب» mode
+> drags or keys a tab to a new slot. The list stays uncapped and the picker still
+> adds at the end.
 
 The homepage was a marketing page: a hero, metric cards, a horizontal row of
 services and testimonials, all scrolled past by a member who came back to open

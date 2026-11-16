@@ -25,6 +25,7 @@ function says(order: string[], status: 'loading' | 'ready' | 'failed' = 'ready')
     reload: async () => {},
     add: async () => null,
     remove: async () => null,
+    reorder: async () => null,
   });
 }
 

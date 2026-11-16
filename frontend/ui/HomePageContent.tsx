@@ -39,7 +39,7 @@ import { HomeTabStrip } from './home/HomeTabStrip';
  * empty state flashing for a member who already has apps.
  */
 export function HomePageContent() {
-  const { order, status } = useHomeServices();
+  const { order, status, reorder } = useHomeServices();
   const router = useRouter();
   const [chosen, setChosen] = useState<HomeServiceKey | null>(null);
 
@@ -80,7 +80,7 @@ export function HomePageContent() {
         <HomeSkeleton />
       ) : selected ? (
         <>
-          <HomeTabStrip selected={selected} onSelect={select} />
+          <HomeTabStrip selected={selected} onSelect={select} onReorder={reorder} />
           <HomeAppSurface tab={selected} />
         </>
       ) : (

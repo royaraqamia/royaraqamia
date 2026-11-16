@@ -90,6 +90,64 @@ class HomeServicesTest {
     }
 
     @Test
+    fun `a guest reorders the strip on the device and writes no request`() = runBlocking {
+        val transport = RecordingTransport { HttpResponse(500, "no answer") }
+        val controller = controller(transport = transport, signedIn = false)
+
+        controller.start()
+        controller.toggle("/rates")
+        controller.toggle("/quran")
+        controller.reorder(listOf("/quran", "/rates"))
+
+        assertEquals(listOf("/quran", "/rates"), controller.order)
+        assertEquals("a guest reorder writes no request", 0, transport.hits)
+        assertEquals(
+            "the new order is on disk, not only in the controller",
+            listOf("/quran", "/rates"),
+            PreferencesHomeServicesStore(context).read(),
+        )
+    }
+
+    @Test
+    fun `a signed-in reorder writes the whole order once`() = runBlocking {
+        val transport =
+            RecordingTransport { request ->
+                when (request.method) {
+                    "GET" -> HttpResponse(200, """{"success":true,"data":["/quran","/rates"]}""")
+                    else -> HttpResponse(200, """{"success":true,"data":["/rates","/quran"]}""")
+                }
+            }
+        val controller = controller(transport = transport, signedIn = true)
+        controller.start()
+
+        controller.reorder(listOf("/rates", "/quran"))
+
+        assertEquals(listOf("/rates", "/quran"), controller.order)
+        assertEquals("the read and one replace", 2, transport.hits)
+        val put = transport.requests.last()
+        assertEquals("PUT", put.method)
+        assertTrue("the whole order is written", put.body.orEmpty().contains("\"/rates\",\"/quran\""))
+    }
+
+    @Test
+    fun `a refused reorder puts the confirmed order back`() = runBlocking {
+        val transport =
+            RecordingTransport { request ->
+                when (request.method) {
+                    "GET" -> HttpResponse(200, """{"success":true,"data":["/quran","/rates"]}""")
+                    else -> HttpResponse(500, """{"success":false,"error":"nope"}""")
+                }
+            }
+        val controller = controller(transport = transport, signedIn = true)
+        controller.start()
+
+        controller.reorder(listOf("/rates", "/quran"))
+
+        assertEquals(listOf("/quran", "/rates"), controller.order)
+        assertEquals("nope", controller.error)
+    }
+
+    @Test
     fun `a sign-in merges the device's list once and clears it`() = runBlocking {
         store.write(listOf("/rates"))
         val transport =
