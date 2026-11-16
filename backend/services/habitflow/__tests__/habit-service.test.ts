@@ -239,9 +239,7 @@ describe('HabitService', () => {
   describe('updateHabit', () => {
     it('requires an id', async () => {
       const { repository, service } = makeRepo();
-      await expect(service.updateHabit('', { name: 'قراءة' })).rejects.toThrow(
-        'معرِّف العادة مطلوب'
-      );
+      await expect(service.updateHabit('', { name: 'قراءة' })).rejects.toThrow('معرِّف العادة مطلوب');
       await expect(
         service.updateHabit(null as unknown as string, { name: 'قراءة' })
       ).rejects.toThrow('معرِّف العادة مطلوب');

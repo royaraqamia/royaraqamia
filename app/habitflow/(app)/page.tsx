@@ -3,8 +3,7 @@ import { HabitflowSurface } from '@/frontend/ui/habitflow/habitflow-surface';
 
 export const metadata: Metadata = {
   title: 'تتبُّع العادات',
-  description:
-    'تتبَّع عاداتك اليوميَّة والأسبوعيَّة، راقب تقدُّمك، وحافظ على استمراريَّتك مع HabitFlow.',
+  description: 'تتبَّع عاداتك اليوميَّة والأسبوعيَّة، راقب تقدُّمك، وحافظ على استمراريَّتك مع HabitFlow.',
   openGraph: {
     title: 'تتبُّع العادات | رؤيَة رقَميَّة',
     description:

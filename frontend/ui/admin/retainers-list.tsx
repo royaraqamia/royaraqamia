@@ -95,9 +95,7 @@ export function buildRetainerDetailsEdit(
 
   const fee = RetainerUpdateSchema.shape.monthly_fee_usd.safeParse(draft.fee);
   const feeValue = fee.success ? fee.data : undefined;
-  const feeError = fee.success
-    ? null
-    : (fee.error.issues[0]?.message ?? 'الرَّسم الشَّهري غير صحيح');
+  const feeError = fee.success ? null : (fee.error.issues[0]?.message ?? 'الرَّسم الشَّهري غير صحيح');
 
   if (typeof feeValue === 'number' && feeValue !== retainer.monthly_fee_usd) {
     edit.monthly_fee_usd = feeValue;

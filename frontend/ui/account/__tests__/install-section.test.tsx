@@ -219,8 +219,6 @@ describe('InstallSection inside the Android shell', () => {
     render(<InstallSection />);
     fireEvent.click(await screen.findByRole('button', { name: 'التَّحقُّق من وجود تحديث' }));
 
-    expect(
-      await screen.findByText('تعذَّر التَّحقُّق من التَّحديث. حاول مرَّة أخرى.')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('تعذَّر التَّحقُّق من التَّحديث. حاول مرَّة أخرى.')).toBeInTheDocument();
   });
 });

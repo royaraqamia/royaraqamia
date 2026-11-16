@@ -25,8 +25,7 @@ export const EMPTY_CONTACT: BookingContactDraft = {
  * its own message instead of the "none available" state those steps show for a
  * genuine absence (ADR-0031).
  */
-export const SLOTS_UNAVAILABLE =
-  'تعذَّر تحميل المواعيد المُتاحة. تحقَّق من اتِّصالك ثم أعِد المحاولة.';
+export const SLOTS_UNAVAILABLE = 'تعذَّر تحميل المواعيد المُتاحة. تحقَّق من اتِّصالك ثم أعِد المحاولة.';
 export const PACKAGES_UNAVAILABLE = 'تعذَّر تحميل الباقات. تحقَّق من اتِّصالك ثم أعِد المحاولة.';
 export const OFFLINE_BOOKING =
   'يلزم الاتصال بالإنترنت لإتمام الحجز. تحقَّق من اتِّصالك ثم أعِد المحاولة.';

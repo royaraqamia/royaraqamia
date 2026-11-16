@@ -146,9 +146,7 @@ describe('RetainersList', () => {
       target: { value: '100.999' },
     });
 
-    expect(
-      screen.getByText('الرَّسم الشَّهري لا يقبل أكثر من منزلتين عشريّتين')
-    ).toBeInTheDocument();
+    expect(screen.getByText('الرَّسم الشَّهري لا يقبل أكثر من منزلتين عشريّتين')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'حفظ التَّفاصيل' })).toBeDisabled();
   });
 });

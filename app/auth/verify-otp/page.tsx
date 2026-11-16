@@ -139,9 +139,7 @@ function VerifyOtpForm() {
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-lg font-bold tracking-tight text-foreground">
-                تمَّ التَّحقُّق بنجاح
-              </h3>
+              <h3 className="text-lg font-bold tracking-tight text-foreground">تمَّ التَّحقُّق بنجاح</h3>
               <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
                 <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
                 جاري تحويلك تلقائيًّا...
@@ -234,8 +232,8 @@ function VerifyOtpForm() {
               </form>
 
               <p className="text-[11px] leading-relaxed text-muted-foreground/80 px-2">
-                إذا كان لديك حساب مُسبقًا بهذا البريد، فقد أرسلنا إليك روابط الدُّخول وإعادة تعيين
-                كلمة المرور بدلًا من الرَّمز.
+                إذا كان لديك حساب مُسبقًا بهذا البريد، فقد أرسلنا إليك روابط الدُّخول وإعادة تعيين كلمة
+                المرور بدلًا من الرَّمز.
               </p>
 
               {resendOutcome.status === 'offline' && (

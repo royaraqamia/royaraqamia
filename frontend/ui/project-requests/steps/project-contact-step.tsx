@@ -50,9 +50,7 @@ export function ProjectContactStep({ control, register, errors }: ProjectContact
             />
           )}
         />
-        <p className="form-help-text">
-          اختر رمز الدولة ثم اكتب رقمك — سنتواصل معك على هذا الرَّقم.
-        </p>
+        <p className="form-help-text">اختر رمز الدولة ثم اكتب رقمك — سنتواصل معك على هذا الرَّقم.</p>
         <FieldError id="phone_whatsapp-error" message={errors.phone_whatsapp?.message} />
       </div>
 

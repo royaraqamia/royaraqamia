@@ -94,8 +94,8 @@ export function DetailsStep({ contact, onChange, onBlurField, fieldErrors }: Det
           className="bg-muted border-border rounded-xl focus-ring"
         />
         <p id="booking-topic-hint" className="form-help-text">
-          {TOPIC_DESCRIPTION_MIN} {arabicCharCountNoun(TOPIC_DESCRIPTION_MIN)} على الأقل — كُلَّما
-          وضَّحت أكثر، كانت الاستشارة أدق.
+          {TOPIC_DESCRIPTION_MIN} {arabicCharCountNoun(TOPIC_DESCRIPTION_MIN)} على الأقل — كُلَّما وضَّحت
+          أكثر، كانت الاستشارة أدق.
         </p>
         {topicError && (
           <p id="booking-topic-error" className="text-sm text-destructive mt-1">

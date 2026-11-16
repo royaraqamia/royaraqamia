@@ -74,9 +74,7 @@ export function AdminPackagesView() {
   }
 
   async function handleDelete(id: string) {
-    if (
-      !window.confirm('حذف الباقة نهائيًا؟ إن كانت مرتبطة بحجوزات فسيفشل الحذف — عطّلها بدلًا منه.')
-    )
+    if (!window.confirm('حذف الباقة نهائيًا؟ إن كانت مرتبطة بحجوزات فسيفشل الحذف — عطّلها بدلًا منه.'))
       return;
     const result = await adminDeletePackage(id);
     if (result.success) {

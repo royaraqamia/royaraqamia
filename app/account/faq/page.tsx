@@ -6,8 +6,7 @@ import { AccountFaqView } from '@/frontend/ui/account/faq-view';
 
 export const metadata: Metadata = {
   title: ACCOUNT_FAQ_COPY.pageTitle,
-  description:
-    'أجوبة عن طرق الدَّفع والعملات المقبولة والدَّفع بالتَّقسيط وشروط التَّدريب في رؤيَة رَقَميَّة.',
+  description: 'أجوبة عن طرق الدَّفع والعملات المقبولة والدَّفع بالتَّقسيط وشروط التَّدريب في رؤيَة رَقَميَّة.',
 };
 
 /**

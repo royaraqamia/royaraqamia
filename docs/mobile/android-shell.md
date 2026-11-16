@@ -1034,7 +1034,7 @@ Measured on the API 30 emulator (`Pixel_5`, 1080x2340), shell at `20002`, manife
 | Step                         | What the device showed                                                                                                                                 |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | The check                    | `ShellUpdater: checked …/android/latest.json: installed=20002 latest=20003 pending=true`                                                               |
-| The prompt                   | `alertTitle` = «تحديث التطبيق»; `button1` = «تنزيل وتثبيت», `button2` = «لاحقًا»                                                                       |
+| The prompt                   | `alertTitle` = «تحديث التطبيق»; `button1` = «تنزيل وتثبيت», `button2` = «لاحقًا»                                                                        |
 | Permission missing           | `Settings$ManageAppExternalSourcesActivity` came to the front, the app still alive (`pid 6668`)                                                        |
 | Granting it                  | `REQUEST_INSTALL_PACKAGES: allow`, and the app's process was gone — the prompt returns afterwards                                                      |
 | The download                 | `ShellUpdater: verified royaraqamia-shell-20003.apk (9167448 bytes) against the manifest`                                                              |
@@ -1051,7 +1051,7 @@ build signed by the repository's keystore with a counter of 20002, updating itse
 | Step                      | What the device showed                                                                                                               |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | The check                 | `ShellUpdater: checked https://royaraqamia.com/android/latest.json: installed=20002 latest=20003 pending=true`                       |
-| The prompt                | «تحديث التطبيق», «يتوفّر إصدار جديد من التطبيق. تنزيله الآن؟», «تنزيل التحديث» / «لاحقًا»                                            |
+| The prompt                | «تحديث التطبيق», «يتوفّر إصدار جديد من التطبيق. تنزيله الآن؟», «تنزيل التحديث» / «لاحقًا»                                              |
 | The download              | `files/updates/royaraqamia-shell-20003.apk`, `-rw-------`, 7447105 bytes — internal storage, renamed into place only once it matched |
 | The install               | the platform installer opened on the FileProvider URI; the tap produced `PACKAGE_REPLACED` and `versionCode=20003`                   |
 | Where the bytes came from | `https://royaraqamia.com/android/royaraqamia-1.0.3.apk` — the site's own path rewritten to the bucket; no GitHub host was involved   |
@@ -1086,12 +1086,12 @@ number in Arabic-Indic digits on an Arabic phone.
 Measured on the API 30 image — en-US locale, 320dp wide, shell at `20005`, a manifest at `20099`, and an
 APK served at 300KB/s so the bar stayed on screen:
 
-| Step           | What the device showed                                                                                                           |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| The offer      | «تحديث التَّطبيق», «يتوفَّر إصدار جديد من التَّطبيق. تنزيله الآن؟», «تحديث من 1.0.5 إلى 1.9.9 · 30 م.ب»                          |
+| Step           | What the device showed                                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| The offer      | «تحديث التَّطبيق», «يتوفَّر إصدار جديد من التَّطبيق. تنزيله الآن؟», «تحديث من 1.0.5 إلى 1.9.9 · 30 م.ب»                              |
 | The download   | «جاري تنزيل التَّحديث…», «23%» at the start of its row and «6.6 من 30 م.ب» at the end, the gradient fill from the right, «إلغاء» |
-| «إلغاء»        | `ShellUpdater: the download was cancelled: cancelled at 7243394 of 31457280 bytes`, and the card closed onto the page            |
-| A failed retry | «تعذَّر تنزيل التَّحديث» with the reason under it, «إعادة المحاولة» and «لاحقًا» — one card, no toast                            |
+| «إلغاء»        | `ShellUpdater: the download was cancelled: cancelled at 7243394 of 31457280 bytes`, and the card closed onto the page          |
+| A failed retry | «تعذَّر تنزيل التَّحديث» with the reason under it, «إعادة المحاولة» and «لاحقًا» — one card, no toast                               |
 
 Two defects were found by that drill rather than by a test, and both would otherwise have shipped: the
 layout took its direction from the phone, so on this en-US image the percentage and the size swapped

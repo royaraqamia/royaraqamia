@@ -242,9 +242,7 @@ describe('RetainerUpdateSchema', () => {
   });
 
   it('accepts present, null and absent notes', () => {
-    expect(RetainerUpdateSchema.safeParse({ status: 'active', notes: 'اتُّفق' }).success).toBe(
-      true
-    );
+    expect(RetainerUpdateSchema.safeParse({ status: 'active', notes: 'اتُّفق' }).success).toBe(true);
     expect(RetainerUpdateSchema.safeParse({ status: 'active', notes: null }).success).toBe(true);
     expect(RetainerUpdateSchema.safeParse({ status: 'active' }).success).toBe(true);
   });

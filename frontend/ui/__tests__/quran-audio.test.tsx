@@ -211,9 +211,7 @@ describe('the offline copy', () => {
     // No local copy and no playable host is the state to name, whether the cause
     // is a plane or a host that never answers.
     expect(
-      await screen.findByText(
-        /هذه السُّورة غير محفوظة على هذا الجُهاز، وتحتاج اتِّصالًا لتشغيلها\./
-      )
+      await screen.findByText(/هذه السُّورة غير محفوظة على هذا الجُهاز، وتحتاج اتِّصالًا لتشغيلها\./)
     ).toBeInTheDocument();
   });
 });

@@ -33,9 +33,9 @@ export default async function HirePage() {
                 className="mt-2 text-sm text-muted-foreground leading-relaxed"
                 buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
               >
-                إن كنتَ صاحب شركة أو مشروع أو صاحب فكرة ولديك حلول رقميَّة تنوي إطلاقها، فبين يديك
-                فريق يتمتَّع بخبرة تتجاوز 7 سنوات يتولَّى صيانة مشاريعك وتطويرها وإدارتها، باستثمار
-                شهري ثابت ودون الحاجة إلى بناء فريق داخلي.
+                إن كنتَ صاحب شركة أو مشروع أو صاحب فكرة ولديك حلول رقميَّة تنوي إطلاقها، فبين يديك فريق
+                يتمتَّع بخبرة تتجاوز 7 سنوات يتولَّى صيانة مشاريعك وتطويرها وإدارتها، باستثمار شهري ثابت
+                ودون الحاجة إلى بناء فريق داخلي.
               </CollapsibleText>
 
               <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">

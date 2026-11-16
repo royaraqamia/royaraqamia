@@ -4,8 +4,7 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 
 export const metadata: Metadata = {
   title: 'شروط الاستخدام',
-  description:
-    'شروط الاستخدام لـ رؤيَة رقَميَّة – اقرأ الشُّروط والالتزامات المُتعلِّقة باستخدام خدماتنا.',
+  description: 'شروط الاستخدام لـ رؤيَة رقَميَّة – اقرأ الشُّروط والالتزامات المُتعلِّقة باستخدام خدماتنا.',
   alternates: { canonical: '/terms' },
   openGraph: {
     title: 'شُروط الاستخدام | رؤيَة رقَميَّة',
@@ -58,9 +57,8 @@ export default function TermsPage() {
             </div>
             <p className="leading-relaxed text-muted-foreground sm:text-lg">
               مرحبًا بك في <strong className="font-bold text-foreground">رؤيَة رقَميَّة</strong>{' '}
-              (&quot;نحنُ&quot; أو &quot;المُشغِّل&quot;). باستخدامك لمواقعنا وخدماتنا، فإنَّك توافق
-              على الالتزام بهذه الشُّروط. إذا لم توافق على أيٍّ من هذه الشُروط، يُرجَى عدم استخدام
-              خدماتنا.
+              (&quot;نحنُ&quot; أو &quot;المُشغِّل&quot;). باستخدامك لمواقعنا وخدماتنا، فإنَّك توافق على
+              الالتزام بهذه الشُّروط. إذا لم توافق على أيٍّ من هذه الشُروط، يُرجَى عدم استخدام خدماتنا.
             </p>
           </section>
 
@@ -76,9 +74,8 @@ export default function TermsPage() {
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">. وصف الخدمات</h2>
             </div>
             <p className="text-muted-foreground">
-              تُقدِّم رؤيَة رقَميَّة خدمة بناء مواقع وتطبيقات؛ كما تُقدِّم للطُّلاب والخرِّيجين
-              الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات مع شهادة مُوثَّقة من
-              قِبَلنا.
+              تُقدِّم رؤيَة رقَميَّة خدمة بناء مواقع وتطبيقات؛ كما تُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا
+              احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات مع شهادة مُوثَّقة من قِبَلنا.
             </p>
           </section>
 
@@ -131,8 +128,8 @@ export default function TermsPage() {
                 </h3>
                 <p className="text-muted-foreground">
                   عند استخدام ميزة الدُّخول بحساب Google، أنت تمنحنا إذنًا بالوصول إلى معلومات حسابك
-                  الأساسيَّة (الاسم والبريد الإلكتروني وصورة الملف الشَّخصي) وِفقًا لإعدادات
-                  الخُصوصيَّة في حسابك على Google.
+                  الأساسيَّة (الاسم والبريد الإلكتروني وصورة الملف الشَّخصي) وِفقًا لإعدادات الخُصوصيَّة في
+                  حسابك على Google.
                 </p>
               </div>
 
@@ -144,8 +141,8 @@ export default function TermsPage() {
                   إلغاء الحساب
                 </h3>
                 <p className="text-muted-foreground">
-                  يمكنك طلب إلغاء حسابك في أيِّ وقت عن طريق التَّواصل معنا عبر البريد الإلكتروني.
-                  سنقوم بمعالجة طلبك خلال يومًا.
+                  يمكنك طلب إلغاء حسابك في أيِّ وقت عن طريق التَّواصل معنا عبر البريد الإلكتروني. سنقوم
+                  بمعالجة طلبك خلال يومًا.
                 </p>
               </div>
             </div>
@@ -222,8 +219,8 @@ export default function TermsPage() {
                 </h3>
                 <p className="text-muted-foreground">
                   جميع المحتويات المتاحة على منصَّتنا (نصوص، صور، فيديوهات، تصاميم، شهادات، وأكواد
-                  برمجيَّة) هي ملكيَّة فكريَّة خاصَّة برؤيَة رقَميَّة أو مُورِّديها. لا يُسمَح بنسخ
-                  أو تعديل أو توزيع أو إعادة استخدام أي محتوى دون إذن كتابي مُسبَق.
+                  برمجيَّة) هي ملكيَّة فكريَّة خاصَّة برؤيَة رقَميَّة أو مُورِّديها. لا يُسمَح بنسخ أو تعديل أو توزيع
+                  أو إعادة استخدام أي محتوى دون إذن كتابي مُسبَق.
                 </p>
               </div>
 
@@ -235,8 +232,8 @@ export default function TermsPage() {
                   محتواك
                 </h3>
                 <p className="text-muted-foreground">
-                  تحتفظ بملكيَّة المحتوى الذي تُنشئه على منصَّتنا. لكنَّك تمنحنا ترخيصًا غير حصري
-                  لاستخدام وعرض هذا المحتوى لتشغيل الخدمات وتقديمها.
+                  تحتفظ بملكيَّة المحتوى الذي تُنشئه على منصَّتنا. لكنَّك تمنحنا ترخيصًا غير حصري لاستخدام
+                  وعرض هذا المحتوى لتشغيل الخدمات وتقديمها.
                 </p>
               </div>
             </div>
@@ -251,9 +248,7 @@ export default function TermsPage() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                 06
               </div>
-              <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-                . الدَّفع والاسترداد
-              </h2>
+              <h2 className="text-xl font-bold text-foreground sm:text-2xl">. الدَّفع والاسترداد</h2>
             </div>
 
             <ul className="space-y-3">
@@ -271,9 +266,7 @@ export default function TermsPage() {
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span>
-                  بعض الخدمات قد تتطلَّب أجرًا. تُوضَّح الأسعار بوضوح قبل إتمام أي عمليَّة شراء.
-                </span>
+                <span>بعض الخدمات قد تتطلَّب أجرًا. تُوضَّح الأسعار بوضوح قبل إتمام أي عمليَّة شراء.</span>
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-border/40 bg-muted/40 p-4">
                 <svg
@@ -289,9 +282,7 @@ export default function TermsPage() {
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span>
-                  في حالة وجود سياسة استرداد مُحدَّدة لدورة أو خدمة مُعيَّنة، ستُعرَض عند الشِّراء.
-                </span>
+                <span>في حالة وجود سياسة استرداد مُحدَّدة لدورة أو خدمة مُعيَّنة، ستُعرَض عند الشِّراء.</span>
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-border/40 bg-muted/40 p-4">
                 <svg
@@ -375,8 +366,8 @@ export default function TermsPage() {
                   />
                 </svg>
                 <span>
-                  لا نتحمَّل المسؤوليَّة عن أيِّ أضرار غير مباشرة أو عرضيَّة أو تبعيَّة ناتجة عن
-                  استخدام الخدمات.
+                  لا نتحمَّل المسؤوليَّة عن أيِّ أضرار غير مباشرة أو عرضيَّة أو تبعيَّة ناتجة عن استخدام
+                  الخدمات.
                 </span>
               </li>
               <li className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-card/90 p-4">
@@ -394,8 +385,8 @@ export default function TermsPage() {
                   />
                 </svg>
                 <span>
-                  مسؤوليَّتنا الإجماليَّة لن تتجاوز المبالغ التي دفعتها فعليًّا لنا خلال الاثني عشر
-                  () شهرًا السَّابقة للحدث المُسبِّب للمسؤوليَّة.
+                  مسؤوليَّتنا الإجماليَّة لن تتجاوز المبالغ التي دفعتها فعليًّا لنا خلال الاثني عشر ()
+                  شهرًا السَّابقة للحدث المُسبِّب للمسؤوليَّة.
                 </span>
               </li>
             </ul>
@@ -413,9 +404,8 @@ export default function TermsPage() {
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">. تعديلات الشُّروط</h2>
             </div>
             <p className="text-muted-foreground">
-              نحتفظ بحقِّ تعديل هذه الشُّروط في أيِّ وقت. سنُعلن عن التَّعديلات الجوهريَّة عبر
-              الموقع أو عبر البريد الإلكتروني. استمرارك في استخدام الخدمات بعد أيِّ تعديلات يُشكِّل
-              قبولًا لها.
+              نحتفظ بحقِّ تعديل هذه الشُّروط في أيِّ وقت. سنُعلن عن التَّعديلات الجوهريَّة عبر الموقع أو عبر
+              البريد الإلكتروني. استمرارك في استخدام الخدمات بعد أيِّ تعديلات يُشكِّل قبولًا لها.
             </p>
           </section>
 
@@ -448,8 +438,8 @@ export default function TermsPage() {
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">. القانون الحاكم</h2>
             </div>
             <p className="text-muted-foreground">
-              تخضع هذه الشُّروط لقوانين الجمهوريَّة العربيَّة السُّوريَّة. أي نزاعات ناشئة عن هذه
-              الشُّروط أو استخدام الخدمات تخضع للاختصاص القضائي الحصري لمحاكم حلب، سوريا.
+              تخضع هذه الشُّروط لقوانين الجمهوريَّة العربيَّة السُّوريَّة. أي نزاعات ناشئة عن هذه الشُّروط أو
+              استخدام الخدمات تخضع للاختصاص القضائي الحصري لمحاكم حلب، سوريا.
             </p>
           </section>
 
@@ -468,22 +458,20 @@ export default function TermsPage() {
               <li className="flex items-start gap-3">
                 <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
                 <span>
-                  يُتيح مُنزِّل الوسائط حفظ ملفٍّ واحد من رابطٍ عام على منصَّات التَّواصل الاجتماعي،
-                  بحدٍّ أقصى للمدة (15 دقيقة) والحجم.
+                  يُتيح مُنزِّل الوسائط حفظ ملفٍّ واحد من رابطٍ عام على منصَّات التَّواصل الاجتماعي، بحدٍّ أقصى
+                  للمدة (15 دقيقة) والحجم.
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
                 <span>
-                  يقتصر على المحتوى العام غير المحميِّ بـ DRM؛ ويُحرَّم استخدامه لتنزيل محتوى لا
-                  تملك حقَّ تنزيله.
+                  يقتصر على المحتوى العام غير المحميِّ بـ DRM؛ ويُحرَّم استخدامه لتنزيل محتوى لا تملك حقَّ
+                  تنزيله.
                 </span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                <span>
-                  أنت وحدك المسؤول عن التزامك بشروط المنصَّة المصدر وبحقوق الملكيَّة الفكريَّة.
-                </span>
+                <span>أنت وحدك المسؤول عن التزامك بشروط المنصَّة المصدر وبحقوق الملكيَّة الفكريَّة.</span>
               </li>
               <li className="flex items-start gap-3">
                 <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />

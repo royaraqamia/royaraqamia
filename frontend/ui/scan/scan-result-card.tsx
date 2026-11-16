@@ -198,8 +198,8 @@ export function ScanResultCard({
                 className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
               >
                 <ShieldAlert className="mt-0.5 size-4 shrink-0" />
-                هذا الرَّابط يخفي وجهته الحقيقيَّة: نطاق مُشابه أو معلومات دخول مضمَّنة. لا تُدخِل
-                عليه أيَّ بيانات.
+                هذا الرَّابط يخفي وجهته الحقيقيَّة: نطاق مُشابه أو معلومات دخول مضمَّنة. لا تُدخِل عليه أيَّ
+                بيانات.
               </p>
             )}
 
@@ -209,8 +209,8 @@ export function ScanResultCard({
                 className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400"
               >
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-                الماسح لا يفتح روابط من نوع «{classification.refusedScheme}» لأنَّها قد تُنفِّذ
-                أوامر على جهازك.
+                الماسح لا يفتح روابط من نوع «{classification.refusedScheme}» لأنَّها قد تُنفِّذ أوامر على
+                جهازك.
               </p>
             )}
 
