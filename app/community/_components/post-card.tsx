@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calendar, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
+import { PostViews } from '@/frontend/ui/shared/post-views';
 import { postExcerpt, stripMarkdown } from '@/shared/reading-time';
+import { formatRelativeTime } from '@/shared/relative-time';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { POST_CARD_COPY } from './post-card-copy';
-import { SocialShare } from './social-share';
-import { PostActionsMenu } from './post-actions-menu';
+import { PostActionBar } from './post-action-bar';
 
 interface PostCardProps {
   post: PostSummary;
@@ -114,46 +115,28 @@ export function PostCard({ post, index, showPinned = false }: PostCardProps) {
           )}
         </div>
 
-        <div className="mt-6 pt-5 border-t border-border flex items-center justify-between text-xs relative z-20">
-          <div className="flex items-center gap-3">
-            {post.published_at ? (
-              <time
-                dateTime={post.published_at}
-                className="text-muted-foreground font-medium flex items-center gap-1.5"
-              >
-                <Calendar className="size-3.5 text-muted-foreground" />
-                {new Intl.DateTimeFormat('ar-SA', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  calendar: 'islamic-umalqura',
-                  numberingSystem: 'latn',
-                }).format(new Date(post.published_at))}
+        <div className="mt-6 border-t border-border pt-4">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+            {post.published_at && (
+              <time dateTime={post.published_at} className="font-medium">
+                {formatRelativeTime(post.published_at)}
               </time>
-            ) : (
-              <span />
             )}
-            <span
-              className="inline-flex items-center gap-1 text-muted-foreground"
-              title="عدد المشاهدات"
-              aria-label={`${post.view_count.toLocaleString('en-US')} مشاهدة`}
-            >
-              <span className="font-digits" dir="ltr">
-                {(post.view_count ?? 0).toLocaleString('en-US')}
+            {post.published_at && post.view_count > 0 && (
+              <span aria-hidden="true" className="opacity-45">
+                ·
               </span>
-              <span>مشاهدة</span>
-            </span>
+            )}
+            <PostViews count={post.view_count} />
           </div>
 
-          <div className="flex items-center gap-2">
-            <SocialShare url={`/community/${post.slug}`} title={label} />
-            <PostActionsMenu
-              post={post}
-              editLabel={POST_CARD_COPY.editAction}
-              onRemoved={() => setRemoved(true)}
-              onRestored={() => setRemoved(false)}
-            />
-          </div>
+          <PostActionBar
+            post={post}
+            label={label}
+            editLabel={POST_CARD_COPY.editAction}
+            onRemoved={() => setRemoved(true)}
+            onRestored={() => setRemoved(false)}
+          />
         </div>
       </div>
     </article>

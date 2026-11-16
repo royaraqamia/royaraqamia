@@ -29,29 +29,12 @@ export const NEWS_REGION_ICONS: Record<NewsRegion, LucideIcon> = {
 };
 
 /**
- * "قبل 4 ساعات" for a source timestamp.
+ * «قبل 4 ساعات» for a source timestamp — the shared formatter, re-exported.
  *
- * Rendered on the server only (the story cards are server components), so the
- * clock read cannot disagree with a hydrating client. An absent timestamp simply
- * renders nothing rather than "قبل 56 سنة" from an epoch fallback.
+ * It moved to `shared/relative-time.ts` when the community card needed the same
+ * sentence: one clock, so a story and a post beside it cannot round differently.
  */
-export function formatRelativeTime(iso: string | null, now: number = Date.now()): string | null {
-  if (!iso) return null;
-  const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return null;
-
-  const minutes = Math.round((now - then) / 60_000);
-  if (minutes < 1) return 'الآن';
-
-  const formatter = new Intl.RelativeTimeFormat('ar-SY-u-nu-latn', { numeric: 'auto' });
-  if (minutes < 60) return formatter.format(-minutes, 'minute');
-
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return formatter.format(-hours, 'hour');
-
-  const days = Math.round(hours / 24);
-  return formatter.format(-days, 'day');
-}
+export { formatRelativeTime } from '@/shared/relative-time';
 
 /**
  * When a snapshot was taken, in the reader's own clock (#555).

@@ -10,8 +10,8 @@
   },
   "routes": {
     "/community/explore": {
-      "comment": "The public hub, measured where `/community` used to be: same shell, same assistant door (ADR-0143), same pinned own row (ADR-0172). It draws no per-viewer control, and the client read that fed one is gone (ADR-0173): measured 265.2 KB after the fix, against 299.1 KB while the roster fetched its states in the browser. The ceiling sits just above today's measurement, as before. Raised from 266 to 268 KB when card excerpts started linking URLs and member handles (ADR-0192): measured 266.6 KB, and the first version of that read cost 32 KB until the client call stopped validating its own reply with zod.",
-      "jsGzipKb": 268
+      "comment": "The public hub, measured where `/community` used to be: same shell, same assistant door (ADR-0143), same pinned own row (ADR-0172). It draws no per-viewer control, and the client read that fed one is gone (ADR-0173): measured 265.2 KB after the fix, against 299.1 KB while the roster fetched its states in the browser. The ceiling sits just above today's measurement, as before. Raised from 266 to 268 KB when card excerpts started linking URLs and member handles (ADR-0192): measured 266.6 KB, and the first version of that read cost 32 KB until the client call stopped validating its own reply with zod. Raised from 268 to 270 KB when the post card split its footer into a meta line and an action bar (views, relative time, and the like/comment cells the product intends): measured 268.1 KB, so the ceiling sits just above today's measurement, as before.",
+      "jsGzipKb": 270
     },
     "/scan": {
       "comment": "The Scanner owns no server surface, so its budget is the initial bundle alone: the decoder and the result card are lazy, and the ~1 MB WASM engine is a static asset fetched only once a visitor actually scans.",
