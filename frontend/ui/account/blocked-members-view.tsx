@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getBlockedChatMembers, unblockChatUser } from '@/frontend/api/chats';
 import { useSession } from '@/frontend/state/session-provider';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import type { ChatPeer } from '@/shared/contracts/chat';
@@ -89,19 +90,12 @@ export function BlockedMembersView() {
       </div>
 
       {isSessionLoading ? (
-        <div
+        <LoadingList
           data-visual="blocked-loading"
-          aria-busy="true"
-          className="rounded-2xl border border-border/70 bg-card/60 px-4 py-6 text-center"
-        >
-          <div
-            aria-hidden="true"
-            className="mx-auto mb-2 h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
-          />
-          <p className="text-xs font-medium text-muted-foreground">
-            {BLOCKED_MEMBERS_COPY.loadingLabel}
-          </p>
-        </div>
+          label={BLOCKED_MEMBERS_COPY.loadingLabel}
+          rows={3}
+          showTrailing={false}
+        />
       ) : !user ? (
         <div
           data-visual="blocked-signed-out"
@@ -116,19 +110,12 @@ export function BlockedMembersView() {
           </SignInCta>
         </div>
       ) : isLoading ? (
-        <div
+        <LoadingList
           data-visual="blocked-loading"
-          aria-busy="true"
-          className="rounded-2xl border border-border/70 bg-card/60 px-4 py-6 text-center"
-        >
-          <div
-            aria-hidden="true"
-            className="mx-auto mb-2 h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
-          />
-          <p className="text-xs font-medium text-muted-foreground">
-            {BLOCKED_MEMBERS_COPY.loadingLabel}
-          </p>
-        </div>
+          label={BLOCKED_MEMBERS_COPY.loadingLabel}
+          rows={3}
+          showTrailing={false}
+        />
       ) : loadError ? (
         <p
           role="alert"

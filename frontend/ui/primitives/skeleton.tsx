@@ -38,6 +38,15 @@ export interface SkeletonProps extends React.ComponentProps<'div'> {
    * @default 'Loading content...'
    */
   ariaLabel?: string;
+  /**
+   * Draw the block as part of a region that already announces itself.
+   *
+   * A page-level skeleton is one labelled region made of many blocks: when every
+   * block were its own `role="status"`, a screen reader would announce the loading
+   * state once per block. A decorative block keeps the paint and drops the voice.
+   * @default false
+   */
+  decorative?: boolean;
 }
 
 const roundedClasses: Record<NonNullable<SkeletonProps['rounded']>, string> = {
@@ -61,6 +70,7 @@ function Skeleton({
   speed = 'normal',
   rounded = 'xl',
   ariaLabel = 'Loading content...',
+  decorative = false,
   children,
   ...props
 }: SkeletonProps) {
@@ -75,9 +85,9 @@ function Skeleton({
     <>
       <SkeletonStyleSheet />
       <div
-        role="status"
-        aria-label={ariaLabel}
-        aria-busy="true"
+        {...(decorative
+          ? { 'aria-hidden': true }
+          : { role: 'status', 'aria-label': ariaLabel, 'aria-busy': true })}
         className={cn(
           // Baseline structural & theme tokens
           'relative overflow-hidden select-none pointer-events-none',
@@ -105,7 +115,7 @@ function Skeleton({
         )}
         {...props}
       >
-        <span className="sr-only">{ariaLabel}</span>
+        {decorative ? null : <span className="sr-only">{ariaLabel}</span>}
         {children}
       </div>
     </>

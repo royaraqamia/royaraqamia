@@ -17,6 +17,7 @@ import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
+import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { AssistantComposer } from '@/frontend/ui/chats/chat-assistant-composer';
@@ -427,12 +428,5 @@ function PanelFailed({ onRetry }: { onRetry: () => void }) {
 }
 
 function PanelLoading() {
-  return (
-    <div className="flex h-full flex-col items-center justify-center px-2 py-8 text-center">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-      <p className="mt-3 text-xs font-medium text-muted-foreground">
-        {ASSISTANT_PANEL_COPY.loading}
-      </p>
-    </div>
-  );
+  return <LoadingThread framed={false} label={ASSISTANT_PANEL_COPY.loading} className="py-2" />;
 }

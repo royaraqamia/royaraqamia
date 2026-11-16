@@ -12,6 +12,7 @@ import {
 import { Label } from '@/frontend/ui/primitives/label';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
+import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
 import { cn } from '@/frontend/shared/cn';
 import { packagesInitialState, packagesReducer } from './admin-packages-view.reducer';
 
@@ -238,9 +239,7 @@ export function AdminPackagesView() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-14">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <LoadingList label="جاري التَّحميل..." rows={3} showAvatar={false} showTrailing={false} />
       ) : (
         <ul className="space-y-2">
           {packages.map((pkg) => (

@@ -14,6 +14,7 @@ import { identityUserId } from '@/frontend/shared/local-store/identity';
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
 import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
@@ -149,15 +150,7 @@ export function ChatsPanel() {
   }
 
   if (isLoading) {
-    return (
-      <div
-        data-local-store-skeleton=""
-        className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs"
-      >
-        <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-        <p className="text-sm font-medium text-muted-foreground">{CHATS_LIST_COPY.loading}</p>
-      </div>
-    );
+    return <LoadingList data-local-store-skeleton="" label={CHATS_LIST_COPY.loading} rows={4} />;
   }
 
   return (

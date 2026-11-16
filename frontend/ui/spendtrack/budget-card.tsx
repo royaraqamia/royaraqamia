@@ -7,6 +7,7 @@ import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
+import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { Wallet, LoaderCircle, TriangleAlert, CircleCheck } from 'lucide-react';
 import { SPENDTRACK_BUDGET_COPY } from './spendtrack-budget-copy';
 import { formatMoney, getCurrencySymbol } from '@/shared/currency';
@@ -113,11 +114,16 @@ export function BudgetCard({
 
       <CardContent className="px-6 pb-6 pt-2 space-y-5">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-10 space-y-3 min-h-45">
-            <LoaderCircle className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-xs text-muted-foreground/80 font-medium">
-              {SPENDTRACK_BUDGET_COPY.loading}
-            </span>
+          <div
+            role="status"
+            aria-busy="true"
+            aria-label={SPENDTRACK_BUDGET_COPY.loading}
+            className="min-h-45 space-y-3"
+          >
+            <Skeleton decorative className="h-8 w-36 max-w-full" />
+            <Skeleton decorative className="h-2.5 w-full" />
+            <Skeleton decorative className="h-10 w-full" />
+            <Skeleton decorative className="h-11 w-28" />
           </div>
         ) : (
           <>

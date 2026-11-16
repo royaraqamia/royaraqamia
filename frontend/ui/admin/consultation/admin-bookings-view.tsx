@@ -8,6 +8,7 @@ import {
   type ConsultationBookingStatus,
 } from '@/shared/contracts/consultation';
 import { adminBookingAction, adminListBookings } from '@/frontend/api/consultation-admin';
+import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
 import {
   formatSessionDateDamascus,
   formatSessionTimeDamascus,
@@ -107,9 +108,7 @@ export function AdminBookingsView() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-14">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <LoadingList label="جاري التَّحميل..." rows={3} showAvatar={false} showTrailing={false} />
       ) : bookings.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-card px-5 py-10 text-center text-muted-foreground">
           لا توجد حجوزات في هذه القائمة.

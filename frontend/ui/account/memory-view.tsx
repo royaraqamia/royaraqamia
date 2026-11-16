@@ -10,6 +10,9 @@ import {
   saveAgentMemorySettings,
 } from '@/frontend/api/account-memory';
 import { useSession } from '@/frontend/state/session-provider';
+import { Skeleton } from '@/frontend/ui/primitives/skeleton';
+import { Switch } from '@/frontend/ui/primitives/switch';
+import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import type {
@@ -50,6 +53,37 @@ function kindLabel(fact: AgentMemoryFact): string | null {
     default:
       return null;
   }
+}
+
+/**
+ * The page before it arrives: the settings card with its switch row, the export
+ * row and one list of facts. The skeleton is the page's own frame rather than a
+ * centred spinner, so nothing jumps when the read lands.
+ *
+ * The loading sentence is announced once, on the fact list; the blocks above it
+ * are decorative.
+ */
+function MemorySkeleton({ label }: { label: string }) {
+  return (
+    <div data-visual="memory-loading" className="space-y-6">
+      <section className="rounded-2xl border border-border/70 bg-card/60 px-4 py-4">
+        <Skeleton decorative className="h-3.5 w-36 max-w-full" />
+        <Skeleton decorative className="mt-2.5 h-3 w-full" />
+        <Skeleton decorative className="mt-1.5 h-3 w-2/3" />
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <Skeleton decorative className="h-3 w-24 max-w-full" />
+          <Skeleton decorative rounded="full" className="h-7 w-12 shrink-0" />
+        </div>
+      </section>
+
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/60 px-4 py-3">
+        <Skeleton decorative className="h-3 w-2/3 max-w-full" />
+        <Skeleton decorative className="h-7 w-16 shrink-0" />
+      </section>
+
+      <LoadingList label={label} rows={3} showTrailing={false} />
+    </div>
+  );
 }
 
 /**
@@ -166,21 +200,7 @@ export function MemoryView() {
   }
 
   if (isSessionLoading) {
-    return (
-      <div
-        data-visual="memory-loading"
-        aria-busy="true"
-        className="rounded-2xl border border-border/70 bg-card/60 px-4 py-6 text-center"
-      >
-        <div
-          aria-hidden="true"
-          className="mx-auto mb-2 h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
-        />
-        <p className="text-xs font-medium text-muted-foreground">
-          {ACCOUNT_MEMORY_COPY.loadingLabel}
-        </p>
-      </div>
-    );
+    return <MemorySkeleton label={ACCOUNT_MEMORY_COPY.loadingLabel} />;
   }
 
   if (!user) {
@@ -212,19 +232,7 @@ export function MemoryView() {
       </div>
 
       {isLoading ? (
-        <div
-          data-visual="memory-loading"
-          aria-busy="true"
-          className="rounded-2xl border border-border/70 bg-card/60 px-4 py-6 text-center"
-        >
-          <div
-            aria-hidden="true"
-            className="mx-auto mb-2 h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
-          />
-          <p className="text-xs font-medium text-muted-foreground">
-            {ACCOUNT_MEMORY_COPY.loadingLabel}
-          </p>
-        </div>
+        <MemorySkeleton label={ACCOUNT_MEMORY_COPY.loadingLabel} />
       ) : loadError ? (
         <p
           role="alert"
@@ -262,29 +270,17 @@ export function MemoryView() {
               <span className="text-xs font-bold text-foreground">
                 {ACCOUNT_MEMORY_COPY.settingsLabel}
               </span>
-              <button
-                type="button"
-                role="switch"
+              <Switch
+                checked={isRemembering}
                 data-visual="memory-switch"
-                aria-checked={isRemembering}
-                aria-label={
+                label={
                   isRemembering
                     ? ACCOUNT_MEMORY_COPY.settingsOffAria
                     : ACCOUNT_MEMORY_COPY.settingsOnAria
                 }
-                onClick={() => void toggle()}
                 disabled={busy === 'settings'}
-                className={`relative h-6 w-11 shrink-0 rounded-full border transition-safe focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-50 ${
-                  isRemembering ? 'border-primary/40 bg-primary/20' : 'border-border/70 bg-muted/40'
-                }`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`absolute top-1/2 size-4 -translate-y-1/2 rounded-full bg-primary transition-safe ${
-                    isRemembering ? 'end-1' : 'start-1 bg-muted-foreground/50'
-                  }`}
-                />
-              </button>
+                onChange={() => void toggle()}
+              />
             </div>
           </section>
 

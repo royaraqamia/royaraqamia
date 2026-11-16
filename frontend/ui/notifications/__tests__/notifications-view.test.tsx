@@ -181,7 +181,7 @@ describe('NotificationsView tabs', () => {
     render(<NotificationsView />);
 
     expect(screen.queryAllByRole('tab')).toHaveLength(0);
-    expect(screen.getByText('جاري التَّحميل...')).toBeInTheDocument();
+    expect(screen.getByLabelText('جاري التَّحميل...')).toHaveAttribute('aria-busy', 'true');
   });
 });
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { ChatThreadView } from '@/frontend/ui/chats/chat-thread-view';
+import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
 
 export const metadata: Metadata = {
   title: 'محادثة',
@@ -39,12 +40,7 @@ export default async function ChatThreadPage({ params }: { params: Promise<{ id:
   );
 }
 
-/** What the route paints while the thread's chunk resolves. */
+/** What the route paints while the thread's chunk resolves: the thread's shape. */
 function ThreadFallback() {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center border-border/70 bg-card/60 px-4 py-14 text-center sm:rounded-2xl sm:border sm:shadow-xs">
-      <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-      <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
-    </div>
-  );
+  return <LoadingThread label="جاري التَّحميل..." />;
 }

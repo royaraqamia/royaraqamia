@@ -7,6 +7,7 @@ import { adminSaveSettings } from '@/frontend/api/consultation-admin';
 import { fetchConsultationSettings } from '@/frontend/api/consultation';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Input } from '@/frontend/ui/primitives/input';
+import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { cn } from '@/frontend/shared/cn';
 
 type SettingsDraft = Partial<ConsultationSettings>;
@@ -58,8 +59,15 @@ export function AdminSettingsView() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-14">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <div
+        role="status"
+        aria-busy="true"
+        aria-label="جاري التَّحميل..."
+        className="border-border bg-card mx-auto max-w-2xl space-y-5 rounded-2xl border p-4 sm:p-6"
+      >
+        <Skeleton decorative className="h-3.5 w-40 max-w-full" />
+        <Skeleton decorative className="h-11 w-full" />
+        <Skeleton decorative className="h-11 w-40 max-w-full" />
       </div>
     );
   }

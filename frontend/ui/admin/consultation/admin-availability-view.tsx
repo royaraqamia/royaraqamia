@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import type { AvailabilitySlot } from '@/shared/contracts/consultation';
+import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
 import {
   adminCreateSlot,
   adminDeleteSlot,
@@ -157,9 +158,7 @@ export function AdminAvailabilityView() {
       )}
 
       {loading ? (
-        <div className="flex justify-center py-14">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
-        </div>
+        <LoadingList label="جاري التَّحميل..." rows={4} showAvatar={false} showTrailing={false} />
       ) : slots.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-card px-5 py-10 text-center text-muted-foreground">
           لا توجد مواعيد قادمة — أضف أول موعد من النموذج أعلاه.
