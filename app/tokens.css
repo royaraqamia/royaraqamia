@@ -66,6 +66,34 @@
     --accent-purple: 256 80% 55%;
     --accent-purple-foreground: 0 0% 100%;
 
+    /* The cover palettes: what a member profile is painted with, seeded from
+       their id (ADR-0200). The component picks an index and reads these, so
+       the twelve pairs are stated once for both clients. */
+    --cover-0-a: 262 80% 62%;
+    --cover-0-b: 320 75% 60%;
+    --cover-1-a: 239 80% 62%;
+    --cover-1-b: 190 85% 55%;
+    --cover-2-a: 172 68% 46%;
+    --cover-2-b: 150 55% 48%;
+    --cover-3-a: 32 84% 56%;
+    --cover-3-b: 350 68% 56%;
+    --cover-4-a: 330 68% 58%;
+    --cover-4-b: 285 62% 56%;
+    --cover-5-a: 205 82% 58%;
+    --cover-5-b: 250 74% 62%;
+    --cover-6-a: 160 52% 46%;
+    --cover-6-b: 88 50% 48%;
+    --cover-7-a: 22 80% 56%;
+    --cover-7-b: 0 66% 54%;
+    --cover-8-a: 188 76% 52%;
+    --cover-8-b: 270 68% 62%;
+    --cover-9-a: 220 26% 52%;
+    --cover-9-b: 212 56% 50%;
+    --cover-10-a: 300 64% 58%;
+    --cover-10-b: 245 78% 62%;
+    --cover-11-a: 68 42% 48%;
+    --cover-11-b: 40 66% 54%;
+
     /* Radii. The scale above this is derived in `app/theme.css`. */
     --radius: 0.5rem;
 
