@@ -171,6 +171,14 @@ of a container kill, and every start and every five minutes the process writes a
 storage, so nothing prunes them — the Vercel-only `prune-deployments.yml` and its script were
 deleted with the migration. `docs/vercel-usage.md` is a historical record now.
 
+**Workflow runs are pruned by a clock.** The repository's retention setting expires logs, artifacts
+and check data but never the run itself, so `.github/workflows/prune-runs.yml` deletes completed runs
+older than two days at 02:20 UTC — oldest first, capped at 800 a day by the installation token's
+1,000-requests-an-hour budget, and never a run that is not `completed`
+([ADR-0204](adr/0204-the-run-list-is-pruned-by-a-clock.md)). A backlog converges over the following
+days instead of failing the job; `npm run prune:runs -- --dry-run` is the local read of the same
+script.
+
 ## Release versioning
 
 - **Web:** no releases (ADR-0090). The deploy identity is `<X.Y.Z>+build.<N>.<7-char-sha>`:
