@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { canGoBack } from './nav-history';
+import { backInFlight, canGoBack, markBackInFlight } from './nav-history';
 import { parentRouteOf } from './route-kind';
 
 /**
@@ -20,11 +20,15 @@ import { parentRouteOf } from './route-kind';
  *    the nearest real parent — `/chats/[id]` to the chats tab, a post to its
  *    community — and does it with `replace`.
  *
- * The `replace` is the fix for the loop. A back control that *pushes* the
- * parent leaves the page it was pressed on in the history, so the way back into
- * it is one entry away: A → B → back → A pushes a second A, B is one press
- * away, and the two trade places for as long as the user keeps pressing. A
- * back press never adds an entry, so the stack strictly shrinks.
+ * `canGoBack` only says yes for entries this page load pushed (`nav-history.ts`
+ * notes every link and every traversal), so "some navigation happened" can no
+ * longer be mistaken for "there is a page of ours behind this one" — the guess
+ * that made two pages trade places.
+ *
+ * The `replace` is the second half of the loop fix. A back control that *pushes*
+ * the parent leaves the page it was pressed on in the history, so the way back
+ * into it is one entry away. A back press never adds an entry, so the stack
+ * strictly shrinks.
  *
  * `fallback` exists for the few pages whose parent is not a prefix of their URL
  * (`/chats/[id]` belongs to `/notifications?tab=chats`); the route-kind list
@@ -35,13 +39,23 @@ export function useBackAction(fallback?: string): () => void {
   const pathname = usePathname();
 
   return useCallback(() => {
+    // One press, one screen. A second press that arrives before the first lands
+    // would pop the entry *after* the one the member is about to see.
+    if (backInFlight()) return;
+
     if (canGoBack()) {
+      markBackInFlight();
       router.back();
       return;
     }
 
-    const target = fallback ?? parentRouteOf(pathname);
-    // Never a no-op push, and never a push at all: see the loop above.
-    if (target !== pathname) router.replace(target);
+    const parent = fallback ?? parentRouteOf(pathname);
+    // A control that presses and does nothing reads as broken: when the parent
+    // is this very page, the door is the only place left that is somewhere else.
+    const target = parent === pathname ? '/' : parent;
+    if (target === pathname) return;
+
+    markBackInFlight();
+    router.replace(target);
   }, [fallback, pathname, router]);
 }

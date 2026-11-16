@@ -81,3 +81,29 @@ order is a preference, not an accident of when they tapped «إضافة».
   picker still adds at the end, but the order is now the member's to change.
 - A refused write costs the member the arrangement they just made, and says so in
   the strip's live region. The same rule already governed add and remove.
+
+## Amendment (2026-11-16): the pill lifts on a hold, because a swipe is a scroll
+
+Point 2 armed the drag on `pointerdown` and the strip marked every pill `touch-none`
+while arranging. On a phone that handed _every_ gesture to the drag: the strip could
+no longer be scrolled inside the mode, so a member could only reorder the two or three
+pills already on screen — and on a narrow screen, only the pills nearest «تم». The
+"flick still scrolls" in the original reasoning was true of the strip outside the mode
+and false inside it.
+
+The mode stays, and so does its reasoning: «ترتيب» is still the only way in, so a tap
+never moves a tab and there is nothing to discover by accident. What changed is the
+gesture inside it:
+
+- **A finger that moves scrolls; a finger that holds lifts.** A press waits
+  `LONG_PRESS_MS` (350 ms) without travelling past 8 px. Movement first hands the
+  gesture back to the browser, so the strip scrolls as it always did — the scroll axis
+  and the drag axis are the same one, and no direction rule can separate them.
+- **Only the lifted pill owns the gesture.** `touch-none` is on that pill, not on the
+  strip, and `touchmove` is prevented from the moment it is in hand.
+- **A mouse lifts on movement.** It has no horizontal scroll to be mistaken for, so it
+  keeps the 4 px threshold and no hold.
+- **Held at an edge, the strip scrolls with it**, accelerating the deeper the pointer is
+  in a 64 px zone, so pills past the edge are reachable in one drag.
+- **Lifting and dropping in place changes nothing**: the tap that a lift swallowed does
+  not select the tab, and the drop only writes if the pointer moved.

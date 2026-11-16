@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HomeTabStrip } from '../HomeTabStrip';
 
@@ -16,10 +16,34 @@ vi.mock('@/frontend/state/home-services-provider', () => ({
   }),
 }));
 
+/** A pointer event jsdom can carry: it has no PointerEvent of its own. */
+function pointer(
+  target: Document | Element | Node | Window,
+  type: string,
+  init: { x: number; y?: number; pointerType?: string; pointerId?: number }
+) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.assign(event, {
+    pointerId: init.pointerId ?? 1,
+    pointerType: init.pointerType ?? 'touch',
+    clientX: init.x,
+    clientY: init.y ?? 10,
+    button: 0,
+  });
+  fireEvent(target, event);
+  return event;
+}
+
 /** The strip's arrange mode (ADR-0202): the toggle, the keyboard, the exit. */
 describe('HomeTabStrip', () => {
   beforeEach(() => {
     state.order = ['/quran', '/athkar', '/notes'];
+    // jsdom has no scrolling on elements; the drag only needs the call.
+    HTMLElement.prototype.scrollBy = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('offers the arrange control and hides the picker while arranging', () => {
@@ -61,5 +85,71 @@ describe('HomeTabStrip', () => {
 
     expect(onSelect).toHaveBeenCalledWith('/notes');
     expect(screen.getByRole('button', { name: 'ترتيب' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('scrolls instead of lifting when the finger moves first', () => {
+    const onReorder = vi.fn(async () => null);
+    vi.useFakeTimers();
+    render(<HomeTabStrip selected="/quran" onSelect={() => {}} onReorder={onReorder} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'ترتيب' }));
+
+    const pill = document.querySelector<HTMLElement>('[data-home-tab="/notes"]');
+    if (!pill) throw new Error('the strip has no notes pill');
+
+    // A swipe inside arrange mode: the gesture belongs to the scroller, so the
+    // pill never lifts and the wait that would have lifted it is abandoned.
+    pointer(pill, 'pointerdown', { x: 300 });
+    pointer(window, 'pointermove', { x: 220 });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(pill.classList.contains('touch-none')).toBe(false);
+    expect(onReorder).not.toHaveBeenCalled();
+  });
+
+  it('lifts the pill after a hold, then saves where it was dropped', () => {
+    const onReorder = vi.fn(async () => null);
+    vi.useFakeTimers();
+    render(<HomeTabStrip selected="/quran" onSelect={() => {}} onReorder={onReorder} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'ترتيب' }));
+
+    const pill = document.querySelector<HTMLElement>('[data-home-tab="/athkar"]');
+    if (!pill) throw new Error('the strip has no athkar pill');
+
+    pointer(pill, 'pointerdown', { x: 300 });
+    act(() => {
+      vi.advanceTimersByTime(350);
+    });
+
+    // In hand: only the lifted pill owns the gesture from here on.
+    expect(pill.classList.contains('touch-none')).toBe(true);
+
+    pointer(window, 'pointermove', { x: 320 });
+    pointer(window, 'pointerup', { x: 320 });
+
+    // Every rect is zero in jsdom, so the pointer is over the first slot.
+    expect(onReorder).toHaveBeenCalledWith(['/athkar', '/quran', '/notes']);
+  });
+
+  it('gives a mouse the drag on movement, with no hold to wait for', () => {
+    const onReorder = vi.fn(async () => null);
+    render(<HomeTabStrip selected="/quran" onSelect={() => {}} onReorder={onReorder} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'ترتيب' }));
+
+    const pill = document.querySelector<HTMLElement>('[data-home-tab="/athkar"]');
+    if (!pill) throw new Error('the strip has no athkar pill');
+
+    pointer(pill, 'pointerdown', { x: 300, pointerType: 'mouse' });
+    pointer(window, 'pointermove', { x: 320, pointerType: 'mouse' });
+
+    expect(pill.classList.contains('touch-none')).toBe(true);
+
+    pointer(window, 'pointerup', { x: 320, pointerType: 'mouse' });
+
+    expect(onReorder).toHaveBeenCalledWith(['/athkar', '/quran', '/notes']);
   });
 });

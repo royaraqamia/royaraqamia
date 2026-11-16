@@ -36,8 +36,10 @@ interface HomeTabStripProps {
  * for a shared link and a direct visit; the tab never uses it. The end control
  * opens the same sheet the navbar does.
  *
- * «ترتيب» is the only way into the drag, so a normal tap never moves a tab and a
- * flick still scrolls the strip. Inside the mode the pills are draggable, the
+ * «ترتيب» is the only way into the drag, so a normal tap never moves a tab. A
+ * swipe still scrolls the strip even inside the mode: a pill has to be held
+ * before it lifts (see `use-home-tab-order`), which is the only rule that works
+ * when the scroll axis and the drag axis are the same one. Once lifted, the
  * arrow keys move the focused pill one slot, and «تم» or choosing a tab leaves
  * the mode. A drop saves the whole order; the provider serialises the writes.
  */
@@ -116,10 +118,12 @@ export function HomeTabStrip({ selected, onSelect, onReorder }: HomeTabStripProp
                     data-home-tab={item.href}
                     onPointerDown={drag.onPointerDown}
                     onClickCapture={drag.onClickCapture}
+                    onContextMenu={drag.onContextMenu}
                     className={cn(
                       'relative shrink-0 snap-start',
-                      arranging && 'touch-none',
-                      dragging === item.href && 'z-10'
+                      // Only the pill in hand owns the gesture; every other pill
+                      // (and every swipe that starts on one) still scrolls.
+                      dragging === item.href && 'touch-none z-10'
                     )}
                   >
                     <button
@@ -138,7 +142,8 @@ export function HomeTabStrip({ selected, onSelect, onReorder }: HomeTabStripProp
                           ? 'border-violet-500/60 bg-violet-600/20 text-violet-200'
                           : 'border-neutral-800 bg-neutral-900/70 text-neutral-200 hover:border-neutral-700 hover:bg-neutral-800',
                         arranging && 'cursor-grab select-none',
-                        dragging === item.href && 'opacity-70'
+                        dragging === item.href &&
+                          'scale-105 cursor-grabbing shadow-lg shadow-violet-950/50 ring-1 ring-violet-400/50'
                       )}
                     >
                       {Icon && (

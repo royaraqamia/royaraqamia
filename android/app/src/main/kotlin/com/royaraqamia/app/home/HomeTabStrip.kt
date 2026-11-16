@@ -3,7 +3,7 @@ package com.royaraqamia.app.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -250,7 +250,10 @@ private fun StripPill(
                 .then(
                     if (arranging) {
                         Modifier.pointerInput(entry.route) {
-                            detectDragGestures(
+                            // The strip scrolls on the same axis the drag travels
+                            // (ADR-0202's amendment): a pill lifts only after a
+                            // hold, so a flick before it still scrolls the row.
+                            detectDragGesturesAfterLongPress(
                                 onDragStart = { onDragStart() },
                                 onDragEnd = { onDragEnd() },
                                 onDragCancel = { onDragEnd() },
