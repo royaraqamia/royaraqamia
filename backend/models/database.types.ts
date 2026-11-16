@@ -53,54 +53,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      agent_memory_embeddings: {
-        Row: {
-          created_at: string;
-          embedding: string;
-          id: string;
-          memory_id: string;
-          model: string;
-          source_updated_at: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          embedding: string;
-          id?: string;
-          memory_id: string;
-          model: string;
-          source_updated_at: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          embedding?: string;
-          id?: string;
-          memory_id?: string;
-          model?: string;
-          source_updated_at?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'agent_memory_embeddings_memory_id_fkey';
-            columns: ['memory_id'];
-            isOneToOne: true;
-            referencedRelation: 'agent_embedding_pending';
-            referencedColumns: ['source_id'];
-          },
-          {
-            foreignKeyName: 'agent_memory_embeddings_memory_id_fkey';
-            columns: ['memory_id'];
-            isOneToOne: true;
-            referencedRelation: 'agent_memories';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       agent_memory_embeddings_1024: {
         Row: {
           created_at: string;
@@ -3410,21 +3362,6 @@ export type Database = {
       agent_memory_forget_thread: {
         Args: { p_thread_id: string };
         Returns: number;
-      };
-      agent_memory_nearest: {
-        Args: {
-          p_limit?: number;
-          p_product?: string | null;
-          p_query: string;
-          p_thread_id?: string | null;
-          p_user_id: string;
-        };
-        Returns: {
-          memory_id: string;
-          similarity: number;
-          text: string;
-          updated_at: string;
-        }[];
       };
       agent_memory_nearest_1024: {
         Args: {

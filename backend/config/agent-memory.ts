@@ -58,7 +58,7 @@ export function createMemoryEmbeddingsFor(
  *
  * Two clients, on purpose. The facts are read and written through the caller's
  * own session, so RLS is what says whose row it is; the vector is written on the
- * service role, because `agent_memory_embeddings` deliberately grants a member
+ * service role, because `agent_memory_embeddings_1024` deliberately grants a member
  * select and nothing else. Handing in one client for both would either widen the
  * table's policies or move the fact read onto the service role, and decision 7
  * forbids the second.
@@ -77,7 +77,7 @@ export function createAgentMemoryFor(
  * Wire the turn's recall (ADR-0182 decision 3, #1510).
  *
  * The query vector is embedded by the deployment's embedding client, and the
- * search runs on the caller's own session: `agent_memory_nearest` is `security
+ * search runs on the caller's own session: `agent_memory_nearest_1024` is `security
  * invoker`, so the member's policies are the boundary and recall cannot read a
  * row the member cannot read. `client` is a parameter for the same reason the
  * embedding service takes one — a deployment with no key, or a test, passes

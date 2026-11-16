@@ -29,7 +29,7 @@ import {
  * for both callers.
  *
  * The vector is the one thing this service cannot write itself —
- * `agent_memory_embeddings` has no member insert policy — so it hands the fact
+ * `agent_memory_embeddings_1024` has no member insert policy — so it hands the fact
  * to the embedding service and treats a refusal as a warning. A fact that could
  * not be embedded is still a fact; the backfill finds it in the pending view.
  */
@@ -122,7 +122,7 @@ export function createAgentMemoryService({
       // A scope the member switched off is closed to every writer, the explicit
       // tool included: a toggle that an extraction run could walk past would be
       // a control that is not one (decision 6). Recall enforces the same switch
-      // on the read side (`agent_memory_nearest`), so off means neither written
+      // on the read side (`agent_memory_nearest_1024`), so off means neither written
       // nor injected — and never hidden from the page.
       const settings = await repository.settings(input.userId);
       if (!scopeEnabled(settings, scope)) throw new MemoryRefusalError(MEMORY_SCOPE_OFF);
