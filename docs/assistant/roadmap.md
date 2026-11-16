@@ -135,7 +135,7 @@ appear in a captured snapshot, proven by a test that tries.
 
 ### Phase 2 — Memory
 
-- `agent_memories` and `agent_memory_embeddings` with RLS, plus the account-deletion cascade.
+- `agent_memories` and `agent_memory_embeddings_1024` with RLS, plus the account-deletion cascade.
 - The identity block stays layer one; facts are layer two; recall is layer three.
 - Fact extraction runs after the answer, never in front of the stream, with a strict schema and a
   confidence floor.
@@ -189,9 +189,9 @@ or message a third party, and leaves one digest line with an undo that works.
 time, versus the lexical baseline measured first. **Measured** (#1448): 85% by meaning, 25% for the
 lexical baseline without a glossary, 68% for the shipped fallback.
 
-**Open:** memory recall still ranks lexically, because its table generation is 1536 and the embedding
-provider is 1024 ([ADR-0190](../adr/0190-the-embedding-provider-is-its-own-credential.md)). Rebuilding
-that generation and backfilling it is its own change.
+**Landed:** memory recall ranks at the provider's own width. #1550 built the 1024 generation and moved
+the pending view to it, the backfill filled it, and #1554 dropped the 1536 pair once a person approved
+the destructive migration (ADR-0200 decision 5).
 
 ### Phase 6 — Trust surface and proof
 
