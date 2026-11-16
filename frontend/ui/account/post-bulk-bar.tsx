@@ -105,6 +105,7 @@ export function PostBulkBar({
   return (
     <>
       <div
+        data-visual="account-posts-bulk"
         className={cn(
           'flex flex-wrap items-center gap-2',
           selected.size > 0
@@ -129,7 +130,7 @@ export function PostBulkBar({
           </span>
           تحديد الكل
         </button>
-        <span className="text-xs text-muted-foreground">
+        <span data-visual="account-posts-bulk-count" className="text-xs text-muted-foreground">
           {selected.size > 0 ? `${selected.size} من ${rows.length}` : `${rows.length} منشور`}
         </span>
         {selected.size > 0 ? (

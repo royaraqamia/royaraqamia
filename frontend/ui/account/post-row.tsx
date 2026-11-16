@@ -32,7 +32,10 @@ export function PostRow({ post, isSelected, onToggleSelect, onEdit, onChanged }:
   const label = postExcerpt(post.content, post.meta_desc ?? '') || 'بدون عنوان';
 
   return (
-    <article className="group flex flex-col justify-between gap-4 rounded-2xl border border-border/70 bg-card p-3.5 transition-safe hover:border-border hover:shadow-md sm:flex-row sm:items-center sm:p-4">
+    <article
+      data-visual="account-posts-row"
+      className="group flex flex-col justify-between gap-4 rounded-2xl border border-border/70 bg-card p-3.5 transition-safe hover:border-border hover:shadow-md sm:flex-row sm:items-center sm:p-4"
+    >
       <div className="flex min-w-0 flex-1 items-start gap-3.5 sm:items-center">
         <button
           type="button"
@@ -89,13 +92,17 @@ export function PostRow({ post, isSelected, onToggleSelect, onEdit, onChanged }:
             <button
               type="button"
               onClick={() => onEdit(post)}
+              data-visual="account-posts-row-title"
               className="block truncate text-start text-sm font-bold text-foreground hover:text-primary sm:text-base"
             >
               {label}
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <div
+            data-visual="account-posts-row-meta"
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
+          >
             <span className="truncate font-mono text-[11px]">/{post.slug}</span>
             <span aria-hidden="true">•</span>
             <span className="inline-flex items-center gap-1">
@@ -128,7 +135,10 @@ export function PostRow({ post, isSelected, onToggleSelect, onEdit, onChanged }:
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border/60 pt-2 sm:border-0 sm:pt-0">
+      <div
+        data-visual="account-posts-row-trailing"
+        className="flex shrink-0 items-center justify-end gap-3 border-t border-border/60 pt-2 sm:border-0 sm:pt-0"
+      >
         <span
           className={cn(
             'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold',

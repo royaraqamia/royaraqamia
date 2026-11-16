@@ -58,6 +58,7 @@ export function PostList({
           onSelect={(id) => setActiveFilter(id as PostFilter)}
           idPrefix="account-posts"
           panelId={panelId}
+          dataVisual="account-posts-chips"
         />
 
         <div className="relative w-full sm:w-64">
@@ -71,6 +72,7 @@ export function PostList({
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="ابحث في منشوراتك"
             aria-label="ابحث في منشوراتك"
+            data-visual="account-posts-search"
             className="h-10 w-full rounded-xl border border-border/70 bg-background ps-9 pe-3 text-xs outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
           />
           {searchQuery ? (
