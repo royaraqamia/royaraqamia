@@ -1,0 +1,72 @@
+# The run list is pruned by a clock, because nothing else prunes it (ADR-0204).
+#
+# The repository's "check, workflow run, status, artifact and log retention"
+# setting expires logs, artifacts and check data; the run stays in the Actions
+# list forever. On 2026-11-16 that list held 11,936 runs back to 2026-07-06 -
+# four months past a 90-day ceiling - and they were deleted by hand. This is the
+# hand, daily.
+#
+# Two bounds, both real:
+#   - A `GITHUB_TOKEN` gets 1,000 requests an hour per repository, and a delete
+#     is one request. `MAX_DELETES` therefore defaults well under that; a
+#     backlog converges over a few runs instead of failing one.
+#   - Only a `completed` run can be deleted. The script never touches a queued
+#     or in-progress run, however old it looks.
+#
+# GitHub disables a schedule after 60 days without repository activity; this
+# repository is active daily, so that only matters for a forgotten fork.
+
+name: 'Prune Runs'
+
+on:
+  # 02:20 UTC - before the daily jobs at 03:30, so the run it deletes most
+  # eagerly is never one the day still needs.
+  schedule:
+    - cron: '20 2 * * *'
+  workflow_dispatch:
+    inputs:
+      keep_days:
+        description: 'Keep completed runs younger than this many days.'
+        type: number
+        default: 2
+      max_deletes:
+        description: 'Most runs this invocation may delete (the token allows 1,000 requests an hour).'
+        type: number
+        default: 800
+      dry_run:
+        description: 'List what would be deleted, delete nothing.'
+        type: boolean
+        default: false
+
+permissions:
+  actions: write # deleting a run is a write to the Actions API
+  contents: read
+
+concurrency:
+  group: prune-runs
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    name: Delete completed runs past their day
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # The script has no dependencies, so the checkout is all it needs; Node is
+      # pinned rather than left to whatever `ubuntu-latest` ships.
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Delete completed runs older than the window
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          KEEP_DAYS: ${{ github.event.inputs.keep_days || '2' }}
+          MAX_DELETES: ${{ github.event.inputs.max_deletes || '800' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && 'true' || 'false' }}
+        run: node scripts/prune-workflow-runs.mjs
