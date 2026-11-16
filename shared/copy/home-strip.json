@@ -10,11 +10,15 @@
     "object": "HomeStripCopy"
   },
   "notes": {
-    "source": "The homepage strip (ADR-0146): its accessible name and the control that opens the picker. The app labels themselves come from the generated `SERVICES_COPY`, never from here. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
+    "source": "The homepage strip (ADR-0146, ADR-0202): its accessible name, the control that opens the picker, and the arrange mode's toggle and announcement. The app labels themselves come from the generated `SERVICES_COPY`, never from here. `npm run copy:generate` writes both files from this one; neither client may spell these strings itself.",
     "gate": "`npm run copy:check` fails a stale generated output, and `npm run check:parity` fails a key the reference component (`frontend/ui/home/HomeTabStrip.tsx`) does not render."
   },
   "strings": {
     "stripLabel": "تطبيقاتك",
-    "newApp": "تطبيق جديد"
+    "newApp": "تطبيق جديد",
+    "arrange": "ترتيب",
+    "done": "تم",
+    "arrangeHelp": "اسحب التَّطبيقات لتغيير ترتيبها، أو حرِّكها بالسَّهمين الأيمن والأيسر.",
+    "moved": "نُقل «{name}» إلى الموضع {position} من {count}."
   }
 }

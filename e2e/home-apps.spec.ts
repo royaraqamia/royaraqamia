@@ -66,6 +66,76 @@ test('removing the only app returns the empty state', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toContainText('ابدأ بتطبيقك الأوَّل');
 });
 
+/**
+ * Reordering (ADR-0202): the mode is the only way in, the keyboard and the
+ * pointer both save the whole order, and the device keeps it across a reload.
+ */
+test('a visitor reorders the strip with the keyboard and keeps the order', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() =>
+    window.localStorage.setItem(
+      'royaraqamia:home-services:v1',
+      JSON.stringify(['/quran', '/athkar', '/notes'])
+    )
+  );
+  await page.reload();
+
+  await page.getByRole('button', { name: 'ترتيب' }).click();
+  await expect(page.getByRole('button', { name: 'تم' })).toBeVisible();
+  // The picker is not part of arranging.
+  await expect(page.getByRole('button', { name: 'تطبيق جديد' })).toHaveCount(0);
+
+  await page.getByRole('tab', { name: 'القرآن الكريم' }).focus();
+  // The app is RTL, so ArrowLeft walks toward the end of the strip.
+  await page.keyboard.press('ArrowLeft');
+  await page.getByRole('button', { name: 'تم' }).click();
+
+  await expect(page.getByRole('tab').nth(0)).toHaveText('أذكار الصَّباح والمساء');
+  expect(
+    JSON.parse(
+      (await page.evaluate(() => window.localStorage.getItem('royaraqamia:home-services:v1'))) ??
+        '[]'
+    )
+  ).toEqual(['/athkar', '/quran', '/notes']);
+
+  await page.reload();
+  await expect(page.getByRole('tab').nth(0)).toHaveText('أذكار الصَّباح والمساء');
+});
+
+test('a visitor drags a tab and the drop saves the order', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() =>
+    window.localStorage.setItem(
+      'royaraqamia:home-services:v1',
+      JSON.stringify(['/quran', '/athkar', '/notes'])
+    )
+  );
+  await page.reload();
+
+  await page.getByRole('button', { name: 'ترتيب' }).click();
+
+  const first = page.getByRole('tab', { name: 'القرآن الكريم' });
+  const box = await first.boundingBox();
+  if (!box) throw new Error('the first tab has no box');
+
+  // One slot to the left is the second tab in RTL.
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 - 100, box.y + box.height / 2, { steps: 12 });
+  await page.mouse.up();
+
+  await expect(page.getByRole('tab').nth(0)).toHaveText('أذكار الصَّباح والمساء');
+  expect(
+    JSON.parse(
+      (await page.evaluate(() => window.localStorage.getItem('royaraqamia:home-services:v1'))) ??
+        '[]'
+    )
+  ).toEqual(['/athkar', '/quran', '/notes']);
+  await page.getByRole('button', { name: 'تم' }).click();
+  await page.reload();
+  await expect(page.getByRole('tab').nth(0)).toHaveText('أذكار الصَّباح والمساء');
+});
+
 test('a tab opens its app under the strip and stays on the door', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() =>

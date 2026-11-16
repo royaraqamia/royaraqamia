@@ -12,6 +12,10 @@
 export const HOME_STRIP_COPY = {
   stripLabel: 'تطبيقاتك',
   newApp: 'تطبيق جديد',
+  arrange: 'ترتيب',
+  done: 'تم',
+  arrangeHelp: 'اسحب التَّطبيقات لتغيير ترتيبها، أو حرِّكها بالسَّهمين الأيمن والأيسر.',
+  moved: 'نُقل «{name}» إلى الموضع {position} من {count}.',
 } as const;
 
 export type HomeStripCopyStrings = typeof HOME_STRIP_COPY;

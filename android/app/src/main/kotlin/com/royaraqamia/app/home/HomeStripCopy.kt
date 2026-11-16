@@ -14,4 +14,8 @@ package com.royaraqamia.app.home
 object HomeStripCopy {
     const val STRIP_LABEL = "تطبيقاتك"
     const val NEW_APP = "تطبيق جديد"
+    const val ARRANGE = "ترتيب"
+    const val DONE = "تم"
+    const val ARRANGE_HELP = "اسحب التَّطبيقات لتغيير ترتيبها، أو حرِّكها بالسَّهمين الأيمن والأيسر."
+    const val MOVED = "نُقل «{name}» إلى الموضع {position} من {count}."
 }

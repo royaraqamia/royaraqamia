@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as api from '@/frontend/api/home-services';
 import * as session from '@/frontend/state/session-provider';
 import { HomeServicesProvider, useHomeServices } from '@/frontend/state/home-services-provider';
+import type { HomeServicesResult } from '@/shared/contracts/home-services';
 
 vi.mock('@/frontend/state/session-provider', () => ({ useSession: vi.fn() }));
 vi.mock('@/frontend/api/home-services', () => ({
@@ -29,6 +30,15 @@ function renderProvider() {
   return renderHook(() => useHomeServices(), {
     wrapper: ({ children }) => <HomeServicesProvider>{children}</HomeServicesProvider>,
   });
+}
+
+/** A promise whose answer the test chooses, for the serialised-write case. */
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
 }
 
 /** The member's strip (ADR-0146), from an account, a device, or both. */
@@ -103,6 +113,79 @@ describe('HomeServicesProvider', () => {
     let message: string | null = null;
     await act(async () => {
       message = await result.current.remove('/quran');
+    });
+
+    expect(message).toBe('تعذَّر الحفظ');
+    expect(result.current.order).toEqual(['/quran', '/athkar']);
+  });
+
+  it('reorders a guest’s strip on the device', async () => {
+    sessionSays(null);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(['/quran', '/athkar', '/notes']));
+
+    const { result } = renderProvider();
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    await act(async () => {
+      await result.current.reorder(['/athkar', '/quran', '/notes']);
+    });
+
+    expect(result.current.order).toEqual(['/athkar', '/quran', '/notes']);
+    expect(JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '[]')).toEqual([
+      '/athkar',
+      '/quran',
+      '/notes',
+    ]);
+  });
+
+  it('writes reorders one at a time so two drops cannot land out of order', async () => {
+    sessionSays({ id: 'abc' });
+    getHomeServices.mockResolvedValue(['/quran', '/athkar']);
+
+    const first = deferred<HomeServicesResult>();
+    const second = deferred<HomeServicesResult>();
+    replaceHomeServices.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+
+    const { result } = renderProvider();
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    let firstWrite: Promise<string | null> = Promise.resolve(null);
+    let secondWrite: Promise<string | null> = Promise.resolve(null);
+    await act(async () => {
+      firstWrite = result.current.reorder(['/athkar', '/quran']);
+      secondWrite = result.current.reorder(['/quran', '/athkar']);
+      await Promise.resolve();
+    });
+
+    // The second drop is drawn, but it waits for the first PUT to finish.
+    expect(result.current.order).toEqual(['/quran', '/athkar']);
+    expect(replaceHomeServices).toHaveBeenCalledTimes(1);
+    expect(replaceHomeServices).toHaveBeenNthCalledWith(1, ['/athkar', '/quran']);
+
+    await act(async () => {
+      first.resolve({ success: true, data: ['/athkar', '/quran'] });
+      await firstWrite;
+    });
+    expect(replaceHomeServices).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      second.resolve({ success: true, data: ['/quran', '/athkar'] });
+      await secondWrite;
+    });
+    expect(result.current.order).toEqual(['/quran', '/athkar']);
+  });
+
+  it('restores the confirmed order when a reorder is refused', async () => {
+    sessionSays({ id: 'abc' });
+    getHomeServices.mockResolvedValue(['/quran', '/athkar']);
+    replaceHomeServices.mockResolvedValue({ success: false, error: 'تعذَّر الحفظ' });
+
+    const { result } = renderProvider();
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+
+    let message: string | null = null;
+    await act(async () => {
+      message = await result.current.reorder(['/athkar', '/quran']);
     });
 
     expect(message).toBe('تعذَّر الحفظ');

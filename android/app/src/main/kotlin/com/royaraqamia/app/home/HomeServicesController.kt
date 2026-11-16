@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.shell.ServicesSheetCopy
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** Where the door's read stands. The strip only cares whether it has an answer. */
 sealed interface HomeServicesStatus {
@@ -57,6 +59,13 @@ class HomeServicesController(
 
     /** The identity whose set is already reconciled, so a sign-in merges once. */
     private var reconciledFor: String? = null
+
+    /**
+     * One write at a time (ADR-0202): every write is the whole ordered list, so
+     * two of them in flight can land out of order and leave the server on the
+     * older list — a drag that crosses two slots quickly is exactly that race.
+     */
+    private val writes = Mutex()
 
     /** The launch path: the device's list for a guest, the account's for a member. */
     suspend fun start() {
@@ -123,37 +132,76 @@ class HomeServicesController(
 
     /** Adds an app at the end of the strip, or removes it; a no-op while a write is in flight. */
     suspend fun toggle(route: String) {
-        if (busy != null) return
         if (route !in HomeServicesCatalog.routes) return
 
-        val previous = order
-        val next =
-            if (route in previous) {
-                previous.filterNot { it == route }
-            } else {
-                previous + route
+        writes.withLock {
+            if (busy != null) return@withLock
+
+            val previous = order
+            val next =
+                if (route in previous) {
+                    previous.filterNot { it == route }
+                } else {
+                    previous + route
+                }
+
+            error = null
+            order = next
+
+            if (!signedIn()) {
+                if (!guest.write(next)) {
+                    order = previous
+                    error = REFUSED
+                }
+                return@withLock
             }
 
-        error = null
-        order = next
-
-        if (!signedIn()) {
-            if (!guest.write(next)) {
-                order = previous
-                error = REFUSED
+            busy = route
+            when (val result = repository.replace(next)) {
+                is ApiResult.Success -> order = HomeServicesCatalog.sanitize(result.value)
+                is ApiResult.Failure -> {
+                    order = previous
+                    error = messageOf(result.error)
+                }
             }
-            return
+            busy = null
         }
+    }
 
-        busy = route
-        when (val result = repository.replace(next)) {
-            is ApiResult.Success -> order = HomeServicesCatalog.sanitize(result.value)
-            is ApiResult.Failure -> {
-                order = previous
-                error = messageOf(result.error)
+    /**
+     * Replaces the strip's order with `next` (#1194, ADR-0202).
+     *
+     * The site's `reorder` is the design: the caller hands over the whole list
+     * the drag settled on, the strip moves before the server answers, and a
+     * refusal puts the last accepted order back. The write is serialised with
+     * the picker's own writes, so a toggle and a drop cannot interleave.
+     */
+    suspend fun reorder(next: List<String>) {
+        val ordered = HomeServicesCatalog.sanitize(next)
+
+        writes.withLock {
+            if (ordered == order) return@withLock
+
+            val previous = order
+            error = null
+            order = ordered
+
+            if (!signedIn()) {
+                if (!guest.write(ordered)) {
+                    order = previous
+                    error = REFUSED
+                }
+                return@withLock
+            }
+
+            when (val result = repository.replace(ordered)) {
+                is ApiResult.Success -> order = HomeServicesCatalog.sanitize(result.value)
+                is ApiResult.Failure -> {
+                    order = previous
+                    error = messageOf(result.error)
+                }
             }
         }
-        busy = null
     }
 
     private fun messageOf(error: ApiError): String =

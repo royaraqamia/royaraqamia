@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Plus } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
@@ -12,6 +12,7 @@ import { SERVICES_LINK } from '@/frontend/ui/navbar/services-link';
 import type { HomeServiceKey } from '@/shared/contracts/home-services-catalog';
 
 import { HOME_STRIP_COPY } from './home-strip-copy';
+import { useHomeTabOrder } from './use-home-tab-order';
 
 const BY_ROUTE = new Map(
   (SERVICES_LINK.subItems ?? []).filter((item) => !item.retired).map((item) => [item.href, item])
@@ -21,33 +22,66 @@ interface HomeTabStripProps {
   /** The app the door is showing, or null while the first one is being chosen. */
   selected: HomeServiceKey | null;
   onSelect: (key: HomeServiceKey) => void;
+  /** The whole ordered list, once a drop or a keyboard move has settled it. */
+  onReorder: (next: readonly HomeServiceKey[]) => Promise<string | null>;
 }
 
 /**
  * The apps a member keeps, as a horizontally scrolling strip (ADR-0146).
  *
- * The strip is the order the account or device stored â€” add order, no cap â€” and
- * each pill is a tab, not a link: the homepage hosts every app under the strip,
- * so choosing one swaps the surface in place and the address bar stays `/`
- * (ADR-0151). An app still has its own route for a shared link and a direct
- * visit; the tab never uses it. The end control opens the same sheet the navbar
- * does.
+ * The strip is the order the account or device stored — add order, until the
+ * member rearranges it (ADR-0202) — and each pill is a tab, not a link: the
+ * homepage hosts every app under the strip, so choosing one swaps the surface in
+ * place and the address bar stays `/` (ADR-0151). An app still has its own route
+ * for a shared link and a direct visit; the tab never uses it. The end control
+ * opens the same sheet the navbar does.
+ *
+ * «ترتيب» is the only way into the drag, so a normal tap never moves a tab and a
+ * flick still scrolls the strip. Inside the mode the pills are draggable, the
+ * arrow keys move the focused pill one slot, and «تم» or choosing a tab leaves
+ * the mode. A drop saves the whole order; the provider serialises the writes.
  */
-export function HomeTabStrip({ selected, onSelect }: HomeTabStripProps) {
+export function HomeTabStrip({ selected, onSelect, onReorder }: HomeTabStripProps) {
   const { order } = useHomeServices();
   const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(280);
   const selectedRef = useRef<HTMLButtonElement | null>(null);
 
+  const describeMove = useCallback((key: HomeServiceKey, position: number, count: number) => {
+    const label = BY_ROUTE.get(key)?.label ?? key;
+    return HOME_STRIP_COPY.moved
+      .replace('{name}', label)
+      .replace('{position}', String(position))
+      .replace('{count}', String(count));
+  }, []);
+
+  const {
+    order: drawn,
+    listRef,
+    arranging,
+    dragging,
+    status,
+    toggleArrange,
+    closeArrange,
+    getTabProps,
+  } = useHomeTabOrder({
+    order,
+    scrollerRef: scrollContainerRef,
+    onReorder,
+    describeMove,
+  });
+
   // A remembered tab can sit past the strip's edge on a narrow screen: bring it
-  // into view without moving the page (`block: 'nearest'`).
+  // into view without moving the page (`block: 'nearest'`). Arranging is not a
+  // selection, so the strip stays where the member put it.
   useEffect(() => {
+    if (arranging) return;
     const target = selectedRef.current;
     if (typeof target?.scrollIntoView === 'function') {
       target.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
     }
-  }, [selected]);
+  }, [selected, arranging]);
 
-  const tabs = order
+  const tabs = drawn
     .map((key) => BY_ROUTE.get(key))
     .filter((item): item is NonNullable<typeof item> => item !== undefined);
 
@@ -64,27 +98,47 @@ export function HomeTabStrip({ selected, onSelect }: HomeTabStripProps) {
         >
           <div className="flex w-max items-center gap-2.5">
             <ul
+              ref={listRef}
               role="tablist"
               aria-label={HOME_STRIP_COPY.stripLabel}
-              className="flex items-center gap-2.5"
+              aria-describedby={arranging ? 'home-strip-arrange-help' : undefined}
+              className="relative flex items-center gap-2.5"
             >
               {tabs.map((item) => {
                 const Icon = item.icon;
                 const active = selected === item.href;
+                const drag = getTabProps(item.href as HomeServiceKey);
 
                 return (
-                  <li key={item.href} role="presentation" className="shrink-0 snap-start">
+                  <li
+                    key={item.href}
+                    role="presentation"
+                    data-home-tab={item.href}
+                    onPointerDown={drag.onPointerDown}
+                    onClickCapture={drag.onClickCapture}
+                    className={cn(
+                      'relative shrink-0 snap-start',
+                      arranging && 'touch-none',
+                      dragging === item.href && 'z-10'
+                    )}
+                  >
                     <button
                       ref={active ? selectedRef : undefined}
                       type="button"
                       role="tab"
                       aria-selected={active}
-                      onClick={() => onSelect(item.href as HomeServiceKey)}
+                      onKeyDown={drag.onKeyDown}
+                      onClick={() => {
+                        onSelect(item.href as HomeServiceKey);
+                        if (arranging) closeArrange();
+                      }}
                       className={cn(
                         'inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition-safe duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950',
                         active
                           ? 'border-violet-500/60 bg-violet-600/20 text-violet-200'
-                          : 'border-neutral-800 bg-neutral-900/70 text-neutral-200 hover:border-neutral-700 hover:bg-neutral-800'
+                          : 'border-neutral-800 bg-neutral-900/70 text-neutral-200 hover:border-neutral-700 hover:bg-neutral-800',
+                        arranging && 'cursor-grab select-none',
+                        dragging === item.href && 'opacity-70'
                       )}
                     >
                       {Icon && (
@@ -97,20 +151,41 @@ export function HomeTabStrip({ selected, onSelect }: HomeTabStripProps) {
               })}
             </ul>
 
+            {!arranging && (
+              <div className="shrink-0 snap-start">
+                <ServicesMenu
+                  trigger={
+                    <button
+                      type="button"
+                      aria-label={HOME_STRIP_COPY.newApp}
+                      data-visual="home-new-app"
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-neutral-700 px-4 text-sm font-bold text-neutral-400 transition-safe duration-200 ease-out hover:border-violet-500/60 hover:text-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95"
+                    >
+                      <Plus className="size-4" aria-hidden="true" />
+                      <span className="whitespace-nowrap">{HOME_STRIP_COPY.newApp}</span>
+                    </button>
+                  }
+                />
+              </div>
+            )}
+
             <div className="shrink-0 snap-start">
-              <ServicesMenu
-                trigger={
-                  <button
-                    type="button"
-                    aria-label={HOME_STRIP_COPY.newApp}
-                    data-visual="home-new-app"
-                    className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-neutral-700 px-4 text-sm font-bold text-neutral-400 transition-safe duration-200 ease-out hover:border-violet-500/60 hover:text-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95"
-                  >
-                    <Plus className="size-4" aria-hidden="true" />
-                    <span className="whitespace-nowrap">{HOME_STRIP_COPY.newApp}</span>
-                  </button>
-                }
-              />
+              <button
+                type="button"
+                aria-pressed={arranging}
+                data-visual="home-arrange"
+                onClick={toggleArrange}
+                className={cn(
+                  'inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-bold transition-safe duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950',
+                  arranging
+                    ? 'border-violet-500/60 bg-violet-600/20 text-violet-200'
+                    : 'border-neutral-800 bg-neutral-900/70 text-neutral-400 hover:border-violet-500/60 hover:text-violet-300'
+                )}
+              >
+                <span className="whitespace-nowrap">
+                  {arranging ? HOME_STRIP_COPY.done : HOME_STRIP_COPY.arrange}
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -119,10 +194,19 @@ export function HomeTabStrip({ selected, onSelect }: HomeTabStripProps) {
           onScroll={scroll}
           canScrollLeft={canScrollLeft}
           canScrollRight={canScrollRight}
-          ariaLabelLeft="Ø§Ù„ØªÙŽÙ‘Ø·Ø¨ÙŠÙ‚ Ø§Ù„ØªÙŽÙ‘Ø§Ù„ÙŠ"
-          ariaLabelRight="Ø§Ù„ØªÙŽÙ‘Ø·Ø¨ÙŠÙ‚ Ø§Ù„Ø³ÙŽÙ‘Ø§Ø¨Ù‚"
+          ariaLabelLeft="التَّطبيق التَّالي"
+          ariaLabelRight="التَّطبيق السَّابق"
         />
       </div>
+
+      {arranging && (
+        <p id="home-strip-arrange-help" className="sr-only">
+          {HOME_STRIP_COPY.arrangeHelp}
+        </p>
+      )}
+      <p role="status" aria-live="polite" className="sr-only">
+        {status || ' '}
+      </p>
     </section>
   );
 }
