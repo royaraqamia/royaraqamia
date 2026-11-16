@@ -1,0 +1,164 @@
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+
+import { ChatMessageList } from '@/frontend/ui/chats/chat-message-list';
+import { formatDaySeparator } from '@/frontend/ui/chats/thread-days';
+import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assistant';
+import type { ChatMessage, ChatThread } from '@/shared/contracts/chat';
+
+const QUOTA = {
+  fileBytes: 1_000,
+  today: { usedBytes: 0, limitBytes: 10_000 },
+  total: { usedBytes: 0, limitBytes: 100_000 },
+  project: { usedBytes: 0, limitBytes: 500_000 },
+};
+
+const THREAD = {
+  id: 'c-1',
+  kind: 'agent',
+  status: 'active',
+  title: 'نور',
+  counterpart: null,
+  myStatus: 'active',
+  lastMessage: null,
+  unreadCount: 0,
+  lastMessageAt: null,
+  createdAt: '2026-11-01T00:00:00.000Z',
+  participants: [],
+  me: null,
+  blockedByMe: false,
+  canWrite: true,
+  attachmentQuota: QUOTA,
+} as unknown as ChatThread;
+
+function message(overrides: Partial<ChatMessage> & { id: string }): ChatMessage {
+  return {
+    conversationId: 'c-1',
+    senderId: 'u-1',
+    senderKind: 'user',
+    body: '',
+    replyToId: null,
+    editedAt: null,
+    deletedAt: null,
+    createdAt: '2026-11-01T10:00:00.000Z',
+    clientId: null,
+    attachments: [],
+    replyTo: null,
+    ...overrides,
+  } as unknown as ChatMessage;
+}
+
+const assistant: ChatAssistantState = {
+  available: true,
+  allowance: null,
+  isStreaming: false,
+  phase: null,
+  streamingText: '',
+  interrupted: '',
+  toolsUsed: [],
+  pending: null,
+  pendingUrl: async () => null,
+  retryPending: vi.fn(),
+  dismissPending: vi.fn(),
+  error: null,
+  ask: vi.fn(),
+  refresh: vi.fn(),
+};
+
+function list(messages: ChatMessage[], extra: Partial<Parameters<typeof ChatMessageList>[0]> = {}) {
+  return (
+    <ChatMessageList
+      thread={THREAD}
+      messages={messages}
+      isMine={(row) => row.senderKind === 'user'}
+      actions={[]}
+      assistant={assistant}
+      pending={{}}
+      hasOlder={false}
+      onLoadOlder={async () => undefined}
+      onRetry={vi.fn()}
+      onResolve={async () => null}
+      onEdit={async () => true}
+      onDelete={vi.fn()}
+      onDownload={vi.fn()}
+      resolveAttachmentUrl={async () => null}
+      intro={<p>ابدأ</p>}
+      {...extra}
+    />
+  );
+}
+
+/**
+ * One conversation, one list (#1562): the marks, the direction and the second
+ * line are here so neither door can draw them its own way.
+ */
+describe('ChatMessageList', () => {
+  it('draws the inline marks instead of their operators', () => {
+    render(list([message({ id: 'm-1', senderKind: 'agent', body: '**Hey!** how are you…' })]));
+
+    expect(screen.getByText('Hey!').tagName).toBe('STRONG');
+    expect(screen.queryByText(/\*\*/)).toBeNull();
+  });
+
+  it('gives every line its own direction, so an English answer reads left to right', () => {
+    render(
+      list([
+        message({ id: 'm-1', senderKind: 'agent', body: 'I answer in your language.' }),
+        message({ id: 'm-2', body: 'مرحباً' }),
+      ])
+    );
+
+    const english = screen.getByText('I answer in your language.');
+    expect(english).toHaveAttribute('dir', 'auto');
+    expect(english).toHaveClass('bidi-lines');
+    expect(screen.getByText('مرحباً')).toHaveAttribute('dir', 'auto');
+  });
+
+  it('draws the second line under a line the member wrote', () => {
+    render(list([message({ id: 'm-1', body: 'Hey!', createdAt: new Date().toISOString() })]));
+
+    expect(screen.getByText(/منذ/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'حذف الرسالة' })).toBeInTheDocument();
+  });
+
+  it('separates the days a conversation crosses', () => {
+    render(
+      list([
+        message({ id: 'm-1', body: 'أمس', createdAt: '2026-11-01T10:00:00.000Z' }),
+        message({ id: 'm-2', body: 'اليوم', createdAt: '2026-11-02T10:00:00.000Z' }),
+      ])
+    );
+
+    // One separator per calendar day, under the day it names.
+    expect(screen.getAllByText(formatDaySeparator('2026-11-01T10:00:00.000Z'))).toHaveLength(1);
+    expect(screen.getAllByText(formatDaySeparator('2026-11-02T10:00:00.000Z'))).toHaveLength(1);
+  });
+
+  it('keeps the reader where they were when an older page prepends', () => {
+    const first = message({ id: 'm-2', body: 'الأحدث', createdAt: '2026-11-02T10:00:00.000Z' });
+    const older = message({ id: 'm-1', body: 'الأقدم', createdAt: '2026-11-01T10:00:00.000Z' });
+
+    const { container, rerender } = render(list([first]));
+    const scroller = container.querySelector('[data-chat-list]') as HTMLElement;
+    let height = 500;
+    let top = 100;
+    Object.defineProperty(scroller, 'scrollHeight', { configurable: true, get: () => height });
+    Object.defineProperty(scroller, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+
+    // An append while the reader is at the bottom pins them there.
+    rerender(list([first, message({ id: 'm-3', body: 'جديد' })]));
+    expect(top).toBe(500);
+
+    // The older page grows above them: the anchor moves by exactly that much.
+    height = 800;
+    top = 100;
+    rerender(list([older, first, message({ id: 'm-3', body: 'جديد' })]));
+    expect(top).toBe(400);
+  });
+});

@@ -30,7 +30,6 @@
     "failed": "تعذّر فتح المحادثة. حاول مرة أخرى.",
     "retry": "إعادة المحاولة",
     "unavailable": "نور غير متاحة حالياً.",
-    "attachmentOnly": "مرفق",
-    "downloadFile": "تنزيل {name}"
+    "attachmentOnly": "مرفق"
   }
 }

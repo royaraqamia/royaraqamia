@@ -106,8 +106,18 @@ export interface ChatThreadState {
  * The read watermark is stamped on open, on a new line that arrives while the
  * thread is on screen, and when the window regains focus — never from a tab the
  * reader is not looking at, which is what keeps the list's badge honest (#816).
+ *
+ * `active` is the one difference between the two surfaces that read a
+ * conversation (#1562): a route is always active, and the floating assistant
+ * panel is active only while it is open. **Mount is not activity** — an inactive
+ * conversation keeps the rows it last painted in memory and opens no Local
+ * Store, subscribes to nothing and asks the server nothing, which is what makes
+ * it safe for the launcher to keep the panel mounted across closes (ADR-0150).
  */
-export function useChatThread(conversationId: string): ChatThreadState {
+export function useChatThread(
+  conversationId: string,
+  { active = true }: { active?: boolean } = {}
+): ChatThreadState {
   const [state, dispatch] = useReducer(chatThreadReducer, undefined, chatThreadInitialState);
   const { thread, messages, actions, cursor, isLoading, isSending, error, readFailed } = state;
   const { identity } = useLocalIdentity();
@@ -189,6 +199,10 @@ export function useChatThread(conversationId: string): ChatThreadState {
    * then the network answer above replaces them.
    */
   useEffect(() => {
+    // Closed is closed: no store, no paint, no request. The rows the last open
+    // painted stay in the reducer until the conversation is active again.
+    if (!active || !conversationId) return;
+
     let cancelled = false;
     let opened: ChatsLocalStore | null = null;
     prefetchedRef.current = false;
@@ -276,13 +290,14 @@ export function useChatThread(conversationId: string): ChatThreadState {
       opened?.close();
       storeRef.current = null;
     };
-  }, [conversationId, identity, refresh]);
+  }, [conversationId, identity, refresh, active]);
 
   /**
    * Coming back to the tab is what stamps what arrived while it was in the
    * background — and it is also when the peer's «قُرئت» catches up.
    */
   useEffect(() => {
+    if (!active) return;
     if (typeof document === 'undefined') return;
 
     const onVisible = () => {
@@ -296,25 +311,23 @@ export function useChatThread(conversationId: string): ChatThreadState {
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', onVisible);
     };
-  }, [markSeen]);
+  }, [markSeen, active]);
 
-  useEffect(
-    () =>
-      subscribeToChatThread(conversationId, () => {
-        void refresh();
-      }),
-    [conversationId, refresh]
-  );
+  useEffect(() => {
+    if (!active) return;
+    return subscribeToChatThread(conversationId, () => {
+      void refresh();
+    });
+  }, [conversationId, refresh, active]);
 
   // A receipt is a peer's watermark moving, which is a roster write rather than
   // a message; without this the sender waits for the peer's next line to see it.
-  useEffect(
-    () =>
-      subscribeToChatRoster(conversationId, () => {
-        void refresh();
-      }),
-    [conversationId, refresh]
-  );
+  useEffect(() => {
+    if (!active) return;
+    return subscribeToChatRoster(conversationId, () => {
+      void refresh();
+    });
+  }, [conversationId, refresh, active]);
 
   const loadOlder = useCallback(async () => {
     if (!cursor) return;

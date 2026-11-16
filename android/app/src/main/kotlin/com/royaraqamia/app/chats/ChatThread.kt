@@ -2,7 +2,6 @@ package com.royaraqamia.app.chats
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,7 +51,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.royaraqamia.app.community.CommunityMarkdown
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItem
@@ -80,17 +74,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Duration
-import java.time.Instant
 import java.util.Locale
-
-/**
- * What the outbox is doing with one of the member's lines (#1033).
- *
- * `Sent` is every line the server already holds, and every line the app has not
- * queued: the queue itself is the web client's until the app's store lands, so
- * this rendering path is here to keep the two clients worded the same.
- */
-private enum class MessagePending { Sent, Queued, Failed }
 
 /**
  * `/chats/[id]`, as a screen (#819).
@@ -147,6 +131,9 @@ fun ChatThread(
     var markedLine by remember { mutableStateOf<String?>(null) }
     /** The lines the queue still owes, by their client id (#1127). */
     var pendingLines by remember { mutableStateOf<Map<String, ChatPending>>(emptyMap()) }
+    /** The cursor the newest page answered: what «تحميل الأقدم» reads above it. */
+    var cursor by remember { mutableStateOf<String?>(null) }
+    var hasOlder by remember { mutableStateOf(false) }
 
     /** What the peer is doing, as the wire word, or null when they are idle. */
     var peerPresence by remember { mutableStateOf<String?>(null) }
@@ -186,6 +173,8 @@ fun ChatThread(
                 when (val page = repository.messages(conversationId)) {
                     is ApiResult.Success -> {
                         messages = page.value.messages
+                        cursor = page.value.nextCursor
+                        hasOlder = page.value.nextCursor != null
                         pendingLines = repository.pending(conversationId)
                         // Seen is stamped once per *new* line, the way the site's hook
                         // does: the badge is the reader's watermark (#816), and a read
@@ -217,6 +206,21 @@ fun ChatThread(
         }
     }
 
+    /** The page above the one on screen: the reader's own request, not a clock. */
+    suspend fun loadOlder() {
+        val before = cursor ?: return
+        when (val page = repository.messages(conversationId, before)) {
+            is ApiResult.Success -> {
+                messages = (page.value.messages + messages).distinctBy { it.id }
+                cursor = page.value.nextCursor
+                hasOlder = page.value.nextCursor != null
+                failure = null
+            }
+            is ApiResult.Failure ->
+                failure = ChatFailure.sentenceOf(page.error) ?: ChatThreadCopy.LOAD_FAILED
+        }
+    }
+
     /**
      * A burst of hints is one pull, the same 400 ms window the site's hook uses.
      * The payload never reaches the screen: a hint says "something changed" and
@@ -224,7 +228,6 @@ fun ChatThread(
      * that is already there (ADR-0060, ADR-0141).
      */
     val hint = remember(conversationId) { Channel<Unit>(Channel.CONFLATED) }
-
     // One read on open (and again after every write), never on a clock.
     LaunchedEffect(repository, conversationId, attempts) {
         load()
@@ -505,6 +508,8 @@ fun ChatThread(
                             }
                         }
                     },
+                    hasOlder = hasOlder,
+                    onLoadOlder = { scope.launch { loadOlder() } },
                     onDownload = { attachmentId ->
                         scope.launch {
                             when (val result = repository.attachmentUrl(conversationId, attachmentId)) {
@@ -517,8 +522,7 @@ fun ChatThread(
                             }
                         }
                     },
-                    onRespond = { accept -> dialog = ChatDialog.Respond(accept) },
-                    onWithdraw = { dialog = ChatDialog.Withdraw },
+                    onRespond = { accept -> dialog = ChatDialog.Respond(accept) },                    onWithdraw = { dialog = ChatDialog.Withdraw },
                     onRequest = {
                         scope.launch {
                             busy = true
@@ -604,6 +608,8 @@ private sealed interface ChatDialog {
 private fun ThreadBody(
     thread: ChatThreadResponseThread,
     messages: List<ChatMessagePageResponseMessagesItem>,
+    hasOlder: Boolean,
+    onLoadOlder: () -> Unit,
     draft: String,
     attached: List<ChatComposeFile>,
     sending: Boolean,
@@ -637,10 +643,6 @@ private fun ThreadBody(
     val face = faceOf(thread)
     val counterpart = ChatText.counterpartOf(thread)
 
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
-    }
-
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -668,43 +670,38 @@ private fun ThreadBody(
             )
         }
 
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = spacing.elementGapSm, vertical = spacing.elementGapSm),
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-        ) {
-            if (messages.isEmpty()) {
-                item { Intro(thread = thread, face = face) }
-            }
-
-            itemsIndexed(messages, key = { _, message -> message.id }) { index, message ->
-                Column {
-                    if (ChatText.isNewDay(messages.getOrNull(index - 1)?.createdAt, message.createdAt)) {
-                        DaySeparator(at = message.createdAt)
-                    }
-                    MessageRow(
-                        thread = thread,
-                        message = message,
-                        mine = message.senderId != null && message.senderId == thread.me?.userId,
-                        editing = editing == message.id,
-                        editText = editingText,
-                        onEditStart = { onEditStart(message) },
-                        onEditText = onEditText,
-                        onEditCancel = onEditCancel,
-                        onEditSave = { onEditSave(message) },
-                        onDownload = onDownload,
-                        onDelete = { onDialog(ChatDialog.Delete(message.id)) },
-                        pending = when (pendingLines[message.clientId]) {
-                            ChatPending.Queued -> MessagePending.Queued
-                            ChatPending.Failed -> MessagePending.Failed
-                            else -> MessagePending.Sent
-                        },
-                        onRetry = { onRetry(message) },
-                    )
+        ChatMessageList(
+            thread = thread,
+            messages = messages,
+            mine = { message -> message.senderId != null && message.senderId == thread.me?.userId },
+            onDownload = onDownload,
+            pending = { message ->
+                when (pendingLines[message.clientId]) {
+                    ChatPending.Queued -> MessagePending.Queued
+                    ChatPending.Failed -> MessagePending.Failed
+                    else -> MessagePending.Sent
                 }
-            }
-        }
+            },
+            editing = editing,
+            editText = editingText,
+            onEditStart = onEditStart,
+            onEditText = onEditText,
+            onEditCancel = onEditCancel,
+            onEditSave = onEditSave,
+            onDelete = { message -> onDialog(ChatDialog.Delete(message.id)) },
+            onRetry = onRetry,
+            hasOlder = hasOlder,
+            onLoadOlder = { onLoadOlder() },
+            listState = listState,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding =
+                PaddingValues(horizontal = spacing.elementGapSm, vertical = spacing.elementGapSm),
+            intro = if (messages.isEmpty()) {
+                { Intro(thread = thread, face = face) }
+            } else {
+                null
+            },
+        )
 
         Footer(
             thread = thread,
@@ -866,206 +863,6 @@ private fun Intro(thread: ChatThreadResponseThread, face: ThreadFace) {
             color = RoyColors.mutedForeground,
             textAlign = TextAlign.Center,
         )
-    }
-}
-
-/** One line: its bubble, its attachments, and what the line says about itself. */
-@Composable
-private fun MessageRow(
-    thread: ChatThreadResponseThread,
-    message: ChatMessagePageResponseMessagesItem,
-    mine: Boolean,
-    editing: Boolean,
-    editText: String,
-    onEditStart: () -> Unit,
-    onEditText: (String) -> Unit,
-    onEditCancel: () -> Unit,
-    onEditSave: () -> Unit,
-    onDownload: (String) -> Unit,
-    onDelete: () -> Unit,
-    pending: MessagePending = MessagePending.Sent,
-    onRetry: () -> Unit = {},
-) {
-    val type = LocalRoyTypeScale.current
-    val spacing = LocalRoySpacing.current
-    val deleted = message.deletedAt != null
-    val settled = pending == MessagePending.Sent
-    val editable =
-        mine && !deleted && settled && withinEditWindow(message.createdAt)
-    val receipt = ChatText.receiptOf(thread, message.createdAt, mine, deleted)
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
-    ) {
-        Column(
-            modifier =
-                Modifier.fillMaxWidth(0.85f)
-                    .background(
-                        if (mine) RoyColors.primary else RoyColors.muted,
-                        RoundedCornerShape(
-                            topStart = 16.dp,
-                            topEnd = 16.dp,
-                            bottomStart = if (mine) 16.dp else 6.dp,
-                            bottomEnd = if (mine) 6.dp else 16.dp,
-                        ),
-                    )
-                    .padding(horizontal = spacing.elementGapSm, vertical = 6.dp),
-        ) {
-            when {
-                deleted ->
-                    Text(
-                        text = ChatThreadCopy.DELETED_MESSAGE,
-                        style = type.xs,
-                        color = if (mine) RoyColors.primaryForeground.copy(alpha = 0.7f) else RoyColors.mutedForeground,
-                    )
-                editing ->
-                    Column(verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2)) {
-                        OutlinedTextField(
-                            value = editText,
-                            onValueChange = onEditText,
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text(text = ChatThreadCopy.EDIT_LABEL, style = type.xs) },
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm)) {
-                            TextButton(onClick = onEditCancel) {
-                                Text(text = ChatThreadCopy.CANCEL, style = type.xs)
-                            }
-                            TextButton(onClick = onEditSave) {
-                                Icon(
-                                    imageVector = LucideVectors.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(12.dp),
-                                )
-                                Text(
-                                    text = ChatThreadCopy.SAVE,
-                                    style = type.xs.copy(fontWeight = FontWeight.Bold),
-                                )
-                            }
-                        }
-                    }
-                else ->
-                    Text(
-                        // The same marks the site draws (ADR-0193): the body is
-                        // markdown, and `CommunityMarkdown.inline` is the app's
-                        // one inline renderer.
-                        text = remember(message.body) {
-                            CommunityMarkdown.inline(message.body.orEmpty())
-                        },
-                        style = type.small,
-                        color = if (mine) RoyColors.primaryForeground else RoyColors.foreground,
-                    )
-            }
-
-            if (message.attachments.isNotEmpty() && !deleted) {
-                message.attachments.forEach { attachment ->
-                    Row(
-                        modifier =
-                            Modifier.fillMaxWidth()
-                                .clickable { onDownload(attachment.id) }
-                                .padding(top = 2.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = attachment.fileName,
-                            style = type.xs,
-                            color = if (mine) RoyColors.primaryForeground else RoyColors.foreground,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 2.dp),
-        ) {
-            when (pending) {
-                MessagePending.Queued -> {
-                    Icon(
-                        imageVector = LucideVectors.Clock,
-                        contentDescription = null,
-                        tint = RoyColors.mutedForeground.copy(alpha = 0.6f),
-                        modifier = Modifier.size(12.dp),
-                    )
-                    Text(
-                        text = ChatThreadCopy.QUEUED,
-                        style = type.xs,
-                        color = RoyColors.mutedForeground.copy(alpha = 0.6f),
-                    )
-                }
-
-                MessagePending.Failed -> {
-                    Icon(
-                        imageVector = LucideVectors.CircleAlert,
-                        contentDescription = null,
-                        tint = RoyColors.destructive,
-                        modifier = Modifier.size(12.dp),
-                    )
-                    Text(
-                        text = ChatThreadCopy.SEND_FAILED,
-                        style = type.xs,
-                        color = RoyColors.destructive,
-                    )
-                    TextButton(onClick = onRetry, contentPadding = PaddingValues(0.dp)) {
-                        Text(
-                            text = ChatThreadCopy.RETRY,
-                            style = type.xs,
-                            fontWeight = FontWeight.Bold,
-                            color = RoyColors.destructive,
-                        )
-                    }
-                }
-
-                MessagePending.Sent -> Unit
-            }
-            Text(
-                text = ChatText.timeAgo(message.createdAt),
-                style = type.xs,
-                color = RoyColors.mutedForeground.copy(alpha = 0.6f),
-            )
-            if (message.editedAt != null && !deleted) {
-                Text(
-                    text = "· ${ChatThreadCopy.EDITED}",
-                    style = type.xs,
-                    color = RoyColors.mutedForeground.copy(alpha = 0.6f),
-                )
-            }
-            if (receipt != null) {
-                Text(
-                    text = "· $receipt",
-                    style = type.xs,
-                    color = RoyColors.mutedForeground.copy(alpha = 0.6f),
-                )
-            }
-            if (mine && !deleted && settled) {
-                if (editable) {
-                    IconButton(
-                        onClick = onEditStart,
-                        modifier = Modifier.size(20.dp),
-                    ) {
-                        Icon(
-                            imageVector = LucideVectors.Pencil,
-                            contentDescription = ChatThreadCopy.EDIT_LABEL,
-                            tint = RoyColors.mutedForeground,
-                            modifier = Modifier.size(12.dp),
-                        )
-                    }
-                }
-                IconButton(onClick = onDelete, modifier = Modifier.size(20.dp)) {
-                    Icon(
-                        imageVector = LucideVectors.Trash,
-                        contentDescription = ChatThreadCopy.DELETE_LABEL,
-                        tint = RoyColors.mutedForeground,
-                        modifier = Modifier.size(12.dp),
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -1425,18 +1222,6 @@ private fun Statement(text: String) {
     )
 }
 
-/** A day's first line is introduced once, the way the site's separators do. */
-@Composable
-private fun DaySeparator(at: String) {
-    Text(
-        text = ChatText.dayOf(at),
-        style = LocalRoyTypeScale.current.xs.copy(fontWeight = FontWeight.Medium),
-        color = RoyColors.mutedForeground.copy(alpha = 0.8f),
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-    )
-}
-
 /** The list's face for a thread this member may not see. */
 @Composable
 private fun MissingThread() {
@@ -1526,12 +1311,6 @@ private fun Avatar(name: String, url: String?) {
             color = RoyColors.primary,
         )
     }
-}
-
-/** The site's window on an edit, mirrored: the RLS policy is the real gate. */
-private fun withinEditWindow(createdAtIso: String): Boolean {
-    val created = runCatching { Instant.parse(createdAtIso) }.getOrNull() ?: return false
-    return Duration.between(created, Instant.now()) <= EDIT_WINDOW
 }
 
 /** The confirmation one write asks for, and the write itself. */
@@ -1627,5 +1406,7 @@ private fun answerSentence(thread: ChatThreadResponseThread?, accept: Boolean): 
         ChatsListCopy.DECLINE_DIRECT_MESSAGE
     }
 }
+
+
 
 
