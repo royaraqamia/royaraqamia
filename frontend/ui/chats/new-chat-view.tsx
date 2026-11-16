@@ -9,6 +9,7 @@ import { getChatPreview, startDirectChat } from '@/frontend/api/chats';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { SignInPromptDialog } from '@/frontend/ui/shared/sign-in-prompt-dialog';
 import { whenGuardDropped } from '@/frontend/ui/primitives/overlay-back';
@@ -94,12 +95,7 @@ export function NewChatView() {
   }
 
   if (isSessionLoading || isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
-        <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-        <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
-      </div>
-    );
+    return <LoadingThread label="جاري التَّحميل..." />;
   }
 
   if (!user) {

@@ -1,6 +1,7 @@
-package com.royaraqamia.app.account
+﻿package com.royaraqamia.app.account
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -32,7 +33,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -373,7 +376,7 @@ private fun SettingsCard(
     }
 }
 
-/** The page's switch: a track and a knob that travels inside it, 150ms. */
+/** The page's switch: the site's own track and knob, and the same 200ms travel. */
 @Composable
 private fun MemorySwitch(
     enabled: Boolean,
@@ -382,14 +385,24 @@ private fun MemorySwitch(
     disabled: Boolean,
     onClick: () -> Unit,
 ) {
-    val position by animateFloatAsState(targetValue = if (enabled) 1f else 0f, label = "memory-switch")
+    // The web component's travel: the knob sits 4dp in when the switch is on and
+    // 22dp in when it is off, inside a 48dp track with a 20dp knob.
+    val position by
+        animateDpAsState(targetValue = if (enabled) 4.dp else 22.dp, label = "memory-switch")
     Box(
         modifier =
-            Modifier.width(44.dp)
-                .height(24.dp)
+            Modifier.width(48.dp)
+                .height(28.dp)
                 .clip(RoyShape.pill)
-                .background(if (enabled) RoyColors.primary.copy(alpha = 0.2f) else RoyColors.muted)
-                .border(Recipes.Card.border, RoyShape.pill)
+                .background(
+                    if (enabled) Brush.horizontalGradient(Recipes.Cta.stops)
+                    else SolidColor(RoyColors.muted)
+                )
+                .border(
+                    if (enabled) BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
+                    else BorderStroke(1.dp, RoyColors.border.copy(alpha = 0.7f)),
+                    RoyShape.pill,
+                )
                 .clickable(enabled = !disabled, onClick = onClick)
                 .testTag(tag)
                 .semantics { contentDescription = description },
@@ -397,10 +410,10 @@ private fun MemorySwitch(
     ) {
         Box(
             modifier =
-                Modifier.offset(x = (4 + 20 * position).dp)
-                    .size(16.dp)
+                Modifier.offset(x = position)
+                    .size(20.dp)
                     .clip(CircleShape)
-                    .background(if (enabled) RoyColors.primary else RoyColors.mutedForeground)
+                    .background(RoyColors.background)
         )
     }
 }

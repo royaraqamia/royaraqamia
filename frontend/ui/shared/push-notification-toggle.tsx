@@ -22,9 +22,9 @@ import {
   unregisterNativePush,
 } from '@/frontend/api/push-native';
 import { VAPID_PUBLIC_KEY } from '@/frontend/shared/constants';
-import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
 import { AccountRow } from '@/frontend/ui/account/account-row';
+import { Switch } from '@/frontend/ui/primitives/switch';
 
 type PushToggleState =
   | { kind: 'checking' }
@@ -277,30 +277,12 @@ export function PushNotificationToggle({ onRequireAuth }: { onRequireAuth: () =>
         </div>
       </div>
 
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isEnabled}
-        aria-label={DEVICE_NOTIFICATIONS_LABEL}
+      <Switch
+        checked={isEnabled}
+        label={DEVICE_NOTIFICATIONS_LABEL}
         disabled={busy || blocked}
-        onClick={() => void handleToggle()}
-        dir="ltr"
-        className={cn(
-          'relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border px-1 transition-colors focus-ring',
-          'disabled:cursor-not-allowed disabled:opacity-60',
-          isEnabled
-            ? 'border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600'
-            : 'border-border/70 bg-muted'
-        )}
-      >
-        <span
-          className={cn(
-            'inline-block size-5 rounded-full bg-background shadow-sm transition-transform duration-200',
-            isEnabled ? 'translate-x-0' : 'translate-x-[18px]'
-          )}
-          aria-hidden="true"
-        />
-      </button>
+        onChange={() => void handleToggle()}
+      />
     </div>
   );
 }

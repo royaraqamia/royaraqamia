@@ -15,6 +15,7 @@ import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { blockChatUser, reportChat } from '@/frontend/api/chats';
 import { forgetConversationMemory } from '@/frontend/api/account-memory';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice } from '@/frontend/ui/shared/read-failure';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
@@ -161,12 +162,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   );
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
-        <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-        <p className="text-sm font-medium text-muted-foreground">{CHAT_THREAD_COPY.loading}</p>
-      </div>
-    );
+    return <LoadingThread label={CHAT_THREAD_COPY.loading} />;
   }
 
   if (!thread && readFailed) {

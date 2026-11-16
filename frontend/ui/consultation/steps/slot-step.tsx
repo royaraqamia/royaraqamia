@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { CalendarClock, Loader2 } from 'lucide-react';
+import { CalendarClock } from 'lucide-react';
 import type { AvailabilitySlot } from '@/shared/contracts/consultation';
 import {
   formatSessionDamascusHint,
@@ -10,6 +10,7 @@ import {
   sessionDayKeyLocal,
 } from '@/frontend/shared/consultation-time';
 import { cn } from '@/frontend/shared/cn';
+import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 
 interface SlotStepProps {
@@ -55,9 +56,22 @@ export function SlotStep({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-3 py-14 text-muted-foreground">
-        <Loader2 className="size-5 animate-spin" />
-        <span>جاري تحميل المواعيد المُتاحة...</span>
+      <div
+        role="status"
+        aria-busy="true"
+        aria-label="جاري تحميل المواعيد المُتاحة..."
+        className="space-y-5"
+      >
+        {[0, 1].map((group) => (
+          <div key={group}>
+            <Skeleton decorative className="mb-2 h-3.5 w-28 max-w-full" />
+            <div className="grid gap-2 sm:grid-cols-2">
+              {[0, 1, 2, 3].map((slot) => (
+                <Skeleton key={slot} decorative rounded="xl" className="h-16" />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

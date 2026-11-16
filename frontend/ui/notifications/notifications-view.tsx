@@ -28,6 +28,7 @@ import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { ChatsPanel } from '@/frontend/ui/chats/chats-panel';
 import { TabChips } from '@/frontend/ui/primitives/tab-chips';
+import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { notificationTarget } from './notification-target';
 import { NOTIFICATIONS_COPY } from './notifications-copy';
@@ -213,12 +214,11 @@ export function NotificationsView() {
             <SignInCta href={loginHref} className="mt-4" />
           </PanelState>
         ) : isLoading ? (
-          <PanelState testId="notifications-loading">
-            <div className="mb-3 h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-            <p className="text-sm font-medium text-muted-foreground">
-              {NOTIFICATIONS_COPY.loading}
-            </p>
-          </PanelState>
+          <LoadingList
+            data-visual="notifications-loading"
+            label={NOTIFICATIONS_COPY.loading}
+            rows={4}
+          />
         ) : activeTab === 'chats' ? (
           <ChatsPanel />
         ) : failed ? (
