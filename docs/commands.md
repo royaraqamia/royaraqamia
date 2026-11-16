@@ -161,7 +161,11 @@ public API reads are `HIT` and the member surfaces are not
 **The free instance has a 512 MB memory budget.** The upload and document caps are in
 [memory-budget.md](memory-budget.md); an OOM restart or a memory graph above roughly 350 MB is the
 trigger for the `1c-2g` ($25) compute plan
-([ADR-0189](adr/0189-the-free-instance-has-a-memory-budget.md)).
+([ADR-0189](adr/0189-the-free-instance-has-a-memory-budget.md)). The runtime heap is capped at
+384 MB in `render.yaml` and the build keeps its own 6 GB, so a V8 failure is a logged error instead
+of a container kill, and every start and every five minutes the process writes a `[boot]` or
+`[memory]` line to the service log
+([ADR-0199](adr/0199-the-heap-cap-belongs-to-the-build-and-a-restart-leaves-a-line.md)).
 
 **Retained deployments:** Render keeps them for rollback and does not meter deployment
 storage, so nothing prunes them — the Vercel-only `prune-deployments.yml` and its script were

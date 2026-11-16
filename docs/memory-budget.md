@@ -53,6 +53,28 @@ A refused archive answers the existing "the document could not be read" sentence
 - **Concurrent paths.** A multipart upload and a document read can overlap; both are capped
   independently. The sum is what the memory graph watches.
 
+## What the process reports about itself
+
+`render.yaml` gives the **runtime** a 384 MB old-generation heap and the **build** its own 6 GB. That
+split is the difference between a collection and a kill: a service-wide
+`--max-old-space-size=6144` reached `next start`, and V8 — which collects against the limit it is
+given — reported a 6,336 MB heap limit on a 512 MB container, so RSS crossed the wall long before
+collection ran ([ADR-0199](adr/0199-the-heap-cap-belongs-to-the-build-and-a-restart-leaves-a-line.md)).
+At 384 the reported limit is 576 MB: still above the container, but close enough that a full old
+generation triggers collection while the instance is alive.
+
+The log stream carries the two readings the dashboard graph would give:
+
+- `[boot]`, once per start: the release, the commit, the instance, the RSS at start, the heap limit
+  the process actually has, the previous start and how long that process had been running, and
+  whether this start came off the same commit (`false` is a deploy, `true` is the same build coming
+  back).
+- `[memory]`, every five minutes: RSS, heap used, the heap limit, external memory and uptime.
+
+A `heapUsedMb` that climbs toward `heapLimitMb` over hours is the leak question answered; one that
+sits flat near the limit through an ordinary day is the plan question. The previous-boot fields need
+`UPSTASH_REDIS_REST_URL`/`_TOKEN` and are `null` without them — local development and CI.
+
 ## When to buy the 2 GB plan
 
 The `1c-2g` compute plan ($25) is the memory wall, not the CPU one. The trigger is evidence, not a
