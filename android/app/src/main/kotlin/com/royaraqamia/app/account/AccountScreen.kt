@@ -39,7 +39,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun AccountScreen(
     state: AccountUiState,
-    isAdmin: Boolean,
     profileRepository: AccountProfileRepository,
     usageRepository: AccountUsageRepository,
     onOpenRoute: (String) -> Unit,
@@ -48,6 +47,12 @@ fun AccountScreen(
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalRoySpacing.current
+
+    // The admin row is the server's answer, not the app's: `GET /api/me` already
+    // carries `isAdmin` for the profile card, and the same read decides whether
+    // the operator row is drawn (#974, ADR-0193 decision 4). Until the read
+    // answers, no row is drawn - never an allowlist kept in the APK.
+    var isAdmin by remember { mutableStateOf(false) }
 
     Column(
         modifier =
@@ -59,7 +64,10 @@ fun AccountScreen(
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         if (state is AccountUiState.Member) {
-            AccountProfileRoute(repository = profileRepository)
+            AccountProfileRoute(
+                repository = profileRepository,
+                onAdmin = { isAdmin = it },
+            )
             // The page stacks the allowance under the profile and above the
             // rows; a visitor gets no card at all, so it is drawn only for a
             // member — the same decision `UsageCard` makes from its session.
@@ -90,6 +98,7 @@ fun AccountScreen(
 @Composable
 private fun AccountProfileRoute(
     repository: AccountProfileRepository,
+    onAdmin: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var profile by remember { mutableStateOf<AccountProfile?>(null) }
@@ -98,12 +107,16 @@ private fun AccountProfileRoute(
     LaunchedEffect(repository) {
         profile =
             when (val result = repository.profile()) {
-                is ApiResult.Success ->
+                is ApiResult.Success -> {
+                    // The same read that names the member also answers whether
+                    // they are an admin; only the boolean reaches the rows.
+                    onAdmin(result.value.isAdmin)
                     AccountProfile(
                         name = result.value.name,
                         email = result.value.email,
                         avatarUrl = result.value.avatarUrl,
                     )
+                }
                 is ApiResult.Failure -> AccountProfile(name = null, email = null, avatarUrl = null)
             }
         loaded = true

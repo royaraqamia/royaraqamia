@@ -1,0 +1,38 @@
+{
+  "surface": "admin",
+  "component": "admin-console",
+  "web": {
+    "file": "frontend/ui/admin/admin-console-copy.ts",
+    "export": "ADMIN_CONSOLE_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/admin/AdminConsoleCopy.kt",
+    "object": "AdminConsoleCopy"
+  },
+  "notes": {
+    "source": "The Admin Console's section index, in both clients (#974). The site's page (`app/admin/page.tsx`) is the reference: every string here is written there, and moving them into one source is what stops the app retyping them (ADR-0098).",
+    "gate": "`npm run check:copy` fails a stale output, and `npm run check:parity` fails a key the reference page does not render or a state the app declares but does not draw.",
+    "review": "The app draws the section index and the review's read rows (ADR-0193). The announcement section is the web page's alone: a one-way broadcast is not a control the APK may carry."
+  },
+  "strings": {
+    "pageTitle": "الإدارة",
+    "certificatesLabel": "إدارة الشَّهادات",
+    "certificatesDescription": "إصدار وتعديل وحذف شهادات الطُّلاب",
+    "trainingLabel": "إدارة التَّدريب",
+    "trainingDescription": "الدُّفعات وطلبات الالتحاق بدورة التَّدريب",
+    "consultationsLabel": "إدارة الاستشارات",
+    "consultationsDescription": "الحجوزات، المواعيد المتاحة، الباقات، وبيانات الدفع",
+    "clientsLabel": "العملاء",
+    "clientsDescription": "طلبات المشاريع والتَّعاقُدات الشَّهريَّة الواردة من الموقع",
+    "linksnapLabel": "اختصار الرَّوابط",
+    "linksnapDescription": "إحصاءات المنصَّة ودليل الرَّوابط وحظر الرَّوابط",
+    "plansLabel": "الاشتراكات",
+    "plansDescription": "تفعيل الخطط المدفوعة ومتابعة استهلاك كل مستخدم",
+    "newsLabel": "مصادر الأخبار",
+    "newsDescription": "مراجعة المصادر التي يقترحها القرَّاء وقبولها أو رفضها",
+    "marketplaceLabel": "متجر التطبيقات",
+    "marketplaceDescription": "إيقاف تطبيق خارجي بسبب، وتعريب ما يقرأه الأعضاء من وصفه",
+    "reportsLabel": "إبلاغات المحادثات",
+    "reportsDescription": "مراجعة بلاغات المحادثات ومقتطفاتها المجمّدة"
+  }
+}

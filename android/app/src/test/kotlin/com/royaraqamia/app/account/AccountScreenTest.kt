@@ -7,6 +7,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -51,7 +52,7 @@ class AccountScreenTest {
     @get:Rule val compose = createComposeRule()
 
     /** The profile read the card makes, answered with the fixture member. */
-    private fun profileRepository(): AccountProfileRepository {
+    private fun profileRepository(isAdmin: Boolean = false): AccountProfileRepository {
         val session =
             runBlocking {
                 Session(
@@ -69,7 +70,7 @@ class AccountScreenTest {
                     RecordingTransport {
                         HttpResponse(
                             200,
-                            """{"isAdmin":false,"name":"أحمد","email":"a@b.test","avatarUrl":null,"username":"ahmad"}""",
+                            """{"isAdmin":$isAdmin,"name":"أحمد","email":"a@b.test","avatarUrl":null,"username":"ahmad"}""",
                         )
                     },
                 ),
@@ -115,8 +116,7 @@ class AccountScreenTest {
                     Box(Modifier.width(393.dp).fillMaxHeight()) {
                         AccountScreen(
                             state = state,
-                            isAdmin = isAdmin,
-                            profileRepository = profileRepository(),
+                            profileRepository = profileRepository(isAdmin),
                             usageRepository = usageRepository(),
                             onOpenRoute = onOpenRoute,
                             onSignIn = onSignIn,
@@ -183,5 +183,14 @@ class AccountScreenTest {
         compose.onNodeWithTag(AccountTags.row("faq")).assertExists()
         compose.onNodeWithTag(AccountTags.row("admin")).assertDoesNotExist()
         compose.onNodeWithTag(AccountTags.SIGN_OUT).assertDoesNotExist()
+    }
+
+    @Test
+    fun `an allowlisted account gets the admin row from the server's answer`() {
+        draw(isAdmin = true)
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag(AccountTags.row("admin")).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }

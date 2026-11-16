@@ -30,6 +30,7 @@ import com.royaraqamia.app.assistant.AssistantSnapshot
 import com.royaraqamia.app.assistant.PublishedScreen
 import com.royaraqamia.app.account.AccountScreen
 import com.royaraqamia.app.account.AccountUiState
+import com.royaraqamia.app.admin.AdminConsoleRoute
 import com.royaraqamia.app.accountnews.NewsScreen
 import kotlinx.coroutines.Dispatchers
 import java.io.File
@@ -322,16 +323,21 @@ class ShellActivity : ComponentActivity() {
                             "/account" ->
                                 AccountScreen(
                                     state = AccountUiState.of(signedIn),
-                                    // The app has no admin answer yet: the operator
-                                    // surfaces wait for their security review (#660,
-                                    // #974), so the row is drawn only when a later
-                                    // slice can verify it against the server.
-                                    isAdmin = false,
                                     profileRepository = graph.accountProfile,
                                     usageRepository = graph.accountUsage,
                                     onOpenRoute = ::openRoute,
                                     onSignIn = ::showSignIn,
                                     onSignOut = ::signOut,
+                                )
+                            // The Admin Console index (#974, ADR-0193): the
+                            // section cards over the server's `/api/me` answer.
+                            // Drawn and off until its gate passes, so the
+                            // document still opens on top of it (ADR-0117).
+                            "/admin" ->
+                                AdminConsoleRoute(
+                                    profileRepository = graph.accountProfile,
+                                    onDenied = { openRoute(Routes.HOME) },
+                                    onOpenRoute = ::openRoute,
                                 )
                             "/habitflow" -> HabitflowScreen(repository = graph.habitflow)
                             // Notes (#1390): drawn from the device store and its

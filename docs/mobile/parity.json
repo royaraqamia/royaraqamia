@@ -2637,6 +2637,30 @@
           "copy": "emptyTitle"
         }
       ]
+    },
+    {
+      "id": "admin-console",
+      "surface": "admin",
+      "issue": "#974",
+      "web": {
+        "route": "app/admin/page.tsx",
+        "component": "frontend/ui/admin/admin-console-view.tsx",
+        "copyModule": "frontend/ui/admin/admin-console-copy.ts",
+        "copyExport": "ADMIN_CONSOLE_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/admin/AdminScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/admin/AdminConsoleState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/admin/AdminConsoleCopy.kt",
+        "copyObject": "AdminConsoleCopy"
+      },
+      "copySource": "shared/copy/admin-console.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "pageTitle"
+        }
+      ]
     }
   ],
   "exempt": [

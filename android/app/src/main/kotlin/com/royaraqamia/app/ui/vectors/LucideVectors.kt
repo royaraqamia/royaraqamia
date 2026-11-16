@@ -252,6 +252,32 @@ object LucideVectors {
         }.build()
     }
 
+    /** `briefcase`, the site's own drawing. */
+    val Briefcase: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "briefcase",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M4 6h16a2 0 0 0 1 2 0v14a2 0 0 0 1 -2 0h-16a2 0 0 0 1 -2 0v-14a2 0 0 0 1 2 0z"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `calendar`, the site's own drawing. */
     val Calendar: ImageVector by lazy {
         ImageVector.Builder(
@@ -1369,6 +1395,25 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("M16 17H8"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `flag`, the site's own drawing. */
+    val Flag: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "flag",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
@@ -2793,6 +2838,39 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("M15 3v5a1 1 0 0 0 1 1h5"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `store`, the site's own drawing. */
+    val Store: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "store",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,

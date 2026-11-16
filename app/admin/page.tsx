@@ -1,127 +1,46 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  Briefcase,
-  CalendarCheck2,
-  Flag,
-  GraduationCap,
-  Link2,
-  Megaphone,
-  Newspaper,
-  ShieldCheck,
-  Store,
-  Wallet,
-} from 'lucide-react';
-import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
+import { ArrowLeft, Megaphone } from 'lucide-react';
+import { AdminConsoleView } from '@/frontend/ui/admin/admin-console-view';
+import { ADMIN_CONSOLE_COPY } from '@/frontend/ui/admin/admin-console-copy';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 
 export const metadata: Metadata = {
-  title: 'الإدارة',
+  title: ADMIN_CONSOLE_COPY.pageTitle,
   description: 'إدارة الشَّهادات والتَّدريب والاستشارات والرَّوابط في رؤيَة رقَميَّة.',
 };
 
-const SECTIONS = [
-  {
-    href: '/admin/certificates',
-    label: 'إدارة الشَّهادات',
-    description: 'إصدار وتعديل وحذف شهادات الطُّلاب',
-    icon: ShieldCheck,
-  },
-  {
-    href: '/admin/training/cohorts',
-    label: 'إدارة التَّدريب',
-    description: 'الدُّفعات وطلبات الالتحاق بدورة التَّدريب',
-    icon: GraduationCap,
-  },
-  {
-    href: '/admin/consultations/bookings',
-    label: 'إدارة الاستشارات',
-    description: 'الحجوزات، المواعيد المتاحة، الباقات، وبيانات الدفع',
-    icon: CalendarCheck2,
-  },
-  {
-    href: '/admin/clients/project-requests',
-    label: 'العملاء',
-    description: 'طلبات المشاريع والتَّعاقُدات الشَّهريَّة الواردة من الموقع',
-    icon: Briefcase,
-  },
-  {
-    href: '/admin/linksnap',
-    label: 'اختصار الرَّوابط',
-    description: 'إحصاءات المنصَّة ودليل الرَّوابط وحظر الرَّوابط',
-    icon: Link2,
-  },
-  {
-    href: '/admin/announcements',
-    label: 'إرسال إعلان',
-    description: 'إرسال إشعار لمستخدمين محددين أو لجميع المستخدمين المسجَّلين',
-    icon: Megaphone,
-  },
-  {
-    href: '/admin/plans',
-    label: 'الاشتراكات',
-    description: 'تفعيل الخطط المدفوعة ومتابعة استهلاك كل مستخدم',
-    icon: Wallet,
-  },
-  {
-    href: '/admin/news',
-    label: 'مصادر الأخبار',
-    description: 'مراجعة المصادر التي يقترحها القرَّاء وقبولها أو رفضها',
-    icon: Newspaper,
-  },
-  {
-    href: '/admin/mcp/marketplace',
-    label: 'متجر التطبيقات',
-    description: 'إيقاف تطبيق خارجي بسبب، وتعريب ما يقرأه الأعضاء من وصفه',
-    icon: Store,
-  },
-  {
-    href: '/admin/reports',
-    label: 'إبلاغات المحادثات',
-    description: 'مراجعة بلاغات المحادثات ومقتطفاتها المجمّدة',
-    icon: Flag,
-  },
-];
-
 export default function AdminConsolePage() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-10 sm:px-6 sm:pb-12 lg:px-8">
-      <AdminPageHeader title="الإدارة" />
-
-      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-        {SECTIONS.map((section) => {
-          const Icon = section.icon;
-
-          return (
-            <Link
-              key={section.href}
-              href={section.href}
-              className="group h-full rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            >
-              <Card className="hover:border-primary/25 h-full">
-                <CardContent className="flex items-start gap-3.5 sm:gap-4">
-                  <span className="border-border/50 bg-muted/60 dark:bg-neutral-800/60 flex size-11 shrink-0 items-center justify-center rounded-xl border sm:size-10">
-                    <Icon className="text-primary size-5" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="text-foreground block font-bold text-pretty">
-                      {section.label}
-                    </span>
-                    <span className="text-muted-foreground mt-1 block text-sm leading-relaxed text-pretty">
-                      {section.description}
-                    </span>
-                  </span>
-                  <ArrowLeft
-                    className="text-muted-foreground/40 group-hover:text-primary mt-0.5 size-4 shrink-0 transition-safe duration-300 group-hover:-translate-x-1"
-                    aria-hidden="true"
-                  />
-                </CardContent>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+    <AdminConsoleView>
+      {/*
+        The app does not draw this section: a one-way broadcast to every member is
+        not a control the APK may carry (ADR-0193 decision 3), so the card stays
+        the page's own and keeps its words here rather than in the shared copy
+        source the native pair reads.
+      */}
+      <Link
+        href="/admin/announcements"
+        className="group h-full rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        <Card className="hover:border-primary/25 h-full">
+          <CardContent className="flex items-start gap-3.5 sm:gap-4">
+            <span className="border-border/50 bg-muted/60 dark:bg-neutral-800/60 flex size-11 shrink-0 items-center justify-center rounded-xl border sm:size-10">
+              <Megaphone className="text-primary size-5" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="text-foreground block font-bold text-pretty">إرسال إعلان</span>
+              <span className="text-muted-foreground mt-1 block text-sm leading-relaxed text-pretty">
+                إرسال إشعار لمستخدمين محددين أو لجميع المستخدمين المسجَّلين
+              </span>
+            </span>
+            <ArrowLeft
+              className="text-muted-foreground/40 group-hover:text-primary mt-0.5 size-4 shrink-0 transition-safe duration-300 group-hover:-translate-x-1"
+              aria-hidden="true"
+            />
+          </CardContent>
+        </Card>
+      </Link>
+    </AdminConsoleView>
   );
 }

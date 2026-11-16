@@ -1,0 +1,58 @@
+{
+  "surface": "admin",
+  "route": "/admin",
+  "notes": "The Admin Console's section index at rest (#974, ADR-0193). `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the first section card, the region both clients draw identically. The at-rest state needs an admin session, so a recording has to sign in as an account the deployment's allowlist names; the surface is in `docs/mobile/screens.json` with the port off and is not yet under `docs/mobile/visual-gate.json` - it joins the gate when this state has evidence (ADR-0117, ADR-0118). Widths of a label's own words are left out deliberately: they are the run of the text, not a decision. Colours are left out too, because they are what the raster proves.",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "section-certificates",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='admin-title'] h1"
+          },
+          "app": {
+            "tag": "admin-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "list",
+          "web": {
+            "selector": "[data-visual='admin-sections']"
+          },
+          "app": {
+            "tag": "admin-sections"
+          },
+          "properties": ["top", "width"]
+        },
+        {
+          "name": "section-certificates",
+          "web": {
+            "selector": "[data-visual='admin-section-certificates']"
+          },
+          "app": {
+            "tag": "admin-section-certificates"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        },
+        {
+          "name": "section-reports",
+          "web": {
+            "selector": "[data-visual='admin-section-reports']"
+          },
+          "app": {
+            "tag": "admin-section-reports"
+          },
+          "properties": ["top", "width", "height", "radius"]
+        }
+      ]
+    }
+  ],
+  "motion": {
+    "notes": "The index is still. A card dims its border and background on hover; the same means the same 150ms colour transition, with no travel and no layout change. The section arrow would travel 4px on hover on the page and is not drawn as motion in the app yet.",
+    "entries": []
+  }
+}
