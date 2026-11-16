@@ -81,6 +81,83 @@ One question to نور and the answer it streams back, with the read tools it us
 made. It spends the member's daily allowance and resets at Damascus midnight.
 _Avoid_: Message, query, request, prompt
 
+**Capability**:
+One thing a product can do on a member's behalf, declared once in the capability registry
+(`backend/services/tools/registry.ts`) with its owner, kind, tier and the name each door calls it
+by. The turn and the MCP server are two adapters over the same declaration, so
+`spendtrack.list_transactions` is one capability reached two ways rather than two tools that happen
+to agree; `docs/assistant/capabilities.md` is generated from it, and a row only one door declares
+is a visible gap (ADR-0183).
+_Avoid_: Tool (that is one door's declaration of it), feature, action, function, endpoint,
+integration
+
+**Tier**:
+The blast radius a Capability declares, 0 to 3, which decides what happens to a call without asking
+the model: 0 runs inside the turn, 1 runs there only with a Tool grant and is a card until then, 2
+is always a card because a third party sees it or money moves, and 3 is a card whose confirm names
+the target. Every entry declares one and a missing tier fails the build, because a default is how a
+new tool quietly becomes automatic (ADR-0180).
+_Avoid_: Level, permission, risk score, Plan
+
+**Tool grant**:
+One row in `agent_tool_grants`: the member's decision that one tier-1 Capability may run inside a
+turn without a card, made after they have seen it run at least once. It is granted per tool and
+never per app, nothing above tier 1 is grantable, and the assistant settings and the apps sheet
+draw the same list (ADR-0180). Distinct from a Grant, which is a connected MCP app's live tokens.
+_Avoid_: Permission, allow-once, auto-approve, trust level, blanket access, Grant
+
+**Identity block**:
+The turn's first context layer: the account row projected into one system block — who to address,
+the handle, whether an email exists (never the address itself), the avatar, the plan and the number
+of connected apps. It is read on every turn and capped rather than trusted, so the model never
+spends a round asking the member their own name (ADR-0182).
+_Avoid_: Profile, user context, persona, system prompt
+
+**Screen snapshot**:
+The surface's own state, published to the turn: route, product, screen id, open overlays, the record
+in hand, the selected tab, allowlisted fields and a capped excerpt of the page. It is the app's own
+model, never a DOM capture or a screenshot; a surface that registers nothing is still visible by
+route, an admin surface publishes nothing, and a client says `{ blind: true }` instead (ADR-0181).
+It lives in the session and is never persisted.
+_Avoid_: DOM capture, screenshot, scrape, page context, Snapshot (that is the offline paint cache)
+
+**Saved fact**:
+One row in `agent_memories` the member asked the assistant to keep, with the scope it belongs to
+(`account`, `product`, `thread`), what kind of thing it is (`fact`, `preference`, `health`, `legal`,
+`financial`), the turn it came from and a confidence. It is written through one door, refused when
+it carries a credential or a card number, and stays visible, editable and deletable on the memory
+page (ADR-0182).
+_Sold as_: ما أتذكّره
+_Avoid_: Memory, note, item, entry, profile field, embedding
+
+**Recall**:
+The Saved facts a turn injects, chosen from the nearest candidates by similarity and recency,
+everything under the similarity floor dropped, and never more than six, each attributed to when it
+was saved. A recall that fails or times out costs the turn nothing — it answers without one — and a
+recalled fact is data the server wrote, never an instruction and never a member's own words
+(ADR-0182).
+_Avoid_: Retrieval, search, RAG, memory lookup, injection, context window
+
+**Ceiling**:
+The cap on one form of attention, enforced outside the model rather than asked for in a prompt:
+tokens, rounds, remote app calls, recalled items, specialist bodies, run time and a run's tier. It
+is what makes "attention is bounded" a fact rather than a hope, and a model that is talked out of
+it still meets it (ADR-0182, ADR-0184).
+_Avoid_: Limit, quota, threshold; cap and budget are their own things
+
+**Scheduled run**:
+One firing of a task the member or an operator created: the same turn loop with no screen, a
+synthetic context of the Identity block, memory and the task's prompt, a tier-1 Ceiling, a budget
+and a Run digest. Dispatch is a claim and a lease rather than a loop, and a run that spends its
+budget stops instead of retrying (ADR-0184).
+_Avoid_: Job, cron job, task (that is the row), execution, automation
+
+**Run digest**:
+The one message a Scheduled run leaves in the assistant thread: what ran, what changed, and an undo
+for each reversible effect. A run that did nothing says so, because silence is indistinguishable
+from failure (ADR-0184). Distinct from a News Digest, which is the day's Arabic news summary.
+_Avoid_: Summary, report, notification, log, News Digest
+
 ### Certificates
 
 **Certificate**:
