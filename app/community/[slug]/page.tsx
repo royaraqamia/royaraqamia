@@ -23,6 +23,7 @@ import { PostViewTracker } from '../_components/post-view-tracker';
 import { CommunityPostScope } from '../_components/community-post-scope';
 import { PostOwnerActions } from '../_components/post-owner-actions';
 import { PostPublishedAt } from '../_components/post-published-at';
+import { PostViews } from '@/frontend/ui/shared/post-views';
 import {
   loadPublishedPostBySlug,
   loadCommunityPost,
@@ -249,9 +250,10 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                 )}
               </header>
 
-              {p.published_at && (
-                <div className="mb-6 sm:mb-8 text-right">
-                  <PostPublishedAt publishedAt={p.published_at} />
+              {(p.published_at || p.view_count > 0) && (
+                <div className="mb-6 flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-xs text-muted-foreground sm:mb-8 sm:text-sm">
+                  {p.published_at && <PostPublishedAt publishedAt={p.published_at} />}
+                  <PostViews count={p.view_count} />
                 </div>
               )}
 
