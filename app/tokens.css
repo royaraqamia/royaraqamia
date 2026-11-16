@@ -67,7 +67,7 @@
     --accent-purple-foreground: 0 0% 100%;
 
     /* The cover palettes: what a member profile is painted with, seeded from
-       their id (ADR-0200). The component picks an index and reads these, so
+       their id (ADR-0201). The component picks an index and reads these, so
        the twelve pairs are stated once for both clients. */
     --cover-0-a: 262 80% 62%;
     --cover-0-b: 320 75% 60%;

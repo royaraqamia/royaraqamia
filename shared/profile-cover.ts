@@ -1,7 +1,7 @@
 import tokens from './tokens/tokens.json';
 
 /**
- * The seeded look of a member's profile cover (ADR-0200).
+ * The seeded look of a member's profile cover (ADR-0201).
  *
  * The cover is drawn from the member, not uploaded by them: a palette, an orb
  * placement and an angle, all decided by integer arithmetic over the row's `id`.
