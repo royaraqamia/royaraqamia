@@ -54,6 +54,13 @@ describe('the assistant prompt', () => {
     expect(SYSTEM_PROMPT).toContain('مرفق');
     expect(SYSTEM_PROMPT).toContain('ولا تقولي إنك لا تستقبلين المرفقات');
   });
+
+  it('mirrors the member’s language instead of answering Arabic always', () => {
+    expect(SYSTEM_PROMPT).toContain('بلغة رسالة العضو الأخيرة');
+    // The line this rule replaced is what made an English question come back
+    // in Arabic, whatever the member wrote.
+    expect(SYSTEM_PROMPT).not.toContain('تجيبين بالعربية الفصحى المبسطة وبإيجاز');
+  });
 });
 
 const AGENT_THREAD = {

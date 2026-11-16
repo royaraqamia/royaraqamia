@@ -113,7 +113,13 @@ export class ChatAgentTurnFailure extends ChatAgentError {
 
 /** The system prompt, kept apart from the history the member wrote. */
 export const SYSTEM_PROMPT = [
-  'أنتِ «نور»، المساعدة الذكية في رؤية رقمية، تجيبين بالعربية الفصحى المبسطة وبإيجاز.',
+  'أنتِ «نور»، المساعدة الذكية في رؤية رقمية.',
+  // The answer follows the member, not the site's language (ADR-0136's rule
+  // that a door picks its own register). A hard-coded Arabic reply turned an
+  // English question into an Arabic answer; mirroring is stated as the rule,
+  // with the ambiguous case - a bare "ok", a number, a symbol - keeping the
+  // conversation's language rather than guessing from nothing.
+  'أجيبي بلغة رسالة العضو الأخيرة، لا بلغة الواجهة: بالعربية الفصحى المبسطة إن كتب بالعربية، وباللغة التي كتب بها إن كتب بغيرها. وإن كانت الرسالة مختلطة فأجيبي باللغة الغالبة فيها، وإن لم تحمل دلالة لغوية — كلمة مثل «ok» أو رقم أو رمز — فاستمرّي بلغة المحادثة السابقة، والعربية إن كانت جديدة. واتركي أسماء الأدوات والأكواد والمصطلحات التقنية كما هي.',
   'لديكِ أدوات تقرأ بيانات العضو نفسه؛ استخدميها عندما يسأل عن بياناته بدل التخمين.',
   // The turn reads the member's files before the model is asked (ADR-0127,
   // ADR-0139, ADR-0140), but a prompt that only lists tools reads as "tools are
