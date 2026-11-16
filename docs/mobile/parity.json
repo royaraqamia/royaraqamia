@@ -1829,11 +1829,13 @@
       "web": {
         "route": "app/layout.tsx",
         "component": "frontend/ui/assistant/assistant-panel.tsx",
+        "also": ["frontend/ui/chats/chat-message-list.tsx"],
         "copyModule": "frontend/ui/assistant/assistant-panel-copy.ts",
         "copyExport": "ASSISTANT_PANEL_COPY"
       },
       "native": {
         "component": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantSheet.kt",
+        "also": ["android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatMessageList.kt"],
         "state": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantUiState.kt",
         "copy": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantPanelCopy.kt",
         "copyObject": "AssistantPanelCopy"
@@ -1937,11 +1939,16 @@
       "web": {
         "route": "app/chats/[id]/page.tsx",
         "component": "frontend/ui/chats/chat-thread-view.tsx",
+        "also": [
+          "frontend/ui/chats/chat-message-list.tsx",
+          "frontend/ui/chats/chat-field-labels.ts"
+        ],
         "copyModule": "frontend/ui/chats/chat-thread-copy.ts",
         "copyExport": "CHAT_THREAD_COPY"
       },
       "native": {
         "component": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatThread.kt",
+        "also": ["android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatMessageList.kt"],
         "state": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatThreadUiState.kt",
         "copy": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatThreadCopy.kt",
         "copyObject": "ChatThreadCopy"

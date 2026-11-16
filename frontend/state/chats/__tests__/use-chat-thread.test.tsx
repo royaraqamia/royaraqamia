@@ -472,3 +472,75 @@ describe('useChatThread queue', () => {
     expect(captured!.messages.find((message) => message.body === 'مرحبا')?.id).toBe('m-server');
   });
 });
+
+/**
+ * Mount is not activity (#1562): the floating panel stays mounted across closes,
+ * so the conversation it holds must connect only while it is on screen.
+ */
+describe('useChatThread activity', () => {
+  const thread: ChatThread = {
+    id: 'c-1',
+    kind: 'agent',
+    status: 'active',
+    title: 'نور',
+    counterpart: null,
+    myStatus: 'active',
+    lastMessage: null,
+    unreadCount: 0,
+    openActions: 0,
+    lastMessageAt: null,
+    createdAt: '2026-11-01T09:00:00.000Z',
+    participants: [],
+    me: null,
+    blockedByMe: false,
+    canWrite: true,
+    attachmentQuota: {
+      fileBytes: 1_000,
+      today: { usedBytes: 0, limitBytes: 10_000 },
+      total: { usedBytes: 0, limitBytes: 100_000 },
+      project: { usedBytes: 0, limitBytes: 500_000 },
+    },
+  };
+
+  function Activity({ on }: { on: boolean }) {
+    const state = useChatThread('c-1', { active: on });
+    useEffect(() => {
+      captured = state;
+    });
+    return null;
+  }
+
+  it('reads nothing until it is on screen, then reads once', async () => {
+    captured = null;
+    api.getChatThread.mockReset().mockResolvedValue(thread);
+    api.getChatMessages.mockReset().mockResolvedValue({ messages: [], nextCursor: null });
+    api.subscribeToChatThread.mockReset().mockReturnValue(() => {});
+    api.subscribeToChatRoster.mockReset().mockReturnValue(() => {});
+    api.markChatRead.mockReset().mockResolvedValue(undefined);
+
+    const { rerender } = render(<Activity on={false} />);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(api.getChatMessages).not.toHaveBeenCalled();
+
+    rerender(<Activity on />);
+    await waitFor(() => expect(api.getChatMessages).toHaveBeenCalled());
+    await waitFor(() => expect(captured?.thread?.id).toBe('c-1'));
+  });
+
+  it('drops the connection when it leaves the screen', async () => {
+    captured = null;
+    const unsubscribe = vi.fn();
+    api.getChatThread.mockReset().mockResolvedValue(thread);
+    api.getChatMessages.mockReset().mockResolvedValue({ messages: [], nextCursor: null });
+    api.subscribeToChatThread.mockReset().mockReturnValue(unsubscribe);
+    api.subscribeToChatRoster.mockReset().mockReturnValue(() => {});
+
+    const { rerender } = render(<Activity on />);
+    await waitFor(() => expect(api.subscribeToChatThread).toHaveBeenCalled());
+
+    rerender(<Activity on={false} />);
+    expect(unsubscribe).toHaveBeenCalled();
+  });
+});

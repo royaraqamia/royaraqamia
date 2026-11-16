@@ -184,6 +184,28 @@ export function validate({ manifest, surfaces, copies, icons, read, sources = []
       contents[label] = text;
     }
 
+    /**
+     * A composed component is one component (#1562). The message row, its days
+     * and its scroll are drawn by a file the surface imports, so the pair names
+     * the files that draw it rather than one file that keeps every string: the
+     * reference and its companions are read as one source for the copy and icon
+     * checks below.
+     */
+    const webFiles = [row.web?.component, ...(row.web?.also ?? [])];
+    const nativeFiles = [row.native?.component, ...(row.native?.also ?? [])];
+    for (const path of [...(row.web?.also ?? []), ...(row.native?.also ?? [])]) {
+      if (typeof path !== 'string' || path.length === 0) {
+        errors.push(`"${id}" has an empty "also" entry`);
+        continue;
+      }
+      if (read(path) === null) {
+        errors.push(`"${id}" names ${path} in "also", which does not exist`);
+      }
+      if (row.native?.also?.includes(path)) claimedFiles.add(path);
+    }
+    const webText = webFiles.map((path) => contents[path] ?? read(path) ?? '').join('\n');
+    const nativeText = nativeFiles.map((path) => contents[path] ?? read(path) ?? '').join('\n');
+
     if (typeof row.web?.copyExport !== 'string' || row.web.copyExport.length === 0) {
       errors.push(`"${id}" has no "web.copyExport"`);
     }
@@ -224,13 +246,13 @@ export function validate({ manifest, surfaces, copies, icons, read, sources = []
     const webExport = row.web?.copyExport;
     const nativeObject = row.native?.copyObject;
 
-    if (webExport && !webComponent.includes(webExport)) {
+    if (webExport && !webText.includes(webExport)) {
       errors.push(`"${id}": ${row.web.component} does not read ${webExport}`);
     }
-    if (nativeObject && !nativeComponent.includes(nativeObject)) {
+    if (nativeObject && !nativeText.includes(nativeObject)) {
       errors.push(`"${id}": ${row.native.component} does not read ${nativeObject}`);
     }
-    if (row.web?.copyModule && !webComponent.includes(moduleSpecifier(row.web.copyModule))) {
+    if (row.web?.copyModule && !webText.includes(moduleSpecifier(row.web.copyModule))) {
       errors.push(`"${id}": ${row.web.component} does not import ${row.web.copyModule}`);
     }
 
@@ -249,15 +271,12 @@ export function validate({ manifest, surfaces, copies, icons, read, sources = []
         );
         continue;
       }
-      if (webExport && !webComponent.includes(`${webExport}.${state.copy}`)) {
+      if (webExport && !webText.includes(`${webExport}.${state.copy}`)) {
         errors.push(
           `"${id}" state "${state.name}" is not rendered by ${row.web.component} (expected ${webExport}.${state.copy})`
         );
       }
-      if (
-        nativeObject &&
-        !nativeComponent.includes(`${nativeObject}.${constantName(state.copy)}`)
-      ) {
+      if (nativeObject && !nativeText.includes(`${nativeObject}.${constantName(state.copy)}`)) {
         errors.push(
           `"${id}" state "${state.name}" is not rendered by ${row.native.component} (expected ${nativeObject}.${constantName(state.copy)})`
         );
@@ -267,14 +286,14 @@ export function validate({ manifest, surfaces, copies, icons, read, sources = []
     // The site is the reference: a string it does not render is copy that only
     // the app reads, which is the drift direction this pair exists to forbid.
     for (const key of Object.keys(strings)) {
-      if (!webComponent.includes(`${webExport}.${key}`)) {
+      if (!webText.includes(`${webExport}.${key}`)) {
         errors.push(`"${row.copySource}" key "${key}" is not rendered by ${row.web.component}`);
       }
     }
 
     // Icons are design too: the glyph the site imports is the glyph the app must
     // draw, from the generated vector rather than a redrawing (ADR-0100).
-    for (const icon of importedIcons(webComponent)) {
+    for (const icon of importedIcons(webText)) {
       usedIcons.add(icon);
       if (!listedIcons.has(icon)) {
         errors.push(
@@ -282,7 +301,7 @@ export function validate({ manifest, surfaces, copies, icons, read, sources = []
         );
         continue;
       }
-      if (nativeObject && !nativeComponent.includes(`LucideVectors.${icon}`)) {
+      if (nativeObject && !nativeText.includes(`LucideVectors.${icon}`)) {
         errors.push(`"${id}": ${row.native.component} does not draw LucideVectors.${icon}`);
       }
       if (vectors && !vectors.includes(`val ${icon}:`)) {

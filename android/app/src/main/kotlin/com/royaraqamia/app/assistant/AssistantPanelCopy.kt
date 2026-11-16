@@ -28,5 +28,4 @@ object AssistantPanelCopy {
     const val RETRY = "إعادة المحاولة"
     const val UNAVAILABLE = "نور غير متاحة حالياً."
     const val ATTACHMENT_ONLY = "مرفق"
-    const val DOWNLOAD_FILE = "تنزيل {name}"
 }

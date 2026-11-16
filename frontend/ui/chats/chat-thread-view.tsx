@@ -1,31 +1,19 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import {
-  ArrowRight,
-  Check,
-  CircleAlert,
-  Clock,
-  EllipsisVertical,
-  Pencil,
-  Send,
-  Trash,
-} from 'lucide-react';
+import { ArrowRight, EllipsisVertical, Send } from 'lucide-react';
 
 import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
-import type { ChatMessageState } from '@/frontend/api/chats/local-store';
 import {
   useChatAssistant,
   type ChatAssistantState,
 } from '@/frontend/state/chats/use-chat-assistant';
-import { pendingIsStored } from '@/frontend/state/chats/pending-turn';
 import { useChatPresence } from '@/frontend/state/chats/use-chat-presence';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { blockChatUser, reportChat } from '@/frontend/api/chats';
 import { forgetConversationMemory } from '@/frontend/api/account-memory';
-import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice } from '@/frontend/ui/shared/read-failure';
@@ -40,47 +28,22 @@ import {
 import { useKeyboardInset } from '@/frontend/ui/shared/keyboard-inset';
 import { ReportChatDialog } from './report-chat-dialog';
 import { AssistantMark } from './assistant-mark';
-import { ASSISTANT_COPY } from './assistant-copy';
 import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
 import { assistantPhaseText } from './assistant-phase';
-import { readReceiptOf, type ChatReadReceipt } from './read-receipt';
 import { PresenceIndicator } from './presence-indicator';
-import { formatDaySeparator, isNewDay } from './thread-days';
-import { ActionCard } from './chat-agent-action-card';
 import { AssistantComposer } from './chat-assistant-composer';
 import { ChatComposer } from './chat-composer';
-import { VoiceNotePlayer } from './voice-note-player';
-import { AttachmentChip } from './attachment-chip';
-import { ChatImage } from './chat-image';
-import { ChatBody } from './chat-body';
-import { ChatField, type ChatFieldLabels } from './chat-field';
+import { ChatMessageList } from './chat-message-list';
+import { CHAT_FIELD_LABELS } from './chat-field-labels';
 import { stageFiles } from './attachment-quota';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
-import { chatTimeAgo } from './chats-panel';
 import {
-  canEditChatMessage,
-  chatAttachmentIsAudio,
-  chatAttachmentIsInlineImage,
   chatVoiceNoteMaxMs,
   type ChatAttachment,
-  type ChatMessage,
   type ChatPresenceState,
   type ChatThread,
 } from '@/shared/contracts/chat';
-import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
-
-/** The field's six marks in the thread's own words (ADR-0193). */
-export const CHAT_FIELD_LABELS: ChatFieldLabels = {
-  toolbar: CHAT_THREAD_COPY.formatToolbar,
-  bold: CHAT_THREAD_COPY.formatBold,
-  italic: CHAT_THREAD_COPY.formatItalic,
-  underline: CHAT_THREAD_COPY.formatUnderline,
-  strike: CHAT_THREAD_COPY.formatStrike,
-  code: CHAT_THREAD_COPY.formatCode,
-  link: CHAT_THREAD_COPY.formatLink,
-  linkPrompt: CHAT_THREAD_COPY.formatLinkPrompt,
-};
 
 /**
  * What the bottom of the screen offers, derived from the thread's own state:
@@ -170,23 +133,11 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [reporting, setReporting] = useState(false);
   const [busy, setBusy] = useState(false);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   const isAssistant = thread?.kind === 'agent';
   const assistant = useChatAssistant(conversationId, Boolean(isAssistant), () => {
     void refresh();
   });
-
-  // The question the composer painted, drawn until the thread's own read carries
-  // the stored row. The moment it does, the local copy goes (#1541).
-  const pendingTurn =
-    assistant.pending && !pendingIsStored(assistant.pending, messages) ? assistant.pending : null;
-  const pendingId = pendingTurn?.message.id ?? null;
-  const { dismissPending, pendingUrl, retryPending } = assistant;
-
-  useEffect(() => {
-    if (assistant.pending && pendingIsStored(assistant.pending, messages)) dismissPending();
-  }, [assistant.pending, messages, dismissPending]);
 
   // A composer that meets the on-screen keyboard is the whole point of the fixed
   // footer: Chrome and the Android shell shrink `100dvh` themselves
@@ -195,17 +146,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   // off (`app/chats/[id]/page.tsx`).
   useKeyboardInset();
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length, assistant.streamingText, pendingId]);
-
   const state = useMemo(() => (thread ? stateOf(thread) : 'inactive'), [thread]);
-  /** A proposal is drawn under the line it belongs to (#818). */
-  const actionByMessage = useMemo(() => {
-    const byMessage = new Map<string, ChatAgentAction>();
-    for (const action of actions) byMessage.set(action.messageId, action);
-    return byMessage;
-  }, [actions]);
 
   // Presence is joined for the conversation as soon as the member is known, not
   // once the read answers: the topic's own policy is the authority on whether
@@ -327,16 +268,6 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     window.location.assign(url);
   }
 
-  /** A staged file's preview is already the bytes: the browser opens its own. */
-  async function downloadPending(attachment: ChatAttachment) {
-    const url = await pendingUrl(attachment);
-    if (!url) {
-      setNotice(CHAT_THREAD_COPY.downloadFailed);
-      return;
-    }
-    window.location.assign(url);
-  }
-
   /**
    * Runs a dialog's action, keeping the dialog open with its spinner. A write
    * that rejects is the same sentence as one that refuses: the spinner always
@@ -414,125 +345,33 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         `lg`, where the gesture is the affordance and `:active` painted the strip
         mid-swipe — and a thin bar above `lg` the moment the pointer is over the
         list, which is the `.dialog-scrollbar` pair the composers use.
+
+        The rows, the days between them, the older page and the scroll contract
+        are `ChatMessageList`'s, so the floating panel (ADR-0143) draws the same
+        conversation rather than a second copy of it (#1562).
       */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 py-4 dialog-scrollbar dialog-scrollbar-touch-none">
-        {/*
-          The last line sits on the composer rather than floating at the top of
-          an empty surface, which is what a short thread looks like in every
-          messenger. `min-h-full` is what keeps that honest: the inner box is at
-          least the list's height (so short content is pushed down) and grows
-          past it when the thread is long (so nothing at the top is cut off, the
-          way `justify-end` alone would).
-
-          `shrink-0` is what lets it grow at all. As a flex item of a list with
-          a definite height it shrank back to that height the moment a thread
-          ran past one screen — and because the rows inside it are flex items
-          too, they compressed into the same box instead of overflowing. The
-          list then reported `scrollHeight === clientHeight`: nothing to scroll,
-          and every line squeezed into the last screenful.
-        */}
-        <div className="flex min-h-full shrink-0 flex-col justify-end gap-2">
-          {hasOlder && (
-            <button
-              type="button"
-              onClick={() => void loadOlder()}
-              className="mx-auto rounded-lg px-3 py-1 text-xs font-medium text-primary hover:bg-primary/10"
-            >
-              {CHAT_THREAD_COPY.loadOlder}
-            </button>
-          )}
-
-          {messages.length === 0 ? (
+      <ChatMessageList
+        thread={thread}
+        messages={messages}
+        isMine={(message) => Boolean(user && message.senderId === user.id)}
+        actions={actions}
+        assistant={assistant}
+        pending={pending}
+        hasOlder={hasOlder}
+        onLoadOlder={loadOlder}
+        onRetry={retrySend}
+        onResolve={resolveAction}
+        onEdit={edit}
+        onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
+        onDownload={(attachment) => void handleDownload(attachment)}
+        resolveAttachmentUrl={attachmentUrl}
+        className="dialog-scrollbar-touch-none"
+        intro={
+          messages.length === 0 ? (
             <ThreadIntro thread={thread} counterpart={counterpart} state={state} />
-          ) : (
-            messages.map((message, index) => {
-              const mine = Boolean(user && message.senderId === user.id);
-              return (
-                <div key={message.id} className="flex w-full flex-col gap-2">
-                  {isNewDay(messages[index - 1], message) && (
-                    <DaySeparator at={message.createdAt} />
-                  )}
-                  <MessageRow
-                    message={message}
-                    mine={mine}
-                    receipt={readReceiptOf(thread, message, mine)}
-                    action={actionByMessage.get(message.id) ?? null}
-                    /* A line the server has not accepted yet (#1033). */
-                    state={message.clientId ? pending[message.clientId] : undefined}
-                    onRetry={retrySend}
-                    onResolve={(actionId, answer) => resolveAction(actionId, answer)}
-                    onEdit={edit}
-                    onDownload={(attachment) => void handleDownload(attachment)}
-                    resolveAttachmentUrl={attachmentUrl}
-                    onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
-                  />
-                </div>
-              );
-            })
-          )}
-
-          {pendingTurn && (
-            <div className="flex w-full flex-col gap-2">
-              <MessageRow
-                message={pendingTurn.message}
-                mine
-                receipt={null}
-                action={null}
-                /* The composer's own line, until the thread's read has it. */
-                state={pendingTurn.status === 'failed' ? 'failed' : 'queued'}
-                onRetry={retryPending}
-                onResolve={async () => null}
-                onEdit={async () => false}
-                onDownload={(attachment) => void downloadPending(attachment)}
-                resolveAttachmentUrl={pendingUrl}
-                onDelete={() => undefined}
-              />
-            </div>
-          )}
-
-          {assistant.isStreaming && assistant.streamingText && (
-            <div className="flex w-full flex-col items-start gap-1">
-              <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
-                <p className="whitespace-pre-wrap wrap-anywhere bidi-lines" dir="auto">
-                  <ChatBody text={assistant.streamingText} />
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* A turn that failed after writing something leaves that text on the
-            screen, named as unfinished rather than presented as an answer. */}
-          {!assistant.isStreaming && assistant.interrupted && (
-            <div className="flex w-full flex-col items-start gap-1">
-              <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted/60 px-3 py-2 text-sm leading-relaxed text-foreground/80">
-                <p className="whitespace-pre-wrap wrap-anywhere bidi-lines" dir="auto">
-                  <ChatBody text={assistant.interrupted} />
-                </p>
-              </div>
-              <p className="text-[11px] italic text-muted-foreground">
-                {ASSISTANT_COPY.interrupted}
-              </p>
-            </div>
-          )}
-
-          {/* What this turn read, folded under the answer: provenance is what
-            explains the answer, not a second live line (#818, ADR-0173). */}
-          {assistant.toolsUsed.length > 0 && (
-            <details className="text-[11px] text-muted-foreground">
-              <summary className="cursor-pointer list-none font-medium">
-                {ASSISTANT_PANEL_COPY.provenance}
-              </summary>
-              <ul className="mt-1 flex flex-col gap-0.5">
-                {assistant.toolsUsed.map((line, at) => (
-                  <li key={`${at}-${line}`}>· {line}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-
-          <div ref={bottomRef} />
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       <ThreadFooter
         thread={thread}
@@ -1068,214 +907,5 @@ function ThreadFooter({
         ? CHAT_THREAD_COPY.declinedComposer
         : CHAT_THREAD_COPY.notMember}
     </p>
-  );
-}
-
-function DaySeparator({ at }: { at: string }) {
-  return (
-    <p className="mx-auto my-1 rounded-full bg-muted/60 px-3 py-1 text-[11px] font-medium text-muted-foreground/80">
-      {formatDaySeparator(at)}
-    </p>
-  );
-}
-
-function MessageRow({
-  message,
-  mine,
-  receipt,
-  action,
-  state,
-  onRetry,
-  onResolve,
-  onEdit,
-  onDownload,
-  resolveAttachmentUrl,
-  onDelete,
-}: {
-  message: ChatMessage;
-  mine: boolean;
-  /** Who has read this line, or `null` when nobody has reached it yet (#816). */
-  receipt: ChatReadReceipt | null;
-  /** The assistant's proposal on this line, or `null` (#818). */
-  action: ChatAgentAction | null;
-  /** The queue's answer for this line, or undefined once the server has it (#1033). */
-  state: ChatMessageState | undefined;
-  onRetry: () => void;
-  onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
-  onEdit: (id: string, body: string) => Promise<boolean>;
-  onDownload: (attachment: ChatAttachment) => void;
-  /** The bytes a chip reads: the device's copy for a queued line, else the server's. */
-  resolveAttachmentUrl: (attachment: ChatAttachment) => Promise<string | null>;
-  onDelete: (id: string) => void;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(message.body ?? '');
-
-  const deleted = message.deletedAt !== null;
-  /** A queued line has no server row yet: nothing can be edited or deleted on it. */
-  const settled = state === undefined;
-  const editable = mine && !deleted && settled && canEditChatMessage(message.createdAt);
-
-  return (
-    <div
-      data-chat-message={message.id}
-      className={cn('flex w-full flex-col gap-1', mine ? 'items-end' : 'items-start')}
-    >
-      {message.replyTo && (
-        <p
-          dir="auto"
-          className="bidi-lines max-w-[85%] truncate rounded-lg bg-muted/60 px-2 py-1 text-[11px] text-muted-foreground"
-        >
-          {message.replyTo.deletedAt ? CHAT_THREAD_COPY.deletedReply : null}
-          {!message.replyTo.deletedAt && message.replyTo.body ? (
-            <ChatBody text={message.replyTo.body} />
-          ) : null}
-        </p>
-      )}
-
-      {action ? (
-        <ActionCard action={action} onResolve={onResolve} />
-      ) : (
-        <div
-          className={cn(
-            'max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-xs',
-            mine
-              ? 'rounded-br-md bg-primary text-primary-foreground'
-              : 'rounded-bl-md bg-muted text-foreground dark:bg-muted/70'
-          )}
-        >
-          {deleted ? (
-            <span className="text-xs italic opacity-70">{CHAT_THREAD_COPY.deletedMessage}</span>
-          ) : editing ? (
-            <div className="space-y-2">
-              {/* The same field the composer is: a message is edited with the
-                  marks it was written in, not with its markdown showing
-                  (ADR-0193). */}
-              <ChatField
-                compact
-                value={draft}
-                onChange={setDraft}
-                ariaLabel={CHAT_THREAD_COPY.editLabel}
-                labels={CHAT_FIELD_LABELS}
-                className="w-full rounded-lg bg-background/90 px-2 py-1 text-foreground"
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditing(false)}
-                  className="text-[11px] font-bold opacity-80"
-                >
-                  {CHAT_THREAD_COPY.cancel}
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (await onEdit(message.id, draft)) setEditing(false);
-                  }}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold"
-                >
-                  <Check size={12} /> {CHAT_THREAD_COPY.save}
-                </button>
-              </div>
-            </div>
-          ) : (
-            message.body && (
-              <p dir="auto" className="whitespace-pre-wrap wrap-anywhere bidi-lines">
-                <ChatBody text={message.body} />
-              </p>
-            )
-          )}
-
-          {message.attachments.length > 0 && !deleted && (
-            <ul className="mt-2 space-y-1">
-              {message.attachments.map((attachment) => {
-                const downloadLabel = CHAT_THREAD_COPY.downloadFile.replace(
-                  '{name}',
-                  attachment.fileName
-                );
-
-                return (
-                  <li key={attachment.id}>
-                    {/* A voice note is played where it sits and a picture is
-                      drawn where it sits (ADR-0113, ADR-0127, ADR-0139); every
-                      other file stays a chip. */}
-                    {chatAttachmentIsAudio(attachment.mimeType) ? (
-                      <VoiceNotePlayer
-                        conversationId={message.conversationId}
-                        attachment={attachment}
-                        mine={mine}
-                        onDownload={onDownload}
-                        resolveUrl={resolveAttachmentUrl}
-                      />
-                    ) : chatAttachmentIsInlineImage(attachment.mimeType) ? (
-                      <ChatImage
-                        conversationId={message.conversationId}
-                        attachment={attachment}
-                        label={downloadLabel}
-                        onDownload={onDownload}
-                        resolveUrl={resolveAttachmentUrl}
-                      />
-                    ) : (
-                      <AttachmentChip
-                        attachment={attachment}
-                        label={downloadLabel}
-                        onDownload={onDownload}
-                      />
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
-        <span>{chatTimeAgo(message.createdAt)}</span>
-        {state === 'queued' && (
-          <span className="inline-flex items-center gap-1">
-            <Clock size={12} />
-            {CHAT_THREAD_COPY.queued}
-          </span>
-        )}
-        {state === 'failed' && (
-          <span className="inline-flex items-center gap-1 text-destructive/80">
-            <CircleAlert size={12} />
-            {CHAT_THREAD_COPY.sendFailed}
-            <button
-              type="button"
-              onClick={onRetry}
-              className="font-bold underline-offset-2 hover:underline"
-            >
-              {CHAT_THREAD_COPY.retry}
-            </button>
-          </span>
-        )}
-        {message.editedAt && !deleted && <span>· {CHAT_THREAD_COPY.edited}</span>}
-        {receipt && <span>· {CHAT_THREAD_COPY.readReceipt}</span>}
-        {mine && !deleted && !action && settled && (
-          <>
-            {editable && (
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                aria-label={CHAT_THREAD_COPY.editLabel}
-                className="rounded p-0.5 transition-safe hover:text-foreground"
-              >
-                <Pencil size={12} />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => onDelete(message.id)}
-              aria-label={CHAT_THREAD_COPY.deleteLabel}
-              className="rounded p-0.5 transition-safe hover:text-destructive"
-            >
-              <Trash size={12} />
-            </button>
-          </>
-        )}
-      </div>
-    </div>
   );
 }

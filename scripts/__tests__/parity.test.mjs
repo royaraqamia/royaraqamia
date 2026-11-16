@@ -123,6 +123,36 @@ describe('a pair that matches', () => {
     expect(run()).toEqual([]);
   });
 
+  it('reads a companion file as the same side of the pair', () => {
+    // The screen draws three states; a module it imports draws the fourth.
+    const withoutFailed = files['web/plan-view.tsx']
+      .split('\n')
+      .filter((line) => !line.includes('PLAN_CARD_COPY.failed'))
+      .join('\n');
+    const companion =
+      "import { PLAN_CARD_COPY } from './plan-card-copy';\nexport const Failed = () => <p>{PLAN_CARD_COPY.failed}</p>;";
+
+    expect(run({ extraFiles: { 'web/plan-view.tsx': withoutFailed } }).join('\n')).toContain(
+      'key "failed" is not rendered'
+    );
+
+    const errors = run({
+      row: { web: { ...manifest.components[0].web, also: ['web/plan-rows.tsx'] } },
+      extraFiles: {
+        'web/plan-view.tsx': withoutFailed,
+        'web/plan-rows.tsx': companion,
+      },
+    });
+    expect(errors).toEqual([]);
+  });
+
+  it('fails a companion file that is not there', () => {
+    const errors = run({
+      row: { web: { ...manifest.components[0].web, also: ['web/missing.tsx'] } },
+    });
+    expect(errors.join('\n')).toContain('web/missing.tsx in "also", which does not exist');
+  });
+
   it('is what the repository itself is', () => {
     const real = validate({
       manifest: JSON.parse(readFileSync(join(ROOT, 'docs', 'mobile', 'parity.json'), 'utf8')),

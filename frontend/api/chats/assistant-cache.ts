@@ -1,28 +1,22 @@
-import { ChatsLocalStore } from '@/frontend/api/chats/local-store';
 import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
-import type { ChatAgentAllowance, ChatMessage, ChatThread } from '@/shared/contracts/chat';
+import type { ChatAgentAllowance } from '@/shared/contracts/chat';
 
 /**
  * What the floating assistant paints before the server answers (ADR-0150).
  *
  * The panel is the thread's short conversation, and a conversation that blanks
  * to a spinner every time it is opened reads as a page that forgot the member.
- * The newest page is already on the device — the thread screen writes it there —
- * so the panel reads it the same way and revalidates behind the paint.
+ * The conversation itself is the thread's own cache — `useChatThread` opens the
+ * identity's Local Store and paints the newest page it already holds (#1033),
+ * which is why this module no longer reads it a second time (#1562).
  *
- * Two pieces, both small:
+ * What is left is the one answer that exists before IndexedDB opens: which
+ * thread this member owns, and whether their plan may ask at all. That is a few
+ * hundred bytes in `localStorage`, partitioned by identity, and never an
+ * authorization: RLS still decides what a read returns.
  *
- * - the conversation itself, in the identity's Local Store (`headers`,
- *   `messages`), which is the same cache the full thread draws from and is
- *   cleared by a sign-out with everything else in that namespace;
- * - the answer the panel needs to pick a face before any request — which thread
- *   this member owns, and whether their plan may ask at all. That is a few
- *   hundred bytes in `localStorage`, partitioned by identity, and never an
- *   authorization: RLS still decides what a read returns.
- *
- * The identity the store is opened for gates a cache read, but a cache write is
- * stamped by the store's own namespace; there is no path where one account's
- * panel can paint another account's rows.
+ * The identity a read is opened for gates the cache; there is no path where one
+ * account's panel can paint another account's rows.
  */
 
 const SNAPSHOT_PREFIX = 'royaraqamia:assistant:';
@@ -35,12 +29,6 @@ export interface AssistantSnapshot {
   available: boolean;
   /** The last known meters; the live read replaces it. */
   allowance: ChatAgentAllowance | null;
-}
-
-/** A previous visit's page, read from the identity's Local Store. */
-export interface CachedConversation {
-  thread: ChatThread;
-  messages: ChatMessage[];
 }
 
 function browserStorage(): Storage | null {
@@ -127,39 +115,5 @@ export function forgetAssistantThread(identity: LocalIdentity): void {
     );
   } catch {
     // Same as the write: a cache hint, not state the panel depends on.
-  }
-}
-
-/** The last page this device held for the thread, or null with no cache. */
-export async function readCachedConversation(
-  identity: LocalIdentity,
-  threadId: string
-): Promise<CachedConversation | null> {
-  try {
-    const store = await ChatsLocalStore.open(identity);
-    const [thread, messages] = await Promise.all([
-      store.getThread(threadId),
-      store.getMessages(threadId),
-    ]);
-    if (!thread) return null;
-    return { thread, messages };
-  } catch {
-    // IndexedDB refused or is unavailable: fall through to the network.
-    return null;
-  }
-}
-
-/** Writes the page the panel just read into the same store the thread uses. */
-export async function saveCachedConversation(
-  identity: LocalIdentity,
-  thread: ChatThread,
-  messages: readonly ChatMessage[]
-): Promise<void> {
-  try {
-    const store = await ChatsLocalStore.open(identity);
-    await store.saveThread(thread);
-    await store.saveMessages(thread.id, messages, { replace: true });
-  } catch {
-    // A cache that cannot be written is a slower next open, not a failed one.
   }
 }

@@ -1,51 +1,29 @@
 'use client';
 
-import { memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
 
-import {
-  confirmChatAgentAction,
-  getChatAttachmentUrl,
-  getChatMessages,
-  getChatThread,
-  markChatRead,
-  rejectChatAgentAction,
-  startAssistantChat,
-} from '@/frontend/api/chats';
+import { startAssistantChat } from '@/frontend/api/chats';
 import {
   forgetAssistantThread,
   readAssistantSnapshot,
-  readCachedConversation,
-  saveCachedConversation,
   writeAssistantSnapshot,
   type AssistantSnapshot,
 } from '@/frontend/api/chats/assistant-cache';
 import { rememberAssistantOpened } from './assistant-hint';
 import { useChatAssistant } from '@/frontend/state/chats/use-chat-assistant';
-import { clearAssistantTurn } from '@/frontend/state/chats/assistant-turn';
+import { useChatThread } from '@/frontend/state/chats/use-chat-thread';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
-import { ActionCard } from '@/frontend/ui/chats/chat-agent-action-card';
+import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { AssistantComposer } from '@/frontend/ui/chats/chat-assistant-composer';
-import { pendingIsStored } from '@/frontend/state/chats/pending-turn';
-import { AssistantMark } from '@/frontend/ui/chats/assistant-mark';
-import { ASSISTANT_COPY } from '@/frontend/ui/chats/assistant-copy';
-import { AttachmentChip } from '@/frontend/ui/chats/attachment-chip';
-import { ChatImage } from '@/frontend/ui/chats/chat-image';
+import { ChatMessageList } from '@/frontend/ui/chats/chat-message-list';
 import { CHAT_THREAD_COPY } from '@/frontend/ui/chats/chat-thread-copy';
-import { VoiceNotePlayer } from '@/frontend/ui/chats/voice-note-player';
 import { ThreadIntro, stateOf } from '@/frontend/ui/chats/chat-thread-view';
-import {
-  chatAttachmentIsAudio,
-  chatAttachmentIsInlineImage,
-  type ChatAttachment,
-  type ChatMessage,
-  type ChatThread,
-} from '@/shared/contracts/chat';
-import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+import type { ChatAttachment } from '@/shared/contracts/chat';
 import { AssistantOrb } from './assistant-orb';
 import { ASSISTANT_PANEL_COPY } from './assistant-panel-copy';
 import { ScreenContextPublisher } from '@/frontend/ui/ScreenContextPublisher';
@@ -57,11 +35,19 @@ type PanelState = 'loading' | 'guest' | 'unavailable' | 'failed' | 'ready';
 /**
  * نور in the corner, opened over whatever the member was reading (ADR-0143).
  *
- * The panel is the assistant's *short* conversation, not a second version of it:
+ * The panel is the assistant's *short conversation*, not a second version of it:
  * the same thread the site's `/chats/<id>` screen draws, read through the same
- * endpoints, written through the same composer. It creates that thread on open
- * — `POST /api/chats/assistant` is idempotent — so a visitor who never opens the
- * panel never gets a row, and a member who opens it twice gets one thread.
+ * state, written through the same composer, and drawn by the same message list
+ * (#1562). It creates that thread on open — `POST /api/chats/assistant` is
+ * idempotent — so a visitor who never opens the panel never gets a row, and a
+ * member who opens it twice gets one thread.
+ *
+ * Two things the panel owns and the thread does not: the conversation is opened
+ * lazily, and it is *only connected while it is on screen* — `useChatThread`'s
+ * `active` flag. A closed panel keeps the rows it last painted in memory and
+ * holds no Local Store connection and no subscription, which is what lets the
+ * launcher keep it mounted (ADR-0150) without paying for a conversation nobody
+ * is reading.
  *
  * The states are the server's answers, not guesses: no provider key
  * (`available`), or a day whose allowance is spent (the composer says so
@@ -81,20 +67,14 @@ export function AssistantPanel({
   const { identity } = useLocalIdentity();
   const userId = user?.id ?? null;
   const [threadId, setThreadId] = useState<string | null>(null);
-  const [thread, setThread] = useState<ChatThread | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [actions, setActions] = useState<ChatAgentAction[]>([]);
-  const [opening, setOpening] = useState(true);
   const [failure, setFailure] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [draft, setDraft] = useState('');
   const [remembered, setRemembered] = useState<AssistantSnapshot | null>(null);
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-  /** Whether the reader is at the bottom: only then may a new line move them. */
-  const pinnedRef = useRef(true);
-  /** True once this panel has ever had a page to draw, cached or live. */
-  const paintedRef = useRef(false);
-  /** The thread the effect has settled on, readable without re-running it. */
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [removing, setRemoving] = useState(false);
+  /** The thread the bootstrap has settled on, readable without re-running it. */
   const threadIdRef = useRef<string | null>(null);
 
   const rememberThread = useCallback((id: string | null) => {
@@ -102,162 +82,91 @@ export function AssistantPanel({
     setThreadId(id);
   }, []);
 
+  const {
+    thread,
+    messages,
+    actions,
+    isLoading,
+    readFailed,
+    hasOlder,
+    pending,
+    loadOlder,
+    retrySend,
+    attachmentUrl,
+    edit,
+    remove,
+    resolveAction,
+    refresh,
+  } = useChatThread(threadId ?? '', { active: open && Boolean(threadId) });
+
+  const assistant = useChatAssistant(threadId ?? '', Boolean(userId && threadId), () => {
+    void refresh();
+  });
+
   // A different member is a different conversation. The panel is mounted at the
   // root and outlives a sign-out, so nothing of the previous identity may stay
-  // in the component — not the thread, its messages, the draft or the painted
-  // flag that would otherwise keep them on screen.
+  // in the component — not the thread, its messages, the draft or the face.
   useEffect(() => {
     rememberThread(null);
-    setThread(null);
-    setMessages([]);
-    setActions([]);
     setDraft('');
     setFailure(null);
+    setNotice(null);
     setRemembered(null);
-    paintedRef.current = false;
-    setOpening(true);
   }, [identity, rememberThread]);
 
-  // A fresh open starts at the newest line; an earlier scroll belongs to the
-  // page that was on screen before the close.
-  useEffect(() => {
-    if (open) pinnedRef.current = true;
-  }, [open]);
-
-  /** One read of the header and the newest page, and the watermark it stamps. */
-  const loadMessages = useCallback(
-    async (id: string) => {
-      const [header, page] = await Promise.all([getChatThread(id), getChatMessages(id)]);
-      // The composer needs the thread's own quota, so a read that answers lines
-      // but no header is not a drawable panel: it is the failure it looks like.
-      if (!header) throw new Error('the assistant thread is not readable');
-      setThread(header);
-      setMessages(page.messages);
-      setActions(page.actions ?? []);
-      paintedRef.current = true;
-      // Seen is stamped once per open, the way the thread's screen does: the
-      // badge counts what the reader has not looked at, and this panel is a look.
-      if (page.messages.length > 0) void markChatRead(id);
-      // The page the panel just read is the page the full thread will open to.
-      void saveCachedConversation(identity, header, page.messages);
-    },
-    [identity]
-  );
-
-  // Opening is idempotent, so the effect can re-run on a retry without
-  // inventing a second thread. A guest ends here too, with no request made.
+  // Opening is idempotent, so the effect can re-run on a retry without inventing
+  // a second thread. A guest ends here too, with no request made.
   useEffect(() => {
     if (!open || sessionLoading) return;
-    if (!userId) {
-      setOpening(false);
+    if (!userId) return;
+
+    const snapshot = readAssistantSnapshot(identity);
+    if (snapshot) setRemembered(snapshot);
+
+    // A thread this component already holds is revalidated by the hook, not
+    // re-created; a remembered id is handed to the hook, which paints the
+    // device's page first and asks the server behind it (ADR-0150).
+    if (threadIdRef.current) return;
+    const rememberedId = snapshot?.threadId ?? null;
+    if (rememberedId) {
+      rememberThread(rememberedId);
       return;
     }
 
     let alive = true;
     setFailure(null);
 
-    const snapshot = readAssistantSnapshot(identity);
-    if (snapshot) setRemembered(snapshot);
-
-    void (async () => {
-      // The device is the first answer: paint the newest page it already holds,
-      // then revalidate behind it. A reopen within this page load is already
-      // painted, so this only reads on a cold start.
-      if (!paintedRef.current && snapshot?.threadId) {
-        const cached = await readCachedConversation(identity, snapshot.threadId);
+    void startAssistantChat()
+      .then((result) => {
         if (!alive) return;
-        if (cached) {
-          rememberThread(snapshot.threadId);
-          setThread(cached.thread);
-          setMessages(cached.messages);
-          setActions([]);
-          paintedRef.current = true;
-          setOpening(false);
+        if (!result.conversationId) {
+          setFailure(result.error ?? ASSISTANT_PANEL_COPY.failed);
+          return;
         }
-      }
-
-      if (!paintedRef.current) setOpening(true);
-
-      let id = threadIdRef.current ?? snapshot?.threadId ?? null;
-
-      try {
-        // A remembered thread is read directly; the open call is only needed
-        // when the member has never opened the panel or the thread is gone.
-        if (id) {
-          try {
-            await loadMessages(id);
-          } catch {
-            // A failed read with a page already on screen is an offline open,
-            // not a vanished thread: keep it rather than forgetting the id.
-            if (!paintedRef.current) {
-              forgetAssistantThread(identity);
-              rememberThread(null);
-              id = null;
-            }
-          }
-        }
-
-        if (!id) {
-          const result = await startAssistantChat();
-          if (!alive) return;
-          if (!result.conversationId) {
-            setFailure(result.error ?? ASSISTANT_PANEL_COPY.failed);
-            return;
-          }
-          id = result.conversationId;
-          rememberThread(id);
-          await loadMessages(id);
-        }
-
-        if (!alive) return;
-        writeAssistantSnapshot(identity, {
-          threadId: id,
-          available: snapshot?.available ?? true,
-          allowance: snapshot?.allowance ?? null,
-        });
+        rememberThread(result.conversationId);
         rememberAssistantOpened();
-      } catch {
+      })
+      .catch(() => {
         if (alive) setFailure(ASSISTANT_PANEL_COPY.failed);
-      } finally {
-        if (alive) setOpening(false);
-      }
-    })();
+      });
 
     return () => {
       alive = false;
     };
-  }, [open, userId, identity, sessionLoading, retryKey, loadMessages, rememberThread]);
+  }, [open, userId, identity, sessionLoading, retryKey, rememberThread]);
 
-  const assistant = useChatAssistant(threadId ?? '', Boolean(userId && threadId), () => {
-    if (threadIdRef.current) {
-      void loadMessages(threadIdRef.current).catch(() => undefined);
-    }
-  });
-
-  // The question the composer painted, drawn until the thread's read carries the
-  // stored row (#1541). The panel's own read is what replaces it; the local copy
-  // goes the moment that row is on screen.
-  const pendingTurn =
-    assistant.pending && !pendingIsStored(assistant.pending, messages) ? assistant.pending : null;
-  const pendingId = pendingTurn?.message.id ?? null;
-  const { dismissPending, pendingUrl, retryPending } = assistant;
-
-  useEffect(() => {
-    if (assistant.pending && pendingIsStored(assistant.pending, messages)) dismissPending();
-  }, [assistant.pending, messages, dismissPending]);
-
-  // A reopen revalidates the meters without blanking the conversation. The
-  // first open is already the hook's own read, so it is not asked twice.
-  const refreshedOnceRef = useRef(false);
-  const refreshAssistant = assistant.refresh;
+  // A remembered thread the device cannot paint and the server will not answer
+  // is not a thread any more: forget it, and let the retry create the one the
+  // server owns. A failed read with a page already on screen is an offline open
+  // and keeps what it has.
   useEffect(() => {
     if (!open || !userId || !threadId) return;
-    if (!refreshedOnceRef.current) {
-      refreshedOnceRef.current = true;
-      return;
-    }
-    void refreshAssistant();
-  }, [open, userId, threadId, refreshAssistant]);
+    if (isLoading || thread || !readFailed) return;
+
+    forgetAssistantThread(identity);
+    rememberThread(null);
+    setFailure(ASSISTANT_PANEL_COPY.failed);
+  }, [open, userId, threadId, isLoading, thread, readFailed, identity, rememberThread]);
 
   // The live answer replaces the remembered one the moment it lands.
   useEffect(() => {
@@ -269,46 +178,23 @@ export function AssistantPanel({
     });
   }, [identity, userId, threadId, assistant.available, assistant.allowance]);
 
-  // One frame per change, and only while the reader is at the bottom: a long
-  // answer must not pull the screen away from an earlier message they opened.
-  // `scrollIntoView` would also scroll the page behind the dialog; scrolling
-  // the panel's own element keeps the movement inside the conversation.
-  useEffect(() => {
-    if (!open) return;
-    const frame = requestAnimationFrame(() => {
-      const element = scrollerRef.current;
-      if (!element || !pinnedRef.current) return;
-      element.scrollTop = element.scrollHeight;
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [open, messages.length, assistant.streamingText, pendingId]);
-
-  const actionByMessage = useMemo(() => {
-    const byMessage = new Map<string, ChatAgentAction>();
-    for (const action of actions) byMessage.set(action.messageId, action);
-    return byMessage;
-  }, [actions]);
-
   // Before the live read answers, the last remembered face is the honest one:
   // whether the deployment has a provider key is the answer the panel draws
   // first, and the live read replaces it a moment later.
   const measured = assistant.allowance !== null;
   const available = measured ? assistant.available : (remembered?.available ?? true);
 
-  const state: PanelState =
-    sessionLoading || (opening && !thread)
-      ? 'loading'
-      : !userId
-        ? 'guest'
-        : failure && !thread
+  const state: PanelState = sessionLoading
+    ? 'loading'
+    : !userId
+      ? 'guest'
+      : thread
+        ? available
+          ? 'ready'
+          : 'unavailable'
+        : failure || readFailed
           ? 'failed'
-          : !threadId
-            ? 'failed'
-            : !thread
-              ? 'loading'
-              : !available
-                ? 'unavailable'
-                : 'ready';
+          : 'loading';
 
   async function ask(body: string, files: File[]) {
     // The field empties on the press, not on the answer (#1541).
@@ -316,44 +202,36 @@ export function AssistantPanel({
     await assistant.ask(body, files);
   }
 
-  const resolveAction = useCallback(
-    async (actionId: string, answer: 'confirm' | 'reject'): Promise<string | null> => {
-      if (!threadId) return ASSISTANT_PANEL_COPY.failed;
-      try {
-        const updated =
-          answer === 'confirm'
-            ? await confirmChatAgentAction(threadId, actionId)
-            : await rejectChatAgentAction(threadId, actionId);
-        setActions((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-        // The proposal is answered, so the row's "needs you" line is done.
-        clearAssistantTurn(threadId);
-        return null;
-      } catch (error) {
-        return error instanceof Error && error.message
-          ? error.message
-          : ASSISTANT_PANEL_COPY.failed;
-      }
-    },
-    [threadId]
-  );
-
   const download = useCallback(
     async (attachment: ChatAttachment) => {
-      if (!threadId) return;
-      const signed = await getChatAttachmentUrl(threadId, attachment.id);
-      if (signed) window.location.assign(signed.url);
+      const signed = await attachmentUrl(attachment);
+      if (signed) window.location.assign(signed);
     },
-    [threadId]
+    [attachmentUrl]
   );
 
-  /** A staged file's preview is the bytes themselves; the browser opens its own. */
-  const downloadPending = useCallback(
-    async (attachment: ChatAttachment) => {
-      const url = await pendingUrl(attachment);
-      if (url) window.location.assign(url);
-    },
-    [pendingUrl]
-  );
+  // A delete is the one write the panel keeps a dialog for: the row's own menu
+  // is one tap, and a tombstone is not undoable.
+  async function confirmRemove() {
+    if (!confirmDelete) return;
+    setRemoving(true);
+    try {
+      setNotice(await remove(confirmDelete));
+      setConfirmDelete(null);
+    } finally {
+      setRemoving(false);
+    }
+  }
+
+  function retry() {
+    setFailure(null);
+    setNotice(null);
+    if (threadId) {
+      void refresh();
+      return;
+    }
+    setRetryKey((key) => key + 1);
+  }
 
   /**
    * A state that is not a conversation does not need a conversation's height:
@@ -418,105 +296,59 @@ export function AssistantPanel({
           </div>
         </header>
 
-        <div
-          ref={scrollerRef}
-          onScroll={() => {
-            const element = scrollerRef.current;
-            pinnedRef.current = element
-              ? element.scrollHeight - element.scrollTop - element.clientHeight < 96
-              : true;
-          }}
-          className="min-h-0 flex-1 overscroll-contain overflow-y-auto dialog-scrollbar px-4 py-4"
-        >
-          {state === 'loading' ? (
-            <PanelLoading />
-          ) : state === 'guest' ? (
-            <PanelGuest onDismiss={onDismiss} />
-          ) : state === 'unavailable' ? (
-            <PanelUnavailable />
-          ) : state === 'failed' ? (
-            <PanelFailed onRetry={() => setRetryKey((key) => key + 1)} />
-          ) : (
-            <div
-              role="log"
-              aria-live="polite"
-              aria-busy={assistant.isStreaming}
-              className="flex min-h-full flex-col gap-3"
-            >
-              {messages.length === 0 && !assistant.isStreaming && !pendingTurn ? (
-                thread ? (
-                  // The same first screen the full thread opens on: one mark,
-                  // the name and the sentence, centred in the list (ADR-0143).
-                  <ThreadIntro
-                    thread={thread}
-                    counterpart={null}
-                    state={stateOf(thread)}
-                    note={ASSISTANT_PANEL_COPY.intro}
-                  />
-                ) : null
-              ) : null}
-
-              {messages.map((message) => (
-                <PanelMessage
-                  key={message.id}
-                  message={message}
-                  action={actionByMessage.get(message.id) ?? null}
-                  onResolve={resolveAction}
-                  onDownload={download}
+        {state === 'ready' && thread ? (
+          <ChatMessageList
+            thread={thread}
+            messages={messages}
+            isMine={(message) => message.senderKind === 'user'}
+            actions={actions}
+            assistant={assistant}
+            pending={pending}
+            hasOlder={hasOlder}
+            onLoadOlder={loadOlder}
+            onRetry={retrySend}
+            onResolve={resolveAction}
+            onEdit={edit}
+            onDelete={(id) => setConfirmDelete(id)}
+            onDownload={(attachment) => void download(attachment)}
+            resolveAttachmentUrl={attachmentUrl}
+            live
+            attachmentOnlyLabel={ASSISTANT_PANEL_COPY.attachmentOnly}
+            intro={
+              messages.length === 0 ? (
+                // The same first screen the full thread opens on: one mark, the
+                // name and the sentence, centred in the list (ADR-0143).
+                <ThreadIntro
+                  thread={thread}
+                  counterpart={null}
+                  state={stateOf(thread)}
+                  note={ASSISTANT_PANEL_COPY.intro}
                 />
-              ))}
+              ) : null
+            }
+          />
+        ) : (
+          <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto dialog-scrollbar px-4 py-4">
+            {state === 'loading' ? (
+              <PanelLoading />
+            ) : state === 'guest' ? (
+              <PanelGuest onDismiss={onDismiss} />
+            ) : state === 'unavailable' ? (
+              <PanelUnavailable />
+            ) : (
+              <PanelFailed onRetry={retry} />
+            )}
+          </div>
+        )}
 
-              {pendingTurn ? (
-                <>
-                  <PanelMessage
-                    message={pendingTurn.message}
-                    action={null}
-                    onResolve={resolveAction}
-                    onDownload={(attachment) => void downloadPending(attachment)}
-                    resolveUrl={pendingUrl}
-                  />
-                  {pendingTurn.status === 'failed' ? (
-                    <p className="flex items-center gap-1 self-end text-[10px] text-destructive/80">
-                      {CHAT_THREAD_COPY.sendFailed}
-                      <button
-                        type="button"
-                        onClick={retryPending}
-                        className="font-bold underline-offset-2 hover:underline"
-                      >
-                        {CHAT_THREAD_COPY.retry}
-                      </button>
-                    </p>
-                  ) : null}
-                </>
-              ) : null}
-
-              {assistant.toolsUsed.length > 0 ? (
-                <details className="group text-[10px] text-muted-foreground/70">
-                  <summary className="cursor-pointer list-none font-medium">
-                    {ASSISTANT_PANEL_COPY.provenance}
-                  </summary>
-                  <p className="mt-1">{assistant.toolsUsed.join(' · ')}</p>
-                </details>
-              ) : null}
-
-              {assistant.interrupted ? (
-                <AgentBubble>
-                  <p className="whitespace-pre-wrap wrap-anywhere">{assistant.interrupted}</p>
-                  <p className="mt-1 text-[10px] italic opacity-70">{ASSISTANT_COPY.interrupted}</p>
-                </AgentBubble>
-              ) : null}
-
-              {assistant.isStreaming && assistant.streamingText ? (
-                <AgentBubble>
-                  <p className="whitespace-pre-wrap wrap-anywhere">
-                    {assistant.streamingText}
-                    <span className="ms-0.5 inline-block h-4 w-[2px] animate-pulse bg-current align-middle" />
-                  </p>
-                </AgentBubble>
-              ) : null}
-            </div>
-          )}
-        </div>
+        {(notice || (state === 'ready' && failure)) && (
+          <p
+            role="alert"
+            className="shrink-0 border-t border-border/40 bg-muted/40 px-4 py-2 text-xs font-medium text-foreground/80"
+          >
+            {notice ?? failure}
+          </p>
+        )}
 
         {state === 'ready' && thread ? (
           <AssistantComposer
@@ -530,108 +362,19 @@ export function AssistantPanel({
           />
         ) : null}
       </DialogContent>
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title={CHAT_THREAD_COPY.deleteMessageTitle}
+        message={CHAT_THREAD_COPY.deleteMessageMessage}
+        confirmLabel={CHAT_THREAD_COPY.delete}
+        cancelLabel={CHAT_THREAD_COPY.cancel}
+        variant="danger"
+        isConfirming={removing}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => void confirmRemove()}
+      />
     </Dialog>
-  );
-}
-
-/**
- * One line of the thread: the member's on the end, نور's on the start.
- *
- * Memoized because a streaming answer re-renders the panel on every frame; the
- * message rows themselves do not change while the newest bubble grows, and a
- * long thread must not be re-drawn per token.
- */
-const PanelMessage = memo(function PanelMessage({
-  message,
-  action,
-  onResolve,
-  onDownload,
-  resolveUrl,
-}: {
-  message: ChatMessage;
-  action: ChatAgentAction | null;
-  onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
-  onDownload: (attachment: ChatAttachment) => void;
-  /** The device's bytes for a line the panel painted itself (#1541). */
-  resolveUrl?: (attachment: ChatAttachment) => Promise<string | null>;
-}) {
-  const mine = message.senderKind === 'user';
-
-  if (action) {
-    return <ActionCard action={action} onResolve={onResolve} />;
-  }
-
-  const content = (
-    <>
-      {message.deletedAt ? (
-        <span className="text-xs italic opacity-70">{CHAT_THREAD_COPY.deletedMessage}</span>
-      ) : message.body ? (
-        <p className="whitespace-pre-wrap wrap-anywhere">{message.body}</p>
-      ) : (
-        <p className="text-xs italic opacity-70">{ASSISTANT_PANEL_COPY.attachmentOnly}</p>
-      )}
-
-      {message.attachments.length > 0 && !message.deletedAt ? (
-        <ul className="mt-2 space-y-1">
-          {message.attachments.map((attachment) => {
-            const label = ASSISTANT_PANEL_COPY.downloadFile.replace('{name}', attachment.fileName);
-            return (
-              <li key={attachment.id}>
-                {chatAttachmentIsAudio(attachment.mimeType) ? (
-                  <VoiceNotePlayer
-                    conversationId={message.conversationId}
-                    attachment={attachment}
-                    mine={mine}
-                    onDownload={onDownload}
-                    resolveUrl={resolveUrl}
-                  />
-                ) : chatAttachmentIsInlineImage(attachment.mimeType) ? (
-                  <ChatImage
-                    conversationId={message.conversationId}
-                    attachment={attachment}
-                    label={label}
-                    onDownload={onDownload}
-                    resolveUrl={resolveUrl}
-                  />
-                ) : (
-                  <AttachmentChip attachment={attachment} label={label} onDownload={onDownload} />
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
-    </>
-  );
-
-  return (
-    <div className={cn('flex w-full flex-col gap-1', mine ? 'items-end' : 'items-start')}>
-      {mine ? (
-        <div className="max-w-[88%] rounded-2xl rounded-br-md bg-primary px-3 py-2 text-sm leading-relaxed text-primary-foreground shadow-xs">
-          {content}
-        </div>
-      ) : (
-        <AgentBubble>{content}</AgentBubble>
-      )}
-    </div>
-  );
-});
-
-/**
- * The assistant's side of the line: a small orb, then the bubble. The orb is
- * the same mark as the launcher, so the answer is visibly نور's rather than a
- * grey box the reader has to attribute.
- */
-function AgentBubble({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex max-w-[92%] items-end gap-2">
-      {/* A still mark per line: the animated orb belongs to the door and the
-          header, not to every answer in a thread that may hold dozens. */}
-      <AssistantMark className="mb-0.5 size-6 shrink-0" glyphClassName="size-[58%]" />
-      <div className="rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
-        {children}
-      </div>
-    </div>
   );
 }
 

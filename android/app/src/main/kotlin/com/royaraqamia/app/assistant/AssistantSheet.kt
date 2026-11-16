@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,11 +13,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,12 +49,13 @@ import com.royaraqamia.app.chats.ChatAttachments
 import com.royaraqamia.app.chats.ChatComposeFile
 import com.royaraqamia.app.chats.ChatComposerAttach
 import com.royaraqamia.app.chats.ChatFailure
+import com.royaraqamia.app.chats.ChatMessageList
+import com.royaraqamia.app.chats.ChatThreadCopy
 import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.contracts.ApiResult
-import com.royaraqamia.app.contracts.generated.ChatAssistantStateResponseAllowance
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItem
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItemSenderKind
-import com.royaraqamia.app.contracts.generated.ChatThreadResponseThreadAttachmentQuota
+import com.royaraqamia.app.contracts.generated.ChatThreadResponseThread
 import com.royaraqamia.app.contracts.generated.ChatThreadsResponseThreadsItemKind
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
@@ -104,7 +102,6 @@ fun AssistantSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
-    val listState = rememberLazyListState()
     val report = rememberUpdatedState(onSnapshot)
 
     var state by remember {
@@ -120,7 +117,14 @@ fun AssistantSheet(
     }
     var threadId by remember { mutableStateOf(snapshot?.threadId) }
     var quota by remember { mutableStateOf(snapshot?.quota) }
+    var header by remember { mutableStateOf<ChatThreadResponseThread?>(null) }
     var messages by remember { mutableStateOf(snapshot?.messages ?: emptyList()) }
+    var cursor by remember { mutableStateOf<String?>(null) }
+    var hasOlder by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<String?>(null) }
+    var editingText by remember { mutableStateOf("") }
+    var deleting by remember { mutableStateOf<String?>(null) }
+    var deletingBusy by remember { mutableStateOf(false) }
     var available by remember { mutableStateOf(snapshot?.available ?: true) }
     var allowance by remember { mutableStateOf(snapshot?.allowance) }
     var openActions by remember { mutableStateOf(0L) }
@@ -163,21 +167,40 @@ fun AssistantSheet(
 
     suspend fun load(id: String): Boolean {
         var readFailed = false
-        when (val header = repository.thread(id)) {
+        when (val read = repository.thread(id)) {
             is ApiResult.Success -> {
-                quota = header.value.attachmentQuota
-                openActions = header.value.openActions ?: 0
+                header = read.value
+                quota = read.value.attachmentQuota
+                openActions = read.value.openActions ?: 0
             }
             is ApiResult.Failure -> readFailed = true
         }
         when (val page = repository.messages(id)) {
             is ApiResult.Success -> {
                 messages = page.value.messages
+                cursor = page.value.nextCursor
+                hasOlder = page.value.nextCursor != null
                 repository.markRead(id)
             }
             is ApiResult.Failure -> readFailed = true
         }
         return readFailed
+    }
+
+    /** The page above the one on screen: the reader's own request, not a clock. */
+    suspend fun loadOlder() {
+        val id = threadId ?: return
+        val before = cursor ?: return
+        when (val page = repository.messages(id, before)) {
+            is ApiResult.Success -> {
+                messages = (page.value.messages + messages).distinctBy { it.id }
+                cursor = page.value.nextCursor
+                hasOlder = page.value.nextCursor != null
+                notice = null
+            }
+            is ApiResult.Failure ->
+                notice = ChatFailure.sentenceOf(page.error) ?: AssistantPanelCopy.FAILED
+        }
     }
 
     /** Hands the page just painted to the shell, for the next open. */
@@ -272,27 +295,6 @@ fun AssistantSheet(
                 else -> AssistantUiState.Ready
             }
         publish()
-    }
-
-    LaunchedEffect(messages.size, turn?.streaming) {
-        // The last row is the streaming bubble while a turn is in flight, and
-        // may be preceded by the tools line; the list itself knows the index.
-        val target =
-            if (asking) {
-                (listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0)
-            } else {
-                messages.lastIndex
-            }
-        if (target < 0) return@LaunchedEffect
-
-        // Follow only while the reader is at the bottom: an earlier answer they
-        // scrolled back to must not be pulled away by the next token. A direct
-        // scroll, not an animation, because a token restarts the effect.
-        val visible = listState.layoutInfo.visibleItemsInfo
-        val atBottom =
-            visible.isEmpty() ||
-                visible.last().index >= listState.layoutInfo.totalItemsCount - 2
-        if (atBottom) listState.scrollToItem(target)
     }
 
     fun stage(picked: List<ChatComposeFile>) {
@@ -408,11 +410,37 @@ fun AssistantSheet(
                         )
                     AssistantUiState.Ready, AssistantUiState.Asking ->
                         AssistantConversation(
+                            header = header,
                             messages = messages,
                             streaming = turn?.streaming.orEmpty(),
                             tools = turn?.tools.orEmpty(),
                             asking = asking,
-                            listState = listState,
+                            editing = editing,
+                            editText = editingText,
+                            onEditStart = { message ->
+                                editing = message.id
+                                editingText = message.body.orEmpty()
+                            },
+                            onEditText = { editingText = it },
+                            onEditCancel = { editing = null },
+                            onEditSave = { message ->
+                                scope.launch {
+                                    when (val result = repository.edit(message.id, editingText.trim())) {
+                                        is ApiResult.Success -> {
+                                            editing = null
+                                            notice = null
+                                            threadId?.let { load(it) }
+                                        }
+                                        is ApiResult.Failure ->
+                                            notice =
+                                                ChatFailure.sentenceOf(result.error)
+                                                    ?: AssistantPanelCopy.FAILED
+                                    }
+                                }
+                            },
+                            onDelete = { message -> deleting = message.id },
+                            hasOlder = hasOlder,
+                            onLoadOlder = { scope.launch { loadOlder() } },
                             type = type,
                             onOpenAttachment = ::openAttachment,
                         )
@@ -491,6 +519,52 @@ fun AssistantSheet(
             }
         }
     }
+
+    // The one write the sheet keeps a dialog for: the row's own control is one
+    // tap, and a tombstone is not undoable.
+    val doomed = deleting
+    if (doomed != null) {
+        AlertDialog(
+            onDismissRequest = { if (!deletingBusy) deleting = null },
+            title = { Text(ChatThreadCopy.DELETE_MESSAGE_TITLE) },
+            text = {
+                Text(
+                    text = ChatThreadCopy.DELETE_MESSAGE_MESSAGE,
+                    style = LocalRoyTypeScale.current.small,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !deletingBusy,
+                    onClick = {
+                        val id = threadId ?: return@TextButton
+                        scope.launch {
+                            deletingBusy = true
+                            when (val result = repository.delete(doomed)) {
+                                is ApiResult.Success -> {
+                                    notice = null
+                                    load(id)
+                                }
+                                is ApiResult.Failure ->
+                                    notice =
+                                        ChatFailure.sentenceOf(result.error)
+                                            ?: AssistantPanelCopy.FAILED
+                            }
+                            deletingBusy = false
+                            deleting = null
+                        }
+                    },
+                ) {
+                    Text(text = ChatThreadCopy.DELETE)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleting = null }, enabled = !deletingBusy) {
+                    Text(text = ChatThreadCopy.CANCEL)
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -546,38 +620,52 @@ private fun AssistantStatePanel(
 
 @Composable
 private fun AssistantConversation(
+    header: ChatThreadResponseThread?,
     messages: List<ChatMessagePageResponseMessagesItem>,
     streaming: String,
     tools: List<String>,
     asking: Boolean,
-    listState: LazyListState,
+    editing: String?,
+    editText: String,
+    onEditStart: (ChatMessagePageResponseMessagesItem) -> Unit,
+    onEditText: (String) -> Unit,
+    onEditCancel: () -> Unit,
+    onEditSave: (ChatMessagePageResponseMessagesItem) -> Unit,
+    onDelete: (ChatMessagePageResponseMessagesItem) -> Unit,
+    hasOlder: Boolean,
+    onLoadOlder: () -> Unit,
     type: RoyTypeScale,
     onOpenAttachment: (String) -> Unit,
 ) {
-    LazyColumn(
-        state = listState,
+    ChatMessageList(
+        thread = header,
+        messages = messages,
+        mine = { message ->
+            message.senderKind == ChatMessagePageResponseMessagesItemSenderKind.USER
+        },
+        onDownload = onOpenAttachment,
+        editing = editing,
+        editText = editText,
+        onEditStart = onEditStart,
+        onEditText = onEditText,
+        onEditCancel = onEditCancel,
+        onEditSave = onEditSave,
+        onDelete = onDelete,
+        hasOlder = hasOlder,
+        onLoadOlder = onLoadOlder,
+        emptyBody = AssistantPanelCopy.ATTACHMENT_ONLY,
+        followKey = listOf(messages.size, asking, streaming.length, tools.size),
         modifier = Modifier.fillMaxWidth().fillMaxHeight(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(vertical = 8.dp),
-    ) {
-        if (messages.isEmpty() && !asking) {
-            item {
-                AssistantIntro()
-            }
-        }
-
-        items(messages, key = { it.id }) { message ->
-            AssistantMessage(message = message, type = type, onOpenAttachment = onOpenAttachment)
-        }
-
-        if (tools.isNotEmpty()) {
-            item {
+        intro = if (messages.isEmpty() && !asking) {
+            { AssistantIntro() }
+        } else {
+            null
+        },
+        trailing = {
+            if (tools.isNotEmpty()) {
                 Provenance(tools = tools, type = type)
             }
-        }
-
-        if (asking && streaming.isNotEmpty()) {
-            item {
+            if (asking && streaming.isNotEmpty()) {
                 AssistantBubble {
                     Text(
                         text = streaming,
@@ -586,8 +674,8 @@ private fun AssistantConversation(
                     )
                 }
             }
-        }
-    }
+        },
+    )
 }
 
 /**
@@ -640,64 +728,6 @@ private fun AssistantIntro() {
 }
 
 @Composable
-private fun AssistantMessage(
-    message: ChatMessagePageResponseMessagesItem,
-    type: RoyTypeScale,
-    onOpenAttachment: (String) -> Unit,
-) {
-    val mine = message.senderKind == ChatMessagePageResponseMessagesItemSenderKind.USER
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (mine) Arrangement.End else Arrangement.Start,
-        verticalAlignment = Alignment.Top,
-    ) {
-        if (!mine && message.senderKind == ChatMessagePageResponseMessagesItemSenderKind.AGENT) {
-            AssistantMark(size = 24.dp)
-        }
-        Column(
-            modifier = Modifier.padding(start = if (mine) 0.dp else 6.dp).widthIn(max = 300.dp),
-            horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            if (mine) RoyColors.primary else RoyColors.muted.copy(alpha = 0.7f)
-                        )
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-            ) {
-                Text(
-                    text =
-                        when {
-                            message.deletedAt != null -> AssistantPanelCopy.ATTACHMENT_ONLY
-                            !message.body.isNullOrBlank() -> message.body
-                            message.attachments.isNotEmpty() -> AssistantPanelCopy.ATTACHMENT_ONLY
-                            else -> ""
-                        },
-                    style = type.small,
-                    color = if (mine) RoyColors.primaryForeground else RoyColors.foreground,
-                )
-            }
-            message.attachments.forEach { attachment ->
-                Text(
-                    text = AssistantPanelCopy.DOWNLOAD_FILE.replace("{name}", attachment.fileName),
-                    style = type.xs,
-                    color = RoyColors.primary,
-                    modifier =
-                        Modifier
-                            .padding(top = 4.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { onOpenAttachment(attachment.id) }
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun AssistantBubble(content: @Composable () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -718,3 +748,5 @@ private fun AssistantBubble(content: @Composable () -> Unit) {
         }
     }
 }
+
+

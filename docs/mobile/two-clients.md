@@ -127,6 +127,11 @@ the gate). `npm run check:parity` fails when
 A component that draws the site's design but must not be paired yet is listed under `exempt` with a
 reason, the way `screens.json` lists a surface the app does not draw.
 
+A surface can be composed of more than one file — the thread's rows and days are their own module
+(#1562) — so a side may name `also` beside `component`. The reference is still the file the surface
+mounts; the `also` files are read as the same source for the copy and icon checks, which is what
+keeps one pair answerable for every string the surface draws.
+
 `shared/copy/<surface>.json` is the copy source: `npm run copy:generate` writes the site's module and
 the app's object, and `npm run check:copy` fails a stale one. Neither client spells a user-facing
 string, because Arabic writes a word's marks in more than one order and the two compare unequal while

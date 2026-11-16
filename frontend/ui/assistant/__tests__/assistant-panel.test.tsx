@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 
 import type { ChatThread } from '@/shared/contracts/chat';
 
@@ -46,13 +46,42 @@ vi.mock('@/frontend/state/chats/use-chat-assistant', () => ({
     available: assistant.available,
     allowance: assistant.allowance,
     isStreaming: false,
+    phase: null,
     streamingText: '',
     interrupted: '',
     toolsUsed: [],
+    pending: null,
+    pendingUrl: vi.fn().mockResolvedValue(null),
+    retryPending: vi.fn(),
+    dismissPending: vi.fn(),
     error: null,
     ask: vi.fn().mockResolvedValue(true),
     refresh: vi.fn(),
   }),
+}));
+
+// The conversation itself is `useChatThread`'s (#1562): the panel owns only the
+// bootstrap and the frame, so the rows and their writes are stubbed here and
+// exercised in `use-chat-thread.test.tsx` and `chat-message-list.test.tsx`.
+const conversation = vi.hoisted(() => ({
+  thread: null as unknown,
+  messages: [] as unknown[],
+  actions: [] as unknown[],
+  isLoading: false,
+  readFailed: false,
+  hasOlder: false,
+  pending: {} as Record<string, string>,
+  loadOlder: vi.fn(),
+  retrySend: vi.fn(),
+  attachmentUrl: vi.fn().mockResolvedValue(null),
+  edit: vi.fn().mockResolvedValue(true),
+  remove: vi.fn().mockResolvedValue(null),
+  resolveAction: vi.fn().mockResolvedValue(null),
+  refresh: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
+  useChatThread: () => conversation,
 }));
 
 const QUOTA = {
@@ -126,6 +155,11 @@ describe('AssistantPanel', () => {
       .mockReset()
       .mockResolvedValue({ messages: [], nextCursor: null, actions: [] });
     api.markChatRead.mockReset().mockResolvedValue({ success: true });
+    conversation.thread = THREAD;
+    conversation.messages = [];
+    conversation.readFailed = false;
+    conversation.isLoading = false;
+    conversation.remove.mockClear();
   });
 
   it('invites a guest to sign in instead of drawing a composer', async () => {
@@ -173,16 +207,23 @@ describe('AssistantPanel', () => {
     expect(screen.queryByRole('link', { name: 'فتح المحادثة كاملة' })).not.toBeInTheDocument();
   });
 
-  it('revalidates on reopen without creating a second thread', async () => {
+  it('reopening a held thread creates nothing new', async () => {
     const { rerender } = render(<AssistantPanel open onDismiss={vi.fn()} />);
     await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
     expect(api.startAssistantChat).toHaveBeenCalledTimes(1);
-    const reads = api.getChatMessages.mock.calls.length;
 
     rerender(<AssistantPanel open={false} onDismiss={vi.fn()} />);
     rerender(<AssistantPanel open onDismiss={vi.fn()} />);
 
-    await waitFor(() => expect(api.getChatMessages.mock.calls.length).toBeGreaterThan(reads));
+    await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
+    // The thread the panel holds is read by `useChatThread`, which is the one
+    // owner of the revalidation now; the panel's job is to not open a second.
     expect(api.startAssistantChat).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws the thread when the conversation answers', async () => {
+    render(<AssistantPanel open onDismiss={vi.fn()} />);
+
+    expect(await screen.findAllByText('نور')).not.toHaveLength(0);
   });
 });
