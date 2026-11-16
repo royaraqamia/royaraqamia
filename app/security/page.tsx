@@ -4,13 +4,11 @@ import { SectionTitle, SectionTitleHighlight } from '../../frontend/ui/shared/se
 
 export const metadata: Metadata = {
   title: 'سياسة الأمان',
-  description:
-    'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
+  description: 'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
   alternates: { canonical: '/security' },
   openGraph: {
     title: 'سياسة الأمان | رؤيَة رقَميَّة',
-    description:
-      'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
+    description: 'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
     url: '/security',
     siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
@@ -20,8 +18,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'سياسة الأمان | رؤيَة رقَميَّة',
-    description:
-      'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
+    description: 'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
     images: ['/OG Image.webp'],
   },
 };
@@ -128,8 +125,8 @@ export default function SecurityPage() {
 
               <div className="space-y-4 text-muted-foreground leading-relaxed text-sm sm:text-base">
                 <p>
-                  تأخذ <strong className="text-foreground font-bold">رؤيَة رقَميَّة</strong> أمان
-                  منصَّتها على محمل الجد. إذا اكتشفت ثغرة أمنيَّة، يُرجَى الإبلاغ عنها{' '}
+                  تأخذ <strong className="text-foreground font-bold">رؤيَة رقَميَّة</strong> أمان منصَّتها
+                  على محمل الجد. إذا اكتشفت ثغرة أمنيَّة، يُرجَى الإبلاغ عنها{' '}
                   <strong className="text-foreground font-bold">بشكل مسؤول</strong> وعدم نشرها علنًا
                   قبل معالجتها.
                 </p>
@@ -202,8 +199,7 @@ export default function SecurityPage() {
                       </svg>
                     </div>
                     <span className="text-foreground/90">
-                      قدِّم، إن أمكن: خطوات إعادة الإنتاج، الأثر المُحتمَل، والاقتراح العلاجي إن
-                      وُجِد.
+                      قدِّم، إن أمكن: خطوات إعادة الإنتاج، الأثر المُحتمَل، والاقتراح العلاجي إن وُجِد.
                     </span>
                   </li>
 
@@ -367,9 +363,9 @@ export default function SecurityPage() {
               </header>
 
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                نلتزم بحماية بياناتك الشَّخصيَّة وِفق أفضل الممارسات: التَّشفير أثناء النَّقل
-                (HTTPS/TLS) وعند التَّخزين، وتطبيق مبدأ الحدّ الأدنى من جمع البيانات، واحترام حقوق
-                الوصول والتَّصحيح والحذف. للمزيد، راجع{' '}
+                نلتزم بحماية بياناتك الشَّخصيَّة وِفق أفضل الممارسات: التَّشفير أثناء النَّقل (HTTPS/TLS)
+                وعند التَّخزين، وتطبيق مبدأ الحدّ الأدنى من جمع البيانات، واحترام حقوق الوصول والتَّصحيح
+                والحذف. للمزيد، راجع{' '}
                 <a
                   href="/privacy"
                   className="font-bold text-primary underline underline-offset-4 decoration-primary/40 hover:decoration-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
@@ -401,9 +397,7 @@ export default function SecurityPage() {
                         />
                       </svg>
                     </div>
-                    <h2 className="text-xl font-bold text-foreground tracking-tight">
-                      5. التَّواصل
-                    </h2>
+                    <h2 className="text-xl font-bold text-foreground tracking-tight">5. التَّواصل</h2>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     للاستفسارات الأمنيَّة أو الإبلاغ عن ثغرة أمنيَّة بشكل مباشر:

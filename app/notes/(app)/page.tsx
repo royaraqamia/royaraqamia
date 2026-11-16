@@ -4,8 +4,7 @@ import { NotesSurface } from '@/frontend/ui/notes/notes-surface';
 
 export const metadata: Metadata = {
   title: 'الملاحظات',
-  description:
-    'دفتر ملاحظات سريع يعمل بلا اتِّصال: اكتب ونظِّم وابحث، ويُزامَن تلقائيًّا مع حسابك.',
+  description: 'دفتر ملاحظات سريع يعمل بلا اتِّصال: اكتب ونظِّم وابحث، ويُزامَن تلقائيًّا مع حسابك.',
 };
 
 /**

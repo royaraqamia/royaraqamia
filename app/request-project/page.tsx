@@ -35,8 +35,8 @@ export default async function RequestProjectPage() {
                 buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
               >
                 أخبرنا بفكرتك وهدفك، ونُحوِّلها إلى منتج جاهز للإطلاق والبيع. نبني مواقع وتطبيقات،
-                وتملك الكود بالكامل. بعد إرسال الطَّلب نُراجع التَّفاصيل ونُرسِل لك عرضًا واضحًا
-                بالمُخرَجات والسِّعر.
+                وتملك الكود بالكامل. بعد إرسال الطَّلب نُراجع التَّفاصيل ونُرسِل لك عرضًا واضحًا بالمُخرَجات
+                والسِّعر.
               </CollapsibleText>
 
               <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">

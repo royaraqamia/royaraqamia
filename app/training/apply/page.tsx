@@ -21,12 +21,9 @@ export default async function TrainingApplyPage() {
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
           <GraduationCap className="h-7 w-7" aria-hidden="true" />
         </div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">
-          التَّقديم متوقِّف حاليًّا
-        </h1>
+        <h1 className="text-xl sm:text-2xl font-extrabold text-foreground">التَّقديم متوقِّف حاليًّا</h1>
         <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-md mx-auto">
-          باب التَّقديم على هذه الدَّورة مغلق مؤقّتًا. راسلنا عبر واتساب لتعرف موعد الدُّفعة
-          القادمة.
+          باب التَّقديم على هذه الدَّورة مغلق مؤقّتًا. راسلنا عبر واتساب لتعرف موعد الدُّفعة القادمة.
         </p>
         <Button
           asChild

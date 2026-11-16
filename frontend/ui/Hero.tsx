@@ -40,8 +40,8 @@ export function Hero() {
                   breaks into three below that, and 30rem is the widest measure that
                   splits them evenly (463px + 416px) instead of 558px + 321px. */}
               <p className="text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 lg:max-w-[30rem] mx-auto leading-relaxed font-normal pt-1">
-                نُقدِّم حزمةً متكاملة من المنتجات الرَّقميَّة، بالإضافة إلى خدماتنا الاحترافيَّة في
-                بناء وصيانة المشاريع البرمجيَّة، والتَّدريب، والاستشارات التِّقنيَّة.
+                نُقدِّم حزمةً متكاملة من المنتجات الرَّقميَّة، بالإضافة إلى خدماتنا الاحترافيَّة في بناء
+                وصيانة المشاريع البرمجيَّة، والتَّدريب، والاستشارات التِّقنيَّة.
               </p>
 
               {/* Social Proof Strip - Trust Signals */}

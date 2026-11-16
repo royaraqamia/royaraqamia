@@ -101,8 +101,8 @@ export default async function ConnectPage({
             <SectionTitleHighlight>السَّماح بالوصول</SectionTitleHighlight>
           </CardTitle>
           <CardDescription>
-            يطلب تطبيق «{client.client_name ?? 'MCP'}» الوصول إلى بياناتك في رؤيَة رقَميَّة، ثم
-            إعادة التَّوجيه إلى{' '}
+            يطلب تطبيق «{client.client_name ?? 'MCP'}» الوصول إلى بياناتك في رؤيَة رقَميَّة، ثم إعادة
+            التَّوجيه إلى{' '}
             <span dir="ltr" className="font-semibold">
               {callbackHost(redirectUri)}
             </span>

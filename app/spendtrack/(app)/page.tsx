@@ -3,8 +3,7 @@ import { SpendtrackSurface } from '@/frontend/ui/spendtrack/spendtrack-surface';
 
 export const metadata: Metadata = {
   title: 'تتبُّع المصاريف',
-  description:
-    'تتبَّع مصاريفك اليوميَّة، حلِّل أنماط إنفاقك، وتحكَّم في ميزانيَّتك مع تتبُّع المصاريف.',
+  description: 'تتبَّع مصاريفك اليوميَّة، حلِّل أنماط إنفاقك، وتحكَّم في ميزانيَّتك مع تتبُّع المصاريف.',
 };
 
 /**

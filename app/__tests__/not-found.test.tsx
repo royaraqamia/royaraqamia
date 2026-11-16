@@ -41,10 +41,7 @@ describe('root not-found', () => {
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('404');
     expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content');
-    expect(screen.getByRole('link', { name: /العودة إلى الرَّئيسيَّة/ })).toHaveAttribute(
-      'href',
-      '/'
-    );
+    expect(screen.getByRole('link', { name: /العودة إلى الرَّئيسيَّة/ })).toHaveAttribute('href', '/');
   });
 
   it('keeps its own title and description, without repeating the site name', () => {

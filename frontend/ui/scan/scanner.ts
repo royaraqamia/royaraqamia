@@ -53,10 +53,7 @@ const DETECT_TIMEOUT_MS = 4000;
  */
 function withDetectTimeout<T>(answer: Promise<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(
-      () => reject(new Error('انتهت مهلة قراءة الرَّمز.')),
-      DETECT_TIMEOUT_MS
-    );
+    const timer = setTimeout(() => reject(new Error('انتهت مهلة قراءة الرَّمز.')), DETECT_TIMEOUT_MS);
     answer.then(
       (value) => {
         clearTimeout(timer);

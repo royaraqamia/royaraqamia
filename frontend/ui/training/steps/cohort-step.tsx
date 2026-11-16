@@ -18,12 +18,9 @@ export function CohortStep({ control, cohorts, error }: CohortStepProps) {
   if (cohorts.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-muted/30 p-6 text-center">
-        <p className="text-sm font-bold text-foreground">
-          لا توجد دُفعات مفتوحة للتَّسجيل حاليًّا.
-        </p>
+        <p className="text-sm font-bold text-foreground">لا توجد دُفعات مفتوحة للتَّسجيل حاليًّا.</p>
         <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-          لا يمكنك إرسال الطَّلب دون اختيار دُفعة. تابعنا عبر واتساب وسنُعلمك عند فتح الدُّفعة
-          القادمة.
+          لا يمكنك إرسال الطَّلب دون اختيار دُفعة. تابعنا عبر واتساب وسنُعلمك عند فتح الدُّفعة القادمة.
         </p>
       </div>
     );

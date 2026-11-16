@@ -666,8 +666,8 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
                         <ShieldCheck className="w-4 h-4 shrink-0" />
                         <span>
-                          الرَّابط محمي حالياً بكلمة مرور. اتركه فارغاً للإبقاء عليها، أو اكتب كلمة
-                          مرور جديدة لتغييرها.
+                          الرَّابط محمي حالياً بكلمة مرور. اتركه فارغاً للإبقاء عليها، أو اكتب كلمة مرور
+                          جديدة لتغييرها.
                         </span>
                       </div>
                     )}

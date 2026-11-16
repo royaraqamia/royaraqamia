@@ -421,11 +421,7 @@ export function createMcpConnectService({
         };
         await repository.saveRegistration(registration);
       } catch (error) {
-        throw new McpConnectError(
-          'registration',
-          'تعذّر تسجيل التطبيق لدينا، ولا يمكن ربطه',
-          error
-        );
+        throw new McpConnectError('registration', 'تعذّر تسجيل التطبيق لدينا، ولا يمكن ربطه', error);
       }
     }
 

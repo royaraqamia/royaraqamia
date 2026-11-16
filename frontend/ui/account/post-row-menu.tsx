@@ -157,9 +157,7 @@ export function PostRowMenu({ post, title, onEdit, onChanged }: PostRowMenuProps
             <CopyPlus className="me-2 size-4" />
             نسخ المنشور
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => exportAs('markdown', 'تمَّ تصدير المنشور بصيغة Markdown')}
-          >
+          <DropdownMenuItem onClick={() => exportAs('markdown', 'تمَّ تصدير المنشور بصيغة Markdown')}>
             <FileDown className="me-2 size-4" />
             تصدير Markdown
           </DropdownMenuItem>

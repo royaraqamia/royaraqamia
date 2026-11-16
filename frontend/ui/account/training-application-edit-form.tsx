@@ -98,8 +98,7 @@ export function TrainingApplicationEditForm({
     >
       {isEnrolled ? (
         <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
-          مقعدك محجوز في هذه الدُّفعة. يمكنك تعديل بياناتك، أمَّا تغيير الدُّفعة فيتطلَّب التواصل
-          معنا.
+          مقعدك محجوز في هذه الدُّفعة. يمكنك تعديل بياناتك، أمَّا تغيير الدُّفعة فيتطلَّب التواصل معنا.
         </p>
       ) : (
         <CohortStep control={control} cohorts={cohorts} error={errors.cohort_id?.message} />

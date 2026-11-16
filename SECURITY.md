@@ -6,7 +6,7 @@
 | **Status**           | Production                             |
 | **Last reviewed**    | 2026-08-02                             |
 | **Next review due**  | 2027-02-02 (mandatory 6-month cadence) |
-| **Owner**            | م. أيْهَم العَلي (project owner)       |
+| **Owner**            | م. أيْهَم العَلي (project owner)          |
 | **Approved by**      | Project owner                          |
 
 This document defines the security posture of the **royaraqamia** application — a Next.js (App Router) platform backed by Supabase, Sentry, Resend, Upstash Redis, and Cloudflare Turnstile, deployed on Vercel.

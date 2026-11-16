@@ -36,8 +36,8 @@ export function SubscribePlanSummary({ price, itemCap }: SubscribePlanSummaryPro
         className="mt-2 text-sm text-muted-foreground leading-relaxed"
         buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
       >
-        خطَّة واحدة ترفع سقف ما تُضيفه في كل خدمة، وتُفعَّل على حسابك بعد أن نتواصل معك لتأكيد
-        الطَّلب. أرسِل اسمك ورقمك ونُكمل الباقي.
+        خطَّة واحدة ترفع سقف ما تُضيفه في كل خدمة، وتُفعَّل على حسابك بعد أن نتواصل معك لتأكيد الطَّلب. أرسِل
+        اسمك ورقمك ونُكمل الباقي.
       </CollapsibleText>
 
       <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">

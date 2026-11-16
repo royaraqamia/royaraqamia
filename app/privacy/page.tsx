@@ -58,9 +58,8 @@ export default function PrivacyPage() {
             </div>
             <p className="text-foreground/80 text-base sm:text-lg leading-relaxed">
               مرحبًا بك في <strong className="text-foreground font-bold">رؤيَة رقَميَّة</strong>{' '}
-              (&quot;نحن&quot; أو &quot;المُشغِّل&quot;). نُقدِّر ثقتك بنا. تشرح هذه السِّياسة
-              كيفيَّة جمع معلوماتك الشَّخصيَّة واستخدامها وحمايتها عند استخدامك لمواقعنا وخدماتنا
-              إلكترونيًّا.
+              (&quot;نحن&quot; أو &quot;المُشغِّل&quot;). نُقدِّر ثقتك بنا. تشرح هذه السِّياسة كيفيَّة جمع
+              معلوماتك الشَّخصيَّة واستخدامها وحمايتها عند استخدامك لمواقعنا وخدماتنا إلكترونيًّا.
             </p>
           </section>
 
@@ -122,8 +121,8 @@ export default function PrivacyPage() {
                   <span className="text-primary font-mono">ب)</span> معلومات الدُّخول عبر Google
                 </h3>
                 <p className="text-muted-foreground text-sm sm:text-base mb-4">
-                  عند اختيار تسجيل الدُّخول باستخدام حساب Google، نتلقَّى المعلومات التَّالية من
-                  Google وِفقًا لتصريح خصوصيَّتك في حسابك:
+                  عند اختيار تسجيل الدُّخول باستخدام حساب Google، نتلقَّى المعلومات التَّالية من Google
+                  وِفقًا لتصريح خصوصيَّتك في حسابك:
                 </p>
                 <ul className="space-y-2.5 mb-4">
                   {[
@@ -234,10 +233,10 @@ export default function PrivacyPage() {
             </div>
 
             <p className="text-muted-foreground text-xs sm:text-sm mt-6 pt-4 border-t border-border/50 leading-relaxed">
-              ولحساب حصَّة الاستخدام نُسجِّل لكل إجراء استهلاكه (كالنَّشر أو التَّنزيل)، ونحفظ
-              للزَّائر عنوان IP بصيغة مُجزَّأة (hash) بمفتاح سرِّي لا يخرج من الخادم، فلا يمكن
-              استعادة العنوان من السِّجل. أمَّا عدَّاد الماسح وقراءة السُّور فحسابهما يجري على جهازك
-              ولا يُرسَل منه إلَّا العدد، ولا يُرسَل أبداً ما مسحتَه أو ما قرأتَه. تفاصيل ذلك في{' '}
+              ولحساب حصَّة الاستخدام نُسجِّل لكل إجراء استهلاكه (كالنَّشر أو التَّنزيل)، ونحفظ للزَّائر عنوان
+              IP بصيغة مُجزَّأة (hash) بمفتاح سرِّي لا يخرج من الخادم، فلا يمكن استعادة العنوان من السِّجل.
+              أمَّا عدَّاد الماسح وقراءة السُّور فحسابهما يجري على جهازك ولا يُرسَل منه إلَّا العدد، ولا يُرسَل
+              أبداً ما مسحتَه أو ما قرأتَه. تفاصيل ذلك في{' '}
               <a
                 href="/pricing"
                 className="text-primary font-medium underline underline-offset-4 hover:text-primary transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -262,8 +261,7 @@ export default function PrivacyPage() {
               </h2>
             </div>
             <p className="text-foreground/80 text-base sm:text-lg mb-6 leading-relaxed">
-              نحنُ لا نبيع معلوماتك الشَّخصيَّة لأيِّ طرفٍ ثالث. قد نُشارك معلوماتك فقط في الحالات
-              التَّالية:
+              نحنُ لا نبيع معلوماتك الشَّخصيَّة لأيِّ طرفٍ ثالث. قد نُشارك معلوماتك فقط في الحالات التَّالية:
             </p>
             <div className="space-y-4">
               <div className="rounded-xl border border-border/40 bg-muted/30 p-5 leading-relaxed">
@@ -394,8 +392,8 @@ export default function PrivacyPage() {
                 </h2>
               </div>
               <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
-                نستخدم ملفَّات تعريف الارتباط الضَّروريَّة لتشغيل الموقع وتأمين الجلسات. لا نستخدم
-                ملفَّات تعريف ارتباط التَّتبُّع لأغراض تحليليَّة أو تسويقيَّة.
+                نستخدم ملفَّات تعريف الارتباط الضَّروريَّة لتشغيل الموقع وتأمين الجلسات. لا نستخدم ملفَّات
+                تعريف ارتباط التَّتبُّع لأغراض تحليليَّة أو تسويقيَّة.
               </p>
             </section>
 
@@ -408,9 +406,8 @@ export default function PrivacyPage() {
                 <h2 className="text-lg sm:text-xl font-bold text-foreground">. خصوصيَّة الأحداث</h2>
               </div>
               <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
-                قد تتمُّ معالجة بعض بياناتك من خلال خدمات مُزوِّدين مثل Vercel Analytics وSentry
-                لتحسين أداء الموقع واكتشاف الأخطاء. تُعالج هذه البيانات بشكل مُجمَّع وغير مُحدَّد
-                الهويَّة.
+                قد تتمُّ معالجة بعض بياناتك من خلال خدمات مُزوِّدين مثل Vercel Analytics وSentry لتحسين
+                أداء الموقع واكتشاف الأخطاء. تُعالج هذه البيانات بشكل مُجمَّع وغير مُحدَّد الهويَّة.
               </p>
             </section>
           </div>
@@ -426,8 +423,8 @@ export default function PrivacyPage() {
                 <h2 className="text-lg sm:text-xl font-bold text-foreground">. الأطفال</h2>
               </div>
               <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
-                خدماتنا غير مُوجَّهة لأقل من عامًا. لا نجمع عن عمد معلومات شخصيَّة من الأطفال. إذا
-                علمنا أنَّنا جمعنا معلومات من طفل دون عامًا، سنقوم بمحو هذه المعلومات فورًا.
+                خدماتنا غير مُوجَّهة لأقل من عامًا. لا نجمع عن عمد معلومات شخصيَّة من الأطفال. إذا علمنا
+                أنَّنا جمعنا معلومات من طفل دون عامًا، سنقوم بمحو هذه المعلومات فورًا.
               </p>
             </section>
 
@@ -442,8 +439,8 @@ export default function PrivacyPage() {
                 </h2>
               </div>
               <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
-                قد نُحدِّث هذه السِّياسة من وقت لآخر. سنُعلن عن أي تغييرات جوهريَّة عبر الموقع أو
-                عبر البريد الإلكتروني. نُشجِّعك على مراجعة هذه السِّياسة بانتظام.
+                قد نُحدِّث هذه السِّياسة من وقت لآخر. سنُعلن عن أي تغييرات جوهريَّة عبر الموقع أو عبر البريد
+                الإلكتروني. نُشجِّعك على مراجعة هذه السِّياسة بانتظام.
               </p>
             </section>
           </div>

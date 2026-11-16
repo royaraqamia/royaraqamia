@@ -102,8 +102,7 @@ describe('the grant a connection was given (#1230)', () => {
   it('shows the refusal the app answered, and offers the wider consent beside it', async () => {
     mocks.getMcpConnection.mockResolvedValue({
       ...NARROW,
-      lastError:
-        'هذا التطبيق يحتاج صلاحية «database:write» لأداء هذه العملية، ولم تُمنح عند الربط.',
+      lastError: 'هذا التطبيق يحتاج صلاحية «database:write» لأداء هذه العملية، ولم تُمنح عند الربط.',
     });
 
     render(<McpConnectionView connectionId="connection-1" connected={false} />);

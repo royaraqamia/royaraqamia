@@ -325,9 +325,7 @@ export function ScanPage() {
           frameErrorsRef.current += 1;
           if (frameErrorsRef.current >= SCAN_MAX_FRAME_ERRORS) {
             stopCamera();
-            setError(
-              'تعذَّر قراءة الرَّمز بكاميرا هذا الجهاز. ارفع صورة تحتوي على الرَّمز بدلًا من ذلك.'
-            );
+            setError('تعذَّر قراءة الرَّمز بكاميرا هذا الجهاز. ارفع صورة تحتوي على الرَّمز بدلًا من ذلك.');
             return;
           }
         }

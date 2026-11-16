@@ -209,9 +209,7 @@ export function TrainingApplicationsList({
                   variant="outline"
                   disabled={isSaving || isEnrolled}
                   className="btn-hover-lift"
-                  title={
-                    isEnrolled ? 'ألغِ التَّسجيل أوَّلًا لتعديل الحالة والملاحظات.' : undefined
-                  }
+                  title={isEnrolled ? 'ألغِ التَّسجيل أوَّلًا لتعديل الحالة والملاحظات.' : undefined}
                   onClick={() =>
                     onSave(application.id, {
                       status: manualStatusOf(application.status),

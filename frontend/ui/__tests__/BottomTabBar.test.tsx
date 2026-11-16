@@ -31,18 +31,13 @@ describe('BottomTabBar', () => {
   it('keeps Home lit inside an app the homepage opened', () => {
     mockPathname.mockReturnValue('/quran');
     render(<BottomTabBar />);
-    expect(screen.getByRole('link', { name: 'الرَّئيسيَّة' })).toHaveAttribute(
-      'aria-current',
-      'page'
-    );
+    expect(screen.getByRole('link', { name: 'الرَّئيسيَّة' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('renders nothing on a secondary page', () => {
     mockPathname.mockReturnValue('/community/some-post');
     render(<BottomTabBar />);
-    expect(
-      screen.queryByRole('navigation', { name: 'التَّنقُّل السُّفليّ' })
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'التَّنقُّل السُّفليّ' })).not.toBeInTheDocument();
   });
 
   it.each(['/auth/login', '/account/posts', '/admin', '/quran/2'])(
