@@ -75,3 +75,41 @@
   filter: none;
   background-image: radial-gradient(closest-side, currentColor, transparent);
 }
+
+/* The seeded cover band (ADR-0200): four paint layers that read the palette and
+   orb placement a member's id chose. They live beside `glow-orb` for the same
+   reason — a profile band is the same kind of atmosphere, painted cheaply — and
+   each reads only `--cover-*`, so it is inert on every other surface. */
+@utility cover-wash-a {
+  background-image: radial-gradient(
+    150% 210% at var(--cover-x) -10%,
+    hsl(var(--cover-a) / 0.54) 0%,
+    hsl(var(--cover-a) / 0.22) 44%,
+    transparent 82%
+  );
+}
+
+@utility cover-wash-b {
+  background-image: radial-gradient(
+    110% 170% at var(--cover-y) -6%,
+    hsl(var(--cover-b) / 0.44) 0%,
+    hsl(var(--cover-b) / 0.15) 38%,
+    transparent 72%
+  );
+}
+
+/* One soft diagonal, so the band is lit rather than filled. */
+@utility cover-sweep {
+  background-image: linear-gradient(
+    118deg,
+    transparent 26%,
+    rgb(255 255 255 / 0.055) 46%,
+    transparent 66%
+  );
+  mix-blend-mode: screen;
+}
+
+/* The lower corners fall away, so the avatar's edge has something to sit on. */
+@utility cover-vignette {
+  background-image: radial-gradient(130% 120% at 50% 128%, rgb(0 0 0 / 0.55) 0%, transparent 62%);
+}

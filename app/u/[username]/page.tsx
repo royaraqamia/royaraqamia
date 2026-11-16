@@ -11,6 +11,7 @@ import { FollowCountsBar } from '@/frontend/ui/shared/follow-counts';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { PostCard } from '@/app/community/_components/post-card';
 import { MemberChatCta } from '@/app/community/_components/member-chat-cta';
+import { ProfileCover } from './_components/profile-cover';
 import { PROFILE_COPY } from './profile-copy';
 
 /**
@@ -81,13 +82,10 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
     <div className="mx-auto max-w-4xl">
       <header
         data-visual="profile-header"
-        className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/40 p-6 shadow-sm sm:p-8"
+        className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/40 shadow-sm"
       >
-        <span
-          className="glow-orb pointer-events-none absolute -top-16 inset-e-[-10%] h-48 w-48 text-violet-500/20"
-          aria-hidden="true"
-        />
-        <div className="relative flex flex-col items-center gap-5 text-center">
+        <ProfileCover memberId={member.id} />
+        <div className="relative -mt-10 flex flex-col items-center gap-5 px-6 pb-8 text-center sm:px-8">
           <MemberAvatar
             name={member.name}
             avatarUrl={member.avatar_url}
