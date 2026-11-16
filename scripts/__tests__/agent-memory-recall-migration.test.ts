@@ -43,9 +43,11 @@ function latestDefinition(): { file: string; sql: string } {
 const { file, sql } = latestDefinition();
 
 describe(`public.agent_memory_nearest (${file})`, () => {
-  it('drops the three-argument function, so one call cannot match two signatures', () => {
+  it('answers one signature, so a call cannot match two', () => {
+    // The three-argument function was dropped by #1510; what keeps the pair from
+    // coming back is that only the five-argument one is granted to a caller.
     expect(sql).toContain(
-      'drop function if exists public.agent_memory_nearest(uuid, extensions.vector, integer)'
+      'grant execute on function public.agent_memory_nearest(uuid, extensions.vector, integer, uuid, text) to authenticated, service_role'
     );
   });
 
@@ -70,12 +72,16 @@ describe(`public.agent_memory_nearest (${file})`, () => {
 
   it('recalls each scope where it belongs, and nowhere else', () => {
     expect(sql).toContain("m.scope = 'account'");
+    // The toggles are the reason each branch is more than a scope test: a scope
+    // the member switched off is not injected, and a missing row means on.
+    expect(sql).toContain("(m.scope = 'account' and coalesce(s.account_enabled, true))");
     expect(sql).toContain(
-      "or (m.scope = 'product' and p_product is not null and m.product = p_product)"
+      "or ( m.scope = 'product' and p_product is not null and m.product = p_product and coalesce(s.product_enabled, true) )"
     );
     expect(sql).toContain(
-      "or (m.scope = 'thread' and p_thread_id is not null and m.thread_id = p_thread_id)"
+      "or ( m.scope = 'thread' and p_thread_id is not null and m.thread_id = p_thread_id and coalesce(s.thread_enabled, true) )"
     );
+    expect(sql).toContain('left join public.agent_memory_settings s on s.user_id = p_user_id');
   });
 
   it('never answers a deleted fact, one member’s other rows, or more than the cap', () => {

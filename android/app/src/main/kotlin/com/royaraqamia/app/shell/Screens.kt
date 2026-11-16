@@ -68,6 +68,7 @@ object Screens {
             ScreenRouteRow("/account/plan", "account-plan", "account", null),
             ScreenRouteRow("/account/connected-apps", "account-connected-apps", "account", null),
             ScreenRouteRow("/account/blocked", "account-blocked", "account", null),
+            ScreenRouteRow("/account/memory", "account-memory", "account", null),
             ScreenRouteRow("/account/faq", "account-faq", "account", null),
             ScreenRouteRow("/account/news", "account-news", "account", null),
             ScreenRouteRow("/notifications", "notifications", "notifications", null),

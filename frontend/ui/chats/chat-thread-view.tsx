@@ -23,6 +23,7 @@ import { useChatPresence } from '@/frontend/state/chats/use-chat-presence';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { blockChatUser, reportChat } from '@/frontend/api/chats';
+import { forgetConversationMemory } from '@/frontend/api/account-memory';
 import { cn } from '@/frontend/shared/cn';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
@@ -620,6 +621,30 @@ function ThreadHeader({
   const goBack = useBackAction('/notifications?tab=chats');
 
   /**
+   * What "forget this conversation" said. One line, in the header's own chrome,
+   * because the answer is a count: "I forgot 3" and "there was nothing" are
+   * different sentences, and neither is an error.
+   */
+  const [memoryNote, setMemoryNote] = useState<string | null>(null);
+  const [isForgetting, setIsForgetting] = useState(false);
+
+  async function forgetConversation() {
+    setIsForgetting(true);
+    try {
+      const forgotten = await forgetConversationMemory(thread.id);
+      setMemoryNote(
+        forgotten > 0
+          ? CHAT_THREAD_COPY.forgetConversationDone.replace('{count}', String(forgotten))
+          : CHAT_THREAD_COPY.forgetConversationNone
+      );
+    } catch {
+      setMemoryNote(CHAT_THREAD_COPY.forgetConversationFailed);
+    } finally {
+      setIsForgetting(false);
+    }
+  }
+
+  /**
    * The member this thread is about, when the site has a page for them.
    *
    * WhatsApp and Telegram both open the contact from the header, and the site's
@@ -667,16 +692,18 @@ function ThreadHeader({
   );
 
   /**
-   * An empty menu is not a menu: the assistant's thread has nothing reportable
-   * (the only other writer is the server's model, #817), no counterpart to
-   * block and no membership to leave, so its header carries no ⋮ at all.
+   * An empty menu is not a menu. The assistant's thread has nothing reportable
+   * (the only other writer is the server's model, #817) and no counterpart to
+   * block, but it has one thing of its own: forgetting what the assistant
+   * remembered of it (ADR-0182 decision 6, #1428).
    */
   const menuItems =
-    (thread.kind !== 'agent' ? 1 : 0) + (thread.kind === 'direct' && counterpart ? 1 : 0);
+    (thread.kind !== 'agent' ? 1 : 0) + (thread.kind === 'direct' && counterpart ? 1 : 0) + 1;
 
   return (
-    <div className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
-      {/*
+    <>
+      <div className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card px-3 py-3">
+        {/*
         The thread's own back control, and the only one on this page: the
         floating header stands down here (`SecondaryHeader`). It runs the app's
         shared back decision rather than a link, because a `Link` to the chats
@@ -685,54 +712,85 @@ function ThreadHeader({
         from when there is one, and replaces itself with the tab when there is
         not — like WhatsApp's conversation screen.
       */}
-      <button
-        type="button"
-        onClick={goBack}
-        aria-label="العودة إلى المحادثات"
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-ring"
-      >
-        <ArrowRight className="size-5" aria-hidden="true" />
-      </button>
-
-      {profileHref ? (
-        <Link
-          href={profileHref}
-          className="-mx-1 flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 transition-safe hover:bg-muted/40 focus-ring"
+        <button
+          type="button"
+          onClick={goBack}
+          aria-label="العودة إلى المحادثات"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-ring"
         >
-          {heading}
-        </Link>
-      ) : (
-        <div className="flex min-w-0 flex-1 items-center gap-3">{heading}</div>
-      )}
+          <ArrowRight className="size-5" aria-hidden="true" />
+        </button>
 
-      {menuItems > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              aria-label={CHAT_THREAD_COPY.options}
-              className="rounded-lg p-1.5 text-muted-foreground transition-safe hover:bg-accent hover:text-foreground"
-            >
-              <EllipsisVertical size={18} />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            {/* Nothing in an assistant thread is reportable: the only other
+        {profileHref ? (
+          <Link
+            href={profileHref}
+            className="-mx-1 flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 transition-safe hover:bg-muted/40 focus-ring"
+          >
+            {heading}
+          </Link>
+        ) : (
+          <div className="flex min-w-0 flex-1 items-center gap-3">{heading}</div>
+        )}
+
+        {menuItems > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={CHAT_THREAD_COPY.options}
+                className="rounded-lg p-1.5 text-muted-foreground transition-safe hover:bg-accent hover:text-foreground"
+              >
+                <EllipsisVertical size={18} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {/* Nothing in an assistant thread is reportable: the only other
                 writer is the server's own model (#817). */}
-            {thread.kind !== 'agent' && (
-              <DropdownMenuItem onSelect={onReport} className="text-xs font-medium text-foreground">
-                {CHAT_THREAD_COPY.report}
-              </DropdownMenuItem>
-            )}
-            {counterpart && (
-              <DropdownMenuItem onSelect={onBlock} className="text-xs font-medium text-destructive">
-                {CHAT_THREAD_COPY.blockUser.replace('{username}', counterpart.username)}
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </div>
+              {thread.kind !== 'agent' && (
+                <DropdownMenuItem
+                  onSelect={onReport}
+                  className="text-xs font-medium text-foreground"
+                >
+                  {CHAT_THREAD_COPY.report}
+                </DropdownMenuItem>
+              )}
+              {counterpart && (
+                <DropdownMenuItem
+                  onSelect={onBlock}
+                  className="text-xs font-medium text-destructive"
+                >
+                  {CHAT_THREAD_COPY.blockUser.replace('{username}', counterpart.username)}
+                </DropdownMenuItem>
+              )}
+              {/*
+              The assistant's own verb: forget what it remembered of this
+              conversation, and nothing else. The thread, its messages and its
+              summary stay — the button says what it does, so it may not do more
+              (ADR-0182 decision 6, #1428).
+            */}
+              {thread.kind === 'agent' && (
+                <DropdownMenuItem
+                  onSelect={() => void forgetConversation()}
+                  disabled={isForgetting}
+                  className="text-xs font-medium text-destructive"
+                >
+                  {CHAT_THREAD_COPY.forgetConversation}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+      {memoryNote ? (
+        <p
+          role="status"
+          data-visual="thread-memory-note"
+          className="shrink-0 border-b border-border/40 bg-card px-4 py-2 text-center text-xs text-muted-foreground"
+        >
+          {memoryNote}
+        </p>
+      ) : null}
+    </>
   );
 }
 

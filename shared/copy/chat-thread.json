@@ -77,6 +77,10 @@
     "formatStrike": "يتوسطه خط",
     "formatCode": "كود",
     "formatLink": "رابط",
-    "formatLinkPrompt": "عنوان الرَّابط"
+    "formatLinkPrompt": "عنوان الرَّابط",
+    "forgetConversation": "انسَ ما حفظته من هذه المحادثة",
+    "forgetConversationDone": "نسيتُ {count} من محفوظات هذه المحادثة.",
+    "forgetConversationNone": "لم أكن أتذكّر شيئاً من هذه المحادثة.",
+    "forgetConversationFailed": "تعذّر النسيان."
   }
 }

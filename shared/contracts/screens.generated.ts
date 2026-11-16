@@ -66,6 +66,7 @@ export const SCREEN_ROUTES: readonly ScreenRouteRow[] = [
     tab: null,
   },
   { pattern: '/account/blocked', surface: 'account-blocked', product: 'account', tab: null },
+  { pattern: '/account/memory', surface: 'account-memory', product: 'account', tab: null },
   { pattern: '/account/faq', surface: 'account-faq', product: 'account', tab: null },
   { pattern: '/account/news', surface: 'account-news', product: 'account', tab: null },
   { pattern: '/notifications', surface: 'notifications', product: 'notifications', tab: null },

@@ -275,6 +275,11 @@ export const CONTRACTS = [
   // sees. The envelopes are here with the payloads because a refusal is a
   // sentence the screen draws (ADR-0031), not a thrown error.
   {
+    module: 'shared/contracts/agent-memory',
+    file: 'AgentMemoryContracts.kt',
+    schemas: ['AgentMemoryListResultSchema', 'AgentMemoryActionResultSchema'],
+  },
+  {
     module: 'shared/contracts/chat',
     file: 'ChatContracts.kt',
     schemas: [

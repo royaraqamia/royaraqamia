@@ -190,20 +190,4 @@ describe('the memory embedding service', () => {
     // floor and the six-item cap choose from.
     expect(repository.nearestCalls).toEqual([{ userId: 'member-1', limit: 24 }]);
   });
-
-  it('deletes the vector of a forgotten fact, and swallows a failed delete', async () => {
-    const repository = new FakeRepository([]);
-    const service = createMemoryEmbeddingsService({ repository, client: fakeClient() });
-
-    expect(await service.forget('fact-1')).toBe(true);
-    expect(repository.removed).toEqual(['fact-1']);
-
-    repository.remove = async () => {
-      throw new Error('42501 permission denied');
-    };
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-    // The fact is already unrecallable; a stale vector is the operator's line.
-    expect(await service.forget('fact-2')).toBe(false);
-    expect(warn).toHaveBeenCalledTimes(1);
-  });
 });

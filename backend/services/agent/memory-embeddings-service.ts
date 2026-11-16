@@ -35,18 +35,17 @@ export interface MemoryEmbeddingsService {
   /** The write path: one fact, right after it was written. Never throws. */
   embedFact(memoryId: string, signal?: AbortSignal): Promise<boolean>;
   /** The read path: the k nearest facts for one member, from a given vector. */
+  /**
+   * The read path, and it calls no provider at all: it is handed a vector
+   * somebody else already has. A turn therefore never pays for an embedding call
+   * to read its own recall (decision 5).
+   */
   nearest(
     userId: string,
     embedding: number[],
     scope: RecallScope,
     limit?: number
   ): Promise<RecalledMemory[]>;
-  /**
-   * The delete path: the vector over a fact the member forgot. The row is
-   * soft-deleted, so no foreign key reaches this copy; it is deleted here to
-   * keep the promise decision 6 makes. Never throws.
-   */
-  forget(memoryId: string): Promise<boolean>;
 }
 
 export interface BackfillOptions {
@@ -166,21 +165,6 @@ export function createMemoryEmbeddingsService({
       // would let unrelated facts occupy the slots the floor should drop.
       const wanted = Math.min(Math.max(1, limit), RECALL_CANDIDATES);
       return repository.nearest(userId, embedding, wanted, scope);
-    },
-
-    async forget(memoryId) {
-      try {
-        return await repository.remove(memoryId);
-      } catch (error) {
-        // The fact is already unrecallable — `agent_memory_nearest` joins the
-        // row and filters `deleted_at` — so a failed delete leaves a stale
-        // vector, not a recalled one. The operator reads it; the member does not.
-        logger.warn('A forgotten memory left its vector behind; the delete failed', {
-          memoryId,
-          error: String(error),
-        });
-        return false;
-      }
     },
   };
 }

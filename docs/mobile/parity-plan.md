@@ -50,6 +50,7 @@ _The account area, notifications and chats: the screens a member opens daily._
 - [x] **account-plan** `/account/plan` — native · #900
 - [x] **account-connected-apps** `/account/connected-apps` — native · #900
 - [x] **account-blocked** `/account/blocked` — native · #1346
+- [ ] **account-memory** `/account/memory` — todo · #1428
 - [x] **account-faq** `/account/faq` — native
 - [x] **account-news** `/account/news` — native · #1347
 - [x] **notifications** `/notifications` — native · #1391
@@ -102,7 +103,7 @@ The things a surface row cannot hold: the cutover, the screens the app needs to 
 
 ## Components
 
-A component is finished when the surface that draws it is native, or when it belongs to the shell frame the visual gate measures: 84 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native, or when it belongs to the shell frame the visual gate measures: 85 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
@@ -170,6 +171,7 @@ A component is finished when the surface that draws it is native, or when it bel
 - [ ] `chat-compose-attachments` on **chats** · #933
 - [ ] `chat-attachments` on **chats** · #933
 - [x] `account-blocked` on **account-blocked** · #977
+- [ ] `account-memory` on **account-memory** · #1428
 - [ ] `account-rows` on **account** · #948
 - [ ] `account-profile` on **account** · #946
 - [ ] `account-usage` on **account** · #947
@@ -191,4 +193,4 @@ A component is finished when the surface that draws it is native, or when it bel
 
 ## Where this stands
 
-24 native · 4 to do · 5 document · 6 blocked of 39 surfaces. 1 of 9 release items done.
+24 native · 5 to do · 5 document · 6 blocked of 40 surfaces. 1 of 9 release items done.

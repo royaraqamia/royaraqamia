@@ -250,11 +250,38 @@ export interface RememberFactInput {
   confidence?: number;
 }
 
+/**
+ * The member's switches, one per scope (ADR-0182 decision 6, #1428).
+ *
+ * On is the default and the missing-row answer: memory is the product's
+ * promise, and a member who has never opened the page has not switched anything
+ * off. Turning a scope off stops both halves — nothing new is saved there and
+ * nothing already saved there is injected — and it never hides a fact from the
+ * page, because a fact the member cannot see is a fact they cannot delete.
+ */
+export interface AgentMemorySettings {
+  account: boolean;
+  product: boolean;
+  thread: boolean;
+}
+
+export const DEFAULT_MEMORY_SETTINGS: AgentMemorySettings = {
+  account: true,
+  product: true,
+  thread: true,
+};
+
+/** One scope's switch, as the one door and the page both read it. */
+export function scopeEnabled(settings: AgentMemorySettings, scope: AgentMemoryScope): boolean {
+  return settings[scope];
+}
+
 /** The sentences the writer answers with, in the member's language. */
 export const MEMORY_EMPTY = 'اكتب ما تريد أن أتذكّره.';
 export const MEMORY_TOO_LONG = `الحد الأقصى للشيء الذي أتذكّره ${MEMORY_TEXT_MAX} حرفاً.`;
 export const MEMORY_INVALID_KIND = 'نوع الحفظ غير معروف.';
 export const MEMORY_SCOPE_KEY = 'نطاق الحفظ لا يطابق مفتاحه.';
+export const MEMORY_SCOPE_OFF = 'أوقفت الحفظ في هذا النطاق، فلن أحفظ فيه شيئاً.';
 export const MEMORY_REFUSED_SENTENCE = 'لا أحفظ كلمات المرور ولا الرموز ولا بيانات البطاقات.';
 
 /**

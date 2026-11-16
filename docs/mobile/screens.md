@@ -30,6 +30,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-faq` | `/account/faq` | `AccountFaqScreen.kt` |  |
 | `account-news` | `/account/news` | `NewsScreen.kt` |  |
 | `account-blocked` | `/account/blocked` | `BlockedMembersScreen.kt` |  |
+| `account-memory` | `/account/memory` | `MemoryScreen.kt` (off) | Ported (#1428) and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117, ADR-0118). |
 | `notifications` | `/notifications` | `NotificationsScreen.kt` |  |
 | `community` | `/community`<br>`/community/explore` | `CommunityFeedScreen.kt` |  |
 | `community-post` | `/community/[slug]` | `CommunityPostScreen.kt` |  |

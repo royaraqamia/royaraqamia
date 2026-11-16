@@ -101,6 +101,33 @@ export type Database = {
           },
         ];
       };
+      agent_memory_settings: {
+        Row: {
+          account_enabled: boolean;
+          created_at: string;
+          product_enabled: boolean;
+          thread_enabled: boolean;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          account_enabled?: boolean;
+          created_at?: string;
+          product_enabled?: boolean;
+          thread_enabled?: boolean;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          account_enabled?: boolean;
+          created_at?: string;
+          product_enabled?: boolean;
+          thread_enabled?: boolean;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       agent_turns: {
         Row: {
           attempts: number;
@@ -3288,6 +3315,14 @@ export type Database = {
       };
     };
     Functions: {
+      agent_memory_forget: {
+        Args: { p_memory_id: string };
+        Returns: boolean;
+      };
+      agent_memory_forget_thread: {
+        Args: { p_thread_id: string };
+        Returns: number;
+      };
       agent_memory_nearest: {
         Args: {
           p_limit?: number;
