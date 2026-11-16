@@ -165,6 +165,15 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
         )
         add(
             AccountLink(
+                id = "memory",
+                icon = LucideVectors.Brain,
+                label = AccountRowsCopy.MEMORY,
+                route = "/account/memory",
+                gated = true,
+            )
+        )
+        add(
+            AccountLink(
                 id = "pricing",
                 icon = LucideVectors.Sparkles,
                 label = AccountRowsCopy.PRICING,

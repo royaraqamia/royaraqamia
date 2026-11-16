@@ -16,6 +16,7 @@ object AccountRowsCopy {
     const val SUBMISSIONS = "طلباتي"
     const val POSTS = "منشوراتي"
     const val BLOCKED = "الأعضاء المحظورون"
+    const val MEMORY = "ذاكرة نور"
     const val PRICING = "خطط التَّسعير"
     const val ADMIN = "الإدارة"
     const val FAQ = "الأسئلة الشَّائعة"

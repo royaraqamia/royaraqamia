@@ -30,20 +30,18 @@ data class MemoryFact(
 )
 
 /**
- * The member's three switches. `false` means the assistant neither saves there
- * nor recalls from there; what is already saved stays on the screen.
+ * The member's three stored scopes, read as one switch: on only when every scope
+ * is open. `false` means the assistant neither saves there nor recalls from
+ * there; what is already saved stays on the screen (ADR-0182's 2026-11-16
+ * amendment keeps the three booleans in the store and draws one control).
  */
 data class MemorySettings(
     val account: Boolean,
     val product: Boolean,
     val thread: Boolean,
 ) {
-    fun isOn(scope: MemoryScope): Boolean =
-        when (scope) {
-            MemoryScope.ACCOUNT -> account
-            MemoryScope.PRODUCT -> product
-            MemoryScope.THREAD -> thread
-        }
+    val isOn: Boolean
+        get() = account && product && thread
 
     companion object {
         val Default = MemorySettings(account = true, product = true, thread = true)

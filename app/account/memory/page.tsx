@@ -5,7 +5,6 @@ import { MemoryView } from '@/frontend/ui/account/memory-view';
 
 export const metadata: Metadata = {
   title: `${ACCOUNT_MEMORY_COPY.pageTitle} · حسابي`,
-  description: ACCOUNT_MEMORY_COPY.intro,
 };
 
 /**

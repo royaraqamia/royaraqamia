@@ -1,7 +1,7 @@
 {
   "surface": "account-memory",
   "route": "/account/memory",
-  "notes": "The memory page at rest, and with nothing remembered (#1428). `origin` is the title in both states, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the first account row at rest and the empty sentence when there is none, because those are the regions both clients draw identically. The at-rest state needs a session with at least one account-scoped fact and the empty state needs one with no facts at all, so a recording has to sign in as the fixture account and arrange that data. Widths of a fact's own words are left out deliberately — they are the run of the text, not a decision. Colours are left out too: they are what the raster proves. The surface is in `docs/mobile/screens.json` with the port off and is not yet under `docs/mobile/visual-gate.json`; it joins the gate when both states have evidence (ADR-0117, ADR-0118).",
+  "notes": "The memory page at rest, and with nothing remembered (#1428). `origin` is the title in both states, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the first account row at rest and the empty sentence when there is none, because those are the regions both clients draw identically. The at-rest state needs a session with at least one account-scoped fact and the empty state needs one with no facts at all, so a recording has to sign in as the fixture account and arrange that data. Widths of a fact's own words are left out deliberately — they are the run of the text, not a decision. Colours are left out too: they are what the raster proves. The one switch is the member's control over the store (ADR-0182's 2026-11-16 amendment); the three scopes are the list's headings, not three rows of switches. The surface is in `docs/mobile/screens.json` with the port off and is not yet under `docs/mobile/visual-gate.json`; it joins the gate when both states have evidence (ADR-0117, ADR-0118).",
   "states": [
     {
       "name": "at-rest",
@@ -19,16 +19,6 @@
           "properties": ["top", "height", "fontSize", "fontWeight"]
         },
         {
-          "name": "intro",
-          "web": {
-            "selector": "[data-visual='memory-intro']"
-          },
-          "app": {
-            "tag": "memory-intro"
-          },
-          "properties": ["top", "height", "fontSize"]
-        },
-        {
           "name": "settings",
           "web": {
             "selector": "[data-visual='memory-settings']"
@@ -39,22 +29,22 @@
           "properties": ["top", "width", "radius", "paddingTop", "paddingBottom"]
         },
         {
-          "name": "scope-account",
+          "name": "switch-row",
           "web": {
-            "selector": "[data-visual='memory-scope-account']"
+            "selector": "[data-visual='memory-switch-row']"
           },
           "app": {
-            "tag": "memory-scope-account"
+            "tag": "memory-switch-row"
           },
           "properties": ["top", "height"]
         },
         {
-          "name": "switch-account",
+          "name": "switch",
           "web": {
-            "selector": "[data-visual='memory-switch-account']"
+            "selector": "[data-visual='memory-switch']"
           },
           "app": {
-            "tag": "memory-switch-account"
+            "tag": "memory-switch"
           },
           "properties": ["width", "height", "radius"]
         },
@@ -159,11 +149,11 @@
     }
   ],
   "motion": {
-    "notes": "The page is still. A scope switch travels between two positions in 150ms with no layout change; a row's editor replaces the fact in place rather than opening a sheet, so nothing moves but the row's own height. The spinner is the loading state and the export is a link.",
+    "notes": "The page is still. The switch travels between two positions in 150ms with no layout change; a row's editor replaces the fact in place rather than opening a sheet, so nothing moves but the row's own height. The spinner is the loading state and the export is a link.",
     "entries": [
       {
-        "gesture": "tap a scope switch",
-        "element": "switch-account",
+        "gesture": "tap the switch",
+        "element": "switch",
         "moves": "the knob travels from one end of the track to the other",
         "same": "150ms, no travel beyond the track, and the row's height does not change"
       }
