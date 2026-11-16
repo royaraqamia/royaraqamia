@@ -801,7 +801,7 @@ object LucideVectors {
                 strokeLineJoin = StrokeJoin.Round,
             )
             addPath(
-                addPathNodes("M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"),
+                addPathNodes("M9 9.5a3 2.5 0 016 0c0 2-2 2-3 3.5"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
