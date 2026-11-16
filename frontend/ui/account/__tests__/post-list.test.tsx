@@ -102,4 +102,24 @@ describe('PostList', () => {
       'account-posts-panel'
     );
   });
+
+  it('names the boxes the visual contract measures', () => {
+    // `shared/visual/account-posts.json` measures these by name, so the page has
+    // to carry them: without one, a recorder has nothing to select. The create
+    // button is the ninth and is drawn by `AccountPostsView`, not this list (#1520).
+    const { container } = renderList();
+
+    for (const name of [
+      'account-posts-chips',
+      'account-posts-search',
+      'account-posts-bulk',
+      'account-posts-bulk-count',
+      'account-posts-row',
+      'account-posts-row-title',
+      'account-posts-row-meta',
+      'account-posts-row-trailing',
+    ]) {
+      expect(container.querySelector(`[data-visual='${name}']`)).not.toBeNull();
+    }
+  });
 });
