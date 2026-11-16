@@ -135,7 +135,11 @@ vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
 }));
 
 import { ChatThreadView } from '@/frontend/ui/chats/chat-thread-view';
-import { recordPathname, resetInAppNavigation } from '@/frontend/ui/navbar/nav-history';
+import {
+  noteNavigation,
+  recordPathname,
+  resetInAppNavigation,
+} from '@/frontend/ui/navbar/nav-history';
 
 const PEER: ChatPeer = {
   id: 'peer-1',
@@ -557,7 +561,8 @@ describe('ChatThreadView back control', () => {
   });
 
   it('pops the page the thread was opened from', () => {
-    recordPathname('/notifications?tab=chats');
+    recordPathname('/notifications');
+    noteNavigation('push', '/chats/c-1');
     recordPathname('/chats/c-1');
     render(<ChatThreadView conversationId="c-1" />);
 

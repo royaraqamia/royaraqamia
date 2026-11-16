@@ -14,7 +14,12 @@ vi.mock('next/navigation', () => ({
 }));
 
 import { SecondaryHeader } from '../navbar/SecondaryHeader';
-import { recordPathname, resetInAppNavigation } from '../navbar/nav-history';
+import {
+  noteNavigation,
+  notePop,
+  recordPathname,
+  resetInAppNavigation,
+} from '../navbar/nav-history';
 
 const SITE_TITLE = 'رؤيَة رقَميَّة';
 
@@ -95,8 +100,9 @@ describe('SecondaryHeader', () => {
 
   it('pops real in-app history when there is some', () => {
     recordPathname('/');
-    mockPathname.mockReturnValue('/privacy');
+    noteNavigation('push', '/privacy');
     recordPathname('/privacy');
+    mockPathname.mockReturnValue('/privacy');
 
     render(<SecondaryHeader />);
     fireEvent.click(screen.getByRole('button', { name: 'رجوع' }));
@@ -106,12 +112,27 @@ describe('SecondaryHeader', () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it('goes up instead of popping once the trail is back at its entry', () => {
-    // The loop this replaces: /rates → /community/x → back → /rates, and the
-    // control believed it could pop again (a counter never comes down), so it
-    // went back into /community/x and the two pages traded places.
+  it('ignores a second press that lands before the first', () => {
+    mockPathname.mockReturnValue('/privacy');
+    render(<SecondaryHeader />);
+
+    const back = screen.getByRole('button', { name: 'رجوع' });
+    fireEvent.click(back);
+    fireEvent.click(back);
+
+    // One press, one screen: the second would have replaced the page the first
+    // was already sending the member to.
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+  });
+
+  it('goes up instead of popping once the stack is back at its entry', () => {
+    // The loop this replaces: /privacy → /community/x → back → /privacy, where
+    // the browser traversal was mistaken for a new visit and the control
+    // believed it could pop again into /community/x.
     recordPathname('/privacy');
+    noteNavigation('push', '/community/x');
     recordPathname('/community/x');
+    notePop('/privacy');
     recordPathname('/privacy');
     mockPathname.mockReturnValue('/privacy');
 
