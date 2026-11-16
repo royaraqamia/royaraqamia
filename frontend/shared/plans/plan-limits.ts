@@ -9,6 +9,7 @@ import {
   type PlanCaps,
 } from '@/shared/contracts/plans.constants';
 import type { UsageState } from '@/shared/contracts/plans';
+import { DAMASCUS_TIME_ZONE } from '@/shared/time';
 import {
   identityUserId,
   userIdentity,
@@ -44,7 +45,7 @@ const LOCAL_USAGE_MARKS_PREFIX = 'royaraqamia:local-usage-marks:';
  * allowance that flipped at UTC midnight would hand a reader in Damascus a new
  * allowance two hours early (ADR-0093).
  */
-const DAMASCUS_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Damascus' });
+const DAMASCUS_DAY = new Intl.DateTimeFormat('en-CA', { timeZone: DAMASCUS_TIME_ZONE });
 
 interface CachedCaps extends PlanCaps {
   fetchedAt: number;

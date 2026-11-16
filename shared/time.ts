@@ -3,8 +3,12 @@
  * UTC midnight: the reminder selection (`habit_damascus_day_start`), the plan
  * allowances and the push dedupe key all frame "today" the same way (ADR-0093).
  */
+
+/** The zone every day the product counts - a stored date, an allowance, a key - is framed in. */
+export const DAMASCUS_TIME_ZONE = 'Asia/Damascus';
+
 const DAMASCUS_DAY = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Damascus',
+  timeZone: DAMASCUS_TIME_ZONE,
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',

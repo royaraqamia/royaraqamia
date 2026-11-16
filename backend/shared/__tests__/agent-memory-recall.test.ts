@@ -4,6 +4,7 @@ import {
   RECALL_HALF_LIFE_DAYS,
   RECALL_MAX_ITEMS,
   RECALL_SIMILARITY_FLOOR,
+  formatMemoryDate,
   rankRecall,
   recallBlock,
   recallScore,
@@ -107,5 +108,18 @@ describe('recallBlock', () => {
 
     expect(block).toContain('من محفوظاتك');
     expect(block).not.toContain('في  ');
+  });
+});
+
+describe('formatMemoryDate', () => {
+  it('names the Damascus day a fact was saved, not the UTC one', () => {
+    // 22:30 UTC is already 00:30 on 16 November in Damascus, which is the date
+    // the account page draws the same fact under (#1545).
+    expect(formatMemoryDate('2026-11-15T22:30:00.000Z')).toBe('16 نوفمبر');
+  });
+
+  it('flips the day at Damascus midnight', () => {
+    expect(formatMemoryDate('2026-11-15T20:59:00.000Z')).toBe('15 نوفمبر');
+    expect(formatMemoryDate('2026-11-15T21:00:00.000Z')).toBe('16 نوفمبر');
   });
 });
