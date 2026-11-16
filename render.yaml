@@ -161,7 +161,7 @@ services:
       - key: AI_EMBEDDING_MODEL
         value: '@cf/baai/bge-m3'
       - key: AI_EMBEDDING_DIMENSIONS
-        value: 1024
+        value: '1024'
       - key: MCP_STATIC_CLIENT_GITHUB_ID
         sync: false
       - key: MCP_STATIC_CLIENT_GITHUB_SECRET
