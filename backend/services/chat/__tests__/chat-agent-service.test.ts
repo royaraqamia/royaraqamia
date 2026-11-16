@@ -8,6 +8,10 @@ import {
 } from '@/backend/clients/ai-chat';
 import { AiChatProviderError } from '@/backend/shared/domain/ai-chat';
 import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
+import type {
+  SkillTelemetryRepository,
+  TurnSkillUse,
+} from '@/backend/repositories/chat/skill-telemetry-repository';
 import {
   ChatAgentError,
   ChatAgentService,
@@ -16,6 +20,7 @@ import {
   type ChatAgentServiceDeps,
 } from '@/backend/services/chat/chat-agent-service';
 import type { ChatAgentTool } from '@/backend/services/chat/chat-agent-tools';
+import { routeSkills } from '@/backend/services/chat/skill-router';
 import { SKILL_ALREADY_LOADED } from '@/backend/shared/domain/agent-skills';
 import { logger } from '@/backend/shared/logger';
 import type { McpAppTool } from '@/backend/services/mcp/marketplace/app-tools-service';
@@ -207,6 +212,11 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
   const reserveAppCall = vi.fn(async () => ({ eventId: 'event-app-1', release }));
   const attachments = { download: vi.fn(async () => new Uint8Array([1, 2, 3])) };
 
+  const telemetry = {
+    record: vi.fn(async (_turnId: string, _skills: readonly TurnSkillUse[]) => undefined),
+    outcomes: vi.fn(async () => []),
+  } satisfies SkillTelemetryRepository;
+
   const actions = {
     propose: vi.fn(async () => ({
       message: message('message-p', 'agent', 'اقتراح'),
@@ -216,6 +226,7 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
 
   const service = new ChatAgentService({
     agent,
+    telemetry,
     chats,
     attachments,
     reserve,
@@ -231,7 +242,17 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
     ...overrides,
   });
 
-  return { service, agent, chats, reserve, reserveAppCall, release, actions, attachments };
+  return {
+    service,
+    agent,
+    telemetry,
+    chats,
+    reserve,
+    reserveAppCall,
+    release,
+    actions,
+    attachments,
+  };
 }
 
 async function collect(events: AsyncGenerator<ChatAgentEvent>) {
@@ -1055,6 +1076,65 @@ describe('the assistant’s tools (#818)', () => {
     expect(specialist.run).toHaveBeenCalledTimes(1);
     const secondRound = JSON.stringify(client.calls[1] ?? []);
     expect(secondRound).toContain(SKILL_ALREADY_LOADED);
+  });
+
+  it('attributes the specialist a turn read to that turn, without its text (#1449)', async () => {
+    const specialist: ChatAgentTool = {
+      name: 'load_specialist',
+      kind: 'read',
+      product: 'assistant',
+      tier: 0,
+      description: 'تحميل تعليمات متخصص',
+      schema: z.strictObject({ id: z.string() }),
+      maxResultChars: 20_000,
+      run: vi.fn(async ({ id }: { id: string }) => ({ id, content: 'تعليمات المتخصص' })),
+    };
+    const client = scriptedClient([
+      [toolCall('load_specialist', { id: 'legal-document-review' }, 'call-1')],
+      textStream('راجعت البنود التي تحمي طرفيك.'),
+    ]);
+    const { service, telemetry } = makeService({
+      client,
+      resolveTool: (name) => (name === 'load_specialist' ? specialist : null),
+    });
+
+    const question = 'راجع عقد الخدمة قبل ما أوقّع';
+    await collect(service.turn('user-1', 'conversation-1', question, TURN_CONTEXT));
+
+    // The row names the turn and the skill, and nothing else: the question the
+    // member typed is not copied into the measurement.
+    const [turnId, rows] = telemetry.record.mock.calls[0] ?? [];
+    expect(turnId).toBe('turn-1');
+    expect(rows).toEqual(
+      routeSkills(question).map((hit) => ({
+        skillId: hit.id,
+        loaded: hit.id === 'legal-document-review',
+      }))
+    );
+  });
+
+  it('records the shortlist of a turn that failed, as offered and never read (#1449)', async () => {
+    const client: AiChatClient = {
+      model: 'deepseek-v4.1-flash',
+      async *streamReply() {},
+      reply: async () => '',
+      transcribe: async () => null,
+      // eslint-disable-next-line require-yield -- the refusal is the point of this fixture
+      async *streamWithTools() {
+        throw new AiChatProviderError(401);
+      },
+    };
+    const { service, telemetry } = makeService({ client });
+
+    const question = 'راجع عقد الخدمة قبل ما أوقّع';
+    await expect(
+      collect(service.turn('user-1', 'conversation-1', question, TURN_CONTEXT))
+    ).rejects.toMatchObject({ status: 502 });
+
+    // A failure still says what the turn was offered: a specialist whose turns
+    // never answer is exactly what the operator has to be able to see.
+    const [, rows] = telemetry.record.mock.calls[0] ?? [];
+    expect(rows).toEqual(routeSkills(question).map((hit) => ({ skillId: hit.id, loaded: false })));
   });
 
   it('closes a failed read with ok:false, and never calls it a read', async () => {

@@ -31,4 +31,6 @@ object AdminConsoleCopy {
     const val MARKETPLACE_DESCRIPTION = "إيقاف تطبيق خارجي بسبب، وتعريب ما يقرأه الأعضاء من وصفه"
     const val REPORTS_LABEL = "إبلاغات المحادثات"
     const val REPORTS_DESCRIPTION = "مراجعة بلاغات المحادثات ومقتطفاتها المجمّدة"
+    const val SKILLS_LABEL = "المتخصصون"
+    const val SKILLS_DESCRIPTION = "كم مرة عرضت القائمة متخصصاً، وكم مرة قرأ الجواب نصه"
 }

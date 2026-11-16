@@ -157,6 +157,7 @@ describe('parentRouteOf', () => {
     ['/auth/login', '/'],
     ['/mcp/guide', '/'],
     ['/mcp/connect/consent', '/mcp/connect'],
+    ['/admin/agent/skills', '/admin'],
     ['/consultation/book', '/'],
     ['/training/apply', '/'],
     ['/u/someone', '/'],

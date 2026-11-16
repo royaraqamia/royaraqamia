@@ -128,6 +128,35 @@ export type Database = {
         };
         Relationships: [];
       };
+      agent_turn_skills: {
+        Row: {
+          created_at: string;
+          loaded: boolean;
+          skill_id: string;
+          turn_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          loaded?: boolean;
+          skill_id: string;
+          turn_id: string;
+        };
+        Update: {
+          created_at?: string;
+          loaded?: boolean;
+          skill_id?: string;
+          turn_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'agent_turn_skills_turn_id_fkey';
+            columns: ['turn_id'];
+            isOneToOne: false;
+            referencedRelation: 'agent_turns';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       agent_turns: {
         Row: {
           attempts: number;
@@ -3277,6 +3306,17 @@ export type Database = {
           source_kind: string | null;
           source_updated_at: string | null;
           user_id: string | null;
+        };
+        Relationships: [];
+      };
+      agent_skill_outcomes: {
+        Row: {
+          answered_turns: number | null;
+          declined_turns: number | null;
+          failed_turns: number | null;
+          loaded_turns: number | null;
+          retried_turns: number | null;
+          skill_id: string | null;
         };
         Relationships: [];
       };

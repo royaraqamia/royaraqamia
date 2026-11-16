@@ -57,6 +57,7 @@ export const TOP_NAV_ONLY_PATHS: readonly (readonly string[])[] = [
  * (`/admin/certificates/[id]`) is spelled here.
  */
 export const LAYOUT_ONLY_PATHS: readonly (readonly string[])[] = [
+  ['admin', 'agent'],
   ['admin', 'certificates', '*'],
   ['admin', 'clients'],
   ['admin', 'consultations'],
