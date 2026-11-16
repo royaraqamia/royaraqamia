@@ -628,6 +628,11 @@ export class ChatAgentService {
         ...(attachments.length > 0 ? { attachments } : {}),
       });
 
+      // The composer drew the question the moment it was pressed. Handing back
+      // the stored row makes that bubble the thread's own line, so the member
+      // never waits for the answer to see what they asked.
+      yield { type: 'question', message: sent };
+
       const page = await this.deps.chats.listMessages(userId, conversationId, null);
       // The typed question is a part of its own when the turn also carries
       // files: a screenshot and "what are the totals?" are one question, and

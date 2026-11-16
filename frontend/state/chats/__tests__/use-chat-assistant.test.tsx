@@ -144,4 +144,102 @@ describe('useChatAssistant', () => {
     expect(result.current.interrupted).toBe('');
     expect(result.current.error).toBeNull();
   });
+
+  it('paints the question before the answer arrives', async () => {
+    let release: (() => void) | null = null;
+    api.streamChatAgentTurn.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          release = resolve;
+        })
+    );
+
+    const { result } = renderHook(() => useChatAssistant('c-1', true, () => undefined));
+
+    let asking!: Promise<boolean>;
+    act(() => {
+      asking = result.current.ask('كيف أبدأ؟', []);
+    });
+
+    // The line is already the member's, while the turn is still running.
+    expect(result.current.pending?.message.body).toBe('كيف أبدأ؟');
+    expect(result.current.pending?.status).toBe('sending');
+    expect(result.current.isStreaming).toBe(true);
+
+    await act(async () => {
+      // Let the send reach the stream, then answer it.
+      for (let tick = 0; tick < 5 && !release; tick += 1) await Promise.resolve();
+      release?.();
+      await asking;
+    });
+  });
+
+  it('takes the stored row the turn hands back', async () => {
+    const stored = {
+      id: 'message-1',
+      conversationId: 'c-1',
+      senderId: 'user-1',
+      senderKind: 'user' as const,
+      body: 'كيف أبدأ؟',
+      replyToId: null,
+      editedAt: null,
+      deletedAt: null,
+      createdAt: '2026-11-09T10:00:00.000Z',
+      attachments: [],
+      replyTo: null,
+    };
+    api.streamChatAgentTurn.mockImplementation(
+      async (_id: string, _body: string, onEvent: (event: unknown) => void) => {
+        onEvent({ type: 'question', message: stored });
+      }
+    );
+
+    const { result } = renderHook(() => useChatAssistant('c-1', true, () => undefined));
+    await act(async () => {
+      await result.current.ask('كيف أبدأ؟', []);
+    });
+
+    expect(result.current.pending?.stored).toBe(true);
+    expect(result.current.pending?.message.id).toBe('message-1');
+  });
+
+  it('keeps a question the server never wrote, and sends it again', async () => {
+    api.streamChatAgentTurn.mockRejectedValue(new Error('انقطع الاتصال'));
+
+    const { result } = renderHook(() => useChatAssistant('c-1', true, () => undefined));
+    await act(async () => {
+      await result.current.ask('سؤال', []);
+    });
+
+    expect(result.current.pending?.status).toBe('failed');
+    expect(api.streamChatAgentTurn).toHaveBeenCalledTimes(1);
+
+    api.streamChatAgentTurn.mockImplementation(
+      async (_id: string, _body: string, onEvent: (event: unknown) => void) => {
+        onEvent({
+          type: 'question',
+          message: {
+            id: 'message-2',
+            conversationId: 'c-1',
+            senderId: 'user-1',
+            senderKind: 'user',
+            body: 'سؤال',
+            replyToId: null,
+            editedAt: null,
+            deletedAt: null,
+            createdAt: '2026-11-09T10:00:00.000Z',
+            attachments: [],
+            replyTo: null,
+          },
+        });
+      }
+    );
+
+    await act(async () => {
+      result.current.retryPending();
+    });
+
+    expect(api.streamChatAgentTurn).toHaveBeenCalledTimes(2);
+    expect(result.current.pending?.message.id).toBe('message-2');
+  });
 });

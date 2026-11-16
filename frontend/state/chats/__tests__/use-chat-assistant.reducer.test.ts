@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ChatAgentAllowance } from '@/shared/contracts/chat';
+import { createPendingTurn } from '@/frontend/state/chats/pending-turn';
 import {
   chatAssistantInitialState,
   chatAssistantReducer,
@@ -7,6 +8,7 @@ import {
 } from '@/frontend/state/chats/use-chat-assistant.reducer';
 
 const ALLOWANCE = { remaining: 3, limit: 10 } as unknown as ChatAgentAllowance;
+const PENDING = createPendingTurn('c-1', 'سؤال', []);
 
 function stateOf(patch: Partial<ChatAssistantTurn> = {}): ChatAssistantTurn {
   return { ...chatAssistantInitialState(), ...patch };
@@ -22,6 +24,7 @@ describe('chatAssistantInitialState', () => {
       streamingText: '',
       interrupted: '',
       toolsUsed: [],
+      pending: null,
       error: null,
     });
   });
@@ -43,7 +46,7 @@ describe('a turn', () => {
   it('starts clean, whatever the previous one left behind', () => {
     const state = chatAssistantReducer(
       stateOf({ streamingText: 'قديم', interrupted: 'قديم', toolsUsed: ['أداة'], error: 'خطأ' }),
-      { type: 'turnStarted' }
+      { type: 'turnStarted', pending: PENDING }
     );
 
     expect(state).toMatchObject({
@@ -107,13 +110,55 @@ describe('a turn', () => {
       failure: 'انقطع',
     });
 
-    expect(chatAssistantReducer(failed, { type: 'turnStarted' }).interrupted).toBe('');
+    expect(
+      chatAssistantReducer(failed, { type: 'turnStarted', pending: PENDING }).interrupted
+    ).toBe('');
+  });
+});
+
+describe('the question bubble', () => {
+  it('appears when the turn starts and takes the stored row the server hands back', () => {
+    const started = chatAssistantReducer(stateOf(), { type: 'turnStarted', pending: PENDING });
+    expect(started.pending?.message.id).toBe(PENDING.message.id);
+    expect(started.pending?.stored).toBe(false);
+
+    const stored = {
+      ...PENDING.message,
+      id: 'message-1',
+      body: 'سؤال',
+    };
+    const confirmed = chatAssistantReducer(started, { type: 'questionStored', message: stored });
+
+    expect(confirmed.pending?.stored).toBe(true);
+    expect(confirmed.pending?.message.id).toBe('message-1');
+  });
+
+  it('stays retryable only when the server never wrote it', () => {
+    const started = chatAssistantReducer(stateOf(), { type: 'turnStarted', pending: PENDING });
+    const failed = chatAssistantReducer(started, { type: 'turnSettled', failure: 'انقطع' });
+
+    expect(failed.pending?.status).toBe('failed');
+
+    const stored = chatAssistantReducer(
+      chatAssistantReducer(started, {
+        type: 'questionStored',
+        message: { ...PENDING.message, id: 'message-1' },
+      }),
+      { type: 'turnSettled', failure: 'انقطع' }
+    );
+
+    expect(stored.pending?.status).toBe('sending');
+  });
+
+  it('is dropped when the thread has drawn the stored row', () => {
+    const started = chatAssistantReducer(stateOf(), { type: 'turnStarted', pending: PENDING });
+    expect(chatAssistantReducer(started, { type: 'pendingDismissed' }).pending).toBeNull();
   });
 });
 
 describe('the phase line', () => {
   it('starts at thinking, then follows the frame that arrived', () => {
-    const started = chatAssistantReducer(stateOf(), { type: 'turnStarted' });
+    const started = chatAssistantReducer(stateOf(), { type: 'turnStarted', pending: PENDING });
     expect(started.phase).toEqual({ kind: 'thinking' });
 
     const writing = chatAssistantReducer(started, { type: 'delta', text: 'أهلاً' });

@@ -269,9 +269,15 @@ describe('the assistant turn', () => {
 
     const events = await collect(service.turn('user-1', 'conversation-1', 'سؤالي', TURN_CONTEXT));
 
-    expect(events[0]).toEqual({ type: 'delta', text: 'مرحبا ' });
-    expect(events[1]).toEqual({ type: 'delta', text: 'بك' });
-    expect(events[2]).toMatchObject({
+    // The stored question is the turn's first frame: the composer's own copy of
+    // the line becomes the thread's row before the answer starts (#1541).
+    expect(events[0]).toMatchObject({
+      type: 'question',
+      message: { senderKind: 'user', body: 'سؤالي' },
+    });
+    expect(events[1]).toEqual({ type: 'delta', text: 'مرحبا ' });
+    expect(events[2]).toEqual({ type: 'delta', text: 'بك' });
+    expect(events[3]).toMatchObject({
       type: 'done',
       message: { senderKind: 'agent', senderId: null },
     });

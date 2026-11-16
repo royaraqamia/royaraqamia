@@ -479,6 +479,12 @@ export type ChatAgentEvent =
   | { type: 'delta'; text: string }
   | { type: 'tool_start'; id: string; name: string; activity: string }
   | { type: 'tool'; id: string; name: string; label: string; ok: boolean }
+  /**
+   * The question was written to the thread, before the answer starts. The
+   * composer already drew its own copy of the line; this frame carries the
+   * stored row, so the two are one bubble rather than a guess and a duplicate.
+   */
+  | { type: 'question'; message: ChatMessage }
   /** A write tool was proposed; the card is drawn from `action` (#818). */
   | { type: 'proposal'; message: ChatMessage; action: ChatAgentAction }
   | { type: 'done'; message: ChatMessage }

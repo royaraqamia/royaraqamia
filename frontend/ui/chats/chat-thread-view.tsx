@@ -19,6 +19,7 @@ import {
   useChatAssistant,
   type ChatAssistantState,
 } from '@/frontend/state/chats/use-chat-assistant';
+import { pendingIsStored } from '@/frontend/state/chats/pending-turn';
 import { useChatPresence } from '@/frontend/state/chats/use-chat-presence';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
@@ -176,6 +177,17 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     void refresh();
   });
 
+  // The question the composer painted, drawn until the thread's own read carries
+  // the stored row. The moment it does, the local copy goes (#1541).
+  const pendingTurn =
+    assistant.pending && !pendingIsStored(assistant.pending, messages) ? assistant.pending : null;
+  const pendingId = pendingTurn?.message.id ?? null;
+  const { dismissPending, pendingUrl, retryPending } = assistant;
+
+  useEffect(() => {
+    if (assistant.pending && pendingIsStored(assistant.pending, messages)) dismissPending();
+  }, [assistant.pending, messages, dismissPending]);
+
   // A composer that meets the on-screen keyboard is the whole point of the fixed
   // footer: Chrome and the Android shell shrink `100dvh` themselves
   // (`interactive-widget: resizes-content`), and this publishes the strip Safari
@@ -185,7 +197,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: 'end' });
-  }, [messages.length, assistant.streamingText]);
+  }, [messages.length, assistant.streamingText, pendingId]);
 
   const state = useMemo(() => (thread ? stateOf(thread) : 'inactive'), [thread]);
   /** A proposal is drawn under the line it belongs to (#818). */
@@ -308,6 +320,16 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
    */
   async function handleDownload(attachment: ChatAttachment) {
     const url = await attachmentUrl(attachment);
+    if (!url) {
+      setNotice(CHAT_THREAD_COPY.downloadFailed);
+      return;
+    }
+    window.location.assign(url);
+  }
+
+  /** A staged file's preview is already the bytes: the browser opens its own. */
+  async function downloadPending(attachment: ChatAttachment) {
+    const url = await pendingUrl(attachment);
     if (!url) {
       setNotice(CHAT_THREAD_COPY.downloadFailed);
       return;
@@ -449,6 +471,25 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
             })
           )}
 
+          {pendingTurn && (
+            <div className="flex w-full flex-col gap-2">
+              <MessageRow
+                message={pendingTurn.message}
+                mine
+                receipt={null}
+                action={null}
+                /* The composer's own line, until the thread's read has it. */
+                state={pendingTurn.status === 'failed' ? 'failed' : 'queued'}
+                onRetry={retryPending}
+                onResolve={async () => null}
+                onEdit={async () => false}
+                onDownload={(attachment) => void downloadPending(attachment)}
+                resolveAttachmentUrl={pendingUrl}
+                onDelete={() => undefined}
+              />
+            </div>
+          )}
+
           {assistant.isStreaming && assistant.streamingText && (
             <div className="flex w-full flex-col items-start gap-1">
               <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
@@ -511,9 +552,11 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         onRecording={noteRecording}
         recordLimitMs={recordLimitMs}
         onAsk={(body, staged) => {
-          void assistant.ask(body, staged).then((sent) => {
-            if (sent) setDraft('');
-          });
+          // The field empties on the press, not on the answer (#1541): the line
+          // is already in the thread, and a question that fails keeps its own
+          // bubble with a retry rather than the words coming back here.
+          setDraft('');
+          void assistant.ask(body, staged);
         }}
         onAccept={() => setConfirm({ kind: 'accept' })}
         onDecline={() => setConfirm({ kind: 'decline' })}
