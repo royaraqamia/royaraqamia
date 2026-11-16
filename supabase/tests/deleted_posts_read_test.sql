@@ -6,7 +6,7 @@
 -- SELECT policy is what `anon` reaches through PostgREST with the publishable
 -- key, so the public branch has to name it too.
 --
--- `20261207130000_hide_deleted_posts_from_public_read.sql` narrows the public
+-- `20261208130000_hide_deleted_posts_from_public_read.sql` narrows the public
 -- branch and leaves the author branch unconditional, which is what keeps
 -- `deletePost`'s `update ... returning slug` answering a row. This file pins
 -- both halves, and the catalog itself, so a later policy rewrite that drops the
