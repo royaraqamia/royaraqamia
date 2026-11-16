@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import webpush from 'web-push';
+import { sendNotification, setVapidDetails } from 'web-push';
 import { createClient } from '@supabase/supabase-js';
 /**
  * Live end-to-end verification of the native Web Push pipeline: real
@@ -110,7 +110,7 @@ test('native web push round-trip', async ({ browser, baseURL }) => {
     .single();
   expect(dbErr).toBeNull();
 
-  webpush.setVapidDetails(
+  setVapidDetails(
     process.env.VAPID_SUBJECT!,
     process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
     process.env.VAPID_PRIVATE_KEY!
@@ -119,7 +119,7 @@ test('native web push round-trip', async ({ browser, baseURL }) => {
   const swLogs: string[] = [];
   context.on('serviceworker', (sw) => void sw.on('console', (m) => void swLogs.push(m.text())));
 
-  await webpush.sendNotification(
+  await sendNotification(
     { endpoint, keys },
     JSON.stringify({
       title,
