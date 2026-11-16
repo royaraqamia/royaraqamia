@@ -1,4 +1,5 @@
-import type { ChatAgentAllowance, ChatAgentPhase } from '@/shared/contracts/chat';
+import type { ChatAgentAllowance, ChatAgentPhase, ChatMessage } from '@/shared/contracts/chat';
+import { withStoredMessage, type PendingTurn } from './pending-turn';
 
 /**
  * The assistant's composer during one turn (ADR-0113, #817).
@@ -26,17 +27,25 @@ export interface ChatAssistantTurn {
   interrupted: string;
   /** This turn's own record of what it read or proposed, in the member's words. */
   toolsUsed: string[];
+  /**
+   * The question as the thread draws it (#1541). It appears on the press and
+   * stays until the thread's own read carries the stored row, so the member
+   * never watches their words sit in a field waiting for the answer.
+   */
+  pending: PendingTurn | null;
   error: string | null;
 }
 
 export type ChatAssistantAction =
   | { type: 'assistantLoaded'; available: boolean; allowance: ChatAgentAllowance | null }
-  | { type: 'turnStarted' }
+  | { type: 'turnStarted'; pending: PendingTurn }
+  | { type: 'questionStored'; message: ChatMessage }
   | { type: 'delta'; text: string }
   | { type: 'toolStarted'; activity: string }
   | { type: 'toolFinished' }
   | { type: 'toolUsed'; label: string }
   | { type: 'proposalSeen' }
+  | { type: 'pendingDismissed' }
   | { type: 'turnSettled'; failure: string | null };
 
 export function chatAssistantInitialState(): ChatAssistantTurn {
@@ -48,6 +57,7 @@ export function chatAssistantInitialState(): ChatAssistantTurn {
     streamingText: '',
     interrupted: '',
     toolsUsed: [],
+    pending: null,
     error: null,
   };
 }
@@ -68,7 +78,14 @@ export function chatAssistantReducer(
         streamingText: '',
         interrupted: '',
         toolsUsed: [],
+        pending: action.pending,
         error: null,
+      };
+
+    case 'questionStored':
+      return {
+        ...state,
+        pending: state.pending ? withStoredMessage(state.pending, action.message) : state.pending,
       };
 
     case 'delta':
@@ -98,9 +115,14 @@ export function chatAssistantReducer(
       // read, so a write waiting for the member is not listed as "used".
       return { ...state, phase: { kind: 'proposal' } };
 
+    case 'pendingDismissed':
+      return { ...state, pending: null };
+
     case 'turnSettled':
       // A turn that failed after writing something keeps that text: dropping it
-      // made the error read as if the whole answer never existed.
+      // made the error read as if the whole answer never existed. A question the
+      // server never stored stays as the member's line, with a retry; one it did
+      // store is the thread's, and the next read replaces it.
       return {
         ...state,
         isStreaming: false,
@@ -108,6 +130,10 @@ export function chatAssistantReducer(
         streamingText: '',
         interrupted:
           action.failure && state.streamingText.trim() ? state.streamingText : state.interrupted,
+        pending:
+          action.failure && state.pending && !state.pending.stored
+            ? { ...state.pending, status: 'failed' }
+            : state.pending,
         error: action.failure,
       };
   }

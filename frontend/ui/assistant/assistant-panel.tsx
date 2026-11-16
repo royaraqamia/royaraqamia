@@ -30,6 +30,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dia
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ActionCard } from '@/frontend/ui/chats/chat-agent-action-card';
 import { AssistantComposer } from '@/frontend/ui/chats/chat-assistant-composer';
+import { pendingIsStored } from '@/frontend/state/chats/pending-turn';
 import { AssistantMark } from '@/frontend/ui/chats/assistant-mark';
 import { ASSISTANT_COPY } from '@/frontend/ui/chats/assistant-copy';
 import { AttachmentChip } from '@/frontend/ui/chats/attachment-chip';
@@ -233,6 +234,18 @@ export function AssistantPanel({
     }
   });
 
+  // The question the composer painted, drawn until the thread's read carries the
+  // stored row (#1541). The panel's own read is what replaces it; the local copy
+  // goes the moment that row is on screen.
+  const pendingTurn =
+    assistant.pending && !pendingIsStored(assistant.pending, messages) ? assistant.pending : null;
+  const pendingId = pendingTurn?.message.id ?? null;
+  const { dismissPending, pendingUrl, retryPending } = assistant;
+
+  useEffect(() => {
+    if (assistant.pending && pendingIsStored(assistant.pending, messages)) dismissPending();
+  }, [assistant.pending, messages, dismissPending]);
+
   // A reopen revalidates the meters without blanking the conversation. The
   // first open is already the hook's own read, so it is not asked twice.
   const refreshedOnceRef = useRef(false);
@@ -268,7 +281,7 @@ export function AssistantPanel({
       element.scrollTop = element.scrollHeight;
     });
     return () => cancelAnimationFrame(frame);
-  }, [open, messages.length, assistant.streamingText]);
+  }, [open, messages.length, assistant.streamingText, pendingId]);
 
   const actionByMessage = useMemo(() => {
     const byMessage = new Map<string, ChatAgentAction>();
@@ -298,7 +311,9 @@ export function AssistantPanel({
                 : 'ready';
 
   async function ask(body: string, files: File[]) {
-    if (await assistant.ask(body, files)) setDraft('');
+    // The field empties on the press, not on the answer (#1541).
+    setDraft('');
+    await assistant.ask(body, files);
   }
 
   const resolveAction = useCallback(
@@ -329,6 +344,15 @@ export function AssistantPanel({
       if (signed) window.location.assign(signed.url);
     },
     [threadId]
+  );
+
+  /** A staged file's preview is the bytes themselves; the browser opens its own. */
+  const downloadPending = useCallback(
+    async (attachment: ChatAttachment) => {
+      const url = await pendingUrl(attachment);
+      if (url) window.location.assign(url);
+    },
+    [pendingUrl]
   );
 
   /**
@@ -419,7 +443,7 @@ export function AssistantPanel({
               aria-busy={assistant.isStreaming}
               className="flex min-h-full flex-col gap-3"
             >
-              {messages.length === 0 && !assistant.isStreaming ? (
+              {messages.length === 0 && !assistant.isStreaming && !pendingTurn ? (
                 thread ? (
                   // The same first screen the full thread opens on: one mark,
                   // the name and the sentence, centred in the list (ADR-0143).
@@ -441,6 +465,30 @@ export function AssistantPanel({
                   onDownload={download}
                 />
               ))}
+
+              {pendingTurn ? (
+                <>
+                  <PanelMessage
+                    message={pendingTurn.message}
+                    action={null}
+                    onResolve={resolveAction}
+                    onDownload={(attachment) => void downloadPending(attachment)}
+                    resolveUrl={pendingUrl}
+                  />
+                  {pendingTurn.status === 'failed' ? (
+                    <p className="flex items-center gap-1 self-end text-[10px] text-destructive/80">
+                      {CHAT_THREAD_COPY.sendFailed}
+                      <button
+                        type="button"
+                        onClick={retryPending}
+                        className="font-bold underline-offset-2 hover:underline"
+                      >
+                        {CHAT_THREAD_COPY.retry}
+                      </button>
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
 
               {assistant.toolsUsed.length > 0 ? (
                 <details className="group text-[10px] text-muted-foreground/70">
@@ -498,11 +546,14 @@ const PanelMessage = memo(function PanelMessage({
   action,
   onResolve,
   onDownload,
+  resolveUrl,
 }: {
   message: ChatMessage;
   action: ChatAgentAction | null;
   onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
   onDownload: (attachment: ChatAttachment) => void;
+  /** The device's bytes for a line the panel painted itself (#1541). */
+  resolveUrl?: (attachment: ChatAttachment) => Promise<string | null>;
 }) {
   const mine = message.senderKind === 'user';
 
@@ -532,6 +583,7 @@ const PanelMessage = memo(function PanelMessage({
                     attachment={attachment}
                     mine={mine}
                     onDownload={onDownload}
+                    resolveUrl={resolveUrl}
                   />
                 ) : chatAttachmentIsInlineImage(attachment.mimeType) ? (
                   <ChatImage
@@ -539,6 +591,7 @@ const PanelMessage = memo(function PanelMessage({
                     attachment={attachment}
                     label={label}
                     onDownload={onDownload}
+                    resolveUrl={resolveUrl}
                   />
                 ) : (
                   <AttachmentChip attachment={attachment} label={label} onDownload={onDownload} />
