@@ -129,7 +129,7 @@ describe('the embeddings repository', () => {
   });
 
   it('writes the vector as a literal and upserts on the fact, never inserting a second row', async () => {
-    const { client, calls } = makeClient({ agent_memory_embeddings: { error: null } });
+    const { client, calls } = makeClient({ agent_memory_embeddings_1024: { error: null } });
     const repository = createSupabaseMemoryEmbeddingsRepository(client);
 
     const written = await repository.write([
@@ -160,7 +160,7 @@ describe('the embeddings repository', () => {
 
   it('asks the function for the nearest facts with the caller’s vector and scope', async () => {
     const { client, rpcCalls } = makeClient({
-      'rpc:agent_memory_nearest': {
+      'rpc:agent_memory_nearest_1024': {
         data: [
           { memory_id: 'memory-1', text: 'أحب القهوة', similarity: 0.87, updated_at: '2026-11-01' },
         ],
@@ -176,7 +176,7 @@ describe('the embeddings repository', () => {
 
     expect(rpcCalls).toEqual([
       {
-        name: 'agent_memory_nearest',
+        name: 'agent_memory_nearest_1024',
         args: {
           p_user_id: 'member-1',
           p_query: '[0.5,0.25]',
@@ -193,7 +193,7 @@ describe('the embeddings repository', () => {
 
   it('counts the rows it holds and the rows still queued', async () => {
     const { client } = makeClient({
-      agent_memory_embeddings: { count: 7, error: null },
+      agent_memory_embeddings_1024: { count: 7, error: null },
       agent_embedding_pending: { count: 3, error: null },
     });
     const repository = createSupabaseMemoryEmbeddingsRepository(client);

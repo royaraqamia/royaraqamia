@@ -4,6 +4,7 @@ import type { AiEmbeddingsClient } from '@/backend/clients/ai-embeddings';
 import type { MemoryEmbeddingsRepository } from '@/backend/repositories/agent/memory-embeddings-repository';
 import { createMemoryEmbeddingsService } from '@/backend/services/agent/memory-embeddings-service';
 import {
+  EMBEDDING_GENERATION,
   type EmbeddingSource,
   type EmbeddingWrite,
   type RecalledMemory,
@@ -74,7 +75,7 @@ class FakeRepository implements MemoryEmbeddingsRepository {
 function fakeClient(embed: AiEmbeddingsClient['embed'] = async (texts) => texts.map(() => [0.5])) {
   return {
     model: 'text-embedding-3-small',
-    dimensions: 1536,
+    dimensions: EMBEDDING_GENERATION.dimensions,
     embed: vi.fn(embed),
   } satisfies AiEmbeddingsClient;
 }

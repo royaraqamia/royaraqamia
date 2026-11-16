@@ -2,16 +2,18 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
 import { repositoryFailure } from '@/backend/shared/repository-error';
-import type {
-  EmbeddingCounts,
-  EmbeddingSource,
-  EmbeddingWrite,
-  RecallScope,
-  RecalledMemory,
+import {
+  EMBEDDING_GENERATION,
+  type EmbeddingCounts,
+  type EmbeddingSource,
+  type EmbeddingWrite,
+  type RecallScope,
+  type RecalledMemory,
 } from '@/backend/shared/domain/agent-memory';
 
 type PendingRow = Database['public']['Views']['agent_embedding_pending']['Row'];
-type NearestRow = Database['public']['Functions']['agent_memory_nearest']['Returns'][number];
+type NearestRow =
+  Database['public']['Functions'][typeof EMBEDDING_GENERATION.nearestFunction]['Returns'][number];
 
 /**
  * A pgvector literal, from the array a provider returned.
@@ -100,7 +102,7 @@ export function createSupabaseMemoryEmbeddingsRepository(
     async write(rows) {
       if (rows.length === 0) return 0;
 
-      const { error } = await supabase.from('agent_memory_embeddings').upsert(
+      const { error } = await supabase.from(EMBEDDING_GENERATION.table).upsert(
         rows.map((row) => ({
           user_id: row.userId,
           memory_id: row.id,
@@ -116,7 +118,7 @@ export function createSupabaseMemoryEmbeddingsRepository(
     },
 
     async nearest(userId, embedding, limit, scope) {
-      const { data, error } = await supabase.rpc('agent_memory_nearest', {
+      const { data, error } = await supabase.rpc(EMBEDDING_GENERATION.nearestFunction, {
         p_user_id: userId,
         p_query: toVectorLiteral(embedding),
         p_limit: limit,
@@ -135,7 +137,7 @@ export function createSupabaseMemoryEmbeddingsRepository(
 
     async counts() {
       const stored = await supabase
-        .from('agent_memory_embeddings')
+        .from(EMBEDDING_GENERATION.table)
         .select('id', { count: 'exact', head: true });
       if (stored.error) throw repositoryFailure('memory.embeddings.counts.stored', stored.error);
 

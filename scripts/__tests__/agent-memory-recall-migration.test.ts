@@ -2,13 +2,16 @@ import { readFileSync, readdirSync } from 'fs';
 import { resolve } from 'path';
 import { describe, expect, it } from 'vitest';
 
+import { EMBEDDING_GENERATION } from '@/backend/shared/domain/agent-memory';
+
 /**
- * The scope a recall answers inside (ADR-0182 decision 3, #1510).
+ * The scope a recall answers inside (ADR-0182 decision 3, #1510), at the
+ * generation whose function a turn calls (#1550).
  *
  * There is no local Supabase stack, so the migration is the production code path
- * and these assertions read it: the last file that defines
- * `agent_memory_nearest` is the one a turn calls. What is pinned is the issue's
- * rule, not the comment header:
+ * and these assertions read it: the last file that defines the generation's own
+ * nearest function is the one recall runs. What is pinned is the issue's rule,
+ * not the comment header:
  *
  * - a thread-scoped fact is recalled only in its own thread;
  * - a product fact only where the turn knows the product, and only that one;
@@ -17,6 +20,8 @@ import { describe, expect, it } from 'vitest';
  */
 
 const migrationsDir = resolve(process.cwd(), 'supabase/migrations');
+const NEAREST = EMBEDDING_GENERATION.nearestFunction;
+const SIGNATURE = `${NEAREST}(uuid, extensions.vector, integer, uuid, text)`;
 
 /** Comments stripped so prose about a rule cannot satisfy a pin for it. */
 const withoutComments = (sql: string) => sql.replace(/--[^\n]*/g, ' ');
@@ -31,33 +36,36 @@ function latestDefinition(): { file: string; sql: string } {
     .filter((entry) => entry.endsWith('.sql'))
     .sort()) {
     const source = withoutComments(readFileSync(resolve(migrationsDir, file), 'utf8'));
-    if (!/create\s+or\s+replace\s+function\s+public\.agent_memory_nearest\s*\(/i.test(source))
+    if (
+      !new RegExp(`create\\s+or\\s+replace\\s+function\\s+public\\.${NEAREST}\\s*\\(`, 'i').test(
+        source
+      )
+    )
       continue;
     latest = { file, sql: flatten(source) };
   }
 
-  expect(latest, 'no migration defines public.agent_memory_nearest').toBeDefined();
+  expect(latest, `no migration defines public.${NEAREST}`).toBeDefined();
   return latest as { file: string; sql: string };
 }
 
 const { file, sql } = latestDefinition();
 
-describe(`public.agent_memory_nearest (${file})`, () => {
+describe(`public.${NEAREST} (${file})`, () => {
   it('answers one signature, so a call cannot match two', () => {
     // The three-argument function was dropped by #1510; what keeps the pair from
     // coming back is that only the five-argument one is granted to a caller.
     expect(sql).toContain(
-      'grant execute on function public.agent_memory_nearest(uuid, extensions.vector, integer, uuid, text) to authenticated, service_role'
+      `grant execute on function public.${SIGNATURE} to authenticated, service_role`
     );
   });
 
   it('takes the two scope keys, defaulted so an account-only call still means something', () => {
-    const args =
-      /create or replace function public\.agent_memory_nearest\(([\s\S]*?)\) returns table/.exec(
-        sql
-      )?.[1];
+    const args = new RegExp(
+      `create or replace function public\\.${NEAREST}\\(([\\s\\S]*?)\\) returns table`
+    ).exec(sql)?.[1];
 
-    expect(args, 'no agent_memory_nearest definition').toBeDefined();
+    expect(args, `no ${NEAREST} definition`).toBeDefined();
     expect(args).toContain('p_thread_id uuid default null');
     expect(args).toContain('p_product text default null');
     // The width and the member stay the caller's, never a guess.
@@ -91,11 +99,9 @@ describe(`public.agent_memory_nearest (${file})`, () => {
   });
 
   it('grants the new signature exactly to the roles that call it', () => {
+    expect(sql).toContain(`revoke all on function public.${SIGNATURE} from public, anon`);
     expect(sql).toContain(
-      'revoke all on function public.agent_memory_nearest(uuid, extensions.vector, integer, uuid, text) from public, anon'
-    );
-    expect(sql).toContain(
-      'grant execute on function public.agent_memory_nearest(uuid, extensions.vector, integer, uuid, text) to authenticated, service_role'
+      `grant execute on function public.${SIGNATURE} to authenticated, service_role`
     );
   });
 });
