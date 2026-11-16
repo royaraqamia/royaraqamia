@@ -1,0 +1,172 @@
+{
+  "surface": "account-memory",
+  "route": "/account/memory",
+  "notes": "The memory page at rest, and with nothing remembered (#1428). `origin` is the title in both states, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the first account row at rest and the empty sentence when there is none, because those are the regions both clients draw identically. The at-rest state needs a session with at least one account-scoped fact and the empty state needs one with no facts at all, so a recording has to sign in as the fixture account and arrange that data. Widths of a fact's own words are left out deliberately — they are the run of the text, not a decision. Colours are left out too: they are what the raster proves. The surface is in `docs/mobile/screens.json` with the port off and is not yet under `docs/mobile/visual-gate.json`; it joins the gate when both states have evidence (ADR-0117, ADR-0118).",
+  "states": [
+    {
+      "name": "at-rest",
+      "origin": "title",
+      "capture": "row-account-0",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='memory-title'] h1"
+          },
+          "app": {
+            "tag": "memory-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "intro",
+          "web": {
+            "selector": "[data-visual='memory-intro']"
+          },
+          "app": {
+            "tag": "memory-intro"
+          },
+          "properties": ["top", "height", "fontSize"]
+        },
+        {
+          "name": "settings",
+          "web": {
+            "selector": "[data-visual='memory-settings']"
+          },
+          "app": {
+            "tag": "memory-settings"
+          },
+          "properties": ["top", "width", "radius", "paddingTop", "paddingBottom"]
+        },
+        {
+          "name": "scope-account",
+          "web": {
+            "selector": "[data-visual='memory-scope-account']"
+          },
+          "app": {
+            "tag": "memory-scope-account"
+          },
+          "properties": ["top", "height"]
+        },
+        {
+          "name": "switch-account",
+          "web": {
+            "selector": "[data-visual='memory-switch-account']"
+          },
+          "app": {
+            "tag": "memory-switch-account"
+          },
+          "properties": ["width", "height", "radius"]
+        },
+        {
+          "name": "export",
+          "web": {
+            "selector": "[data-visual='memory-export']"
+          },
+          "app": {
+            "tag": "memory-export"
+          },
+          "properties": ["top", "width", "radius", "height"]
+        },
+        {
+          "name": "list-account",
+          "web": {
+            "selector": "[data-visual='memory-list-account']"
+          },
+          "app": {
+            "tag": "memory-list-account"
+          },
+          "properties": ["top", "width", "radius"]
+        },
+        {
+          "name": "row-account-0",
+          "web": {
+            "selector": "[data-visual='memory-row-account-0']"
+          },
+          "app": {
+            "tag": "memory-row-account-0"
+          },
+          "properties": ["top", "width", "height", "paddingTop", "paddingBottom"]
+        },
+        {
+          "name": "text-account-0",
+          "web": {
+            "selector": "[data-visual='memory-text-account-0']"
+          },
+          "app": {
+            "tag": "memory-text-account-0"
+          },
+          "properties": ["height", "fontSize", "lineHeight"]
+        },
+        {
+          "name": "delete-account-0",
+          "web": {
+            "selector": "[data-visual='memory-delete-account-0']"
+          },
+          "app": {
+            "tag": "memory-delete-account-0"
+          },
+          "properties": ["width", "height", "radius", "fontSize", "fontWeight"]
+        }
+      ]
+    },
+    {
+      "name": "empty",
+      "origin": "title",
+      "capture": "empty",
+      "elements": [
+        {
+          "name": "title",
+          "web": {
+            "selector": "[data-visual='memory-title'] h1"
+          },
+          "app": {
+            "tag": "memory-title"
+          },
+          "properties": ["top", "height", "fontSize", "fontWeight"]
+        },
+        {
+          "name": "settings",
+          "web": {
+            "selector": "[data-visual='memory-settings']"
+          },
+          "app": {
+            "tag": "memory-settings"
+          },
+          "properties": ["top", "width", "radius"]
+        },
+        {
+          "name": "export",
+          "web": {
+            "selector": "[data-visual='memory-export']"
+          },
+          "app": {
+            "tag": "memory-export"
+          },
+          "properties": ["top", "width", "radius", "height"]
+        },
+        {
+          "name": "empty",
+          "web": {
+            "selector": "[data-visual='memory-empty']"
+          },
+          "app": {
+            "tag": "memory-empty"
+          },
+          "properties": ["top", "width", "height", "radius", "fontSize"]
+        }
+      ]
+    }
+  ],
+  "motion": {
+    "notes": "The page is still. A scope switch travels between two positions in 150ms with no layout change; a row's editor replaces the fact in place rather than opening a sheet, so nothing moves but the row's own height. The spinner is the loading state and the export is a link.",
+    "entries": [
+      {
+        "gesture": "tap a scope switch",
+        "element": "switch-account",
+        "moves": "the knob travels from one end of the track to the other",
+        "same": "150ms, no travel beyond the track, and the row's height does not change"
+      }
+    ]
+  }
+}

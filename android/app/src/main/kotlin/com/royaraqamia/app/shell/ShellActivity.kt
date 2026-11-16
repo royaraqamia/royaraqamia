@@ -37,6 +37,8 @@ import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
 import com.royaraqamia.app.account.AccountFaqScreen
 import com.royaraqamia.app.account.BlockedMembersScreen
+import com.royaraqamia.app.account.MemoryRepository
+import com.royaraqamia.app.account.MemoryScreen
 import com.royaraqamia.app.chats.ChatNewScreen
 import com.royaraqamia.app.chats.ChatRoutes
 import com.royaraqamia.app.chats.ChatThread
@@ -400,6 +402,18 @@ class ShellActivity : ComponentActivity() {
                                     repository = graph.blockedMembers,
                                     signedIn = signedIn,
                                     onSignIn = ::showSignIn,
+                                )
+                            // What the assistant remembers (#1428): the
+                            // page's read, its three switches, its two
+                            // controls per fact and its export. Ported and off
+                            // until the visual gate passes (ADR-0117), so the
+                            // document still opens on top of it.
+                            "/account/memory" ->
+                                MemoryScreen(
+                                    repository = graph.memory,
+                                    signedIn = signedIn,
+                                    onSignIn = ::showSignIn,
+                                    onExport = ::openMemoryExport,
                                 )
                             // The account news page (#950): the checklist, the
                             // private feeds and the proposal form. Ported and
@@ -881,6 +895,17 @@ class ShellActivity : ComponentActivity() {
         assistantOpen = false
         assistantSnapshot = null
         openRoute("/auth/login")
+    }
+
+    /**
+     * The memory page's export (#1428): the page's own route, opened as a file.
+     *
+     * The answer is an attachment (`content-disposition`), so the document is
+     * what downloads it — the screen owns no storage and no downloader, and the
+     * file the member gets is byte for byte the site's.
+     */
+    private fun openMemoryExport() {
+        document.launch(WebSurface.intentFor(this, MemoryRepository.EXPORT_PATH))
     }
 
     /**

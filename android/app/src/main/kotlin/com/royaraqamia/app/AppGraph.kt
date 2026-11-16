@@ -5,6 +5,7 @@ import com.royaraqamia.app.account.AccountProfileRepository
 import com.royaraqamia.app.account.AccountUsageRepository
 import com.royaraqamia.app.account.AvatarLoader
 import com.royaraqamia.app.account.BlockedMembersRepository
+import com.royaraqamia.app.account.MemoryRepository
 import com.royaraqamia.app.account.TransportAvatarLoader
 import com.royaraqamia.app.accountnews.NewsRepository
 import com.royaraqamia.app.api.ApiClient
@@ -95,6 +96,8 @@ class AppGraph private constructor(
     val connectedApps: ConnectedAppsRepository,
     /** The account's blocked members (#977): the list and the unblock. */
     val blockedMembers: BlockedMembersRepository,
+    /** What the assistant remembers (#1428): the facts, the switches, the export. */
+    val memory: MemoryRepository,
     /** The account profile's two writes and its avatar read (#945). */
     val accountProfile: AccountProfileRepository,
     /** The account allowance card's one read (#947). */
@@ -398,6 +401,7 @@ class AppGraph private constructor(
                         identityKey = { session.storeIdentity.key },
                     ),
                 blockedMembers = BlockedMembersRepository(client),
+                memory = MemoryRepository(client),
                 accountProfile = AccountProfileRepository(client, TransportAvatarLoader()),
                 accountUsage = AccountUsageRepository(client),
                 news = NewsRepository(client),

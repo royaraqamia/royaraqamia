@@ -11,6 +11,7 @@ import {
 import {
   MEMORY_REFUSED_SENTENCE,
   MEMORY_SCOPE_KEY,
+  MEMORY_SCOPE_OFF,
   MEMORY_TOO_LONG,
   type AgentMemory,
 } from '@/backend/shared/domain/agent-memory';
@@ -42,13 +43,21 @@ function makeRepository(overrides: Partial<AgentMemoryRepository> = {}): {
     },
     update: async (_userId, _id, patch) => ({ ...saved, ...patch }),
     forget: async () => true,
+    forgetThread: async () => 0,
+    settings: async () => ({ account: true, product: true, thread: true }),
+    saveSettings: async (_userId, patch) => ({
+      account: true,
+      product: true,
+      thread: true,
+      ...patch,
+    }),
     ...overrides,
   };
   return { repository, inserted };
 }
 
 function makeService(repository: AgentMemoryRepository) {
-  const embeddings = { embedFact: vi.fn(async () => true), forget: vi.fn(async () => true) };
+  const embeddings = { embedFact: vi.fn(async () => true) };
   return { service: createAgentMemoryService({ repository, embeddings }), embeddings };
 }
 
@@ -142,7 +151,7 @@ describe('the fact write path (#1509)', () => {
 
   it('still answers the fact when the embedding could not be written', async () => {
     const { repository } = makeRepository();
-    const embeddings = { embedFact: vi.fn(async () => false), forget: vi.fn(async () => true) };
+    const embeddings = { embedFact: vi.fn(async () => false) };
     const service = createAgentMemoryService({ repository, embeddings });
 
     // A memory that cannot be embedded is still a memory (ADR-0182 decision 3).
@@ -160,16 +169,51 @@ describe('the fact write path (#1509)', () => {
     expect(embeddings.embedFact).toHaveBeenCalledWith('memory-1');
   });
 
-  it('deletes the vector of a forgotten fact, and does nothing for a row that was not there', async () => {
+  it('forgets a fact through the one transaction, and answers what the row said', async () => {
     const { repository } = makeRepository();
     const { service, embeddings } = makeService(repository);
 
-    expect(await service.forget('member-1', 'memory-1')).toBe(true);
-    expect(embeddings.forget).toHaveBeenCalledWith('memory-1');
+    expect(await service.forget('memory-1')).toBe(true);
+    // The vector is deleted inside `agent_memory_forget`, not by a second call
+    // the member's request could be interrupted between (ADR-0182 decision 6).
+    expect(embeddings.embedFact).not.toHaveBeenCalled();
 
     const missing = makeRepository({ forget: async () => false });
     const second = makeService(missing.repository);
-    expect(await second.service.forget('member-1', 'memory-2')).toBe(false);
-    expect(second.embeddings.forget).not.toHaveBeenCalled();
+    expect(await second.service.forget('memory-2')).toBe(false);
+  });
+
+  it('refuses to remember into a scope the member switched off', async () => {
+    const { repository, inserted } = makeRepository({
+      settings: async () => ({ account: true, product: false, thread: true }),
+    });
+    const { service } = makeService(repository);
+
+    // The tool, extraction and the page are one door, and the switch is a
+    // control only if the door honours it (decision 6).
+    await expect(
+      service.remember({
+        userId: 'member-1',
+        text: 'أنا شهري',
+        scope: 'product',
+        product: 'spendtrack',
+      })
+    ).rejects.toThrow(MEMORY_SCOPE_OFF);
+    expect(inserted).toHaveLength(0);
+
+    await expect(
+      service.remember({ userId: 'member-1', text: 'الموعد في الخامس عشر' })
+    ).resolves.toMatchObject({ id: 'memory-1' });
+  });
+
+  it('writes only the switches it was given, and answers all three', async () => {
+    const { repository } = makeRepository();
+    const { service } = makeService(repository);
+
+    await expect(service.saveSettings('member-1', { thread: false })).resolves.toEqual({
+      account: true,
+      product: true,
+      thread: false,
+    });
   });
 });

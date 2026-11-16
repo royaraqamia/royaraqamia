@@ -232,15 +232,25 @@ describe('ChatThreadView menu', () => {
   });
 
   /**
-   * A menu with nothing in it is not a menu (#1021): the assistant's thread has
-   * nothing to report, nobody to block and no membership to leave, so the header
-   * carries no ⋮ rather than a control that opens an empty box.
+   * The assistant thread's menu is not empty any more (#1428): the one verb it
+   * has is forgetting what the assistant remembered of this conversation. What
+   * it still does not have is a report or a block — the only other writer is the
+   * server's model, and there is no counterpart.
    */
-  it('draws no menu on the assistant thread', () => {
+  it('draws one menu item on the assistant thread: forget this conversation', async () => {
     thread.current = { ...makeThread('agent'), counterpart: null };
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(screen.queryByRole('button', { name: 'خيارات المحادثة' })).toBeNull();
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'خيارات المحادثة' }), {
+      button: 0,
+      pointerType: 'mouse',
+    });
+
+    const menu = await screen.findByRole('menu');
+    expect(
+      within(menu).getByRole('menuitem', { name: 'انسَ ما حفظته من هذه المحادثة' })
+    ).toBeInTheDocument();
+    expect(within(menu).getAllByRole('menuitem')).toHaveLength(1);
   });
 
   /**

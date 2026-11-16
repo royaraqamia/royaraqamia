@@ -7,12 +7,15 @@ import {
   MEMORY_EMPTY,
   MEMORY_INVALID_KIND,
   MEMORY_SCOPE_KEY,
+  MEMORY_SCOPE_OFF,
   MEMORY_TEXT_MAX,
   MEMORY_TOO_LONG,
   memoryRefusal,
+  scopeEnabled,
   type AgentMemory,
   type AgentMemoryKind,
   type AgentMemoryScope,
+  type AgentMemorySettings,
   type RememberFactInput,
 } from '@/backend/shared/domain/agent-memory';
 
@@ -51,14 +54,19 @@ export interface AgentMemoryService {
     id: string,
     patch: { text?: string; kind?: AgentMemoryKind }
   ): Promise<AgentMemory | null>;
-  /** Soft-deletes the row and the vector built from it. */
-  forget(userId: string, id: string): Promise<boolean>;
+  /** Soft-deletes the row and the vector built from it, in one transaction. */
+  forget(id: string): Promise<boolean>;
+  /** Forgets a conversation's thread facts; answers how many went. */
+  forgetThread(threadId: string): Promise<number>;
+  /** The per-scope switches (ADR-0182 decision 6, #1428). */
+  settings(userId: string): Promise<AgentMemorySettings>;
+  saveSettings(userId: string, patch: Partial<AgentMemorySettings>): Promise<AgentMemorySettings>;
 }
 
 export interface AgentMemoryServiceDeps {
   repository: AgentMemoryRepository;
-  /** The vectors the fact needs, and the one it leaves behind. */
-  embeddings: Pick<MemoryEmbeddingsService, 'embedFact' | 'forget'>;
+  /** The vector a fact needs. The delete half is the repository's transaction. */
+  embeddings: Pick<MemoryEmbeddingsService, 'embedFact'>;
 }
 
 function validated(text: string): string {
@@ -111,6 +119,14 @@ export function createAgentMemoryService({
       const threadId = input.threadId ?? null;
       assertScopeKey(scope, product, threadId);
 
+      // A scope the member switched off is closed to every writer, the explicit
+      // tool included: a toggle that an extraction run could walk past would be
+      // a control that is not one (decision 6). Recall enforces the same switch
+      // on the read side (`agent_memory_nearest`), so off means neither written
+      // nor injected — and never hidden from the page.
+      const settings = await repository.settings(input.userId);
+      if (!scopeEnabled(settings, scope)) throw new MemoryRefusalError(MEMORY_SCOPE_OFF);
+
       const memory = await repository.insert({
         userId: input.userId,
         text,
@@ -145,12 +161,29 @@ export function createAgentMemoryService({
       return updated;
     },
 
-    async forget(userId, id) {
-      const forgotten = await repository.forget(userId, id, new Date().toISOString());
-      // A soft delete reaches no foreign key, so the vector is deleted here
-      // rather than left as a copy of text the member asked to forget.
-      if (forgotten) await embeddings.forget(id);
-      return forgotten;
+    async forget(id) {
+      // The row and its vector in one transaction, inside the database: the soft
+      // delete reaches no foreign key, so two calls could leave a vector over
+      // text the member asked to forget (decision 6, #1428).
+      return repository.forget(id);
+    },
+
+    async forgetThread(threadId) {
+      return repository.forgetThread(threadId);
+    },
+
+    async settings(userId) {
+      return repository.settings(userId);
+    },
+
+    async saveSettings(userId, patch) {
+      // Only the three keys are writable, and an unknown key is a caller's bug
+      // rather than a column: the shape is the contract's, not the row's.
+      const changes: Partial<AgentMemorySettings> = {};
+      if (patch.account !== undefined) changes.account = Boolean(patch.account);
+      if (patch.product !== undefined) changes.product = Boolean(patch.product);
+      if (patch.thread !== undefined) changes.thread = Boolean(patch.thread);
+      return repository.saveSettings(userId, changes);
     },
   };
 }

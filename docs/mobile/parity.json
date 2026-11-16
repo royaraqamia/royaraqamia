@@ -2067,6 +2067,42 @@
       ]
     },
     {
+      "id": "account-memory",
+      "surface": "account-memory",
+      "issue": "#1428",
+      "web": {
+        "route": "app/account/memory/page.tsx",
+        "component": "frontend/ui/account/memory-view.tsx",
+        "copyModule": "frontend/ui/account/memory-copy.ts",
+        "copyExport": "ACCOUNT_MEMORY_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/account/MemoryScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/account/MemoryUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountMemoryCopy.kt",
+        "copyObject": "AccountMemoryCopy"
+      },
+      "copySource": "shared/copy/account-memory.json",
+      "states": [
+        {
+          "name": "Loading",
+          "copy": "loadingLabel"
+        },
+        {
+          "name": "SignedOut",
+          "copy": "signedOutTitle"
+        },
+        {
+          "name": "Failed",
+          "copy": "loadFailed"
+        },
+        {
+          "name": "Ready",
+          "copy": "emptyTitle"
+        }
+      ]
+    },
+    {
       "id": "account-rows",
       "surface": "account",
       "issue": "#948",

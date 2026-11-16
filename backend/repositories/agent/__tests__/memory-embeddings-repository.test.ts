@@ -191,23 +191,6 @@ describe('the embeddings repository', () => {
     ]);
   });
 
-  it('deletes the vector a forgotten fact left behind, by the fact it describes', async () => {
-    const { client, calls } = makeClient({
-      agent_memory_embeddings: [
-        { data: { id: 'vector-1' }, error: null },
-        { data: null, error: null },
-      ],
-    });
-    const repository = createSupabaseMemoryEmbeddingsRepository(client);
-
-    expect(await repository.remove('memory-1')).toBe(true);
-    expect(await repository.remove('memory-2')).toBe(false);
-    expect(calls.slice(0, 2)).toEqual([
-      'agent_memory_embeddings:delete',
-      'agent_memory_embeddings:eq memory_id=memory-1',
-    ]);
-  });
-
   it('counts the rows it holds and the rows still queued', async () => {
     const { client } = makeClient({
       agent_memory_embeddings: { count: 7, error: null },

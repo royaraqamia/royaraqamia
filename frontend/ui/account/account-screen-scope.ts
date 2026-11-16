@@ -22,6 +22,7 @@ const ACCOUNT_SCREENS: Readonly<Record<string, ScreenScope>> = {
   '/account/plan': { id: 'account-plan.page', kind: 'screen' },
   '/account/connected-apps': { id: 'account-connected-apps.page', kind: 'screen' },
   '/account/blocked': { id: 'account-blocked.page', kind: 'screen' },
+  '/account/memory': { id: 'account-memory.page', kind: 'screen' },
   '/account/faq': { id: 'account-faq.page', kind: 'screen' },
   '/account/news': { id: 'account-news.page', kind: 'screen' },
 };

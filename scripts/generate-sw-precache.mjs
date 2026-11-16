@@ -149,6 +149,11 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'the list is a per-identity client read, so a precached shell would paint an empty page; the slot belongs to `/verify`',
   },
+  {
+    route: '/account/memory',
+    reason:
+      'the facts and the three switches are a per-identity client read, so a precached shell would paint an empty page; the slot belongs to `/verify`',
+  },
   // The marketplace reads `?tab=` and the connect callback's outcome from the
   // request, so it cannot be a frozen document: a precached copy would open the
   // wrong tab after a consent. The list, the search and the states are client

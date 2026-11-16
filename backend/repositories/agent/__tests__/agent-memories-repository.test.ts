@@ -34,6 +34,9 @@ class Builder {
   update(row: unknown) {
     return this.log(`update ${JSON.stringify(row)}`);
   }
+  upsert(row: unknown, options?: { onConflict?: string }) {
+    return this.log(`upsert ${JSON.stringify(row)} on ${String(options?.onConflict)}`);
+  }
   delete() {
     return this.log('delete');
   }
@@ -59,24 +62,33 @@ class Builder {
   }
 }
 
-function makeClient(results: Record<string, Result | Result[]> = {}) {
+function makeClient(
+  results: Record<string, Result | Result[]> = {},
+  rpcResults: Record<string, Result | Result[]> = {}
+) {
   const calls: string[] = [];
   const cursors: Record<string, number> = {};
 
-  const from = (table: string) => {
-    const entry = results[table];
-    const next = (): Result => {
-      if (Array.isArray(entry)) {
-        const index = Math.min(cursors[table] ?? 0, entry.length - 1);
-        cursors[table] = (cursors[table] ?? 0) + 1;
-        return entry[index] ?? {};
-      }
-      return entry ?? {};
-    };
-    return new Builder(table, calls, next);
+  const scripted = (key: string, entry: Result | Result[] | undefined): Result => {
+    if (Array.isArray(entry)) {
+      const index = Math.min(cursors[key] ?? 0, entry.length - 1);
+      cursors[key] = (cursors[key] ?? 0) + 1;
+      return entry[index] ?? {};
+    }
+    return entry ?? {};
   };
 
-  return { client: { from } as unknown as SupabaseClient, calls };
+  const from = (table: string) => new Builder(table, calls, () => scripted(table, results[table]));
+
+  // The two forgets are functions, not table writes: the vector and the row are
+  // one transaction inside the database (#1428), so the fake answers an `rpc`
+  // and records the argument it was called with.
+  const rpc = (name: string, args: Record<string, unknown>) => {
+    calls.push(`rpc ${name} ${JSON.stringify(args)}`);
+    return Promise.resolve(scripted(`rpc:${name}`, rpcResults[name]));
+  };
+
+  return { client: { from, rpc } as unknown as SupabaseClient, calls };
 }
 
 const row = {
@@ -194,18 +206,73 @@ describe('the fact repository', () => {
     ]);
   });
 
-  it('forgets by stamping the row, and says when there was nothing to stamp', async () => {
+  it('forgets through the one function, and says when there was nothing live', async () => {
+    const { client, calls } = makeClient(
+      {},
+      {
+        agent_memory_forget: [
+          { data: true, error: null },
+          { data: false, error: null },
+        ],
+      }
+    );
+    const repository = createSupabaseAgentMemoriesRepository(client);
+
+    expect(await repository.forget('memory-1')).toBe(true);
+    expect(await repository.forget('memory-2')).toBe(false);
+    // The member is not an argument: the function reads `auth.uid()` from the
+    // caller's own session, so an id cannot be paired with somebody else.
+    expect(calls).toEqual([
+      'rpc agent_memory_forget {"p_memory_id":"memory-1"}',
+      'rpc agent_memory_forget {"p_memory_id":"memory-2"}',
+    ]);
+  });
+
+  it('forgets a conversation as one function too, and answers how many went', async () => {
+    const { client, calls } = makeClient(
+      {},
+      { agent_memory_forget_thread: { data: 3, error: null } }
+    );
+    const repository = createSupabaseAgentMemoriesRepository(client);
+
+    expect(await repository.forgetThread('thread-1')).toBe(3);
+    expect(calls).toEqual(['rpc agent_memory_forget_thread {"p_thread_id":"thread-1"}']);
+  });
+
+  it('reads the switches, and answers every scope on when there is no row', async () => {
+    const { client } = makeClient({ agent_memory_settings: { data: null, error: null } });
+    const repository = createSupabaseAgentMemoriesRepository(client);
+
+    expect(await repository.settings('member-1')).toEqual({
+      account: true,
+      product: true,
+      thread: true,
+    });
+  });
+
+  it('writes only the switch it was given, and answers all three', async () => {
     const { client, calls } = makeClient({
-      agent_memories: [
-        { data: { id: 'memory-1' }, error: null },
+      agent_memory_settings: [
         { data: null, error: null },
+        {
+          data: {
+            user_id: 'member-1',
+            account_enabled: true,
+            product_enabled: true,
+            thread_enabled: false,
+          },
+          error: null,
+        },
       ],
     });
     const repository = createSupabaseAgentMemoriesRepository(client);
 
-    expect(await repository.forget('member-1', 'memory-1', '2026-11-15T10:00:00.000Z')).toBe(true);
-    expect(await repository.forget('member-1', 'memory-2', '2026-11-15T10:00:00.000Z')).toBe(false);
-    expect(calls[0]).toContain('"deleted_at":"2026-11-15T10:00:00.000Z"');
-    expect(calls).toContain('agent_memories:is deleted_at=null');
+    expect(await repository.saveSettings('member-1', { thread: false })).toEqual({
+      account: true,
+      product: true,
+      thread: false,
+    });
+    expect(calls).toContain('agent_memory_settings:eq user_id=member-1');
+    expect(calls.some((call) => call.includes('"thread_enabled":false'))).toBe(true);
   });
 });
