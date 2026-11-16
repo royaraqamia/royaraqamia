@@ -327,7 +327,7 @@ export function renderCss(tokens) {
   lines.push(
     '',
     '    /* The cover palettes: what a member profile is painted with, seeded from',
-    '       their id (ADR-0200). The component picks an index and reads these, so',
+    '       their id (ADR-0201). The component picks an index and reads these, so',
     '       the twelve pairs are stated once for both clients. */'
   );
   for (const [index, palette] of tokens.cover.palettes.entries()) {
@@ -628,7 +628,7 @@ export function renderThemeColors(tokens) {
 
 /** Every output, keyed by repo-relative path, without touching the disk. */
 /**
- * The cover palettes as Compose colours (ADR-0200).
+ * The cover palettes as Compose colours (ADR-0201).
  *
  * The site reads the same twelve pairs as CSS custom properties, and the seed
  * that picks one is shared (`shared/profile-cover.ts`), so the app's band is the
@@ -646,7 +646,7 @@ export function renderCoverKotlin(tokens) {
     'import androidx.compose.ui.graphics.Color',
     '',
     '/**',
-    ' * The twelve cover palettes, in source order (ADR-0200). A member profile picks',
+    ' * The twelve cover palettes, in source order (ADR-0201). A member profile picks',
     ' * one by its own id; the index comes from the shared seed, never from a',
     ' * separate colour choice in this client.',
     ' */',

@@ -10,7 +10,7 @@ import {
 } from '../profile-cover';
 
 /**
- * The seed the app mirrors (ADR-0200). These cases are the contract between the
+ * The seed the app mirrors (ADR-0201). These cases are the contract between the
  * two clients: the Kotlin test asserts the same fixtures, so an edit that moves
  * one implementation fails in the other.
  */

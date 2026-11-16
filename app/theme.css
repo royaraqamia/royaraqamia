@@ -76,7 +76,7 @@
   background-image: radial-gradient(closest-side, currentColor, transparent);
 }
 
-/* The seeded cover band (ADR-0200): four paint layers that read the palette and
+/* The seeded cover band (ADR-0201): four paint layers that read the palette and
    orb placement a member's id chose. They live beside `glow-orb` for the same
    reason — a profile band is the same kind of atmosphere, painted cheaply — and
    each reads only `--cover-*`, so it is inert on every other surface. */

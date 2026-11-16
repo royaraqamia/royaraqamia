@@ -6,7 +6,7 @@ package com.royaraqamia.app.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * The twelve cover palettes, in source order (ADR-0200). A member profile picks
+ * The twelve cover palettes, in source order (ADR-0201). A member profile picks
  * one by its own id; the index comes from the shared seed, never from a
  * separate colour choice in this client.
  */

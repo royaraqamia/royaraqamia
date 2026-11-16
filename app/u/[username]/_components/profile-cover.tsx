@@ -1,7 +1,7 @@
 import { coverVars } from '@/shared/profile-cover';
 
 /**
- * The band a member's identity is drawn on (ADR-0200).
+ * The band a member's identity is drawn on (ADR-0201).
  *
  * It is scenery, not content: drawn from the member's id, carrying no text, no
  * image and no meaning that is only in colour, so it is `aria-hidden` and the

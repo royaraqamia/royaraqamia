@@ -35,11 +35,19 @@ export const FollowStateSchema = z.enum(['self', 'following', 'not_following', '
  * What `POST`/`DELETE /api/users/[username]/follow` answers, and what both
  * clients decode instead of guessing from the status. `counts` is the member's
  * numbers after the write, so the header updates without a second read.
+ *
+ * `followsYou` is the direction the header cannot read from the cached public
+ * document: the member follows the viewer. Only the read (`GET`, and the
+ * server render behind it) fills it, because a write already knows both sides
+ * and spending a read to learn something the press did not change would be a
+ * second query on every tap. It is optional for the same reason it is additive:
+ * an app build from before this field keeps decoding the body.
  */
 export const FollowToggleResponseSchema = z.object({
   success: z.boolean(),
   state: FollowStateSchema,
   counts: FollowCountsSchema.optional(),
+  followsYou: z.boolean().optional(),
   error: z.string().optional(),
 });
 

@@ -7,6 +7,7 @@ import { createFollowsService } from '@/backend/config/follows';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { FollowButton } from '@/frontend/ui/shared/follow-button';
+import { FollowBadge } from '@/frontend/ui/shared/follow-badge';
 import { FollowCountsBar } from '@/frontend/ui/shared/follow-counts';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { PostCard } from '@/app/community/_components/post-card';
@@ -103,6 +104,7 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
             <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
               @{member.username}
             </p>
+            <FollowBadge state={follow.state} followsYou={follow.followsYou} />
             <FollowCountsBar
               username={member.username}
               counts={follow.counts}
