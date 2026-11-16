@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -40,6 +42,26 @@ function post(id: string, status: Post['status'] = 'draft'): Post {
 function renderList(posts: Post[] = [post('a'), post('b')]) {
   return render(<PostList posts={posts} onEdit={vi.fn()} onChanged={vi.fn()} onCreate={vi.fn()} />);
 }
+
+/**
+ * The selectors `shared/visual/account-posts.json` names for this list. The
+ * contract is the reviewed target list for a page that will not have a port
+ * (ADR-0118's #1520 amendment), so a selector it names and the list no longer
+ * draws is the contract describing a page that is gone. The create button is the
+ * ninth and belongs to `AccountPostsView`.
+ */
+const CONTRACT_SELECTORS = (() => {
+  const contract = JSON.parse(
+    readFileSync(join(process.cwd(), 'shared', 'visual', 'account-posts.json'), 'utf8')
+  ) as { states: { elements: { name: string; web: { selector: string } }[] }[] };
+  const selectors = new Set<string>();
+  for (const state of contract.states) {
+    for (const element of state.elements) {
+      if (element.name !== 'fab') selectors.add(element.web.selector);
+    }
+  }
+  return [...selectors];
+})();
 
 /** Select the first row, which is the one under test unless a case says otherwise. */
 function selectFirst() {
@@ -103,23 +125,14 @@ describe('PostList', () => {
     );
   });
 
-  it('names the boxes the visual contract measures', () => {
+  it('names every box its visual contract measures', () => {
     // `shared/visual/account-posts.json` measures these by name, so the page has
-    // to carry them: without one, a recorder has nothing to select. The create
-    // button is the ninth and is drawn by `AccountPostsView`, not this list (#1520).
+    // to carry them: without one, the contract describes a page that is gone.
     const { container } = renderList();
 
-    for (const name of [
-      'account-posts-chips',
-      'account-posts-search',
-      'account-posts-bulk',
-      'account-posts-bulk-count',
-      'account-posts-row',
-      'account-posts-row-title',
-      'account-posts-row-meta',
-      'account-posts-row-trailing',
-    ]) {
-      expect(container.querySelector(`[data-visual='${name}']`)).not.toBeNull();
+    expect(CONTRACT_SELECTORS).toHaveLength(8);
+    for (const selector of CONTRACT_SELECTORS) {
+      expect(container.querySelector(selector), selector).not.toBeNull();
     }
   });
 });

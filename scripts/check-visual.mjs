@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inflateSync } from 'node:zlib';
 
@@ -497,14 +497,21 @@ function readContract({ id, entry, errors, repoRoot }) {
 }
 
 /**
- * Every contract file carries the motion decision, not only the ones the gate
- * measures yet (#903). A surface can be declared in `shared/visual` before it is
- * under the gate, and the rule is the same for it: no motion section, no green
- * check. Files the gate already read are skipped so the failure is reported once.
+ * Every contract file, not only the ones the gate measures yet (#903).
+ *
+ * A surface can be declared in `shared/visual` before it is under the gate, and the
+ * rule is the same for it: no motion section, no green check. Since #1520 a contract
+ * is also the reviewed target list for a surface that will never have a port, so it
+ * must name a screen the plan knows — a contract for a screen nobody planned is dead
+ * documentation, and the one file that is not a screen is the gate's frame, which the
+ * loop skips because the frame is read above.
  */
-function checkEveryContractMotion({ gate, errors, repoRoot }) {
+function checkDeclaredContracts({ gate, screens, errors, repoRoot }) {
   const dir = join(repoRoot, 'shared', 'visual');
   if (!existsSync(dir)) return;
+
+  /** A path as the repo writes it, whatever the platform's separator is. */
+  const asRepoPath = (path) => relative(repoRoot, path).split(sep).join('/');
 
   const alreadyRead = new Set(
     [...(gate.surfaces ?? []), ...(gate.frame ? [gate.frame] : [])]
@@ -512,20 +519,31 @@ function checkEveryContractMotion({ gate, errors, repoRoot }) {
       .filter((contract) => typeof contract === 'string')
       .map((contract) => resolve(repoRoot, contract))
   );
+  const known = new Set(
+    (screens?.screens ?? [])
+      .map((row) => row?.surface)
+      .filter((surface) => typeof surface === 'string')
+  );
 
   for (const name of readdirSync(dir).sort()) {
     if (!name.endsWith('.json')) continue;
     const path = join(dir, name);
+    const file = asRepoPath(path);
     if (alreadyRead.has(resolve(path))) continue;
 
     let contract;
     try {
       contract = JSON.parse(readFileSync(path, 'utf8'));
     } catch (error) {
-      errors.push(`${relative(repoRoot, path)} is not JSON (${error.message})`);
+      errors.push(`${file} is not JSON (${error.message})`);
       continue;
     }
-    for (const problem of validateMotion(contract, relative(repoRoot, path))) {
+    if (typeof contract?.surface !== 'string' || contract.surface.trim() === '') {
+      errors.push(`${file}: the contract names no "surface"`);
+    } else if (!known.has(contract.surface)) {
+      errors.push(`${file}: "${contract.surface}" is not a screen in docs/mobile/screens.json`);
+    }
+    for (const problem of validateMotion(contract, file)) {
       errors.push(problem);
     }
   }
@@ -780,7 +798,7 @@ export function validate({ gate, screens, repoRoot = ROOT, evidenceRoot = EVIDEN
     }
   }
 
-  checkEveryContractMotion({ gate, errors, repoRoot });
+  checkDeclaredContracts({ gate, screens, errors, repoRoot });
 
   return errors;
 }
