@@ -1,6 +1,7 @@
 import type { AiEmbeddingsClient } from '@/backend/clients/ai-embeddings';
 import { logger } from '@/backend/shared/logger';
 import {
+  EMBEDDING_GENERATION,
   EMBEDDING_MAX_INPUT_CHARS,
   RECALL_CANDIDATES,
   RECALL_QUERY_TIMEOUT_MS,
@@ -29,6 +30,12 @@ export interface RecallQuery extends RecallScope {
   userId: string;
   /** The member's own message: never the history, never a tool's output. */
   question: string;
+  /**
+   * The turn's own query vector, when the turn already spent the call (#1448).
+   * Shared with the specialist shortlist so one message costs one embedding;
+   * a width the memory generation cannot store is ignored, not passed on.
+   */
+  vector?: readonly number[] | null;
   /** The request's signal, so a member who leaves stops the embedding call. */
   signal?: AbortSignal;
 }
@@ -58,13 +65,17 @@ export function createAgentRecallService({
   now = Date.now,
 }: AgentRecallDeps): AgentRecallService {
   return {
-    async recall({ userId, question, threadId, product, signal }) {
+    async recall({ userId, question, threadId, product, signal, vector }) {
+      // The turn's own vector, when it has one of the width this table stores
+      // (#1448). It was paid for once, by whichever layer asked first.
+      const shared =
+        vector && vector.length === EMBEDDING_GENERATION.dimensions ? [...vector] : null;
       // Embeddings off is a supported state, not a failure: no call, no block,
       // and the turn answers exactly as it did before this service existed.
-      if (!client) return [];
+      if (!client && !shared) return [];
 
       const text = question.trim().slice(0, EMBEDDING_MAX_INPUT_CHARS);
-      if (!text) return [];
+      if (!text && !shared) return [];
 
       // Recall sits in front of the stream, so its budget is the turn's: the
       // provider's own timeout is larger, and a member waiting on a hanging
@@ -78,8 +89,7 @@ export function createAgentRecallService({
       signal?.addEventListener('abort', forwardAbort, { once: true });
 
       try {
-        const vectors = await client.embed([text], deadline.signal);
-        const vector = vectors?.[0];
+        const vector = shared ?? (await client?.embed([text], deadline.signal))?.[0];
         // The client already logged the *provider's* reason once; a null here
         // is a turn without recall, not a second line every message.
         if (!vector) return [];

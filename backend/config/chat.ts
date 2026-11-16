@@ -37,6 +37,9 @@ import {
 } from '@/backend/config/agent-memory';
 import { deferredAfter } from '@/backend/config/after';
 import { env } from '@/backend/config/env';
+import { createAiEmbeddingsClient } from '@/backend/clients/ai-embeddings';
+import { createTurnEmbedding } from '@/backend/services/agent/turn-embedding';
+import { skillIndexDimensions } from '@/backend/services/chat/skill-index';
 import { projectIdentity } from '@/backend/services/chat/turn-identity';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createAiChatClient } from '@/backend/clients/ai-chat';
@@ -134,6 +137,15 @@ export function createSupabaseChatAgentService(
   // one model and one place to change either.
   const client = createAiChatClient();
 
+  // The specialist shortlist reads the roster's own artifact, so its width is
+  // the artifact's, not the memory table's (#1448). A deployment with no
+  // embedding provider passes no vector and ranks by words — the turn is the
+  // turn it always was, with a shorter catalogue to guess from.
+  const skillDimensions = skillIndexDimensions();
+  const embedding = createTurnEmbedding(
+    skillDimensions ? createAiEmbeddingsClient({ dimensions: skillDimensions }) : null
+  );
+
   return new ChatAgentService({
     agent: createSupabaseChatAgentRepository(getAdminSupabase()),
     chats: createSupabaseChatService(supabase),
@@ -176,6 +188,9 @@ export function createSupabaseChatAgentService(
     // fact they deleted is unreachable even with a stale vector; the query
     // vector is the one embedding call a turn's read path spends.
     recall: createAgentRecallFor(supabase),
+    // The turn's one query vector (#1448): the recall above and the specialist
+    // shortlist both read it, so a message costs one embedding and not two.
+    queryVector: embedding.vector,
     // The beginning of a thread the window has already dropped (ADR-0182,
     // decision 4): read on the member's session and injected as its own block,
     // regenerated behind the answer once ten more messages have arrived. The

@@ -77,6 +77,9 @@ Use proactively when task matches. Load with the `skill` tool.
   Tree, provenance and the regeneration recipe: `.opencode/skills/agency/`
 - The product assistant reaches the same roster through two read tools
   (`list_specialists`, `load_specialist`) instead of a skill list — [ADR-0137](adr/0137-the-assistant-loads-a-specialist-by-tool.md)
+- Each turn carries a shortlist of up to five specialists chosen from the question, then loads at most
+  one body. The vectors are a committed artifact (`agency-roster/vectors.json`) built by
+  `npm run skills:index` and guarded by `npm run check:skills` — [ADR-0190](adr/0190-the-embedding-provider-is-its-own-credential.md)
 
 ## Skill Versioning
 

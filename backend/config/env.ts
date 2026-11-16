@@ -170,6 +170,21 @@ export const env = {
     return read('AI_EMBEDDING_MODEL')?.trim() || undefined;
   },
   /**
+   * Where the embeddings live, when that is not where the turns live.
+   *
+   * The chat gateway this deployment turns on serves chat models only — it has
+   * no `/embeddings` route — so the embedding model is a second provider on the
+   * same kind of OpenAI-compatible API (ADR-0190). Empty means the turn keeps
+   * the chat endpoint and key, which is what an endpoint that does serve
+   * embeddings wants.
+   */
+  get aiEmbeddingBaseUrl(): string | undefined {
+    return read('AI_EMBEDDING_BASE_URL')?.trim() || undefined;
+  },
+  get aiEmbeddingApiKey(): string | undefined {
+    return read('AI_EMBEDDING_API_KEY')?.trim() || undefined;
+  },
+  /**
    * Whether a settled turn is read for facts worth saving (ADR-0182 decision 2,
    * #1511). Off unless a deployment says otherwise.
    *

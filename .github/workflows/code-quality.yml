@@ -80,6 +80,12 @@ jobs:
       - name: Generated Copy Is Current
         run: npm run check:copy
 
+      # The specialist shortlist is served from a committed artifact built from
+      # the roster (#1448): an edited description that nobody re-embedded would
+      # route from words that no longer exist, so the hash is a gate.
+      - name: Specialist Vectors Match The Roster
+        run: npm run check:skills
+
       - name: Generated Currency Table Is Current
         run: npm run check:currency
 

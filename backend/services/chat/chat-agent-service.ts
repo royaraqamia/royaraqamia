@@ -24,6 +24,8 @@ import {
 import type { McpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import type { AgentRecallService } from '@/backend/services/agent/agent-recall-service';
+import { routeSkills } from '@/backend/services/chat/skill-router';
+import { SKILL_ALREADY_LOADED, type SkillHit } from '@/backend/shared/domain/agent-skills';
 import type { ConversationSummaryService } from '@/backend/services/agent/conversation-summary-service';
 import type { MemoryExtractionService } from '@/backend/services/agent/memory-extraction-service';
 import { turnContextMessages, type TurnIdentity } from '@/backend/services/chat/turn-identity';
@@ -310,6 +312,12 @@ export interface ChatAgentServiceDeps {
    */
   recall?: Pick<AgentRecallService, 'recall'>;
   /**
+   * The turn's own query vector (#1448), produced once and shared by recall and
+   * the specialist shortlist. Absent in a test and in a deployment with no
+   * embedding provider, and both layers then rank by words.
+   */
+  queryVector?: (question: string) => Promise<number[] | null>;
+  /**
    * What the beginning of a thread past the window said (ADR-0182 decision 4,
    * #1512). `read` is what the turn injects and costs nothing; `refresh` is the
    * provider call behind the answer, and the service itself decides whether it
@@ -439,7 +447,8 @@ export class ChatAgentService {
     userId: string,
     question: string,
     threadId: string,
-    product: string | null | undefined
+    product: string | null | undefined,
+    vector: readonly number[] | null = null
   ): Promise<RecalledMemory[]> {
     if (!this.deps.recall) return [];
     try {
@@ -448,12 +457,40 @@ export class ChatAgentService {
         question,
         threadId,
         product: product ?? null,
+        vector,
       });
     } catch (error) {
       // The service is written never to throw, and this is the second half of
       // that promise: an unwired or broken implementation costs the memory,
       // never the answer.
       logger.warn('Recall was skipped for this turn', { error: String(error) });
+      return [];
+    }
+  }
+
+  /**
+   * The turn's one query vector, or `null` when this deployment cannot make one
+   * (#1448). It is asked once: recall and the shortlist both read the answer.
+   */
+  private async queryVector(question: string): Promise<number[] | null> {
+    if (!this.deps.queryVector) return null;
+    try {
+      return await this.deps.queryVector(question);
+    } catch (error) {
+      logger.warn('The turn carried no query vector', { error: String(error) });
+      return null;
+    }
+  }
+
+  /**
+   * The specialists this question is asking for, if any. Never a failure: a
+   * router that cannot answer leaves the turn with the catalogue it always had.
+   */
+  private skilled(question: string, vector: readonly number[] | null): SkillHit[] {
+    try {
+      return routeSkills(question, { vector });
+    } catch (error) {
+      logger.warn('The specialist shortlist was skipped', { error: String(error) });
       return [];
     }
   }
@@ -616,12 +653,17 @@ export class ChatAgentService {
       // What the member asked to be remembered, once, from their own message.
       // It is read before the provider is called and never in front of the
       // stream: a recall that fails is an empty list, not a failed turn.
+      // The query vector is the turn's one provider spend (#1448): recall and
+      // the specialist shortlist both read what this message is about.
+      const vector = await this.queryVector(question);
       const recalled = await this.remembered(
         userId,
         question,
         conversationId,
-        this.visibleProduct(screen)
+        this.visibleProduct(screen),
+        vector
       );
+      const skills = this.skilled(question, vector);
 
       // A voice note's words are only known now, and the row should say what the
       // turn actually answered. Best effort: the recording still runs the turn.
@@ -657,7 +699,7 @@ export class ChatAgentService {
         context,
         screen,
         messages: [
-          ...turnContextMessages(identity, screen, recalled, summary),
+          ...turnContextMessages(identity, screen, recalled, summary, skills),
           { role: 'system', content: SYSTEM_PROMPT },
           ...(read.spoken ? [{ role: 'system' as const, content: SPOKEN_NOTE }] : []),
           // The line just stored is replaced by its own reading, so an image or a
@@ -819,7 +861,15 @@ export class ChatAgentService {
     // page does not come back with a resumed turn (ADR-0181, decision 5), so a
     // product-scoped fact stays out: the turn no longer knows which product it
     // is about, and guessing one is worse than a quieter answer.
-    const recalled = await this.remembered(turn.memberId, turn.question, turn.conversationId, null);
+    const vector = await this.queryVector(turn.question ?? '');
+    const recalled = await this.remembered(
+      turn.memberId,
+      turn.question ?? '',
+      turn.conversationId,
+      null,
+      vector
+    );
+    const skills = this.skilled(turn.question ?? '', vector);
     // And the earlier part of the thread for the same reason the identity block
     // is read again (ADR-0182 decision 4): a turn that lost it mid-thread would
     // answer as if the conversation had just started — the exact failure the
@@ -833,7 +883,7 @@ export class ChatAgentService {
         question: turn.question ?? '',
         context,
         messages: [
-          ...turnContextMessages(identity, undefined, recalled, summary),
+          ...turnContextMessages(identity, undefined, recalled, summary, skills),
           { role: 'system', content: SYSTEM_PROMPT },
           ...trimHistory(page.messages),
         ],
@@ -913,6 +963,8 @@ export class ChatAgentService {
     let rounds = 0;
     let retried = false;
     let appCalls = 0;
+    /** The specialist whose body this turn already read (#1448). */
+    let loadedSkill: string | null = null;
     /** How many of those came from each connection (#1226). */
     const connectionCalls = new Map<string, number>();
 
@@ -1121,6 +1173,15 @@ export class ChatAgentService {
 
           const args = parseToolArgs(call.arguments);
 
+          // One specialist body per turn (ADR-0185 decision 5, #1448). The
+          // ceiling is enforced here rather than asked for in a prompt: a turn
+          // follows one specialist's instructions or none, never two mixed,
+          // and a second read would put 20k characters in the same window.
+          if (tool.name === 'load_specialist' && loadedSkill) {
+            messages.push(toolAnswer(call.id, { error: SKILL_ALREADY_LOADED, id: loadedSkill }));
+            continue;
+          }
+
           // A tool above tier 0 is proposed, never run here: the member
           // confirms it (ADR-0180). Today every write is above tier 0 and every
           // read is 0, so this is the same boundary `kind` drew; the tier is
@@ -1189,6 +1250,10 @@ export class ChatAgentService {
               ok: true,
             };
             messages.push(toolAnswer(call.id, result, tool.maxResultChars));
+            if (tool.name === 'load_specialist') {
+              const loaded = (parsed.data as { id?: unknown }).id;
+              if (typeof loaded === 'string') loadedSkill = loaded;
+            }
           } catch (error) {
             logger.warn('Assistant read tool failed', { tool: tool.name, error: String(error) });
             yield {

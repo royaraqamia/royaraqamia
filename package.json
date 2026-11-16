@@ -24,6 +24,8 @@
     "format:check": "prettier --check .",
     "graph": "node scripts/graph-query.mjs",
     "embeddings:backfill": "node scripts/backfill-agent-embeddings.mjs",
+    "skills:index": "node scripts/skill-index.mjs",
+    "check:skills": "node scripts/skill-index.mjs --check",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
