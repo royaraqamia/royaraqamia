@@ -1,11 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { PublicUser } from '@/shared/contracts/users';
 import { CommunityMembersPanel, CommunityMembersStrip } from '../community-members';
 
 const session = vi.hoisted(() => ({
-  current: { user: null, profileUsername: null, profileName: null, profileAvatarUrl: null } as {
+  current: {
+    user: null,
+    isLoading: false,
+    profileUsername: null,
+    profileName: null,
+    profileAvatarUrl: null,
+  } as {
     user: { id: string } | null;
+    isLoading: boolean;
     profileUsername: string | null;
     profileName: string | null;
     profileAvatarUrl: string | null;
@@ -14,6 +21,10 @@ const session = vi.hoisted(() => ({
 
 vi.mock('@/frontend/state/session-provider', () => ({
   useSession: () => session.current,
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 
 function member(id: string, username: string, name: string | null = username): PublicUser {
@@ -29,6 +40,7 @@ const roster = [
 beforeEach(() => {
   session.current = {
     user: null,
+    isLoading: false,
     profileUsername: null,
     profileName: null,
     profileAvatarUrl: null,
@@ -48,9 +60,53 @@ describe('CommunityMembersPanel', () => {
     expect(screen.queryByText('أنت')).not.toBeInTheDocument();
   });
 
+  it('gives a guest a follow control that opens the sign-in prompt', () => {
+    render(<CommunityMembersPanel members={roster} signInReturnTo="/community" />);
+
+    const buttons = screen.getAllByRole('button', { name: 'متابعة' });
+    expect(buttons).toHaveLength(roster.length);
+
+    fireEvent.click(buttons[0]!);
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('link')).toHaveAttribute(
+      'href',
+      '/auth/login?redirect=%2Fcommunity'
+    );
+  });
+
+  it('draws no control for a signed-in viewer whose states never arrived', () => {
+    session.current = {
+      user: { id: 'u3' },
+      isLoading: false,
+      profileUsername: 'royaraqamia',
+      profileName: 'رؤية رقميّة',
+      profileAvatarUrl: null,
+    };
+
+    render(<CommunityMembersPanel members={roster} />);
+
+    expect(screen.queryByRole('button', { name: 'متابعة' })).not.toBeInTheDocument();
+  });
+
+  it('waits for the session before drawing the guest control', () => {
+    session.current = {
+      user: null,
+      isLoading: true,
+      profileUsername: null,
+      profileName: null,
+      profileAvatarUrl: null,
+    };
+
+    render(<CommunityMembersPanel members={roster} />);
+
+    expect(screen.queryByRole('button', { name: 'متابعة' })).not.toBeInTheDocument();
+  });
+
   it('pins the signed-in member first and labels only their row', () => {
     session.current = {
       user: { id: 'u3' },
+      isLoading: false,
       profileUsername: 'royaraqamia',
       profileName: 'رؤية رقميّة',
       profileAvatarUrl: null,
@@ -71,6 +127,7 @@ describe('CommunityMembersPanel', () => {
   it('draws one follow control per row, never on the viewer’s own', () => {
     session.current = {
       user: { id: 'u3' },
+      isLoading: false,
       profileUsername: 'royaraqamia',
       profileName: 'رؤية رقميّة',
       profileAvatarUrl: null,
@@ -93,6 +150,7 @@ describe('CommunityMembersPanel', () => {
   it('pins a member the roster does not list', () => {
     session.current = {
       user: { id: 'u9' },
+      isLoading: false,
       profileUsername: 'new-member',
       profileName: 'عضو جديد',
       profileAvatarUrl: null,
@@ -109,6 +167,7 @@ describe('CommunityMembersPanel', () => {
   it('waits for the session before pinning anything', () => {
     session.current = {
       user: { id: 'u3' },
+      isLoading: false,
       profileUsername: null,
       profileName: null,
       profileAvatarUrl: null,
@@ -126,6 +185,7 @@ describe('CommunityMembersStrip', () => {
   it('pins and labels the viewer’s chip the same way', () => {
     session.current = {
       user: { id: 'u3' },
+      isLoading: false,
       profileUsername: 'royaraqamia',
       profileName: 'رؤية رقميّة',
       profileAvatarUrl: null,

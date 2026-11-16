@@ -92,7 +92,11 @@ export default async function CommunityPage() {
               </div>
             </Suspense>
 
-            <CommunityMembersStrip members={members} states={rosterStates} />
+            <CommunityMembersStrip
+              members={members}
+              states={rosterStates}
+              signInReturnTo="/community"
+            />
 
             <Suspense
               fallback={
@@ -128,7 +132,11 @@ export default async function CommunityPage() {
               (ADR-0132). An `aside` is already `display: block` at
               `lg`, so there is nothing to restore. */}
           <aside className="sticky top-24 max-lg:hidden self-start" aria-label="أعضاء المجتمع">
-            <CommunityMembersPanel members={members} states={rosterStates} />
+            <CommunityMembersPanel
+              members={members}
+              states={rosterStates}
+              signInReturnTo="/community"
+            />
           </aside>
         </div>
       </div>

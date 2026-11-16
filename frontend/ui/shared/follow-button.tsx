@@ -33,6 +33,15 @@ interface FollowButtonProps {
   /** A guest gets the same button; pressing it goes to sign in. */
   signedIn: boolean;
   /**
+   * The page the sign-in prompt returns to, when that is not the member's page.
+   *
+   * A profile's own button already sits on `/u/<name>`, so the default is what
+   * that visitor would have asked for anyway. A roster row is the other case:
+   * the member is not the page they are on, and sending them to the profile
+   * after signing in leaves the roster they were reading.
+   */
+  signInReturnTo?: string;
+  /**
    * `md` is the profile header's button, one step taller than a row's.
    *
    * The control is the hero gradient everywhere because it is one action: a
@@ -76,6 +85,7 @@ export function FollowButton({
   memberId,
   initialState,
   signedIn,
+  signInReturnTo,
   size = 'sm',
   className,
 }: FollowButtonProps) {
@@ -147,7 +157,7 @@ export function FollowButton({
           variant="hero"
           size="sm"
           className={cn(buttonClass, className)}
-          onClick={() => requireSignIn(`/u/${username}`)}
+          onClick={() => requireSignIn(signInReturnTo ?? `/u/${username}`)}
         >
           {FOLLOW_BUTTON_COPY.follow}
         </Button>

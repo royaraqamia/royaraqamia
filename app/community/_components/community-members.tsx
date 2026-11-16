@@ -15,12 +15,16 @@ interface CommunityMembersProps {
   /**
    * The viewer's standing with the members in this list, resolved by the page.
    *
-   * `undefined` means no control is drawn: the public hub is one cached document
-   * for every visitor, and a per-viewer button there would have to be fetched in
-   * the browser - which is the round trip and the skeleton this shape exists to
-   * avoid. The member's own feed passes it, because that page is already theirs.
+   * `undefined` means the page had no per-viewer read to attach: the public hub
+   * is one cached document for every visitor, and a signed-in visitor's button
+   * there would have to be fetched in the browser - which is the round trip and
+   * the skeleton this shape exists to avoid. A guest is the exception the cache
+   * already covers: a guest follows nobody, so the control is the same for all
+   * of them and opens the sign-in prompt instead of a write.
    */
   states?: Record<string, FollowState>;
+  /** The page a guest returns to after signing in. Defaults to the member's page. */
+  signInReturnTo?: string;
 }
 
 function displayName(member: PublicUser): string {
@@ -32,11 +36,13 @@ function displayName(member: PublicUser): string {
  *
  * The list arrives from a cached, viewer-agnostic read, so who "you" are can
  * only be answered here, from the session; a guest gets the roster untouched.
+ * `guest` waits for the session to settle, so a signed-in visitor never sees
+ * the guest control flash on a page that has no states to replace it.
  */
-function usePinnedRoster(members: PublicUser[]): PinnedRoster {
-  const { user, profileUsername, profileName, profileAvatarUrl } = useSession();
+function useRoster(members: PublicUser[]): { roster: PinnedRoster; guest: boolean } {
+  const { user, isLoading, profileUsername, profileName, profileAvatarUrl } = useSession();
 
-  return useMemo(() => {
+  const roster = useMemo(() => {
     const viewer: ViewerMember | null =
       user && profileUsername
         ? {
@@ -49,6 +55,8 @@ function usePinnedRoster(members: PublicUser[]): PinnedRoster {
 
     return withPinnedSelf(members, viewer);
   }, [members, user, profileUsername, profileName, profileAvatarUrl]);
+
+  return { roster, guest: !isLoading && !user };
 }
 
 /**
@@ -65,11 +73,65 @@ function YouBadge() {
 }
 
 /**
+ * The row's one control.
+ *
+ * A resolved state is the whole answer. Without one, the only viewer the cached
+ * roster can word correctly is a guest — a guest follows nobody — so their
+ * press opens the site's sign-in prompt instead of writing, and returns them to
+ * the page they were reading. A signed-in visitor with no states is left
+ * undrawn rather than shown a guess.
+ */
+function MemberFollowControl({
+  member,
+  state,
+  guest,
+  self,
+  signInReturnTo,
+  className,
+}: {
+  member: PublicUser;
+  state?: FollowState;
+  guest: boolean;
+  self: boolean;
+  signInReturnTo?: string;
+  className?: string;
+}) {
+  if (self) return null;
+
+  if (state) {
+    return (
+      <FollowButton
+        username={member.username}
+        name={member.name}
+        memberId={member.id}
+        initialState={state}
+        signedIn
+        className={className}
+      />
+    );
+  }
+
+  if (!guest) return null;
+
+  return (
+    <FollowButton
+      username={member.username}
+      name={member.name}
+      memberId={member.id}
+      initialState="not_following"
+      signedIn={false}
+      signInReturnTo={signInReturnTo}
+      className={className}
+    />
+  );
+}
+
+/**
  * Desktop rail of members. Reads as part of the feed's right column —
  * deliberately quiet chrome so the gradient avatars carry the identity.
  */
-export function CommunityMembersPanel({ members, states }: CommunityMembersProps) {
-  const roster = usePinnedRoster(members);
+export function CommunityMembersPanel({ members, states, signInReturnTo }: CommunityMembersProps) {
+  const { roster, guest } = useRoster(members);
   if (roster.members.length === 0) return null;
 
   return (
@@ -114,16 +176,14 @@ export function CommunityMembersPanel({ members, states }: CommunityMembersProps
               {/* One control per row, and its state arrived with the document.
                   The viewer's own row already carries «أنت» beside the name;
                   a follow button there would say the same thing twice. */}
-              {state && member.id !== roster.selfId ? (
-                <FollowButton
-                  username={member.username}
-                  name={member.name}
-                  memberId={member.id}
-                  initialState={state}
-                  signedIn
-                  className="shrink-0 pe-2"
-                />
-              ) : null}
+              <MemberFollowControl
+                member={member}
+                state={state}
+                guest={guest}
+                self={member.id === roster.selfId}
+                signInReturnTo={signInReturnTo}
+                className="shrink-0 pe-2"
+              />
             </li>
           );
         })}
@@ -133,8 +193,8 @@ export function CommunityMembersPanel({ members, states }: CommunityMembersProps
 }
 
 /** Mobile counterpart: a snap-scrolling row of member chips above the feed. */
-export function CommunityMembersStrip({ members, states }: CommunityMembersProps) {
-  const roster = usePinnedRoster(members);
+export function CommunityMembersStrip({ members, states, signInReturnTo }: CommunityMembersProps) {
+  const { roster, guest } = useRoster(members);
   const listRef = useRef<HTMLUListElement>(null);
 
   // The pin lands after paint, on a scroller that was already laid out without
@@ -183,15 +243,13 @@ export function CommunityMembersStrip({ members, states }: CommunityMembersProps
                     @{member.username}
                   </span>
                 </Link>
-                {state && member.id !== roster.selfId ? (
-                  <FollowButton
-                    username={member.username}
-                    name={member.name}
-                    memberId={member.id}
-                    initialState={state}
-                    signedIn
-                  />
-                ) : null}
+                <MemberFollowControl
+                  member={member}
+                  state={state}
+                  guest={guest}
+                  self={member.id === roster.selfId}
+                  signInReturnTo={signInReturnTo}
+                />
               </div>
             </li>
           );
