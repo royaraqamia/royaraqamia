@@ -109,27 +109,22 @@ describe('MemoryView', () => {
     expect(await screen.findByText('الموعد صار في العشرين')).toBeInTheDocument();
   });
 
-  it('shows the three scopes as switches, with the stored state on each', async () => {
+  it('draws one switch over the whole store, off when any scope is closed', async () => {
     render(<MemoryView />);
 
-    expect(
-      await screen.findByRole('switch', { name: 'إيقاف الحفظ على كل المنتجات' })
-    ).toBeChecked();
-    expect(screen.getByRole('switch', { name: 'تشغيل الحفظ في المحادثة' })).not.toBeChecked();
+    expect(await screen.findByRole('switch', { name: 'تشغيل التذكّر' })).not.toBeChecked();
   });
 
-  it('sends only the scope it flipped, and takes the answer as the new state', async () => {
+  it('writes every scope together and takes the server answer as the new state', async () => {
+    const allOn = { account: true, product: true, thread: true };
+    mocks.saveAgentMemorySettings.mockResolvedValue(allOn);
     render(<MemoryView />);
 
-    fireEvent.click(await screen.findByRole('switch', { name: 'تشغيل الحفظ في المحادثة' }));
+    fireEvent.click(await screen.findByRole('switch', { name: 'تشغيل التذكّر' }));
 
-    await waitFor(() =>
-      expect(mocks.saveAgentMemorySettings).toHaveBeenCalledWith({ thread: true })
-    );
-    // The page takes the server's three switches rather than assuming the flip.
-    await waitFor(() =>
-      expect(screen.getByRole('switch', { name: 'تشغيل الحفظ في المحادثة' })).not.toBeChecked()
-    );
+    await waitFor(() => expect(mocks.saveAgentMemorySettings).toHaveBeenCalledWith(allOn));
+    // The page takes the server's three booleans rather than assuming the flip.
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'إيقاف التذكّر' })).toBeChecked());
   });
 
   it('offers the export as a download of the same rows', async () => {

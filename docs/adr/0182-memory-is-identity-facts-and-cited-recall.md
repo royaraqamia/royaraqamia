@@ -127,3 +127,27 @@ ceiling being hit (a member asking for something the summary dropped), the sourc
 embedded when it is written and cited as «من محادثتنا في 3 أكتوبر». That is a cost decision of its
 own — one vector per exchange instead of one per ten messages — and it needs the eval before it
 needs the table.
+
+## Amendment (2026-11-16): one switch, not one switch per scope
+
+Decision 6 lists "a per-scope toggle". What shipped (#1428) was three switches over
+`account | product | thread`, and two of them — «على كل المنتجات» and «في المنتجات» — said almost the
+same thing in two words. The difference between those scopes is where the server routes a fact, which
+is not a decision the member can see or predict; the page therefore showed a settings card with a
+dial that moved something invisible.
+
+The page is now titled **«ذاكرة نور»**, the same string the account row carries, and it draws **one**
+switch that writes all three booleans together. A scope appears only as a heading over the facts it
+holds («عنك»، «عن المنتجات»، «عن المحادثة»), and the control that acts on a single fact stays the
+button on that fact's row: edit or forget. Decision 6's promise is unchanged — view, edit, delete,
+export, a switch and "forget this conversation" — and the promise that matters is the one the switch
+was standing in for: a member can stop the assistant remembering at all without losing the facts
+already saved, because they stay listed until deleted.
+
+The store keeps three booleans. The route still accepts a partial patch, so a scope can be closed on
+its own if a surface ever needs it; the two clients' single switch simply names all three, and reads
+"on" only when every scope is open.
+
+**What would reopen it.** A product surface that wants to close one scope alone (say, conversations
+but not account facts) and can explain, in the member's words, why the two differ. Until then the
+three headings are the only place a scope is named.

@@ -127,7 +127,7 @@ One row in `agent_memories` the member asked the assistant to keep, with the sco
 `financial`), the turn it came from and a confidence. It is written through one door, refused when
 it carries a credential or a card number, and stays visible, editable and deletable on the memory
 page (ADR-0182).
-_Sold as_: ما أتذكّره
+_Sold as_: ذاكرة نور
 _Avoid_: Memory, note, item, entry, profile field, embedding
 
 **Recall**:

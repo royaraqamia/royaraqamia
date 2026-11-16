@@ -72,13 +72,15 @@ class MemoryRepository(private val client: ApiClient) {
     suspend fun forget(id: String): ApiResult<Unit> =
         answer(client.delete<AgentMemoryActionResult>(factPath(id)))
 
-    /** Flips one scope, and answers every switch as the server now holds them. */
-    suspend fun setScope(scope: MemoryScope, enabled: Boolean): ApiResult<MemorySettings> =
+    /** Flips the one switch, and answers every scope as the server now holds them. */
+    suspend fun setEnabled(enabled: Boolean): ApiResult<MemorySettings> =
         when (
             val result =
                 client.patch<AgentMemoryListResult>(
                     SETTINGS_PATH,
-                    ContractCodec.encode(settingsBody(scope, enabled)),
+                    ContractCodec.encode(
+                        MemoryScopeBody(account = enabled, product = enabled, thread = enabled)
+                    ),
                 )
         ) {
             is ApiResult.Success -> {
@@ -108,14 +110,6 @@ class MemoryRepository(private val client: ApiClient) {
                     ApiResult.Failure(ApiError.Server(200, result.value.error.orEmpty()))
                 }
             is ApiResult.Failure -> result
-        }
-
-    /** One switch, as the route reads it: the scope's own key and nothing else. */
-    private fun settingsBody(scope: MemoryScope, enabled: Boolean): MemoryScopeBody =
-        when (scope) {
-            MemoryScope.ACCOUNT -> MemoryScopeBody(account = enabled)
-            MemoryScope.PRODUCT -> MemoryScopeBody(product = enabled)
-            MemoryScope.THREAD -> MemoryScopeBody(thread = enabled)
         }
 
     private fun scopeOf(scope: AgentMemoryListResultFactsItemScope): MemoryScope =
@@ -153,7 +147,7 @@ class MemoryRepository(private val client: ApiClient) {
 @Serializable
 data class MemoryEditBody(val text: String)
 
-/** One scope's switch; the other two are absent, not null. */
+/** The one switch's body: all three scopes, named together. */
 @Serializable
 data class MemoryScopeBody(
     val account: Boolean? = null,

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
+  Brain,
   ClipboardList,
   FileText,
   CircleQuestionMark,
@@ -83,6 +84,13 @@ export function AccountRows({ onSignOut, children }: AccountRowsProps) {
           href="/account/blocked"
           icon={ShieldOff}
           label={ACCOUNT_ROWS_COPY.blocked}
+          onRequireAuth={setPromptHref}
+        />
+
+        <AccountRow
+          href="/account/memory"
+          icon={Brain}
+          label={ACCOUNT_ROWS_COPY.memory}
           onRequireAuth={setPromptHref}
         />
 

@@ -54,7 +54,7 @@ import kotlinx.coroutines.launch
  *
  * The second client of `frontend/ui/account/memory-view.tsx`, not a second
  * design: the same four faces ([MemoryUiState]), the same card
- * ([Recipes.Card] radius and container), the same three switches, the same
+ * ([Recipes.Card] radius and container), the same one switch, the same
  * grouped facts with their edit and forget controls, and the same words,
  * generated from `shared/copy/account-memory.json` rather than retyped
  * (ADR-0098). `docs/mobile/parity.json` lists the pair, and
@@ -150,16 +150,16 @@ fun MemoryScreen(
         }
     }
 
-    fun toggle(part: MemoryScope) {
+    fun toggle() {
         if (busy != null) return
         val current = state
         if (current !is MemoryUiState.Ready) return
-        val next = !current.memory.settings.isOn(part)
+        val next = !current.memory.settings.isOn
         scope.launch {
-            busy = "scope-${part.name}"
-            when (val result = repository.setScope(part, next)) {
+            busy = "settings"
+            when (val result = repository.setEnabled(next)) {
                 is ApiResult.Failure ->
-                    fail(ChatFailure.sentenceOf(result.error) ?: AccountMemoryCopy.SCOPE_SAVE_FAILED)
+                    fail(ChatFailure.sentenceOf(result.error) ?: AccountMemoryCopy.SETTINGS_SAVE_FAILED)
                 is ApiResult.Success -> {
                     fail(null)
                     state = current.copy(memory = current.memory.copy(settings = result.value))
@@ -190,14 +190,6 @@ fun MemoryScreen(
                     .semantics { heading() },
             style = scale.h2,
             color = RoyColors.foreground,
-            textAlign = TextAlign.Center,
-        )
-
-        Text(
-            text = AccountMemoryCopy.INTRO,
-            modifier = Modifier.fillMaxWidth().testTag("memory-intro"),
-            style = scale.xs,
-            color = RoyColors.mutedForeground,
             textAlign = TextAlign.Center,
         )
 
@@ -326,15 +318,16 @@ fun MemoryScreen(
     }
 }
 
-/** The three switches, in the page's order and with the page's sentences. */
+/** The page's one switch, under the page's heading and sentence. */
 @Composable
 private fun SettingsCard(
     settings: MemorySettings,
     busy: String?,
-    onToggle: (MemoryScope) -> Unit,
+    onToggle: () -> Unit,
 ) {
     val spacing = LocalRoySpacing.current
     val scale = LocalRoyTypeScale.current
+    val enabled = settings.isOn
     Column(
         modifier =
             Modifier.fillMaxWidth()
@@ -356,36 +349,33 @@ private fun SettingsCard(
             style = scale.xs,
             color = RoyColors.mutedForeground,
         )
-        for (part in listOf(MemoryScope.ACCOUNT, MemoryScope.PRODUCT, MemoryScope.THREAD)) {
-            val enabled = settings.isOn(part)
-            Row(
-                modifier = Modifier.fillMaxWidth().testTag("memory-scope-${part.name.lowercase()}"),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = scopeLabel(part),
-                    style = scale.xs,
-                    fontWeight = FontWeight.Bold,
-                    color = RoyColors.foreground,
-                )
-                ScopeSwitch(
-                    enabled = enabled,
-                    tag = "memory-switch-${part.name.lowercase()}",
-                    description =
-                        (if (enabled) AccountMemoryCopy.SCOPE_OFF_ARIA else AccountMemoryCopy.SCOPE_ON_ARIA)
-                            .replace("{scope}", scopeLabel(part)),
-                    disabled = busy == "scope-${part.name}",
-                    onClick = { onToggle(part) },
-                )
-            }
+        Row(
+            modifier = Modifier.fillMaxWidth().testTag("memory-switch-row"),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = AccountMemoryCopy.SETTINGS_LABEL,
+                style = scale.xs,
+                fontWeight = FontWeight.Bold,
+                color = RoyColors.foreground,
+            )
+            MemorySwitch(
+                enabled = enabled,
+                tag = "memory-switch",
+                description =
+                    if (enabled) AccountMemoryCopy.SETTINGS_OFF_ARIA
+                    else AccountMemoryCopy.SETTINGS_ON_ARIA,
+                disabled = busy == "settings",
+                onClick = onToggle,
+            )
         }
     }
 }
 
 /** The page's switch: a track and a knob that travels inside it, 150ms. */
 @Composable
-private fun ScopeSwitch(
+private fun MemorySwitch(
     enabled: Boolean,
     tag: String,
     description: String,
@@ -619,14 +609,6 @@ private fun RowAction(
         color = tone,
     )
 }
-
-/** The scope's own name, as the page's switch row draws it. */
-private fun scopeLabel(scope: MemoryScope): String =
-    when (scope) {
-        MemoryScope.ACCOUNT -> AccountMemoryCopy.SCOPE_ACCOUNT
-        MemoryScope.PRODUCT -> AccountMemoryCopy.SCOPE_PRODUCT
-        MemoryScope.THREAD -> AccountMemoryCopy.SCOPE_THREAD
-    }
 
 /** The group's heading, which is the page's own section label. */
 private fun sectionLabel(scope: MemoryScope): String =

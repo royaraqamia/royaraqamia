@@ -14,6 +14,7 @@ export const ACCOUNT_ROWS_COPY = {
   submissions: 'طلباتي',
   posts: 'منشوراتي',
   blocked: 'الأعضاء المحظورون',
+  memory: 'ذاكرة نور',
   pricing: 'خطط التَّسعير',
   admin: 'الإدارة',
   faq: 'الأسئلة الشَّائعة',

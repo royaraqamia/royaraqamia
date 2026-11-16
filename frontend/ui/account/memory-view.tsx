@@ -27,12 +27,6 @@ const MEMORY_ROUTE = '/account/memory';
 /** The three scopes, in the order the page draws them. */
 const SCOPES: readonly AgentMemoryScope[] = ['account', 'product', 'thread'];
 
-const SCOPE_LABEL: Readonly<Record<AgentMemoryScope, string>> = {
-  account: ACCOUNT_MEMORY_COPY.scopeAccount,
-  product: ACCOUNT_MEMORY_COPY.scopeProduct,
-  thread: ACCOUNT_MEMORY_COPY.scopeThread,
-};
-
 const SECTION_LABEL: Readonly<Record<AgentMemoryScope, string>> = {
   account: ACCOUNT_MEMORY_COPY.factsAccount,
   product: ACCOUNT_MEMORY_COPY.factsProduct,
@@ -62,11 +56,16 @@ function kindLabel(fact: AgentMemoryFact): string | null {
  * What the assistant remembers (ADR-0182 decision 6, #1428).
  *
  * The page is the whole control surface: every fact the assistant can recall is
- * listed here and carries its own edit and forget buttons, the three scopes are
- * switched on and off here, and the export is the same rows as a file. "Do not
- * show a fact the member cannot delete" is why the list is the store itself and
- * not a derived view: a row drawn from a second table would be a row with no
- * button.
+ * listed here and carries its own edit and forget buttons, one switch closes the
+ * whole store without hiding what it already holds, and the export is the same
+ * rows as a file. "Do not show a fact the member cannot delete" is why the list
+ * is the store itself and not a derived view: a row drawn from a second table
+ * would be a row with no button.
+ *
+ * The store's three scopes (`account`, `product`, `thread`) are the list's
+ * headings and not three switches: where a fact is routed is the server's
+ * business, while "remember or not" is the member's (ADR-0182's 2026-11-16
+ * amendment). The one switch writes all three together.
  *
  * Like the rest of `/account`, it is a data-free shell: a guest is pointed at
  * sign-in, and the read runs on the client.
@@ -141,18 +140,25 @@ export function MemoryView() {
     }
   }
 
-  async function toggle(scope: AgentMemoryScope) {
-    const next = !settings[scope];
-    setBusy(`scope-${scope}`);
+  /** Whether Nour may remember at all: on only when every scope is open. */
+  const isRemembering = settings.account && settings.product && settings.thread;
+
+  async function toggle() {
+    const next = !isRemembering;
+    setBusy('settings');
     try {
-      const answer = await saveAgentMemorySettings({ [scope]: next });
+      const answer = await saveAgentMemorySettings({
+        account: next,
+        product: next,
+        thread: next,
+      });
       setSettings(answer);
       setActionError(null);
     } catch (cause) {
       setActionError(
         cause instanceof Error && cause.message
           ? cause.message
-          : ACCOUNT_MEMORY_COPY.scopeSaveFailed
+          : ACCOUNT_MEMORY_COPY.settingsSaveFailed
       );
     } finally {
       setBusy(null);
@@ -197,18 +203,12 @@ export function MemoryView() {
   return (
     <div className="space-y-6">
       <div
-        className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12"
+        className="mb-8 flex flex-col items-center text-center sm:mb-10 lg:mb-12"
         data-visual="memory-title"
       >
         <SectionTitle as="h1">
           <SectionTitleHighlight>{ACCOUNT_MEMORY_COPY.pageTitle}</SectionTitleHighlight>
         </SectionTitle>
-        <p
-          data-visual="memory-intro"
-          className="mt-3 max-w-md text-xs leading-6 text-muted-foreground"
-        >
-          {ACCOUNT_MEMORY_COPY.intro}
-        </p>
       </div>
 
       {isLoading ? (
@@ -255,43 +255,37 @@ export function MemoryView() {
             <p className="mt-1 text-xs leading-6 text-muted-foreground">
               {ACCOUNT_MEMORY_COPY.settingsHint}
             </p>
-            <ul className="mt-3 space-y-2">
-              {SCOPES.map((scope) => {
-                const enabled = settings[scope];
-                const label = SCOPE_LABEL[scope];
-                return (
-                  <li
-                    key={scope}
-                    data-visual={`memory-scope-${scope}`}
-                    className="flex items-center justify-between gap-3"
-                  >
-                    <span className="text-xs font-bold text-foreground">{label}</span>
-                    <button
-                      type="button"
-                      role="switch"
-                      data-visual={`memory-switch-${scope}`}
-                      aria-checked={enabled}
-                      aria-label={(enabled
-                        ? ACCOUNT_MEMORY_COPY.scopeOffAria
-                        : ACCOUNT_MEMORY_COPY.scopeOnAria
-                      ).replace('{scope}', label)}
-                      onClick={() => void toggle(scope)}
-                      disabled={busy === `scope-${scope}`}
-                      className={`relative h-6 w-11 shrink-0 rounded-full border transition-safe focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-50 ${
-                        enabled ? 'border-primary/40 bg-primary/20' : 'border-border/70 bg-muted/40'
-                      }`}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={`absolute top-1/2 size-4 -translate-y-1/2 rounded-full bg-primary transition-safe ${
-                          enabled ? 'end-1' : 'start-1 bg-muted-foreground/50'
-                        }`}
-                      />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+            <div
+              data-visual="memory-switch-row"
+              className="mt-3 flex items-center justify-between gap-3"
+            >
+              <span className="text-xs font-bold text-foreground">
+                {ACCOUNT_MEMORY_COPY.settingsLabel}
+              </span>
+              <button
+                type="button"
+                role="switch"
+                data-visual="memory-switch"
+                aria-checked={isRemembering}
+                aria-label={
+                  isRemembering
+                    ? ACCOUNT_MEMORY_COPY.settingsOffAria
+                    : ACCOUNT_MEMORY_COPY.settingsOnAria
+                }
+                onClick={() => void toggle()}
+                disabled={busy === 'settings'}
+                className={`relative h-6 w-11 shrink-0 rounded-full border transition-safe focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-50 ${
+                  isRemembering ? 'border-primary/40 bg-primary/20' : 'border-border/70 bg-muted/40'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`absolute top-1/2 size-4 -translate-y-1/2 rounded-full bg-primary transition-safe ${
+                    isRemembering ? 'end-1' : 'start-1 bg-muted-foreground/50'
+                  }`}
+                />
+              </button>
+            </div>
           </section>
 
           <section
