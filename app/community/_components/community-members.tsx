@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Users } from 'lucide-react';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { FollowButton } from '@/frontend/ui/shared/follow-button';
+import { FOLLOW_BUTTON_COPY } from '@/frontend/ui/shared/follow-button-copy';
 import { useSession } from '@/frontend/state/session-provider';
 import type { PublicUser } from '@/shared/contracts/users';
 import type { FollowState } from '@/shared/contracts/follows';
@@ -60,14 +61,15 @@ function useRoster(members: PublicUser[]): { roster: PinnedRoster; guest: boolea
 }
 
 /**
- * The one difference the pinned row carries: a label, not a second card style.
- * It sits inside the name line so it never pushes the handle it shares a column
- * with, and it is `shrink-0` so a long name truncates instead of the label.
+ * The viewer's own row carries no control to press, so the slot that holds the
+ * follow button everywhere else holds this label instead. It is the button's
+ * own footprint — 40px tall, the same sideways padding — so the row keeps the
+ * rhythm of the list and the name it used to sit beside is free to truncate.
  */
-function YouBadge() {
+function SelfBadge() {
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full border border-primary/40 bg-primary/10 px-1.5 text-[10px] font-bold leading-[14px] text-primary">
-      أنت
+    <span className="inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10 px-4 text-xs font-bold text-primary">
+      {FOLLOW_BUTTON_COPY.you}
     </span>
   );
 }
@@ -80,6 +82,9 @@ function YouBadge() {
  * press opens the site's sign-in prompt instead of writing, and returns them to
  * the page they were reading. A signed-in visitor with no states is left
  * undrawn rather than shown a guess.
+ *
+ * The viewer's own row is the exception the session already answers: nobody
+ * follows themselves, so that slot holds the «أنت» label.
  */
 function MemberFollowControl({
   member,
@@ -87,16 +92,14 @@ function MemberFollowControl({
   guest,
   self,
   signInReturnTo,
-  className,
 }: {
   member: PublicUser;
   state?: FollowState;
   guest: boolean;
   self: boolean;
   signInReturnTo?: string;
-  className?: string;
 }) {
-  if (self) return null;
+  if (self) return <SelfBadge />;
 
   if (state) {
     return (
@@ -106,7 +109,6 @@ function MemberFollowControl({
         memberId={member.id}
         initialState={state}
         signedIn
-        className={className}
       />
     );
   }
@@ -121,7 +123,6 @@ function MemberFollowControl({
       initialState="not_following"
       signedIn={false}
       signInReturnTo={signInReturnTo}
-      className={className}
     />
   );
 }
@@ -158,32 +159,32 @@ export function CommunityMembersPanel({ members, states, signInReturnTo }: Commu
                   sizes="36px"
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <span className="truncate text-sm font-bold text-foreground">
-                      {displayName(member)}
-                    </span>
-                    {member.id === roster.selfId && <YouBadge />}
+                  <span className="block truncate text-sm font-bold text-foreground">
+                    {displayName(member)}
                   </span>
                   <span className="block truncate text-end text-xs text-muted-foreground" dir="ltr">
                     @{member.username}
                   </span>
                 </span>
-                <ArrowLeft
-                  className="size-4 shrink-0 text-primary opacity-0 transition-safe duration-200 group-hover:translate-x-[-2px] group-hover:opacity-100"
-                  aria-hidden="true"
-                />
+                {member.id !== roster.selfId && (
+                  <ArrowLeft
+                    className="size-4 shrink-0 text-primary opacity-0 transition-safe duration-200 group-hover:translate-x-[-2px] group-hover:opacity-100"
+                    aria-hidden="true"
+                  />
+                )}
               </Link>
               {/* One control per row, and its state arrived with the document.
-                  The viewer's own row already carries «أنت» beside the name;
-                  a follow button there would say the same thing twice. */}
-              <MemberFollowControl
-                member={member}
-                state={state}
-                guest={guest}
-                self={member.id === roster.selfId}
-                signInReturnTo={signInReturnTo}
-                className="shrink-0 pe-2"
-              />
+                  The viewer's own row has nothing to follow, so that slot is
+                  where «أنت» lands - the row reads like the others. */}
+              <div className="shrink-0 pe-2">
+                <MemberFollowControl
+                  member={member}
+                  state={state}
+                  guest={guest}
+                  self={member.id === roster.selfId}
+                  signInReturnTo={signInReturnTo}
+                />
+              </div>
             </li>
           );
         })}
@@ -233,11 +234,8 @@ export function CommunityMembersStrip({ members, states, signInReturnTo }: Commu
                     size="lg"
                     sizes="56px"
                   />
-                  <span className="flex w-full min-w-0 items-center justify-center gap-1">
-                    <span className="truncate text-xs font-bold text-foreground">
-                      {displayName(member)}
-                    </span>
-                    {member.id === roster.selfId && <YouBadge />}
+                  <span className="block w-full truncate text-xs font-bold text-foreground">
+                    {displayName(member)}
                   </span>
                   <span className="w-full truncate text-[10px] text-muted-foreground" dir="ltr">
                     @{member.username}

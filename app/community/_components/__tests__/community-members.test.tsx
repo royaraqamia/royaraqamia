@@ -120,7 +120,9 @@ describe('CommunityMembersPanel', () => {
       '/u/salah-talb',
       '/u/mahmoud-hamada',
     ]);
-    expect(within(rows[0]!).getByText('أنت')).toBeInTheDocument();
+    // The label is the row's control slot now, not part of the link's text.
+    expect(within(rows[0]!).queryByText('أنت')).not.toBeInTheDocument();
+    expect(rows[0]!.closest('li')).toContainElement(screen.getByText('أنت'));
     expect(screen.getAllByText('أنت')).toHaveLength(1);
   });
 
@@ -140,7 +142,7 @@ describe('CommunityMembersPanel', () => {
       />
     );
 
-    // The viewer's row carries «أنت» beside the name and no pill below it.
+    // The viewer's row carries «أنت» in the button's slot, and no button.
     expect(screen.getAllByText('أنت')).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'متابعة' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'إلغاء المتابعة' })).toBeInTheDocument();
@@ -195,7 +197,8 @@ describe('CommunityMembersStrip', () => {
 
     const rows = within(screen.getByRole('list')).getAllByRole('link');
     expect(rows[0]).toHaveAttribute('href', '/u/royaraqamia');
-    expect(within(rows[0]!).getByText('أنت')).toBeInTheDocument();
+    expect(within(rows[0]!).queryByText('أنت')).not.toBeInTheDocument();
+    expect(rows[0]!.closest('li')).toContainElement(screen.getByText('أنت'));
     expect(screen.getAllByText('أنت')).toHaveLength(1);
   });
 });
