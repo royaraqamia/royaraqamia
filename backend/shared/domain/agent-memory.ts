@@ -18,6 +18,8 @@
  * operator reads one warning.
  */
 
+import { DAMASCUS_TIME_ZONE } from '@/shared/time';
+
 export const EMBEDDING_GENERATION = {
   /** Where the vectors live. A new width is a new table, not the same one reindexed. */
   table: 'agent_memory_embeddings',
@@ -182,7 +184,7 @@ const RECALL_DATE = new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
   day: 'numeric',
   month: 'long',
   calendar: 'gregory',
-  timeZone: 'UTC',
+  timeZone: DAMASCUS_TIME_ZONE,
 });
 
 export function formatMemoryDate(value: string): string {

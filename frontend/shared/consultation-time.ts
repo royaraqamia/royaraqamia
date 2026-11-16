@@ -1,6 +1,7 @@
 import type { AvailabilitySlot } from '@/shared/contracts/consultation';
+import { DAMASCUS_TIME_ZONE } from '@/shared/time';
 
-export const DAMASCUS_TIME_ZONE = 'Asia/Damascus';
+export { DAMASCUS_TIME_ZONE };
 
 const dateOptions: Intl.DateTimeFormatOptions = {
   weekday: 'long',

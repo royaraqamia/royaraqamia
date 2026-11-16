@@ -3,20 +3,23 @@ import type {
   AgentMemoryKind,
   AgentMemoryScope,
 } from '@/shared/contracts/agent-memory';
+import { DAMASCUS_TIME_ZONE } from '@/shared/time';
 
 /**
- * How the memory page reads a fact's date (#1428).
+ * How the memory page reads a fact's date (#1428, #1545).
  *
  * Same rendering rule as the recall citation (`formatMemoryDate` in the domain):
  * the member's language, the Gregorian calendar and Latin digits, because the
- * site writes every numeral as ASCII. Kept beside the view rather than imported
- * from the backend: a domain module that carries the write path's refusals has no
- * business in a client bundle.
+ * site writes every numeral as ASCII — and the same Damascus day, so the page
+ * and the citation can never name two different dates for one fact. Kept beside
+ * the view rather than imported from the backend: a domain module that carries
+ * the write path's refusals has no business in a client bundle.
  */
 const MEMORY_DATE = new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
   day: 'numeric',
   month: 'long',
   calendar: 'gregory',
+  timeZone: DAMASCUS_TIME_ZONE,
 });
 
 export function memoryDate(value: string): string {
