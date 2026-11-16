@@ -60,7 +60,7 @@ export default async function CommunityExplorePage() {
               </div>
             </Suspense>
 
-            <CommunityMembersStrip members={members} />
+            <CommunityMembersStrip members={members} signInReturnTo="/community/explore" />
 
             <Suspense
               fallback={
@@ -86,7 +86,7 @@ export default async function CommunityExplorePage() {
           </div>
 
           <aside className="sticky top-24 max-lg:hidden self-start" aria-label="أعضاء المجتمع">
-            <CommunityMembersPanel members={members} />
+            <CommunityMembersPanel members={members} signInReturnTo="/community/explore" />
           </aside>
         </div>
       </div>
