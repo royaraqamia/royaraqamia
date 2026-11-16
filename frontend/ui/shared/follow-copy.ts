@@ -18,6 +18,15 @@ export const FOLLOW_COPY = {
   followingEmpty: 'لا يوجد متابَعون بعد.',
   listLoadFailed: 'تعذَّر تحميل القائمة. أعد المحاولة.',
   listPrivate: 'هذه القائمة خاصة بصاحب الحساب.',
+  /**
+   * The profile's «يتابعك» line (ADR-0201): the member follows the viewer, and
+   * when both edges exist the sentence says the relationship rather than one
+   * direction of it. Same rule as the counts above - this module is the site's
+   * words until the app draws the same badge, and then they move to
+   * `shared/copy/` the way the button's already did.
+   */
+  followsYou: 'يتابعك',
+  mutual: 'تتابعان بعضكما',
 } as const;
 
 export type CountKind = 'follower' | 'following';

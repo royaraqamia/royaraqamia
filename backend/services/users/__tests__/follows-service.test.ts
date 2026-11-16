@@ -290,3 +290,46 @@ describe('FollowsService.list', () => {
     expect(follows.isFollowing).not.toHaveBeenCalled();
   });
 });
+
+// ADR-0201: the header's «يتابعك» is the reverse edge, and the cached public
+// document cannot answer it, so the same read that decides the follow control
+// has to answer it - once, in parallel with the other three.
+describe('FollowsService.viewerState', () => {
+  it('answers whether the member follows the viewer, in the same round trip', async () => {
+    const { service, follows } = makeService({
+      isFollowing: vi.fn(async (follower: string) => follower === 'target'),
+    });
+
+    await expect(service.viewerState('viewer', 'target')).resolves.toEqual({
+      state: 'not_following',
+      counts: { followers: 3, following: 5 },
+      followsYou: true,
+    });
+    expect(follows.isFollowing).toHaveBeenCalledWith('target', 'viewer');
+  });
+
+  it('says nothing follows the viewer when either side blocked the other', async () => {
+    const { service } = makeService({
+      isBlockedEitherWay: vi.fn().mockResolvedValue(true),
+      isFollowing: vi.fn(async (follower: string) => follower === 'target'),
+    });
+
+    await expect(service.viewerState('viewer', 'target')).resolves.toMatchObject({
+      state: 'blocked',
+      followsYou: false,
+    });
+  });
+
+  it('reports no relationship on the owner profile or to a guest', async () => {
+    const { service } = makeService();
+
+    await expect(service.viewerState('target', 'target')).resolves.toMatchObject({
+      state: 'self',
+      followsYou: false,
+    });
+    await expect(service.viewerState(null, 'target')).resolves.toMatchObject({
+      state: 'not_following',
+      followsYou: false,
+    });
+  });
+});

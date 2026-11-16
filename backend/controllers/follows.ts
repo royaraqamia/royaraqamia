@@ -51,8 +51,11 @@ export async function getFollowState(username: string): Promise<HttpResult> {
       }
 
       try {
-        const { state, counts } = await createFollowsService().standingOf(userId, parsed.data);
-        const body: FollowToggleResponse = { success: true, state, counts };
+        const { state, counts, followsYou } = await createFollowsService().standingOf(
+          userId,
+          parsed.data
+        );
+        const body: FollowToggleResponse = { success: true, state, counts, followsYou };
         return jsonResult(200, body, { headers: { 'cache-control': 'no-store' } });
       } catch (error) {
         if (error instanceof FollowRefusedError) {

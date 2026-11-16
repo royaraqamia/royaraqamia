@@ -33,6 +33,12 @@ export interface FollowsServiceDeps {
 export interface FollowResult {
   state: FollowState;
   counts: FollowCounts;
+  /**
+   * The member follows the viewer (ADR-0201). Only the read answers it: the
+   * write knows both sides already, and the header that draws this sits on the
+   * render the read feeds.
+   */
+  followsYou?: boolean;
 }
 
 /**
@@ -116,31 +122,38 @@ export class FollowsService {
   /**
    * The viewer's standing with one member, and that member's numbers.
    *
-   * Three reads, in parallel and in one round trip: the aggregate, the block in
-   * either direction, and the edge. The page already has the member row, so this
-   * takes its id - looking the handle up again would be a fourth read to learn
-   * something the caller already knows.
+   * Four reads, in parallel and in one round trip: the aggregate, the block in
+   * either direction, the edge the viewer wrote, and the edge the member wrote
+   * - the last one is the header's «يتابعك», which the cached public document
+   * cannot answer (ADR-0172, ADR-0201). The page already has the member row, so
+   * this takes its id - looking the handle up again would be a fifth read to
+   * learn something the caller already knows.
    */
   async viewerState(
     viewerId: string | null,
     memberId: string
-  ): Promise<{ state: FollowState; counts: FollowCounts }> {
+  ): Promise<{ state: FollowState; counts: FollowCounts; followsYou: boolean }> {
     if (!viewerId || viewerId === memberId) {
       return {
         state: viewerId ? 'self' : 'not_following',
         counts: await this.countsOf(memberId),
+        followsYou: false,
       };
     }
 
-    const [counts, blocked, following] = await Promise.all([
+    const [counts, blocked, following, followsYou] = await Promise.all([
       this.countsOf(memberId),
       this.deps.follows.isBlockedEitherWay(viewerId, memberId),
       this.deps.follows.isFollowing(viewerId, memberId),
+      this.deps.follows.isFollowing(memberId, viewerId),
     ]);
 
     return {
       state: blocked ? 'blocked' : following ? 'following' : 'not_following',
       counts,
+      // A block severs both edges, but saying it here keeps the header honest
+      // if a row outlives the trigger that should have removed it.
+      followsYou: !blocked && followsYou,
     };
   }
 
