@@ -23,7 +23,12 @@ services:
     # types on the pull request, and the build machine only needs the artifact.
     # It still runs the whole prebuild chain and the postbuild precache list.
     # `npm ci` honours the repository's `.npmrc` (`legacy-peer-deps`).
-    buildCommand: npm ci && npm run build:render
+    #
+    # The 6 GB heap belongs to this command, not to the service: collecting page
+    # data died on "used over 8GB" once, and `next.config.js` already cuts the
+    # worker pool when `RENDER` is set. The prefix ends with the build; the
+    # runtime cap is `NODE_OPTIONS` below (ADR-0199).
+    buildCommand: npm ci && NODE_OPTIONS=--max-old-space-size=6144 npm run build:render
     startCommand: npm start
     # A static file: a health check that touches the app would count against the
     # 0.1 CPU the free instance has, and would report unhealthy while a page is
@@ -50,12 +55,18 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 22.22.2
-      # The first deploy died on "Ran out of memory (used over 8GB)" while
-      # collecting page data; `next.config.js` cuts the worker pool when
-      # `RENDER` is set, and this caps the heap so a future regression fails
-      # with a clear JavaScript error instead of an OOM kill.
+      # The runtime heap cap, and it has to stay near the instance: 512 MB of
+      # container with ~100 MB of non-heap RSS leaves ~360 MB for the heap.
+      # `--max-old-space-size=384` caps the old generation; V8 reports a 576 MB
+      # total heap limit with the young generation on top, which is close enough
+      # to the wall that collection runs while the instance is still alive.
+      #
+      # It used to read 6144 here, carrying the build's cap into `next start` as
+      # a service variable — V8 was told it had a ~6.3 GB heap, collected later
+      # than the container could afford, and the instance was killed at 512 MB
+      # while nearly idle (2026-11-15, ADR-0199).
       - key: NODE_OPTIONS
-        value: --max-old-space-size=6144
+        value: --max-old-space-size=384
 
       # Inlined at build time by Next, so they have to exist before
       # `next build` runs, not only at boot.
