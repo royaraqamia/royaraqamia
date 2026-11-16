@@ -1,6 +1,6 @@
-import webpush from 'web-push';
-
-const { generateVAPIDKeys } = webpush;
+// web-push 4 is an ES module that exports named members only, so the default
+// import this script used on 3.x no longer resolves.
+import { generateVAPIDKeys } from 'web-push';
 
 const keys = generateVAPIDKeys();
 
