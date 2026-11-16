@@ -1,6 +1,7 @@
 import type { AiChatMessage } from '@/backend/clients/ai-chat';
 import type { UserProfile } from '@/backend/repositories/users/user-profile-repository';
 import { screenContextMessages } from '@/backend/services/chat/turn-screen';
+import { skillBlock, type SkillHit } from '@/backend/shared/domain/agent-skills';
 import { recallBlock, type RecalledMemory } from '@/backend/shared/domain/agent-memory';
 import {
   summaryBlock,
@@ -139,14 +140,20 @@ export function turnContextMessages(
   identity: TurnIdentity | null,
   screen?: ScreenContextInput,
   recalled: readonly RecalledMemory[] = [],
-  summary?: ConversationSummary | null
+  summary?: ConversationSummary | null,
+  skills: readonly SkillHit[] = []
 ): AiChatMessage[] {
   const memory = recallBlock(recalled);
   const earlier = summaryBlock(summary ?? null);
+  const specialists = skillBlock(skills);
   return [
     ...(identity ? [{ role: 'system' as const, content: identityBlock(identity) }] : []),
     ...screenContextMessages(screen),
     ...(memory ? [{ role: 'system' as const, content: memory }] : []),
+    // The shortlist is the assistant's working context like recall is, and it
+    // sits after it, before the oldest part of the thread: names to choose
+    // from, never a body (#1448).
+    ...(specialists ? [{ role: 'system' as const, content: specialists }] : []),
     ...(earlier ? [{ role: 'system' as const, content: earlier }] : []),
   ];
 }

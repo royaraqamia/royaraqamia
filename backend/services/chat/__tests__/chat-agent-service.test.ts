@@ -16,6 +16,7 @@ import {
   type ChatAgentServiceDeps,
 } from '@/backend/services/chat/chat-agent-service';
 import type { ChatAgentTool } from '@/backend/services/chat/chat-agent-tools';
+import { SKILL_ALREADY_LOADED } from '@/backend/shared/domain/agent-skills';
 import { logger } from '@/backend/shared/logger';
 import type { McpAppTool } from '@/backend/services/mcp/marketplace/app-tools-service';
 import { DOCUMENT_PAGES_MAX } from '@/backend/services/chat/document-text';
@@ -364,6 +365,8 @@ describe('the assistant turn', () => {
       question: 'ما قهوتي المفضلة؟',
       threadId: 'conversation-1',
       product: 'spendtrack',
+      // One query vector per turn (#1448): absent here, so recall embeds.
+      vector: null,
     });
 
     const messages = client.calls[0] ?? [];
@@ -1022,6 +1025,36 @@ describe('the assistant’s tools (#818)', () => {
       content: JSON.stringify([{ id: 'cert-1', course_name: 'دورة' }]),
     });
     expect(agent.insertAgentMessage).toHaveBeenCalledWith('conversation-1', 'عندك شهادة واحدة.');
+  });
+
+  it('reads one specialist body per turn, and refuses the second (#1448)', async () => {
+    const specialist: ChatAgentTool = {
+      name: 'load_specialist',
+      kind: 'read',
+      product: 'assistant',
+      tier: 0,
+      description: 'تحميل تعليمات متخصص',
+      schema: z.strictObject({ id: z.string() }),
+      maxResultChars: 20_000,
+      run: vi.fn(async ({ id }: { id: string }) => ({ id, content: 'تعليمات المتخصص' })),
+    };
+    const client = scriptedClient([
+      [toolCall('load_specialist', { id: 'engineering-code-reviewer' }, 'call-1')],
+      [toolCall('load_specialist', { id: 'design-brand-guardian' }, 'call-2')],
+      textStream('تمام، راجعت الكود.'),
+    ]);
+    const { service } = makeService({
+      client,
+      resolveTool: (name) => (name === 'load_specialist' ? specialist : null),
+    });
+
+    await collect(service.turn('user-1', 'conversation-1', 'راجع الكود', TURN_CONTEXT));
+
+    // Attention is bounded outside the model: the second read never happens,
+    // and the turn keeps the first specialist's instructions.
+    expect(specialist.run).toHaveBeenCalledTimes(1);
+    const secondRound = JSON.stringify(client.calls[1] ?? []);
+    expect(secondRound).toContain(SKILL_ALREADY_LOADED);
   });
 
   it('closes a failed read with ok:false, and never calls it a read', async () => {

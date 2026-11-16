@@ -204,4 +204,41 @@ describe('turnContextMessages', () => {
       })
     ).toEqual([]);
   });
+
+  it('opens the specialist shortlist after recall and before the summary', () => {
+    const messages = turnContextMessages(
+      identity(),
+      undefined,
+      [
+        {
+          memoryId: 'memory-1',
+          text: 'أحب القهوة السادة',
+          similarity: 0.82,
+          updatedAt: '2026-10-03T09:00:00.000Z',
+        },
+      ],
+      {
+        text: 'اتفقتا على أن تبدأ الميزانية في 15 من كل شهر.',
+        throughMessageId: 'message-20',
+        updatedAt: '2026-11-15T09:00:00.000Z',
+      },
+      [
+        {
+          id: 'design-brand-guardian',
+          name: 'Brand Guardian',
+          description: 'Expert brand strategist and guardian.',
+          score: 0.81,
+        },
+      ]
+    );
+
+    expect(messages).toHaveLength(4);
+    expect(String(messages[2]?.content)).toContain('design-brand-guardian');
+    expect(String(messages[3]?.content)).toContain('اتفقتا على أن تبدأ الميزانية');
+  });
+
+  it('carries no shortlist when the router offered nothing', () => {
+    const messages = turnContextMessages(identity(), undefined, [], null, []);
+    expect(messages).toHaveLength(1);
+  });
 });

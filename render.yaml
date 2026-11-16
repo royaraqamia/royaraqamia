@@ -159,6 +159,20 @@ services:
         sync: false
       - key: OPENCODE_API_KEY
         sync: false
+      # The specialist shortlist's vectors (ADR-0190): the chat gateway serves
+      # no embedding model, so this is a second OpenAI-compatible provider on
+      # the account that already hosts R2. The model and its width are constants
+      # here because the committed artifact must match them exactly; the URL
+      # carries the account id and the token is a secret, so both stay in the
+      # dashboard.
+      - key: AI_EMBEDDING_BASE_URL
+        sync: false
+      - key: AI_EMBEDDING_API_KEY
+        sync: false
+      - key: AI_EMBEDDING_MODEL
+        value: '@cf/baai/bge-m3'
+      - key: AI_EMBEDDING_DIMENSIONS
+        value: '1024'
       - key: MCP_STATIC_CLIENT_GITHUB_ID
         sync: false
       - key: MCP_STATIC_CLIENT_GITHUB_SECRET

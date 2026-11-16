@@ -22,7 +22,7 @@ Verified against this checkout, not estimated.
 | Writes            | proposed as a card, executed only by the member's confirm on their own session                            |
 | External apps     | router + `find_app_tools`; `readOnlyHint` runs, the rest cards; 3 calls per turn, 2 per connection        |
 | Own MCP server    | 37 tools over 7 products, OAuth, scopes, plan caps, user-scoped client                                    |
-| Skills            | 284 vendored specialists, reachable through `list_specialists` and `load_specialist` only                 |
+| Skills            | 283 vendored specialists: a semantic shortlist per turn, then `load_specialist` for one body              |
 | Attachments       | image, PDF, document, text, voice — read inside the turn                                                  |
 | Memory            | the last 20 messages, trimmed to a token budget. Nothing else                                             |
 | Page awareness    | none. The panel is on every screen (ADR-0143) and knows nothing about it                                  |
@@ -176,13 +176,19 @@ or message a third party, and leaves one digest line with an undo that works.
 
 ### Phase 5 — Skills
 
-- Embed the 284 specialists; route top-k instead of a two-call guess; load at most one body per
-  turn by default, with `maxResultChars` honoured.
+- Embed the 283 specialists; route top-k instead of a two-call guess; load at most one body per
+  turn by default, with `maxResultChars` honoured. **Landed** (#1448): a shortlist of five, the
+  committed artifact, the lexical fallback, and one body per turn enforced in code.
 - Per-skill outcome telemetry: did the answer that loaded it score better on the eval suite?
 - A skill the answer never used costs nothing and is not loaded.
 
 **Exit:** a routing fixture set of 60 questions lands on the right specialist at least 80% of the
-time, versus the lexical baseline measured first.
+time, versus the lexical baseline measured first. **Measured** (#1448): 85% by meaning, 25% for the
+lexical baseline without a glossary, 68% for the shipped fallback.
+
+**Open:** memory recall still ranks lexically, because its table generation is 1536 and the embedding
+provider is 1024 ([ADR-0190](../adr/0190-the-embedding-provider-is-its-own-credential.md)). Rebuilding
+that generation and backfilling it is its own change.
 
 ### Phase 6 — Trust surface and proof
 

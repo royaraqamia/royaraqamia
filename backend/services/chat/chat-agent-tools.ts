@@ -651,7 +651,7 @@ const tools: ChatAgentTool[] = [
     product: 'assistant',
     tier: 0,
     description:
-      'تحميل تعليمات متخصص من الدليل بمعرّفه، لتتبعها في بقية الجواب. خذه من list_specialists، ولا تخترع معرّفاً.',
+      'تحميل تعليمات متخصص من الدليل بمعرّفه، لتتبعها في بقية الجواب. خذه من قائمة المرشّحين التي تصل مع السؤال أو من list_specialists، ولا تخترع معرّفاً، ولا تحمّل أكثر من متخصص واحد في الجولة.',
     schema: LoadSpecialistArgs,
     maxResultChars: 20_000,
     async run(args) {

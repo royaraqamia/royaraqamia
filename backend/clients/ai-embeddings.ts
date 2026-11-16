@@ -107,24 +107,51 @@ export function readEmbeddings(payload: unknown, dimensions: number): number[][]
 }
 
 /** The configured client, or `null` when embeddings are off or cannot be stored. */
-export function createAiEmbeddingsClient(): AiEmbeddingsClient | null {
-  const apiKey = env.aiChatApiKey;
+export interface EmbeddingClientOptions {
+  /**
+   * The width the caller can store. Defaults to the memory generation; the
+   * specialist index passes its own, because a roster artifact and a vector
+   * column are two independent generations (ADR-0185 decision 6, ADR-0190).
+   */
+  dimensions?: number;
+}
+
+export function createAiEmbeddingsClient(
+  options: EmbeddingClientOptions = {}
+): AiEmbeddingsClient | null {
+  const apiKey = env.aiEmbeddingApiKey ?? env.aiChatApiKey;
   const model = env.aiEmbeddingModel;
 
   if (!apiKey || !model) return null;
 
-  const mismatch = embeddingDimensionMismatch();
-  if (mismatch) {
+  const dimensions = options.dimensions ?? EMBEDDING_GENERATION.dimensions;
+  if (options.dimensions === undefined) {
+    const mismatch = embeddingDimensionMismatch();
+    if (mismatch) {
+      warnOnce(
+        'dimensions',
+        'Embedding dimensions do not match the vector index; recall stays lexical until the new generation is backfilled',
+        { ...mismatch, table: EMBEDDING_GENERATION.table }
+      );
+      return null;
+    }
+  } else if (env.aiEmbeddingDimensions !== undefined && env.aiEmbeddingDimensions !== dimensions) {
+    // A caller that can only store 1024 asked a provider configured for
+    // something else. Storing one width in a place that expects another is the
+    // one failure no later check catches, so this answers "no embeddings".
     warnOnce(
-      'dimensions',
-      'Embedding dimensions do not match the vector index; recall stays lexical until the new generation is backfilled',
-      { ...mismatch, table: EMBEDDING_GENERATION.table }
+      `dimensions:${dimensions}`,
+      'The embedding width does not match what this caller can store; it stays lexical',
+      { configured: env.aiEmbeddingDimensions, expected: dimensions }
     );
     return null;
   }
 
-  const baseUrl = (env.aiChatBaseUrl?.trim() || AI_CHAT_DEFAULT_BASE_URL).replace(/\/+$/, '');
-  const dimensions = EMBEDDING_GENERATION.dimensions;
+  const baseUrl = (
+    env.aiEmbeddingBaseUrl ||
+    env.aiChatBaseUrl?.trim() ||
+    AI_CHAT_DEFAULT_BASE_URL
+  ).replace(/\/+$/, '');
 
   async function embedBatch(texts: string[], signal: AbortSignal): Promise<number[][] | null> {
     const inputs = texts

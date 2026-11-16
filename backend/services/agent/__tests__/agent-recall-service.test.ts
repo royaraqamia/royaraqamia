@@ -73,6 +73,56 @@ describe('the recall service', () => {
     expect(recalled).toEqual([]);
   });
 
+  it('reuses the turn’s own vector instead of embedding the message twice (#1448)', async () => {
+    const client = fakeClient();
+    const nearest = vi.fn(async () => [fact('a', 0.9)]);
+    const service = createAgentRecallService({ nearest, client, now: () => NOW });
+
+    const shared = new Array<number>(1536).fill(0.1);
+    const recalled = await service.recall({
+      userId: 'member-1',
+      question: 'قهوتي',
+      ...SCOPE,
+      vector: shared,
+    });
+
+    expect(client.embed).not.toHaveBeenCalled();
+    expect(nearest).toHaveBeenCalledWith('member-1', shared, SCOPE, RECALL_CANDIDATES);
+    expect(recalled.map((item) => item.memoryId)).toEqual(['a']);
+  });
+
+  it('needs no client when the turn already paid for the vector', async () => {
+    const nearest = vi.fn(async () => [fact('a', 0.9)]);
+    const service = createAgentRecallService({ nearest, client: null, now: () => NOW });
+
+    const recalled = await service.recall({
+      userId: 'member-1',
+      question: 'قهوتي',
+      ...SCOPE,
+      vector: new Array<number>(1536).fill(0.1),
+    });
+
+    expect(recalled.map((item) => item.memoryId)).toEqual(['a']);
+  });
+
+  it('ignores a shared vector the memory table cannot store', async () => {
+    const client = fakeClient();
+    const nearest = vi.fn(async () => [fact('a', 0.9)]);
+    const service = createAgentRecallService({ nearest, client, now: () => NOW });
+
+    // The specialist artifact is 1024 wide; this table is 1536. A vector from
+    // the other generation is a turn without recall, never a mismatched write.
+    const recalled = await service.recall({
+      userId: 'member-1',
+      question: 'قهوتي',
+      ...SCOPE,
+      vector: new Array<number>(1024).fill(0.1),
+    });
+
+    expect(client.embed).toHaveBeenCalledTimes(1);
+    expect(recalled.map((item) => item.memoryId)).toEqual(['a']);
+  });
+
   it('orders survivors by decayed similarity, not by similarity alone', async () => {
     const client = fakeClient();
     const nearest = vi.fn(async () => [

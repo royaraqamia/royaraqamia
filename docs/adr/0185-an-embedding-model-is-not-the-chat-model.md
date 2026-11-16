@@ -4,6 +4,10 @@
 
 Accepted (program). The eval suite lands with phase 0; embeddings with phase 2.
 
+_Amended by [ADR 0190](0190-the-embedding-provider-is-its-own-credential.md) for decision 1: the
+chat gateway this deployment turns on serves no embedding model, so the embedding provider is its own
+endpoint and key._
+
 ## Context
 
 Two things in this program need a similarity measure: recall over memory (ADR-0182) and routing
