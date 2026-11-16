@@ -120,6 +120,17 @@ describe('the embedding client', () => {
     expect(String(warn.mock.calls[0]?.[0])).toContain('do not match the vector index');
   });
 
+  it('builds a client when the deployment configures the generation’s own width (#1550)', () => {
+    // What `render.yaml` carries: the provider's width is the table's width, so
+    // there is nothing to report and recall has a vector to rank with.
+    configure({ AI_EMBEDDING_DIMENSIONS: String(EMBEDDING_GENERATION.dimensions) });
+
+    expect(embeddingDimensionMismatch()).toBeNull();
+    const client = createAiEmbeddingsClient();
+    expect(client).not.toBeNull();
+    expect(client?.dimensions).toBe(EMBEDDING_GENERATION.dimensions);
+  });
+
   it('sends one batch per thirty-two inputs, and answers in input order', async () => {
     configure();
     const calls = stubProvider(

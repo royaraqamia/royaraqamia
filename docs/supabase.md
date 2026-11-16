@@ -191,13 +191,15 @@ so the caps are on files (ADR-0113, #852).
 
 ## Operations
 
-- **pgvector:** `agent_memory_embeddings` holds one vector per saved fact, in
-  `extensions.vector(1536)` (20261203120000, ADR-0185). The width is the
-  generation: a model of another width is a new table and
+- **pgvector:** `agent_memory_embeddings_1024` holds one vector per saved fact, in
+  `extensions.vector(1024)` (20261210120000, ADR-0185 decision 6, ADR-0200). The
+  width is the generation: a model of another width is a new table and
   `npm run embeddings:backfill`, never an in-place reindex, and until the new
   table exists the embedding path stays off with one operator warning. The
   pending view, `agent_embedding_pending`, is the one definition of "waiting",
-  including a fact edited after its vector was built.
+  including a fact edited after its vector was built. The 1536 generation
+  (`agent_memory_embeddings`) and its function are still there, frozen, until the
+  backfill reports `done` and a person approves a migration that drops them.
 
 - **Advisors:** Run `supabase_get_advisors` (security + performance) after schema changes
 - **Deliberate advisor findings:** `unindexed_foreign_keys` names the `user_id` columns on `training_applications`, `consultation_bookings`, `project_requests` and `retainers`. They carry no index on purpose — nothing reads them yet (ADR-0005), and an index only pays for reads. `training_applications` dedupes on its own `user_id`, so if that ever becomes slow, index all four together rather than only the newest two. `rate_sync_runs.snapshot_id`

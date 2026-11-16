@@ -4,11 +4,12 @@
  *
  * Two things here are fixed on purpose, and neither is a tuning knob:
  *
- * - The width. `agent_memory_embeddings.embedding` is `vector(1536)`, so a model
- *   that answers another width cannot be stored at all — Postgres refuses the
- *   write rather than mixing two spaces in one index. That is why a dimension
- *   change is a new table generation and a backfill (decision 6), not an
- *   in-place reindex: the old table keeps answering while the new one fills.
+ * - The width. `agent_memory_embeddings_1024.embedding` is `vector(1024)`, the
+ *   width the deployment's model answers (ADR-0190 decision 2), so a model that
+ *   answers another width cannot be stored at all — Postgres refuses the write
+ *   rather than mixing two spaces in one index. That is why a dimension change
+ *   is a new table generation and a backfill (decision 6), not an in-place
+ *   reindex: the old table keeps answering while the new one fills.
  * - The batch. Vectors are written when a row is written, never on a turn's
  *   read path (decision 5), so the write is one provider call for many rows.
  *
@@ -22,9 +23,11 @@ import { DAMASCUS_TIME_ZONE } from '@/shared/time';
 
 export const EMBEDDING_GENERATION = {
   /** Where the vectors live. A new width is a new table, not the same one reindexed. */
-  table: 'agent_memory_embeddings',
+  table: 'agent_memory_embeddings_1024',
+  /** The function that ranks `table`; a generation brings its own reader. */
+  nearestFunction: 'agent_memory_nearest_1024',
   /** The fixed width of `embedding`; an index needs it known at DDL time. */
-  dimensions: 1536,
+  dimensions: 1024,
 } as const;
 
 /** Rows per provider call. One write of a batch, never one call per row. */

@@ -13,7 +13,8 @@ import {
  * A model of its own, on the same OpenAI-compatible endpoint and key as the
  * turns: `AI_EMBEDDING_MODEL` and `AI_EMBEDDING_DIMENSIONS`, independent of
  * `AI_CHAT_MODEL`. The vectors it answers are stored beside the rows they
- * describe (`agent_memory_embeddings`) and never fetched on a turn's read path.
+ * describe (`EMBEDDING_GENERATION.table`) and never fetched on a turn's read
+ * path.
  *
  * **It degrades, it does not fail.** No key, no model, a dimension that does not
  * match the index generation, a refused request, a timeout, a body without one
@@ -60,8 +61,8 @@ export function resetEmbeddingWarnings(): void {
 }
 
 /**
- * The width `agent_memory_embeddings.embedding` was created with. A configured
- * value that differs is a deployment waiting for its own table generation
+ * The width the active generation's `embedding` column was created with. A
+ * configured value that differs is a deployment waiting for its own table generation
  * (ADR-0185 decision 6), so the answer is the mismatch — not a guess, and not a
  * write Postgres would refuse anyway.
  */

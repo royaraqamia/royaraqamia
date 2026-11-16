@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AiEmbeddingsClient } from '@/backend/clients/ai-embeddings';
 import { createAgentRecallService } from '@/backend/services/agent/agent-recall-service';
 import {
+  EMBEDDING_GENERATION,
   RECALL_CANDIDATES,
   RECALL_HALF_LIFE_DAYS,
   RECALL_MAX_ITEMS,
@@ -29,7 +30,7 @@ function daysAgo(days: number): string {
 function fakeClient(embed: AiEmbeddingsClient['embed'] = async () => [[0.5, 0.25]]) {
   return {
     model: 'text-embedding-3-small',
-    dimensions: 1536,
+    dimensions: EMBEDDING_GENERATION.dimensions,
     embed: vi.fn(embed),
   } satisfies AiEmbeddingsClient;
 }
@@ -78,7 +79,9 @@ describe('the recall service', () => {
     const nearest = vi.fn(async () => [fact('a', 0.9)]);
     const service = createAgentRecallService({ nearest, client, now: () => NOW });
 
-    const shared = new Array<number>(1536).fill(0.1);
+    // The shortlist's artifact and the memory table are both the provider's
+    // width now, so the turn's one vector is the one recall ranks with (#1550).
+    const shared = new Array<number>(EMBEDDING_GENERATION.dimensions).fill(0.1);
     const recalled = await service.recall({
       userId: 'member-1',
       question: 'قهوتي',
@@ -99,7 +102,7 @@ describe('the recall service', () => {
       userId: 'member-1',
       question: 'قهوتي',
       ...SCOPE,
-      vector: new Array<number>(1536).fill(0.1),
+      vector: new Array<number>(EMBEDDING_GENERATION.dimensions).fill(0.1),
     });
 
     expect(recalled.map((item) => item.memoryId)).toEqual(['a']);
@@ -110,13 +113,14 @@ describe('the recall service', () => {
     const nearest = vi.fn(async () => [fact('a', 0.9)]);
     const service = createAgentRecallService({ nearest, client, now: () => NOW });
 
-    // The specialist artifact is 1024 wide; this table is 1536. A vector from
-    // the other generation is a turn without recall, never a mismatched write.
+    // The 1536 generation's vector is six hundred numbers too wide for this
+    // table. A vector from another generation is a turn without a shared one,
+    // never a mismatched write: recall embeds the message at its own width.
     const recalled = await service.recall({
       userId: 'member-1',
       question: 'قهوتي',
       ...SCOPE,
-      vector: new Array<number>(1024).fill(0.1),
+      vector: new Array<number>(1536).fill(0.1),
     });
 
     expect(client.embed).toHaveBeenCalledTimes(1);

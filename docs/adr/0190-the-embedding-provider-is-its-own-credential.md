@@ -5,6 +5,9 @@
 Accepted. Amends [ADR-0185](0185-an-embedding-model-is-not-the-chat-model.md) decision 1; lands with
 phase 5 ([#1448](https://github.com/royaraqamia/royaraqamia/issues/1448)).
 
+_Amended by [ADR 0200](0200-a-memory-generation-follows-its-provider-s-width.md) for decision 4: memory
+also follows the provider to 1024, as a new table generation backfilled beside the old one._
+
 ## Context
 
 ADR-0185 decision 1 put the embedding model on "the same OpenAI-compatible endpoint and key as the
