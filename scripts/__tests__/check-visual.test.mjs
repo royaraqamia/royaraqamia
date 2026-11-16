@@ -68,6 +68,7 @@ const opaque = (width, height) => {
 };
 
 const CONTRACT = {
+  surface: 'verify',
   motion: { notes: 'Nothing moves at rest.', entries: [] },
   states: [
     {
@@ -462,7 +463,60 @@ describe('the motion section', () => {
       join(ungated.root, 'shared', 'visual', 'extra.json'),
       JSON.stringify({ surface: 'extra', states: CONTRACT.states })
     );
-    expect(ungated.check()).toEqual(['shared/visual/extra.json: no motion section']);
+    expect(ungated.check()).toEqual([
+      'shared/visual/extra.json: "extra" is not a screen in docs/mobile/screens.json',
+      'shared/visual/extra.json: no motion section',
+    ]);
+  });
+});
+
+describe('a contract that is declared and not gated', () => {
+  /**
+   * A repo whose extra contract is not under the gate and whose screen is not
+   * switched on, so the only errors left are the contract's own.
+   */
+  function declared(contract, screens = [{ surface: 'verify', native: 'x/Verify.kt' }]) {
+    const fixture = repo();
+    fixture.screens = { screens };
+    writeFileSync(
+      join(fixture.root, 'shared', 'visual', 'account-posts.json'),
+      JSON.stringify(contract)
+    );
+    return fixture;
+  }
+
+  it('accepts a contract that names a planned screen and decides its motion', () => {
+    expect(
+      declared(
+        {
+          surface: 'account-posts',
+          states: CONTRACT.states,
+          motion: { notes: 'The page is still.', entries: [] },
+        },
+        [{ surface: 'verify', native: 'x/Verify.kt' }, { surface: 'account-posts' }]
+      ).check()
+    ).toEqual([]);
+  });
+
+  it('refuses a contract for a screen the plan does not know', () => {
+    expect(
+      declared({
+        surface: 'account-posts',
+        states: CONTRACT.states,
+        motion: { notes: 'The page is still.', entries: [] },
+      }).check()
+    ).toEqual([
+      'shared/visual/account-posts.json: "account-posts" is not a screen in docs/mobile/screens.json',
+    ]);
+  });
+
+  it('refuses a contract with no surface at all', () => {
+    expect(
+      declared({
+        states: CONTRACT.states,
+        motion: { notes: 'The page is still.', entries: [] },
+      }).check()
+    ).toEqual(['shared/visual/account-posts.json: the contract names no "surface"']);
   });
 });
 

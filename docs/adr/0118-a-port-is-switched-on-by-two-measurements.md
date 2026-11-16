@@ -105,3 +105,30 @@ shape, not the movement itself, so the entries are compared by hand against the 
 This is the rule first, deliberately: a rule added after the backfill is a rule nobody can be held
 to. Every surface that already carries a contract carries the section now, and the backfill fills it
 one surface per change.
+
+## Amendment: a surface that will never have a port is reviewed, not gated (#1520)
+
+The evidence is a pair because the app is the second renderer of the same screen. A surface that is
+the document has no second renderer, and `docs/mobile/parity-plan.json` says some never will
+(`account-posts` is `document`, by ADR-0178), so there is nothing to pair the page against. #1520
+asked for a contract anyway: that page is the densest in the account area, and a regression there had
+no measurement at all.
+
+The contract is kept and the gate is not. Two substitutes were refused:
+
+- **The page against its own last recording.** It needs a browser, a signed-in fixture and a seeded
+  row on the pull request, either in the required path or in a path-filtered job that reports no check
+  when nothing matches — the two shapes `visual-baseline.yml` and `e2e-offline.yml` are both kept out
+  of. It would also make "gated" mean two different things in one file.
+- **A picture compared across machines.** ADR-0096 already refuses that: a baseline recorded on Linux
+  CI cannot be re-recorded on a developer's Windows machine, so it is a number nobody can regenerate
+  locally.
+
+So for a document surface the contract is a reviewed target list: the boxes, their properties and the
+motion are written down, `data-visual` names make them selectable, and a reviewer diffs the intent
+against the page. What holds it in place is structural rather than visual — `check:visual` refuses a
+contract that names no screen in `docs/mobile/screens.json`, and the page's own tests refuse a
+contract selector that no longer resolves to an element.
+
+The pair applies unchanged the day the surface gets a port, and this amendment is what reopens then.
+It also reopens if a defect slips through twice that the contract's boxes would have caught.
