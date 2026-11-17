@@ -16,14 +16,7 @@
           "userMessage": "كم شهادة عندي؟",
           "reply": "عندك 3 شهادات.",
           "error": "",
-          "events": [
-            "question",
-            "tool_start",
-            "tool",
-            "delta",
-            "delta",
-            "done"
-          ],
+          "events": ["question", "tool_start", "tool", "delta", "delta", "done"],
           "deterministic": {
             "pass": true,
             "failures": [],
