@@ -1,10 +1,7 @@
 {
   "generatedAt": "2026-11-17T18:04:11.799Z",
   "meta": {
-    "tiers": [
-      "model",
-      "agent"
-    ],
+    "tiers": ["model", "agent"],
     "model": "deepseek-v4.1-flash",
     "judge": "claude-haiku-5-5",
     "baseline": false,
@@ -1385,13 +1382,7 @@
           "userMessage": "How many certificates do I have?",
           "reply": "You have 3 certificates.",
           "error": "",
-          "events": [
-            "question",
-            "tool_start",
-            "tool",
-            "delta",
-            "done"
-          ],
+          "events": ["question", "tool_start", "tool", "delta", "done"],
           "deterministic": {
             "pass": true,
             "failures": [],
