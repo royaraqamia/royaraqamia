@@ -22,8 +22,8 @@ import { MCP_STORE_COPY } from './store-copy';
 
 import type { McpCatalogRow } from '@/shared/contracts/mcp-catalog';
 import type { McpConnection, McpPermissionLevel } from '@/shared/contracts/mcp-marketplace';
+import { LockedCard } from '@/frontend/ui/shared/locked-card';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
-import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { useSession } from '@/frontend/state/session-provider';
 import { getMcpConnections, startMcpConnection } from '@/frontend/api/mcp-connections';
 import { searchMcpCatalog } from '@/frontend/api/mcp-catalog';
@@ -191,14 +191,13 @@ export function StoreTab({ query, connect }: StoreTabProps) {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center gap-4 px-4 py-6 text-center">
-        <p className="max-w-sm text-sm leading-relaxed text-balance text-muted-foreground">
-          {MCP_STORE_COPY.signInBody}
-        </p>
-        <SignInCta href="/auth/login?redirect=/mcp/apps" visual="marketplace-cta">
-          {MCP_STORE_COPY.signIn}
-        </SignInCta>
-      </div>
+      <LockedCard
+        title={MCP_STORE_COPY.signInTitle}
+        body={MCP_STORE_COPY.signInBody}
+        href="/auth/login?redirect=/mcp/apps"
+        ctaLabel={MCP_STORE_COPY.signIn}
+        visual="marketplace-cta"
+      />
     );
   }
 

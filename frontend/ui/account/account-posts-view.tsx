@@ -135,13 +135,7 @@ function AccountPostsContent() {
         </section>
       ) : null}
 
-      <PostList
-        posts={posts}
-        onEdit={openEdit}
-        onChanged={repaint}
-        onCreate={openCreate}
-        initialFilter={initialFilter}
-      />
+      <PostList posts={posts} onEdit={openEdit} onChanged={repaint} initialFilter={initialFilter} />
 
       <FabButton label="منشور جديد" data-visual="account-posts-fab" onClick={openCreate}>
         <PenLine className="size-6 transition-transform duration-200 ease-out group-hover:-rotate-6 group-hover:scale-110" />

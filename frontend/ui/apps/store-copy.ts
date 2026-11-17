@@ -60,6 +60,7 @@ export const MCP_STORE_COPY = {
   searchRefreshing: 'جاري تحديث القائمة...',
   signIn: 'تسجيل الدُّخول',
   signInBody: 'سجِّل الدُّخول لترى التطبيقات التي يستطيع نور الوصول إليها، وتربط غيرها.',
+  signInTitle: 'سجِّل الدُّخول لفتح المتجر',
   statusActive: 'متصل',
   statusError: 'تعذّر الوصول إلى التطبيق',
   statusNeedsReauth: 'أعد الربط',

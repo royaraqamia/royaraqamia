@@ -46,14 +46,12 @@ describe('HomeTabStrip', () => {
     vi.useRealTimers();
   });
 
-  it('offers the arrange control and hides the picker while arranging', () => {
+  it('offers the arrange control and toggles the mode', () => {
     render(<HomeTabStrip selected="/quran" onSelect={() => {}} onReorder={async () => null} />);
 
-    expect(screen.getByRole('button', { name: 'تطبيق جديد' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'ترتيب' }));
 
     expect(screen.getByRole('button', { name: 'تم' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.queryByRole('button', { name: 'تطبيق جديد' })).not.toBeInTheDocument();
   });
 
   it('moves the focused tab with the arrow keys and saves the whole order', () => {

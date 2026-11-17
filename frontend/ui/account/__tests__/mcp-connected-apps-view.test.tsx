@@ -61,6 +61,10 @@ describe('McpConnectedAppsView', () => {
     session.useSession.mockReturnValue({ user: null, isLoading: false });
     render(<McpConnectedAppsView />);
 
+    expect(await screen.findByText('سجِّل الدُّخول لترى التَّطبيقات المتَّصلة')).toBeInTheDocument();
+    expect(
+      screen.getByText('التَّطبيقات التي تربطها بحسابك تظهر هنا، ومعها آخر استخدام لكلٍّ منها.')
+    ).toBeInTheDocument();
     expect(await screen.findByRole('link', { name: 'تسجيل الدُّخول' })).toHaveAttribute(
       'href',
       '/auth/login?redirect=%2Fmcp%2Fapps%3Ftab%3Dinbound'

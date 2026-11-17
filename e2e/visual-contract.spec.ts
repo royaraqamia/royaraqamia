@@ -607,16 +607,17 @@ const PREPARE: Record<
     await hideDevIndicator(page);
     await page.waitForTimeout(400);
   },
-  // The picker over the strip: the sheet is opened by the strip's own end
-  // control, and the body is the capture region, so the shared `visit` cannot
-  // wait for it first.
+  // The picker over the strip: the sheet is opened by the navbar's apps door,
+  // and the body is the capture region, so the shared `visit` cannot wait for
+  // it first.
   'home/picker': async (page) => {
     const baseURL = projectBaseURL();
     await signInAsVisualAccount(page.context(), baseURL);
     await seedHomeServices(page.context(), baseURL, VISUAL_HOME_SERVICES);
     await page.goto(new URL('/', baseURL).toString(), { waitUntil: 'domcontentloaded' });
-    await page.locator('[data-visual="home-new-app"]').waitFor({ timeout: 30_000 });
-    await page.locator('[data-visual="home-new-app"]').click();
+    const door = page.getByRole('button', { name: 'التَّطبيقات', exact: true });
+    await door.waitFor({ timeout: 30_000 });
+    await door.click();
     await page.locator('[data-visual="services-sheet"]').waitFor({ timeout: 30_000 });
     await hideDevIndicator(page);
     await page.waitForTimeout(600);

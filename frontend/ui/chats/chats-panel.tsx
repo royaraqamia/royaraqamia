@@ -13,6 +13,7 @@ import { startAssistantChat } from '@/frontend/api/chats';
 import { identityUserId } from '@/frontend/shared/local-store/identity';
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
+import { Button } from '@/frontend/ui/primitives/button';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
 import { FabButton } from '@/frontend/ui/shared/fab-button';
@@ -218,24 +219,25 @@ export function ChatsPanel() {
               className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3"
             >
               <ThreadIdentity thread={thread} presence={null} />
-              <p className="mt-1 text-xs text-muted-foreground">{CHATS_LIST_COPY.requestDirect}</p>
               <div className="mt-3 flex items-center gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="hero"
+                  size="sm"
                   onClick={() => setAnswering({ thread, choice: 'accept' })}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90"
                 >
-                  <Check size={14} />
+                  <Check size={16} aria-hidden="true" />
                   {CHATS_LIST_COPY.accept}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => setAnswering({ thread, choice: 'decline' })}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 px-3 py-1.5 text-xs font-bold text-muted-foreground transition-safe hover:bg-accent"
                 >
-                  <X size={14} />
+                  <X size={16} aria-hidden="true" />
                   {CHATS_LIST_COPY.decline}
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -351,7 +353,11 @@ function ThreadIdentity({
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
-        {thread.status === 'declined' ? (
+        {thread.myStatus === 'requested' || thread.myStatus === 'invited' ? (
+          <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
+            {CHATS_LIST_COPY.requestDirect}
+          </p>
+        ) : thread.status === 'declined' ? (
           <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
             {CHATS_LIST_COPY.declinedLabel}
           </p>

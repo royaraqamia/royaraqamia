@@ -11,7 +11,6 @@
  */
 export const HOME_STRIP_COPY = {
   stripLabel: 'تطبيقاتك',
-  newApp: 'تطبيق جديد',
   arrange: 'ترتيب',
   done: 'تم',
   arrangeHelp: 'اسحب التَّطبيقات لتغيير ترتيبها، أو حرِّكها بالسَّهمين الأيمن والأيسر.',

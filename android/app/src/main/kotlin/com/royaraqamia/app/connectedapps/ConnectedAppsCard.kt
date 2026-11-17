@@ -496,38 +496,75 @@ private fun Skeleton(modifier: Modifier) {
     }
 }
 
-/** The site's guest state: one way in, and nothing else — the page has no list to show. */
+/** The site's guest state: the locked card, the sentence, and the one way in. */
 @Composable
 private fun SignedOut(modifier: Modifier, onSignIn: () -> Unit) {
     val type = LocalRoyTypeScale.current
+    val spacing = LocalRoySpacing.current
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier =
-                Modifier.testTag(ConnectedAppsScreenMetrics.CTA)
-                    .height(Recipes.Cta.height)
-                    .widthIn(min = Recipes.Cta.minWidth)
-                    .shadow(
-                        elevation = Recipes.Cta.bloomY,
-                        shape = Recipes.Cta.radius,
-                        ambientColor = Recipes.Cta.bloom,
-                        spotColor = Recipes.Cta.bloom,
-                    )
-                    .clip(Recipes.Cta.radius)
-                    .background(Brush.horizontalGradient(Recipes.Cta.stops))
-                    .border(Recipes.Cta.border, Recipes.Cta.radius)
-                    .clickable(onClick = onSignIn)
-                    .padding(horizontal = Recipes.Cta.paddingX),
-            contentAlignment = Alignment.Center,
+    CardShell {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
         ) {
+            Box(
+                modifier =
+                    Modifier.size(Recipes.GuestMark.size)
+                        .royInsetShadow(
+                            shape = Recipes.GuestMark.radius,
+                            color = Recipes.GuestMark.shadowColor,
+                            blur = Recipes.GuestMark.shadowBlur,
+                            offsetY = Recipes.GuestMark.shadowOffsetY,
+                        )
+                        .clip(Recipes.GuestMark.radius)
+                        .background(Recipes.GuestMark.surface)
+                        .border(Recipes.GuestMark.border, Recipes.GuestMark.radius),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = LucideVectors.Lock,
+                    contentDescription = null,
+                    tint = Recipes.GuestMark.content,
+                    modifier = Modifier.size(Recipes.Glyph.md),
+                )
+            }
             Text(
-                text = ConnectedAppsCopy.SIGN_IN,
-                style = Recipes.Cta.text(type),
-                color = Recipes.Cta.content,
+                text = ConnectedAppsCopy.SIGN_IN_TITLE,
+                style = type.body.copy(fontWeight = FontWeight.Bold),
+                color = RoyColors.foreground,
+                textAlign = TextAlign.Center,
             )
+            Text(
+                text = ConnectedAppsCopy.SIGN_IN_BODY,
+                style = type.xs,
+                color = RoyColors.mutedForeground,
+                textAlign = TextAlign.Center,
+            )
+            Box(
+                modifier =
+                    Modifier.testTag(ConnectedAppsScreenMetrics.CTA)
+                        .height(Recipes.Cta.height)
+                        .widthIn(min = Recipes.Cta.minWidth)
+                        .shadow(
+                            elevation = Recipes.Cta.bloomY,
+                            shape = Recipes.Cta.radius,
+                            ambientColor = Recipes.Cta.bloom,
+                            spotColor = Recipes.Cta.bloom,
+                        )
+                        .clip(Recipes.Cta.radius)
+                        .background(Brush.horizontalGradient(Recipes.Cta.stops))
+                        .border(Recipes.Cta.border, Recipes.Cta.radius)
+                        .clickable(onClick = onSignIn)
+                        .padding(horizontal = Recipes.Cta.paddingX),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = ConnectedAppsCopy.SIGN_IN,
+                    style = Recipes.Cta.text(type),
+                    color = Recipes.Cta.content,
+                )
+            }
         }
     }
 }
