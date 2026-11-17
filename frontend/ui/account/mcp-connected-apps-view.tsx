@@ -15,8 +15,8 @@ import {
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { LockedCard } from '@/frontend/ui/shared/locked-card';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
-import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ApiError } from '@/frontend/transport/http';
 import { useSession } from '@/frontend/state/session-provider';
 import { appsCacheKey, readAppsCache, writeAppsCache } from '@/frontend/ui/apps/apps-cache';
@@ -152,12 +152,13 @@ function ConnectedAppsBody({ query }: { query: string }) {
 
   if (!user)
     return (
-      <SignInCta
+      <LockedCard
+        title={MCP_CONNECTED_APPS_COPY.signInTitle}
+        body={MCP_CONNECTED_APPS_COPY.signInBody}
         href={`/auth/login?redirect=${encodeURIComponent('/mcp/apps?tab=inbound')}`}
+        ctaLabel={MCP_CONNECTED_APPS_COPY.signIn}
         visual="connected-cta"
-      >
-        {MCP_CONNECTED_APPS_COPY.signIn}
-      </SignInCta>
+      />
     );
 
   if (loadFailed) {

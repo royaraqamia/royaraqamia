@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +39,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -63,6 +66,7 @@ import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
+import com.royaraqamia.app.theme.royInsetShadow
 import com.royaraqamia.app.ui.vectors.LucideVectors
 import android.graphics.BitmapFactory
 import kotlinx.coroutines.delay
@@ -365,43 +369,80 @@ private suspend fun resubmit(
     write(MarketplaceUiState.from(repository.search(term), term))
 }
 
-/** The signed-out answer: the page's one card and its way in. */
+/** The site's guest state: the locked card every locked surface draws. */
 @Composable
 private fun SignedOut(modifier: Modifier, onSignIn: () -> Unit) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .testTag(MarketplaceMetrics.SIGNED_OUT)
-                .padding(horizontal = spacing.elementGap, vertical = spacing.elementGapSm),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+    Surface(
+        modifier = modifier.fillMaxWidth().testTag(MarketplaceMetrics.SIGNED_OUT),
+        shape = Recipes.Card.radius,
+        color = Recipes.Card.container,
+        border = Recipes.Card.border,
     ) {
-        Text(
-            text = McpStoreCopy.SIGN_IN_BODY,
-            style = type.small,
-            color = RoyColors.mutedForeground,
-            textAlign = TextAlign.Center,
-        )
-        Row(
-            modifier =
-                Modifier.clip(Recipes.Cta.radius)
-                    .background(RoyColors.primary)
-                    .clickable(onClick = onSignIn)
-                    .semantics { role = Role.Button }
-                    .testTag(MarketplaceMetrics.SIGN_IN_ACTION)
-                    .padding(horizontal = 24.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(Recipes.Card.padding(spacing)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
         ) {
+            Box(
+                modifier =
+                    Modifier.size(Recipes.GuestMark.size)
+                        .royInsetShadow(
+                            shape = Recipes.GuestMark.radius,
+                            color = Recipes.GuestMark.shadowColor,
+                            blur = Recipes.GuestMark.shadowBlur,
+                            offsetY = Recipes.GuestMark.shadowOffsetY,
+                        )
+                        .clip(Recipes.GuestMark.radius)
+                        .background(Recipes.GuestMark.surface)
+                        .border(Recipes.GuestMark.border, Recipes.GuestMark.radius),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = LucideVectors.Lock,
+                    contentDescription = null,
+                    tint = Recipes.GuestMark.content,
+                    modifier = Modifier.size(Recipes.Glyph.md),
+                )
+            }
             Text(
-                text = McpStoreCopy.SIGN_IN,
-                style = type.small.copy(fontWeight = FontWeight.Bold),
-                color = RoyColors.primaryForeground,
-                maxLines = 1,
+                text = McpStoreCopy.SIGN_IN_TITLE,
+                style = type.body.copy(fontWeight = FontWeight.Bold),
+                color = RoyColors.foreground,
+                textAlign = TextAlign.Center,
             )
+            Text(
+                text = McpStoreCopy.SIGN_IN_BODY,
+                style = type.xs,
+                color = RoyColors.mutedForeground,
+                textAlign = TextAlign.Center,
+            )
+            Box(
+                modifier =
+                    Modifier.testTag(MarketplaceMetrics.SIGN_IN_ACTION)
+                        .height(Recipes.Cta.height)
+                        .widthIn(min = Recipes.Cta.minWidth)
+                        .shadow(
+                            elevation = Recipes.Cta.bloomY,
+                            shape = Recipes.Cta.radius,
+                            ambientColor = Recipes.Cta.bloom,
+                            spotColor = Recipes.Cta.bloom,
+                        )
+                        .clip(Recipes.Cta.radius)
+                        .background(Brush.horizontalGradient(Recipes.Cta.stops))
+                        .border(Recipes.Cta.border, Recipes.Cta.radius)
+                        .clickable(onClick = onSignIn)
+                        .padding(horizontal = Recipes.Cta.paddingX),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = McpStoreCopy.SIGN_IN,
+                    style = Recipes.Cta.text(type),
+                    color = Recipes.Cta.content,
+                )
+            }
         }
     }
 }

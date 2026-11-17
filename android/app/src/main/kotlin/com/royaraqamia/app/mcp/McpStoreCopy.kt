@@ -60,6 +60,7 @@ object McpStoreCopy {
     const val SEARCH_REFRESHING = "جاري تحديث القائمة..."
     const val SIGN_IN = "تسجيل الدُّخول"
     const val SIGN_IN_BODY = "سجِّل الدُّخول لترى التطبيقات التي يستطيع نور الوصول إليها، وتربط غيرها."
+    const val SIGN_IN_TITLE = "سجِّل الدُّخول لفتح المتجر"
     const val STATUS_ACTIVE = "متصل"
     const val STATUS_ERROR = "تعذّر الوصول إلى التطبيق"
     const val STATUS_NEEDS_REAUTH = "أعد الربط"

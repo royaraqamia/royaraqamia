@@ -40,7 +40,7 @@ function post(id: string, status: Post['status'] = 'draft'): Post {
 }
 
 function renderList(posts: Post[] = [post('a'), post('b')]) {
-  return render(<PostList posts={posts} onEdit={vi.fn()} onChanged={vi.fn()} onCreate={vi.fn()} />);
+  return render(<PostList posts={posts} onEdit={vi.fn()} onChanged={vi.fn()} />);
 }
 
 /**

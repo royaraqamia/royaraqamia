@@ -15,6 +15,8 @@ object ConnectedAppsCopy {
     const val PAGE_TITLE = "التَّطبيقات المتَّصلة بالـ MCP"
     const val LOADING_LABEL = "جاري التَّحميل..."
     const val SIGN_IN = "تسجيل الدُّخول"
+    const val SIGN_IN_TITLE = "سجِّل الدُّخول لترى التَّطبيقات المتَّصلة"
+    const val SIGN_IN_BODY = "التَّطبيقات التي تربطها بحسابك تظهر هنا، ومعها آخر استخدام لكلٍّ منها."
     const val FAILED = "تعذّر تحميل التَّطبيقات المتَّصلة."
     const val OFFLINE = "تعذّر تحميل التَّطبيقات المتَّصلة: لم يصل الطَّلب إلى الخادم. تحقَّق من اتِّصالك ثم أعد المحاولة."
     const val RETRY = "إعادة المحاولة"

@@ -1,13 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { Plus } from 'lucide-react';
+import { ArrowUpDown } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useHorizontalScroll } from '@/frontend/shared/use-horizontal-scroll';
 import { useHomeServices } from '@/frontend/state/home-services-provider';
 import { HorizontalScrollArrows } from '@/frontend/ui/HorizontalScrollArrows';
-import { ServicesMenu } from '@/frontend/ui/navbar/ServicesMenu';
 import { SERVICES_LINK } from '@/frontend/ui/navbar/services-link';
 import type { HomeServiceKey } from '@/shared/contracts/home-services-catalog';
 
@@ -33,8 +32,8 @@ interface HomeTabStripProps {
  * member rearranges it (ADR-0202) — and each pill is a tab, not a link: the
  * homepage hosts every app under the strip, so choosing one swaps the surface in
  * place and the address bar stays `/` (ADR-0151). An app still has its own route
- * for a shared link and a direct visit; the tab never uses it. The end control
- * opens the same sheet the navbar does.
+ * for a shared link and a direct visit; the tab never uses it. The picker is the
+ * navbar's door, so the row is the tabs and the arrange toggle and nothing else.
  *
  * «ترتيب» is the only way into the drag, so a normal tap never moves a tab. A
  * swipe still scrolls the strip even inside the mode: a pill has to be held
@@ -156,24 +155,6 @@ export function HomeTabStrip({ selected, onSelect, onReorder }: HomeTabStripProp
               })}
             </ul>
 
-            {!arranging && (
-              <div className="shrink-0 snap-start">
-                <ServicesMenu
-                  trigger={
-                    <button
-                      type="button"
-                      aria-label={HOME_STRIP_COPY.newApp}
-                      data-visual="home-new-app"
-                      className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-neutral-700 px-4 text-sm font-bold text-neutral-400 transition-safe duration-200 ease-out hover:border-violet-500/60 hover:text-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95"
-                    >
-                      <Plus className="size-4" aria-hidden="true" />
-                      <span className="whitespace-nowrap">{HOME_STRIP_COPY.newApp}</span>
-                    </button>
-                  }
-                />
-              </div>
-            )}
-
             <div className="shrink-0 snap-start">
               <button
                 type="button"
@@ -181,12 +162,13 @@ export function HomeTabStrip({ selected, onSelect, onReorder }: HomeTabStripProp
                 data-visual="home-arrange"
                 onClick={toggleArrange}
                 className={cn(
-                  'inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-bold transition-safe duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950',
+                  'inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-bold transition-safe duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950',
                   arranging
                     ? 'border-violet-500/60 bg-violet-600/20 text-violet-200'
                     : 'border-neutral-800 bg-neutral-900/70 text-neutral-400 hover:border-violet-500/60 hover:text-violet-300'
                 )}
               >
+                <ArrowUpDown className="size-4 shrink-0" aria-hidden="true" />
                 <span className="whitespace-nowrap">
                   {arranging ? HOME_STRIP_COPY.done : HOME_STRIP_COPY.arrange}
                 </span>

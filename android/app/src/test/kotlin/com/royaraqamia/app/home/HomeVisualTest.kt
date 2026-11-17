@@ -68,7 +68,6 @@ class HomeVisualTest {
                                 order = listOf("/quran", "/rates"),
                                 selected = "/quran",
                                 onSelect = {},
-                                onAddApp = {},
                             )
                         }
                     }
@@ -78,7 +77,6 @@ class HomeVisualTest {
         compose.waitForIdle()
 
         val strip = boxOf("home-app-strip")
-        val newApp = boxOf("home-new-app")
 
         val json =
             """
@@ -91,14 +89,6 @@ class HomeVisualTest {
                   "width": ${widthOf("home-app-strip")},
                   "height": ${heightOf("home-app-strip")},
                   "columnGap": "normal"
-                },
-                "new-app": {
-                  "top": ${newApp.top.value},
-                  "width": ${widthOf("home-new-app")},
-                  "height": ${heightOf("home-new-app")},
-                  "radius": $FULL_RADIUS,
-                  "fontSize": ${HomeStripMetrics.pillTextSize.value},
-                  "paddingLeft": ${HomeStripMetrics.pillHorizontalPadding.value}
                 }
               }
             }

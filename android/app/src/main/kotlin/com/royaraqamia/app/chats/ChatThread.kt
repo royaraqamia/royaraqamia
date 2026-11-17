@@ -2,6 +2,7 @@ package com.royaraqamia.app.chats
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -1061,20 +1064,43 @@ private fun Footer(
                     horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    OutlinedButton(
-                        onClick = { onRespond(true) },
-                        modifier = Modifier.weight(1f),
+                    // The site's Hero pill, compact: `h-11 px-6 text-sm`.
+                    Box(
+                        modifier =
+                            Modifier.weight(1f)
+                                .height(44.dp)
+                                .shadow(
+                                    elevation = Recipes.Cta.bloomY,
+                                    shape = Recipes.Cta.radius,
+                                    ambientColor = Recipes.Cta.bloom,
+                                    spotColor = Recipes.Cta.bloom,
+                                )
+                                .clip(Recipes.Cta.radius)
+                                .background(Brush.horizontalGradient(Recipes.Cta.stops))
+                                .border(Recipes.Cta.border, Recipes.Cta.radius)
+                                .clickable { onRespond(true) },
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = ChatsListCopy.ACCEPT,
                             style = type.small.copy(fontWeight = FontWeight.Bold),
+                            color = Recipes.Cta.content,
                         )
                     }
-                    OutlinedButton(
-                        onClick = { onRespond(false) },
-                        modifier = Modifier.weight(1f),
+                    Box(
+                        modifier =
+                            Modifier.weight(1f)
+                                .height(44.dp)
+                                .clip(Recipes.Cta.radius)
+                                .border(1.dp, RoyColors.border.copy(alpha = 0.7f), Recipes.Cta.radius)
+                                .clickable { onRespond(false) },
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Text(text = ChatsListCopy.DECLINE, style = type.small)
+                        Text(
+                            text = ChatsListCopy.DECLINE,
+                            style = type.small.copy(fontWeight = FontWeight.Bold),
+                            color = RoyColors.mutedForeground,
+                        )
                     }
                 }
             }

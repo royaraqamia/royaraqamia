@@ -53,7 +53,7 @@ test('removing the only app returns the empty state', async ({ page }) => {
 
   await expect(page.getByRole('tab', { name: 'القرآن الكريم' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'تطبيق جديد' }).click();
+  await page.getByRole('button', { name: 'التَّطبيقات', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog
     .getByRole('listitem')
@@ -82,8 +82,6 @@ test('a visitor reorders the strip with the keyboard and keeps the order', async
 
   await page.getByRole('button', { name: 'ترتيب' }).click();
   await expect(page.getByRole('button', { name: 'تم' })).toBeVisible();
-  // The picker is not part of arranging.
-  await expect(page.getByRole('button', { name: 'تطبيق جديد' })).toHaveCount(0);
 
   await page.getByRole('tab', { name: 'القرآن الكريم' }).focus();
   // The app is RTL, so ArrowLeft walks toward the end of the strip.

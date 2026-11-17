@@ -32,6 +32,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -535,47 +538,72 @@ private fun RequestRow(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm)) {
-            Row(
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // The site's Hero pill, compact: `h-11 px-6 text-sm` over the CTA recipe.
+            Box(
                 modifier =
-                    Modifier.background(RoyColors.primary, RoundedCornerShape(8.dp))
+                    Modifier.height(44.dp)
+                        .shadow(
+                            elevation = Recipes.Cta.bloomY,
+                            shape = Recipes.Cta.radius,
+                            ambientColor = Recipes.Cta.bloom,
+                            spotColor = Recipes.Cta.bloom,
+                        )
+                        .clip(Recipes.Cta.radius)
+                        .background(Brush.horizontalGradient(Recipes.Cta.stops))
+                        .border(Recipes.Cta.border, Recipes.Cta.radius)
                         .clickable { onAnswer(thread, true) }
-                        .padding(horizontal = spacing.elementGapSm, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                        .padding(horizontal = 24.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = LucideVectors.Check,
-                    contentDescription = null,
-                    tint = RoyColors.primaryForeground,
-                    modifier = Modifier.size(14.dp),
-                )
-                Text(
-                    text = ChatsListCopy.ACCEPT,
-                    style = type.xs.copy(fontWeight = FontWeight.Bold),
-                    color = RoyColors.primaryForeground,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = LucideVectors.Check,
+                        contentDescription = null,
+                        tint = Recipes.Cta.content,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        text = ChatsListCopy.ACCEPT,
+                        style = type.small.copy(fontWeight = FontWeight.Bold),
+                        color = Recipes.Cta.content,
+                        maxLines = 1,
+                    )
+                }
             }
 
-            Row(
+            Box(
                 modifier =
-                    Modifier.border(1.dp, RoyColors.border.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
+                    Modifier.height(44.dp)
+                        .clip(Recipes.Cta.radius)
+                        .border(1.dp, RoyColors.border.copy(alpha = 0.7f), Recipes.Cta.radius)
                         .clickable { onAnswer(thread, false) }
-                        .padding(horizontal = spacing.elementGapSm, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                        .padding(horizontal = 24.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = LucideVectors.X,
-                    contentDescription = null,
-                    tint = RoyColors.mutedForeground,
-                    modifier = Modifier.size(14.dp),
-                )
-                Text(
-                    text = ChatsListCopy.DECLINE,
-                    style = type.xs.copy(fontWeight = FontWeight.Bold),
-                    color = RoyColors.mutedForeground,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = LucideVectors.X,
+                        contentDescription = null,
+                        tint = RoyColors.mutedForeground,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        text = ChatsListCopy.DECLINE,
+                        style = type.small.copy(fontWeight = FontWeight.Bold),
+                        color = RoyColors.mutedForeground,
+                        maxLines = 1,
+                    )
+                }
             }
         }
     }

@@ -29,14 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -93,10 +86,8 @@ private object StripColors {
  * under it yet.
  *
  * The page's numbers are the contract's (`shared/visual/home.json`): a 10dp gap
- * between pills, 44dp pills with a 16dp inline inset, and the end control that
- * opens the same picker the top bar does. The new-app control's dashed border is
- * the one shape Compose does not provide, so it is drawn with a dash path rather
- * than faked with a solid line.
+ * between pills and 44dp pills with a 16dp inline inset. The picker is the top
+ * bar's door, so the row is the tabs and the arrange toggle and nothing else.
  *
  * «ترتيب» is the only way into the drag, exactly as on the site: the pills are
  * draggable only in that mode, so a tap still selects and a flick still scrolls.
@@ -108,7 +99,6 @@ fun HomeTabStrip(
     order: List<String>,
     selected: String?,
     onSelect: (String) -> Unit,
-    onAddApp: () -> Unit,
     modifier: Modifier = Modifier,
     arranging: Boolean = false,
     onToggleArrange: () -> Unit = {},
@@ -194,9 +184,6 @@ fun HomeTabStrip(
                         if (draft != order) onReorder(draft)
                     },
                 )
-            }
-            if (!arranging) {
-                NewAppPill(onClick = onAddApp)
             }
             ArrangePill(arranging = arranging, onClick = onToggleArrange)
         }
@@ -293,40 +280,6 @@ private fun StripPill(
     }
 }
 
-/** The site's dashed "new app" pill, which opens the picker. */
-@Composable
-private fun NewAppPill(onClick: () -> Unit) {
-    Row(
-        modifier =
-            Modifier.heightIn(min = HomeStripMetrics.pillMinHeight)
-                .clip(RoundedCornerShape(HomeStripMetrics.pillRadius))
-                .clickable(onClick = onClick)
-                .testTag("home-new-app")
-                .dashedPillBorder(StripColors.Neutral700)
-                .padding(HomeStripMetrics.borderWidth)
-                .padding(horizontal = HomeStripMetrics.pillHorizontalPadding),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Icon(
-            imageVector = LucideVectors.Plus,
-            contentDescription = null,
-            tint = StripColors.Neutral400,
-            modifier = Modifier.size(HomeStripMetrics.iconSize),
-        )
-        Text(
-            text = HomeStripCopy.NEW_APP,
-            style =
-                MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = HomeStripMetrics.pillTextSize,
-                    fontWeight = HomeStripMetrics.pillWeight,
-                ),
-            color = StripColors.Neutral400,
-            maxLines = 1,
-        )
-    }
-}
-
 /** The site's «ترتيب»/«تم» toggle; the only way into the drag. */
 @Composable
 private fun ArrangePill(arranging: Boolean, onClick: () -> Unit) {
@@ -352,7 +305,14 @@ private fun ArrangePill(arranging: Boolean, onClick: () -> Unit) {
                 .padding(HomeStripMetrics.borderWidth)
                 .padding(horizontal = HomeStripMetrics.pillHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(HomeStripMetrics.pillGap),
     ) {
+        Icon(
+            imageVector = LucideVectors.ArrowUpDown,
+            contentDescription = null,
+            tint = if (arranging) StripColors.Violet200 else StripColors.Neutral400,
+            modifier = Modifier.size(HomeStripMetrics.iconSize),
+        )
         Text(
             text = if (arranging) HomeStripCopy.DONE else HomeStripCopy.ARRANGE,
             style =
@@ -365,33 +325,3 @@ private fun ArrangePill(arranging: Boolean, onClick: () -> Unit) {
         )
     }
 }
-
-/** `border-dashed` on a fully rounded pill, to the page's 1dp line. */
-private fun Modifier.dashedPillBorder(color: Color): Modifier =
-    drawBehind {
-        val line = 1.dp.toPx()
-        val inset = line / 2f
-        val radius = (size.height / 2f) - inset
-        val path =
-            Path().apply {
-                addRoundRect(
-                    RoundRect(
-                        rect = Rect(inset, inset, size.width - inset, size.height - inset),
-                        topLeft = CornerRadius(radius),
-                        topRight = CornerRadius(radius),
-                        bottomRight = CornerRadius(radius),
-                        bottomLeft = CornerRadius(radius),
-                    )
-                )
-            }
-        drawPath(
-            path = path,
-            color = color,
-            style =
-                Stroke(
-                    width = line,
-                    pathEffect =
-                        PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 3.dp.toPx())),
-                ),
-        )
-    }

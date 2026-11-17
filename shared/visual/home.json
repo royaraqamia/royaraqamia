@@ -1,7 +1,7 @@
 {
   "surface": "home",
   "route": "/",
-  "notes": "The door's own boxes (ADR-0146, ADR-0159). `strip` measures the horizontally scrolling row of apps and the control that opens the picker; `picker` measures the full-height apps sheet the strip's end control and the empty state open - its header, three tabs, one search field, its first add/remove row and that row's action - which is the surface `/mcp/apps` renders as a page. The pills themselves are left out of `strip`: their order is the member's, so the contract measures the row, not one app's label. The empty state is the third state of the same surface.",
+  "notes": "The door's own boxes (ADR-0146, ADR-0159). `strip` measures the horizontally scrolling row of apps; `picker` measures the full-height apps sheet the navbar's door and the empty state open - its header, three tabs, one search field, its first add/remove row and that row's action - which is the surface `/mcp/apps` renders as a page. The pills themselves are left out of `strip`: their order is the member's, so the contract measures the row, not one app's label. The empty state is the third state of the same surface.",
   "states": [
     {
       "name": "strip",
@@ -13,12 +13,6 @@
           "web": { "selector": "[data-visual='home-app-strip']" },
           "app": { "tag": "home-app-strip" },
           "properties": ["top", "width", "height", "columnGap"]
-        },
-        {
-          "name": "new-app",
-          "web": { "selector": "[data-visual='home-new-app']" },
-          "app": { "tag": "home-new-app" },
-          "properties": ["top", "width", "height", "radius", "fontSize", "paddingLeft"]
         }
       ]
     },

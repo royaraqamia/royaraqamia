@@ -839,10 +839,10 @@ function ThreadFooter({
       <div className="shrink-0 space-y-2 border-t border-border/40 bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <p className="text-center text-xs text-muted-foreground">{inviteNote(thread)}</p>
         <div className="flex items-center justify-center gap-2">
-          <HeroCtaButton type="button" onClick={onAccept} className="h-11 px-6 text-sm">
+          <Button type="button" variant="hero" onClick={onAccept} className="h-11 px-6 text-sm">
             {CHATS_LIST_COPY.accept}
-          </HeroCtaButton>
-          <Button type="button" variant="outline" onClick={onDecline} className="h-11 px-6">
+          </Button>
+          <Button type="button" variant="outline" onClick={onDecline} className="h-11 px-6 text-sm">
             {CHATS_LIST_COPY.decline}
           </Button>
         </div>

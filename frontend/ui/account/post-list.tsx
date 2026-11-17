@@ -1,9 +1,8 @@
 'use client';
 
 import { useRef } from 'react';
-import { FileText, Plus, Search, X } from 'lucide-react';
+import { FileText, Search, X } from 'lucide-react';
 
-import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { TabChips } from '@/frontend/ui/primitives/tab-chips';
 import { PostBulkBar } from './post-bulk-bar';
@@ -17,7 +16,6 @@ interface PostListProps {
   onEdit: (post: Post) => void;
   /** Repaints the store after a server-owned transition. */
   onChanged: () => Promise<void> | void;
-  onCreate: () => void;
   initialFilter?: PostFilter;
 }
 
@@ -29,13 +27,7 @@ interface PostListProps {
  * `usePostSelection` for which of them a bulk action would reach — so either
  * can be tested without mounting a Radix menu or an image loader.
  */
-export function PostList({
-  posts,
-  onEdit,
-  onChanged,
-  onCreate,
-  initialFilter = 'all',
-}: PostListProps) {
+export function PostList({ posts, onEdit, onChanged, initialFilter = 'all' }: PostListProps) {
   const { activeFilter, setActiveFilter, searchQuery, setSearchQuery, rows, counts, panelId } =
     usePostFilters(posts, initialFilter);
   const { selected, allSelected, toggle, toggleAll, clear } = usePostSelection(rows, {
@@ -119,14 +111,6 @@ export function PostList({
                 : activeFilter === 'all'
                   ? 'ابدأ بكتابة أوَّل منشور لك.'
                   : 'لا توجد منشورات في هذه الحالة.'
-            }
-            action={
-              !searchQuery && activeFilter === 'all' ? (
-                <Button onClick={onCreate}>
-                  <Plus className="ms-1.5 size-4" />
-                  منشور جديد
-                </Button>
-              ) : undefined
             }
           />
         ) : (
