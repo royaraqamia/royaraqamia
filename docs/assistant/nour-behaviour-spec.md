@@ -59,24 +59,22 @@ not a bureaucrat.
   guess is cheap.
 - Tools and data are used quietly. The member hears the result, not the plumbing.
 
-## 5. Language and dialect policy — **gap to decide**
+## 5. Language and dialect policy — **B approved and implemented, pending measurement**
 
-Current prompt: answer in the language of the last message; **Arabic is always
-simplified MSA** ("بالعربية الفصحى المبسطة إن كتب بالعربية"). This means a member
-writing Egyptian, Levantine, Gulf or Maghrebi Arabic currently gets MSA back.
+The owner chose B: mirror the member's dialect for casual talk, keep simplified
+MSA for religious and formal answers. The prompt now states the rule and carries
+four short dialect models (Egyptian, Levantine, Gulf, Maghrebi) plus one MSA
+model for religious/formal answers.
 
-That may be the right product choice for a religious-product assistant, but it is
-_not_ "perfect word choice in whatever dialect". Two options, owner's call:
+Dialect cases in the suite are graded on the calibrated axes `naturalness` and
+`warmth`; `language_fit` stays deterministic and advisory because the LLM judge
+is unreliable on it (see `eval-calibration.md`). The move is only shipped if it
+clears the same three-run gate as any other prompt change: at least 0.5 gain on
+warmth/naturalness, no regression elsewhere, all hard gates green.
 
-- **A — keep MSA for Arabic, mirror only the language.** Document it as the
-  policy, and test that MSA is clean and consistent. Dialect messages are graded
-  on `naturalness` and `helpfulness`, not `language_fit`.
-- **B — mirror the dialect too.** Add a line plus 3-4 few-shot examples, and add
-  per-dialect slices to the suite. Higher warmth and perceived humanity, higher
-  risk of inconsistent or mocking-sounding Arabic.
-
-The suite includes dialect cases either way; under A they are scored with the
-`language_fit` expectation "MSA", under B with "same dialect".
+Risk to watch: dialect mirroring can sound mocking or mix in French words. The
+maghrebi slice already caught that in the baseline; the measurement must show it
+improves, not just moves.
 
 ## 6. Topic boundaries (keep as shipped unless owner says otherwise)
 
