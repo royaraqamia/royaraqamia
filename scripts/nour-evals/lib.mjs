@@ -176,7 +176,8 @@ const GLOBAL_BANNED = [
   'نور تجيبك',
   'as an ai',
   'let me know if',
-  'anything else',
+  'anything else you need',
+  'anything else i can do',
   'great question',
   "i'm sorry to hear that",
 ];

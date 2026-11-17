@@ -138,7 +138,7 @@
       "expect": {
         "language": "en",
         "mustInclude": [],
-        "mustExclude": ["let me know", "anything else"],
+        "mustExclude": ["let me know", "anything else you need"],
         "judge": ["naturalness", "conciseness", "warmth"]
       }
     },
