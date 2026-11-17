@@ -59,6 +59,12 @@ import {
 import { ProfileNameSchema } from '@/shared/contracts/users';
 import { whatsappPhoneRegex } from '@/shared/contracts/phone';
 import type { ChatAgentToolKind, ChatAgentToolName } from '@/shared/contracts/chat-agent-actions';
+import {
+  WEB_SEARCH_QUERY_MAX,
+  WEB_SEARCH_QUERY_MIN,
+  WEB_SEARCH_UNAVAILABLE,
+  type WebSearchResult,
+} from '@/shared/contracts/web-search';
 
 /**
  * The assistant's tools (ADR-0113, #818).
@@ -98,6 +104,12 @@ export interface ChatAgentToolContext {
    * a page the member has left. Absent when the client has no eyes here.
    */
   screen?: ScreenContextInput;
+  /**
+   * The web, when the deployment has a search key (ADR-0205). The turn wires
+   * this to a counted call; a turn with no client passes nothing, and
+   * `search_web` is not declared at all.
+   */
+  searchWeb?: (query: string) => Promise<WebSearchResult>;
 }
 
 export interface ChatAgentTool {
@@ -273,6 +285,15 @@ const RememberArgs = z.strictObject({
 
 const FindAppToolsArgs = z.strictObject({
   query: z.string().trim().min(2, 'اكتب ما تبحث عنه').max(120, 'النصّ طويل جداً'),
+});
+
+/** A search query is the question's own words, never the member's details. */
+const SearchWebArgs = z.strictObject({
+  query: z
+    .string()
+    .trim()
+    .min(WEB_SEARCH_QUERY_MIN, 'الاستعلام قصير جداً')
+    .max(WEB_SEARCH_QUERY_MAX, 'الاستعلام طويل جداً'),
 });
 
 /** The Damascus calendar day, which is the day every meter in the app resets on. */
@@ -1135,6 +1156,29 @@ const tools: ChatAgentTool[] = [
     },
   },
   {
+    name: 'search_web',
+    kind: 'read',
+    product: 'assistant',
+    tier: 0,
+    description:
+      'البحث في الويب عن معلومة ليست في بياناتنا ولا في معرفتك، أو تتغيّر بمرور الوقت، أو يطلب العضو مصدرها. اكتب استعلاماً قصيراً بلغة السؤال، ولا تكتب فيه أي معلومة شخصية عن العضو. قدّم بيانات العضو وأدواتنا على البحث، واستشهد بما تقرأه برقم المصدر بين قوسين.',
+    schema: SearchWebArgs,
+    maxResultChars: 6_500,
+    async run(args, context) {
+      const input = SearchWebArgs.parse(args);
+      if (!context.searchWeb) throw new Error(WEB_SEARCH_UNAVAILABLE);
+      const result = await context.searchWeb(input.query);
+      return {
+        // The full sources go back with the evidence: the card on the message
+        // needs the URL and the date the model does not. They are small beside
+        // the text, and one array is the one truth for both readers.
+        sources: result.sources,
+        evidence: result.evidence,
+        ...(result.sources.length === 0 ? { note: 'لم أجد نتيجة في الويب لهذا الاستعلام.' } : {}),
+      };
+    },
+  },
+  {
     name: 'find_app_tools',
     kind: 'read',
     product: 'assistant',
@@ -1193,22 +1237,26 @@ export function chatAgentToolDefinitions(): Array<{
 /**
  * The first-party declarations a turn carries.
  *
- * Two are conditional, for the same reason: a tool that promises something the
- * turn does not have is an invitation to waste a round.
+ * Three are conditional, for the same reason: a tool that promises something
+ * the turn does not have is an invitation to waste a round.
  *
  * `find_app_tools` needs a connected app, because a member with no app has
  * nothing to find. `get_screen_context` needs the snapshot the request brought
  * (ADR-0181, decision 7): a client with no eyes — an older tab, an opted-out
  * surface, the admin area — is a turn where the tool would answer "nothing"
- * after costing a round. Every other tool is always declared.
+ * after costing a round. `search_web` needs a search key (ADR-0205): a
+ * deployment without one declares no web at all. Every other tool is always
+ * declared.
  */
 export function chatAgentToolDefinitionsForTurn(input: {
   hasApps: boolean;
   hasScreen: boolean;
+  hasWebSearch: boolean;
 }): ReturnType<typeof chatAgentToolDefinitions> {
   return chatAgentToolDefinitions().filter((definition) => {
     if (definition.function.name === 'find_app_tools') return input.hasApps;
     if (definition.function.name === 'get_screen_context') return input.hasScreen;
+    if (definition.function.name === 'search_web') return input.hasWebSearch;
     return true;
   });
 }

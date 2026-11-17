@@ -88,6 +88,10 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'remember',
   'list_specialists',
   'load_specialist',
+  // The web the assistant may read (ADR-0205). Declared only when the
+  // deployment has a search key, so a turn with no search carries no
+  // invitation to look for one.
+  'search_web',
   // The recovery path for an app tool the router missed (ADR-0155, decision 7).
   // Declared only when the member has an enabled app, so a turn with no
   // connections carries no invitation to look for one.
@@ -201,6 +205,7 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     activity: 'تقرأ دليل المتخصصين',
   },
   load_specialist: { kind: 'read', label: 'تحميل متخصص', activity: 'تحمّل متخصصاً' },
+  search_web: { kind: 'read', label: 'البحث في الويب', activity: 'تبحث في الويب' },
   find_app_tools: {
     kind: 'read',
     label: 'البحث في أدوات التطبيقات',

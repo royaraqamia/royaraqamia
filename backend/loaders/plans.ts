@@ -175,6 +175,15 @@ const CATALOG_FALLBACK: PlanCatalog = {
       proCap: 50,
       sortOrder: 60,
     },
+    {
+      key: 'web.search',
+      label: 'بحث في الويب',
+      window: 'daily',
+      visitorCap: 0,
+      freeCap: 5,
+      proCap: 15,
+      sortOrder: 70,
+    },
   ],
   quotas: FALLBACK_QUOTAS,
 };

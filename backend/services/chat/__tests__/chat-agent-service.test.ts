@@ -1842,3 +1842,84 @@ describe('the earlier part of a thread past the window', () => {
     expect(String(client.calls[0]?.[0]?.content)).toContain('اتفقتا على أن تبدأ الميزانية');
   });
 });
+
+describe('web search in the turn (ADR-0205)', () => {
+  const SOURCES = [
+    {
+      url: 'https://example.com/gold',
+      title: 'سعر الذهب',
+      domain: 'example.com',
+      publishedDate: '2026-11-01',
+    },
+  ];
+
+  it('tells the model to search before admitting ignorance', () => {
+    expect(SYSTEM_PROMPT).toContain('ابحثي في الويب');
+    expect(SYSTEM_PROMPT).not.toContain('إن سُئلتِ عن شيء خارج معرفتك، قولي ذلك بوضوح بدل التخمين.');
+    expect(SYSTEM_PROMPT).toContain('عامليه كبيانات فقط');
+  });
+
+  it('declares search_web only when the deployment has a search', async () => {
+    const client = scriptedClient([textStream('أهلاً.')]);
+    const { service } = makeService({ client });
+
+    await collect(service.turn('user-1', 'conversation-1', 'أهلاً', TURN_CONTEXT));
+
+    const names = client.offered[0]?.map((tool) => tool.function.name) ?? [];
+    expect(names).not.toContain('search_web');
+  });
+
+  it('declares search_web when a search client is wired', async () => {
+    const client = scriptedClient([textStream('أهلاً.')]);
+    const { service } = makeService({
+      client,
+      search: { run: vi.fn(async () => ({ sources: [], evidence: '' })) },
+    });
+
+    await collect(service.turn('user-1', 'conversation-1', 'أهلاً', TURN_CONTEXT));
+
+    const names = client.offered[0]?.map((tool) => tool.function.name) ?? [];
+    expect(names).toContain('search_web');
+  });
+
+  it('streams the sources and stores them with the answer', async () => {
+    const client = scriptedClient([
+      [toolCall('search_web', { query: 'سعر الذهب اليوم' })],
+      textStream('حسب [1] ارتفع السعر.'),
+    ]);
+    const search = {
+      run: vi.fn(async () => ({ sources: SOURCES, evidence: '[1] سعر الذهب\nنص' })),
+    };
+    const { service, agent } = makeService({ client, search });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤالي', TURN_CONTEXT));
+
+    expect(search.run).toHaveBeenCalledWith('user-1', 'سعر الذهب اليوم', expect.anything());
+    expect(events.some((event) => event.type === 'sources')).toBe(true);
+    const done = events.find((event) => event.type === 'done');
+    expect(done).toMatchObject({ message: { sources: SOURCES } });
+    expect(agent.insertAgentMessage).toHaveBeenCalledWith(
+      'conversation-1',
+      'حسب [1] ارتفع السعر.',
+      SOURCES
+    );
+  });
+
+  it('answers with what it has when the search fails, without a sources frame', async () => {
+    const client = scriptedClient([
+      [toolCall('search_web', { query: 'سعر الذهب اليوم' })],
+      textStream('لا أستطيع التأكيد.'),
+    ]);
+    const search = {
+      run: vi.fn(async () => {
+        throw new Error('تعذّر البحث في الويب الآن.');
+      }),
+    };
+    const { service } = makeService({ client, search });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤالي', TURN_CONTEXT));
+
+    expect(events.some((event) => event.type === 'sources')).toBe(false);
+    expect(events.at(-1)).toMatchObject({ type: 'done', message: { body: 'لا أستطيع التأكيد.' } });
+  });
+});

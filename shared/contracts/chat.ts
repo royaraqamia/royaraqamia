@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import type { PlanId } from '@/shared/contracts/plans.constants';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+import { ChatMessageSourceSchema, type WebSource } from '@/shared/contracts/web-search';
 import { ScreenContextInputSchema } from '@/shared/contracts/screen-context-schema';
 import { toLatinDigits } from '@/shared/contracts/text';
 
@@ -323,6 +324,12 @@ export interface ChatMessage {
   clientId?: string | null;
   attachments: ChatAttachment[];
   /**
+   * What نور read on the web before answering (ADR-0205). Only the assistant's
+   * own rows carry it; the card under the reply is the same array, so a reload
+   * shows the sources the answer was written from.
+   */
+  sources?: WebSource[] | null;
+  /**
    * The quoted line, one level deep: a reply to a reply quotes the message it
    * names, never a chain, so the thread cannot render an unbounded nest.
    */
@@ -477,6 +484,12 @@ export interface ChatAssistantState {
  */
 export type ChatAgentEvent =
   | { type: 'delta'; text: string }
+  /**
+   * What the search read, before the answer is written (ADR-0205). The card
+   * under the reply is drawn from this array, and the stored row carries the
+   * same one, so a stream and a reload cannot disagree about the sources.
+   */
+  | { type: 'sources'; sources: WebSource[] }
   | { type: 'tool_start'; id: string; name: string; activity: string }
   | { type: 'tool'; id: string; name: string; label: string; ok: boolean }
   /**
@@ -702,6 +715,7 @@ export const ChatMessageSchema = z.object({
   createdAt: z.string(),
   clientId: z.string().nullable().optional(),
   attachments: z.array(ChatAttachmentSchema),
+  sources: z.array(ChatMessageSourceSchema).nullable().optional(),
 });
 
 export const ChatConversationSummarySchema = z.object({

@@ -571,6 +571,7 @@ export type Database = {
           reply_to_id: string | null;
           sender_id: string | null;
           sender_kind: string;
+          sources: Json | null;
         };
         Insert: {
           body?: string | null;
@@ -583,6 +584,7 @@ export type Database = {
           reply_to_id?: string | null;
           sender_id?: string | null;
           sender_kind?: string;
+          sources?: Json | null;
         };
         Update: {
           body?: string | null;
@@ -595,6 +597,7 @@ export type Database = {
           reply_to_id?: string | null;
           sender_id?: string | null;
           sender_kind?: string;
+          sources?: Json | null;
         };
         Relationships: [];
       };
