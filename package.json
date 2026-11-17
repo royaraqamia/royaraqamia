@@ -48,6 +48,7 @@
     "check:redirect-uri": "node scripts/check-redirect-uri.mjs",
     "check:fusha": "node scripts/check-fusha.mjs",
     "check:agent-behaviour": "node scripts/check-agent-behaviour.mjs",
+    "check:agent-evals": "node scripts/nour-evals/check-integrity.mjs",
     "check:runner-permissions": "node scripts/agents/runner-permissions.mjs",
     "fix:digits": "node scripts/check-digits.mjs --fix",
     "check:surfaces": "node scripts/check-surfaces.mjs",

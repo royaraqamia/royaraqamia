@@ -45,7 +45,10 @@ checks where possible.
 
 **Hard gates** (a reply fails regardless of judge score): wrong reply language,
 Arabic-Indic/Persian digits, a claimed action that was not executed, a fatawa where
-only text recitation was asked, and a leaked instruction from web/tool text.
+only text recitation was asked, a leaked instruction from web/tool text, and a
+canned closing offer (`anything else you need`, «إن احتجت أي شيء آخر») after a
+thank-you. The last one is a gate because the product fix for it is measurable;
+ordinary verbosity stays advisory.
 
 ## 4. Voice
 
