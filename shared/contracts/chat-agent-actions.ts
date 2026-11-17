@@ -54,6 +54,15 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'get_post_by_slug',
   'get_habits_summary',
   'get_expenses_summary',
+  // The two content reads (issue #1429): the day's digest and one story of it.
+  // Public content, so nothing here depends on the member beyond the plan's
+  // card allowance the board already applies.
+  'get_latest_news',
+  'get_news_item',
+  // The rates board and the series it exposes, read through the same converter
+  // the `/rates` page runs, so a number the assistant quotes is the page's.
+  'get_rate',
+  'get_rate_history',
   'create_post_draft',
   'edit_post_draft',
   'publish_post_draft',
@@ -132,6 +141,18 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     kind: 'read',
     label: 'قراءة مصروفات هذا الشهر',
     activity: 'تقرأ مصروفات هذا الشهر',
+  },
+  get_latest_news: {
+    kind: 'read',
+    label: 'قراءة آخر الأخبار',
+    activity: 'تقرأ آخر الأخبار',
+  },
+  get_news_item: { kind: 'read', label: 'قراءة خبر', activity: 'تقرأ خبراً' },
+  get_rate: { kind: 'read', label: 'قراءة سعر الصرف', activity: 'تقرأ سعر الصرف' },
+  get_rate_history: {
+    kind: 'read',
+    label: 'قراءة تاريخ سعر الصرف',
+    activity: 'تقرأ تاريخ سعر الصرف',
   },
   create_post_draft: {
     kind: 'write',

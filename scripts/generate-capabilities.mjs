@@ -56,6 +56,25 @@ async function loadRegistry() {
       format: 'cjs',
       target: 'node22',
       alias: { '@': ROOT },
+      // Next resolves `server-only` at build time and does not install it as a
+      // package. The registry reaches a domain module that marks itself with it,
+      // so the bundle needs the same empty marker the tests use — a plugin here
+      // rather than an installed stub, so nothing new lands in `node_modules`.
+      plugins: [
+        {
+          name: 'server-only',
+          setup(build) {
+            build.onResolve({ filter: /^server-only$/ }, () => ({
+              path: 'server-only',
+              namespace: 'server-only-marker',
+            }));
+            build.onLoad({ filter: /.*/, namespace: 'server-only-marker' }, () => ({
+              contents: '',
+              loader: 'js',
+            }));
+          },
+        },
+      ],
       outfile,
       logLevel: 'silent',
     });

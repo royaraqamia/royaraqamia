@@ -1,30 +1,12 @@
 import type { ParallelMarket, RatesBoard } from '@/shared/contracts/rates';
-import type { RateLookup } from '@/shared/rates';
 
 /**
- * Builds the conversion lookup from a board, resolving each dual-rate currency
- * to the requested market when it spans more than one (YER), otherwise its
- * default parallel value.
+ * The conversion lookup is shared with the server (`shared/rates.ts`): the
+ * assistant's rate tool reads the same board this page does, and a pair rate
+ * that disagreed with the converter here would be a wrong number in a member's
+ * thread rather than a red test.
  */
-export function buildLookup(board: RatesBoard, activeMarket: string | null = null): RateLookup {
-  const parallel: Record<string, number> = {};
-  for (const currency of board.currencies) {
-    if (!currency.parallel) continue;
-    const markets = currency.parallelMarkets;
-    const chosen =
-      markets && markets.length > 0
-        ? (markets.find((option) => option.key === activeMarket) ?? markets[0])
-        : null;
-    parallel[currency.code] = chosen ? chosen.rate.rate : currency.parallel.rate;
-  }
-
-  return {
-    base: board.base,
-    rates: Object.fromEntries(board.currencies.map((currency) => [currency.code, currency.rate])),
-    parallel,
-    metals: Object.fromEntries(board.metals.map((metal) => [metal.code, metal.pricePerOunceUsd])),
-  };
-}
+export { buildLookup } from '@/shared/rates';
 
 /** The parallel markets quoted for the first of `codes` that has more than one. */
 export function marketOptionsFor(

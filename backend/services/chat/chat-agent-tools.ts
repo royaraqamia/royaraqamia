@@ -12,6 +12,9 @@ import { createDefaultProjectRequestService } from '@/backend/config/project-req
 import { createProfileService } from '@/backend/config/users';
 import { createUsageService } from '@/backend/config/plans';
 import { createAgentMemoryFor } from '@/backend/config/agent-memory';
+import { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/backend/config/news';
+import { createRatesService } from '@/backend/config/rates';
+import { applyNewsCardLimit, resolveNewsCardCap } from '@/backend/services/news/card-limit';
 import { listAgencySkills, loadAgencySkill } from '@/backend/services/chat/agency-skills';
 import { screenContextAnswer } from '@/backend/services/chat/turn-screen';
 import type { CapabilityOwner, ToolTier } from '@/backend/services/tools/registry';
@@ -19,6 +22,22 @@ import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 import { toPublicCertificate } from '@/shared/contracts/certificates';
 import { PostSlugSchema } from '@/shared/contracts/community';
 import { COURSE_SLUGS } from '@/shared/contracts/training';
+import {
+  NEWS_CATEGORIES,
+  NEWS_CATEGORY_LABELS,
+  NEWS_REGION_LABELS,
+  type NewsCategory,
+  type NewsStory,
+} from '@/shared/contracts/news';
+import {
+  DISPLAY_CURRENCY_CODES,
+  DISPLAY_CURRENCY_SET,
+  RATE_BASES,
+  RATE_RANGES,
+  type RateBasis,
+  type RatesBoard,
+} from '@/shared/contracts/rates';
+import { buildLookup, computeChangePct, convertAmount, type RateLookup } from '@/shared/rates';
 import { AGENT_MEMORY_KINDS, MEMORY_TEXT_MAX } from '@/backend/shared/domain/agent-memory';
 import {
   PROJECT_REQUEST_TYPES,
@@ -180,6 +199,33 @@ const ProjectRequestArgs = z.strictObject({
 
 const ChangeNameArgs = z.strictObject({ name: ProfileNameSchema });
 
+const LatestNewsArgs = z.strictObject({
+  category: z.enum(NEWS_CATEGORIES, 'التصنيف غير صالح').optional(),
+});
+
+const NewsItemArgs = z.strictObject({
+  id: z.string().trim().uuid('معرِّف الخبر غير صالح'),
+});
+
+/**
+ * A three-letter currency code, as the member would say it ("الدولار" is the
+ * model's job to turn into `USD`). Upper-cased here so the board's own keys
+ * match, whatever the model typed.
+ */
+const CurrencyCode = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z]{3}$/, 'رمز العملة ثلاثة أحرف لاتينية')
+  .transform((value) => value.toUpperCase());
+
+const RatePairArgs = z.strictObject({ from: CurrencyCode, to: CurrencyCode });
+
+const RateHistoryArgs = z.strictObject({
+  code: CurrencyCode,
+  range: z.enum(RATE_RANGES).optional(),
+  basis: z.enum(RATE_BASES).optional(),
+});
+
 /**
  * What the model may ask to save. Only the fact and its kind: the scope and its
  * key are the server's (the tool always remembers for the account), so a model
@@ -232,6 +278,83 @@ async function categoriesByName(context: ChatAgentToolContext): Promise<Map<stri
 function unknownCategory(name: string, categories: Map<string, string>): { error: string } {
   const known = [...categories.keys()].join('، ');
   return { error: `لا يوجد تصنيف باسم «${name}». التصنيفات المتاحة: ${known || 'لا شيء'}` };
+}
+
+/**
+ * The news digest as the page reads it for this member: the shared board
+ * narrowed to the sources they kept, then cut to their plan's card allowance
+ * (ADR-0093).
+ *
+ * The tool composes the same two steps the board route applies rather than
+ * reaching for the page's loader, so nothing here can show a story the site
+ * would hide. A failed preference read is the full digest, which is never
+ * wrong — the same answer the loader gives (#620).
+ */
+async function newsBoardFor(context: ChatAgentToolContext, category?: NewsCategory) {
+  const preferences = await createNewsPreferencesServiceFor(context.supabase)
+    .get(context.userId)
+    .catch(() => null);
+
+  const board = await createNewsServiceFor(context.supabase).getBoard(
+    category ? { category } : {},
+    { sourceIds: preferences?.sourceIds ?? null }
+  );
+
+  const cap = await resolveNewsCardCap(context.userId);
+  return applyNewsCardLimit(board, cap, false);
+}
+
+/** One story as the model reads it: the card the page draws, and its id. */
+function newsStoryCard(story: NewsStory): Record<string, unknown> {
+  return {
+    id: story.id,
+    category: NEWS_CATEGORY_LABELS[story.category],
+    headline: story.headline,
+    summary: story.summary,
+    why_it_matters: story.whyItMatters,
+    source: story.sourceName,
+  };
+}
+
+/**
+ * One side of a pair, read through the converter the `/rates` page uses
+ * (`shared/rates.ts`), so a rate the assistant quotes is the rate the converter
+ * shows for the same two currencies.
+ *
+ * `change_pct` is the traded currency's own day-on-day move, which is the pair's
+ * move only when the other side is the board's base. A cross pair has no daily
+ * change the site shows either, so it answers null rather than a derived number.
+ */
+function pairQuote(
+  board: RatesBoard,
+  lookup: RateLookup,
+  from: string,
+  to: string,
+  basis: RateBasis
+): { rate: number; as_of: string | null; change_pct: number | null } | null {
+  if (from === to) {
+    return { rate: 1, as_of: board.providerQuoteDate, change_pct: 0 };
+  }
+
+  const conversion = convertAmount(lookup, from, to, 1, basis);
+  if (!conversion) return null;
+
+  const traded = board.currencies.find((currency) => currency.code === to);
+
+  let legAsOf: string | null = null;
+  if (from === board.base) {
+    legAsOf = basis === 'parallel' ? (traded?.parallel?.asOf ?? null) : (traded?.asOf ?? null);
+  }
+  const asOf = legAsOf ?? board.providerQuoteDate;
+
+  const changePct =
+    from !== board.base
+      ? null
+      : basis === 'parallel'
+        ? (traded?.parallel?.changePct ?? null)
+        : (traded?.changePct ?? null);
+
+  return { rate: conversion.rate, as_of: asOf, change_pct: changePct };
 }
 
 const tools: ChatAgentTool[] = [
@@ -406,6 +529,162 @@ const tools: ChatAgentTool[] = [
   },
 
   // --- writes --------------------------------------------------------------
+  {
+    name: 'get_latest_news',
+    kind: 'read',
+    product: 'news',
+    tier: 0,
+    description:
+      'ملخّص أخبار اليوم من صفحة الأخبار: تاريخ الملخّص وعنوانه ومقدّمته وأخباره كما تظهر للعضو، وبوسيط category أخبار تصنيف واحد فقط. عدد الأخبار يتبع خطة العضو، فما حُجب عنها لا يظهر هنا.',
+    schema: LatestNewsArgs,
+    // A digest is at most twelve stories of a 420-character summary plus their
+    // headline and the one line of why it matters; this bound carries the widest
+    // day the workflow may publish without cutting the JSON a turn reads.
+    maxResultChars: 12_000,
+    async run(args, context) {
+      const { category } = LatestNewsArgs.parse(args);
+      const board = await newsBoardFor(context, category);
+
+      if (!board.day) {
+        return {
+          has_any_digest: board.hasAnyDigest,
+          date: null,
+          stories: [],
+          note: board.hasAnyDigest ? 'لا خبر في هذا التصنيف اليوم.' : 'لم يُنشر ملخّص أخبار بعد.',
+        };
+      }
+
+      const { digest, stories } = board.day;
+      return {
+        date: digest.date,
+        title: digest.title,
+        lede: digest.lede,
+        // The plan's allowance, when it hid stories from the day (ADR-0093).
+        cards: board.cards,
+        // What the member's own source selection did to the day; null when they
+        // kept none.
+        preferences: board.preferences,
+        stories: stories.map(newsStoryCard),
+      };
+    },
+  },
+  {
+    name: 'get_news_item',
+    kind: 'read',
+    product: 'news',
+    tier: 0,
+    description:
+      'خبر واحد كامل بمعرّفه، كما يعيده get_latest_news: العنوان والملخّص وسبب الأهمية والمصدر ورابطه. واحد لا أكثر، فكل خبر بطاقة واحدة تسمح بها كل خطة.',
+    schema: NewsItemArgs,
+    async run(args, context) {
+      const { id } = NewsItemArgs.parse(args);
+      const story = await createNewsServiceFor(context.supabase).getStory(id);
+      // The retained window is seven days, so "not found" is also "the site no
+      // longer has it".
+      if (!story) return { found: false };
+
+      return {
+        found: true,
+        id: story.id,
+        date: story.digestDate,
+        category: NEWS_CATEGORY_LABELS[story.category],
+        region: NEWS_REGION_LABELS[story.region],
+        headline: story.headline,
+        summary: story.summary,
+        why_it_matters: story.whyItMatters,
+        source: story.sourceName,
+        source_url: story.sourceUrl,
+        source_published_at: story.sourcePublishedAt,
+      };
+    },
+  },
+  {
+    name: 'get_rate',
+    kind: 'read',
+    product: 'rates',
+    tier: 0,
+    description:
+      'سعر صرف عملة مقابل أخرى الآن من صفحة أسعار الصرف: الوحدة من from تساوي كم من to، مع تاريخ التسعير (as_of) ووقت القراءة. يعيد السعر الرسمي ودائماً السعر الموازي إن وُجد.',
+    schema: RatePairArgs,
+    async run(args, context) {
+      const { from, to } = RatePairArgs.parse(args);
+      const unknown = [from, to].find((code) => !DISPLAY_CURRENCY_SET.has(code));
+      if (unknown) {
+        return {
+          error: `لا يتابع الموقع عملة «${unknown}». العملات المتاحة: ${DISPLAY_CURRENCY_CODES.join('، ')}`,
+        };
+      }
+
+      const board = await createRatesService(context.supabase).getBoard();
+      if (!board) return { error: 'لا توجد أسعار حفظها الخادم بعد. تُحدَّث أسعار الصرف يومياً.' };
+
+      const lookup = buildLookup(board);
+      const official = pairQuote(board, lookup, from, to, 'official');
+      if (!official) return { error: `تعذّر حساب سعر ${from}/${to}.` };
+
+      // The parallel market is quoted per base currency; a cross pair's parallel
+      // value would blend two markets, which the site never shows.
+      const parallel =
+        from === board.base && lookup.parallel[to] !== undefined
+          ? pairQuote(board, lookup, from, to, 'parallel')
+          : null;
+
+      return {
+        pair: `${from}/${to}`,
+        base: board.base,
+        read_at: new Date().toISOString(),
+        quote_date: board.providerQuoteDate,
+        stale: board.isStale,
+        official,
+        parallel,
+      };
+    },
+  },
+  {
+    name: 'get_rate_history',
+    kind: 'read',
+    product: 'rates',
+    tier: 0,
+    description:
+      'تاريخ سعر عملة أو ذهب/فضّة مقابل الدولار من صفحة أسعار الصرف: نقاط يومية للفترة 1W أو 1M أو 1Y، بخطّ رسم بياني على رسم الصفحة. مع أساس السعر الرسمي أو الموازي للعملات المزدوجة.',
+    schema: RateHistoryArgs,
+    // A year of daily points is the widest series the page draws; the compact
+    // [date, value] pairs keep all of it inside one turn's answer.
+    maxResultChars: 12_000,
+    async run(args, context) {
+      const input = RateHistoryArgs.parse(args);
+      const range = input.range ?? '1M';
+      const basis = input.basis ?? 'official';
+      const series = await createRatesService(context.supabase).getSeries(input.code, range, basis);
+
+      if (!series || series.points.length === 0) {
+        return { found: false, code: input.code, range, basis };
+      }
+
+      const values = series.points.map((point) => point.value);
+      const first = series.points[0]!;
+      const last = series.points[series.points.length - 1]!;
+
+      return {
+        found: true,
+        code: series.code,
+        kind: series.kind,
+        range,
+        basis,
+        read_at: new Date().toISOString(),
+        columns: ['date', 'value'],
+        points: series.points.map((point) => [point.date, point.value]),
+        summary: {
+          points: series.points.length,
+          first: { date: first.date, value: first.value },
+          last: { date: last.date, value: last.value },
+          min: Math.min(...values),
+          max: Math.max(...values),
+          change_pct: computeChangePct(last.value, first.value),
+        },
+      };
+    },
+  },
   {
     name: 'create_post_draft',
     kind: 'write',

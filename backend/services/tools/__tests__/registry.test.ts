@@ -21,8 +21,8 @@ import { CHAT_AGENT_TOOL_NAMES } from '@/shared/contracts/chat-agent-actions';
  */
 
 const expectedPerOwner: Record<CapabilityOwner, number> = {
-  news: 0,
-  rates: 0,
+  news: 2,
+  rates: 2,
   scan: 0,
   quran: 0,
   athkar: 0,

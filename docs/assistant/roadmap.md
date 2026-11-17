@@ -18,7 +18,7 @@ Verified against this checkout, not estimated.
 | Piece             | Today                                                                                                                                 |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Turn              | `ChatAgentService.turn` streams over SSE, bounded rounds, one clean retry, a turn row, a resumable runner                             |
-| Tools             | 22 first-party declarations (11 read, 11 write); 21 on a turn with no connected app                                                   |
+| Tools             | 26 first-party declarations (15 read, 11 write); 25 on a turn with no connected app                                                   |
 | Writes            | proposed as a card, executed only by the member's confirm on their own session                                                        |
 | External apps     | router + `find_app_tools`; `readOnlyHint` runs, the rest cards; 3 calls per turn, 2 per connection                                    |
 | Own MCP server    | 37 tools over 7 products, OAuth, scopes, plan caps, user-scoped client                                                                |
@@ -37,8 +37,8 @@ product, and six of the nine sheet apps have no tool at all.
 
 | Product             | Assistant | MCP server | Missing                                  |
 | ------------------- | --------- | ---------- | ---------------------------------------- |
-| News                | 0         | 0          | read                                     |
-| Rates               | 0         | 0          | read                                     |
+| News                | 2         | 0          | search, archive by date                  |
+| Rates               | 2         | 0          | metals, conversion amount                |
 | Scan                | 0         | 0          | read history, act                        |
 | Quran               | 0         | 0          | read, bookmarks, progress                |
 | Athkar              | 0         | 0          | read, completion                         |
@@ -159,6 +159,9 @@ one fact they asked to be remembered, and every injected item is traceable to a 
   rows.
 - Budgets revisited with measurements, not guesses: the 3-call turn cap and the 2-call
   connection cap are re-derived from the eval runs.
+
+**Landed:** News and Rates, read side (#1429): the day's digest cut to the plan's cards, one
+story by id, the current pair on both bases with its quote date, and the series the page draws.
 
 **Exit:** every row of the coverage table has at least a read and, where the product has a write,
 a tiered write; a member can grant and revoke each of them.

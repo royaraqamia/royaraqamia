@@ -4,6 +4,7 @@ import {
   TROY_OUNCE_GRAMS,
   type MetalCode,
   type RateBasis,
+  type RatesBoard,
 } from '@/shared/contracts/rates';
 
 export interface RateLookup {
@@ -13,6 +14,36 @@ export interface RateLookup {
   /** Parallel-market units per base, per code. Absent for single-rate codes. */
   parallel: Record<string, number>;
   metals: Record<string, number>;
+}
+
+/**
+ * Builds the conversion lookup from a board, resolving each dual-rate currency
+ * to the requested market when it spans more than one (YER), otherwise its
+ * default parallel value.
+ *
+ * It lives here rather than with a client because the arithmetic is the
+ * product's, not one surface's: the site's converter, the app's `RatesMath.kt`
+ * and the assistant's rate tool all read the same board and must land on the
+ * same pair rate (ADR-0098, #658).
+ */
+export function buildLookup(board: RatesBoard, activeMarket: string | null = null): RateLookup {
+  const parallel: Record<string, number> = {};
+  for (const currency of board.currencies) {
+    if (!currency.parallel) continue;
+    const markets = currency.parallelMarkets;
+    const chosen =
+      markets && markets.length > 0
+        ? (markets.find((option) => option.key === activeMarket) ?? markets[0])
+        : null;
+    parallel[currency.code] = chosen ? chosen.rate.rate : currency.parallel.rate;
+  }
+
+  return {
+    base: board.base,
+    rates: Object.fromEntries(board.currencies.map((currency) => [currency.code, currency.rate])),
+    parallel,
+    metals: Object.fromEntries(board.metals.map((metal) => [metal.code, metal.pricePerOunceUsd])),
+  };
 }
 
 export function isMetalCode(code: string): code is MetalCode {
