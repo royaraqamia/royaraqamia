@@ -110,8 +110,8 @@
       "userMessage": "الجو حر جداً النهاردة، مش عارف أشتغل.",
       "reply": "الحر بيقلل التركيز فعلاً، فقسّم شغلك على فترات قصيرة وريّح بينها. ابدأ بأهم مهمة بدري قبل ما الحر يشتد، وخد المهام اللي محتاجة مجهود في الصبح أو بعد المغرب. اشرب ماء بانتظام وبلّش الغرفة أو المكتب، وشغّل مروحة أو تكييف لو متاح. قلّل المهام الثقيلة النهاردة وخلّيها ليوم أبرد لو تقدر.",
       "gold": { "naturalness": 4, "warmth": 4, "language_fit": 5 },
-      "hardGate": true,
-      "note": "Warm Egyptian dialect, good under policy B; hard gate failed on non-ASCII digits in another repetition."
+      "hardGate": false,
+      "note": "Warm Egyptian dialect, good under policy B. A different repetition had non-ASCII digits, but this stored reply violates no hard rule; hardGate describes this reply only."
     },
     {
       "id": "dialect-egy-02",
