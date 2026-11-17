@@ -27,10 +27,11 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   scan: 1,
   quran: 4,
   athkar: 2,
-  linksnap: 0,
+  // The five hands each product gained in #1431.
+  linksnap: 5,
   habitflow: 3,
   spendtrack: 3,
-  notes: 0,
+  notes: 5,
   community: 5,
   account: 3,
   certificates: 1,
@@ -88,12 +89,16 @@ describe('the assistant door', () => {
     ).toEqual([
       'change_display_name',
       'create_habit',
+      'create_link',
+      'create_note',
       'create_post_draft',
       'edit_expense',
       'edit_post_draft',
       'record_expense',
       'remember',
       'set_habit_reminder',
+      'update_link',
+      'update_note',
     ]);
     // A third party can see it, or money moves: never grantable (ADR-0180).
     expect(
@@ -107,7 +112,30 @@ describe('the assistant door', () => {
       'publish_post_draft',
       'submit_project_request',
     ]);
-    expect(writes.some((entry) => entry.tier === 3)).toBe(false);
+    // The first tier-3 writes on the turn: a delete whose card names its target.
+    expect(
+      writes
+        .filter((entry) => entry.tier === 3)
+        .map((entry) => entry.agentName)
+        .sort()
+    ).toEqual(['delete_link', 'delete_note']);
+  });
+
+  it('names the public MCP tool where a capability exists on both doors', () => {
+    const byId = new Map(capabilities.map((entry) => [entry.id, entry]));
+
+    for (const name of [
+      'list_links',
+      'get_analytics',
+      'create_link',
+      'update_link',
+      'delete_link',
+    ]) {
+      expect(byId.get(`linksnap.${name}`)?.mcpName).toBe(`royaraqamia_linksnap_${name}`);
+    }
+    for (const name of ['list_notes', 'get_note', 'create_note', 'update_note', 'delete_note']) {
+      expect(byId.get(`notes.${name}`)?.mcpName).toBeNull();
+    }
   });
 
   it('marks the turn’s own mechanisms as the assistant’s, not a product’s', () => {
