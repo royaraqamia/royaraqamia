@@ -109,6 +109,21 @@ function commentCursorFilter(cursor: CommentCursor): string {
   return `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`;
 }
 
+/** The post's live comment count, with no cursor narrowing it to a remainder. */
+async function countLiveComments(
+  supabase: SupabaseClient<Database>,
+  postId: string
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('post_comments')
+    .select('id', { count: 'exact', head: true })
+    .eq('post_id', postId)
+    .is('deleted_at', null);
+
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export function createPostEngagementRepository(
   supabase: SupabaseClient<Database>
 ): PostEngagementRepository {
@@ -128,11 +143,17 @@ export function createPostEngagementRepository(
     if (decoded) query = query.or(commentCursorFilter(decoded));
 
     // One extra row answers "is there another page" without guessing from the
-    // count, and the count answers the action bar's number in the same read.
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false })
-      .limit(pageSize + 1);
+    // count, and the count answers the action bar's number in the same read —
+    // but only on the first page: PostgREST counts the rows the filter matches,
+    // and the cursor filter matches the remainder, not the thread. A cursor page
+    // asks the live total separately, beside the rows it reads.
+    const [{ data, error, count }, liveTotal] = await Promise.all([
+      query
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .limit(pageSize + 1),
+      decoded ? countLiveComments(supabase, postId) : Promise.resolve(null),
+    ]);
 
     if (error) throw error;
 
@@ -153,7 +174,7 @@ export function createPostEngagementRepository(
       rows: page,
       nextCursor:
         hasMore && last ? encodeCommentCursor({ createdAt: last.createdAt, id: last.id }) : null,
-      total: count ?? page.length,
+      total: liveTotal ?? count ?? page.length,
     };
   }
 
