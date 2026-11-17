@@ -6,10 +6,9 @@ import { cn } from '@/frontend/shared/cn';
 import {
   chatAgentActionIsOpen,
   chatAgentActionSentence,
-  chatAgentActionStatusLabel,
   type ChatAgentAction,
+  type ChatAgentActionStatus,
 } from '@/shared/contracts/chat-agent-actions';
-import { ASSISTANT_COPY } from './assistant-copy';
 
 /**
  * The proposal (ADR-0113, #818): the tool in the member's words, the arguments
@@ -23,11 +22,19 @@ import { ASSISTANT_COPY } from './assistant-copy';
  * draws a member's thread natively and hands the assistant's back to the
  * document, so the reference for the ported thread is the thread without them.
  */
+/** The card's words, from the assistant panel's one copy source (ADR-0098). */
+export type ActionCardLabels = Record<ChatAgentActionStatus, string> & {
+  confirm: string;
+  reject: string;
+};
+
 export function ActionCard({
   action,
+  labels,
   onResolve,
 }: {
   action: ChatAgentAction;
+  labels: ActionCardLabels;
   onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
 }) {
   const [busy, setBusy] = useState(false);
@@ -58,7 +65,7 @@ export function ActionCard({
               : 'text-muted-foreground'
         )}
       >
-        {chatAgentActionStatusLabel(action.status)}
+        {labels[action.status]}
       </p>
       {reason && <p className="mt-1 text-xs leading-relaxed text-destructive">{reason}</p>}
 
@@ -70,7 +77,7 @@ export function ActionCard({
             onClick={() => void resolve('confirm')}
             className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-60"
           >
-            {ASSISTANT_COPY.confirmAction}
+            {labels.confirm}
           </button>
           <button
             type="button"
@@ -78,7 +85,7 @@ export function ActionCard({
             onClick={() => void resolve('reject')}
             className="rounded-lg border border-border/70 px-3 py-1 text-xs font-bold text-muted-foreground transition-safe hover:bg-muted/60 disabled:opacity-60"
           >
-            {ASSISTANT_COPY.cancelAction}
+            {labels.reject}
           </button>
         </div>
       )}

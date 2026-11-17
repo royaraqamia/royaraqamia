@@ -1,10 +1,17 @@
 import { z } from 'zod';
 
 import type { PlanId } from '@/shared/contracts/plans.constants';
-import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+import { ChatAgentActionSchema, type ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import { ChatMessageSourceSchema, type WebSource } from '@/shared/contracts/web-search';
 import { ScreenContextInputSchema } from '@/shared/contracts/screen-context-schema';
 import { toLatinDigits } from '@/shared/contracts/text';
+
+// Re-exported so `scripts/generate-contracts.mjs` loads them from this module:
+// the message page and the proposal row are one generated file (ADR-0098).
+export {
+  ChatAgentActionResponseSchema,
+  ChatAgentActionSchema,
+} from '@/shared/contracts/chat-agent-actions';
 
 /** A message body's ceiling. Long enough for a real answer, still one row. */
 export const CHAT_BODY_MAX = 4_000;
@@ -668,9 +675,11 @@ export type ChatReadInput = z.infer<typeof ChatReadSchema>;
  * narrower read of the route:
  *
  * - `replyTo` is a quote of another message, so the schema would be recursive
- *   for a feature neither client can compose yet (no reply control exists);
- * - `actions` is the assistant's proposal list, and the assistant's thread is
- *   the document in the app until its own stage lands.
+ *   for a feature neither client can compose yet (no reply control exists).
+ *
+ * `actions` joined with the assistant's sheet (#1182): the app draws the same
+ * proposals the page draws, so the rows are part of the page's own body rather
+ * than a narrower read of it.
  */
 export const ChatPeerSchema = z.object({
   id: z.string(),
@@ -750,6 +759,7 @@ export const ChatThreadSchema = ChatConversationSummarySchema.extend({
 export const ChatMessagePageSchema = z.object({
   messages: z.array(ChatMessageSchema),
   nextCursor: z.string().nullable(),
+  actions: z.array(ChatAgentActionSchema),
 });
 
 export const ChatAssistantAllowanceSchema = z.object({
@@ -789,6 +799,7 @@ export const ChatMessagePageResponseSchema = z.object({
   success: z.boolean(),
   messages: z.array(ChatMessageSchema).optional(),
   nextCursor: z.string().nullable().optional(),
+  actions: z.array(ChatAgentActionSchema).optional(),
   error: z.string().optional(),
 });
 

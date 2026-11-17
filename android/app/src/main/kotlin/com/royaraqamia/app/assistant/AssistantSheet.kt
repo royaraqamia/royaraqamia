@@ -54,6 +54,7 @@ import com.royaraqamia.app.chats.WebSourcesCard
 import com.royaraqamia.app.chats.ChatThreadCopy
 import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.generated.ChatAgentActionStatus
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItem
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItemSenderKind
 import com.royaraqamia.app.contracts.generated.ChatThreadResponseThread
@@ -77,11 +78,11 @@ const val ASSISTANT_SHEET_TAG = "assistant-sheet"
  * The thread is created on open (`startAssistant` is idempotent), read through
  * the chats repository, and written through the assistant's streamed turn.
  *
- * **What this sheet does not do yet:** a proposal is not confirmed here. The
- * card's contract is not generated for Kotlin, and the native chats port is still
- * behind the visual gate, so the sheet keeps its text and the header's "open the
- * full conversation" link carries the member to the page where the proposal is
- * actionable. The remaining work is tracked in the issues the ADR names.
+ * A proposal (#1182) is drawn under its message from the page's own rows: the
+ * sentence is the assistant's line the server wrote, the status and the two
+ * answers come from `shared/copy`, and confirming or declining calls the same
+ * route the page calls. The header's link opens the full conversation; it is no
+ * longer the only way to answer.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,6 +121,8 @@ fun AssistantSheet(
     var quota by remember { mutableStateOf(snapshot?.quota) }
     var header by remember { mutableStateOf<ChatThreadResponseThread?>(null) }
     var messages by remember { mutableStateOf(snapshot?.messages ?: emptyList()) }
+    var actions by remember { mutableStateOf<List<AssistantAction>>(emptyList()) }
+    var actionBusy by remember { mutableStateOf(false) }
     var cursor by remember { mutableStateOf<String?>(null) }
     var hasOlder by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<String?>(null) }
@@ -142,8 +145,8 @@ fun AssistantSheet(
 
     /**
      * The one line under the name (ADR-0173): the turn's phase while it runs,
-     * and "waiting for you" once a proposal is open. The sheet cannot confirm a
-     * proposal yet, so the phase it sees is the stream's own.
+     * and "waiting for you" once a proposal is open. The stream's phase is the
+     * first answer; the page's rows are the record once the turn settles.
      */
     val phaseLine =
         when (turn?.phase) {
@@ -151,7 +154,14 @@ fun AssistantSheet(
             AssistantPhase.Writing -> AssistantPanelCopy.WRITING
             AssistantPhase.Tool -> turn?.toolLabel
             AssistantPhase.Proposal -> AssistantPanelCopy.NEEDS_YOU
-            null -> if (openActions > 0) AssistantPanelCopy.NEEDS_YOU else null
+            null ->
+                if (openActions > 0 ||
+                    actions.any { it.status == ChatAgentActionStatus.PROPOSED }
+                ) {
+                    AssistantPanelCopy.NEEDS_YOU
+                } else {
+                    null
+                }
         }
 
     suspend fun refreshAssistant() {
@@ -179,6 +189,7 @@ fun AssistantSheet(
         when (val page = repository.messages(id)) {
             is ApiResult.Success -> {
                 messages = page.value.messages
+                actions = page.value.actions.map { it.asAssistantAction() }
                 cursor = page.value.nextCursor
                 hasOlder = page.value.nextCursor != null
                 repository.markRead(id)
@@ -195,6 +206,9 @@ fun AssistantSheet(
         when (val page = repository.messages(id, before)) {
             is ApiResult.Success -> {
                 messages = (page.value.messages + messages).distinctBy { it.id }
+                actions =
+                    (actions + page.value.actions.map { it.asAssistantAction() })
+                        .distinctBy { it.id }
                 cursor = page.value.nextCursor
                 hasOlder = page.value.nextCursor != null
                 notice = null
@@ -322,6 +336,33 @@ fun AssistantSheet(
         turns.start(id, body, files)
     }
 
+    /** The two answers a proposal offers, written through the same route as the page. */
+    fun answerAction(actionId: String, answer: String) {
+        val id = threadId ?: return
+        if (actionBusy) return
+        actionBusy = true
+        scope.launch {
+            val result =
+                if (answer == "confirm") {
+                    repository.confirmAgentAction(id, actionId)
+                } else {
+                    repository.rejectAgentAction(id, actionId)
+                }
+            when (result) {
+                is ApiResult.Success -> {
+                    actions = actions.map { if (it.id == actionId) result.value else it }
+                    openActions = (openActions - 1).coerceAtLeast(0)
+                    notice = null
+                }
+                is ApiResult.Failure ->
+                    notice =
+                        ChatFailure.sentenceOf(result.error)
+                            ?: AssistantPanelCopy.FAILED
+            }
+            actionBusy = false
+        }
+    }
+
     fun openAttachment(attachmentId: String) {
         val id = threadId ?: return
         scope.launch {
@@ -413,6 +454,9 @@ fun AssistantSheet(
                         AssistantConversation(
                             header = header,
                             messages = messages,
+                            actions = actions,
+                            onActionAnswer = ::answerAction,
+                            actionBusy = actionBusy,
                             streaming = turn?.streaming.orEmpty(),
                             tools = turn?.tools.orEmpty(),
                             sources = turn?.sources.orEmpty(),
@@ -624,6 +668,9 @@ private fun AssistantStatePanel(
 private fun AssistantConversation(
     header: ChatThreadResponseThread?,
     messages: List<ChatMessagePageResponseMessagesItem>,
+    actions: List<AssistantAction>,
+    onActionAnswer: (String, String) -> Unit,
+    actionBusy: Boolean,
     streaming: String,
     tools: List<String>,
     sources: List<AssistantSource>,
@@ -647,6 +694,9 @@ private fun AssistantConversation(
             message.senderKind == ChatMessagePageResponseMessagesItemSenderKind.USER
         },
         onDownload = onOpenAttachment,
+        actions = actions,
+        onActionAnswer = onActionAnswer,
+        busyActions = actionBusy,
         editing = editing,
         editText = editText,
         onEditStart = onEditStart,

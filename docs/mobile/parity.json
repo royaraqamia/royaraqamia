@@ -1922,7 +1922,10 @@
       },
       "native": {
         "component": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantSheet.kt",
-        "also": ["android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatMessageList.kt"],
+        "also": [
+          "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantActionCard.kt",
+          "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatMessageList.kt"
+        ],
         "state": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantUiState.kt",
         "copy": "android/app/src/main/kotlin/com/royaraqamia/app/assistant/AssistantPanelCopy.kt",
         "copyObject": "AssistantPanelCopy"

@@ -32,6 +32,13 @@
     "unavailable": "نور غير متاحة حالياً.",
     "attachmentOnly": "مرفق",
     "sourcesTitle": "المصادر",
-    "sourcesRead": "قرأ نور هذه الصفحات:"
+    "sourcesRead": "قرأ نور هذه الصفحات:",
+    "actionConfirm": "تأكيد",
+    "actionReject": "إلغاء",
+    "actionStatusProposed": "بانتظار تأكيدك",
+    "actionStatusConfirmed": "قيد التنفيذ",
+    "actionStatusRejected": "أُلغي",
+    "actionStatusApplied": "نُفِّذ",
+    "actionStatusFailed": "لم يُنفَّذ"
   }
 }

@@ -28,6 +28,13 @@ export const ASSISTANT_PANEL_COPY = {
   attachmentOnly: 'مرفق',
   sourcesTitle: 'المصادر',
   sourcesRead: 'قرأ نور هذه الصفحات:',
+  actionConfirm: 'تأكيد',
+  actionReject: 'إلغاء',
+  actionStatusProposed: 'بانتظار تأكيدك',
+  actionStatusConfirmed: 'قيد التنفيذ',
+  actionStatusRejected: 'أُلغي',
+  actionStatusApplied: 'نُفِّذ',
+  actionStatusFailed: 'لم يُنفَّذ',
 } as const;
 
 export type AssistantPanelCopyStrings = typeof ASSISTANT_PANEL_COPY;

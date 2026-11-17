@@ -30,4 +30,11 @@ object AssistantPanelCopy {
     const val ATTACHMENT_ONLY = "مرفق"
     const val SOURCES_TITLE = "المصادر"
     const val SOURCES_READ = "قرأ نور هذه الصفحات:"
+    const val ACTION_CONFIRM = "تأكيد"
+    const val ACTION_REJECT = "إلغاء"
+    const val ACTION_STATUS_PROPOSED = "بانتظار تأكيدك"
+    const val ACTION_STATUS_CONFIRMED = "قيد التنفيذ"
+    const val ACTION_STATUS_REJECTED = "أُلغي"
+    const val ACTION_STATUS_APPLIED = "نُفِّذ"
+    const val ACTION_STATUS_FAILED = "لم يُنفَّذ"
 }

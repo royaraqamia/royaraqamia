@@ -6,6 +6,8 @@
  * (ADR-0098's reasoning, one layer before the app port of #819).
  */
 
+import { z } from 'zod';
+
 export const CHAT_AGENT_ACTION_STATUSES = [
   'proposed',
   'confirmed',
@@ -15,6 +17,44 @@ export const CHAT_AGENT_ACTION_STATUSES = [
 ] as const;
 
 export type ChatAgentActionStatus = (typeof CHAT_AGENT_ACTION_STATUSES)[number];
+
+/**
+ * The wire shapes (#1182). The row above is what the site's services pass around;
+ * these are the same fields as a schema, so the app decodes one contract instead
+ * of retyping its names in Kotlin (ADR-0098). `args` carries whatever the tool
+ * accepted, so it is an open object — the app reads the sentence the server
+ * already wrote into the message rather than re-deriving it from the arguments.
+ */
+export const ChatAgentActionStatusSchema = z.enum(CHAT_AGENT_ACTION_STATUSES);
+
+/**
+ * An object whose keys belong to the tool that was proposed, not to this card.
+ * The one optional field keeps the generated Kotlin class constructible; every
+ * other key is read by the site and ignored by the app, which draws the sentence
+ * the server already wrote into the message.
+ */
+const OpaqueArgumentsSchema = z.object({ opaque: z.string().optional() }).passthrough();
+
+export const ChatAgentActionSchema = z.object({
+  id: z.string(),
+  conversationId: z.string(),
+  messageId: z.string(),
+  tool: z.string(),
+  args: OpaqueArgumentsSchema,
+  appName: z.string().nullable().optional(),
+  status: ChatAgentActionStatusSchema,
+  result: z.object({ error: z.string().optional() }).passthrough().nullable(),
+  createdAt: z.string(),
+  resolvedAt: z.string().nullable(),
+  resolvedBy: z.string().nullable(),
+});
+
+/** The answer to a confirm or a reject: the settled row, or the refusal. */
+export const ChatAgentActionResponseSchema = z.object({
+  success: z.boolean(),
+  action: ChatAgentActionSchema.optional(),
+  error: z.string().optional(),
+});
 
 /** The audit row: which tool, which arguments, who resolved it, what it answered. */
 export interface ChatAgentAction {
@@ -299,25 +339,6 @@ export function isChatAgentToolName(value: string): value is ChatAgentToolName {
 /** Only this status may be confirmed or declined. */
 export function chatAgentActionIsOpen(status: ChatAgentActionStatus): boolean {
   return status === 'proposed';
-}
-
-/**
- * The two words a proposal's card offers, and the one its title shows. Only the
- * open status gets buttons; a resolved row says what it became instead.
- */
-export function chatAgentActionStatusLabel(status: ChatAgentActionStatus): string {
-  switch (status) {
-    case 'applied':
-      return 'نُفِّذ';
-    case 'failed':
-      return 'لم يُنفَّذ';
-    case 'rejected':
-      return 'أُلغي';
-    case 'confirmed':
-      return 'قيد التنفيذ';
-    case 'proposed':
-      return 'بانتظار تأكيدك';
-  }
 }
 
 function text(value: unknown): string {
