@@ -112,6 +112,20 @@ export function communitySearchRateLimitPolicy(ip: string): RateLimitPolicy {
 }
 
 /**
+ * The engagement reads (#1573): the batched numbers a feed page asks once and
+ * the thread a post page pages through. Anonymous, and each is a handful of
+ * database round trips, so they share one bucket shaped like the search's.
+ */
+export function communityEngagementRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `community-engagement:${ip}`,
+    limit: 120,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: متابعة التفاعل محدودة بـ 120 طلبًا في الدقيقة.',
+  };
+}
+
+/**
  * The `/news` search combobox: anonymous and one database query per keystroke
  * burst, so it shares the community search's single 60/minute bucket shape.
  */

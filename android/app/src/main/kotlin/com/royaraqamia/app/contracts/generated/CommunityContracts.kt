@@ -159,3 +159,123 @@ data class CommunityMemberResponsePostsItemAuthor(
     val name: String?,
     val avatar_url: String?,
 )
+
+@Serializable
+data class PostEngagement(
+    val postId: String,
+    val likeCount: Long,
+    val commentCount: Long,
+    val liked: Boolean,
+)
+
+@Serializable
+data class PostEngagementBatch(
+    val items: List<PostEngagementBatchItemsItem>,
+)
+
+@Serializable
+data class PostEngagementBatchItemsItem(
+    val postId: String,
+    val likeCount: Long,
+    val commentCount: Long,
+    val liked: Boolean,
+)
+
+@Serializable
+data class PostEngagementRequest(
+    val postIds: List<String>,
+)
+
+@Serializable
+data class PostCommentsResponse(
+    val comments: List<PostCommentsResponseCommentsItem>,
+    val nextCursor: String? = null,
+    val total: Long,
+)
+
+@Serializable
+data class PostCommentsResponseCommentsItem(
+    val id: String,
+    val postId: String,
+    val body: String,
+    val author: PostCommentsResponseCommentsItemAuthor?,
+    val createdAt: String,
+    val editedAt: String?,
+)
+
+@Serializable
+data class PostCommentsResponseCommentsItemAuthor(
+    val id: String,
+    val username: String,
+    val name: String?,
+    val avatar_url: String?,
+)
+
+@Serializable
+data class PostLikeResponse(
+    val liked: Boolean,
+    val likeCount: Long,
+)
+
+@Serializable
+data class CreateCommentInput(
+    val body: String,
+)
+
+@Serializable
+data class UpdateCommentInput(
+    val body: String,
+)
+
+@Serializable
+data class CreateCommentResponse(
+    val comment: CreateCommentResponseComment,
+    val commentCount: Long,
+)
+
+@Serializable
+data class CreateCommentResponseComment(
+    val id: String,
+    val postId: String,
+    val body: String,
+    val author: CreateCommentResponseCommentAuthor?,
+    val createdAt: String,
+    val editedAt: String?,
+)
+
+@Serializable
+data class CreateCommentResponseCommentAuthor(
+    val id: String,
+    val username: String,
+    val name: String?,
+    val avatar_url: String?,
+)
+
+@Serializable
+data class UpdateCommentResponse(
+    val comment: UpdateCommentResponseComment,
+)
+
+@Serializable
+data class UpdateCommentResponseComment(
+    val id: String,
+    val postId: String,
+    val body: String,
+    val author: UpdateCommentResponseCommentAuthor?,
+    val createdAt: String,
+    val editedAt: String?,
+)
+
+@Serializable
+data class UpdateCommentResponseCommentAuthor(
+    val id: String,
+    val username: String,
+    val name: String?,
+    val avatar_url: String?,
+)
+
+@Serializable
+data class DeleteCommentResponse(
+    val deleted: Boolean,
+    val commentCount: Long,
+)

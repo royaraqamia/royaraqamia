@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.CommunityIndexResponsePostsItem
+import com.royaraqamia.app.contracts.generated.PostEngagementBatchItemsItem
 import com.royaraqamia.app.shared.NeedsConnection
 import com.royaraqamia.app.shared.NeedsConnectionState
 import com.royaraqamia.app.shared.ReadFailureNotice
@@ -92,6 +93,8 @@ fun CommunityFeedScreen(
     onSignIn: () -> Unit = {},
     signedIn: Boolean = false,
     currentUserId: String? = null,
+    engagementRepository: PostEngagementRepository? = null,
+    onSharePost: (String) -> Unit = {},
 ) {
     val spacing = LocalRoySpacing.current
     val scope = rememberCoroutineScope()
@@ -103,6 +106,9 @@ fun CommunityFeedScreen(
     var editing by remember { mutableStateOf<CommunityIndexResponsePostsItem?>(null) }
     var composing by remember { mutableStateOf(false) }
     var publishedSlug by remember { mutableStateOf<String?>(null) }
+    var engagement by remember {
+        mutableStateOf<Map<String, PostEngagementBatchItemsItem>>(emptyMap())
+    }
 
     /** The member's own posts are the ones the editor may open (#925). */
     fun canEdit(post: CommunityIndexResponsePostsItem): Boolean =
@@ -113,6 +119,72 @@ fun CommunityFeedScreen(
         loadMoreFailed = false
         loadingMore = false
         state = CommunityFeedUiState.of(repository.firstPage())
+    }
+
+    // One read for the whole page, the way the site's provider batches it (#1573).
+    // The ids are the page's own cards, so a new page asks for its own rows only.
+    val visibleIds =
+        (state as? CommunityFeedUiState.Live)?.posts?.map { it.id }.orEmpty() +
+            (state as? CommunityFeedUiState.Snapshot)?.posts?.map { it.id }.orEmpty()
+
+    LaunchedEffect(engagementRepository, visibleIds) {
+        val store = engagementRepository
+        if (store != null && visibleIds.isNotEmpty()) {
+            when (val answer = store.states(visibleIds)) {
+                is ApiResult.Success ->
+                    engagement =
+                        engagement + answer.value.items.associateBy { it.postId }
+                is ApiResult.Failure -> Unit
+            }
+        }
+    }
+
+    /** Paint the press, then settle on the count the server answers. */
+    fun toggleLike(post: CommunityIndexResponsePostsItem) {
+        val store = engagementRepository
+        if (store == null) return
+        if (!signedIn) {
+            onSignIn()
+            return
+        }
+
+        val current = engagement[post.id]
+        val next = current?.liked != true
+        engagement =
+            engagement +
+                (
+                    post.id to
+                        (current?.copy(
+                            liked = next,
+                            likeCount = maxOf(0, current.likeCount + if (next) 1 else -1),
+                        ) ?: PostEngagementBatchItemsItem(
+                            postId = post.id,
+                            likeCount = if (next) 1 else 0,
+                            commentCount = 0,
+                            liked = next,
+                        ))
+                )
+
+        scope.launch {
+            when (val answer = store.like(post.slug, next)) {
+                is ApiResult.Success -> {
+                    val settled =
+                        engagement[post.id]?.copy(
+                            liked = answer.value.liked,
+                            likeCount = answer.value.likeCount,
+                        )
+                    if (settled != null) engagement = engagement + (post.id to settled)
+                }
+                is ApiResult.Failure -> {
+                    engagement =
+                        if (current != null) {
+                            engagement + (post.id to current)
+                        } else {
+                            engagement - post.id
+                        }
+                }
+            }
+        }
     }
 
     val loadMore: () -> Unit = {
@@ -157,6 +229,9 @@ fun CommunityFeedScreen(
                     onOpenProfile = onOpenProfile,
                     canEdit = ::canEdit,
                     onEditPost = { editing = it },
+                    engagement = engagement,
+                    onToggleLike = ::toggleLike,
+                    onSharePost = onSharePost,
                 )
             is CommunityFeedUiState.Live ->
                 Feed(
@@ -171,6 +246,9 @@ fun CommunityFeedScreen(
                     onOpenProfile = onOpenProfile,
                     canEdit = ::canEdit,
                     onEditPost = { editing = it },
+                    engagement = engagement,
+                    onToggleLike = ::toggleLike,
+                    onSharePost = onSharePost,
                 )
         }
 
@@ -242,6 +320,9 @@ private fun Feed(
     onOpenProfile: (String) -> Unit,
     canEdit: (CommunityIndexResponsePostsItem) -> Boolean,
     onEditPost: (CommunityIndexResponsePostsItem) -> Unit,
+    engagement: Map<String, PostEngagementBatchItemsItem>,
+    onToggleLike: (CommunityIndexResponsePostsItem) -> Unit,
+    onSharePost: (String) -> Unit,
 ) {
     val spacing = LocalRoySpacing.current
 
@@ -278,6 +359,10 @@ private fun Feed(
                 } else {
                     null
                 },
+                engagement = engagement[post.id],
+                onToggleLike = { onToggleLike(post) },
+                onOpenComments = { onOpenPost(post.slug) },
+                onShare = { onSharePost(post.slug) },
             )
         }
 

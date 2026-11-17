@@ -14,6 +14,11 @@ export const POST_CARD_COPY = {
   expand: 'عرض المزيد',
   collapse: 'عرض أقل',
   editAction: 'تعديل',
+  likeAction: 'إعجاب',
+  unlikeAction: 'إلغاء الإعجاب',
+  commentAction: 'التعليقات',
+  shareAction: 'مشاركة المنشور',
+  moreAction: 'إجراءات المنشور',
 } as const;
 
 export type PostCardCopyStrings = typeof POST_CARD_COPY;

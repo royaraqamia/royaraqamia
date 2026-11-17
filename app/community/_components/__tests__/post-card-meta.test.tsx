@@ -50,10 +50,14 @@ describe('PostCard meta and actions', () => {
     expect(container.textContent).not.toMatch(/جمادى|رجب|شعبان|رمضان|محرم|صفر|ربيع/);
   });
 
-  it('reserves the like and comment cells without pretending they work', () => {
+  it('hands the like and comment cells to the post itself, not a placeholder', () => {
     render(<PostCard post={post} index={0} />);
-    expect(screen.getByLabelText('إعجاب — قريبًا')).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByLabelText('تعليق — قريبًا')).toHaveAttribute('aria-disabled', 'true');
+
+    expect(screen.getByRole('button', { name: 'إعجاب' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('link', { name: 'التعليقات' })).toHaveAttribute(
+      'href',
+      '/community/test-post#comments'
+    );
   });
 
   it('renders no figure for a post nobody has opened', () => {

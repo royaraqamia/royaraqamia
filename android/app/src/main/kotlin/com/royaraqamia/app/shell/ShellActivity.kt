@@ -536,6 +536,10 @@ class ShellActivity : ComponentActivity() {
                                     repository = graph.community,
                                     editorStore = graph.communityEditor,
                                     composerStore = graph.communityComposer,
+                                    engagementRepository = graph.communityEngagement,
+                                    onSharePost = { slug ->
+                                        shareText("https://${DeepLink.HOST}/community/$slug")
+                                    },
                                     onSignIn = ::showSignIn,
                                     signedIn = signedIn,
                                     currentUserId = (graph.session.storeIdentity as? Identity.User)?.id,
@@ -566,6 +570,16 @@ class ShellActivity : ComponentActivity() {
                                         CommunityPostScreen(
                                             slug = postSlug,
                                             repository = graph.communityPost,
+                                            engagementRepository = graph.communityEngagement,
+                                            onSharePost = {
+                                                shareText(
+                                                    "https://${DeepLink.HOST}/community/$postSlug"
+                                                )
+                                            },
+                                            onSignIn = ::showSignIn,
+                                            signedIn = signedIn,
+                                            currentUserId =
+                                                (graph.session.storeIdentity as? Identity.User)?.id,
                                             onOpenProfile = { username ->
                                                 openRoute(ProfileRoutes.profileOf(username))
                                             },

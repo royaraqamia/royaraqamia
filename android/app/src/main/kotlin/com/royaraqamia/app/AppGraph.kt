@@ -22,6 +22,7 @@ import com.royaraqamia.app.community.CommunityComposerRepository
 import com.royaraqamia.app.community.CommunityEditorRepository
 import com.royaraqamia.app.community.CommunityFeedRepository
 import com.royaraqamia.app.community.CommunityPostRepository
+import com.royaraqamia.app.community.PostEngagementRepository
 import com.royaraqamia.app.connectedapps.ConnectedAppsRepository
 import com.royaraqamia.app.home.HomeServicesRepository
 import com.royaraqamia.app.mcp.McpConnectionRepository
@@ -116,6 +117,8 @@ class AppGraph private constructor(
     val community: CommunityFeedRepository,
     /** One published community post, read from the route the page serves (#922). */
     val communityPost: CommunityPostRepository,
+    /** A post's likes and comments, on the routes the page serves (#1573). */
+    val communityEngagement: PostEngagementRepository,
     /** One public member profile, read from the route the page serves (#927). */
     val profile: ProfileRepository,
     /** The community editor over BlogPress's device store (#925). */
@@ -381,6 +384,7 @@ class AppGraph private constructor(
             // The composer's retry reads the post back through the same public
             // route the post screen uses (#924), so it is one instance.
             val communityPost = CommunityPostRepository(client)
+            val communityEngagement = PostEngagementRepository(client)
 
             val chats =
                 ChatsRepository(
@@ -420,6 +424,7 @@ class AppGraph private constructor(
                 rates = RatesRepository(client, publicSnapshots),
                 community = CommunityFeedRepository(client, publicSnapshots),
                 communityPost = communityPost,
+                communityEngagement = communityEngagement,
                 communityComposer = CommunityComposerRepository(client, communityPost),
                 profile = ProfileRepository(client),
                 chats = chats,

@@ -2342,6 +2342,98 @@ export type Database = {
           },
         ];
       };
+      post_comments: {
+        Row: {
+          author_id: string;
+          body: string;
+          created_at: string;
+          deleted_at: string | null;
+          edited_at: string | null;
+          id: string;
+          post_id: string;
+        };
+        Insert: {
+          author_id: string;
+          body: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          id?: string;
+          post_id: string;
+        };
+        Update: {
+          author_id?: string;
+          body?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          id?: string;
+          post_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'post_comments_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_comments_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'following_feed';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_comments_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      post_likes: {
+        Row: {
+          created_at: string;
+          post_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          post_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          post_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'post_likes_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'following_feed';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_likes_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_likes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       post_tags: {
         Row: {
           post_id: string;
@@ -3649,6 +3741,44 @@ export type Database = {
       };
       materialize_due_recurring_expenses: { Args: never; Returns: boolean };
       news_card_cap: { Args: { p_user_id: string }; Returns: number };
+      post_comment_create: {
+        Args: { p_author_id: string; p_body: string; p_post_id: string };
+        Returns: {
+          comment_count: number;
+          created_at: string;
+          id: string;
+        }[];
+      };
+      post_comment_delete: {
+        Args: { p_author_id: string; p_comment_id: string };
+        Returns: {
+          comment_count: number;
+          post_id: string;
+        }[];
+      };
+      post_comment_update: {
+        Args: { p_author_id: string; p_body: string; p_comment_id: string };
+        Returns: {
+          body: string;
+          edited_at: string;
+          id: string;
+        }[];
+      };
+      post_engagement_counts: {
+        Args: { p_post_ids: string[] };
+        Returns: {
+          comment_count: number;
+          like_count: number;
+          post_id: string;
+        }[];
+      };
+      post_like: {
+        Args: { p_like: boolean; p_post_id: string; p_user_id: string };
+        Returns: {
+          like_count: number;
+          liked: boolean;
+        }[];
+      };
       publish_post: {
         Args: { p_fields?: Json; p_post_id: string };
         Returns: string;

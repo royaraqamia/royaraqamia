@@ -1,0 +1,235 @@
+import { describe, it, expect, vi } from 'vitest';
+
+import {
+  PostEngagementRefusedError,
+  PostEngagementService,
+  type PostEngagementServiceDeps,
+} from '@/backend/services/blogpress/post-engagement-service';
+import type {
+  PostCommentRow,
+  PostEngagementRepository,
+} from '@/backend/repositories/blogpress/post-engagement-repository';
+
+const POST_ID = '11111111-1111-4111-8111-111111111111';
+const OTHER_POST = '22222222-2222-4222-8222-222222222222';
+const VIEWER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const OTHER_MEMBER = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+function makeRepository(overrides: Partial<PostEngagementRepository> = {}) {
+  const repository: PostEngagementRepository = {
+    findPostIdBySlug: vi.fn(async () => POST_ID),
+    counts: vi.fn(async (ids: string[]) =>
+      Object.fromEntries(ids.map((id) => [id, { likes: 0, comments: 0 }]))
+    ),
+    likedAmong: vi.fn(async () => []),
+    setLike: vi.fn(async () => ({ liked: true, likeCount: 7 })),
+    listComments: vi.fn(async () => ({ rows: [], nextCursor: null, total: 0 })),
+    authorsByIds: vi.fn(async () => ({})),
+    getComment: vi.fn(async () => null),
+    createComment: vi.fn(async () => ({
+      id: 'c1',
+      createdAt: '2026-01-01T00:00:00Z',
+      commentCount: 1,
+    })),
+    updateComment: vi.fn(async () => null),
+    deleteComment: vi.fn(async () => null),
+    ...overrides,
+  };
+  return repository;
+}
+
+function makeService(
+  repository: PostEngagementRepository,
+  allowed = true
+): { service: PostEngagementService; checkRateLimit: ReturnType<typeof vi.fn> } {
+  const checkRateLimit = vi.fn(async () => allowed);
+  const deps: PostEngagementServiceDeps = { engagement: repository, checkRateLimit };
+  return { service: new PostEngagementService(deps), checkRateLimit };
+}
+
+const comment = (overrides: Partial<PostCommentRow> = {}): PostCommentRow => ({
+  id: 'c1',
+  postId: POST_ID,
+  authorId: VIEWER,
+  body: 'تعليق',
+  createdAt: '2026-01-01T00:00:00Z',
+  editedAt: null,
+  ...overrides,
+});
+
+describe('PostEngagementService.statesFor', () => {
+  it('reads a page of cards in two calls, not two per card', async () => {
+    const repository = makeRepository({
+      counts: vi.fn(async () => ({
+        [POST_ID]: { likes: 4, comments: 2 },
+        [OTHER_POST]: { likes: 0, comments: 0 },
+      })),
+      likedAmong: vi.fn(async () => [POST_ID]),
+    });
+    const { service } = makeService(repository);
+
+    const states = await service.statesFor(VIEWER, [POST_ID, OTHER_POST, POST_ID]);
+
+    expect(repository.counts).toHaveBeenCalledTimes(1);
+    expect(repository.likedAmong).toHaveBeenCalledTimes(1);
+    expect(repository.likedAmong).toHaveBeenCalledWith(VIEWER, [POST_ID, OTHER_POST]);
+    expect(states[POST_ID]).toEqual({
+      postId: POST_ID,
+      likeCount: 4,
+      commentCount: 2,
+      liked: true,
+    });
+    expect(states[OTHER_POST]).toEqual({
+      postId: OTHER_POST,
+      likeCount: 0,
+      commentCount: 0,
+      liked: false,
+    });
+  });
+
+  it('answers a guest with zeros and no like, without asking for one', async () => {
+    const repository = makeRepository();
+    const { service } = makeService(repository);
+
+    const states = await service.statesFor(null, [POST_ID]);
+
+    expect(repository.likedAmong).not.toHaveBeenCalled();
+    expect(states[POST_ID]?.liked).toBe(false);
+  });
+
+  it('asks the database for nothing when there is no post', async () => {
+    const repository = makeRepository();
+    const { service } = makeService(repository);
+
+    expect(await service.statesFor(VIEWER, [])).toEqual({});
+    expect(repository.counts).not.toHaveBeenCalled();
+  });
+});
+
+describe('PostEngagementService.setLike', () => {
+  it('resolves the slug and answers the count the write reported', async () => {
+    const repository = makeRepository();
+    const { service } = makeService(repository);
+
+    const result = await service.setLike(VIEWER, 'a-post', true);
+
+    expect(repository.findPostIdBySlug).toHaveBeenCalledWith('a-post');
+    expect(repository.setLike).toHaveBeenCalledWith(POST_ID, VIEWER, true);
+    expect(result).toEqual({ liked: true, likeCount: 7 });
+  });
+
+  it('spends the budget before the write, so a refused press writes nothing', async () => {
+    const repository = makeRepository();
+    const { service } = makeService(repository, false);
+
+    await expect(service.setLike(VIEWER, 'a-post', true)).rejects.toMatchObject({ status: 429 });
+    expect(repository.setLike).not.toHaveBeenCalled();
+  });
+
+  it('refuses a post that is not public', async () => {
+    const repository = makeRepository({ findPostIdBySlug: vi.fn(async () => null) });
+    const { service } = makeService(repository);
+
+    await expect(service.setLike(VIEWER, 'gone', true)).rejects.toBeInstanceOf(
+      PostEngagementRefusedError
+    );
+    expect(repository.setLike).not.toHaveBeenCalled();
+  });
+});
+
+describe('PostEngagementService.thread', () => {
+  it('joins the page’s authors in one read and keeps the server’s total', async () => {
+    const repository = makeRepository({
+      listComments: vi.fn(async () => ({
+        rows: [comment(), comment({ id: 'c2', authorId: OTHER_MEMBER })],
+        nextCursor: 'next',
+        total: 12,
+      })),
+      authorsByIds: vi.fn(async () => ({
+        [VIEWER]: { id: VIEWER, username: 'ruya', name: 'رؤية', avatarUrl: null },
+        [OTHER_MEMBER]: { id: OTHER_MEMBER, username: 'salah', name: null, avatarUrl: '/s.png' },
+      })),
+    });
+    const { service } = makeService(repository);
+
+    const page = await service.thread('a-post', null, 20);
+
+    expect(repository.authorsByIds).toHaveBeenCalledTimes(1);
+    expect(page.total).toBe(12);
+    expect(page.nextCursor).toBe('next');
+    expect(page.comments[0]?.author).toEqual({
+      id: VIEWER,
+      username: 'ruya',
+      name: 'رؤية',
+      avatar_url: null,
+    });
+    expect(page.comments[1]?.author?.avatar_url).toBe('/s.png');
+  });
+});
+
+describe('PostEngagementService.comment', () => {
+  it('answers the stored row and the post’s new count', async () => {
+    const repository = makeRepository({
+      createComment: vi.fn(async () => ({
+        id: 'c9',
+        createdAt: '2026-02-02T00:00:00Z',
+        commentCount: 3,
+      })),
+      authorsByIds: vi.fn(async () => ({
+        [VIEWER]: { id: VIEWER, username: 'ruya', name: 'رؤية', avatarUrl: null },
+      })),
+    });
+    const { service } = makeService(repository);
+
+    const result = await service.comment(VIEWER, 'a-post', 'نصّ');
+
+    expect(result.commentCount).toBe(3);
+    expect(result.comment).toMatchObject({
+      id: 'c9',
+      postId: POST_ID,
+      body: 'نصّ',
+      createdAt: '2026-02-02T00:00:00Z',
+      editedAt: null,
+    });
+  });
+
+  it('refuses a post that is not public without writing', async () => {
+    const repository = makeRepository({ findPostIdBySlug: vi.fn(async () => null) });
+    const { service } = makeService(repository);
+
+    await expect(service.comment(VIEWER, 'gone', 'نصّ')).rejects.toMatchObject({ status: 404 });
+    expect(repository.createComment).not.toHaveBeenCalled();
+  });
+});
+
+describe('PostEngagementService comment ownership', () => {
+  it('refuses to edit another member’s comment, and writes nothing', async () => {
+    const repository = makeRepository({
+      getComment: vi.fn(async () => comment({ authorId: OTHER_MEMBER })),
+    });
+    const { service } = makeService(repository);
+
+    await expect(service.editComment(VIEWER, 'c1', 'نصّ')).rejects.toMatchObject({ status: 403 });
+    expect(repository.updateComment).not.toHaveBeenCalled();
+  });
+
+  it('refuses to delete another member’s comment, and writes nothing', async () => {
+    const repository = makeRepository({
+      getComment: vi.fn(async () => comment({ authorId: OTHER_MEMBER })),
+    });
+    const { service } = makeService(repository);
+
+    await expect(service.deleteComment(VIEWER, 'c1')).rejects.toMatchObject({ status: 403 });
+    expect(repository.deleteComment).not.toHaveBeenCalled();
+  });
+
+  it('answers the count the tombstone reported', async () => {
+    const repository = makeRepository({
+      getComment: vi.fn(async () => comment()),
+      deleteComment: vi.fn(async () => ({ postId: POST_ID, commentCount: 2 })),
+    });
+    const { service } = makeService(repository);
+
+    expect(await service.deleteComment(VIEWER, 'c1')).toEqual({ deleted: true, commentCount: 2 });
+  });
+});

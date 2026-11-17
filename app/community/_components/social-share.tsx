@@ -1,14 +1,32 @@
 'use client';
 
-import { Share2 } from 'lucide-react';
+import { useState } from 'react';
+import { Share2, Check } from 'lucide-react';
+
+import { cn } from '@/frontend/shared/cn';
+import { actionCellClass } from './post-action-cell';
 
 interface SocialShareProps {
   /** Absolute URL, or a site-relative path resolved against the current origin. */
   url: string;
   title: string;
+  /** The control's accessible name, owned by the host's copy source. */
+  label: string;
+  /** The host's control classes: the bar's one cell shape (#1573). */
+  className?: string;
 }
 
-export function SocialShare({ url, title }: SocialShareProps) {
+/**
+ * Share, in the host's control family.
+ *
+ * It started as a 36px filled disc beside 44px bare cells, which made one row
+ * speak two visual languages. It now takes the host's classes and is a cell like
+ * every other action; the only thing that sets it apart is the moment it
+ * succeeds, when the glyph becomes a check for a beat.
+ */
+export function SocialShare({ url, title, label, className }: SocialShareProps) {
+  const [copied, setCopied] = useState(false);
+
   const resolveUrl = () => {
     try {
       return new URL(url, window.location.origin).toString();
@@ -17,9 +35,15 @@ export function SocialShare({ url, title }: SocialShareProps) {
     }
   };
 
+  const markCopied = () => {
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  };
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(resolveUrl());
+      markCopied();
     } catch {
       /* ignore */
     }
@@ -33,20 +57,23 @@ export function SocialShare({ url, title }: SocialShareProps) {
         /* ignore */
       }
     } else {
-      handleCopyLink();
+      await handleCopyLink();
     }
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={handleNativeShare}
-        className="size-9 rounded-full bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-safe cursor-pointer"
-        aria-label="مشاركة المنشور"
-        title="مشاركة المنشور"
-      >
-        <Share2 className="size-4" />
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={handleNativeShare}
+      className={cn(actionCellClass(className))}
+      aria-label={label}
+      title={label}
+    >
+      {copied ? (
+        <Check className="size-[18px] text-primary" aria-hidden="true" />
+      ) : (
+        <Share2 className="size-[18px]" aria-hidden="true" />
+      )}
+    </button>
   );
 }

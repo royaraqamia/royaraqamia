@@ -16,4 +16,9 @@ object PostCardCopy {
     const val EXPAND = "عرض المزيد"
     const val COLLAPSE = "عرض أقل"
     const val EDIT_ACTION = "تعديل"
+    const val LIKE_ACTION = "إعجاب"
+    const val UNLIKE_ACTION = "إلغاء الإعجاب"
+    const val COMMENT_ACTION = "التعليقات"
+    const val SHARE_ACTION = "مشاركة المنشور"
+    const val MORE_ACTION = "إجراءات المنشور"
 }

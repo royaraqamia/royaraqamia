@@ -16,13 +16,15 @@ import python from 'highlight.js/lib/languages/python';
 import markdown from 'highlight.js/lib/languages/markdown';
 import { User } from 'lucide-react';
 import { SocialShare } from '../_components/social-share';
+import { POST_CARD_COPY } from '../_components/post-card-copy';
 import { PostTableOfContents } from './_components/post-table-of-contents';
 import { COMMUNITY_POST_COPY } from './community-post-copy';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { PostViewTracker } from '../_components/post-view-tracker';
 import { CommunityPostScope } from '../_components/community-post-scope';
-import { PostOwnerActions } from '../_components/post-owner-actions';
 import { PostPublishedAt } from '../_components/post-published-at';
+import { PostEngagementBar } from './_components/post-engagement-bar';
+import { PostComments } from './_components/post-comments';
 import { PostViews } from '@/frontend/ui/shared/post-views';
 import {
   loadPublishedPostBySlug,
@@ -162,98 +164,100 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
       <CommunityPostScope postId={p.id} />
       <CodeBlockEnhancer />
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <article aria-label={excerpt} data-visual="community-post">
-          {/* The publisher chip; the back control lives in the sticky header. */}
-          <div className="mb-8 sm:mb-10 flex flex-wrap items-center justify-between gap-x-3 gap-y-4">
-            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
-              {author?.name && (
-                <Link
-                  href={`/u/${encodeURIComponent(author.username)}`}
-                  aria-label={COMMUNITY_POST_COPY.authorProfileLabel.replace('{name}', author.name)}
-                  data-visual="community-post-author"
-                  className="flex items-center gap-2.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40 hover:bg-muted/50 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                >
-                  {author.avatar_url?.trim() ? (
-                    <Image
-                      src={author.avatar_url}
-                      alt={author.name}
-                      width={28}
-                      height={28}
-                      className="rounded-full object-cover ring-2 ring-primary/20 shrink-0"
-                    />
-                  ) : (
-                    <div className="size-7 rounded-full bg-primary/15 flex items-center justify-center text-primary font-medium shrink-0">
-                      <User className="size-3.5" />
-                    </div>
-                  )}
-                  <span className="flex min-w-0 flex-col text-start">
-                    <span className="font-bold text-foreground leading-tight">{author.name}</span>
-                    <span className="text-[11px] text-muted-foreground leading-tight">
-                      <span dir="ltr">@{author.username}</span>
-                    </span>
-                  </span>
-                </Link>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <SocialShare url={postUrl} title={excerpt} />
-              <PostOwnerActions post={p} />
-            </div>
-          </div>
-
-          {/* Layout Grid: Article Body & Sticky Sidebar. `max-lg:`/`lg:`, never
-              `grid-cols-1` + `lg:grid-cols-12`: a base utility loses the contest
-              to whichever surface loaded last (ADR-0132). */}
-          <div
-            className={`grid max-lg:grid-cols-1 max-lg:gap-8 lg:gap-12 items-start ${
-              hasHeadings ? 'lg:grid-cols-12' : 'lg:grid-cols-1 max-w-4xl mx-auto'
-            }`}
-          >
-            <div
-              id="article-body"
-              className={`min-w-0 ${hasHeadings ? 'lg:col-span-8 xl:col-span-8' : 'w-full'}`}
-            >
-              <header className="mb-10 sm:mb-12">
-                {p.cover_image && (
-                  <div
-                    data-visual="community-post-cover"
-                    className="group relative aspect-video overflow-hidden rounded-2xl sm:rounded-3xl mb-8 sm:mb-10 bg-muted/60 border border-border/50 shadow-xl shadow-foreground/3 transition-safe duration-500 hover:shadow-2xl hover:border-border/80"
+          {/* The publisher, the facts, and the one action that belongs to the
+              whole post. The date used to sit in its own right-aligned row above
+              the body, which read as an orphan; it is now the caption of the
+              identity it belongs to. */}
+          <header className="mx-auto mb-8 max-w-2xl sm:mb-10">
+            <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-3">
+              <div className="flex min-w-0 flex-col gap-2">
+                {author?.name && (
+                  <Link
+                    href={`/u/${encodeURIComponent(author.username)}`}
+                    aria-label={COMMUNITY_POST_COPY.authorProfileLabel.replace(
+                      '{name}',
+                      author.name
+                    )}
+                    data-visual="community-post-author"
+                    className="flex w-fit items-center gap-2.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40 hover:bg-muted/50 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                   >
-                    <Image
-                      src={p.cover_image}
-                      alt={excerpt}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 800px"
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
-                      priority
-                    />
-                    <div className="absolute inset-0 ring-1 ring-inset ring-foreground/10 rounded-2xl sm:rounded-3xl pointer-events-none" />
-                  </div>
-                )}
-
-                {postTags.length > 0 && (
-                  <div
-                    data-visual="community-post-tags"
-                    className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground border-y border-border/40 py-4 sm:py-4.5"
-                  >
-                    {postTags.map((tag) => (
-                      <span
-                        key={tag.id}
-                        className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-bold text-primary"
-                      >
-                        #{tag.name}
+                    {author.avatar_url?.trim() ? (
+                      <Image
+                        src={author.avatar_url}
+                        alt={author.name}
+                        width={28}
+                        height={28}
+                        className="rounded-full object-cover ring-2 ring-primary/20 shrink-0"
+                      />
+                    ) : (
+                      <div className="size-7 rounded-full bg-primary/15 flex items-center justify-center text-primary font-medium shrink-0">
+                        <User className="size-3.5" />
+                      </div>
+                    )}
+                    <span className="flex min-w-0 flex-col text-start">
+                      <span className="font-bold text-foreground leading-tight">{author.name}</span>
+                      <span className="text-[11px] text-muted-foreground leading-tight">
+                        <span dir="ltr">@{author.username}</span>
                       </span>
-                    ))}
-                  </div>
+                    </span>
+                  </Link>
                 )}
-              </header>
 
-              {(p.published_at || p.view_count > 0) && (
-                <div className="mb-6 flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-xs text-muted-foreground sm:mb-8 sm:text-sm">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
                   {p.published_at && <PostPublishedAt publishedAt={p.published_at} />}
                   <PostViews count={p.view_count} />
+                  {p.reading_time_minutes > 0 && (
+                    <span>
+                      {COMMUNITY_POST_COPY.readingTime.replace(
+                        '{minutes}',
+                        String(p.reading_time_minutes)
+                      )}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <SocialShare url={postUrl} title={excerpt} label={POST_CARD_COPY.shareAction} />
+            </div>
+          </header>
+
+          {/* One measure at every width: the body is a fixed column and the
+              contents rail sits beside it on wide screens, never inside it. A
+              post with a heading used to be 75px narrower than one without. */}
+          <div className="flex justify-center gap-12 items-start">
+            <div id="article-body" className="w-full min-w-0 max-w-2xl">
+              {p.cover_image && (
+                <div
+                  data-visual="community-post-cover"
+                  className="group relative aspect-video overflow-hidden rounded-2xl sm:rounded-3xl mb-8 bg-muted/60 border border-border/50 shadow-xl shadow-foreground/3 transition-safe duration-500 hover:shadow-2xl hover:border-border/80"
+                >
+                  <Image
+                    src={p.cover_image}
+                    alt={excerpt}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 672px"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                    priority
+                  />
+                  <div className="absolute inset-0 ring-1 ring-inset ring-foreground/10 rounded-2xl sm:rounded-3xl pointer-events-none" />
+                </div>
+              )}
+
+              {postTags.length > 0 && (
+                <div
+                  data-visual="community-post-tags"
+                  className="mb-8 flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground"
+                >
+                  {postTags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary"
+                    >
+                      #{tag.name}
+                    </span>
+                  ))}
                 </div>
               )}
 
@@ -273,9 +277,14 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                   {p.content ?? ''}
                 </ReactMarkdown>
               </div>
+
+              {/* Where a reader finishes is where the actions go: like, the
+                  thread's count, and the owner's menu. The thread follows, so
+                  the page ends in a conversation rather than in whitespace. */}
+              <PostEngagementBar post={p} label={excerpt} />
+              <PostComments postId={p.id} slug={p.slug} />
             </div>
 
-            {/* Sticky Table of Contents Sidebar */}
             {hasHeadings && <PostTableOfContents headings={headings} />}
           </div>
         </article>

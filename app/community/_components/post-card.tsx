@@ -115,15 +115,18 @@ export function PostCard({ post, index, showPinned = false }: PostCardProps) {
           )}
         </div>
 
-        <div className="mt-6 border-t border-border pt-4">
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+        <div
+          data-visual="community-card-footer"
+          className="-mx-6 -mb-6 mt-6 bg-muted/20 px-6 pb-2.5 pt-3 sm:-mx-7 sm:-mb-7 sm:px-7"
+        >
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
             {post.published_at && (
               <time dateTime={post.published_at} className="font-medium">
                 {formatRelativeTime(post.published_at)}
               </time>
             )}
             {post.published_at && post.view_count > 0 && (
-              <span aria-hidden="true" className="opacity-45">
+              <span aria-hidden="true" className="opacity-40">
                 ·
               </span>
             )}
@@ -134,8 +137,10 @@ export function PostCard({ post, index, showPinned = false }: PostCardProps) {
             post={post}
             label={label}
             editLabel={POST_CARD_COPY.editAction}
+            moreLabel={POST_CARD_COPY.moreAction}
             onRemoved={() => setRemoved(true)}
             onRestored={() => setRemoved(false)}
+            className="mt-1"
           />
         </div>
       </div>

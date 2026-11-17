@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,10 +25,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -44,8 +45,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.royaraqamia.app.contracts.ApiError
+import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.CommunityPostResponse
 import com.royaraqamia.app.contracts.generated.CommunityPostResponsePostAuthor
+import com.royaraqamia.app.contracts.generated.PostEngagementBatchItemsItem
 import com.royaraqamia.app.plans.PlanDates
 import com.royaraqamia.app.shared.NeedsConnection
 import com.royaraqamia.app.shared.NeedsConnectionState
@@ -55,6 +58,7 @@ import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.ui.vectors.LucideVectors
+import kotlinx.coroutines.launch
 
 /**
  * The visual gate's handles on one post (#922, `shared/visual/community-post.json`).
@@ -68,51 +72,101 @@ object CommunityPostMetrics {
     const val AUTHOR = "community-post-author"
     const val TAGS = "community-post-tags"
     const val BODY = "community-post-body"
+    const val COMMENT_FIELD = "community-comment-field"
 
     /** The page's `rounded-2xl` at the phone width (`sm:` is 640px). */
     const val COVER_RADIUS = 16
-
-    /** The page's `py-4` on the tags band at the phone width. */
-    const val TAG_BAND_PADDING = 16
 }
 
 /**
- * `/community/[slug]` as a screen (#922).
+ * `/community/[slug]` as a screen (#922), with the post's engagement (#1573).
  *
- * The page draws one published post: the publisher chip, the cover, the tags, the
- * publication date and the Markdown body. The app draws the same parts from the
- * same route (`GET /api/community/{slug}`) and the same words
- * ([CommunityPostCopy]), with the body converted by [CommunityMarkdown] because
- * the app has no Markdown runtime.
+ * The page draws one published post: the publisher chip and its facts, the cover,
+ * the tags, the Markdown body, then the actions and the thread. The app draws the
+ * same parts from the same routes and the same words ([CommunityPostCopy],
+ * [PostCardCopy]), with the body converted by [CommunityMarkdown] because the app
+ * has no Markdown runtime.
  *
  * The two faces the server decides are [CommunityPostUiState.AtRest] and
  * [CommunityPostUiState.NotFound]; a read that never answered is the shared
  * read-failure or needs-connection notice, kept apart for the reason ADR-0031
- * gives. The port is switched off until the visual gate passes (ADR-0117), so the
- * shell still hands the route to the document in the meantime.
+ * gives.
  */
 @Composable
 fun CommunityPostScreen(
     slug: String,
     repository: CommunityPostRepository,
+    engagementRepository: PostEngagementRepository,
     modifier: Modifier = Modifier,
     onOpenProfile: (String) -> Unit = {},
+    onSharePost: () -> Unit = {},
+    onSignIn: () -> Unit = {},
+    signedIn: Boolean = false,
+    currentUserId: String? = null,
 ) {
     var state by remember(slug) { mutableStateOf<CommunityPostUiState?>(null) }
     var failure by remember(slug) { mutableStateOf<ApiError?>(null) }
+    var engagement by remember(slug) { mutableStateOf<PostEngagementBatchItemsItem?>(null) }
     var attempts by remember(slug) { mutableStateOf(0) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(slug, attempts) {
         state = null
         failure = null
+        engagement = null
+
         val result = repository.post(slug)
         state = CommunityPostUiState.of(result, slug)
         failure = (result as? CommunityPostResult.Unavailable)?.error
+
+        val live = (state as? CommunityPostUiState.AtRest)?.post
+        if (live != null) {
+            when (val answer = engagementRepository.states(listOf(live.post.id))) {
+                is ApiResult.Success -> engagement = answer.value.items.firstOrNull()
+                is ApiResult.Failure -> Unit
+            }
+        }
+    }
+
+    val toggleLike: () -> Unit = {
+        val current = engagement
+        if (!signedIn) {
+            onSignIn()
+        } else {
+            val next = current?.liked != true
+            // Paint first, then settle on the server's number (#1573): the press
+            // must not wait for a round trip to feel answered.
+            engagement =
+                current?.copy(
+                    liked = next,
+                    likeCount = maxOf(0, current.likeCount + if (next) 1 else -1),
+                )
+            scope.launch {
+                when (val answer = engagementRepository.like(slug, next)) {
+                    is ApiResult.Success ->
+                        engagement =
+                            engagement?.copy(
+                                liked = answer.value.liked,
+                                likeCount = answer.value.likeCount,
+                            )
+                    is ApiResult.Failure -> engagement = current
+                }
+            }
+        }
     }
 
     CommunityPostContent(
         state = state,
         failure = failure,
+        engagement = engagement,
+        slug = slug,
+        engagementRepository = engagementRepository,
+        signedIn = signedIn,
+        currentUserId = currentUserId,
+        onToggleLike = toggleLike,
+        onSharePost = onSharePost,
+        onSignIn = onSignIn,
+        onCountChanged = { count -> engagement = engagement?.copy(commentCount = count) },
         onRetry = { attempts += 1 },
         onOpenProfile = onOpenProfile,
         modifier = modifier,
@@ -131,6 +185,15 @@ internal fun CommunityPostScreen(
     CommunityPostContent(
         state = state,
         failure = failure,
+        engagement = null,
+        slug = "",
+        engagementRepository = null,
+        signedIn = false,
+        currentUserId = null,
+        onToggleLike = {},
+        onSharePost = {},
+        onSignIn = {},
+        onCountChanged = {},
         onRetry = onRetry,
         onOpenProfile = onOpenProfile,
         modifier = modifier,
@@ -141,6 +204,15 @@ internal fun CommunityPostScreen(
 private fun CommunityPostContent(
     state: CommunityPostUiState?,
     failure: ApiError?,
+    engagement: PostEngagementBatchItemsItem?,
+    slug: String,
+    engagementRepository: PostEngagementRepository?,
+    signedIn: Boolean,
+    currentUserId: String?,
+    onToggleLike: () -> Unit,
+    onSharePost: () -> Unit,
+    onSignIn: () -> Unit,
+    onCountChanged: (Long) -> Unit,
     onRetry: () -> Unit,
     onOpenProfile: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -159,6 +231,15 @@ private fun CommunityPostContent(
             state is CommunityPostUiState.AtRest ->
                 Post(
                     response = state.post,
+                    engagement = engagement,
+                    slug = slug,
+                    engagementRepository = engagementRepository,
+                    signedIn = signedIn,
+                    currentUserId = currentUserId,
+                    onToggleLike = onToggleLike,
+                    onSharePost = onSharePost,
+                    onSignIn = onSignIn,
+                    onCountChanged = onCountChanged,
                     onOpenProfile = onOpenProfile,
                     modifier = Modifier.padding(horizontal = spacing.containerPadding),
                 )
@@ -170,100 +251,79 @@ private fun CommunityPostContent(
 @Composable
 private fun Post(
     response: CommunityPostResponse,
+    engagement: PostEngagementBatchItemsItem?,
+    slug: String,
+    engagementRepository: PostEngagementRepository?,
+    signedIn: Boolean,
+    currentUserId: String?,
+    onToggleLike: () -> Unit,
+    onSharePost: () -> Unit,
+    onSignIn: () -> Unit,
+    onCountChanged: (Long) -> Unit,
     onOpenProfile: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val post = response.post
+    val scroll = rememberScrollState()
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier =
             modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
                 .testTag(CommunityPostMetrics.POST),
     ) {
-        // The page's own rhythm, at the phone width: the author block's `mb-8`,
-        // the cover's `mb-8`, the header's `mb-10` and the date's `mb-6`. The
-        // margins are the design, so the screen carries the same numbers instead
-        // of one uniform gap.
+        // The page's rhythm, at the phone width: the chip and its facts are one
+        // block (`gap-2`), the header closes with `mb-8`, and each of the cover
+        // and the tags carries the same `mb-8` (#1573).
         post.author?.let { author ->
             AuthorChip(author, onOpenProfile)
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(8.dp))
         }
+
+        PostFacts(post.published_at, post.view_count, post.reading_time_minutes)
+        Spacer(Modifier.height(32.dp))
 
         val cover = post.cover_image?.takeIf { it.isNotBlank() }
         val hasTags = response.postTags.isNotEmpty()
-        if (cover != null || hasTags) {
-            if (cover != null) {
-                AsyncImage(
-                    model = cover,
-                    contentDescription = PostText.label(post.content, post.meta_desc),
-                    contentScale = ContentScale.Crop,
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .aspectRatio(16f / 9f)
-                            .clip(RoundedCornerShape(CommunityPostMetrics.COVER_RADIUS.dp))
-                            .background(RoyColors.muted.copy(alpha = 0.6f))
-                            .testTag(CommunityPostMetrics.COVER),
-                )
-                if (hasTags) Spacer(Modifier.height(32.dp))
-            }
-            if (hasTags) {
-                Column(modifier = Modifier.fillMaxWidth().testTag(CommunityPostMetrics.TAGS)) {
-                    HorizontalDivider(color = RoyColors.border.copy(alpha = 0.4f))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-                        modifier =
-                            Modifier.padding(vertical = CommunityPostMetrics.TAG_BAND_PADDING.dp),
-                    ) {
-                        response.postTags.forEach { tag ->
-                            Text(
-                                text = "#${tag.name}",
-                                style =
-                                    type.xs.copy(fontWeight = FontWeight.Bold, lineHeight = 16.sp),
-                                color = RoyColors.primary,
-                                modifier =
-                                    Modifier.clip(CircleShape)
-                                        .background(RoyColors.primary.copy(alpha = 0.1f))
-                                        .border(
-                                            1.dp,
-                                            RoyColors.primary.copy(alpha = 0.2f),
-                                            CircleShape,
-                                        )
-                                        .padding(horizontal = spacing.elementGapSm, vertical = 6.dp),
-                            )
-                        }
-                    }
-                    HorizontalDivider(color = RoyColors.border.copy(alpha = 0.4f))
-                }
-            }
-            Spacer(Modifier.height(40.dp))
+
+        if (cover != null) {
+            AsyncImage(
+                model = cover,
+                contentDescription = PostText.label(post.content, post.meta_desc),
+                contentScale = ContentScale.Crop,
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(CommunityPostMetrics.COVER_RADIUS.dp))
+                        .background(RoyColors.muted.copy(alpha = 0.6f))
+                        .testTag(CommunityPostMetrics.COVER),
+            )
+            Spacer(Modifier.height(32.dp))
         }
 
-        post.published_at?.let { published ->
-            // The page's date line is 24px tall at the phone width (its `text-xs`
-            // row with the icon); the app's single Hijri date would otherwise be
-            // shorter and pull the body up under it.
+        if (hasTags) {
             Row(
-                modifier = Modifier.height(24.dp),
-                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2),
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                modifier = Modifier.fillMaxWidth().testTag(CommunityPostMetrics.TAGS),
             ) {
-                Icon(
-                    imageVector = LucideVectors.Calendar,
-                    contentDescription = null,
-                    tint = RoyColors.primary.copy(alpha = 0.7f),
-                    modifier = Modifier.size(14.dp),
-                )
-                Text(
-                    text = PlanDates.label(published),
-                    style = type.xs,
-                    color = RoyColors.mutedForeground,
-                )
+                response.postTags.forEach { tag ->
+                    Text(
+                        text = "#${tag.name}",
+                        style = type.xs.copy(fontWeight = FontWeight.Bold, lineHeight = 16.sp),
+                        color = RoyColors.primary,
+                        modifier =
+                            Modifier.clip(CircleShape)
+                                .background(RoyColors.primary.copy(alpha = 0.1f))
+                                .border(1.dp, RoyColors.primary.copy(alpha = 0.2f), CircleShape)
+                                .padding(horizontal = spacing.elementGapSm, vertical = 6.dp),
+                    )
+                }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(32.dp))
         }
 
         MarkdownBody(
@@ -271,7 +331,139 @@ private fun Post(
             modifier = Modifier.testTag(CommunityPostMetrics.BODY),
         )
 
+        Spacer(Modifier.height(24.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth().testTag("community-post-actions"),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                PostAction(
+                    icon = LucideVectors.Heart,
+                    label =
+                        if (engagement?.liked == true) {
+                            PostCardCopy.UNLIKE_ACTION
+                        } else {
+                            PostCardCopy.LIKE_ACTION
+                        },
+                    count = engagement?.likeCount,
+                    active = engagement?.liked == true,
+                    onClick = onToggleLike,
+                )
+                PostAction(
+                    icon = LucideVectors.MessageCircle,
+                    label = PostCardCopy.COMMENT_ACTION,
+                    count = engagement?.commentCount,
+                    active = false,
+                    onClick = { scope.launch { scroll.animateScrollTo(Int.MAX_VALUE) } },
+                )
+            }
+            PostAction(
+                icon = LucideVectors.Share2,
+                label = PostCardCopy.SHARE_ACTION,
+                count = null,
+                active = false,
+                onClick = onSharePost,
+            )
+        }
+
+        if (engagementRepository != null) {
+            PostCommentsSection(
+                slug = slug,
+                repository = engagementRepository,
+                signedIn = signedIn,
+                currentUserId = currentUserId,
+                onSignIn = onSignIn,
+                onCountChanged = onCountChanged,
+            )
+        }
+
         Spacer(Modifier.height(spacing.elementGap))
+    }
+}
+
+/** Date, views and reading time: the caption of the identity above it. */
+@Composable
+private fun PostFacts(publishedAt: String?, viewCount: Long, readingMinutes: Long) {
+    val type = LocalRoyTypeScale.current
+    val spacing = LocalRoySpacing.current
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (publishedAt != null) {
+            Icon(
+                imageVector = LucideVectors.Calendar,
+                contentDescription = null,
+                tint = RoyColors.primary.copy(alpha = 0.7f),
+                modifier = Modifier.size(14.dp),
+            )
+            Text(
+                text = PlanDates.label(publishedAt),
+                style = type.xs,
+                color = RoyColors.mutedForeground,
+            )
+        }
+
+        if (viewCount > 0) {
+            Icon(
+                imageVector = LucideVectors.Eye,
+                contentDescription = null,
+                tint = RoyColors.mutedForeground,
+                modifier = Modifier.size(14.dp),
+            )
+            Text(text = viewCount.toString(), style = type.xs, color = RoyColors.mutedForeground)
+        }
+
+        if (readingMinutes > 0) {
+            Text(
+                text = CommunityPostCopy.READING_TIME.replace("{minutes}", readingMinutes.toString()),
+                style = type.xs,
+                color = RoyColors.mutedForeground,
+            )
+        }
+    }
+}
+
+/** One control under the post: the card's own cell shape (#1573). */
+@Composable
+private fun PostAction(
+    icon: ImageVector,
+    label: String,
+    count: Long?,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    val type = LocalRoyTypeScale.current
+    val tint = if (active) RoyColors.primary else RoyColors.mutedForeground
+
+    Row(
+        modifier =
+            Modifier.clip(RoundedCornerShape(12.dp))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .semantics {
+                    role = Role.Button
+                    contentDescription = label
+                },
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(18.dp),
+        )
+        if (count != null && count > 0) {
+            Text(
+                text = count.toString(),
+                style = type.xs.copy(fontWeight = FontWeight.Bold),
+                color = tint,
+            )
+        }
     }
 }
 
@@ -286,8 +478,7 @@ private fun AuthorChip(
     val name = author.name.orEmpty()
 
     // The page's chip is 42.75px at the phone width: the app pins that height so
-    // the line box's own font padding cannot make the pill taller than the page's
-    // (the row's padding already gives it the page's target).
+    // the line box's own font padding cannot make the pill taller than the page's.
     Row(
         modifier =
             Modifier.height(42.75.dp)
