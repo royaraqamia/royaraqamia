@@ -63,6 +63,15 @@ export const CHAT_AGENT_TOOL_NAMES = [
   // the `/rates` page runs, so a number the assistant quotes is the page's.
   'get_rate',
   'get_rate_history',
+  // The three content apps' reads (issue #1430): the Quran's text and its own
+  // search index, the Athkar's two sets, and the summary a scan left behind.
+  'list_surahs',
+  'get_surah',
+  'get_verse',
+  'search_quran',
+  'list_athkar_sets',
+  'get_athkar',
+  'get_scan_history',
   'create_post_draft',
   'edit_post_draft',
   'publish_post_draft',
@@ -201,6 +210,41 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     kind: 'read',
     label: 'قراءة الشاشة الحالية',
     activity: 'تقرأ الشاشة الحالية',
+  },
+  list_surahs: {
+    kind: 'read',
+    label: 'قائمة السور',
+    activity: 'يقرأ قائمة السور',
+  },
+  get_surah: {
+    kind: 'read',
+    label: 'سورة',
+    activity: 'يقرأ السورة',
+  },
+  get_verse: {
+    kind: 'read',
+    label: 'آية',
+    activity: 'يقرأ الآية',
+  },
+  search_quran: {
+    kind: 'read',
+    label: 'بحث في القرآن',
+    activity: 'يبحث في القرآن',
+  },
+  list_athkar_sets: {
+    kind: 'read',
+    label: 'مجموعات الأذكار',
+    activity: 'يقرأ مجموعات الأذكار',
+  },
+  get_athkar: {
+    kind: 'read',
+    label: 'أذكار',
+    activity: 'يقرأ الأذكار',
+  },
+  get_scan_history: {
+    kind: 'read',
+    label: 'سجل المسح',
+    activity: 'يقرأ سجل المسح',
   },
 };
 

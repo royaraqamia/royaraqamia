@@ -116,6 +116,8 @@ describe('sw-routing predicates', () => {
       '/api/project-requests/abc',
       '/api/retainers/abc',
       '/api/consultation/bookings',
+      // The scan history is a per-account read: never Cache Storage (#1430).
+      '/api/scan/history',
       // The Quran pull carries bookmarks and a reading position; a shared
       // cache would replay them to the next identity on the device (#392).
       '/quran/api/sync',

@@ -39,9 +39,9 @@ product, and six of the nine sheet apps have no tool at all.
 | ------------------- | --------- | ---------- | ---------------------------------------- |
 | News                | 2         | 0          | search, archive by date                  |
 | Rates               | 2         | 0          | metals, conversion amount                |
-| Scan                | 0         | 0          | read history, act                        |
-| Quran               | 0         | 0          | read, bookmarks, progress                |
-| Athkar              | 0         | 0          | read, completion                         |
+| Scan                | 1         | 0          | act                                      |
+| Quran               | 4         | 0          | bookmarks, progress                      |
+| Athkar              | 2         | 0          | completion                               |
 | LinkSnap            | 0         | 5          | both                                     |
 | HabitFlow           | 3         | 6          | read, logs, archive                      |
 | SpendTrack          | 3         | 9          | budgets, categories, reports             |
@@ -162,6 +162,11 @@ one fact they asked to be remembered, and every injected item is traceable to a 
 
 **Landed:** News and Rates, read side (#1429): the day's digest cut to the plan's cards, one
 story by id, the current pair on both bases with its quote date, and the series the page draws.
+
+**Landed:** Quran, Athkar and Scan, read side (#1430): the 114 suras, one sura in a bounded
+window, one Ayah by its reference, text search over the `check:quran-search` asset itself, the
+two Athkar sets and their items, and the member's own scan history — a summary she can read and
+clear, whose payload never leaves the device (ADR-0205).
 
 **Exit:** every row of the coverage table has at least a read and, where the product has a write,
 a tiered write; a member can grant and revoke each of them.

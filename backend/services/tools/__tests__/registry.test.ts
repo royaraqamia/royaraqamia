@@ -23,9 +23,10 @@ import { CHAT_AGENT_TOOL_NAMES } from '@/shared/contracts/chat-agent-actions';
 const expectedPerOwner: Record<CapabilityOwner, number> = {
   news: 2,
   rates: 2,
-  scan: 0,
-  quran: 0,
-  athkar: 0,
+  // The three content apps' reads (#1430).
+  scan: 1,
+  quran: 4,
+  athkar: 2,
   linksnap: 0,
   habitflow: 3,
   spendtrack: 3,

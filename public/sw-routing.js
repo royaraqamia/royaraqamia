@@ -195,6 +195,10 @@
     '/mcp/token',
     '/api/training',
     '/api/project-requests',
+    // The scan history is the member's own list of codes (#1430): a summary
+    // rather than a payload, but still a per-account read that must never be
+    // replayed to the next identity on a shared device.
+    '/api/scan',
     '/api/retainers',
     '/api/subscriptions',
     '/api/consultation',

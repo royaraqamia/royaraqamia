@@ -21,7 +21,10 @@ import { cn } from '@/frontend/shared/cn';
 import { shellVersionFromUserAgent } from '@/frontend/shared/shell-update';
 import { useSession } from '@/frontend/state/session-provider';
 import { useScreenScope } from '@/frontend/state/use-screen-scope';
+import { recordScanHistory } from '@/frontend/api/scan-history';
+import { scanHistoryRecord } from '@/shared/contracts/scan-history';
 import { scanScreenScope } from './scan-screen-scope';
+import { ScanHistory } from './scan-history';
 import { identityFromUser } from '@/frontend/shared/local-store/identity';
 import { canRecordLocalUsage, recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
 import { useScannedCertificate } from '@/frontend/state/scan/use-scanned-certificate';
@@ -127,7 +130,8 @@ export function ScanPage() {
   const [torchOn, setTorchOn] = useState(false);
   const [hit, setHit] = useState<{ rawValue: string; format: string } | null>(null);
   const [limitReached, setLimitReached] = useState(false);
-  const { user } = useSession();
+  const [historyToken, setHistoryToken] = useState(0);
+  const { user, isLoading: sessionLoading } = useSession();
 
   // The scanner registers its screen and nothing else: a decoded code can be
   // another member's row, so it never becomes a snapshot (ADR-0181, #1420).
@@ -278,6 +282,16 @@ export function ScanPage() {
     setError(null);
     setHit({ rawValue: code.rawValue, format: code.format });
     setStatus('result');
+
+    // A signed-in member's scan also becomes a summary row (ADR-0205). The write
+    // is fire-and-forget and carries no payload: the result is already on screen,
+    // and a history that failed to save must not turn a successful scan into an
+    // error the visitor has to read.
+    if (user) {
+      void recordScanHistory(scanHistoryRecord(classifyScanPayload(code.rawValue), code.format))
+        .then(() => setHistoryToken((token) => token + 1))
+        .catch(() => {});
+    }
   }
 
   function scheduleFrame() {
@@ -624,6 +638,8 @@ export function ScanPage() {
           onRescan={rescan}
         />
       )}
+
+      <ScanHistory signedIn={user !== null} loading={sessionLoading} reloadToken={historyToken} />
     </div>
   );
 }

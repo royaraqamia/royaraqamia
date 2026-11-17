@@ -294,6 +294,19 @@ export const CONTRACTS = [
     schemas: ['AgentMemoryListResultSchema', 'AgentMemoryActionResultSchema'],
   },
   {
+    // The Scanner's history (#1430, ADR-0205): the list the screen draws, the
+    // summary a scan writes, and the clear. The write carries no payload, so the
+    // generated type is the whole of what a scan can say about a code.
+    module: 'shared/contracts/scan-history',
+    file: 'ScanHistoryContracts.kt',
+    schemas: [
+      'ScanHistoryRecordSchema',
+      'ScanHistoryResultSchema',
+      'ScanHistoryRecordResultSchema',
+      'ScanHistoryClearResultSchema',
+    ],
+  },
+  {
     module: 'shared/contracts/chat',
     file: 'ChatContracts.kt',
     schemas: [

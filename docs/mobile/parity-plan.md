@@ -103,8 +103,9 @@ The things a surface row cannot hold: the cutover, the screens the app needs to 
 
 ## Components
 
-A component is finished when the surface that draws it is native, or when it belongs to the shell frame the visual gate measures: 87 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native, or when it belongs to the shell frame the visual gate measures: 88 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
+- [x] `scan-history` on **scan** · #1430
 - [x] `habit-list` on **habitflow** · #649
 - [x] `sync-status-pill` on **habitflow** · #649
 - [ ] `sign-in` on **auth** · #770

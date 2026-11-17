@@ -185,6 +185,20 @@ export function homeServicesRateLimitPolicy(userId: string): RateLimitPolicy {
   };
 }
 
+/**
+ * A scan is one code at a time, and a member at a shop counter may read a handful
+ * in a minute. The bound is for a loop that calls the route instead of the
+ * camera, not for a person: the table keeps at most 200 rows either way.
+ */
+export function scanHistoryRateLimitPolicy(userId: string): RateLimitPolicy {
+  return {
+    key: `scan-history:${userId}`,
+    limit: 60,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: حفظ سجل المسح محدود بـ 60 مسحاً في الدقيقة.',
+  };
+}
+
 export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `link-unlock:${ip}`,
