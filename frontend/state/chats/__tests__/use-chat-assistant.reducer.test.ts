@@ -24,6 +24,7 @@ describe('chatAssistantInitialState', () => {
       streamingText: '',
       interrupted: '',
       toolsUsed: [],
+      sources: [],
       pending: null,
       error: null,
     });

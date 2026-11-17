@@ -38,7 +38,7 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   training: 1,
   'client-work': 1,
   admin: 0,
-  assistant: 4,
+  assistant: 5,
 };
 
 describe('the assistant door', () => {
@@ -117,6 +117,7 @@ describe('the assistant door', () => {
       'get_screen_context',
       'list_specialists',
       'load_specialist',
+      'search_web',
     ]);
   });
 });
