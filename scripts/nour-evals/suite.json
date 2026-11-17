@@ -486,7 +486,7 @@
       "expect": {
         "language": "ar",
         "mustInclude": [],
-        "mustExclude": [],
+        "mustExclude": ["حفظت", "سجّلت"],
         "judge": ["boundaries", "helpfulness"]
       }
     },

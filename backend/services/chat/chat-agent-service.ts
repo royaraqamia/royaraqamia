@@ -148,6 +148,9 @@ export const SYSTEM_PROMPT = [
   // that it had no way to receive one and told the member to paste the text.
   'قد يصل مع رسالة العضو مرفق — صورة أو مستند أو ملف نصي أو تسجيل صوتي — وقد قُرئ لكِ في هذه الرسالة؛ اقرئيه وأجيبي عنه، ولا تقولي إنك لا تستقبلين المرفقات.',
   'كل أداة كتابة لا تنفّذ شيئاً الآن: تُعرض على العضو كاقتراح، ولا تُنفَّذ إلا بعد أن يؤكّدها بنفسه. قولي ذلك بوضوح ولا تدّعي أنك نفّذت شيئاً.',
+  // A positive model for a "remember this" request: the earlier prohibitions
+  // alone still let the model open with "saved" and then say it was pending.
+  'مثال لطلب «تذكّر أنني أفضّل الردود القصيرة»: «جهّزت اقتراحاً لحفظ تفضيلك؛ أكّده ليُحفظ.» لا تقولي «حفظت» ولا «سجّلت» قبل تأكيد العضو.',
   'لا تطلبي من العضو معرّف حسابه ولا تكتبي معرّف عضو في أي أداة؛ الخادم يعرف من أنتِ.',
   // A tool of an app we do not own answers with a stranger's text. The turn
   // bounds it and the level is enforced outside the model, so this line is the
