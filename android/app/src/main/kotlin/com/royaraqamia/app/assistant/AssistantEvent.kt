@@ -1,12 +1,24 @@
 package com.royaraqamia.app.assistant
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+
+/**
+ * One row of the source card under a web answer (ADR-0206). The server's
+ * `sources` frame and the stored message carry the same four fields.
+ */
+data class AssistantSource(
+    val url: String,
+    val title: String,
+    val domain: String,
+    val publishedDate: String?,
+)
 
 /**
  * One frame of an assistant turn, in the shapes the sheet draws (ADR-0143).
@@ -29,6 +41,9 @@ sealed interface AssistantEvent {
 
     /** A tool call closed, with the gerund the provenance line keeps. */
     data class Tool(val id: String, val label: String, val ok: Boolean) : AssistantEvent
+
+    /** What the web search read before the answer (ADR-0206). */
+    data class Sources(val sources: List<AssistantSource>) : AssistantEvent
 
     /**
      * A write was proposed. The sheet does not confirm it — the proposal's card
@@ -67,6 +82,20 @@ fun parseAssistantEvent(data: String): AssistantEvent? =
                         id = frame["id"].text().orEmpty(),
                         label = frame["label"].text().orEmpty(),
                         ok = frame["ok"]?.jsonPrimitive?.booleanOrNull ?: true,
+                    )
+                "sources" ->
+                    AssistantEvent.Sources(
+                        ((frame["sources"] as? JsonArray) ?: emptyList()).mapNotNull { element ->
+                            runCatching {
+                                val source = element.jsonObject
+                                AssistantSource(
+                                    url = source["url"].text().orEmpty(),
+                                    title = source["title"].text().orEmpty(),
+                                    domain = source["domain"].text().orEmpty(),
+                                    publishedDate = source["publishedDate"].text(),
+                                )
+                            }.getOrNull()
+                        }
                     )
                 "proposal" ->
                     AssistantEvent.Proposal(

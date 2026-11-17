@@ -32,6 +32,7 @@ const ASSISTANT = {
   streamingText: '',
   interrupted: '',
   toolsUsed: [],
+  sources: [],
   pending: null,
   pendingUrl: vi.fn(async () => null),
   retryPending: vi.fn(),

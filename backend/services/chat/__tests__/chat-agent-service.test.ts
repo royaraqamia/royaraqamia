@@ -1843,7 +1843,7 @@ describe('the earlier part of a thread past the window', () => {
   });
 });
 
-describe('web search in the turn (ADR-0205)', () => {
+describe('web search in the turn (ADR-0206)', () => {
   const SOURCES = [
     {
       url: 'https://example.com/gold',

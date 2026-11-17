@@ -48,6 +48,25 @@ class AssistantEventTest {
     }
 
     @Test
+    fun `a sources frame carries the card rows with their dates`() {
+        assertEquals(
+            AssistantEvent.Sources(
+                listOf(
+                    AssistantSource(
+                        url = "https://example.com/gold",
+                        title = "سعر الذهب",
+                        domain = "example.com",
+                        publishedDate = "2026-11-01",
+                    )
+                )
+            ),
+            parseAssistantEvent(
+                """{"type":"sources","sources":[{"url":"https://example.com/gold","title":"سعر الذهب","domain":"example.com","publishedDate":"2026-11-01"}]}"""
+            ),
+        )
+    }
+
+    @Test
     fun `a proposal names the tool it wants to run`() {
         assertEquals(
             AssistantEvent.Proposal("create_habit"),

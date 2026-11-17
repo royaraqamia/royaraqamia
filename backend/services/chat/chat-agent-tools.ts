@@ -105,7 +105,7 @@ export interface ChatAgentToolContext {
    */
   screen?: ScreenContextInput;
   /**
-   * The web, when the deployment has a search key (ADR-0205). The turn wires
+   * The web, when the deployment has a search key (ADR-0206). The turn wires
    * this to a counted call; a turn with no client passes nothing, and
    * `search_web` is not declared at all.
    */
@@ -1244,7 +1244,7 @@ export function chatAgentToolDefinitions(): Array<{
  * nothing to find. `get_screen_context` needs the snapshot the request brought
  * (ADR-0181, decision 7): a client with no eyes — an older tab, an opted-out
  * surface, the admin area — is a turn where the tool would answer "nothing"
- * after costing a round. `search_web` needs a search key (ADR-0205): a
+ * after costing a round. `search_web` needs a search key (ADR-0206): a
  * deployment without one declares no web at all. Every other tool is always
  * declared.
  */

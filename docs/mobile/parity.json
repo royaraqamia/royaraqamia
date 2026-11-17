@@ -1916,7 +1916,7 @@
       "web": {
         "route": "app/layout.tsx",
         "component": "frontend/ui/assistant/assistant-panel.tsx",
-        "also": ["frontend/ui/chats/chat-message-list.tsx"],
+        "also": ["frontend/ui/chats/chat-message-list.tsx", "frontend/ui/chats/web-sources.tsx"],
         "copyModule": "frontend/ui/assistant/assistant-panel-copy.ts",
         "copyExport": "ASSISTANT_PANEL_COPY"
       },

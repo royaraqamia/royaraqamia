@@ -1,4 +1,4 @@
-# 0205. The assistant searches the web and cites what it read
+# 0206. The assistant searches the web and cites what it read
 
 ## Status
 

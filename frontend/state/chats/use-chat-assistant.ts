@@ -13,6 +13,7 @@ import type {
   ChatAgentPhase,
   ChatAttachment,
 } from '@/shared/contracts/chat';
+import type { WebSource } from '@/shared/contracts/web-search';
 import { publishedScreen } from '@/frontend/state/screen-context';
 import { beginAssistantTurn, endAssistantTurn, setAssistantPhase } from './assistant-turn';
 import { createPendingTurn, type PendingTurn } from './pending-turn';
@@ -40,6 +41,8 @@ export interface ChatAssistantState {
    * folded away. A proposal is its own card, not a read (#818, ADR-0173).
    */
   toolsUsed: string[];
+  /** What the web search read for this answer (ADR-0206). */
+  sources: WebSource[];
   /**
    * The question this turn is carrying, painted the moment it is sent (#1541).
    * It is the thread's own row once the server names it, and stays on screen
@@ -86,6 +89,7 @@ export function useChatAssistant(
     streamingText,
     interrupted,
     toolsUsed,
+    sources,
     pending,
     error,
   } = state;
@@ -169,7 +173,9 @@ export function useChatAssistant(
                 dispatch({ type: 'delta', text: event.text });
                 if (event.text) setAssistantPhase(conversationId, { kind: 'writing' });
               } else if (event.type === 'error') failure = event.error;
-              else if (event.type === 'tool_start') {
+              else if (event.type === 'sources') {
+                dispatch({ type: 'sourcesSeen', sources: event.sources });
+              } else if (event.type === 'tool_start') {
                 dispatch({ type: 'toolStarted', activity: event.activity });
                 setAssistantPhase(conversationId, { kind: 'tool', label: event.activity });
               } else if (event.type === 'tool') {
@@ -233,6 +239,7 @@ export function useChatAssistant(
     streamingText,
     interrupted,
     toolsUsed,
+    sources,
     pending,
     pendingUrl,
     retryPending,

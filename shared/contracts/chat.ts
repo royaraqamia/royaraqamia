@@ -324,7 +324,7 @@ export interface ChatMessage {
   clientId?: string | null;
   attachments: ChatAttachment[];
   /**
-   * What نور read on the web before answering (ADR-0205). Only the assistant's
+   * What نور read on the web before answering (ADR-0206). Only the assistant's
    * own rows carry it; the card under the reply is the same array, so a reload
    * shows the sources the answer was written from.
    */
@@ -485,7 +485,7 @@ export interface ChatAssistantState {
 export type ChatAgentEvent =
   | { type: 'delta'; text: string }
   /**
-   * What the search read, before the answer is written (ADR-0205). The card
+   * What the search read, before the answer is written (ADR-0206). The card
    * under the reply is drawn from this array, and the stored row carries the
    * same one, so a stream and a reload cannot disagree about the sources.
    */

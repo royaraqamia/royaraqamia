@@ -138,7 +138,7 @@ export function createSupabaseChatAgentService(
   // extraction behind the turn answers with it, so the deployment has one key,
   // one model and one place to change either.
   const client = createAiChatClient();
-  // The web, when the deployment has a search key (ADR-0205). No key is no
+  // The web, when the deployment has a search key (ADR-0206). No key is no
   // client, and the turn then declares no search tool at all.
   const search = createWebSearchClient();
 
@@ -161,7 +161,7 @@ export function createSupabaseChatAgentService(
     // Every remote call a turn makes is its own counted action (#1226): one
     // counter for both directions, because a read causes the same egress.
     reserveAppCall: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.mcpCalls),
-    // The web is one counted search inside the member's turn (ADR-0205): the
+    // The web is one counted search inside the member's turn (ADR-0206): the
     // gate releases the count when the vendor call failed, and the project
     // ceiling is what keeps the shared free month from being spent in a week.
     ...(search

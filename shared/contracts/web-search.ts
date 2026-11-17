@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * The web the assistant may read (ADR-0205).
+ * The web the assistant may read (ADR-0206).
  *
  * One search is bounded on both ends: the vendor returns at most five results,
  * and only the three with the fullest text reach the model. The numbers live

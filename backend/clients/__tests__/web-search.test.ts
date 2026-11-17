@@ -27,7 +27,7 @@ function stubFetch(results: unknown[]) {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe('the web search client (ADR-0205)', () => {
+describe('the web search client (ADR-0206)', () => {
   it('has no client when the deployment has no key', () => {
     expect(createWebSearchClient('')).toBeNull();
     expect(createWebSearchClient(undefined)).toBeNull();

@@ -1,5 +1,5 @@
 -- ============================================================
--- A message may carry the sources it was written from (ADR-0205)
+-- A message may carry the sources it was written from (ADR-0206)
 --
 -- The assistant's reply cites the web as [1], [2]; the card under it is the
 -- same array. Storing it on the row is what makes reopening a thread show the

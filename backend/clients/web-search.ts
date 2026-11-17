@@ -16,7 +16,7 @@ import {
 } from '@/shared/contracts/web-search';
 
 /**
- * The web, as one request (ADR-0205).
+ * The web, as one request (ADR-0206).
  *
  * The vendor is Tavily: an LLM-facing search that returns, per result, a
  * title, a URL, a publish date and a few semantically selected chunks of the

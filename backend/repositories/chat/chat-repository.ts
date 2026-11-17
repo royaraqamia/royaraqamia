@@ -57,7 +57,7 @@ export interface ChatMessageRecord {
   createdAt: string;
   /** The writer's own id for the line (#1033); null for one the server named. */
   clientId: string | null;
-  /** What the assistant read on the web before this line (ADR-0205). */
+  /** What the assistant read on the web before this line (ADR-0206). */
   sources?: WebSource[] | null;
 }
 
@@ -98,7 +98,7 @@ export interface InsertMessageInput {
    * answers the first row instead of creating one.
    */
   clientId?: string | null;
-  /** The assistant's evidence, written only on its own rows (ADR-0205). */
+  /** The assistant's evidence, written only on its own rows (ADR-0206). */
   sources?: WebSource[] | null;
   attachments?: {
     storagePath: string;

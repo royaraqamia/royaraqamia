@@ -10,7 +10,7 @@
     "object": "AssistantPanelCopy"
   },
   "notes": {
-    "source": "The assistant's floating conversation (ADR-0143), in both clients: the name, the first sentence, and the four states a member can meet before asking anything. The site's `frontend/ui/assistant/assistant-panel.tsx` is the reference; the app's `AssistantSheet.kt` draws the same words from this file.",
+    "source": "The assistant's floating conversation (ADR-0143), in both clients: the name, the first sentence, and the four states a member can meet before asking anything. It also names the sources card a web answer draws (ADR-0206). The site's `frontend/ui/assistant/assistant-panel.tsx` and `frontend/ui/chats/chat-message-list.tsx` are the reference; the app's `AssistantSheet.kt` and `ChatMessageList.kt` draw the same words from this file.",
     "placeholders": "`downloadFile` carries `{name}`, filled with the attachment's own file name.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component does not render, or a state `AssistantUiState` declares that the row does not list."
   },
@@ -30,6 +30,8 @@
     "failed": "تعذّر فتح المحادثة. حاول مرة أخرى.",
     "retry": "إعادة المحاولة",
     "unavailable": "نور غير متاحة حالياً.",
-    "attachmentOnly": "مرفق"
+    "attachmentOnly": "مرفق",
+    "sourcesTitle": "المصادر",
+    "sourcesRead": "قرأ نور هذه الصفحات:"
   }
 }

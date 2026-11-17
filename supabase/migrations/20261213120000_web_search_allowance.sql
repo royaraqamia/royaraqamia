@@ -1,5 +1,5 @@
 -- ============================================================
--- The assistant searches the web (ADR-0205)
+-- The assistant searches the web (ADR-0206)
 --
 -- The turn pays for the question; a search is counted for a different reason:
 -- the vendor's free month is shared by the deployment, and no member's

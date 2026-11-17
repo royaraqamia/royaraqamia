@@ -4,7 +4,7 @@
 a read tool the model calls when the fact is outside our data, backed by a search vendor, answered
 with citations the member can open.
 
-The decision is [ADR-0205](../adr/0205-the-assistant-searches-the-web-and-cites-what-it-read.md).
+The decision is [ADR-0206](../adr/0206-the-assistant-searches-the-web-and-cites-what-it-read.md).
 This file is the work order: what exists, what changes, in which order, and the evidence that says a
 phase is done.
 

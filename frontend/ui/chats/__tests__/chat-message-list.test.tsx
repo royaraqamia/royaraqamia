@@ -56,6 +56,7 @@ const assistant: ChatAssistantState = {
   streamingText: '',
   interrupted: '',
   toolsUsed: [],
+  sources: [],
   pending: null,
   pendingUrl: async () => null,
   retryPending: vi.fn(),
@@ -160,5 +161,47 @@ describe('ChatMessageList', () => {
     top = 100;
     rerender(list([older, first, message({ id: 'm-3', body: 'جديد' })]));
     expect(top).toBe(400);
+  });
+});
+
+describe('web citations (ADR-0206)', () => {
+  const SOURCES = [
+    {
+      url: 'https://example.com/gold',
+      title: 'سعر الذهب',
+      domain: 'example.com',
+      publishedDate: '2026-11-01T10:00:00Z',
+    },
+  ];
+
+  it('turns a cited marker into a link to the card row', () => {
+    render(
+      list([
+        message({
+          id: 'm-1',
+          senderKind: 'agent',
+          senderId: null,
+          body: 'حسب [1] ارتفع السعر.',
+          sources: SOURCES,
+        }),
+      ])
+    );
+
+    expect(screen.getAllByText('[1]')[0]).toHaveAttribute('href', '#source-m-1-1');
+    expect(screen.getByRole('link', { name: /سعر الذهب/ })).toHaveAttribute(
+      'href',
+      'https://example.com/gold'
+    );
+    expect(screen.getByText('المصادر')).toBeInTheDocument();
+  });
+
+  it('leaves a marker that names no source as plain text', () => {
+    render(
+      list([message({ id: 'm-2', senderKind: 'agent', senderId: null, body: 'انظر [9] هنا.' })])
+    );
+
+    expect(screen.getByText(/انظر \[9\] هنا/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '[9]' })).toBeNull();
+    expect(screen.queryByText('المصادر')).toBeNull();
   });
 });

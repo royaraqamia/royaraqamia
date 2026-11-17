@@ -88,7 +88,7 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'remember',
   'list_specialists',
   'load_specialist',
-  // The web the assistant may read (ADR-0205). Declared only when the
+  // The web the assistant may read (ADR-0206). Declared only when the
   // deployment has a search key, so a turn with no search carries no
   // invitation to look for one.
   'search_web',
