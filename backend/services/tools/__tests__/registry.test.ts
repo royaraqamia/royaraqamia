@@ -27,10 +27,12 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   scan: 1,
   quran: 4,
   athkar: 2,
-  // The five hands each product gained in #1431.
+  // The five hands each product gained in #1431; #1432 completes HabitFlow
+  // and SpendTrack. `record_expense` and `edit_expense` are the SpendTrack
+  // create/update capabilities, so 10 tools cover 9 capability ids.
   linksnap: 5,
-  habitflow: 3,
-  spendtrack: 3,
+  habitflow: 8,
+  spendtrack: 10,
   notes: 5,
   community: 5,
   account: 3,
@@ -56,7 +58,9 @@ describe('the assistant door', () => {
     const known = new Set<string>([...PRODUCTS, 'assistant']);
     for (const entry of capabilities) {
       expect(known.has(entry.owner)).toBe(true);
-      expect(entry.id).toBe(capabilityId(entry.owner, entry.agentName ?? ''));
+      expect(entry.id).toBe(
+        capabilityId(entry.owner, entry.capabilityName ?? entry.agentName ?? '')
+      );
     }
   });
 
@@ -88,6 +92,7 @@ describe('the assistant door', () => {
         .sort()
     ).toEqual([
       'change_display_name',
+      'create_category',
       'create_habit',
       'create_link',
       'create_note',
@@ -96,7 +101,10 @@ describe('the assistant door', () => {
       'edit_post_draft',
       'record_expense',
       'remember',
+      'set_budget',
       'set_habit_reminder',
+      'toggle_log',
+      'update_habit',
       'update_link',
       'update_note',
     ]);
@@ -112,13 +120,35 @@ describe('the assistant door', () => {
       'publish_post_draft',
       'submit_project_request',
     ]);
-    // The first tier-3 writes on the turn: a delete whose card names its target.
+    // The tier-3 writes on the turn: a delete whose card names its target.
     expect(
       writes
         .filter((entry) => entry.tier === 3)
         .map((entry) => entry.agentName)
         .sort()
-    ).toEqual(['delete_link', 'delete_note']);
+    ).toEqual(['delete_expense', 'delete_habit', 'delete_link', 'delete_note']);
+  });
+
+  it('gives the turn every HabitFlow and SpendTrack capability the MCP door declares', () => {
+    const byId = new Map(capabilities.map((entry) => [entry.id, entry]));
+
+    for (const declared of mcpCapabilities().filter(
+      (entry) => entry.owner === 'habitflow' || entry.owner === 'spendtrack'
+    )) {
+      const onTurn = byId.get(declared.id);
+      expect(onTurn).toBeDefined();
+      expect(onTurn).toMatchObject({
+        owner: declared.owner,
+        kind: declared.kind,
+        tier: declared.tier,
+        mcpName: declared.mcpName,
+      });
+      // A write the turn can name is still a card when its tier is above 1.
+      if (declared.tier === 3) expect(onTurn?.agentName).toMatch(/^delete_/);
+      if (declared.tier === 1 && declared.kind === 'write') {
+        expect(onTurn?.agentName).not.toMatch(/^delete_/);
+      }
+    }
   });
 
   it('names the public MCP tool where a capability exists on both doors', () => {

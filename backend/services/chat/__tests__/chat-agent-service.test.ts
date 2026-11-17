@@ -19,7 +19,7 @@ import {
   trimHistory,
   type ChatAgentServiceDeps,
 } from '@/backend/services/chat/chat-agent-service';
-import type { ChatAgentTool } from '@/backend/services/chat/chat-agent-tools';
+import { chatAgentTool, type ChatAgentTool } from '@/backend/services/chat/chat-agent-tools';
 import { routeSkills } from '@/backend/services/chat/skill-router';
 import { SKILL_ALREADY_LOADED } from '@/backend/shared/domain/agent-skills';
 import { logger } from '@/backend/shared/logger';
@@ -1046,6 +1046,56 @@ describe('the assistant’s tools (#818)', () => {
       content: JSON.stringify([{ id: 'cert-1', course_name: 'دورة' }]),
     });
     expect(agent.insertAgentMessage).toHaveBeenCalledWith('conversation-1', 'عندك شهادة واحدة.');
+  });
+
+  it('answers a coffee question from transactions, not the summary alone (#1432)', async () => {
+    // The model's second round must read the individual rows, so it can add
+    // their amounts. A month total would only answer "how much did I spend".
+    const rows = {
+      expenses: [
+        { id: 'e1', date: '2026-11-03', amount: 12, description: 'قهوة الصباح' },
+        { id: 'e2', date: '2026-11-14', amount: 15, description: 'قهوة' },
+      ],
+      total: 2,
+    };
+    const transactions: ChatAgentTool = {
+      ...chatAgentTool('list_transactions')!,
+      run: vi.fn(async () => rows),
+    };
+    const client = scriptedClient([
+      [
+        toolCall('list_transactions', {
+          search: 'قهوة',
+          start: '2026-11-01',
+          end: '2026-11-30',
+        }),
+      ],
+      textStream('صرفت 27 على القهوة هذا الشهر.'),
+    ]);
+    const { service, agent } = makeService({
+      client,
+      resolveTool: (name) => (name === 'list_transactions' ? transactions : null),
+    });
+
+    await collect(
+      service.turn('user-1', 'conversation-1', 'كم صرفت على القهوة هذا الشهر؟', TURN_CONTEXT)
+    );
+
+    expect(transactions.run).toHaveBeenCalledWith(
+      { search: 'قهوة', start: '2026-11-01', end: '2026-11-30' },
+      expect.objectContaining({ userId: 'user-1' })
+    );
+    const second = client.calls[1] ?? [];
+    expect(second).toContainEqual({
+      role: 'tool',
+      tool_call_id: 'call-1',
+      content: JSON.stringify(rows),
+    });
+    expect(transactions.run).toHaveBeenCalledTimes(1);
+    expect(agent.insertAgentMessage).toHaveBeenCalledWith(
+      'conversation-1',
+      'صرفت 27 على القهوة هذا الشهر.'
+    );
   });
 
   it('reads one specialist body per turn, and refuses the second (#1448)', async () => {
