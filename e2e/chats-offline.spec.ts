@@ -62,6 +62,67 @@ test('the chat list reloads from the device with the radio off', async ({ browse
   await context.close();
 });
 
+/**
+ * The composer's row is one square (#1583).
+ *
+ * Measured, not eyeballed: one line of the field is 44px — 2px of border, 8+8 of
+ * padding and a 26px line box — which is the button at the row's end, so the
+ * paperclip inside the field and that button share its centre. The field used to
+ * stand 46.8px: the editor's paragraph inherited the sheet's body copy (a fluid
+ * 18px at 1.6 leading) while both controls were pinned to the field's foot, and
+ * the pair read 3.4px low at 1280px and 1.8px at 393px. The paragraph's own type
+ * is the assertion that holds: a size that drifts with the viewport is the bug.
+ */
+test('the composer row is one square, on one line', async ({ context, page, baseURL }) => {
+  test.setTimeout(180_000);
+
+  await signIn(context, baseURL!);
+  await page.goto(`${baseURL}/notifications?tab=chats`, { waitUntil: 'domcontentloaded' });
+
+  const rows = page.locator('a[href^="/chats/"]').filter({ hasText: FIXTURE_PEER });
+  if ((await rows.count()) === 0) {
+    test.skip(true, 'the chats fixture is missing (run e2e/setup-test-user.ts)');
+  }
+  const href = await rows.first().getAttribute('href');
+  await page.goto(`${baseURL}${href}`, { waitUntil: 'domcontentloaded' });
+
+  const field = page.locator('.tiptap[role="textbox"]');
+  await expect(field).toBeVisible();
+
+  const row = await field.evaluate((element) => {
+    const centre = (node: Element) => {
+      const box = node.getBoundingClientRect();
+      return box.top + box.height / 2;
+    };
+    const row = element.closest('.flex.items-end')!;
+    const fieldBox = element.getBoundingClientRect();
+    const paragraph = element.querySelector('p')!;
+    const clip = row.querySelector('svg.lucide-paperclip')!.closest('button')!;
+    // The end button is the row's sibling of the field's column, not part of it.
+    const end = row
+      .parentElement!.querySelector('svg.lucide-mic, svg.lucide-send')!
+      .closest('button')!;
+    const type = getComputedStyle(paragraph);
+    return {
+      fieldHeight: fieldBox.height,
+      fieldCentre: fieldBox.top + fieldBox.height / 2,
+      paragraphSize: type.fontSize,
+      paragraphLine: type.lineHeight,
+      clipCentre: centre(clip),
+      endCentre: centre(end),
+    };
+  });
+
+  // The paragraph is the field's own type, not the sheet's body copy.
+  expect(row.paragraphSize).toBe('16px');
+  expect(row.paragraphLine).toBe('26px');
+
+  // One line is the row's square, and both controls sit on its centre.
+  expect(row.fieldHeight).toBe(44);
+  expect(Math.abs(row.clipCentre - row.fieldCentre)).toBeLessThanOrEqual(1);
+  expect(Math.abs(row.endCentre - row.fieldCentre)).toBeLessThanOrEqual(1);
+});
+
 test('a thread reloads the same bubbles from the device', async ({ browser, baseURL }) => {
   test.setTimeout(180_000);
 
