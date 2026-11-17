@@ -159,6 +159,11 @@ services:
         sync: false
       - key: OPENCODE_API_KEY
         sync: false
+      # The assistant's web search (ADR-0206). The value is set in the Render
+      # dashboard, never in this blueprint; without it no search tool is declared
+      # and نور answers exactly as before.
+      - key: TAVILY_API_KEY
+        sync: false
       # The specialist shortlist's vectors (ADR-0190): the chat gateway serves
       # no embedding model, so this is a second OpenAI-compatible provider on
       # the account that already hosts R2. The model and its width are constants
