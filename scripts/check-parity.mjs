@@ -241,8 +241,6 @@ export function validate({ manifest, surfaces, copies, icons, read, sources = []
     }
 
     const strings = copies.get(row.copySource)?.strings ?? {};
-    const webComponent = contents['web.component'] ?? '';
-    const nativeComponent = contents['native.component'] ?? '';
     const webExport = row.web?.copyExport;
     const nativeObject = row.native?.copyObject;
 
