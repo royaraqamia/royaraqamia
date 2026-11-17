@@ -269,7 +269,7 @@ export function ChatComposer({
       <div className="flex items-end gap-2">
         {recorder.isRecording ? (
           <>
-            <div className="flex min-h-10 flex-1 items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-[11px] text-foreground">
+            <div className="flex min-h-11 flex-1 items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-[11px] text-foreground">
               <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-destructive" />
               <span className="font-digits shrink-0 tabular-nums" dir="ltr">
                 {formatVoiceDuration(recorder.elapsedMs)}
@@ -320,17 +320,24 @@ export function ChatComposer({
               aria-label={stopLabel}
               disabled={recorder.isPreparing}
               onClick={() => void finish()}
-              className="text-destructive"
+              className="size-11 text-destructive"
             >
               <Square size={14} />
             </Button>
           </>
         ) : (
           <>
-            <div className="relative flex min-h-10 min-w-0 flex-1 items-end">
+            <div className="relative flex min-h-11 min-w-0 flex-1 items-end">
               {/* The field is the editor (ADR-0193). Its padding is physical for
                   the reason the clip is: the clip is pinned to the box while the
-                  text's direction follows the draft. */}
+                  text's direction follows the draft.
+
+                  One line is 44px by arithmetic — 2px of border, 8+8 of padding
+                  and a 26px line box — and 44px is the button at the row's end,
+                  so the paperclip and that button share the field's centre at
+                  every viewport. It used to be 40px assumed and 46.8px drawn,
+                  which put both of them 3.4px low (#1583). Change one of these
+                  numbers and the row stops being square. */}
               <ChatField
                 value={value}
                 onChange={onValueChange}
@@ -340,12 +347,12 @@ export function ChatComposer({
                 placeholder={placeholder}
                 disabled={disabled}
                 labels={fieldLabels}
-                className="w-full min-h-10 resize-none rounded-xl border border-border/70 bg-background py-2 pl-10 pr-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="w-full min-h-11 resize-none rounded-xl border border-border/70 bg-background py-2 pl-10 pr-3 text-base leading-[26px] text-foreground focus-visible:ring-2 focus-visible:ring-primary/40"
               />
               <ChatAttachButton
                 onAddFiles={onAddFiles}
                 disabled={disabled}
-                className="absolute bottom-1 left-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+                className="absolute bottom-1.5 left-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
               />
             </div>
 
@@ -356,6 +363,7 @@ export function ChatComposer({
                 size="icon-sm"
                 aria-label={sendLabel}
                 disabled={!canSend}
+                className="size-11"
                 onClick={(event) => {
                   event.preventDefault();
                   onSend();
@@ -371,6 +379,7 @@ export function ChatComposer({
                 aria-label={recordLabel}
                 aria-pressed={false}
                 disabled={disabled || recorder.isPreparing}
+                className="size-11"
                 onPointerDown={onPointerDown}
               >
                 <Mic size={16} />

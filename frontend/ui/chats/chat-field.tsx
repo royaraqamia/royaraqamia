@@ -117,9 +117,19 @@ export function ChatField({
         'aria-label': ariaLabel,
         'aria-multiline': 'true',
         dir: 'auto',
+        // A message field is a control, not prose.
+        //
+        // The base sheet sizes every paragraph as body copy
+        // (`--type-body-size`, a fluid 16-18px at 1.6 leading), and that rule
+        // outranks the size this element declares: the field drew 18px/28.8px
+        // while asking for 14px, so it stood 46.8px tall and the paperclip and
+        // the end button — pinned to its foot — read 3.4px low (#1583). The
+        // paragraph inherits the field's own type instead, which keeps one line
+        // on the height the row is built on and lets a new line cost exactly one
+        // line box.
         class: cn(
-          'tiptap outline-none wrap-anywhere whitespace-pre-wrap',
-          compact ? 'min-h-8 text-sm' : 'min-h-10 max-h-32 overflow-y-auto',
+          'tiptap outline-none wrap-anywhere whitespace-pre-wrap [&_p]:[font:inherit]',
+          compact ? 'min-h-8 text-sm' : 'min-h-11 max-h-32 overflow-y-auto',
           className
         ),
       },
@@ -235,7 +245,7 @@ export function ChatField({
   if (!editor) {
     return (
       <div
-        className={cn('animate-pulse rounded-xl bg-muted/30', compact ? 'h-8' : 'h-10', className)}
+        className={cn('animate-pulse rounded-xl bg-muted/30', compact ? 'h-8' : 'h-11', className)}
         aria-hidden="true"
       />
     );
