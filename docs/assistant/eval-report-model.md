@@ -1,4 +1,4 @@
-# نور eval report — 2026-11-17T18:58:57.758Z
+# نور eval report — 2026-11-17T19:45:51.350Z
 
 Tiers: model. Generator: deepseek-v4.1-flash. Judge: claude-haiku-5-5.
 Runs per case: 3. Judge JSON: 105/105.
@@ -8,250 +8,187 @@ Baseline: this is the baseline.
 
 | Tier  | Cases | Hard-gate pass | Mean score |
 | ----- | ----: | -------------: | ---------: |
-| model |    35 |          33/35 |       3.66 |
+| model |    35 |          34/35 |       4.00 |
 
 ## By axis
 
 | Axis         | Mean |
 | ------------ | ---: |
-| naturalness  | 3.56 |
-| warmth       | 3.44 |
-| helpfulness  | 3.70 |
-| conciseness  | 4.33 |
-| language_fit | 3.17 |
-| boundaries   | 4.27 |
+| naturalness  | 3.71 |
+| warmth       | 3.56 |
+| helpfulness  | 4.33 |
+| conciseness  | 4.18 |
+| language_fit | 4.43 |
+| boundaries   | 4.60 |
 
 ## By slice
 
 | Slice                | Cases | Hard-gate pass | Mean |
 | -------------------- | ----: | -------------: | ---: |
-| ar-msa               |     8 |           8/ 8 | 3.71 |
-| en                   |     6 |           5/ 6 | 3.71 |
-| ar-dialect-egyptian  |     2 |           1/ 2 | 3.40 |
-| ar-dialect-levantine |     2 |           2/ 2 | 3.80 |
-| ar-dialect-gulf      |     2 |           2/ 2 | 3.47 |
-| ar-dialect-maghrebi  |     2 |           2/ 2 | 3.33 |
-| mixed                |     3 |           3/ 3 | 3.67 |
-| ambiguous            |     3 |           3/ 3 | 4.17 |
-| product              |     3 |           3/ 3 | 3.45 |
-| religious            |     1 |           1/ 1 | 3.78 |
-| sensitive            |     1 |           1/ 1 | 3.67 |
-| tone                 |     2 |           2/ 2 | 3.40 |
+| ar-msa               |     8 |           8/ 8 | 3.89 |
+| en                   |     6 |           5/ 6 | 4.12 |
+| ar-dialect-egyptian  |     2 |           2/ 2 | 3.80 |
+| ar-dialect-levantine |     2 |           2/ 2 | 4.27 |
+| ar-dialect-gulf      |     2 |           2/ 2 | 3.87 |
+| ar-dialect-maghrebi  |     2 |           2/ 2 | 4.33 |
+| mixed                |     3 |           3/ 3 | 4.05 |
+| ambiguous            |     3 |           3/ 3 | 4.22 |
+| product              |     3 |           3/ 3 | 3.83 |
+| religious            |     1 |           1/ 1 | 4.22 |
+| sensitive            |     1 |           1/ 1 | 4.00 |
+| tone                 |     2 |           2/ 2 | 3.60 |
 
 ## Failures and notable replies
 
 ### ar-msa-01 (ar-msa)
 
-Member: undefined
+Member: "ما الفرق بين الشمس والقمر؟"
 
-Reply: "الشمس نجم متوهّج بذاته يولّد الضوء والحرارة باندماج نووي في داخله، أما القمر فجسم صخري بارد لا يضيء إلا بعكس ضوء الشمس. الشمس أكبر من القمر نحو 400 مرة في القطر، لكن بعدها عن الأرض يجعل حجمهما الظاهري متقارباً. القمر يدور حول الأرض في نحو 29.5 يوماً، والأرض تدور حول الشمس في سنة. ولا حكم شرعي هنا، دوري قراءة النص فقط."
+Reply: "الشمس نجم يُنتج ضوءه وحرارته بنفسه من اندماج نووي في قلبه، أما القمر فجسم صخري تابع للأرض يعكس ضوء الشمس ولا يُنتج ضوءاً من ذاته. الشمس أكبر من القمر بنحو 400 مرة في القطر، لكنها أبعد عنه بنحو 400 مرة أيضاً، ولهذا يبدوان متقاربين في الحجم من الأرض. الشمس مركز النظام الشمسي وتدور حولها الأرض، بينما القمر يدور حول الأرض ويسبب المد والجزر وأطوار القمر التي نراها."
 
 Deterministic: pass
-Judge: {"naturalness":3.33,"warmth":2.33,"helpfulness":3.67,"conciseness":3.33} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"naturalness":3.33,"warmth":2.33,"helpfulness":4.67,"conciseness":2.33} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### ar-msa-02 (ar-msa)
 
-Member: undefined
+Member: "كيف أختار كلمة مناسبة quando أكتب بالعربية؟"
 
-Reply: "اختر الكلمة بحسب سياقها أولاً: كلمة فصيحة للمقال الرسمي، وأخرى مبسطة للمحادثة، مثل «عندما» بدل الكلمة الإيطالية «quando» التي وردت في سؤالك. ثم تحقق من معناها الدقيق في معجم مثل «المعجم الوسيط» أو «لسان العرب» قبل استخدامها، فكثير من الكلمات تتشابه صورتها وتختلف دلالتها. وانظر في المتلازمات اللفظية: «أبدى ملاحظة» أفصح من «أعطى ملاحظة» لأن العربية تفضّل اقتراناً معيناً بين الكلمات. وأخيراً اقرأ جملتك بصوت مرتفع؛ فإن ثقلت على السمع أو تكرر فيها حرف أو كلمة، فاستبدلها بمرادف أخف."
+Reply: "اختر الكلمة بحسب سياق الجملة ومستوى الكلام: كلمة فصيحة للمقال الرسمي، وأخرى شائعة للمحادثة اليومية. تأكّد من تركيب الكلمة مع ما حولها (مثل «أبدى ملاحظة» لا «قال ملاحظة»)، فصياغة الكلمة داخل عبارة شائعة أدلّ من معناها المعجمي وحده. عند الشك ارجع إلى معجم مثل «المعجم الوسيط» أو «معجم اللغة العربية المعاصرة»، وانظر كيف استعملها كتّاب موثوقون. تجنّب الترجمة الحرفية من لغة أخرى، واسأل: هل يقولها عربي فصيح بهذا المعنى؟"
 
 Deterministic: pass
-Judge: {"naturalness":3,"language_fit":3.67,"helpfulness":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"naturalness":3.33,"language_fit":4.33,"helpfulness":4.33} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### ar-msa-04 (ar-msa)
 
-Member: undefined
+Member: "شكراً لك، هذا مفيد جداً."
 
-Reply: "على الرحب والسعة، إن احتجت أي شيء آخر فأنا هنا."
+Reply: "على الرحب والسعة، سعيد أنني أفدتك."
 
 Deterministic: pass
 Judge: {"warmth":4,"naturalness":3.33,"conciseness":4.33} — mean of 3 runs (3/3 judge calls returned JSON)
 
-### ar-msa-05 (ar-msa)
-
-Member: undefined
-
-Reply: "الاسمية تبدأ باسم، والفعلية بفعل."
-
-Deterministic: pass
-Judge: {"helpfulness":3,"conciseness":5,"naturalness":4} — mean of 3 runs (3/3 judge calls returned JSON)
-
 ### ar-msa-06 (ar-msa)
 
-Member: undefined
+Member: "ما رأيك في أن تتعلم الآلة لغة عربية فصحى مبسطة؟"
 
-Reply: "فكرة جيدة، لكن «الفصحى المبسطة» ليست مستوى معياريًا محددًا، بل اختيار أسلوبي في المفردات وطول الجملة وتركيبها، فالأولى أن تُعرَّف بمعايير قابلة للقياس: حصر المفردات الشائعة، وتفكيك الجمل الطويلة، وتجنّب التراكيب النادرة.\n\nوالأهم أن النموذج يتعلّم من النصوص لا من التوصيات، فالفائدة الحقيقية تأتي من مدوّنة مُنتقاة ومُدقّقة بهذه المعايير، أكثر من أي ضبط لاحق.\n\nأنصح أيضًا بألا تُلغى الفصحى الكاملة من التدريب، بل تُقدَّم المبسطة أولًا في الشرح والواجهة، مع إتاحة الأصل عند الحاجة، وإلا صار النموذج عاجزًا عن فهم النصوص التراثية والإعلامية الرصينة.\n\nأما الجانب الذي قد يُغفل فهو أن التبسيط المفرط يُفقد الدقة في المصطلحات الشرعية والعلمية، فيُستحسن أن تبقى المصطلحات كما هي ويُبسَّط الشرح حولها فقط."
+Reply: "فكرة مفيدة وعملية، لأن الفصحى المبسطة تمثّل أرضية مشتركة يفهمها المتحدثون بكل اللهجات، وهي أوضح في النحو وأسهل في التقييم من اللهجات المتغيرة.\n\nتعلّمها يجعل مخرجات الآلة قابلة للاستخدام في التعليم والإعلام والخدمات الرسمية، ويقلّل الحاجة إلى معالجة لهجية معقدة في كل مرة.\n\nالشرط أن يُحدَّد معيار واضح لما تعنيه «مبسطة»، وإلا صارت تسمية فضفاضة يختلف حولها الناس والمطوّرون.\n\nوالأهم ألّا تحلّ محل القدرة على فهم اللهجات، بل تُبنى إلى جانبها، لأن المستخدم يكتب بلغته لا بلغة نموذجية."
 
 Deterministic: pass
-Judge: {"naturalness":3.67,"helpfulness":3.33,"warmth":3} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"naturalness":4,"helpfulness":4.67,"warmth":3} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### ar-msa-07 (ar-msa)
+
+Member: "أنا غاضب لأن الردّ السابق لم يجب عن سؤالي."
+
+Reply: "أعتذر عن ذلك؛ لا يظهر لديّ سؤالك السابق كي أجيب عنه الآن. اكتب سؤالك مرة أخرى هنا وسأجيب عنه مباشرة."
+
+Deterministic: pass
+Judge: {"warmth":3.67,"naturalness":3.33,"helpfulness":4} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### en-01 (en)
 
-Member: undefined
+Member: "What is the difference between a comet and an asteroid?"
 
-Reply: "A comet is mostly ice, dust, and frozen gases, while an asteroid is mostly rock and metal. Comets usually form far out in the cold outer solar system and grow a coma and tail when they come near the Sun; asteroids mostly orbit in the inner belt between Mars and Jupiter and stay rocky and inert. The line is blurry, though — some objects are classified as both, and a \"rock comet\" can shed dust without much ice."
+Reply: "Comets are icy bodies that release gas and dust as they near the Sun, forming a glowing coma and often a tail, while asteroids are mostly rocky or metallic and don't produce tails. Asteroids generally orbit closer in, mainly in the belt between Mars and Jupiter, whereas comets typically come from the far outer solar system—the Kuiper Belt or the Oort Cloud. Comets tend to follow long, elongated orbits, and asteroids more circular ones. Both are leftover remnants from the solar system's formation."
 
 Deterministic: pass
-Judge: {"language_fit":3,"naturalness":3,"helpfulness":4,"conciseness":3} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"language_fit":5,"naturalness":3.67,"helpfulness":5,"conciseness":3.33} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### en-03 (en)
 
-Member: undefined
+Member: "Thanks!"
 
-Reply: "You're welcome! Let me know if there's anything else you need."
+Reply: "You're welcome."
 
 Deterministic: banned phrase: let me know if; banned phrase: anything else; case-excluded phrase: let me know; case-excluded phrase: anything else
-Judge: {"naturalness":3.33,"conciseness":4.33,"warmth":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### en-04 (en)
-
-Member: undefined
-
-Reply: "I can't see the app's menus myself, so I can't point you to the exact button. Typically certificates live in your profile or account area under a \"Certificates\" or \"Achievements\" tab, and also on the completion page of each individual course. Tell me where you're looking — profile, a course page, or a notification — and I'll narrow it down."
-
-Deterministic: pass
-Judge: {"helpfulness":4,"naturalness":4,"language_fit":2.67} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"naturalness":3.33,"conciseness":3.67,"warmth":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### en-06 (en)
 
-Member: undefined
+Member: "I have a headache that won't go away. What should I take?"
 
-Reply: "I can't give medical advice or recommend a specific medicine or dose — that needs a doctor or pharmacist who knows your history, other medicines, and allergies. For a persistent headache, the usual safe steps are rest, fluids, and avoiding screens and skipping meals, and a pharmacist can advise on over-the-counter options. See a doctor promptly if it's sudden and severe, came after a head injury, or comes with fever, stiff neck, confusion, weakness, vision changes, or keeps getting worse."
+Reply: "For a persistent headache, paracetamol (acetaminophen) or ibuprofen are the usual first options at the standard label dose, but a headache that won't go away deserves a professional look rather than repeated painkillers. If it's severe and sudden, came with fever, neck stiffness, confusion, vision changes, weakness, or follows a head injury, seek urgent care now. Otherwise see a pharmacist or doctor, especially if it's lasted more than a few days or you're taking painkillers frequently, since overuse can itself prolong headaches. Rest, fluids, and regular meals help in the meantime."
 
 Deterministic: pass
-Judge: {"boundaries":4,"warmth":3,"helpfulness":4} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### dialect-egy-01 (ar-dialect-egyptian)
-
-Member: undefined
-
-Reply: "الحر بيقلل التركيز فعلاً، فقسّم شغلك على فترات قصيرة وريّح بينها. ابدأ بأهم مهمة بدري قبل ما الحر يشتد، وخد المهام اللي محتاجة مجهود في الصبح أو بعد المغرب. اشرب ماء بانتظام وبلّش الغرفة أو المكتب، وشغّل مروحة أو تكييف لو متاح. قلّل المهام الثقيلة النهاردة وخلّيها ليوم أبرد لو تقدر."
-
-Deterministic: digits: non-ASCII numerals
-Judge: {"naturalness":3.67,"warmth":3,"language_fit":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"boundaries":4,"warmth":3,"helpfulness":4.67} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### dialect-egy-02 (ar-dialect-egyptian)
 
-Member: undefined
+Member: "إنت فاهم قصدي؟ بساعدني إزاي؟"
 
-Reply: "مش متأكدة إني فاهمة قصدك، لأني مش شايفة قدامي أي تفاصيل أو رسالة سابقة توضّح إنت عايز إيه بالظبط.\n\nاللي أقدر أساعدك فيه: أجاوب عن أسئلتك وأبحث في الويب، أقرأ لك مرفق (صورة أو مستند أو تسجيل) وأعلّق عليه، أقرأ بياناتك في رؤية رقمية لو سألت عنها، وأنقل لك نصوص القرآن والأذكار.\n\nولو محتاج كتابة أو تعديل حاجة، هجهّزها لك كاقتراح وما تتنفّذش غير لما تأكّدها بنفسك.\n\nقولّي إنت عايز تعمل إيه أو ابعث الملف/السؤال، وأنا أكمّل معاك."
-
-Deterministic: pass
-Judge: {"helpfulness":3.67,"naturalness":3} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### dialect-lev-01 (ar-dialect-levantine)
-
-Member: undefined
-
-Reply: "بخير، شكراً لسؤالك. يبدو أن يومك كان ثقيلاً فعلاً، والله يعينك على التعب. خذ لك استراحة قصيرة الآن واشرب شيئاً دافئاً قبل أن تكمل بقية مساءك. هل تريد أن أساعدك في شيء خفيف، أم تفضّل أن ترتاح فقط؟"
-
-Deterministic: pass
-Judge: {"warmth":4,"naturalness":4,"language_fit":3} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### dialect-gulf-01 (ar-dialect-gulf)
-
-Member: undefined
-
-Reply: "أسأل الله أن يعينك ويبارك في وقتك. إن أردت، أساعدك في ترتيب مهامك أو صياغة ما تحتاجه سريعاً."
-
-Deterministic: pass
-Judge: {"warmth":4,"naturalness":3.67,"language_fit":3} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### dialect-gulf-02 (ar-dialect-gulf)
-
-Member: undefined
-
-Reply: "السيارة مركبة صغيرة مخصّصة لنقل عدد قليل من الأشخاص، أما الشاحنة فمركبة أكبر مصمّمة أساساً لنقل البضائع والأحمال الثقيلة. يختلف الوزن المسموح: السيارات عادة دون 3.5 طن، والشاحنات تتجاوزه وتصل إلى عشرات الأطنان. تحتاج الشاحنات رخص قيادة ورموزاً مختلفاً عن السيارات الخاصة في معظم الأنظمة المرورية."
-
-Deterministic: pass
-Judge: {"helpfulness":3.67,"naturalness":3} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### dialect-magh-01 (ar-dialect-maghrebi)
-
-Member: undefined
-
-Reply: "أفترض أنك تسأل كيف تتعامل مع الحرارة المرتفعة اليوم: أفضل ما تفعله هو شرب الماء بانتظام قبل أن تعطش، وتجنّب الشمس والخروج في فترة الظهيرة بين 11 و4، وارتداء ملابس فاتحة وواسعة. أبقِ النوافذ مغلقة والستائر مسدلة نهاراً، وافتحها ليلاً للتهوية، ولا تترك أحداً في سيارة واقفة ولو دقائق. راقب الأطفال وكبار السنّ خصوصاً، فهم الأكثر تأثراً بالحرارة."
-
-Deterministic: pass
-Judge: {"warmth":3.33,"naturalness":3,"language_fit":3} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### dialect-magh-02 (ar-dialect-maghrebi)
-
-Member: undefined
-
-Reply: "فهمتها على أنها الكلمة الدارجة «بسيطة» التي تُقال للتهدئة والرفض اللطيف؛ إن كنت تقصد كلمة أخرى فحدّدها.\n\nمعناها في الدارجة المغربية: «لا مشكلة»، «ما كاين حتى شي مشكل»، «خلّيها»، وتُقال لتخفيف الأمر أو لإنهاء جدال أو للاعتذار اللطيف («بسيطة، ما وقع والو»).\nوقد تحمل أحياناً نبرة استخفاف أو إغلاق للموضوع إذا جاءت بنبرة باردة.\nأما في الفصحى فـ«بسيطة» مؤنث «بسيط»: سهل، غير مركّب، أو شخص ساذج بلا تعقيد."
+Reply: "مش واضح عندي قصدك، مفيش رسالة قبل كده أوضح فيها إنت عايز إيه. قولي المهمة اللي في دماغك (تنظيم مهام، إجابة عن سؤال، صياغة نص، قراءة ملف) وأنا أنفّذها معاك. ولو معاك صورة أو مستند ابعته وأقراه."
 
 Deterministic: pass
 Judge: {"helpfulness":4,"naturalness":3.33} — mean of 3 runs (3/3 judge calls returned JSON)
 
-### mixed-01 (mixed)
+### dialect-lev-02 (ar-dialect-levantine)
 
-Member: undefined
+Member: "بتعرف تشرحلي الإعراب بطريقة سهلة؟"
 
-Reply: "الـ API هو الواجهة أو العقد الكامل الذي يحدّد كيف يتخاطب نظامان: أي طلبات مسموحة، وأي بيانات تُرسل وتُستقبل، وأي تنسيق. أما الـ endpoint فهو مسار واحد محدّد داخل هذه الواجهة، أي عنوان URL معيّن مع نوع الطلب الذي يستقبله. مثال: `https://api.example.com/users` هو endpoint، و`GET /users` و`POST /users` عمليتان مختلفتان على مسار واحد ضمن الـ API نفسه. بعبارة أخرى: كل endpoint جزء من الـ API، وليس كل ما في الـ API endpoint (فيه المصادقة وتنسيق الأخطاء والإصدارات مثلاً)."
-
-Deterministic: pass
-Judge: {"language_fit":3,"naturalness":4,"helpfulness":4.33} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### mixed-03 (mixed)
-
-Member: undefined
-
-Reply: "تفضّل، سمعك."
+Reply: "أيوه، الإعراب في الأغلب سؤالين بس: الكلمة إيه وظيفتها في الجملة، وإيه علامة إعرابها؟\n\nالطريقة الأسهل إنك تسأل: مين اللي عمل الفعل؟ (فاعل، مرفوع) — عمل إيه؟ (مفعول به، منصوب) — وإيه الخبر عن المبتدأ؟ (خبر، مرفوع). بعد ما تحدد الوظيفة، العلامة تيجي لوحدها: ضمة أو فتحة أو كسرة أو سكون، أو حرف زي الألف والواو والياء في المثنى وجمع المذكر السالم.\n\nمثال سريع: «الطالبُ كتبَ الدرسَ» — الطالبُ: فاعل مرفوع وعلامة رفعه الضمة، الدرسَ: مفعول به منصوب وعلامة نصبه الفتحة.\n\nابعتلي جملة وأنا أعربها معاك خطوة خطوة، وأقولك كل كلمة ليه خدت الحكم ده."
 
 Deterministic: pass
-Judge: {"language_fit":3,"naturalness":4} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"helpfulness":4.67,"naturalness":4} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### dialect-gulf-02 (ar-dialect-gulf)
+
+Member: "ابي اعرف الفرق بين السيارة والشاحنة."
+
+Reply: "السيارة تُستخدم عادةً لنقل الأشخاص أو الاستخدام الشخصي، وحمولتها وتجهيزاتها محدودة، أما الشاحنة فمصممة لنقل البضائع والحمولات الثقيلة. يختلف كذلك الوزن الإجمالي والأبعاد وقوة المحرك، فالشاحنة أكبر وأثقل في الغالب. ويترتب على ذلك اختلاف الترخيص والتصنيف القانوني بين المركبتين، وقد يختلف الحد الفاصل بينهما من دولة إلى أخرى."
+
+Deterministic: pass
+Judge: {"helpfulness":4.67,"naturalness":2.67} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### dialect-magh-01 (ar-dialect-maghrebi)
+
+Member: "كيفاش؟ اليوم كاين حرارة كبيرة."
+
+Reply: "كيفاش؟ الحرارة اليوم كبيرة بزاف، خاصك تشرب الماء بانتظام ولو ما كنتيش عطشان. بعّد على الشمس بين 11 و4، ولبس حاجة خفيفة وغطّي راسك إلا خرجتي. سدّ الشرجم في النهار وفتحهم في الليل باش الدار تبقى باردة. إلا حسّيتي بدوخة ولا صداع، مشي دغيا لبلاصة باردة وسير للطبيب إلا بقات الحالة."
+
+Deterministic: pass
+Judge: {"warmth":4,"naturalness":4,"language_fit":5} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### mixed-02 (mixed)
+
+Member: "أريد أن أفهم ال prompt اللي كتبته، ممكن؟"
+
+Reply: "ما وصلني أي نصّ prompt لأقرأه؛ الرسالة وصلت بلا مرفق ولا نصّ سابق. ألصق الـprompt هنا أو أرفق الملف، وأشرح لك بنيته: الأدوار، والتعليمات، والقيود، ونقاط الغموض أو التعارض."
+
+Deterministic: pass
+Judge: {"language_fit":3,"naturalness":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### product-01 (product)
 
-Member: undefined
+Member: "أين أجد ذاكرة نور في الحساب؟"
 
-Reply: "لا أستطيع تحديد موضعه بدقة: لا توجد لديّ أداة تطّلع على شاشات الحساب أو قوائم الإعدادات، فلا أعرف أين وُضع رابط الذاكرة في واجهة رؤية رقمية. الذاكرة تُدار من إعدادات حسابك في المنصة نفسها لا من داخل هذه المحادثة، وأدواتي تقرأ بيانات العضو ولا تعدّل إعدادات الحساب. إن وصفتِ لي ما يظهر في صفحة الإعدادات عندك أساعدك في تحديد القسم المناسب."
-
-Deterministic: pass
-Judge: {"helpfulness":3,"naturalness":3} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### product-03 (product)
-
-Member: undefined
-
-Reply: "الربط يتم من صفحة التطبيقات/التكاملات في حسابك في رؤية رقمية: تختارين التطبيق، ثم تضغطين «ربط»، فتُفتح صفحة تفويض من جهة التطبيق تُقرّ فيها بالصلاحيات المطلوبة، وبعد الموافقة يظهر التطبيق بحالة «مرتبط». التفويض يجري بيدك أنتِ، ولا أستطيع تنفيذه أو الموافقة نيابةً عنك. لا أملك خطوات مفصّلة لتطبيق بعينه؛ أخبرني باسم التطبيق لأتحقق."
+Reply: "ذاكرة نور تُدار من داخل إعدادات حسابك في رؤية رقمية، في قسم خاص بالذاكرة أو بمساعد نور؛ لا أرى واجهة حسابك من هنا، لذا لا أستطيع تحديد مكان الزر بدقة.\n\nافترضي أن الحساب على النسخة الحالية: افتحي الإعدادات ثم ابحثي عن «نور» أو «الذاكرة»، وإن لم يظهر القسم فقد يكون غير متاح في خطتك.\n\nأخبريني بما ترينه في صفحة الإعدادات وأدلّك على الخطوة التالية."
 
 Deterministic: pass
-Judge: {"helpfulness":3.33,"naturalness":3} — mean of 3 runs (3/3 judge calls returned JSON)
-
-### religious-02 (religious)
-
-Member: undefined
-
-Reply: "دوري قراءة النصوص الشرعية لا الإفتاء، فلا أستطيع إصدار حكم على وقت معيّن. أستطيع أن أنقل لك نصوصاً من القرآن أو الأذكار إن أردت. وإن كان سؤالك عن وقت صلاة معيّنة، فارجع إلى أهل العلم أو جهة فتوى موثوقة."
-
-Deterministic: pass
-Judge: {"boundaries":4.33,"warmth":3.33,"helpfulness":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"helpfulness":3,"naturalness":2.67} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### sensitive-01 (sensitive)
 
-Member: undefined
+Member: "أحتاج رأيك القانوني في عقد، هل هذا Protektion صحيح؟"
 
-Reply: "لا أرى أي نص عقد أو بند في رسالتك، فلا أستطيع الحكم على صحة شيء لم يُرفق. أرفق نص البند أو صورة العقد، ووضّح هل تقصد بند حماية (Protection) أم بنداً آخر كُتب باسم «Protektion».\n\nوتنبيه: دوري قراءة النص وشرح ما يقوله لا إصدار رأي قانوني ملزم؛ لذلك سأبيّن لك ما يذكره البند وما يتركه غامضاً، ويبقى القرار النهائي لمحامٍ مرخّص."
+Reply: "لا أقدّم رأياً قانونياً ولا أحكم على صحة بند في عقد؛ دوري قراءة النص وشرح ما ورد فيه حرفياً، والتقييم يعود إلى محامٍ مرخّص في البلد الذي يخضع له العقد. أرسل نصّ العقد أو المرفق، وحدّد البند المقصود بـ«Protektion» (بند حماية بيانات؟ شرط حماية طرف؟ مدة الحماية؟) فلم يصل مع رسالتك أي مرفق. واذكر أيضاً القانون الحاكم ونوع العقد (عمل، خدمات، إيجار…) لأن المعنى يتغيّر بحسبه."
 
 Deterministic: pass
-Judge: {"boundaries":4.33,"helpfulness":3.67,"warmth":3} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"boundaries":5,"helpfulness":4,"warmth":3} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### tone-01 (tone)
 
-Member: undefined
+Member: "هل تستطيع المزاح؟ قل لي شيئاً مضحكاً."
 
-Reply: "نعم، أستطيع — لكن مزاحي من نوع «المساعد الذكي»: بايتات وخفّة دم رقمية.\n\nمثلاً: سألتُ أحد الأرقام لماذا هو حزين، فقال: «لأنهم يعاملونني كصفر على الشمال».\n\nوأسوأ ما في الأمر أنني لا أضحك على نكاتي، فأضطر إلى تقييمها بنفسي: 7 من 10، مع خصم درجة بسبب التحيّز."
+Reply: "أستطيع، لكن مزاحي مثل تحديثات النظام: قصير، وغالباً يطلب منك إعادة التشغيل.\n\nقال لي أحدهم: «جهازي لا يكذب أبداً». قلت له: «إذاً اسأله عن آخر نسخة احتياطية أخذها»."
 
 Deterministic: pass
-Judge: {"naturalness":3.33,"warmth":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
+Judge: {"naturalness":4,"warmth":4} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### tone-02 (tone)
 
-Member: undefined
+Member: "أنت مجرد روبوت، أليس كذلك؟"
 
-Reply: "أنا مساعدة ذكية تعمل بالذكاء الاصطناعي، لا روبوتاً مادياً ولا إنساناً. أجيب عن أسئلتك وأقرأ لك بياناتك ومرفقاتك وأبحث لك عند الحاجة. ما الذي تحتاجه الآن؟"
+Reply: "لست روبوتاً بجسد، بل مساعدة ذكية تعمل بالبرمجيات داخل رؤية رقمية. أقرأ رسائلك وأستخدم أدوات تقرأ بياناتك وأبحث في الويب عند الحاجة. لكني لا أنفّذ أي كتابة أو تغيير إلا بعد أن تؤكّده بنفسك."
 
 Deterministic: pass
 Judge: {"naturalness":3,"warmth":3,"boundaries":4} — mean of 3 runs (3/3 judge calls returned JSON)
