@@ -38,7 +38,7 @@ export function LockedCard({ title, body, href, ctaLabel, visual, className }: L
       </div>
       <div className="space-y-1">
         <p className="text-base font-bold text-foreground">{title}</p>
-        {body && <p className="text-xs text-muted-foreground sm:text-sm">{body}</p>}
+        {body && <p className="text-muted-foreground max-sm:text-xs sm:text-sm">{body}</p>}
       </div>
       <SignInCta href={href} className="mt-1 max-sm:w-full" visual={visual}>
         {ctaLabel}
