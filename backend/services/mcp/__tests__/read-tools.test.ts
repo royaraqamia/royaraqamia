@@ -67,6 +67,7 @@ describe('profile tools', () => {
           id: 'u1',
           email: 'user@example.com',
           name: 'Test User',
+          username: 'testuser',
           avatar_url: null,
           bio: 'Hello',
           is_admin: false,
@@ -79,6 +80,7 @@ describe('profile tools', () => {
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent?.email).toBe('user@example.com');
     expect(result.structuredContent?.name).toBe('Test User');
+    expect(result.structuredContent?.username).toBe('testuser');
   });
 
   it('getProfileHandler rejects when profile.read scope is missing', async () => {

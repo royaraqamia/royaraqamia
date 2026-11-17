@@ -5,7 +5,12 @@ import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from '../constants';
 import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { registerSystemTools } from './system';
-import { registerCommunityTools, registerCommunityWriteTools } from './blogpress';
+import {
+  registerCommunityTools,
+  registerCommunityWriteTools,
+  registerCommunityEngagementTools,
+  registerCommunityEngagementWriteTools,
+} from './blogpress';
 import { registerLinkSnapTools, registerLinkSnapWriteTools } from './linksnap';
 import { registerSpendTrackTools, registerSpendTrackWriteTools } from './spendtrack';
 import { registerHabitFlowTools, registerHabitFlowWriteTools } from './habitflow';
@@ -87,6 +92,8 @@ export function createMcpServer(ctx: McpUserContext): McpServer {
   registerSystemTools(server, ctx);
   registerCommunityTools(server, ctx);
   registerCommunityWriteTools(writes, ctx);
+  registerCommunityEngagementTools(server, ctx);
+  registerCommunityEngagementWriteTools(writes, ctx);
   registerLinkSnapTools(server, ctx);
   registerLinkSnapWriteTools(writes, ctx);
   registerSpendTrackTools(server, ctx);

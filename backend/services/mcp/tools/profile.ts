@@ -42,6 +42,7 @@ export async function getProfileHandler(
       id: profile.id,
       email: profile.email,
       name: profile.name,
+      username: profile.username,
       avatar_url: profile.avatar_url,
       bio: profile.bio,
       is_admin: profile.is_admin,
@@ -55,6 +56,7 @@ export async function getProfileHandler(
       '# Your Profile',
       '',
       `- **Name**: ${profile.name ?? 'â€”'}`,
+      `- **Username**: ${profile.username}`,
       `- **Email**: ${profile.email}`,
       `- **Bio**: ${profile.bio ?? 'â€”'}`,
     ];
@@ -69,12 +71,12 @@ export function registerProfileTools(server: McpServer, ctx: McpUserContext): vo
     mcpCapabilityName('account.get'),
     {
       title: 'Get Profile',
-      description: `Returns your profile: name, email, bio, avatar, and admin flag. Requires the "profile.read" scope and an authenticated session.
+      description: `Returns your profile: name, username, email, bio, and avatar. Requires the "profile.read" scope and an authenticated session.
 
 Args:
   - format ('markdown' | 'json', default 'markdown'): output format
 
-Returns (JSON): { "id": string, "email": string, "name": string|null, "avatar_url": string|null, "bio": string|null, "is_admin": boolean }
+Returns (JSON): { "id": string, "email": string, "name": string|null, "username": string, "avatar_url": string|null, "bio": string|null, "is_admin": boolean }
 
 Examples:
   - Use when: "what is my profile"`,
