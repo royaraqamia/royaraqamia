@@ -228,18 +228,19 @@ All code merged into this repository MUST satisfy the following standards.
 
 Security is enforced at every stage. The following gates are **required** in CI and block merge if any fails:
 
-| Gate                   | Tool / Practice                                                         | Blocking            |
-| ---------------------- | ----------------------------------------------------------------------- | ------------------- |
-| Lint & type check      | ESLint + `tsc --noEmit` (already in `package.json`)                     | Yes                 |
-| Static analysis (SAST) | ESLint security rules (e.g. `eslint-plugin-security`) and GitHub CodeQL | Yes                 |
-| Secrets scan           | gitleaks / TruffleHog / GitHub secret scanning                          | Yes                 |
-| Dependency audit       | `npm audit` + Dependabot alerts                                         | Yes (high/critical) |
-| RLS policy check       | Test asserting RLS is enabled on public tables                          | Yes                 |
-| CORS/CSP check         | Test asserting allowed origins & CSP directives                         | Yes                 |
-| Tests                  | Vitest unit + Playwright e2e                                            | Yes                 |
-| Build                  | `next build`                                                            | Yes                 |
+| Gate                   | Tool / Practice                                                         | Blocking                       |
+| ---------------------- | ----------------------------------------------------------------------- | ------------------------------ |
+| Lint & type check      | ESLint + `tsc --noEmit` (already in `package.json`)                     | Yes                            |
+| Static analysis (SAST) | ESLint security rules (e.g. `eslint-plugin-security`) and GitHub CodeQL | Yes                            |
+| Secrets scan           | gitleaks / TruffleHog / GitHub secret scanning                          | Yes                            |
+| Dependency audit       | `npm audit` + reachability policy (`security/audit-exceptions.json`)    | Yes (unexcepted high/critical) |
+| RLS policy check       | Test asserting RLS is enabled on public tables                          | Yes                            |
+| CORS/CSP check         | Test asserting allowed origins & CSP directives                         | Yes                            |
+| Tests                  | Vitest unit + Playwright e2e                                            | Yes                            |
+| Build                  | `next build`                                                            | Yes                            |
 
-- `npm audit` is run on every release; high/critical findings are triaged to zero before deploy.
+- `npm audit` gates every push and pull request on production dependencies (`npm run audit:deps -- --scope=production`); weekly scheduled runs also audit the full tree (`--scope=all`).
+- A high/critical finding blocks unless it is accepted in `security/audit-exceptions.json`: an exception names the advisory, the owner, the reason it is not reachable from a request path, an upstream tracking link and an expiry of at most one year. An expired or incomplete entry fails the gate, so an accepted risk is re-checked rather than forgotten (ADR-0207). Never silence an advisory by force-downgrading a dependency or pinning it to a version that merely hides the finding.
 - PRs touching auth, payments, data handling, or storage require a **security-aware reviewer** in addition to a functional reviewer.
 - Every production deployment is traceable to a commit hash (Vercel deploys) for incident correlation.
 
@@ -298,7 +299,7 @@ This is **not** a type-check bypass: the authoritative type gate is **`tsc --noE
 
 - **Header audit:** run the production domain through `https://securityheaders.com` after each release; grade must be **A or better** for `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and HSTS.
 - **TLS check:** verify TLS 1.2+/1.3 and certificate health (e.g. `SSL Labs`) on every certificate renewal and before major releases.
-- **Dependency sweep:** `npm audit` at least weekly via Dependabot; triage high/critical to zero before any release.
+- **Dependency sweep:** `npm audit` at least weekly via Dependabot; every high/critical finding is fixed or carries a current, documented exception before any release.
 - **Secret re-scan:** run the history scan (`git log --all`) quarterly and after any suspected leak.
 - **Access review:** quarterly review of who has admin access across GitHub, Vercel, Supabase, Sentry, Upstash, and Resend; remove inactive accounts.
 - **This policy** is reviewed and versioned at least **every 6 months**; changes are tracked in Git history.
