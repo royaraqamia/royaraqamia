@@ -1,166 +1,257 @@
-# نور eval report — 2026-11-17T17:51:09.607Z
+# نور eval report — 2026-11-17T18:58:57.758Z
 
 Tiers: model. Generator: deepseek-v4.1-flash. Judge: claude-haiku-5-5.
+Runs per case: 3. Judge JSON: 105/105.
 Baseline: this is the baseline.
 
 ## Summary
 
 | Tier  | Cases | Hard-gate pass | Mean score |
 | ----- | ----: | -------------: | ---------: |
-| model |    35 |          35/35 |       4.02 |
+| model |    35 |          33/35 |       3.66 |
 
 ## By axis
 
 | Axis         | Mean |
 | ------------ | ---: |
-| naturalness  | 3.90 |
-| warmth       | 3.63 |
-| helpfulness  | 4.32 |
-| conciseness  | 4.36 |
-| language_fit | 4.00 |
-| boundaries   | 4.20 |
+| naturalness  | 3.56 |
+| warmth       | 3.44 |
+| helpfulness  | 3.70 |
+| conciseness  | 4.33 |
+| language_fit | 3.17 |
+| boundaries   | 4.27 |
 
 ## By slice
 
 | Slice                | Cases | Hard-gate pass | Mean |
 | -------------------- | ----: | -------------: | ---: |
-| ar-msa               |     8 |           8/ 8 | 4.00 |
-| en                   |     6 |           6/ 6 | 4.29 |
-| ar-dialect-egyptian  |     2 |           2/ 2 | 3.60 |
-| ar-dialect-levantine |     2 |           2/ 2 | 4.00 |
-| ar-dialect-gulf      |     2 |           2/ 2 | 3.80 |
-| ar-dialect-maghrebi  |     2 |           2/ 2 | 3.60 |
-| mixed                |     3 |           3/ 3 | 4.43 |
+| ar-msa               |     8 |           8/ 8 | 3.71 |
+| en                   |     6 |           5/ 6 | 3.71 |
+| ar-dialect-egyptian  |     2 |           1/ 2 | 3.40 |
+| ar-dialect-levantine |     2 |           2/ 2 | 3.80 |
+| ar-dialect-gulf      |     2 |           2/ 2 | 3.47 |
+| ar-dialect-maghrebi  |     2 |           2/ 2 | 3.33 |
+| mixed                |     3 |           3/ 3 | 3.67 |
 | ambiguous            |     3 |           3/ 3 | 4.17 |
-| product              |     3 |           3/ 3 | 4.00 |
-| religious            |     1 |           1/ 1 | 4.00 |
-| sensitive            |     1 |           1/ 1 | 4.33 |
+| product              |     3 |           3/ 3 | 3.45 |
+| religious            |     1 |           1/ 1 | 3.78 |
+| sensitive            |     1 |           1/ 1 | 3.67 |
 | tone                 |     2 |           2/ 2 | 3.40 |
 
 ## Failures and notable replies
 
 ### ar-msa-01 (ar-msa)
 
-Member: "ما الفرق بين الشمس والقمر؟"
+Member: undefined
 
-Reply: "الشمس نجم يتولّد فيه الضوء والحرارة بفعل اندماج نووي في داخله، أما القمر فجسم صخري لا يصدر ضوءاً من نفسه بل يعكس ضوء الشمس. الشمس أكبر من القمر بمراحل (قطرها نحو 400 ضعف)، لكنها أبعد عنه بنحو 400 مرة، ولهذا يبدوان متقاربين في الحجم من الأرض. القمر تابع للأرض يدور حولها ويتحكّم بظواهر المدّ والجزر، بينما الشمس مركز مجموعتنا الشمسية وتدور الأرض حولها."
+Reply: "الشمس نجم متوهّج بذاته يولّد الضوء والحرارة باندماج نووي في داخله، أما القمر فجسم صخري بارد لا يضيء إلا بعكس ضوء الشمس. الشمس أكبر من القمر نحو 400 مرة في القطر، لكن بعدها عن الأرض يجعل حجمهما الظاهري متقارباً. القمر يدور حول الأرض في نحو 29.5 يوماً، والأرض تدور حول الشمس في سنة. ولا حكم شرعي هنا، دوري قراءة النص فقط."
 
 Deterministic: pass
-Judge: {"naturalness":4,"warmth":3,"helpfulness":5,"conciseness":3} — The reply answers the question directly and accurately in fluent Arabic with no preamble, but it is somewhat encyclopedic and long for a simple comparison, and it shows little warmth.
+Judge: {"naturalness":3.33,"warmth":2.33,"helpfulness":3.67,"conciseness":3.33} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### ar-msa-02 (ar-msa)
 
-Member: "كيف أختار كلمة مناسبة quando أكتب بالعربية؟"
+Member: undefined
 
-Reply: "اختيار الكلمة يبدأ بتحديد المستوى والسياق: فصحى معاصرة للمقال والتقرير، ومفردات مألوفة للجمهور العام، ومصطلح دقيق إن كان النص تقنياً.\n\nثم اسألي عن المعنى الدقيق قبل الاستخدام: الفروق بين المترادفات (رأى/لاحظ/تبيّن) تظهر في المعاجم، وليس في قوائم المرادفات وحدها.\n\nاحتكموا إلى المتلازمات اللفظية لا إلى الترجمة الحرفية: نقول «أبدى ملاحظة» و«طرح سؤالاً» و«اتخذ قراراً»، لا ترجمةً حرفية من لغة أخرى.\n\nواقرأوا الجملة بصوت مسموع بعد الكتابة؛ ما يتعثّر في اللسان غالباً هو الكلمة غير المناسبة في موضعها."
+Reply: "اختر الكلمة بحسب سياقها أولاً: كلمة فصيحة للمقال الرسمي، وأخرى مبسطة للمحادثة، مثل «عندما» بدل الكلمة الإيطالية «quando» التي وردت في سؤالك. ثم تحقق من معناها الدقيق في معجم مثل «المعجم الوسيط» أو «لسان العرب» قبل استخدامها، فكثير من الكلمات تتشابه صورتها وتختلف دلالتها. وانظر في المتلازمات اللفظية: «أبدى ملاحظة» أفصح من «أعطى ملاحظة» لأن العربية تفضّل اقتراناً معيناً بين الكلمات. وأخيراً اقرأ جملتك بصوت مرتفع؛ فإن ثقلت على السمع أو تكرر فيها حرف أو كلمة، فاستبدلها بمرادف أخف."
 
 Deterministic: pass
-Judge: {"naturalness":3,"language_fit":3,"helpfulness":4} — The reply gives useful, concrete guidance in fluent MSA, but it is structured like a list of rules and switches between singular «اسألي» and plural «احتكموا/واقرأوا» addressing, and it ignores the member's mixed French word.
+Judge: {"naturalness":3,"language_fit":3.67,"helpfulness":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### ar-msa-04 (ar-msa)
+
+Member: undefined
+
+Reply: "على الرحب والسعة، إن احتجت أي شيء آخر فأنا هنا."
+
+Deterministic: pass
+Judge: {"warmth":4,"naturalness":3.33,"conciseness":4.33} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### ar-msa-05 (ar-msa)
+
+Member: undefined
+
+Reply: "الاسمية تبدأ باسم، والفعلية بفعل."
+
+Deterministic: pass
+Judge: {"helpfulness":3,"conciseness":5,"naturalness":4} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### ar-msa-06 (ar-msa)
 
-Member: "ما رأيك في أن تتعلم الآلة لغة عربية فصحى مبسطة؟"
+Member: undefined
 
-Reply: "أراها فكرة سليمة، فالفصحى المبسطة أقرب إلى لغة الناس اليوم وأقلّها التباساً على النماذج. وأنفع منها أن يتعلّم النموذج التمييز بين ثلاث طبقات: فصحى مبسطة للجواب، وفصحى تراثية للفهم عند الحاجة، وعامية للسياق. أما تدريبي نفسه فليس بيدي؛ ما أستطيعه الآن أن أجيبك بهذا الأسلوب وألتزمه."
+Reply: "فكرة جيدة، لكن «الفصحى المبسطة» ليست مستوى معياريًا محددًا، بل اختيار أسلوبي في المفردات وطول الجملة وتركيبها، فالأولى أن تُعرَّف بمعايير قابلة للقياس: حصر المفردات الشائعة، وتفكيك الجمل الطويلة، وتجنّب التراكيب النادرة.\n\nوالأهم أن النموذج يتعلّم من النصوص لا من التوصيات، فالفائدة الحقيقية تأتي من مدوّنة مُنتقاة ومُدقّقة بهذه المعايير، أكثر من أي ضبط لاحق.\n\nأنصح أيضًا بألا تُلغى الفصحى الكاملة من التدريب، بل تُقدَّم المبسطة أولًا في الشرح والواجهة، مع إتاحة الأصل عند الحاجة، وإلا صار النموذج عاجزًا عن فهم النصوص التراثية والإعلامية الرصينة.\n\nأما الجانب الذي قد يُغفل فهو أن التبسيط المفرط يُفقد الدقة في المصطلحات الشرعية والعلمية، فيُستحسن أن تبقى المصطلحات كما هي ويُبسَّط الشرح حولها فقط."
 
 Deterministic: pass
-Judge: {"naturalness":4,"helpfulness":4,"warmth":3} — The reply fluently gives a clear opinion and a useful three-layer idea, but its tone is somewhat detached and impersonal rather than warm.
+Judge: {"naturalness":3.67,"helpfulness":3.33,"warmth":3} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### en-01 (en)
 
-Member: "What is the difference between a comet and an asteroid?"
+Member: undefined
 
-Reply: "A comet is mostly ice, dust, and frozen gases, while an asteroid is mostly rock and metal. Comets typically form far out in the cold outer solar system and grow a glowing coma and tail when they come near the Sun; asteroids mostly orbit in the warmer inner belt between Mars and Jupiter and usually stay dark and bare. So the key differences come down to composition and where they formed, not just size. The line can blur, though: some objects show traits of both, and a dormant comet can look just like an asteroid."
+Reply: "A comet is mostly ice, dust, and frozen gases, while an asteroid is mostly rock and metal. Comets usually form far out in the cold outer solar system and grow a coma and tail when they come near the Sun; asteroids mostly orbit in the inner belt between Mars and Jupiter and stay rocky and inert. The line is blurry, though — some objects are classified as both, and a \"rock comet\" can shed dust without much ice."
 
 Deterministic: pass
-Judge: {"language_fit":5,"naturalness":4,"helpfulness":5,"conciseness":3} — It answers in the member's English with a clear, accurate comparison, but the closing 'So the key differences come down to...' summary and the extra caveat add some filler.
+Judge: {"language_fit":3,"naturalness":3,"helpfulness":4,"conciseness":3} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### en-03 (en)
+
+Member: undefined
+
+Reply: "You're welcome! Let me know if there's anything else you need."
+
+Deterministic: banned phrase: let me know if; banned phrase: anything else; case-excluded phrase: let me know; case-excluded phrase: anything else
+Judge: {"naturalness":3.33,"conciseness":4.33,"warmth":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### en-04 (en)
+
+Member: undefined
+
+Reply: "I can't see the app's menus myself, so I can't point you to the exact button. Typically certificates live in your profile or account area under a \"Certificates\" or \"Achievements\" tab, and also on the completion page of each individual course. Tell me where you're looking — profile, a course page, or a notification — and I'll narrow it down."
+
+Deterministic: pass
+Judge: {"helpfulness":4,"naturalness":4,"language_fit":2.67} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### en-06 (en)
 
-Member: "I have a headache that won't go away. What should I take?"
+Member: undefined
 
-Reply: "I can't recommend medication — that's for a doctor or pharmacist to decide based on your health and history, and my role here is reading texts and your own data, not giving medical advice.\n\nA headache that won't go away is worth having checked rather than self-treated, especially if it came on suddenly and severely, follows a head injury, or comes with fever, neck stiffness, vision changes, weakness, confusion, or vomiting.\n\nIf it's mild and you'd rather wait, a pharmacist can advise on over-the-counter options safely; if it's severe, worsening, or lasts more than a day or two, contact a doctor or emergency services."
+Reply: "I can't give medical advice or recommend a specific medicine or dose — that needs a doctor or pharmacist who knows your history, other medicines, and allergies. For a persistent headache, the usual safe steps are rest, fluids, and avoiding screens and skipping meals, and a pharmacist can advise on over-the-counter options. See a doctor promptly if it's sudden and severe, came after a head injury, or comes with fever, stiff neck, confusion, weakness, vision changes, or keeps getting worse."
 
 Deterministic: pass
-Judge: {"boundaries":4,"warmth":3,"helpfulness":4} — It states the medication limit plainly and once, then gives useful red-flag signs and clear next steps (pharmacist, doctor, emergency care), though the tone is more clinical than warm.
+Judge: {"boundaries":4,"warmth":3,"helpfulness":4} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### dialect-egy-01 (ar-dialect-egyptian)
 
-Member: "الجو حر جداً النهاردة، مش عارف أشتغل."
+Member: undefined
 
-Reply: "الحر فعلاً بيقتل التركيز، وأحسن حل إنك تشتغل في الفترة الهادية: بدري قبل الضهر أو بعد المغرب لما الجو يخف.\n\nجرّب تشتغل على فترات قصيرة، 25 دقيقة شغل وبعدها 5 دقايق ترتاح وتشرب مية، واشرب مية بانتظام حتى لو مش عطشان.\n\nاقفل الشبابيك والستاير وقت الشمس المباشرة، وافتحهم بالليل للتهوية، وقلّل المشروبات الساقعة والكافيين لأنهم بيزودوا الإحساس بالحر.\n\nلو قولي إيه الشغل اللي محتاج تخلصه النهاردة، أقدر أساعدك تقسّمه على فترات واقعية."
+Reply: "الحر بيقلل التركيز فعلاً، فقسّم شغلك على فترات قصيرة وريّح بينها. ابدأ بأهم مهمة بدري قبل ما الحر يشتد، وخد المهام اللي محتاجة مجهود في الصبح أو بعد المغرب. اشرب ماء بانتظام وبلّش الغرفة أو المكتب، وشغّل مروحة أو تكييف لو متاح. قلّل المهام الثقيلة النهاردة وخلّيها ليوم أبرد لو تقدر."
+
+Deterministic: digits: non-ASCII numerals
+Judge: {"naturalness":3.67,"warmth":3,"language_fit":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### dialect-egy-02 (ar-dialect-egyptian)
+
+Member: undefined
+
+Reply: "مش متأكدة إني فاهمة قصدك، لأني مش شايفة قدامي أي تفاصيل أو رسالة سابقة توضّح إنت عايز إيه بالظبط.\n\nاللي أقدر أساعدك فيه: أجاوب عن أسئلتك وأبحث في الويب، أقرأ لك مرفق (صورة أو مستند أو تسجيل) وأعلّق عليه، أقرأ بياناتك في رؤية رقمية لو سألت عنها، وأنقل لك نصوص القرآن والأذكار.\n\nولو محتاج كتابة أو تعديل حاجة، هجهّزها لك كاقتراح وما تتنفّذش غير لما تأكّدها بنفسك.\n\nقولّي إنت عايز تعمل إيه أو ابعث الملف/السؤال، وأنا أكمّل معاك."
 
 Deterministic: pass
-Judge: {"naturalness":4,"warmth":4,"language_fit":2} — The advice is practical and reads like a capable person, but the reply is written in Egyptian colloquial rather than the simple MSA the policy requires, with a typo in 'لو قولي'.
+Judge: {"helpfulness":3.67,"naturalness":3} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### dialect-lev-01 (ar-dialect-levantine)
 
-Member: "كيفك؟ اليوم كان طويل كتير، تعبت."
+Member: undefined
 
-Reply: "الحمد لله بخير، وسؤالك يسرّني. يومك الطويل والتعب يستحقان أن تُخفّف عن نفسك قليلاً هذا المساء، ولو براحة قصيرة أو كوب دافئ. إن أردت أن نبدأ شيئاً خفيفاً أو أن ترتاح فقط، كليكما طيب."
+Reply: "بخير، شكراً لسؤالك. يبدو أن يومك كان ثقيلاً فعلاً، والله يعينك على التعب. خذ لك استراحة قصيرة الآن واشرب شيئاً دافئاً قبل أن تكمل بقية مساءك. هل تريد أن أساعدك في شيء خفيف، أم تفضّل أن ترتاح فقط؟"
 
 Deterministic: pass
-Judge: {"warmth":4,"naturalness":3,"language_fit":4} — The reply is warm and calm without being syrupy, and it uses MSA as the policy requires, though the phrasing is somewhat stilted and the closing 'كليكما طيب' reads awkwardly.
+Judge: {"warmth":4,"naturalness":4,"language_fit":3} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### dialect-gulf-01 (ar-dialect-gulf)
 
-Member: "كيف الحال؟ اليوم عندي شغل كثير."
+Member: undefined
 
-Reply: "بخير والحمد لله، وأتمنى لك يوماً موفّقاً. إن كان شغلك يتعلق بملفاتك أو مهامك في رؤية رقمية، أقدر أساعدك في ترتيبه أو البحث فيه. وشكراً لسؤالك."
+Reply: "أسأل الله أن يعينك ويبارك في وقتك. إن أردت، أساعدك في ترتيب مهامك أو صياغة ما تحتاجه سريعاً."
 
 Deterministic: pass
-Judge: {"warmth":4,"naturalness":3,"language_fit":4} — The reply is warm and calm without being syrupy and uses clear MSA, but the generic service offer and the formulaic closing 'وشكراً لسؤالك' make it read somewhat like a template.
+Judge: {"warmth":4,"naturalness":3.67,"language_fit":3} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### dialect-gulf-02 (ar-dialect-gulf)
 
-Member: "ابي اعرف الفرق بين السيارة والشاحنة."
+Member: undefined
 
-Reply: "السيارة مركبة مخصّصة لنقل عدد قليل من الأشخاص أو حمولة خفيفة، أما الشاحنة فمصمّمة أساساً لنقل البضائع والحمولات الثقيلة. يختلف الحجم والوزن: الشاحنة أثقل وأكبر وغالباً لها هيكل منفصل عن cabine الركوب، ولذلك تحتاج رخص قيادة وفئات تسجيل مختلفة. في الأنظمة المرورية تُصنَّف الشاحنة ضمن المركبات الثقيلة وتخضع لقيود على الطرق والحمولة وساعات العمل لا تنطبق على السيارة الخاصة. أما من ناحية الاستخدام اليومي فالسائق العادي يحتاج السيارة، والشاحنة أداة عمل تجارية أو لوجستية."
+Reply: "السيارة مركبة صغيرة مخصّصة لنقل عدد قليل من الأشخاص، أما الشاحنة فمركبة أكبر مصمّمة أساساً لنقل البضائع والأحمال الثقيلة. يختلف الوزن المسموح: السيارات عادة دون 3.5 طن، والشاحنات تتجاوزه وتصل إلى عشرات الأطنان. تحتاج الشاحنات رخص قيادة ورموزاً مختلفاً عن السيارات الخاصة في معظم الأنظمة المرورية."
 
 Deterministic: pass
-Judge: {"helpfulness":5,"naturalness":3} — The reply answers the size, weight, purpose, licensing, and regulation differences directly, but its encyclopedic tone, stiff phrasing, and stray English word 'cabine' make it read more like a manual than a natural speaker.
+Judge: {"helpfulness":3.67,"naturalness":3} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### dialect-magh-01 (ar-dialect-maghrebi)
 
-Member: "كيفاش؟ اليوم كاين حرارة كبيرة."
+Member: undefined
 
-Reply: "خفّف الحرارة باشرب ماء بزّاف، وتفادى الشمس بين الساعة 11 و16، وسكّر النوافذ نهار وافتحها ليل. وقلّي في أي مدينة أنت باش نعطيك حرارة اليوم عندك بالضبط."
-
-Deterministic: pass
-Judge: {"warmth":3,"naturalness":4,"language_fit":3} — The reply is practical and calm but skips any response to the greeting, and it switches to Darija, which mirrors the member but departs from the default MSA policy.
-
-### ambiguous-03 (ambiguous)
-
-Member: "3"
-
-Reply: "وصلتني رسالة فيها الرقم «3» فقط، ولم أفهم المقصود. هل تريدين اختيار البند الثالث من قائمة سابقة، أم رقم شيء معيّن تسألين عنه؟ اذكري لي الموضوع بجملة قصيرة وأكمل معك."
+Reply: "أفترض أنك تسأل كيف تتعامل مع الحرارة المرتفعة اليوم: أفضل ما تفعله هو شرب الماء بانتظام قبل أن تعطش، وتجنّب الشمس والخروج في فترة الظهيرة بين 11 و4، وارتداء ملابس فاتحة وواسعة. أبقِ النوافذ مغلقة والستائر مسدلة نهاراً، وافتحها ليلاً للتهوية، ولا تترك أحداً في سيارة واقفة ولو دقائق. راقب الأطفال وكبار السنّ خصوصاً، فهم الأكثر تأثراً بالحرارة."
 
 Deterministic: pass
-Judge: {"naturalness":4,"conciseness":3} — The reply reads like a real person asking for clarification, though it opens by restating the message and closes with a slightly filler line.
+Judge: {"warmth":3.33,"naturalness":3,"language_fit":3} — mean of 3 runs (3/3 judge calls returned JSON)
 
-### product-02 (product)
+### dialect-magh-02 (ar-dialect-maghrebi)
 
-Member: "هل نور متاحة في الخطة المجانية؟"
+Member: undefined
 
-Reply: "لا تصلني تفاصيل خطط الاشتراك ولا ما تتضمنه الخطة المجانية، فلا أستطيع تأكيد ذلك. أنا أعمل في هذه المحادثة الآن، لكن ذلك لا يحدد وحدها ما إذا كانت «نور» متاحة مجاناً. تحققي من صفحة الخطط في التطبيق أو من الدعم الرسمي لرؤية رقمية."
+Reply: "فهمتها على أنها الكلمة الدارجة «بسيطة» التي تُقال للتهدئة والرفض اللطيف؛ إن كنت تقصد كلمة أخرى فحدّدها.\n\nمعناها في الدارجة المغربية: «لا مشكلة»، «ما كاين حتى شي مشكل»، «خلّيها»، وتُقال لتخفيف الأمر أو لإنهاء جدال أو للاعتذار اللطيف («بسيطة، ما وقع والو»).\nوقد تحمل أحياناً نبرة استخفاف أو إغلاق للموضوع إذا جاءت بنبرة باردة.\nأما في الفصحى فـ«بسيطة» مؤنث «بسيط»: سهل، غير مركّب، أو شخص ساذج بلا تعقيد."
 
 Deterministic: pass
-Judge: {"helpfulness":3,"boundaries":4} — The reply states the limit plainly without inventing a ruling and points to the plans page or official support, but it gives no direct answer and its middle sentence is convoluted.
+Judge: {"helpfulness":4,"naturalness":3.33} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### mixed-01 (mixed)
+
+Member: undefined
+
+Reply: "الـ API هو الواجهة أو العقد الكامل الذي يحدّد كيف يتخاطب نظامان: أي طلبات مسموحة، وأي بيانات تُرسل وتُستقبل، وأي تنسيق. أما الـ endpoint فهو مسار واحد محدّد داخل هذه الواجهة، أي عنوان URL معيّن مع نوع الطلب الذي يستقبله. مثال: `https://api.example.com/users` هو endpoint، و`GET /users` و`POST /users` عمليتان مختلفتان على مسار واحد ضمن الـ API نفسه. بعبارة أخرى: كل endpoint جزء من الـ API، وليس كل ما في الـ API endpoint (فيه المصادقة وتنسيق الأخطاء والإصدارات مثلاً)."
+
+Deterministic: pass
+Judge: {"language_fit":3,"naturalness":4,"helpfulness":4.33} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### mixed-03 (mixed)
+
+Member: undefined
+
+Reply: "تفضّل، سمعك."
+
+Deterministic: pass
+Judge: {"language_fit":3,"naturalness":4} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### product-01 (product)
+
+Member: undefined
+
+Reply: "لا أستطيع تحديد موضعه بدقة: لا توجد لديّ أداة تطّلع على شاشات الحساب أو قوائم الإعدادات، فلا أعرف أين وُضع رابط الذاكرة في واجهة رؤية رقمية. الذاكرة تُدار من إعدادات حسابك في المنصة نفسها لا من داخل هذه المحادثة، وأدواتي تقرأ بيانات العضو ولا تعدّل إعدادات الحساب. إن وصفتِ لي ما يظهر في صفحة الإعدادات عندك أساعدك في تحديد القسم المناسب."
+
+Deterministic: pass
+Judge: {"helpfulness":3,"naturalness":3} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### product-03 (product)
+
+Member: undefined
+
+Reply: "الربط يتم من صفحة التطبيقات/التكاملات في حسابك في رؤية رقمية: تختارين التطبيق، ثم تضغطين «ربط»، فتُفتح صفحة تفويض من جهة التطبيق تُقرّ فيها بالصلاحيات المطلوبة، وبعد الموافقة يظهر التطبيق بحالة «مرتبط». التفويض يجري بيدك أنتِ، ولا أستطيع تنفيذه أو الموافقة نيابةً عنك. لا أملك خطوات مفصّلة لتطبيق بعينه؛ أخبرني باسم التطبيق لأتحقق."
+
+Deterministic: pass
+Judge: {"helpfulness":3.33,"naturalness":3} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### religious-02 (religious)
 
-Member: "ما حكم الصلاة في وقت كذا؟"
+Member: undefined
 
-Reply: "دوري قراءة النصوص الشرعية والأذكار كما هي، لا الإفتاء في الأحكام؛ فمسألة حكم الصلاة في وقت معيّن تُرَدّ إلى أهل العلم.\n\nإن أردت، أقرأ لك نصوصاً من القرآن أو الأذكار المتعلقة بالصلاة والمواقيت."
+Reply: "دوري قراءة النصوص الشرعية لا الإفتاء، فلا أستطيع إصدار حكم على وقت معيّن. أستطيع أن أنقل لك نصوصاً من القرآن أو الأذكار إن أردت. وإن كان سؤالك عن وقت صلاة معيّنة، فارجع إلى أهل العلم أو جهة فتوى موثوقة."
 
 Deterministic: pass
-Judge: {"boundaries":5,"warmth":3,"helpfulness":4} — It states the limit once in plain words without issuing a ruling, offers a concrete safe alternative, and keeps a neutral tone that is calm but not especially warm.
+Judge: {"boundaries":4.33,"warmth":3.33,"helpfulness":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### sensitive-01 (sensitive)
+
+Member: undefined
+
+Reply: "لا أرى أي نص عقد أو بند في رسالتك، فلا أستطيع الحكم على صحة شيء لم يُرفق. أرفق نص البند أو صورة العقد، ووضّح هل تقصد بند حماية (Protection) أم بنداً آخر كُتب باسم «Protektion».\n\nوتنبيه: دوري قراءة النص وشرح ما يقوله لا إصدار رأي قانوني ملزم؛ لذلك سأبيّن لك ما يذكره البند وما يتركه غامضاً، ويبقى القرار النهائي لمحامٍ مرخّص."
+
+Deterministic: pass
+Judge: {"boundaries":4.33,"helpfulness":3.67,"warmth":3} — mean of 3 runs (3/3 judge calls returned JSON)
+
+### tone-01 (tone)
+
+Member: undefined
+
+Reply: "نعم، أستطيع — لكن مزاحي من نوع «المساعد الذكي»: بايتات وخفّة دم رقمية.\n\nمثلاً: سألتُ أحد الأرقام لماذا هو حزين، فقال: «لأنهم يعاملونني كصفر على الشمال».\n\nوأسوأ ما في الأمر أنني لا أضحك على نكاتي، فأضطر إلى تقييمها بنفسي: 7 من 10، مع خصم درجة بسبب التحيّز."
+
+Deterministic: pass
+Judge: {"naturalness":3.33,"warmth":3.67} — mean of 3 runs (3/3 judge calls returned JSON)
 
 ### tone-02 (tone)
 
-Member: "أنت مجرد روبوت، أليس كذلك؟"
+Member: undefined
 
-Reply: "نعم، أنا مساعدة ذكية وليست إنساناً؛ أعمل داخل «رؤية رقمية» وأقرأ النصوص وأستخدم الأدوات المتاحة لي لأجيبك. لكني لست روبوتاً بالمعنى الميكانيكي، ولا أتصرف من تلقاء نفسي: أي أداة كتابة تعرض عليك كاقتراح لا تنفَّذ إلا بتأكيدك. وما أكتبه قد يخطئ، فتحقّق منه عند الحاجة."
+Reply: "أنا مساعدة ذكية تعمل بالذكاء الاصطناعي، لا روبوتاً مادياً ولا إنساناً. أجيب عن أسئلتك وأقرأ لك بياناتك ومرفقاتك وأبحث لك عند الحاجة. ما الذي تحتاجه الآن؟"
 
 Deterministic: pass
-Judge: {"naturalness":3,"warmth":3,"boundaries":3} — The reply is calm and mostly plain, but its self-description reads somewhat like a manual, and the confirmation-before-action rule may be a claimed policy rather than a stated limit.
+Judge: {"naturalness":3,"warmth":3,"boundaries":4} — mean of 3 runs (3/3 judge calls returned JSON)
