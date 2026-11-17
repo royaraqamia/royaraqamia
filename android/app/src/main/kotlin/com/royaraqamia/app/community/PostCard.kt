@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.royaraqamia.app.contracts.generated.CommunityIndexResponsePostsItem
 import com.royaraqamia.app.contracts.generated.PostEngagementBatchItemsItem
-import com.royaraqamia.app.plans.PlanDates
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
@@ -53,7 +52,7 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
  * member's profile: the same cover, the same publisher chip, the same clamped
  * body, the same footer. What it prints is derived, never retyped — the body and
  * the label come from [PostText] (the site's `stripMarkdown`/`postExcerpt`), the
- * date from [PlanDates] (the site's Umm al-Qura sentence), and every word from
+ * age from [PostTime] (the site's relative sentence), and every word from
  * the generated [PostCardCopy].
  *
  * A post has no title (the product is a social feed, not a blog), so the body is
@@ -267,8 +266,8 @@ private fun CardFooter(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             post.published_at?.let { published ->
-                Text(
-                    text = PlanDates.label(published),
+                PostTime(
+                    iso = published,
                     style = type.xs.copy(fontWeight = FontWeight.Medium),
                     color = RoyColors.mutedForeground,
                 )

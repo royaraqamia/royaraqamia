@@ -1,0 +1,44 @@
+{
+  "surface": "community",
+  "component": "post-time",
+  "web": {
+    "file": "app/community/_components/post-time-copy.ts",
+    "export": "POST_TIME_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/community/PostTimeCopy.kt",
+    "object": "PostTimeCopy"
+  },
+  "notes": {
+    "source": "The feed card and the thread carry the same age sentence (#1580): the site rendered it from `shared/relative-time.ts`, which builds it with `Intl.RelativeTimeFormat`, and the app had no way to reproduce ICU Arabic without retyping it, so it printed the Hijri date instead. The sentence is copy now, on both clients, and the clock is still `relativeTimeParts` - one ladder, one set of words. `PlanDates` keeps the Hijri date where the page prints one (`PostFacts` on the post screen).",
+    "placeholders": "The counted forms carry `{count}`; each client substitutes the rounded count with grouping, because `Intl` writes a thousand years as `1,000`. The singular, dual and `auto` forms (`أمس`, `الأسبوع الماضي`) carry no count at all, because Arabic says them with a word rather than a number.",
+    "grammar": "Arabic picks a form by count: one, two, 3-10 (`few`), 11-99 (`many`), and 100+ (`other`). Months, days and weeks cannot reach every form on this ladder - a month is 1-12, a week 1-4, a day 1-6 - so the copy carries the forms each unit can print and no others.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `post-time.tsx` does not render. `shared/__tests__/relative-time.test.ts` sweeps the copy against `formatRelativeTime`, so a wording this file gets wrong is a red test rather than two clients that disagree."
+  },
+  "strings": {
+    "now": "الآن",
+    "minuteOne": "قبل دقيقة واحدة",
+    "minuteTwo": "قبل دقيقتين",
+    "minuteFew": "قبل {count} دقائق",
+    "minuteMany": "قبل {count} دقيقة",
+    "hourOne": "قبل ساعة واحدة",
+    "hourTwo": "قبل ساعتين",
+    "hourFew": "قبل {count} ساعات",
+    "hourMany": "قبل {count} ساعة",
+    "dayOne": "أمس",
+    "dayTwo": "أول أمس",
+    "dayFew": "قبل {count} أيام",
+    "weekOne": "الأسبوع الماضي",
+    "weekTwo": "قبل أسبوعين",
+    "weekFew": "قبل {count} أسابيع",
+    "monthOne": "الشهر الماضي",
+    "monthTwo": "قبل شهرين",
+    "monthFew": "قبل {count} أشهر",
+    "monthMany": "قبل {count} شهرًا",
+    "yearOne": "السنة الماضية",
+    "yearTwo": "قبل سنتين",
+    "yearFew": "قبل {count} سنوات",
+    "yearMany": "قبل {count} سنة",
+    "yearOther": "قبل {count} سنة"
+  }
+}

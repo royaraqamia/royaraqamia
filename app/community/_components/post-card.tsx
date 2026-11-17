@@ -8,10 +8,10 @@ import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { PostViews } from '@/frontend/ui/shared/post-views';
 import { postExcerpt, stripMarkdown } from '@/shared/reading-time';
-import { formatRelativeTime } from '@/shared/relative-time';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { POST_CARD_COPY } from './post-card-copy';
 import { PostActionBar } from './post-action-bar';
+import { PostTime } from './post-time';
 
 interface PostCardProps {
   post: PostSummary;
@@ -120,11 +120,7 @@ export function PostCard({ post, index, showPinned = false }: PostCardProps) {
           className="-mx-6 -mb-6 mt-6 bg-muted/20 px-6 pb-2.5 pt-3 sm:-mx-7 sm:-mb-7 sm:px-7"
         >
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
-            {post.published_at && (
-              <time dateTime={post.published_at} className="font-medium">
-                {formatRelativeTime(post.published_at)}
-              </time>
-            )}
+            {post.published_at && <PostTime iso={post.published_at} className="font-medium" />}
             {post.published_at && post.view_count > 0 && (
               <span aria-hidden="true" className="opacity-40">
                 ·
