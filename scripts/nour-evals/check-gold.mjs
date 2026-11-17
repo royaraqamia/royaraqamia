@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as prettier from 'prettier';
 import { arg } from './lib.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -23,14 +24,20 @@ const byId = new Map(report.tiers.flatMap((tier) => tier.cases).map((c) => [c.id
 const missing = gold.cases.filter((entry) => !byId.has(entry.id)).map((entry) => entry.id);
 if (missing.length) throw new Error(`gold cases missing from report: ${missing.join(', ')}`);
 
+const advisory = new Set(gold.advisoryAxes ?? []);
 const axes = {};
 const lines = [
   '# Judge vs gold set',
   '',
   `${gold.cases.length} labelled replies · ${gold.labelledBy}`,
   '',
-  '| Axis | n | MAE | within 1 point |',
-  '| --- | ---: | ---: | ---: |',
+  `**${gold.status ?? 'calibration only'}**`,
+  '',
+  '> These are fixed replies from the pre-dialect-B baseline. They calibrate the',
+  '> judge on known text; they are not the current product behaviour.',
+  '',
+  '| Axis | n | MAE | within 1 point | Gate |',
+  '| --- | ---: | ---: | ---: | --- |',
 ];
 let totalError = 0;
 let totalCount = 0;
@@ -40,10 +47,12 @@ for (const entry of gold.cases) {
     const score = byId.get(entry.id).judge.scores[axis];
     if (typeof score !== 'number') continue;
     const error = Math.abs(score - label);
-    const stat = (axes[axis] ??= { n: 0, error: 0, close: 0 });
+    const stat = (axes[axis] ??= { n: 0, error: 0, close: 0, advisory: advisory.has(axis) });
     stat.n += 1;
     stat.error += error;
     stat.close += error <= 1 ? 1 : 0;
+    // Advisory axes are reported, but their error never enters the gate number.
+    if (stat.advisory) continue;
     totalError += error;
     totalCount += 1;
     totalClose += error <= 1 ? 1 : 0;
@@ -51,12 +60,12 @@ for (const entry of gold.cases) {
 }
 for (const [axis, stat] of Object.entries(axes)) {
   lines.push(
-    `| ${axis} | ${stat.n} | ${(stat.error / stat.n).toFixed(2)} | ${Math.round((stat.close / stat.n) * 100)}% |`
+    `| ${axis} | ${stat.n} | ${(stat.error / stat.n).toFixed(2)} | ${Math.round((stat.close / stat.n) * 100)}% | ${stat.advisory ? 'advisory' : 'yes'} |`
   );
 }
 lines.push(
   '',
-  `Overall: MAE ${(totalError / totalCount).toFixed(2)}, within 1 point ${Math.round((totalClose / totalCount) * 100)}%.`,
+  `Calibrated axes only: MAE ${(totalError / totalCount).toFixed(2)}, within 1 point ${Math.round((totalClose / totalCount) * 100)}%.`,
   ''
 );
 
@@ -74,7 +83,7 @@ for (const entry of gateDisagreements) {
 lines.push('', '## Label provenance', '', gold.note, gold.labelledBy, '');
 
 const out = resolve(root, 'docs/assistant/gold-agreement.md');
-writeFileSync(out, `${lines.join('\n')}\n`);
+writeFileSync(out, await prettier.format(`${lines.join('\n')}\n`, { parser: 'markdown' }));
 process.stdout.write(`gold agreement: ${out}\n`);
 process.stdout.write(
   `MAE ${(totalError / totalCount).toFixed(2)} · within-1 ${Math.round((totalClose / totalCount) * 100)}%\n`

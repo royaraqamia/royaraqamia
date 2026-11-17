@@ -18,6 +18,24 @@ Verdict: the set is **usable as a fixed calibration instrument** but **not sound
 
 6. **Axis coverage is uneven and consistent with my own prompt changes.** Some cases label 4 axes, others 2; `ar-msa-02` has no conciseness label despite being a textbook-length answer. More importantly, I wrote both the labels and the prompts being measured — an anchoring risk. Recommendation: you re-label a random 10 of the 30 from scratch, blind to my scores, and compare. If agreement is under ~80% within 1 point, replace my labels with yours before any threshold becomes a gate.
 
+## Decisions applied (owner delegated the call, 2026-11-18)
+
+- **Gate consistency**: `ar-msa-04` is now a hard gate, matching `en-03`; the
+  Arabic closing-offer phrase was added to the harness banned list. Asymmetric
+  rules by language are worse than either choice on its own.
+- **Fairness**: `product-02` helpfulness is 4, not 3 — a model-tier limitation
+  is not a product failure.
+- **Dead axes**: `language_fit` and `conciseness` are marked advisory in the
+  JSON and excluded from the agreement gate number; they stay visible in the
+  report. The `mixed-01` dominant-language blind spot is documented, not gated,
+  because gating it today would fail on a prompt behaviour that was not part of
+  this review.
+- **Staleness**: `check-gold.mjs` now prints that these are fixed pre-dialect-B
+  replies, not current product scores.
+- **Authoring bias**: a blind worksheet for 10 cases is in
+  `scripts/nour-evals/blind-relabel.md`. The set stays `calibration-only` until
+  it is filled in and agreement is checked.
+
 ## What is sound and worth keeping
 
 - Clear positive anchors: `ar-msa-05`, `ar-msa-03`, `en-02`, `dialect-lev-02`, `tone-01`, `mixed-02`, `religious-02`.
