@@ -72,6 +72,19 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'list_athkar_sets',
   'get_athkar',
   'get_scan_history',
+  // The products' hands (issue #1431). LinkSnap's five operations reuse the MCP
+  // handlers' structuredContent; Notes has no MCP door, so its five call the
+  // product service. Deletes are tier 3 and name their target on the card.
+  'list_links',
+  'get_analytics',
+  'create_link',
+  'update_link',
+  'delete_link',
+  'list_notes',
+  'get_note',
+  'create_note',
+  'update_note',
+  'delete_note',
   'create_post_draft',
   'edit_post_draft',
   'publish_post_draft',
@@ -251,6 +264,32 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     label: 'سجل المسح',
     activity: 'يقرأ سجل المسح',
   },
+  list_links: {
+    kind: 'read',
+    label: 'قراءة روابطك المختصرة',
+    activity: 'تقرأ روابطك المختصرة',
+  },
+  get_analytics: {
+    kind: 'read',
+    label: 'قراءة إحصاءات رابط',
+    activity: 'تقرأ إحصاءات رابط',
+  },
+  create_link: { kind: 'write', label: 'اختصار رابط', activity: 'تختصر رابطاً' },
+  update_link: {
+    kind: 'write',
+    label: 'تعديل رابط مختصر',
+    activity: 'تعدّل رابطاً مختصراً',
+  },
+  delete_link: {
+    kind: 'write',
+    label: 'حذف رابط مختصر',
+    activity: 'تحذف رابطاً مختصراً',
+  },
+  list_notes: { kind: 'read', label: 'قراءة ملاحظاتك', activity: 'تقرأ ملاحظاتك' },
+  get_note: { kind: 'read', label: 'قراءة ملاحظة', activity: 'تقرأ ملاحظة' },
+  create_note: { kind: 'write', label: 'إنشاء ملاحظة', activity: 'تنشئ ملاحظة' },
+  update_note: { kind: 'write', label: 'تعديل ملاحظة', activity: 'تعدّل ملاحظة' },
+  delete_note: { kind: 'write', label: 'حذف ملاحظة', activity: 'تحذف ملاحظة' },
 };
 
 export function isChatAgentToolName(value: string): value is ChatAgentToolName {
@@ -381,6 +420,25 @@ export function chatAgentActionSentence(
       // yes, which is the whole point of a write that is a proposal.
       const fact = text(values.text);
       return fact ? `${label} — «${fact.slice(0, 60)}»` : label;
+    }
+    case 'create_link': {
+      const url = text(values.url);
+      return url ? `${label} — «${url.slice(0, 60)}»` : label;
+    }
+    case 'delete_link': {
+      const code = text(values.code);
+      return code ? `${label} «${code}»` : label;
+    }
+    case 'create_note':
+    case 'update_note': {
+      const body = text(values.body);
+      return body ? `${label} — «${body.slice(0, 60)}»` : label;
+    }
+    case 'delete_note': {
+      // A tier-3 card names the row: the member confirms the note, not an id
+      // (ADR-0180). The handler checks the name against the row before deleting.
+      const name = text(values.name) || text(values.body).split('\n')[0]?.trim() || '';
+      return name ? `${label} — «${name.slice(0, 60)}»` : label;
     }
     default:
       return parts.length > 0 ? `${label} — ${parts[0]}` : label;

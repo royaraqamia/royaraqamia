@@ -13,7 +13,7 @@ that reads `Turn + MCP` is the same operation reached two ways.
 a read is always tier 0 and runs inside the turn; a write is above it, and
 tier 2 or 3 is always a card. Every write's tier is in the table below.
 
-**72 capabilities** (40 read, 32 write): 36 declared by the turn, 37 by the MCP server.
+**77 capabilities** (42 read, 35 write): 46 declared by the turn, 37 by the MCP server.
 
 | Product | Reads | Writes | Turn | MCP |
 | --- | --- | --- | --- | --- |
@@ -22,10 +22,10 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | `scan` | 1 | 0 | 1 | 0 |
 | `quran` | 4 | 0 | 4 | 0 |
 | `athkar` | 2 | 0 | 2 | 0 |
-| `linksnap` | 2 | 3 | 0 | 5 |
+| `linksnap` | 2 | 3 | 5 | 5 |
 | `habitflow` | 3 | 5 | 3 | 6 |
 | `spendtrack` | 5 | 7 | 3 | 9 |
-| `notes` | 0 | 0 | 0 | 0 |
+| `notes` | 2 | 3 | 5 | 0 |
 | `community` | 4 | 8 | 5 | 7 |
 | `account` | 2 | 3 | 3 | 2 |
 | `certificates` | 5 | 3 | 1 | 7 |
@@ -87,11 +87,11 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
-| `linksnap.list_links` | read | 0 | MCP |
-| `linksnap.get_analytics` | read | 0 | MCP |
-| `linksnap.create_link` | write | 1 | MCP |
-| `linksnap.update_link` | write | 1 | MCP |
-| `linksnap.delete_link` | write | 3 | MCP |
+| `linksnap.list_links` | read | 0 | Turn + MCP |
+| `linksnap.get_analytics` | read | 0 | Turn + MCP |
+| `linksnap.create_link` | write | 1 | Turn + MCP |
+| `linksnap.update_link` | write | 1 | Turn + MCP |
+| `linksnap.delete_link` | write | 3 | Turn + MCP |
 
 ## `habitflow`
 
@@ -129,7 +129,15 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 
 ## `notes`
 
-No capability on either door yet.
+2 read, 3 write.
+
+| Capability | Kind | Tier | Doors |
+| --- | --- | --- | --- |
+| `notes.list_notes` | read | 0 | Turn |
+| `notes.get_note` | read | 0 | Turn |
+| `notes.create_note` | write | 1 | Turn |
+| `notes.update_note` | write | 1 | Turn |
+| `notes.delete_note` | write | 3 | Turn |
 
 ## `community`
 

@@ -10,7 +10,9 @@ import { createPublicConsultationService } from '@/backend/config/consultation';
 import { createDefaultTrainingApplicationService } from '@/backend/config/training';
 import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
 import { createProfileService } from '@/backend/config/users';
-import { createUsageService } from '@/backend/config/plans';
+import { createUsageService, createPlanGate } from '@/backend/config/plans';
+import { createNotesService } from '@/backend/config/notes';
+import { resolveOrigin } from '@/backend/config/origin';
 import { createAgentMemoryFor } from '@/backend/config/agent-memory';
 import { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/backend/config/news';
 import { createRatesService } from '@/backend/config/rates';
@@ -33,6 +35,17 @@ import type { CapabilityOwner, ToolTier } from '@/backend/services/tools/registr
 import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 import { toPublicCertificate } from '@/shared/contracts/certificates';
 import { PostSlugSchema } from '@/shared/contracts/community';
+import { NOTE_BODY_MAX, normalizeNoteBody } from '@/shared/contracts/notes';
+import { OWNED_ITEMS } from '@/shared/contracts/plans';
+import {
+  createLinkHandler,
+  deleteLinkHandler,
+  getAnalyticsHandler,
+  listLinksHandler,
+  updateLinkHandler,
+} from '@/backend/services/mcp/tools/linksnap';
+import type { ToolResult } from '@/backend/services/mcp/tools/tool-utils';
+import type { McpUserContext } from '@/backend/services/mcp/session';
 import { COURSE_SLUGS } from '@/shared/contracts/training';
 import {
   NEWS_CATEGORIES,
@@ -295,6 +308,110 @@ const SearchWebArgs = z.strictObject({
     .min(WEB_SEARCH_QUERY_MIN, 'الاستعلام قصير جداً')
     .max(WEB_SEARCH_QUERY_MAX, 'الاستعلام طويل جداً'),
 });
+
+/**
+ * LinkSnap and Notes hands (issue #1431). Every schema is strict: the member's
+ * id comes from the session, never from a model-written argument. The LinkSnap
+ * arguments mirror the MCP handlers' own shapes so one call serves both doors.
+ */
+const LinkCode = z
+  .string()
+  .trim()
+  .min(1, 'رمز الرابط مطلوب')
+  .max(16, 'رمز الرابط طويل جداً')
+  .regex(/^[A-Za-z0-9_-]+$/, 'رمز الرابط غير صالح');
+
+const LinkUrl = z.string().trim().url('الرابط غير صالح').max(2_000, 'الرابط طويل جداً');
+
+const ListLinksArgs = z.strictObject({
+  limit: z.number().int().min(1).max(100).optional(),
+  offset: z.number().int().min(0).optional(),
+});
+
+const LinkAnalyticsArgs = z.strictObject({
+  code: LinkCode,
+  days: z.number().int().min(1).max(366).optional(),
+});
+
+const CreateLinkArgs = z.strictObject({
+  url: LinkUrl,
+  code: LinkCode.optional(),
+  expires_at: z.string().datetime().optional(),
+  password: z.string().min(1, 'كلمة المرور مطلوبة').max(200).optional(),
+});
+
+const UpdateLinkArgs = z.strictObject({
+  code: LinkCode,
+  new_code: LinkCode.optional(),
+  url: LinkUrl.optional(),
+  expires_at: z.string().datetime().nullable().optional(),
+  password: z.string().min(1).max(200).nullable().optional(),
+});
+
+const DeleteLinkArgs = z.strictObject({ code: LinkCode });
+
+const NoteIdArgs = z.strictObject({
+  id: z.string().uuid('معرّف الملاحظة غير صالح'),
+});
+
+const ListNotesArgs = z.strictObject({
+  limit: z.number().int().min(1).max(50).optional(),
+});
+
+const NoteBody = z.string().trim().min(1, 'اكتب نصّ الملاحظة').max(NOTE_BODY_MAX, 'النصّ طويل جداً');
+
+const CreateNoteArgs = z.strictObject({ body: NoteBody });
+
+const UpdateNoteArgs = z.strictObject({ id: NoteIdArgs.shape.id, body: NoteBody });
+
+const DeleteNoteArgs = z.strictObject({
+  id: NoteIdArgs.shape.id,
+  // The name the card shows must be the name of the row the hand will delete.
+  name: z.string().trim().min(1, 'اسم الملاحظة مطلوب').max(120),
+});
+
+/**
+ * The assistant's call into an existing MCP handler. The turn is already the
+ * member: the only thing the MCP door adds is a scope check, so the context
+ * carries the scope this operation needs and nothing else (ADR-0183's amendment).
+ */
+function linkSnapContext(
+  context: ChatAgentToolContext,
+  scope: 'linksnap.read' | 'linksnap.write'
+): McpUserContext {
+  return {
+    userId: context.userId,
+    email: null,
+    isAdmin: false,
+    scopes: [scope],
+    clientId: null,
+    tokenExpiresAt: null,
+    supabase: context.supabase as never,
+  };
+}
+
+/** The domain value beside the markdown: never parse the handler's rendering. */
+function linkSnapAnswer(result: ToolResult, failure: string): Record<string, unknown> {
+  if (result.isError || !result.structuredContent) return { error: failure };
+  return result.structuredContent;
+}
+
+function shortLinkUrl(code: string): string {
+  return `${resolveOrigin().replace(/\/+$/, '')}/${code}`;
+}
+
+/** The name a note is listed under: its first non-empty line, Markdown markers gone (ADR-0110). */
+function noteName(body: string, max = 120): string {
+  for (const line of body.split('\n')) {
+    const plain = line
+      .trim()
+      .replace(/^#{1,6}\s*/, '')
+      .trim();
+    if (!plain) continue;
+    return plain.length > max ? `${plain.slice(0, max).trimEnd()}…` : plain;
+  }
+  return '';
+}
 
 /** The Damascus calendar day, which is the day every meter in the app resets on. */
 function damascusToday(now: Date = new Date()): string {
@@ -903,6 +1020,100 @@ const tools: ChatAgentTool[] = [
     },
   },
   {
+    name: 'list_links',
+    kind: 'read',
+    product: 'linksnap',
+    tier: 0,
+    description:
+      'روابط العضو المختصرة في LinkSnap: رمز كل رابط ووجهته وتاريخ إنشائه وتعديله، وإن كان موقوفاً أو محمياً بكلمة سر أو تنتهي صلاحيته، مع العدد الإجمالي وإن كانت هناك صفحة تالية. اقرأها لتختار رابطاً بعينه.',
+    schema: ListLinksArgs,
+    maxResultChars: 8_000,
+    async run(args, context) {
+      const input = ListLinksArgs.parse(args);
+      return linkSnapAnswer(
+        await listLinksHandler(
+          {
+            page_size: input.limit ?? 20,
+            offset: input.offset ?? 0,
+            format: 'json',
+          },
+          linkSnapContext(context, 'linksnap.read')
+        ),
+        'لم أقرأ روابطك المختصرة.'
+      );
+    },
+  },
+  {
+    name: 'get_analytics',
+    kind: 'read',
+    product: 'linksnap',
+    tier: 0,
+    description:
+      'إحصاءات رابط مختصر واحد برمزه: عدد النقرات، وتوزيعها على الأيام والدول والأجهزة، وأشهر المصادر، وآخر النقرات. وسيط days يحدّد عدد الأيام الماضية، وبدونه تكون الإحصاءات من كل الوقت. ولا تُقرأ إلا إحصاءات رابط يملكه العضو.',
+    schema: LinkAnalyticsArgs,
+    maxResultChars: 8_000,
+    async run(args, context) {
+      const input = LinkAnalyticsArgs.parse(args);
+      return linkSnapAnswer(
+        await getAnalyticsHandler(
+          { code: input.code, ...(input.days ? { days: input.days } : {}), format: 'json' },
+          linkSnapContext(context, 'linksnap.read')
+        ),
+        'لم أقرأ إحصاءات هذا الرابط.'
+      );
+    },
+  },
+  {
+    name: 'list_notes',
+    kind: 'read',
+    product: 'notes',
+    tier: 0,
+    description:
+      'ملاحظات العضو التي كتبها على جهازه: اسم كل ملاحظة (أول سطر فيها) وتاريخ آخر تعديل لها، دون الملاحظات المحذوفة. خذ منها المعرّف والاسم حين يطلب العضو قراءة ملاحظة أو تعديلها أو حذفها.',
+    schema: ListNotesArgs,
+    maxResultChars: 8_000,
+    async run(args, context) {
+      const { limit } = ListNotesArgs.parse(args);
+      const snapshot = await createNotesService(context.supabase).getSyncSnapshot(context.userId);
+      const notes = snapshot.notes
+        .filter((note) => note.deletedAt === null)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+      return {
+        count: notes.length,
+        notes: notes.slice(0, limit ?? 20).map((note) => ({
+          id: note.id,
+          name: noteName(note.body),
+          updated_at: note.updatedAt,
+        })),
+        ...(notes.length === 0 ? { note: 'لا ملاحظات بعد.' } : {}),
+      };
+    },
+  },
+  {
+    name: 'get_note',
+    kind: 'read',
+    product: 'notes',
+    tier: 0,
+    description:
+      'نصّ ملاحظة واحدة بمعرّفها، كما كتبها العضو على جهازه. إن كانت الملاحظة محذوفة أو غير موجودة فالجواب found: false.',
+    schema: NoteIdArgs,
+    maxResultChars: 12_000,
+    async run(args, context) {
+      const { id } = NoteIdArgs.parse(args);
+      const note = await createNotesService(context.supabase).getNote(context.userId, id);
+      if (!note || note.deletedAt !== null) return { found: false };
+      return {
+        found: true,
+        id: note.id,
+        name: noteName(note.body),
+        body: note.body,
+        created_at: note.createdAt,
+        updated_at: note.updatedAt,
+      };
+    },
+  },
+  {
     name: 'create_post_draft',
     kind: 'write',
     product: 'community',
@@ -1126,6 +1337,155 @@ const tools: ChatAgentTool[] = [
         ...(input.kind ? { kind: input.kind } : {}),
       });
       return { memory_id: memory.id, text: memory.text };
+    },
+  },
+  {
+    name: 'create_link',
+    kind: 'write',
+    product: 'linksnap',
+    tier: 1,
+    description:
+      'اختصار رابط بعنوانه الأصلي، ويمكن اختيار رمز مخصّص وتاريخ انتهاء وكلمة مرور. قل «اختصر هذا الرابط» عند طلب الاختصار؛ يبقى الأمر بطاقة حتى يؤكّده العضو، وبعد التأكيد يُعاد الرابط المختصر.',
+    schema: CreateLinkArgs,
+    async run(args, context) {
+      const input = CreateLinkArgs.parse(args);
+      const answer = linkSnapAnswer(
+        await createLinkHandler(
+          {
+            url: input.url,
+            ...(input.code ? { code: input.code } : {}),
+            ...(input.expires_at ? { expires_at: input.expires_at } : {}),
+            ...(input.password ? { password: input.password } : {}),
+            format: 'json',
+          },
+          linkSnapContext(context, 'linksnap.write')
+        ),
+        'لم أختصر الرابط.'
+      );
+      if ('error' in answer) return answer;
+      const code = typeof answer.code === 'string' ? answer.code : '';
+      return { ...answer, short_url: code ? shortLinkUrl(code) : null };
+    },
+  },
+  {
+    name: 'update_link',
+    kind: 'write',
+    product: 'linksnap',
+    tier: 1,
+    description:
+      'تعديل رابط مختصر يملكه العضو: وجهته أو رمزه أو تاريخ انتهائه أو كلمة المرور. الرمز الحالي مطلوب، وكل حقل يُترك فارغاً يبقى كما هو.',
+    schema: UpdateLinkArgs,
+    async run(args, context) {
+      const input = UpdateLinkArgs.parse(args);
+      return linkSnapAnswer(
+        await updateLinkHandler(
+          {
+            code: input.code,
+            ...(input.new_code ? { new_code: input.new_code } : {}),
+            ...(input.url ? { url: input.url } : {}),
+            ...('expires_at' in input ? { expires_at: input.expires_at } : {}),
+            ...('password' in input ? { password: input.password } : {}),
+            format: 'json',
+          },
+          linkSnapContext(context, 'linksnap.write')
+        ),
+        'لم أعدّل الرابط المختصر.'
+      );
+    },
+  },
+  {
+    name: 'delete_link',
+    kind: 'write',
+    product: 'linksnap',
+    tier: 3,
+    description:
+      'حذف رابط مختصر يملكه العضو برمزه. لا يُنفَّذ داخل الجولة؛ تُعرض بطاقة تسمّي الرمز، ولا يُحذف إلا بعد تأكيد العضو.',
+    schema: DeleteLinkArgs,
+    async run(args, context) {
+      const input = DeleteLinkArgs.parse(args);
+      return linkSnapAnswer(
+        await deleteLinkHandler(
+          { code: input.code, format: 'json' },
+          linkSnapContext(context, 'linksnap.write')
+        ),
+        'لم أحذف الرابط المختصر.'
+      );
+    },
+  },
+  {
+    name: 'create_note',
+    kind: 'write',
+    product: 'notes',
+    tier: 1,
+    description:
+      'إنشاء ملاحظة جديدة بنصّها كما كتبه العضو. السطر الأول هو اسمها الذي يظهر في القائمة. تُعرض بطاقة بالنصّ قبل الحفظ.',
+    schema: CreateNoteArgs,
+    async run(args, context) {
+      const input = CreateNoteArgs.parse(args);
+      const service = createNotesService(context.supabase);
+      const id = crypto.randomUUID();
+      // The same slot check the notes route applies to a first write (ADR-0075).
+      const existing = await service.getNote(context.userId, id);
+      if (!existing || existing.deletedAt) {
+        await createPlanGate().cap(context.userId, OWNED_ITEMS.notes);
+      }
+      await service.saveNote(
+        context.userId,
+        id,
+        { body: normalizeNoteBody(input.body), deletedAt: null },
+        { clientId: id }
+      );
+      return { note_id: id, name: noteName(input.body), body: input.body };
+    },
+  },
+  {
+    name: 'update_note',
+    kind: 'write',
+    product: 'notes',
+    tier: 1,
+    description:
+      'تعديل نصّ ملاحظة قائمة بمعرّفها، مع الإبقاء على اسمها إن بقي أول سطر كما هو. لا تُنشأ ملاحظة جديدة إن كان المعرّف غير موجود.',
+    schema: UpdateNoteArgs,
+    async run(args, context) {
+      const input = UpdateNoteArgs.parse(args);
+      const service = createNotesService(context.supabase);
+      const existing = await service.getNote(context.userId, input.id);
+      if (!existing || existing.deletedAt !== null) {
+        return { error: 'لم أجد هذه الملاحظة' };
+      }
+      await service.saveNote(
+        context.userId,
+        input.id,
+        { body: normalizeNoteBody(input.body) },
+        { clientId: existing.clientId }
+      );
+      return { note_id: input.id, name: noteName(input.body) };
+    },
+  },
+  {
+    name: 'delete_note',
+    kind: 'write',
+    product: 'notes',
+    tier: 3,
+    description:
+      'حذف ملاحظة يملكها العضو بمعرّفها واسمها كما يظهر في القائمة. لا يُنفَّذ داخل الجولة؛ تُعرض بطاقة تسمّي الملاحظة، ولا تُحذف إلا بعد تأكيد العضو.',
+    schema: DeleteNoteArgs,
+    async run(args, context) {
+      const input = DeleteNoteArgs.parse(args);
+      const service = createNotesService(context.supabase);
+      const existing = await service.getNote(context.userId, input.id);
+      if (!existing || existing.deletedAt !== null) {
+        return { error: 'لم أجد هذه الملاحظة' };
+      }
+      // The name on the card is a typed target: it must name this very row.
+      const names = [noteName(existing.body), noteName(existing.body, 1_000)].map((name) =>
+        name.trim().toLocaleLowerCase()
+      );
+      if (!names.includes(input.name.trim().toLocaleLowerCase())) {
+        return { error: 'اسم الملاحظة غير مطابق' };
+      }
+      await service.deleteNote(context.userId, input.id);
+      return { note_id: input.id, name: input.name };
     },
   },
   {

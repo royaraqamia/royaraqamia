@@ -18,7 +18,7 @@ Verified against this checkout, not estimated.
 | Piece             | Today                                                                                                                                 |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Turn              | `ChatAgentService.turn` streams over SSE, bounded rounds, one clean retry, a turn row, a resumable runner                             |
-| Tools             | 26 first-party declarations (15 read, 11 write); 25 on a turn with no connected app                                                   |
+| Tools             | 46 first-party declarations (28 read, 18 write); 43 on a turn with no app, screen or web search                                       |
 | Writes            | proposed as a card, executed only by the member's confirm on their own session                                                        |
 | External apps     | router + `find_app_tools`; `readOnlyHint` runs, the rest cards; 3 calls per turn, 2 per connection                                    |
 | Own MCP server    | 37 tools over 7 products, OAuth, scopes, plan caps, user-scoped client                                                                |
@@ -42,10 +42,10 @@ product, and six of the nine sheet apps have no tool at all.
 | Scan                | 1         | 0          | act                                      |
 | Quran               | 4         | 0          | bookmarks, progress                      |
 | Athkar              | 2         | 0          | completion                               |
-| LinkSnap            | 0         | 5          | both                                     |
+| LinkSnap            | 5         | 5          | —                                        |
 | HabitFlow           | 3         | 6          | read, logs, archive                      |
 | SpendTrack          | 3         | 9          | budgets, categories, reports             |
-| Notes               | 0         | 0          | both                                     |
+| Notes               | 5         | 0          | MCP door                                 |
 | Community           | 4         | 7          | comments, reactions, reports             |
 | Account             | 1         | 2          | profile read, username, avatar, sessions |
 | Consultations       | 2         | 0          | bookings, reschedule, cancel             |
@@ -167,6 +167,11 @@ story by id, the current pair on both bases with its quote date, and the series 
 window, one Ayah by its reference, text search over the `check:quran-search` asset itself, the
 two Athkar sets and their items, and the member's own scan history — a summary she can read and
 clear, whose payload never leaves the device (ADR-0205).
+
+**Landed:** LinkSnap and Notes, read and write side (#1431): the member's links and their
+analytics, link create and update, and tier-3 deletes that name the link or note on the card.
+LinkSnap reads its five MCP handlers' `structuredContent`; Notes has no MCP door and calls the
+product service.
 
 **Exit:** every row of the coverage table has at least a read and, where the product has a write,
 a tiered write; a member can grant and revoke each of them.

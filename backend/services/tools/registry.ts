@@ -1,13 +1,14 @@
 import { chatAgentTools } from '@/backend/services/chat/chat-agent-tools';
+import { mcpCapabilities } from '@/backend/services/tools/mcp-capabilities';
 
 /**
  * The capability registry (ADR-0183).
  *
  * A capability is one thing a product can do on a member's behalf, declared
  * once with the blast radius that decides what happens to a call (ADR-0180).
- * The assistant is the first door to read it; the MCP modules adopt the same
- * entries in the change that follows, which is why `mcpName` exists here and is
- * null until that door reads the entry rather than its own literal.
+ * Both doors read it. `mcpName` is filled from the MCP table when the same
+ * operation exists there, so a row that reads `Turn + MCP` names the one public
+ * MCP tool the second door registered (issue #1431).
  *
  * `owner` is the coverage axis, not a module path: the nine apps from the apps
  * sheet, then the surfaces a member reaches from the account and chat shell,
@@ -74,12 +75,21 @@ export function capabilityId(owner: CapabilityOwner, name: string): string {
  * disagree with what the turn can actually call.
  */
 export function agentCapabilities(): Capability[] {
-  return chatAgentTools().map((tool) => ({
-    id: capabilityId(tool.product, tool.name),
-    owner: tool.product,
-    kind: tool.kind,
-    tier: tool.tier,
-    agentName: tool.name,
-    mcpName: null,
-  }));
+  const mcpNames = new Map(
+    mcpCapabilities()
+      .filter((entry): entry is Capability & { mcpName: string } => entry.mcpName !== null)
+      .map((entry) => [entry.id, entry.mcpName])
+  );
+
+  return chatAgentTools().map((tool) => {
+    const id = capabilityId(tool.product, tool.name);
+    return {
+      id,
+      owner: tool.product,
+      kind: tool.kind,
+      tier: tool.tier,
+      agentName: tool.name,
+      mcpName: mcpNames.get(id) ?? null,
+    };
+  });
 }
