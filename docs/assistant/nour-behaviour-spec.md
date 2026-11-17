@@ -120,9 +120,14 @@ Each reply is scored by deterministic checks and an LLM judge. The judge is a
 and bad reference replies. Report is `docs/assistant/eval-report.md` plus a JSON
 scorecard, broken down by axis and slice.
 
-Gates: every hard gate must pass; no axis may average below 4.0; no slice may
+Gates: every hard gate must pass; the calibrated judged axes (`naturalness`,
+`warmth`, `helpfulness`, `boundaries`) must average at least 4.0; no slice may
 average below 3.5; no regression greater than 0.5 against the committed
-baseline. The baseline is the report committed with this spec.
+baseline. `language_fit` is **not** judged — the LLM judge is wrong on that axis
+(see `eval-calibration.md`) — it is checked deterministically by
+`detectLanguage()`. `conciseness` is advisory (75% judge agreement). Compare
+prompts only with `--runs 3` aggregated reports; a single run is too noisy to
+decide anything.
 
 ## 9. Change process
 
