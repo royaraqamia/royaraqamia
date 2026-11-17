@@ -26,7 +26,11 @@ const cfg = config();
 const suite = JSON.parse(readFileSync(resolve(here, 'suite.json'), 'utf8'));
 const axesById = new Map([...suite.model, ...suite.agent].map((c) => [c.id, c.expect.judge]));
 const expectations = new Map([...suite.model, ...suite.agent].map((c) => [c.id, c.expect]));
-const path = resolve(root, 'docs/assistant/eval-report-model.json');
+const tier = arg('tier', 'model');
+const path =
+  tier === 'agent'
+    ? resolve(here, 'eval-report-agent.json')
+    : resolve(root, 'docs/assistant/eval-report-model.json');
 const report = JSON.parse(readFileSync(path, 'utf8'));
 const cases = report.tiers[0].cases;
 const runs = report.meta.runs ?? 1;
@@ -90,5 +94,10 @@ for (const entry of cases) {
 report.meta.judgeOk = `${updated.filter((item) => item.judge.ok).length}/${updated.length}`;
 report.meta.runs = runs;
 summarize(report);
-await writeReport(root, report, '-model');
+if (tier === 'agent') {
+  const { writeJson } = await import('./lib.mjs');
+  await writeJson(path, report);
+} else {
+  await writeReport(root, report, '-model');
+}
 process.stdout.write(`rejudged ${updated.length} replies with ${cfg.judge}\n`);
