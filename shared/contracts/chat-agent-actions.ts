@@ -87,7 +87,11 @@ export interface ChatAgentAction {
 /** The tools the model may name. The server's registry owns the schemas. */
 export const CHAT_AGENT_TOOL_NAMES = [
   'list_certificates',
+  'get_certificate',
+  'verify_certificate',
   'get_usage_state',
+  'get_profile',
+  'update_profile',
   'list_consultation_bookings',
   'list_consultation_options',
   'list_my_posts',
@@ -144,6 +148,15 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'create_post_draft',
   'edit_post_draft',
   'publish_post_draft',
+  // The rest of Community's hands (#1433): unpublishing, delete, the public
+  // keyset thread, the member's own like row, and their own comments.
+  'unpublish_post_draft',
+  'delete_post',
+  'list_post_comments',
+  'set_post_like',
+  'create_post_comment',
+  'edit_post_comment',
+  'delete_post_comment',
   'record_expense',
   'edit_expense',
   'create_habit',
@@ -193,11 +206,15 @@ export interface ChatAgentToolInfo {
 
 export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
   list_certificates: { kind: 'read', label: 'قراءة شهاداتك', activity: 'تقرأ شهاداتك' },
+  get_certificate: { kind: 'read', label: 'قراءة شهادة', activity: 'تقرأ شهادة' },
+  verify_certificate: { kind: 'read', label: 'التحقق من شهادة', activity: 'يتحقق من شهادة' },
   get_usage_state: {
     kind: 'read',
     label: 'قراءة خطتك واستخدامك',
     activity: 'تقرأ خطتك واستخدامك',
   },
+  get_profile: { kind: 'read', label: 'قراءة ملفك الشخصي', activity: 'تقرأ ملفك الشخصي' },
+  update_profile: { kind: 'write', label: 'تعديل ملفك الشخصي', activity: 'تعدّل ملفك الشخصي' },
   list_consultation_bookings: {
     kind: 'read',
     label: 'قراءة حجوزات الاستشارة',
@@ -257,6 +274,25 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
   },
   edit_post_draft: { kind: 'write', label: 'تعديل مسودة', activity: 'تعدّل مسودة' },
   publish_post_draft: { kind: 'write', label: 'نشر مسودة', activity: 'تنشر مسودة' },
+  unpublish_post_draft: {
+    kind: 'write',
+    label: 'إعادة منشور إلى المسودات',
+    activity: 'تعيد منشوراً إلى المسودات',
+  },
+  delete_post: { kind: 'write', label: 'حذف منشور', activity: 'تحذف منشوراً' },
+  list_post_comments: {
+    kind: 'read',
+    label: 'قراءة تعليقات منشور',
+    activity: 'تقرأ تعليقات منشور',
+  },
+  set_post_like: {
+    kind: 'write',
+    label: 'الإعجاب بمنشور أو إلغاؤه',
+    activity: 'تضبط الإعجاب بمنشور',
+  },
+  create_post_comment: { kind: 'write', label: 'كتابة تعليق', activity: 'تكتب تعليقاً' },
+  edit_post_comment: { kind: 'write', label: 'تعديل تعليقك', activity: 'تعدّل تعليقك' },
+  delete_post_comment: { kind: 'write', label: 'حذف تعليقك', activity: 'تحذف تعليقك' },
   record_expense: { kind: 'write', label: 'تسجيل مصروف', activity: 'تسجّل مصروفاً' },
   edit_expense: { kind: 'write', label: 'تعديل مصروف', activity: 'تعدّل مصروفاً' },
   create_habit: { kind: 'write', label: 'إنشاء عادة', activity: 'تنشئ عادة' },
@@ -507,9 +543,26 @@ export function chatAgentActionSentence(
       return code ? `${label} «${code}»` : label;
     }
     case 'create_note':
-    case 'update_note': {
+    case 'update_note':
+    case 'create_post_comment':
+    case 'edit_post_comment': {
       const body = text(values.body);
       return body ? `${label} — «${body.slice(0, 60)}»` : label;
+    }
+    case 'delete_post_comment': {
+      // The body is the card's name for the row, not an argument the service uses.
+      const body = text(values.body);
+      return body ? `${label} — «${body.slice(0, 60)}»` : label;
+    }
+    case 'set_post_like': {
+      const slug = text(values.slug);
+      const state = values.liked === true ? 'إعجاب' : values.liked === false ? 'إلغاء إعجاب' : '';
+      return slug ? `${label} — «${slug}»${state ? ` — ${state}` : ''}` : label;
+    }
+    case 'update_profile': {
+      const name = text(values.name);
+      const bio = text(values.bio);
+      return name || bio ? `${label} — «${(name || bio).slice(0, 60)}»` : label;
     }
     case 'delete_note': {
       // A tier-3 card names the row: the member confirms the note, not an id

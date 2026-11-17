@@ -34,9 +34,10 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   habitflow: 8,
   spendtrack: 10,
   notes: 5,
-  community: 5,
-  account: 3,
-  certificates: 1,
+  // #1433 completes Community, Account and Certificates on the turn.
+  community: 12,
+  account: 5,
+  certificates: 3,
   consultations: 3,
   training: 1,
   'client-work': 1,
@@ -97,16 +98,21 @@ describe('the assistant door', () => {
       'create_link',
       'create_note',
       'create_post_draft',
+      'delete_post_comment',
       'edit_expense',
+      'edit_post_comment',
       'edit_post_draft',
       'record_expense',
       'remember',
       'set_budget',
       'set_habit_reminder',
+      'set_post_like',
       'toggle_log',
+      'unpublish_post_draft',
       'update_habit',
       'update_link',
       'update_note',
+      'update_profile',
     ]);
     // A third party can see it, or money moves: never grantable (ADR-0180).
     expect(
@@ -117,6 +123,7 @@ describe('the assistant door', () => {
     ).toEqual([
       'apply_training',
       'book_consultation',
+      'create_post_comment',
       'publish_post_draft',
       'submit_project_request',
     ]);
@@ -126,7 +133,7 @@ describe('the assistant door', () => {
         .filter((entry) => entry.tier === 3)
         .map((entry) => entry.agentName)
         .sort()
-    ).toEqual(['delete_expense', 'delete_habit', 'delete_link', 'delete_note']);
+    ).toEqual(['delete_expense', 'delete_habit', 'delete_link', 'delete_note', 'delete_post']);
   });
 
   it('gives the turn every HabitFlow and SpendTrack capability the MCP door declares', () => {
@@ -148,6 +155,47 @@ describe('the assistant door', () => {
       if (declared.tier === 1 && declared.kind === 'write') {
         expect(onTurn?.agentName).not.toMatch(/^delete_/);
       }
+    }
+  });
+
+  it('gives the turn every Community, Account and Certificates read the MCP door declares', () => {
+    const byId = new Map(capabilities.map((entry) => [entry.id, entry]));
+
+    for (const declared of mcpCapabilities().filter(
+      (entry) =>
+        (entry.owner === 'community' ||
+          entry.owner === 'account' ||
+          entry.owner === 'certificates') &&
+        entry.kind === 'read'
+    )) {
+      // The admin-only certificate list and get are reads on the MCP door but
+      // are not member reads: #1433 adds list_mine, get and verify on the turn.
+      if (declared.id === 'certificates.list') continue;
+      const onTurn = byId.get(declared.id);
+      expect(onTurn).toBeDefined();
+      expect(onTurn).toMatchObject({
+        owner: declared.owner,
+        kind: declared.kind,
+        tier: declared.tier,
+        mcpName: declared.mcpName,
+      });
+    }
+  });
+
+  it('keeps engagement on both doors at the tier the decision assigned', () => {
+    const byId = new Map(capabilities.map((entry) => [entry.id, entry]));
+    const tiers: Record<string, number> = {
+      'community.list_comments': 0,
+      'community.set_like': 1,
+      'community.edit_comment': 1,
+      'community.delete_comment': 1,
+      'community.create_comment': 2,
+    };
+    for (const [id, tier] of Object.entries(tiers)) {
+      const onTurn = byId.get(id);
+      expect(onTurn).toBeDefined();
+      expect(onTurn?.tier).toBe(tier);
+      expect(onTurn?.mcpName).toBe(mcpCapabilities().find((entry) => entry.id === id)?.mcpName);
     }
   });
 

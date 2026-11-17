@@ -13,7 +13,7 @@ that reads `Turn + MCP` is the same operation reached two ways.
 a read is always tier 0 and runs inside the turn; a write is above it, and
 tier 2 or 3 is always a card. Every write's tier is in the table below.
 
-**75 capabilities** (42 read, 33 write): 58 declared by the turn, 37 by the MCP server.
+**77 capabilities** (40 read, 37 write): 69 declared by the turn, 42 by the MCP server.
 
 | Product | Reads | Writes | Turn | MCP |
 | --- | --- | --- | --- | --- |
@@ -26,9 +26,9 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | `habitflow` | 3 | 5 | 8 | 6 |
 | `spendtrack` | 5 | 5 | 10 | 9 |
 | `notes` | 2 | 3 | 5 | 0 |
-| `community` | 4 | 8 | 5 | 7 |
-| `account` | 2 | 3 | 3 | 2 |
-| `certificates` | 5 | 3 | 1 | 7 |
+| `community` | 3 | 12 | 12 | 12 |
+| `account` | 2 | 3 | 5 | 2 |
+| `certificates` | 4 | 3 | 3 | 7 |
 | `consultations` | 2 | 1 | 3 | 0 |
 | `training` | 0 | 1 | 1 | 0 |
 | `client-work` | 0 | 1 | 1 | 0 |
@@ -139,22 +139,25 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 
 ## `community`
 
-4 read, 8 write.
+3 read, 12 write.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
-| `community.list_my_posts` | read | 0 | Turn |
-| `community.get_post_by_slug` | read | 0 | Turn |
+| `community.list_posts` | read | 0 | Turn + MCP |
+| `community.get_post` | read | 0 | Turn + MCP |
+| `community.list_comments` | read | 0 | Turn + MCP |
 | `community.create_post_draft` | write | 1 | Turn |
 | `community.edit_post_draft` | write | 1 | Turn |
 | `community.publish_post_draft` | write | 2 | Turn |
-| `community.list_posts` | read | 0 | MCP |
-| `community.get_post` | read | 0 | MCP |
+| `community.unpublish_post` | write | 1 | Turn + MCP |
+| `community.delete_post` | write | 3 | Turn + MCP |
+| `community.set_like` | write | 1 | Turn + MCP |
+| `community.create_comment` | write | 2 | Turn + MCP |
+| `community.edit_comment` | write | 1 | Turn + MCP |
+| `community.delete_comment` | write | 1 | Turn + MCP |
 | `community.create_post` | write | 1 | MCP |
 | `community.update_post` | write | 1 | MCP |
 | `community.publish_post` | write | 2 | MCP |
-| `community.unpublish_post` | write | 1 | MCP |
-| `community.delete_post` | write | 3 | MCP |
 
 ## `account`
 
@@ -163,22 +166,21 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
 | `account.get_usage_state` | read | 0 | Turn |
+| `account.get` | read | 0 | Turn + MCP |
 | `account.change_display_name` | write | 1 | Turn |
+| `account.update` | write | 1 | Turn + MCP |
 | `account.remember` | write | 1 | Turn |
-| `account.get` | read | 0 | MCP |
-| `account.update` | write | 1 | MCP |
 
 ## `certificates`
 
-5 read, 3 write.
+4 read, 3 write.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
-| `certificates.list_certificates` | read | 0 | Turn |
+| `certificates.list_mine` | read | 0 | Turn + MCP |
+| `certificates.get` | read | 0 | Turn + MCP |
+| `certificates.verify` | read | 0 | Turn + MCP |
 | `certificates.list` | read | 0 | MCP |
-| `certificates.list_mine` | read | 0 | MCP |
-| `certificates.get` | read | 0 | MCP |
-| `certificates.verify` | read | 0 | MCP |
 | `certificates.create` | write | 2 | MCP |
 | `certificates.update` | write | 2 | MCP |
 | `certificates.delete` | write | 3 | MCP |

@@ -41,6 +41,16 @@ const ROWS: McpRow[] = [
   { owner: 'community', name: 'unpublish_post', kind: 'write', tier: 1 },
   { owner: 'community', name: 'delete_post', kind: 'write', tier: 3 },
 
+  // Community engagement (#1573), added to both doors by #1433. Likes are an
+  // idempotent set through PostEngagementService; a comment names its author
+  // and never writes on another member's behalf. No moderation row: #1575 owns
+  // that decision, and #1576 owns the notification a reply sends.
+  { owner: 'community', name: 'list_comments', kind: 'read', tier: 0 },
+  { owner: 'community', name: 'set_like', kind: 'write', tier: 1 },
+  { owner: 'community', name: 'edit_comment', kind: 'write', tier: 1 },
+  { owner: 'community', name: 'delete_comment', kind: 'write', tier: 1 },
+  { owner: 'community', name: 'create_comment', kind: 'write', tier: 2 },
+
   // habitflow
   { owner: 'habitflow', name: 'list_habits', kind: 'read', tier: 0 },
   { owner: 'habitflow', name: 'get_logs', kind: 'read', tier: 0 },
@@ -100,7 +110,7 @@ const ROWS: McpRow[] = [
   { owner: 'assistant', name: 'server_info', kind: 'read', tier: 0 },
 ];
 
-/** The 37 capabilities the MCP door declares, in registry order. */
+/** The 42 capabilities the MCP door declares, in registry order. */
 export function mcpCapabilities(): Capability[] {
   return ROWS.map((row) => ({
     id: `${row.owner}.${row.name}`,

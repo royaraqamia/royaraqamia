@@ -5,7 +5,14 @@ import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
 import { createPostsRepository } from '@/backend/config/blogpress';
+import { createPostEngagementService } from '@/backend/config/community';
 import type { PostSummary } from '@/shared/contracts/blogpress';
+import {
+  POST_COMMENT_MAX_LENGTH,
+  POST_COMMENTS_PAGE_SIZE,
+  PostCommentsResponseSchema,
+  PostSlugSchema,
+} from '@/shared/contracts/community';
 import { postExcerpt } from '@/shared/reading-time';
 import {
   buildPaginationMeta,
@@ -561,6 +568,293 @@ Examples:
   );
 }
 
+// ============================================================
+// Community engagement (#1573). Both doors call these handlers, so a like or a
+// comment means the same thing whether it came from a turn or from an MCP client.
+// Every write goes through createPostEngagementService: service_role writes,
+// rate-limited per member in the service, never a client table write in a tool.
+// ============================================================
+
+const ListCommentsInputSchema = z
+  .object({
+    slug: PostSlugSchema,
+    cursor: z.string().max(200).optional().describe('Opaque cursor from a previous page'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const SetLikeInputSchema = z
+  .object({
+    slug: PostSlugSchema,
+    liked: z.boolean().describe('The state wanted, not a toggle'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const CommentBodySchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(POST_COMMENT_MAX_LENGTH)
+  .describe('The comment body, written by the caller');
+
+const CreateCommentInputSchema = z
+  .object({ slug: PostSlugSchema, body: CommentBodySchema, format: ResponseFormatSchema })
+  .strict();
+
+const EditCommentInputSchema = z
+  .object({ id: z.string().min(1), body: CommentBodySchema, format: ResponseFormatSchema })
+  .strict();
+
+const DeleteCommentInputSchema = z
+  .object({ id: z.string().min(1), format: ResponseFormatSchema })
+  .strict();
+
+type ListCommentsInput = z.infer<typeof ListCommentsInputSchema>;
+type SetLikeInput = z.infer<typeof SetLikeInputSchema>;
+type CreateCommentInput = z.infer<typeof CreateCommentInputSchema>;
+type EditCommentInput = z.infer<typeof EditCommentInputSchema>;
+type DeleteCommentInput = z.infer<typeof DeleteCommentInputSchema>;
+
+/** One keyset page of a thread, the same page the public post page reads. */
+export async function listPostCommentsHandler(
+  params: ListCommentsInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['community.read']);
+    const page = PostCommentsResponseSchema.parse(
+      await createPostEngagementService().thread(
+        params.slug,
+        params.cursor ?? null,
+        POST_COMMENTS_PAGE_SIZE
+      )
+    );
+    return params.format === 'json'
+      ? structuredResponse(jsonText(page), page)
+      : structuredResponse(
+          [
+            '# Comments',
+            '',
+            `${page.comments.length} of ${page.total} comment(s).`,
+            ...page.comments.map(
+              (comment) =>
+                `- ${comment.author?.name ?? comment.author?.username ?? 'member'}: ${comment.body}`
+            ),
+            ...(page.nextCursor ? ['', 'More comments are available.'] : []),
+          ].join('\n'),
+          page
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+/** The member's own like row, set to the state asked for; the count is the write's answer. */
+export async function setPostLikeHandler(
+  params: SetLikeInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['community.write']);
+    const userId = requireUserId(ctx, 'Setting your like');
+    const result = await createPostEngagementService().setLike(userId, params.slug, params.liked);
+    return params.format === 'json'
+      ? structuredResponse(jsonText(result), result)
+      : structuredResponse(
+          `# Like ${result.liked ? 'Added' : 'Removed'}\n\nThis post now has ${result.likeCount} like(s).`,
+          result
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+/** A comment always carries its author: the authenticated caller, never an argument. */
+export async function createPostCommentHandler(
+  params: CreateCommentInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['community.write']);
+    const userId = requireUserId(ctx, 'Writing a comment');
+    const result = await createPostEngagementService().comment(userId, params.slug, params.body);
+    return params.format === 'json'
+      ? structuredResponse(jsonText(result), result)
+      : structuredResponse(
+          `# Comment Added\n\nThe post now has ${result.commentCount} comment(s).`,
+          result
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function editPostCommentHandler(
+  params: EditCommentInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['community.write']);
+    const userId = requireUserId(ctx, 'Editing your comment');
+    const result = await createPostEngagementService().editComment(userId, params.id, params.body);
+    return params.format === 'json'
+      ? structuredResponse(jsonText(result), result)
+      : structuredResponse(`# Comment Updated\n\nComment \`${params.id}\` was updated.`, result);
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function deletePostCommentHandler(
+  params: DeleteCommentInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['community.write']);
+    const userId = requireUserId(ctx, 'Deleting your comment');
+    const result = await createPostEngagementService().deleteComment(userId, params.id);
+    return params.format === 'json'
+      ? structuredResponse(jsonText(result), result)
+      : structuredResponse(
+          `# Comment Deleted\n\nThe post now has ${result.commentCount} comment(s).`,
+          result
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export function registerCommunityEngagementTools(server: McpServer, ctx: McpUserContext): void {
+  server.registerTool(
+    mcpCapabilityName('community.list_comments'),
+    {
+      title: 'List Community Comments',
+      description: `Reads one keyset page of a public post's comments, the same page the post page reads. Requires the "community.read" scope.
+      
+Args:
+  - slug (string, required): the post's slug
+  - cursor (string, optional): opaque cursor from a previous page
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "comments": PostComment[], "nextCursor": string|null, "total": number }
+
+Examples:
+  - Use when: "read the comments on this post" -> slug="how-to-start"`,
+      inputSchema: ListCommentsInputSchema,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    (params) => listPostCommentsHandler(params, ctx)
+  );
+}
+
+export function registerCommunityEngagementWriteTools(
+  server: McpServer,
+  ctx: McpUserContext
+): void {
+  server.registerTool(
+    mcpCapabilityName('community.set_like'),
+    {
+      title: 'Set Community Post Like',
+      description: `Sets your own like on a post to the state you ask for. Repeating the same call is the same row; it is not a toggle. Requires "community.write".
+      
+Args:
+  - slug (string, required): the post's slug
+  - liked (boolean, required): true to like, false to unlike
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "liked": boolean, "likeCount": number }
+
+Examples:
+  - Use when: "like this post" -> slug="how-to-start", liked=true`,
+      inputSchema: SetLikeInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    (params) => setPostLikeHandler(params, ctx)
+  );
+
+  server.registerTool(
+    mcpCapabilityName('community.create_comment'),
+    {
+      title: 'Comment on Community Post',
+      description: `Writes a comment on a public post as you. You cannot write on another member's behalf. Requires "community.write".
+      
+Args:
+  - slug (string, required): the post's slug
+  - body (string, required): the comment, 1 to 2000 characters
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "comment": PostComment, "commentCount": number }
+
+Examples:
+  - Use when: "comment that this was useful" -> slug="how-to-start", body="مفيد جداً"`,
+      inputSchema: CreateCommentInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => createPostCommentHandler(params, ctx)
+  );
+
+  server.registerTool(
+    mcpCapabilityName('community.edit_comment'),
+    {
+      title: 'Edit Your Community Comment',
+      description: `Edits a comment you wrote. Another member's comment is refused. Requires "community.write".
+      
+Args:
+  - id (string, required): your comment's id
+  - body (string, required): the new body, 1 to 2000 characters
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "comment": PostComment }`,
+      inputSchema: EditCommentInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    (params) => editPostCommentHandler(params, ctx)
+  );
+
+  server.registerTool(
+    mcpCapabilityName('community.delete_comment'),
+    {
+      title: 'Delete Your Community Comment',
+      description: `Deletes a comment you wrote. Another member's comment is refused. Requires "community.write".
+      
+Args:
+  - id (string, required): your comment's id
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "deleted": boolean, "commentCount": number }`,
+      inputSchema: DeleteCommentInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => deletePostCommentHandler(params, ctx)
+  );
+}
+
 export type {
   ListPostsInput,
   GetPostInput,
@@ -569,4 +863,9 @@ export type {
   PublishPostInput,
   UnpublishPostInput,
   DeletePostInput,
+  ListCommentsInput,
+  SetLikeInput,
+  CreateCommentInput,
+  EditCommentInput,
+  DeleteCommentInput,
 };

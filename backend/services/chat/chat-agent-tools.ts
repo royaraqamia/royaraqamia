@@ -2,7 +2,10 @@ import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
-import { createCertificatesRepository } from '@/backend/config/certificates';
+import {
+  createCertificatesRepository,
+  verifyCertificateByCode,
+} from '@/backend/config/certificates';
 import { createPostsRepository } from '@/backend/config/blogpress';
 import { createHabitService } from '@/backend/config/habitflow';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
@@ -35,7 +38,7 @@ import { screenContextAnswer } from '@/backend/services/chat/turn-screen';
 import type { CapabilityOwner, ToolTier } from '@/backend/services/tools/registry';
 import type { ScreenContextInput } from '@/shared/contracts/screen-context';
 import { toPublicCertificate } from '@/shared/contracts/certificates';
-import { PostSlugSchema } from '@/shared/contracts/community';
+import { POST_COMMENT_MAX_LENGTH, PostSlugSchema } from '@/shared/contracts/community';
 import { NOTE_BODY_MAX, normalizeNoteBody } from '@/shared/contracts/notes';
 import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
@@ -61,6 +64,16 @@ import {
   listTransactionsHandler,
   setBudgetHandler,
 } from '@/backend/services/mcp/tools/spendtrack';
+import {
+  createPostCommentHandler,
+  deletePostCommentHandler,
+  deletePostHandler,
+  editPostCommentHandler,
+  listPostCommentsHandler,
+  setPostLikeHandler,
+  unpublishPostHandler,
+} from '@/backend/services/mcp/tools/blogpress';
+import { getProfileHandler, updateProfileHandler } from '@/backend/services/mcp/tools/profile';
 import type { ToolResult } from '@/backend/services/mcp/tools/tool-utils';
 import type { McpUserContext } from '@/backend/services/mcp/session';
 import { COURSE_SLUGS } from '@/shared/contracts/training';
@@ -86,7 +99,7 @@ import {
   PROJECT_REQUEST_BUDGET_RANGES,
   PROJECT_REQUEST_TIMELINES,
 } from '@/shared/contracts/project-requests';
-import { ProfileNameSchema } from '@/shared/contracts/users';
+import { ProfileBioSchema, ProfileNameSchema } from '@/shared/contracts/users';
 import { whatsappPhoneRegex } from '@/shared/contracts/phone';
 import type { ChatAgentToolKind, ChatAgentToolName } from '@/shared/contracts/chat-agent-actions';
 import {
@@ -202,6 +215,54 @@ const EditDraftArgs = z.strictObject({
 });
 
 const PublishDraftArgs = z.strictObject({ post_id: z.string().uuid('معرِّف المنشور غير صالح') });
+
+// Community's remaining hands (#1433). The model never names an author: the
+// like and the comment are written as context.userId by the shared handler.
+const CertificateIdArgs = z.strictObject({
+  id: z.string().uuid('معرِّف شهادة غير صالح'),
+});
+
+const VerifyCertificateArgs = z.strictObject({
+  code: z
+    .string()
+    .trim()
+    .regex(/^COMP-\d{4}-[A-Z0-9]{8}$/, 'رمز شهادة غير صالح'),
+});
+
+const PostIdArgs = z.strictObject({
+  id: z.string().uuid('معرِّف المنشور غير صالح'),
+  // The card names the post; the handler checks ownership by id.
+  slug: z.string().trim().min(1).max(200).optional(),
+});
+
+const ListCommentsArgs = z.strictObject({
+  slug: PostSlugSchema,
+  cursor: z.string().max(200).optional(),
+});
+
+const SetLikeArgs = z.strictObject({ slug: PostSlugSchema, liked: z.boolean() });
+
+const CommentBody = z
+  .string()
+  .trim()
+  .min(1, 'اكتب تعليقاً أولاً.')
+  .max(POST_COMMENT_MAX_LENGTH, `الحدّ الأقصى ${POST_COMMENT_MAX_LENGTH} حرفًا.`);
+
+const CreateCommentArgs = z.strictObject({ slug: PostSlugSchema, body: CommentBody });
+
+const EditCommentArgs = z.strictObject({ id: z.string().min(1), body: CommentBody });
+
+const DeleteCommentArgs = z.strictObject({
+  id: z.string().min(1),
+  // Only the card reads this: the comment's text names the row the member deletes.
+  body: CommentBody,
+});
+
+const UpdateProfileArgs = z.strictObject({
+  name: ProfileNameSchema.nullable().optional(),
+  bio: ProfileBioSchema.nullable().optional(),
+  avatar_url: z.string().url('رابط صورة غير صالح').nullable().optional(),
+});
 
 const RecordExpenseArgs = z.strictObject({
   amount: z.number().positive('المبلغ غير صالح').max(1_000_000_000, 'المبلغ كبير جداً'),
@@ -471,7 +532,11 @@ type ProductScope =
   | 'habitflow.read'
   | 'habitflow.write'
   | 'spendtrack.read'
-  | 'spendtrack.write';
+  | 'spendtrack.write'
+  | 'community.read'
+  | 'community.write'
+  | 'profile.read'
+  | 'profile.write';
 
 function mcpContext(context: ChatAgentToolContext, scope: ProductScope): McpUserContext {
   return {
@@ -631,6 +696,8 @@ const tools: ChatAgentTool[] = [
     name: 'list_certificates',
     kind: 'read',
     product: 'certificates',
+    // The member's own certificates: the MCP door froze `list_mine`.
+    capabilityName: 'list_mine',
     tier: 0,
     description: 'الشهادات التي حصل عليها العضو.',
     schema: NoArgs,
@@ -642,6 +709,39 @@ const tools: ChatAgentTool[] = [
     },
   },
   {
+    name: 'get_certificate',
+    kind: 'read',
+    product: 'certificates',
+    capabilityName: 'get',
+    tier: 0,
+    description: 'شهادة واحدة من شهادات العضو بمعرّفها، إن كانت من نصيبه.',
+    schema: CertificateIdArgs,
+    async run(args, context) {
+      const { id } = CertificateIdArgs.parse(args);
+      const certificates = await createCertificatesRepository(context.supabase).listByRecipient(
+        context.userId
+      );
+      const certificate = certificates.find((item) => item.id === id);
+      if (!certificate) return { found: false };
+      return { found: true, certificate: toPublicCertificate(certificate) };
+    },
+  },
+  {
+    name: 'verify_certificate',
+    kind: 'read',
+    product: 'certificates',
+    capabilityName: 'verify',
+    tier: 0,
+    description: 'التحقق من شهادة برمزها؛ الجواب هو نفسه الذي تعرضه صفحة التحقق العامة.',
+    schema: VerifyCertificateArgs,
+    async run(args, context) {
+      const { code } = VerifyCertificateArgs.parse(args);
+      // The public verifier is the read-only path the /verify page uses: same
+      // format check, same limits, same verdict. Never a write path.
+      return verifyCertificateByCode(code, context.ip);
+    },
+  },
+  {
     name: 'get_usage_state',
     kind: 'read',
     product: 'account',
@@ -650,6 +750,30 @@ const tools: ChatAgentTool[] = [
     schema: NoArgs,
     async run(_args, context) {
       return createUsageService().state(context.userId);
+    },
+  },
+  {
+    name: 'get_profile',
+    kind: 'read',
+    product: 'account',
+    capabilityName: 'get',
+    tier: 0,
+    description: 'اسم العضو ومعرّفه وصورته وبريده ونبذته، من ملفه لا من بطاقة الهوية.',
+    schema: NoArgs,
+    async run(_args, context) {
+      const answer = mcpAnswer(
+        await getProfileHandler({ format: 'json' }, mcpContext(context, 'profile.read')),
+        'تعذّر قراءة الملف الشخصي.'
+      );
+      // A non-admin turn never sees the admin flag, even though the MCP door
+      // carries it. The identity block has no such field either (ADR-0182).
+      return {
+        email: answer.email ?? null,
+        name: answer.name ?? null,
+        username: answer.username ?? null,
+        avatar_url: answer.avatar_url ?? null,
+        bio: answer.bio ?? null,
+      };
     },
   },
   {
@@ -683,6 +807,8 @@ const tools: ChatAgentTool[] = [
     name: 'list_my_posts',
     kind: 'read',
     product: 'community',
+    // The member's own posts; the MCP door froze `list_posts`.
+    capabilityName: 'list_posts',
     tier: 0,
     description: 'منشورات العضو ومسوداته في المجتمع.',
     schema: PostStatusArgs,
@@ -704,6 +830,8 @@ const tools: ChatAgentTool[] = [
     name: 'get_post_by_slug',
     kind: 'read',
     product: 'community',
+    // A public post by its slug; the MCP door froze `get_post`.
+    capabilityName: 'get_post',
     tier: 0,
     description: 'منشور منشور واحد برابطه.',
     schema: PostSlugArgs,
@@ -720,6 +848,25 @@ const tools: ChatAgentTool[] = [
         published_at: post.published_at,
         is_mine: post.author_id === context.userId,
       };
+    },
+  },
+  {
+    name: 'list_post_comments',
+    kind: 'read',
+    product: 'community',
+    capabilityName: 'list_comments',
+    tier: 0,
+    description: 'صفحة من تعليقات منشور عام، كما يقرأها زائر صفحة المنشور.',
+    schema: ListCommentsArgs,
+    async run(args, context) {
+      const input = ListCommentsArgs.parse(args);
+      return mcpAnswer(
+        await listPostCommentsHandler(
+          { ...input, format: 'json' },
+          mcpContext(context, 'community.read')
+        ),
+        'تعذّر قراءة التعليقات.'
+      );
     },
   },
   {
@@ -1383,6 +1530,124 @@ const tools: ChatAgentTool[] = [
     },
   },
   {
+    name: 'unpublish_post_draft',
+    kind: 'write',
+    product: 'community',
+    capabilityName: 'unpublish_post',
+    tier: 1,
+    description: 'إعادة منشور نشره العضو إلى المسودات.',
+    schema: PostIdArgs,
+    async run(args, context) {
+      const input = PostIdArgs.parse(args);
+      return mcpAnswer(
+        await unpublishPostHandler(
+          { id: input.id, format: 'json' },
+          mcpContext(context, 'community.write')
+        ),
+        'تعذّر إعادة المنشور إلى المسودات.'
+      );
+    },
+  },
+  {
+    name: 'delete_post',
+    kind: 'write',
+    product: 'community',
+    capabilityName: 'delete_post',
+    tier: 3,
+    description: 'حذف منشور يملكه العضو نهائياً.',
+    schema: PostIdArgs,
+    async run(args, context) {
+      const input = PostIdArgs.parse(args);
+      const posts = createPostsRepository(context.supabase);
+      const post = await posts.getPostForUser(input.id, context.userId);
+      if (!post) return { error: 'لم أجد هذا المنشور' };
+      return mcpAnswer(
+        await deletePostHandler(
+          { id: input.id, format: 'json' },
+          mcpContext(context, 'community.write')
+        ),
+        'تعذّر حذف المنشور.'
+      );
+    },
+  },
+  {
+    name: 'set_post_like',
+    kind: 'write',
+    product: 'community',
+    capabilityName: 'set_like',
+    tier: 1,
+    description: 'جعل إعجاب العضو بمنشور إمّا قائماً أو مزالاً؛ إعادته لا تبدّل الحالة.',
+    schema: SetLikeArgs,
+    async run(args, context) {
+      const input = SetLikeArgs.parse(args);
+      return mcpAnswer(
+        await setPostLikeHandler(
+          { ...input, format: 'json' },
+          mcpContext(context, 'community.write')
+        ),
+        'تعذّر ضبط الإعجاب.'
+      );
+    },
+  },
+  {
+    name: 'create_post_comment',
+    kind: 'write',
+    product: 'community',
+    capabilityName: 'create_comment',
+    tier: 2,
+    description: 'تعليق عام على منشور، باسم العضو الذي طلبه.',
+    schema: CreateCommentArgs,
+    async run(args, context) {
+      const input = CreateCommentArgs.parse(args);
+      return mcpAnswer(
+        await createPostCommentHandler(
+          { ...input, format: 'json' },
+          mcpContext(context, 'community.write')
+        ),
+        'تعذّر كتابة التعليق.'
+      );
+    },
+  },
+  {
+    name: 'edit_post_comment',
+    kind: 'write',
+    product: 'community',
+    capabilityName: 'edit_comment',
+    tier: 1,
+    description: 'تعديل تعليق كتبه العضو بنفسه.',
+    schema: EditCommentArgs,
+    async run(args, context) {
+      const input = EditCommentArgs.parse(args);
+      return mcpAnswer(
+        await editPostCommentHandler(
+          { ...input, format: 'json' },
+          mcpContext(context, 'community.write')
+        ),
+        'تعذّر تعديل التعليق.'
+      );
+    },
+  },
+  {
+    name: 'delete_post_comment',
+    kind: 'write',
+    product: 'community',
+    capabilityName: 'delete_comment',
+    tier: 1,
+    description: 'حذف تعليق كتبه العضو بنفسه.',
+    schema: DeleteCommentArgs,
+    async run(args, context) {
+      const input = DeleteCommentArgs.parse(args);
+      // `body` is for the confirmation card only; the handler never forwards it.
+      return mcpAnswer(
+        await deletePostCommentHandler(
+          { id: input.id, format: 'json' },
+          mcpContext(context, 'community.write')
+        ),
+        'تعذّر حذف التعليق.'
+      );
+    },
+  },
+  {
     name: 'record_expense',
     kind: 'write',
     product: 'spendtrack',
@@ -1706,6 +1971,33 @@ const tools: ChatAgentTool[] = [
         input.name
       );
       return { name: updated.name };
+    },
+  },
+  {
+    name: 'update_profile',
+    kind: 'write',
+    product: 'account',
+    capabilityName: 'update',
+    tier: 1,
+    description: 'تعديل الاسم أو النبذة أو رابط الصورة في ملف العضو، بالقدر الذي يتيحه الموقع.',
+    schema: UpdateProfileArgs,
+    async run(args, context) {
+      const input = UpdateProfileArgs.parse(args);
+      const answer = mcpAnswer(
+        await updateProfileHandler(
+          {
+            ...input,
+            format: 'json',
+          },
+          mcpContext(context, 'profile.write')
+        ),
+        'تعذّر تعديل الملف الشخصي.'
+      );
+      return {
+        name: answer.name ?? null,
+        bio: answer.bio ?? null,
+        avatar_url: answer.avatar_url ?? null,
+      };
     },
   },
   {
