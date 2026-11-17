@@ -22,7 +22,7 @@ function AccountSkeleton() {
 }
 
 export function AccountView() {
-  const { user, isLoading, profileName, profileAvatarUrl, signOut } = useSession();
+  const { user, isLoading, profileName, profileAvatarUrl, profileBio, signOut } = useSession();
 
   if (isLoading) {
     return <AccountSkeleton />;
@@ -54,7 +54,12 @@ export function AccountView() {
           <SignInCta href="/auth/login?redirect=/account" className="mt-1 w-full sm:w-auto" />
         </section>
       ) : (
-        <ProfileEditor userName={userName} userEmail={userEmail} avatarUrl={avatarUrl} />
+        <ProfileEditor
+          userName={userName}
+          userEmail={userEmail}
+          avatarUrl={avatarUrl}
+          bio={profileBio}
+        />
       )}
 
       {/* Public handle editor — signed-in members only */}

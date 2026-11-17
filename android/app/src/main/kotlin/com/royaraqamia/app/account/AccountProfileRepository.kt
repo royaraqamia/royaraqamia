@@ -5,6 +5,8 @@ import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.ContractCodec
 import com.royaraqamia.app.contracts.generated.AvatarUploadResponse
 import com.royaraqamia.app.contracts.generated.MeResponse
+import com.royaraqamia.app.contracts.generated.UpdateBio
+import com.royaraqamia.app.contracts.generated.UpdateBioResponse
 import com.royaraqamia.app.contracts.generated.UpdateName
 import com.royaraqamia.app.contracts.generated.UpdateNameResponse
 import com.royaraqamia.app.net.MultipartFile
@@ -40,6 +42,10 @@ class AccountProfileRepository(
     suspend fun updateName(name: String): ApiResult<UpdateNameResponse> =
         client.patch<UpdateNameResponse>(PATH_NAME, ContractCodec.encode(UpdateName(name)))
 
+    /** The public bio, written to the same row the page's `PATCH /api/me/bio` writes. */
+    suspend fun updateBio(bio: String): ApiResult<UpdateBioResponse> =
+        client.patch<UpdateBioResponse>(PATH_BIO, ContractCodec.encode(UpdateBio(bio)))
+
     suspend fun uploadAvatar(file: AvatarUpload): ApiResult<AvatarUploadResponse> =
         client.postFile<AvatarUploadResponse>(
             path = PATH_AVATAR,
@@ -56,6 +62,7 @@ class AccountProfileRepository(
     companion object {
         const val PATH_ME = "/api/me"
         const val PATH_NAME = "/api/me/name"
+        const val PATH_BIO = "/api/me/bio"
         const val PATH_AVATAR = "/api/me/avatar"
 
         /** The field the page's `FormData` and the route's `formData.get` both name. */

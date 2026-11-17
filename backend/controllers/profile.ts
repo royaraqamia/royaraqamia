@@ -9,7 +9,12 @@ import {
   AvatarValidationError,
   UsernameTakenError,
 } from '@/backend/services/users/profile-service';
-import { UpdateNameSchema, UpdateUsernameSchema, UsernameSchema } from '@/shared/contracts/users';
+import {
+  UpdateBioSchema,
+  UpdateNameSchema,
+  UpdateUsernameSchema,
+  UsernameSchema,
+} from '@/shared/contracts/users';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { messageError } from '@/backend/transport/authenticated-handler';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
@@ -120,6 +125,36 @@ export async function updateName(
       );
     },
     { mapError: messageError(500, 'تعذَّر تحديث الاسم') }
+  );
+}
+
+/** Change the caller's public-profile bio. */
+export async function updateBio(
+  body: Record<string, unknown>,
+  headers: Headers
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
+      const parsed = UpdateBioSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: parsed.error.issues[0]?.message ?? 'نبذة غير صالحة',
+        });
+      }
+
+      const { bio } = await createProfileService(supabase).updateBio(userId, parsed.data.bio);
+      return jsonResult(
+        200,
+        { success: true, bio },
+        { tags: [COMMUNITY_TAGS.members, COMMUNITY_TAGS.memberByUsername] }
+      );
+    },
+    { mapError: messageError(500, 'تعذَّر تحديث النبذة') }
   );
 }
 

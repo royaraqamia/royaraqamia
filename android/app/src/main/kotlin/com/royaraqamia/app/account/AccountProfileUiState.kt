@@ -3,9 +3,9 @@ package com.royaraqamia.app.account
 /**
  * Which of the card's own faces is drawn (#946).
  *
- * `ProfileEditor` on the page owns exactly these four: the card at rest, the
- * name dialog, the avatar dialog and the question before the picture is
- * removed. Keeping them a sealed interface is what lets
+ * `ProfileEditor` on the page owns these faces: the card at rest, the name
+ * dialog, the bio dialog, the avatar dialog and the question before the picture
+ * is removed. Keeping them a sealed interface is what lets
  * `docs/mobile/parity.json` hold the app's faces against the page's and
  * `check:parity` fail one the other client does not draw.
  */
@@ -15,6 +15,9 @@ sealed interface AccountProfileUiState {
 
     /** The name dialog is open, with its field and its save action. */
     data object EditingName : AccountProfileUiState
+
+    /** The bio dialog is open, with its field, the count and its save action. */
+    data object EditingBio : AccountProfileUiState
 
     /** The avatar dialog is open: the large picture, the limit and the actions. */
     data object EditingAvatar : AccountProfileUiState

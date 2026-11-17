@@ -115,9 +115,11 @@ private fun AccountProfileRoute(
                         name = result.value.name,
                         email = result.value.email,
                         avatarUrl = result.value.avatarUrl,
+                        bio = result.value.bio,
                     )
                 }
-                is ApiResult.Failure -> AccountProfile(name = null, email = null, avatarUrl = null)
+                is ApiResult.Failure ->
+                    AccountProfile(name = null, email = null, avatarUrl = null, bio = null)
             }
         loaded = true
     }

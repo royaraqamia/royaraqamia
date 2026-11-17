@@ -63,6 +63,13 @@ export class ProfileService {
     return { name };
   }
 
+  /** Set the caller's public bio; an empty string clears it. */
+  async updateBio(userId: string, bio: string): Promise<{ bio: string | null }> {
+    const value = bio.trim() || null;
+    await this.deps.profiles.updateProfile(userId, { bio: value });
+    return { bio: value };
+  }
+
   /**
    * Replace the caller's avatar. The new object is written first, then the
    * profile row is pointed at it; only after that succeeds is the previous

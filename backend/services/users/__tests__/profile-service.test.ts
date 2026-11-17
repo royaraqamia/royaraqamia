@@ -105,6 +105,22 @@ describe('ProfileService.updateName', () => {
   });
 });
 
+describe('ProfileService.updateBio', () => {
+  it('persists the bio', async () => {
+    const { service, updateProfile } = createService();
+
+    await expect(service.updateBio('u-1', 'كاتب')).resolves.toEqual({ bio: 'كاتب' });
+    expect(updateProfile).toHaveBeenCalledWith('u-1', { bio: 'كاتب' });
+  });
+
+  it('clears the bio when the member leaves it empty', async () => {
+    const { service, updateProfile } = createService();
+
+    await expect(service.updateBio('u-1', '   ')).resolves.toEqual({ bio: null });
+    expect(updateProfile).toHaveBeenCalledWith('u-1', { bio: null });
+  });
+});
+
 describe('ProfileService.updateAvatar', () => {
   it('uploads, points the profile at the new URL, then deletes the old object', async () => {
     const { service, avatars, updateProfile } = createService({
