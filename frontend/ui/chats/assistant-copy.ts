@@ -28,9 +28,6 @@ export const ASSISTANT_COPY = {
    * back is the line this composer draws.
    */
   appsMeter: 'تطبيقات: {used} من {cap} اليوم',
-  /** The proposal card's two answers (#818). */
-  confirmAction: 'تأكيد',
-  cancelAction: 'إلغاء',
   /** The composer's microphone, and the clip waiting to be sent. */
   record: 'تسجيل رسالة صوتية',
   stopRecording: 'إيقاف التسجيل',

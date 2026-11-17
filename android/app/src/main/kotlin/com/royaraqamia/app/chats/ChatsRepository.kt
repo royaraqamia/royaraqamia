@@ -2,14 +2,19 @@ package com.royaraqamia.app.chats
 
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.assistant.ScreenContextInput
+import com.royaraqamia.app.assistant.toAssistantAction
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.ContractCodec
+import com.royaraqamia.app.contracts.generated.ChatAgentAction
+import com.royaraqamia.app.contracts.generated.ChatAgentActionResponse
+import com.royaraqamia.app.contracts.generated.ChatAgentActionResponseAction
 import com.royaraqamia.app.contracts.generated.ChatAssistantStateResponse
 import com.royaraqamia.app.contracts.generated.ChatAttachmentUrlResponse
 import com.royaraqamia.app.contracts.generated.ChatMembersResponse
 import com.royaraqamia.app.contracts.generated.ChatMembersResponseMembersItem
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponse
+import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseActionsItem
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItem
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItemAttachmentsItem
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItemSenderKind
@@ -54,6 +59,8 @@ import java.net.URLEncoder
 data class ChatMessages(
     val messages: List<ChatMessagePageResponseMessagesItem>,
     val nextCursor: String?,
+    /** The assistant's proposals under this page's lines (#1182). */
+    val actions: List<ChatMessagePageResponseActionsItem> = emptyList(),
 )
 
 /** Where a line the device still owes stands, as the bubble draws it. */
@@ -192,13 +199,14 @@ class ChatsRepository(
                     // Older pages still come from the network (#1033): only the
                     // newest page is the device's window, so only it is written
                     // down and only it can be answered offline.
+                    val proposals = result.value.actions.orEmpty()
                     if (before != null) {
                         return@withContext ApiResult.Success(
-                            ChatMessages(page, result.value.nextCursor)
+                            ChatMessages(page, result.value.nextCursor, proposals)
                         )
                     }
                     val merged = mergeAndSave(conversationId, page)
-                    ApiResult.Success(ChatMessages(merged, result.value.nextCursor))
+                    ApiResult.Success(ChatMessages(merged, result.value.nextCursor, proposals))
                 } else {
                     refused(result.value.error)
                 }
@@ -465,6 +473,30 @@ class ChatsRepository(
                 buildJsonObject { put("answer", if (accept) "accept" else "decline") }.toString(),
             )
         )
+
+    /**
+     * The member's answer to a proposal, in the assistant's own thread (#1182).
+     * The server answers the settled row; a second tap is refused by it, not here.
+     */
+    suspend fun confirmAgentAction(
+        conversationId: String,
+        actionId: String,
+    ): ApiResult<ChatAgentAction> = resolveAgentAction(agentActionPath(conversationId, actionId, "confirm"))
+
+    suspend fun rejectAgentAction(
+        conversationId: String,
+        actionId: String,
+    ): ApiResult<ChatAgentAction> = resolveAgentAction(agentActionPath(conversationId, actionId, "reject"))
+
+    private suspend fun resolveAgentAction(path: String): ApiResult<ChatAgentAction> =
+        when (val result = client.post<ChatAgentActionResponse>(path, "{}")) {
+            is ApiResult.Success ->
+                when {
+                    !result.value.success || result.value.action == null -> refused(result.value.error)
+                    else -> ApiResult.Success(result.value.action.toAssistantAction())
+                }
+            is ApiResult.Failure -> result
+        }
 
     /**
      * The read watermark. The body is empty, so the server stamps "now" — the same
@@ -912,6 +944,9 @@ class ChatsRepository(
         /** The one streamed route: a turn with the assistant (ADR-0143). */
         fun assistantTurnPath(conversationId: String): String =
             "${threadPath(conversationId)}/assistant"
+
+        fun agentActionPath(conversationId: String, actionId: String, answer: String): String =
+            "${threadPath(conversationId)}/agent-actions/$actionId/$answer"
 
         fun respondPath(conversationId: String): String = "${threadPath(conversationId)}/respond"
 

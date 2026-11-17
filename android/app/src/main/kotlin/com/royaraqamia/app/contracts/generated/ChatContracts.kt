@@ -8,6 +8,81 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 
 @Serializable
+data class ChatAgentAction(
+    val id: String,
+    val conversationId: String,
+    val messageId: String,
+    val tool: String,
+    val args: ChatAgentActionArgs,
+    val appName: String? = null,
+    val status: ChatAgentActionStatus,
+    val result: ChatAgentActionResult?,
+    val createdAt: String,
+    val resolvedAt: String?,
+    val resolvedBy: String?,
+)
+
+@Serializable
+data class ChatAgentActionArgs(
+    val opaque: String? = null,
+)
+
+@Serializable
+enum class ChatAgentActionStatus {
+    @SerialName("proposed") PROPOSED,
+    @SerialName("confirmed") CONFIRMED,
+    @SerialName("rejected") REJECTED,
+    @SerialName("applied") APPLIED,
+    @SerialName("failed") FAILED,
+}
+
+@Serializable
+data class ChatAgentActionResult(
+    val error: String? = null,
+)
+
+@Serializable
+data class ChatAgentActionResponse(
+    val success: Boolean,
+    val action: ChatAgentActionResponseAction? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class ChatAgentActionResponseAction(
+    val id: String,
+    val conversationId: String,
+    val messageId: String,
+    val tool: String,
+    val args: ChatAgentActionResponseActionArgs,
+    val appName: String? = null,
+    val status: ChatAgentActionResponseActionStatus,
+    val result: ChatAgentActionResponseActionResult?,
+    val createdAt: String,
+    val resolvedAt: String?,
+    val resolvedBy: String?,
+)
+
+@Serializable
+data class ChatAgentActionResponseActionArgs(
+    val opaque: String? = null,
+)
+
+@Serializable
+enum class ChatAgentActionResponseActionStatus {
+    @SerialName("proposed") PROPOSED,
+    @SerialName("confirmed") CONFIRMED,
+    @SerialName("rejected") REJECTED,
+    @SerialName("applied") APPLIED,
+    @SerialName("failed") FAILED,
+}
+
+@Serializable
+data class ChatAgentActionResponseActionResult(
+    val error: String? = null,
+)
+
+@Serializable
 data class ChatThreadsResponse(
     val success: Boolean,
     val threads: List<ChatThreadsResponseThreadsItem>? = null,
@@ -251,6 +326,7 @@ data class ChatMessagePageResponse(
     val success: Boolean,
     val messages: List<ChatMessagePageResponseMessagesItem>? = null,
     val nextCursor: String? = null,
+    val actions: List<ChatMessagePageResponseActionsItem>? = null,
     val error: String? = null,
 )
 
@@ -291,6 +367,40 @@ data class ChatMessagePageResponseMessagesItemSourcesItem(
     val title: String,
     val domain: String,
     val publishedDate: String?,
+)
+
+@Serializable
+data class ChatMessagePageResponseActionsItem(
+    val id: String,
+    val conversationId: String,
+    val messageId: String,
+    val tool: String,
+    val args: ChatMessagePageResponseActionsItemArgs,
+    val appName: String? = null,
+    val status: ChatMessagePageResponseActionsItemStatus,
+    val result: ChatMessagePageResponseActionsItemResult?,
+    val createdAt: String,
+    val resolvedAt: String?,
+    val resolvedBy: String?,
+)
+
+@Serializable
+data class ChatMessagePageResponseActionsItemArgs(
+    val opaque: String? = null,
+)
+
+@Serializable
+enum class ChatMessagePageResponseActionsItemStatus {
+    @SerialName("proposed") PROPOSED,
+    @SerialName("confirmed") CONFIRMED,
+    @SerialName("rejected") REJECTED,
+    @SerialName("applied") APPLIED,
+    @SerialName("failed") FAILED,
+}
+
+@Serializable
+data class ChatMessagePageResponseActionsItemResult(
+    val error: String? = null,
 )
 
 @Serializable

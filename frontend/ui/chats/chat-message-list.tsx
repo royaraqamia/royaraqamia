@@ -9,7 +9,7 @@ import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assista
 import { cn } from '@/frontend/shared/cn';
 import { ASSISTANT_COPY } from './assistant-copy';
 import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
-import { ActionCard } from './chat-agent-action-card';
+import { ActionCard, type ActionCardLabels } from './chat-agent-action-card';
 import { AttachmentChip } from './attachment-chip';
 import { ChatBody } from './chat-body';
 import { ChatField } from './chat-field';
@@ -30,6 +30,17 @@ import {
   type ChatThread,
 } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+
+/** The proposal card's words: one copy source for the page and the app (#1182). */
+const ACTION_LABELS: ActionCardLabels = {
+  confirm: ASSISTANT_PANEL_COPY.actionConfirm,
+  reject: ASSISTANT_PANEL_COPY.actionReject,
+  proposed: ASSISTANT_PANEL_COPY.actionStatusProposed,
+  confirmed: ASSISTANT_PANEL_COPY.actionStatusConfirmed,
+  rejected: ASSISTANT_PANEL_COPY.actionStatusRejected,
+  applied: ASSISTANT_PANEL_COPY.actionStatusApplied,
+  failed: ASSISTANT_PANEL_COPY.actionStatusFailed,
+};
 
 /**
  * One conversation, drawn the same way wherever it is read (#1562).
@@ -354,7 +365,7 @@ export const ChatMessageRow = memo(function ChatMessageRow({
       )}
 
       {action ? (
-        <ActionCard action={action} onResolve={onResolve} />
+        <ActionCard action={action} labels={ACTION_LABELS} onResolve={onResolve} />
       ) : (
         <div
           className={cn(

@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.royaraqamia.app.api.ApiClient
 import com.royaraqamia.app.contracts.ApiError
 import com.royaraqamia.app.contracts.ApiResult
+import com.royaraqamia.app.contracts.generated.ChatAgentActionStatus
 import com.royaraqamia.app.net.HttpResponse
 import com.royaraqamia.app.session.MemoryTokenStore
 import com.royaraqamia.app.session.RefreshOutcome
@@ -93,6 +94,32 @@ class ChatsRepositoryTest {
         assertTrue(page is ApiResult.Success)
         assertEquals("c-1", (thread as ApiResult.Success).value.id)
         assertEquals(listOf("hello"), (page as ApiResult.Success).value.messages.map { it.body })
+    }
+
+    @Test
+    fun `a proposal is answered through the assistant's own routes`() = runBlocking {
+        val transport =
+            RecordingTransport { request ->
+                val status = if (request.url.endsWith("/reject")) "rejected" else "applied"
+                HttpResponse(200, answerBody(status))
+            }
+        val repository = repository(transport)
+
+        val confirmed = repository.confirmAgentAction("c-1", "a-1")
+        assertTrue("confirm: $confirmed", confirmed is ApiResult.Success)
+        assertEquals(
+            ChatAgentActionStatus.APPLIED,
+            (confirmed as ApiResult.Success).value.status,
+        )
+        assertTrue(transport.requests.single().url.endsWith("/agent-actions/a-1/confirm"))
+
+        val rejected = repository.rejectAgentAction("c-1", "a-1")
+        assertTrue("reject: $rejected", rejected is ApiResult.Success)
+        assertEquals(
+            ChatAgentActionStatus.REJECTED,
+            (rejected as ApiResult.Success).value.status,
+        )
+        assertTrue(transport.requests.last().url.endsWith("/agent-actions/a-1/reject"))
     }
 
     @Test
@@ -382,6 +409,27 @@ class ChatsRepositoryTest {
           }
         }
         """
+
+        fun answerBody(status: String) =
+            """
+            {
+              "success": true,
+              "action": {
+                "id": "a-1",
+                "conversationId": "c-1",
+                "messageId": "m-1",
+                "tool": "create_habit",
+                "args": {},
+                "appName": null,
+                "status": "$status",
+                "result": null,
+                "createdAt": "2026-11-01T00:00:00.000Z",
+                "resolvedAt": "2026-11-01T00:01:00.000Z",
+                "resolvedBy": "alice-id"
+              }
+            }
+            """
+                .trimIndent()
 
         const val MESSAGES_BODY = """
         {

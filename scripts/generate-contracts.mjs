@@ -307,9 +307,14 @@ export const CONTRACTS = [
     ],
   },
   {
+    // The assistant's proposal card (#1182): the row is read with the page's
+    // messages and with the confirm/reject answer, and the app decodes both from
+    // the same schema the site's services use.
     module: 'shared/contracts/chat',
     file: 'ChatContracts.kt',
     schemas: [
+      'ChatAgentActionSchema',
+      'ChatAgentActionResponseSchema',
       'ChatThreadsResponseSchema',
       'ChatThreadResponseSchema',
       'ChatMessagePageResponseSchema',

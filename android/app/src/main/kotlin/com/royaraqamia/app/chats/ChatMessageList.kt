@@ -34,6 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.assistant.AssistantAction
+import com.royaraqamia.app.assistant.AssistantActionCard
 import com.royaraqamia.app.assistant.AssistantPanelCopy
 import com.royaraqamia.app.assistant.AssistantSource
 import com.royaraqamia.app.community.CommunityMarkdown
@@ -96,6 +98,12 @@ fun ChatMessageList(
     onLoadOlder: () -> Unit = {},
     /** What a line with no words says; the assistant's sheet names it. */
     emptyBody: String? = null,
+    /** The assistant's proposals, drawn under the lines they belong to (#1182). */
+    actions: List<AssistantAction> = emptyList(),
+    /** The member's answer to a proposal: `(actionId, confirm|reject)`. */
+    onActionAnswer: (String, String) -> Unit = { _, _ -> },
+    /** One answer is on its way; the other card's buttons wait for it. */
+    busyActions: Boolean = false,
     /** What the newest answer changes: a streamed token, a pending phase. */
     followKey: Any? = messages.size,
     listState: LazyListState = rememberLazyListState(),
@@ -190,6 +198,14 @@ fun ChatMessageList(
                     onRetry = { onRetry(message) },
                     emptyBody = emptyBody,
                 )
+                actions.firstOrNull { it.messageId == message.id }?.let { action ->
+                    AssistantActionCard(
+                        action = action,
+                        sentence = message.body.orEmpty(),
+                        onAnswer = { answer -> onActionAnswer(action.id, answer) },
+                        busy = busyActions,
+                    )
+                }
             }
         }
 
