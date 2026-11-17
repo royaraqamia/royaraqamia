@@ -5,6 +5,7 @@ import { mcpCapabilityName } from '@/backend/services/tools/mcp-capabilities';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
 import { createServerUserProfileRepository } from '@/backend/config/users';
+import { ProfileBioSchema } from '@/shared/contracts/users';
 
 /**
  * Profile read tool. Reads the caller's own row in the `users` table using the
@@ -97,7 +98,7 @@ const UpdateProfileInputSchema = z
   .object({
     name: z.string().trim().min(1).max(80).nullable().optional().describe('Display name'),
     avatar_url: z.string().url().nullable().optional().describe('Avatar image URL'),
-    bio: z.string().trim().max(500).nullable().optional().describe('Short biography'),
+    bio: ProfileBioSchema.nullable().optional().describe('Short biography'),
     format: z.enum(['markdown', 'json']).default('markdown').describe('Output format'),
   })
   .strict();

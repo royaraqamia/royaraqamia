@@ -350,6 +350,8 @@ export const CONTRACTS = [
       'MeResponseSchema',
       'UpdateNameSchema',
       'UpdateNameResponseSchema',
+      'UpdateBioSchema',
+      'UpdateBioResponseSchema',
       'AvatarUploadResponseSchema',
     ],
   },

@@ -60,6 +60,21 @@ class AccountProfileRepositoryTest {
     }
 
     @Test
+    fun `the bio is the page's PATCH with its generated body`() {
+        val transport = RecordingTransport { HttpResponse(200, """{"success":true,"bio":"كاتبة"}""") }
+
+        val result = runBlocking { repository(transport).updateBio("كاتبة") }
+
+        assertTrue(result is ApiResult.Success)
+        assertEquals("كاتبة", (result as ApiResult.Success).value.bio)
+
+        val request = transport.requests.single()
+        assertEquals("PATCH", request.method)
+        assertEquals("https://app.test/api/me/bio", request.url)
+        assertEquals("""{"bio":"كاتبة"}""", request.body)
+    }
+
+    @Test
     fun `the write names the origin the route's guard asks for`() {
         val transport = RecordingTransport { HttpResponse(200, """{"success":true}""") }
 

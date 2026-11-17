@@ -114,6 +114,8 @@ export const MeResponseSchema = z.object({
   email: z.string().nullable(),
   avatarUrl: z.string().nullable(),
   username: z.string().nullable(),
+  /** The public-profile bio, from the same row the account card edits. */
+  bio: z.string().nullable(),
 });
 
 export type MeResponse = z.infer<typeof MeResponseSchema>;
@@ -123,6 +125,29 @@ export const UpdateNameSchema = z.object({
 });
 
 export type UpdateNameInput = z.infer<typeof UpdateNameSchema>;
+
+/**
+ * The short biography a member writes for their public profile. The 500-char
+ * ceiling is the one the database column and the MCP profile tool already use;
+ * keeping it here makes the site, the app and the agent agree on one rule.
+ * An empty value clears the bio (stored as null) rather than saving a blank.
+ */
+export const ProfileBioSchema = z.string().trim().max(500, 'النبذة طويلة جدًا');
+
+export const UpdateBioSchema = z.object({
+  bio: ProfileBioSchema,
+});
+
+export type UpdateBioInput = z.infer<typeof UpdateBioSchema>;
+
+/** What `PATCH /api/me/bio` answers, mirroring the name write. */
+export const UpdateBioResponseSchema = z.object({
+  success: z.boolean(),
+  bio: z.string().nullable().optional(),
+  error: z.string().optional(),
+});
+
+export type UpdateBioResponse = z.infer<typeof UpdateBioResponseSchema>;
 
 /**
  * What `PATCH /api/me/name` answers: the name it kept, or the sentence that

@@ -93,7 +93,7 @@ class AccountProfileCardTest {
             RecordingTransport { HttpResponse(200, """{"success":true,"name":"سارة"}""") }
         val changes = mutableListOf<AccountProfile>()
         draw(
-            profile = AccountProfile(name = "أحمد", email = "a@b.test", avatarUrl = null),
+            profile = AccountProfile(name = "أحمد", email = "a@b.test", avatarUrl = null, bio = null),
             repository = repository(transport),
             onChanged = { changes += it },
         )
@@ -116,7 +116,7 @@ class AccountProfileCardTest {
     fun `a blank name is refused before a request is spent`() {
         val transport = RecordingTransport { HttpResponse(500, "{}") }
         draw(
-            profile = AccountProfile(name = "أحمد", email = "a@b.test", avatarUrl = null),
+            profile = AccountProfile(name = "أحمد", email = "a@b.test", avatarUrl = null, bio = null),
             repository = repository(transport),
         )
 
@@ -126,6 +126,30 @@ class AccountProfileCardTest {
 
         assertTrue("no request for an invalid name", transport.requests.isEmpty())
         compose.onNodeWithText(AccountProfileCopy.NAME_REQUIRED).assertExists()
+    }
+
+    @Test
+    fun `the bio edit writes the page's PATCH and paints the kept bio`() {
+        val transport = RecordingTransport { HttpResponse(200, """{"success":true,"bio":"كاتبة"}""") }
+        val changes = mutableListOf<AccountProfile>()
+        draw(
+            profile = AccountProfile(name = "أحمد", email = "a@b.test", avatarUrl = null, bio = null),
+            repository = repository(transport),
+            onChanged = { changes += it },
+        )
+
+        compose.onNodeWithTag(AccountProfileMetrics.EDIT_BIO).performClick()
+        compose.onNodeWithTag(AccountProfileMetrics.BIO_FIELD).performTextReplacement("كاتبة")
+        compose.onNodeWithTag(AccountProfileMetrics.SAVE_BIO).performClick()
+        compose.waitUntil(5_000) { changes.isNotEmpty() }
+
+        val request = transport.requests.single()
+        assertEquals("PATCH", request.method)
+        assertEquals("https://app.test/api/me/bio", request.url)
+        assertEquals("""{"bio":"كاتبة"}""", request.body)
+
+        compose.onNodeWithText("كاتبة").assertExists()
+        assertEquals("كاتبة", changes.last().bio)
     }
 
     @Test
@@ -139,6 +163,7 @@ class AccountProfileCardTest {
                     name = "أحمد",
                     email = "a@b.test",
                     avatarUrl = "https://cdn.test/a.png",
+                    bio = null,
                 ),
             repository = repository(transport),
             onChanged = { changes += it },

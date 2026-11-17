@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     profileName: null as string | null,
     profileAvatarUrl: null as string | null,
     profileUsername: null as string | null,
+    profileBio: null as string | null,
     signOut: vi.fn(),
     refreshProfile: vi.fn(),
   },
@@ -54,6 +55,7 @@ beforeEach(() => {
   mocks.session.isAdmin = false;
   mocks.session.profileName = null;
   mocks.session.profileAvatarUrl = null;
+  mocks.session.profileBio = null;
   vi.clearAllMocks();
 });
 

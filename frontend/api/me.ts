@@ -41,6 +41,15 @@ export async function updateName(
   });
 }
 
+export async function updateBio(
+  bio: string
+): Promise<{ success: boolean; bio?: string | null; error?: string }> {
+  return request<{ success: boolean; bio?: string | null; error?: string }>('/api/me/bio', {
+    method: 'PATCH',
+    body: JSON.stringify({ bio }),
+  });
+}
+
 export async function uploadAvatar(
   file: File
 ): Promise<{ success: boolean; avatarUrl?: string; error?: string }> {

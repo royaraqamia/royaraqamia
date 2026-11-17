@@ -41,6 +41,8 @@ interface SessionContextType {
   profileAvatarUrl: string | null;
   /** Public handle from the user's profile row, or null when unavailable. */
   profileUsername: string | null;
+  /** Public-profile bio from the user's profile row, or null when unavailable. */
+  profileBio: string | null;
   signOut: () => Promise<void>;
   /** Re-read the profile row after an edit so the UI reflects it immediately. */
   refreshProfile: () => Promise<void>;
@@ -54,6 +56,7 @@ const SessionContext = createContext<SessionContextType>({
   profileName: null,
   profileAvatarUrl: null,
   profileUsername: null,
+  profileBio: null,
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -97,6 +100,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
+  const [profileBio, setProfileBio] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const prevSessionRef = useRef<Session | null>(null);
@@ -196,6 +200,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setProfileName(me.name ?? null);
     setProfileAvatarUrl(me.avatarUrl ?? null);
     setProfileUsername(me.username ?? null);
+    setProfileBio(me.bio ?? null);
   }, []);
 
   const clearProfile = useCallback(() => {
@@ -203,6 +208,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setProfileName(null);
     setProfileAvatarUrl(null);
     setProfileUsername(null);
+    setProfileBio(null);
   }, []);
 
   useEffect(() => {
@@ -269,6 +275,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       profileName,
       profileAvatarUrl,
       profileUsername,
+      profileBio,
       signOut,
       refreshProfile,
     }),
@@ -280,6 +287,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       profileName,
       profileAvatarUrl,
       profileUsername,
+      profileBio,
       signOut,
       refreshProfile,
     ]

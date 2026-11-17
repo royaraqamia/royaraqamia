@@ -2251,6 +2251,10 @@
           "copy": "save"
         },
         {
+          "name": "EditingBio",
+          "copy": "save"
+        },
+        {
           "name": "EditingAvatar",
           "copy": "changeAvatar"
         },

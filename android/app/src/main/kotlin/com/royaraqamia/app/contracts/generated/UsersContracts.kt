@@ -13,6 +13,7 @@ data class MeResponse(
     val email: String?,
     val avatarUrl: String?,
     val username: String?,
+    val bio: String?,
 )
 
 @Serializable
@@ -24,6 +25,18 @@ data class UpdateName(
 data class UpdateNameResponse(
     val success: Boolean,
     val name: String? = null,
+    val error: String? = null,
+)
+
+@Serializable
+data class UpdateBio(
+    val bio: String,
+)
+
+@Serializable
+data class UpdateBioResponse(
+    val success: Boolean,
+    val bio: String? = null,
     val error: String? = null,
 )
 

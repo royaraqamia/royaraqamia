@@ -19,16 +19,19 @@ export async function getMe(): Promise<HttpResult> {
   let name: string | null = null;
   let avatarUrl: string | null = null;
   let username: string | null = null;
+  let bio: string | null = null;
   if (user) {
     try {
       const profile = await createServerUserProfileRepository().getById(user.id);
       name = profile?.name?.trim() ? profile.name : null;
       avatarUrl = profile?.avatar_url?.trim() ? profile.avatar_url : null;
       username = profile?.username?.trim() ? profile.username : null;
+      bio = profile?.bio?.trim() ? profile.bio : null;
     } catch {
       name = null;
       avatarUrl = null;
       username = null;
+      bio = null;
     }
   }
 
@@ -42,6 +45,7 @@ export async function getMe(): Promise<HttpResult> {
       email: user?.email ?? null,
       avatarUrl,
       username,
+      bio,
     },
     { headers: { 'Cache-Control': 'no-store' } }
   );

@@ -8,16 +8,18 @@ import { toast } from 'sonner';
 import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
+import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { useSession } from '@/frontend/state/session-provider';
-import { removeAvatar, updateName, uploadAvatar } from '@/frontend/api/me';
+import { removeAvatar, updateBio, updateName, uploadAvatar } from '@/frontend/api/me';
 import { PROFILE_CARD_COPY } from './profile-card-copy';
 import {
   AVATAR_ALLOWED_MIME_TYPES,
   AVATAR_MAX_BYTES,
+  ProfileBioSchema,
   ProfileNameSchema,
 } from '@/shared/contracts/users';
 
@@ -25,6 +27,7 @@ interface ProfileEditorProps {
   userName: string | null;
   userEmail: string | null;
   avatarUrl: string | null;
+  bio: string | null;
 }
 
 const iconButtonClasses =
@@ -34,16 +37,16 @@ const dialogClassName =
   'sm:max-w-md w-[calc(100%-2rem)] mx-auto p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-border/80 bg-background shadow-2xl';
 
 /**
- * The signed-in member's profile card. The name is edited in a dialog and the
- * avatar (upload / replace / remove) in another, both triggered from the row.
- * The profile row is the source of truth; after every successful write we ask
- * the session to re-read it so the header and community surfaces pick it up too.
+ * The signed-in member's profile card. The name, the public bio and the avatar
+ * (upload / replace / remove) each have their own dialog, triggered from the
+ * card. The profile row is the source of truth; after every successful write we
+ * ask the session to re-read it so the header and community surfaces pick it up.
  *
  * The words come from `shared/copy/account-profile.json` through
  * [PROFILE_CARD_COPY] (#946), so the app's card is the same card rather than a
  * second set of Arabic that renders alike and compares unequal (ADR-0098).
  */
-export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorProps) {
+export function ProfileEditor({ userName, userEmail, avatarUrl, bio }: ProfileEditorProps) {
   const { refreshProfile } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +54,11 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
   const [nameValue, setNameValue] = useState(userName ?? '');
   const [nameError, setNameError] = useState<string | null>(null);
   const [savingName, setSavingName] = useState(false);
+
+  const [bioDialogOpen, setBioDialogOpen] = useState(false);
+  const [bioValue, setBioValue] = useState(bio ?? '');
+  const [bioError, setBioError] = useState<string | null>(null);
+  const [savingBio, setSavingBio] = useState(false);
 
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -61,6 +69,10 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
   useEffect(() => {
     setImageFailed(false);
   }, [avatarUrl]);
+
+  useEffect(() => {
+    setBioValue(bio ?? '');
+  }, [bio]);
 
   const showAvatar = Boolean(avatarUrl) && !imageFailed;
 
@@ -73,6 +85,43 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
   const closeNameDialog = () => {
     setNameDialogOpen(false);
     setNameError(null);
+  };
+
+  const openBioDialog = () => {
+    setBioValue(bio ?? '');
+    setBioError(null);
+    setBioDialogOpen(true);
+  };
+
+  const closeBioDialog = () => {
+    setBioDialogOpen(false);
+    setBioError(null);
+  };
+
+  const saveBio = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    const parsed = ProfileBioSchema.safeParse(bioValue);
+    if (!parsed.success) {
+      setBioError(PROFILE_CARD_COPY.bioTooLong);
+      return;
+    }
+
+    setBioError(null);
+    setSavingBio(true);
+    try {
+      const result = await updateBio(parsed.data);
+      if (!result.success) {
+        setBioError(result.error ?? PROFILE_CARD_COPY.bioFailed);
+        return;
+      }
+      await refreshProfile();
+      setBioDialogOpen(false);
+      toast.success(PROFILE_CARD_COPY.bioSaved);
+    } catch (error) {
+      setBioError(error instanceof Error ? error.message : PROFILE_CARD_COPY.bioFailed);
+    } finally {
+      setSavingBio(false);
+    }
   };
 
   const saveName = async (event?: React.FormEvent) => {
@@ -217,6 +266,24 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
         >
           {userEmail || PROFILE_CARD_COPY.activeAccount}
         </p>
+        <div className="mt-1 flex items-start gap-1.5">
+          <p
+            className={cn(
+              'line-clamp-2 min-w-0 flex-1 text-xs sm:text-sm',
+              bio?.trim() ? 'text-foreground/80' : 'text-muted-foreground'
+            )}
+          >
+            {bio?.trim() || PROFILE_CARD_COPY.noBio}
+          </p>
+          <button
+            type="button"
+            onClick={openBioDialog}
+            aria-label={bio?.trim() ? PROFILE_CARD_COPY.editBio : PROFILE_CARD_COPY.addBio}
+            className={cn(iconButtonClasses, 'h-6 w-6 rounded-lg')}
+          >
+            <Pencil className="size-3" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       <input
@@ -270,6 +337,66 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
             <DialogActions onCancel={closeNameDialog}>
               <HeroCtaButton type="submit" disabled={savingName} className="w-full sm:w-auto">
                 {savingName ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin shrink-0" aria-hidden="true" />
+                    <span aria-live="polite">{PROFILE_CARD_COPY.saving}</span>
+                  </>
+                ) : (
+                  PROFILE_CARD_COPY.save
+                )}
+              </HeroCtaButton>
+            </DialogActions>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={bioDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) closeBioDialog();
+        }}
+      >
+        <DialogContent
+          hideClose
+          aria-describedby={undefined}
+          className={cn(dialogClassName, 'gap-0')}
+        >
+          <DialogTitle className="sr-only">
+            {bio?.trim() ? PROFILE_CARD_COPY.editBio : PROFILE_CARD_COPY.addBio}
+          </DialogTitle>
+
+          <form onSubmit={saveBio} className="space-y-4">
+            <div className="space-y-2.5">
+              <label
+                htmlFor="profile-bio"
+                className="block text-[13px] font-medium text-foreground/80"
+              >
+                {PROFILE_CARD_COPY.bioLabel}
+              </label>
+              <Textarea
+                id="profile-bio"
+                autoFocus
+                value={bioValue}
+                onChange={(event) => {
+                  setBioValue(event.target.value);
+                  if (bioError) setBioError(null);
+                }}
+                maxLength={500}
+                showCount
+                placeholder={PROFILE_CARD_COPY.bioPlaceholder}
+                error={Boolean(bioError)}
+                aria-label={PROFILE_CARD_COPY.bioLabel}
+              />
+              <p className="text-xs text-muted-foreground">{PROFILE_CARD_COPY.bioLimit}</p>
+            </div>
+            {bioError && (
+              <p className="text-xs font-medium text-destructive" role="alert">
+                {bioError}
+              </p>
+            )}
+            <DialogActions onCancel={closeBioDialog}>
+              <HeroCtaButton type="submit" disabled={savingBio} className="w-full sm:w-auto">
+                {savingBio ? (
                   <>
                     <Loader2 className="size-4 animate-spin shrink-0" aria-hidden="true" />
                     <span aria-live="polite">{PROFILE_CARD_COPY.saving}</span>

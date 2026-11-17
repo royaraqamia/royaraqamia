@@ -77,6 +77,7 @@ data class AccountProfile(
     val name: String?,
     val email: String?,
     val avatarUrl: String?,
+    val bio: String?,
 )
 
 /** The boxes and controls the card's own tests press, named once (#946). */
@@ -90,6 +91,11 @@ object AccountProfileMetrics {
     const val NAME_FIELD = "account-profile-name-field"
     const val SAVE_NAME = "account-profile-save-name"
     const val CANCEL_NAME = "account-profile-cancel-name"
+    const val EDIT_BIO = "account-profile-edit-bio"
+    const val BIO_FIELD = "account-profile-bio-field"
+    const val SAVE_BIO = "account-profile-save-bio"
+    const val CANCEL_BIO = "account-profile-cancel-bio"
+    const val BIO = "account-profile-bio"
     const val CHANGE_AVATAR = "account-profile-change-avatar"
     const val REMOVE_AVATAR = "account-profile-remove-avatar"
     const val CONFIRM_REMOVE = "account-profile-confirm-remove"
@@ -100,12 +106,14 @@ object AccountProfileMetrics {
  * The account page's profile card (#946), ported from
  * `frontend/ui/account/profile-editor.tsx`.
  *
- * The page draws the member's avatar, name and email, and owns two dialogs: the
- * name is edited in one and the avatar is replaced or removed in the other, with
- * the page's own question before a removal. This is the same card, on the same
- * routes: [AccountProfileRepository.profile] reads `/api/me`, the writes are the
- * page's `PATCH /api/me/name`, `POST /api/me/avatar` and `DELETE /api/me/avatar`,
- * so a change made here is the row the page reads back (#946, ADR-0098).
+ * The page draws the member's avatar, name, bio and email, and owns three
+ * dialogs: the name and the bio are edited in their own, and the avatar is
+ * replaced or removed in the other, with the page's own question before a
+ * removal. This is the same card, on the same routes:
+ * [AccountProfileRepository.profile] reads `/api/me`, the writes are the page's
+ * `PATCH /api/me/name`, `PATCH /api/me/bio`, `POST /api/me/avatar` and
+ * `DELETE /api/me/avatar`, so a change made here is the row the page reads back
+ * (#946, ADR-0098).
  *
  * The words come from [AccountProfileCopy], generated from
  * `shared/copy/account-profile.json`; nothing user-facing is retyped here.
@@ -128,6 +136,9 @@ fun AccountProfileCard(
     var nameValue by remember { mutableStateOf("") }
     var nameError by remember { mutableStateOf<String?>(null) }
     var savingName by remember { mutableStateOf(false) }
+    var bioValue by remember { mutableStateOf("") }
+    var bioError by remember { mutableStateOf<String?>(null) }
+    var savingBio by remember { mutableStateOf(false) }
     var uploading by remember { mutableStateOf(false) }
     var removing by remember { mutableStateOf(false) }
     var avatarError by remember { mutableStateOf<String?>(null) }
@@ -168,6 +179,38 @@ fun AccountProfileCard(
                 is ApiResult.Failure ->
                     nameError = answer.error.messageOrNull() ?: AccountProfileCopy.NAME_FAILED
                 null -> nameError = AccountProfileCopy.NAME_FAILED
+            }
+        }
+    }
+
+    fun openBio() {
+        bioValue = live.bio.orEmpty()
+        bioError = null
+        face = AccountProfileUiState.EditingBio
+    }
+
+    fun saveBio() {
+        if (savingBio) return
+        val trimmed = bioValue.trim()
+        if (trimmed.length > BIO_LENGTH) {
+            bioError = AccountProfileCopy.BIO_TOO_LONG
+            return
+        }
+
+        savingBio = true
+        bioError = null
+        scope.launch {
+            val answer = runCatching { repository.updateBio(trimmed) }.getOrNull()
+            savingBio = false
+            when (answer) {
+                is ApiResult.Success -> {
+                    val kept = answer.value.bio?.trim()?.takeIf { it.isNotEmpty() }
+                    update(live.copy(bio = kept ?: trimmed.takeIf { it.isNotEmpty() }))
+                    face = AccountProfileUiState.AtRest
+                }
+                is ApiResult.Failure ->
+                    bioError = answer.error.messageOrNull() ?: AccountProfileCopy.BIO_FAILED
+                null -> bioError = AccountProfileCopy.BIO_FAILED
             }
         }
     }
@@ -276,6 +319,22 @@ fun AccountProfileCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.testTag(AccountProfileMetrics.EMAIL),
             )
+            Row(
+                modifier = Modifier.padding(top = 4.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                val shownBio = live.bio?.trim()?.takeIf { it.isNotEmpty() }
+                Text(
+                    text = shownBio ?: AccountProfileCopy.NO_BIO,
+                    style = LocalRoyTypeScale.current.xs,
+                    color = if (shownBio != null) RoyColors.foreground else RoyColors.mutedForeground,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).testTag(AccountProfileMetrics.BIO),
+                )
+                EditBioButton(hasBio = shownBio != null, onClick = ::openBio)
+            }
         }
     }
 
@@ -289,6 +348,20 @@ fun AccountProfileCard(
                 if (nameError != null) nameError = null
             },
             onSave = ::saveName,
+            onDismiss = { face = AccountProfileUiState.AtRest },
+        )
+    }
+
+    if (face is AccountProfileUiState.EditingBio) {
+        BioDialog(
+            value = bioValue,
+            error = bioError,
+            saving = savingBio,
+            onValueChange = {
+                bioValue = it
+                if (bioError != null) bioError = null
+            },
+            onSave = ::saveBio,
             onDismiss = { face = AccountProfileUiState.AtRest },
         )
     }
@@ -427,6 +500,28 @@ private fun EditNameButton(onClick: () -> Unit) {
     }
 }
 
+/** The pencil beside the bio: the same small bordered control as the name's. */
+@Composable
+private fun EditBioButton(hasBio: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.size(20.dp).testTag(AccountProfileMetrics.EDIT_BIO),
+        shape = RoundedCornerShape(8.dp),
+        color = RoyColors.card.copy(alpha = 0.6f),
+        border = BorderStroke(1.dp, RoyColors.border.copy(alpha = 0.5f)),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = LucideVectors.Pencil,
+                contentDescription =
+                    if (hasBio) AccountProfileCopy.EDIT_BIO else AccountProfileCopy.ADD_BIO,
+                tint = RoyColors.foreground,
+                modifier = Modifier.size(11.dp),
+            )
+        }
+    }
+}
+
 /** The name dialog: the page's label, field, error and save action. */
 @Composable
 private fun NameDialog(
@@ -474,6 +569,72 @@ private fun NameDialog(
                     onClick = onSave,
                     enabled = !saving,
                     modifier = Modifier.testTag(AccountProfileMetrics.SAVE_NAME),
+                ) {
+                    if (saving) Spinner(size = 16.dp, tint = Color.White)
+                    Text(
+                        text = if (saving) AccountProfileCopy.SAVING else AccountProfileCopy.SAVE,
+                        modifier = Modifier.padding(start = if (saving) 6.dp else 0.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** The bio dialog: the page's label, field, count, error and save action. */
+@Composable
+private fun BioDialog(
+    value: String,
+    error: String?,
+    saving: Boolean,
+    onValueChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = { if (!saving) onDismiss() },
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        DialogCard {
+            androidx.compose.material3.OutlinedTextField(
+                value = value,
+                onValueChange = onValueChange,
+                label = { Text(AccountProfileCopy.BIO_LABEL) },
+                placeholder = { Text(AccountProfileCopy.BIO_PLACEHOLDER) },
+                minLines = 3,
+                maxLines = 5,
+                isError = error != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                modifier = Modifier.fillMaxWidth().testTag(AccountProfileMetrics.BIO_FIELD),
+            )
+            Text(
+                text = AccountProfileCopy.BIO_LIMIT,
+                style = LocalRoyTypeScale.current.xs,
+                color = RoyColors.mutedForeground,
+            )
+            if (error != null) {
+                Text(
+                    text = error,
+                    style = LocalRoyTypeScale.current.xs.copy(fontWeight = FontWeight.Medium),
+                    color = RoyColors.destructive,
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = LocalRoySpacing.current.elementGapSm),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(
+                    onClick = onDismiss,
+                    enabled = !saving,
+                    modifier = Modifier.testTag(AccountProfileMetrics.CANCEL_BIO),
+                ) {
+                    Text(AccountProfileCopy.CANCEL, color = RoyColors.mutedForeground)
+                }
+                Button(
+                    onClick = onSave,
+                    enabled = !saving,
+                    modifier = Modifier.testTag(AccountProfileMetrics.SAVE_BIO),
                 ) {
                     if (saving) Spinner(size = 16.dp, tint = Color.White)
                     Text(
@@ -692,3 +853,6 @@ private fun ApiError.messageOrNull(): String? =
 
 /** The page's own name ceiling (`ProfileNameSchema`). */
 private const val NAME_LENGTH = 80
+
+/** The page's own bio ceiling (`ProfileBioSchema`). */
+private const val BIO_LENGTH = 500
