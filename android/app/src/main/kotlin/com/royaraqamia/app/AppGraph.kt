@@ -39,6 +39,7 @@ import com.royaraqamia.app.rates.RatesRepository
 import com.royaraqamia.app.realtime.RealtimeClient
 import com.royaraqamia.app.realtime.RealtimeSession
 import com.royaraqamia.app.realtime.RealtimeToken
+import com.royaraqamia.app.scan.ScanHistoryRepository
 import com.royaraqamia.app.session.AndroidDocumentCookies
 import com.royaraqamia.app.session.DocumentForeground
 import com.royaraqamia.app.session.DocumentSessionCookie
@@ -111,6 +112,8 @@ class AppGraph private constructor(
     val notifications: NotificationsRepository,
     /** The certificate check (#658): the one route a visitor can call with no session. */
     val verify: VerifyRepository,
+    /** The codes this member's scans left behind (#1430, ADR-0205). */
+    val scanHistory: ScanHistoryRepository,
     /** The rates board, and the last one this device read (#658). */
     val rates: RatesRepository,
     /** The community feed, and the last page this device saw (#658). */
@@ -421,6 +424,7 @@ class AppGraph private constructor(
                 mcpConnection = McpConnectionRepository(client),
                 homeServices = HomeServicesRepository(client),
                 verify = VerifyRepository(client),
+                scanHistory = ScanHistoryRepository(client),
                 rates = RatesRepository(client, publicSnapshots),
                 community = CommunityFeedRepository(client, publicSnapshots),
                 communityPost = communityPost,

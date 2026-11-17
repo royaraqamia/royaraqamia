@@ -14,6 +14,18 @@ import { createUsageService } from '@/backend/config/plans';
 import { createAgentMemoryFor } from '@/backend/config/agent-memory';
 import { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/backend/config/news';
 import { createRatesService } from '@/backend/config/rates';
+import { createScanHistoryService } from '@/backend/config/scan-history';
+import { listAthkarSets, readAthkarSet } from '@/backend/services/athkar/athkar-read';
+import {
+  QURAN_SEARCH_MAX_HITS,
+  SURAH_VERSE_WINDOW,
+  listSurahs,
+  readSurah,
+  readVerse,
+  searchQuran,
+} from '@/backend/services/quran/quran-read';
+import { ATHKAR_PERIODS } from '@/shared/contracts/athkar';
+import { SCAN_HISTORY_KIND_LABELS } from '@/shared/contracts/scan-history';
 import { applyNewsCardLimit, resolveNewsCardCap } from '@/backend/services/news/card-limit';
 import { listAgencySkills, loadAgencySkill } from '@/backend/services/chat/agency-skills';
 import { screenContextAnswer } from '@/backend/services/chat/turn-screen';
@@ -219,11 +231,34 @@ const CurrencyCode = z
   .transform((value) => value.toUpperCase());
 
 const RatePairArgs = z.strictObject({ from: CurrencyCode, to: CurrencyCode });
-
 const RateHistoryArgs = z.strictObject({
   code: CurrencyCode,
   range: z.enum(RATE_RANGES).optional(),
   basis: z.enum(RATE_BASES).optional(),
+});
+
+/** One sura, or a window of it. A whole sura can be 286 Ayat, so the window is named. */
+const SurahArgs = z.strictObject({
+  surah: z.number().int().min(1).max(114),
+  from: z.number().int().min(1).max(286).optional(),
+  to: z.number().int().min(1).max(286).optional(),
+});
+
+/** A reference is the sura and the Ayah inside it, both 1-based. */
+const VerseArgs = z.strictObject({
+  surah: z.number().int().min(1).max(114),
+  ayah: z.number().int().min(1).max(286),
+});
+
+const QuranSearchArgs = z.strictObject({
+  query: z.string().trim().min(2, 'اكتب كلمتين على الأقل للبحث').max(100, 'البحث أطول من المسموح'),
+  limit: z.number().int().min(1).max(QURAN_SEARCH_MAX_HITS).optional(),
+});
+
+const AthkarArgs = z.strictObject({ period: z.enum(ATHKAR_PERIODS) });
+
+const ScanHistoryArgs = z.strictObject({
+  limit: z.number().int().min(1).max(50).optional(),
 });
 
 /**
@@ -682,6 +717,167 @@ const tools: ChatAgentTool[] = [
           max: Math.max(...values),
           change_pct: computeChangePct(last.value, first.value),
         },
+      };
+    },
+  },
+  {
+    name: 'list_surahs',
+    kind: 'read',
+    product: 'quran',
+    tier: 0,
+    description:
+      'قائمة سور القرآن الـ114 كما تعرضها صفحة القرآن: رقم السورة واسمها وعدد آياتها ومكّية أو مدنية. اقرئي منها لتختاري سورة يطلبها العضو، ولا تعيدي القائمة كاملة إلا إن طلبها.',
+    schema: NoArgs,
+    maxResultChars: 12_000,
+    async run() {
+      const surahs = await listSurahs();
+      return { count: surahs.length, surahs };
+    },
+  },
+  {
+    name: 'get_surah',
+    kind: 'read',
+    product: 'quran',
+    tier: 0,
+    description:
+      'سورة واحدة من صفحة القرآن بآياتها المرقّمة، بوسيط surah (1 إلى 114) ووسيطَي from وto لآية البداية والنهاية. بلا from تبدأ من الآية الأولى، وبلا to تعيد ' +
+      `${SURAH_VERSE_WINDOW} آية، فالسورة الطويلة تُقرأ على دفعات ويقول الجواب truncated إن بقي منها شيء.`,
+    schema: SurahArgs,
+    maxResultChars: 12_000,
+    async run(args) {
+      const input = SurahArgs.parse(args);
+      const reading = await readSurah(input.surah, input.from, input.to);
+      if (!reading) return { found: false };
+
+      return {
+        found: true,
+        surah: { number: reading.number, name: reading.name },
+        ayah_count: reading.ayahCount,
+        from: reading.from,
+        to: reading.to,
+        verses: reading.verses,
+        truncated: reading.truncated,
+        next_from: reading.truncated ? reading.to + 1 : null,
+      };
+    },
+  },
+  {
+    name: 'get_verse',
+    kind: 'read',
+    product: 'quran',
+    tier: 0,
+    description:
+      'آية واحدة بمرجعها: surah رقم السورة وayah رقم الآية داخلها (كلتاهما تبدأ من 1). تعيد نصّ الآية واسم سورتها وعدد آياتها، فالإشارة مثل «البقرة 255» تُقرأ وحدها.',
+    schema: VerseArgs,
+    maxResultChars: 4_000,
+    async run(args) {
+      const input = VerseArgs.parse(args);
+      const verse = await readVerse(input.surah, input.ayah);
+      if (!verse) return { found: false };
+
+      return {
+        found: true,
+        surah: verse.surah,
+        ayah: verse.number,
+        ayah_count: verse.ayahCount,
+        text: verse.text,
+      };
+    },
+  },
+  {
+    name: 'search_quran',
+    kind: 'read',
+    product: 'quran',
+    tier: 0,
+    description:
+      'بحث نصّي في القرآن بمحرّك صفحة القرآن نفسه (لا فهرس ثانٍ): يعيد total عدد الآيات المطابقة وأول hits منها، كلٌّ برقم سورتها واسمها ورقم الآية ونصّها. البحث يتجاهل التشكيل ويقبل الصيغ الإملائية المختلفة.',
+    schema: QuranSearchArgs,
+    maxResultChars: 12_000,
+    async run(args) {
+      const input = QuranSearchArgs.parse(args);
+      const limit = input.limit ?? 5;
+      const { total, hits } = await searchQuran(input.query, limit);
+
+      return {
+        query: input.query,
+        total,
+        returned: hits.length,
+        hits: hits.map((hit) => ({
+          surah: hit.surah,
+          ayah: hit.number,
+          text: hit.text,
+        })),
+      };
+    },
+  },
+  {
+    name: 'list_athkar_sets',
+    kind: 'read',
+    product: 'athkar',
+    tier: 0,
+    description:
+      'مجموعتا الأذكار في صفحة الأذكار: أذكار الصباح وأذكار المساء، لكلٍّ دورها واسمها وعدد أذكارها. اقرئيها لتختاري المجموعة التي يسأل عنها العضو.',
+    schema: NoArgs,
+    async run() {
+      return { sets: await listAthkarSets() };
+    },
+  },
+  {
+    name: 'get_athkar',
+    kind: 'read',
+    product: 'athkar',
+    tier: 0,
+    description:
+      'مجموعة أذكار كاملة بوسيط period (morning أو evening): عنوانها وأذكارها بترتيب الصفحة، لكلٍّ نصّه وعدد مرّاته وفضله إن ورد ومصدره من السنّة. النصّ يُنقل كما هو ولا يُفسَّر ولا يُستنبط منه حكم.',
+    schema: AthkarArgs,
+    maxResultChars: 12_000,
+    async run(args) {
+      const input = AthkarArgs.parse(args);
+      const collection = await readAthkarSet(input.period);
+      if (!collection) return { found: false };
+
+      return {
+        found: true,
+        period: collection.period,
+        title: collection.title,
+        count: collection.items.length,
+        items: collection.items.map((item) => ({
+          id: item.id,
+          text: item.text,
+          repeat: item.repeat,
+          virtue: item.virtue ?? null,
+          source: item.source,
+        })),
+      };
+    },
+  },
+  {
+    name: 'get_scan_history',
+    kind: 'read',
+    product: 'scan',
+    tier: 0,
+    description:
+      'آخر الرموز التي مسحها العضو بماسح الصفحة: نوع كل رمز (رابط، شبكة WiFi، رمز تحقّق بخطوتين، جهة اتصال…) والتسمية التي تعرّفه (مضيف الرابط أو اسم الشبكة أو اسم الجهة) وآخر يوم مسحه وعدد مرّاته. لا يعيد الرمز نفسه ولا أي كلمة سر أو مفتاح: السجل ملخّص لا نسخة.',
+    schema: ScanHistoryArgs,
+    maxResultChars: 8_000,
+    async run(args, context) {
+      const input = ScanHistoryArgs.parse(args);
+      const entries = await createScanHistoryService(context.supabase).list(context.userId);
+      const limit = input.limit ?? 20;
+
+      return {
+        count: entries.length,
+        entries: entries.slice(0, limit).map((entry) => ({
+          kind: entry.kind,
+          kind_label: SCAN_HISTORY_KIND_LABELS[entry.kind],
+          label: entry.label,
+          last_seen_date: entry.lastSeenDate,
+          seen_count: entry.seenCount,
+        })),
+        note:
+          entries.length === 0
+            ? 'لا سجل مسح بعد. يُحفظ الرمز في السجل بعد أن يمسحه العضو وهو مسجّل الدخول.'
+            : null,
       };
     },
   },

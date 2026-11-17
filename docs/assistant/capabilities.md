@@ -13,15 +13,15 @@ that reads `Turn + MCP` is the same operation reached two ways.
 a read is always tier 0 and runs inside the turn; a write is above it, and
 tier 2 or 3 is always a card. Every write's tier is in the table below.
 
-**64 capabilities** (32 read, 32 write): 28 declared by the turn, 37 by the MCP server.
+**71 capabilities** (39 read, 32 write): 35 declared by the turn, 37 by the MCP server.
 
 | Product | Reads | Writes | Turn | MCP |
 | --- | --- | --- | --- | --- |
 | `news` | 2 | 0 | 2 | 0 |
 | `rates` | 2 | 0 | 2 | 0 |
-| `scan` | 0 | 0 | 0 | 0 |
-| `quran` | 0 | 0 | 0 | 0 |
-| `athkar` | 0 | 0 | 0 | 0 |
+| `scan` | 1 | 0 | 1 | 0 |
+| `quran` | 4 | 0 | 4 | 0 |
+| `athkar` | 2 | 0 | 2 | 0 |
 | `linksnap` | 2 | 3 | 0 | 5 |
 | `habitflow` | 3 | 5 | 3 | 6 |
 | `spendtrack` | 5 | 7 | 3 | 9 |
@@ -55,15 +55,31 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 
 ## `scan`
 
-No capability on either door yet.
+1 read, 0 write.
+
+| Capability | Kind | Tier | Doors |
+| --- | --- | --- | --- |
+| `scan.get_scan_history` | read | 0 | Turn |
 
 ## `quran`
 
-No capability on either door yet.
+4 read, 0 write.
+
+| Capability | Kind | Tier | Doors |
+| --- | --- | --- | --- |
+| `quran.list_surahs` | read | 0 | Turn |
+| `quran.get_surah` | read | 0 | Turn |
+| `quran.get_verse` | read | 0 | Turn |
+| `quran.search_quran` | read | 0 | Turn |
 
 ## `athkar`
 
-No capability on either door yet.
+2 read, 0 write.
+
+| Capability | Kind | Tier | Doors |
+| --- | --- | --- | --- |
+| `athkar.list_athkar_sets` | read | 0 | Turn |
+| `athkar.get_athkar` | read | 0 | Turn |
 
 ## `linksnap`
 

@@ -486,6 +486,8 @@ class ShellActivity : ComponentActivity() {
                             "/scan" ->
                                 ScanScreen(
                                     siteUrl = BuildConfig.SITE_URL,
+                                    repository = graph.scanHistory,
+                                    signedIn = signedIn,
                                     onOpenRoute = ::openRoute,
                                     onOpenExternal = ::openExternal,
                                     onCopy = ::copyToClipboard,

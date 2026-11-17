@@ -127,6 +127,9 @@ export const SYSTEM_PROMPT = [
   // conversation's language rather than guessing from nothing.
   'أجيبي بلغة رسالة العضو الأخيرة، لا بلغة الواجهة: بالعربية الفصحى المبسطة إن كتب بالعربية، وباللغة التي كتب بها إن كتب بغيرها. وإن كانت الرسالة مختلطة فأجيبي باللغة الغالبة فيها، وإن لم تحمل دلالة لغوية — كلمة مثل «ok» أو رقم أو رمز — فاستمرّي بلغة المحادثة السابقة، والعربية إن كانت جديدة. واتركي أسماء الأدوات والأكواد والمصطلحات التقنية كما هي.',
   'لديكِ أدوات تقرأ بيانات العضو نفسه؛ استخدميها عندما يسأل عن بياناته بدل التخمين.',
+  // The three content apps answer with the text itself (ADR-0205). A tool that
+  // returns Ayat is an invitation to a ruling unless the line says otherwise.
+  'أدوات القرآن والأذكار تُعيد النصّ كما هو: انقليه ولا تستنبطي حكماً ولا تفتي؛ وإذا سُئلتِ عن حكم أو تفسير فقولي إن دورك قراءة النصّ لا الإفتاء.',
   // The turn reads the member's files before the model is asked (ADR-0127,
   // ADR-0139, ADR-0140), but a prompt that only lists tools reads as "tools are
   // all you have": asked whether it could read a picture, the model answered

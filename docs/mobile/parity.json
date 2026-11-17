@@ -3,6 +3,31 @@
   "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. A row names what draws it: a `surface` from perf/surfaces.json, or the `frame` from docs/mobile/visual-gate.json when the component is the shell's chrome rather than one screen's content (ADR-0118: the frame is not a surface, so it is named separately). `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, a copy source no row claims, and any Kotlin file that reads `Recipes` or `LucideVectors` without a row (`exempt` takes a path and a reason). The rules are in docs/mobile/two-clients.md, and ADR-0098 and ADR-0103 record why this exists.",
   "components": [
     {
+      "id": "scan-history",
+      "surface": "scan",
+      "issue": "#1430",
+      "web": {
+        "route": "app/scan/page.tsx",
+        "component": "frontend/ui/scan/scan-history.tsx",
+        "copyModule": "frontend/ui/scan/scan-history-copy.ts",
+        "copyExport": "SCAN_HISTORY_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanHistory.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanHistoryUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanHistoryCopy.kt",
+        "copyObject": "ScanHistoryCopy"
+      },
+      "copySource": "shared/copy/scan-history.json",
+      "states": [
+        { "name": "SignedOut", "copy": "signedOut" },
+        { "name": "Loading", "copy": "title" },
+        { "name": "Empty", "copy": "empty" },
+        { "name": "Failed", "copy": "failed" },
+        { "name": "Ready", "copy": "title" }
+      ]
+    },
+    {
       "id": "habit-list",
       "surface": "habitflow",
       "issue": "#649",

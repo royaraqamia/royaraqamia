@@ -110,8 +110,23 @@ const nextConfig = {
   // (`backend/services/chat/agency-skills.ts`); Next ships only what a function
   // reaches, so the tree is named here. The terminal and the Telegram bot read
   // the same directory from the checkout (ADR-0137).
+  //
+  // The Quran and Athkar reads are the same shape (#1430): the turn's tools read
+  // `public/quran/**` (the sura files and the built search asset) and
+  // `data/athkar/**` at request time, and neither tree is copied into a function
+  // unless it is named. Without these two lines the tools work locally — the
+  // files are in the working directory — and 500 on the deployed function, which
+  // is exactly the failure the local gate cannot see.
   outputFileTracingIncludes: {
-    '/api/chats/**': ['./.opencode/skills/agency/**'],
+    '/api/chats/**': [
+      './.opencode/skills/agency/**',
+      // The turn's Quran tools read these three trees, not `audio/` or
+      // `tafsir/`: only what a tool reaches belongs in the function bundle.
+      './public/quran/meta/**',
+      './public/quran/surah/**',
+      './public/quran/search/**',
+      './data/athkar/**',
+    ],
   },
   images: {
     formats: ['image/avif', 'image/webp'],

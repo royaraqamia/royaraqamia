@@ -1,0 +1,74 @@
+[
+  {
+    "payload": "https://cafe.example/menu?table=4&token=abc123",
+    "format": "qr_code",
+    "nativeFormat": "QR_CODE",
+    "kind": "link",
+    "label": "cafe.example",
+    "absent": ["abc123", "token", "/menu", "table=4"]
+  },
+  {
+    "payload": "mailto:khaled@example.test?subject=hi",
+    "format": "qr_code",
+    "nativeFormat": "QR_CODE",
+    "kind": "email",
+    "label": "example.test",
+    "absent": ["khaled", "subject=hi"]
+  },
+  {
+    "payload": "tel:+963999123456",
+    "format": "qr_code",
+    "nativeFormat": "QR_CODE",
+    "kind": "phone",
+    "label": "••• 456",
+    "absent": ["+963999123456", "999123"]
+  },
+  {
+    "payload": "sms:+963999123456?body=hello",
+    "format": "qr_code",
+    "nativeFormat": "QR_CODE",
+    "kind": "sms",
+    "label": "••• 456",
+    "absent": ["+963999123456", "hello"]
+  },
+  {
+    "payload": "WIFI:T:WPA;S:CafeGuest;P:hunter2-secret;;",
+    "format": "qr_code",
+    "nativeFormat": "QR_CODE",
+    "kind": "wifi",
+    "label": "CafeGuest",
+    "absent": ["hunter2-secret", "WPA"]
+  },
+  {
+    "payload": "BEGIN:VCARD\nVERSION:3.0\nFN:Khaled Example\nTEL:+963999123456\nEMAIL:k@example.test\nEND:VCARD",
+    "format": "qr_code",
+    "nativeFormat": "QR_CODE",
+    "kind": "contact",
+    "label": "Khaled Example",
+    "absent": ["+963999123456", "k@example.test"]
+  },
+  {
+    "payload": "geo:33.5138,36.2765",
+    "format": "qr_code",
+    "nativeFormat": "QR_CODE",
+    "kind": "location",
+    "label": null,
+    "absent": ["33.5138", "36.2765"]
+  },
+  {
+    "payload": "otpauth://totp/GitHub:khaled?secret=JBSWY3DPEHPK3PXP&issuer=GitHub",
+    "format": "qr_code",
+    "nativeFormat": "QR_CODE",
+    "kind": "otp",
+    "label": "GitHub",
+    "absent": ["JBSWY3DPEHPK3PXP", "khaled"]
+  },
+  {
+    "payload": "password=hunter2",
+    "format": "qr_code",
+    "nativeFormat": "QR_CODE",
+    "kind": "text",
+    "label": null,
+    "absent": ["hunter2"]
+  }
+]

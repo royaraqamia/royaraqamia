@@ -44,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
@@ -112,6 +114,8 @@ internal enum class ScanStatus {
 @Composable
 fun ScanScreen(
     siteUrl: String,
+    repository: ScanHistoryRepository,
+    signedIn: Boolean,
     modifier: Modifier = Modifier,
     onOpenRoute: (String) -> Unit = {},
     onOpenExternal: (String) -> Unit = {},
@@ -143,6 +147,50 @@ fun ScanScreen(
     var torchAvailable by remember { mutableStateOf(false) }
     var torchOn by remember { mutableStateOf(false) }
 
+    // The history section's own state (ADR-0205). The server owns the dedupe, the
+    // count and the day, so a successful write is answered by reading the list
+    // again rather than by adding a row here.
+    var historyEntries by remember { mutableStateOf<List<ScanHistoryEntry>>(emptyList()) }
+    var historyLoading by remember { mutableStateOf(false) }
+    var historyFailed by remember { mutableStateOf(false) }
+    var historyConfirming by remember { mutableStateOf(false) }
+    var historyNotice by remember { mutableStateOf<String?>(null) }
+    var historyToken by remember { mutableStateOf(0) }
+
+    LaunchedEffect(signedIn, historyToken) {
+        if (!signedIn) {
+            historyEntries = emptyList()
+            historyFailed = false
+            historyLoading = false
+            return@LaunchedEffect
+        }
+
+        historyLoading = true
+        historyNotice = null
+        when (val answer = repository.read()) {
+            is ApiResult.Success -> {
+                historyEntries = answer.value
+                historyFailed = false
+            }
+            is ApiResult.Failure -> historyFailed = true
+        }
+        historyLoading = false
+    }
+
+    fun clearHistory() {
+        scope.launch {
+            when (repository.clear()) {
+                is ApiResult.Success -> {
+                    historyEntries = emptyList()
+                    historyNotice = ScanHistoryCopy.CLEARED
+                    historyFailed = false
+                }
+                is ApiResult.Failure -> historyFailed = true
+            }
+            historyConfirming = false
+        }
+    }
+
     fun releaseCamera() {
         generation.incrementAndGet()
         controller.value?.stop()
@@ -165,6 +213,17 @@ fun ScanScreen(
         message = null
         hit = code
         status = ScanStatus.Result
+
+        // A signed-in member's scan also becomes a summary row (ADR-0205). The
+        // summary is built here, on the device: the payload has no field to travel
+        // in, and a history that failed to save must not turn a good scan into an
+        // error the visitor has to read.
+        if (signedIn) {
+            val summary = ScanHistorySummary.of(ScanClassifier.classify(code.rawValue), code.format)
+            scope.launch {
+                if (repository.record(summary) is ApiResult.Success) historyToken++
+            }
+        }
     }
 
     val permission =
@@ -225,6 +284,15 @@ fun ScanScreen(
         }
     }
 
+    val historyState =
+        when {
+            !signedIn -> ScanHistoryUiState.SignedOut
+            historyLoading && historyEntries.isEmpty() -> ScanHistoryUiState.Loading
+            historyFailed -> ScanHistoryUiState.Failed
+            historyEntries.isEmpty() -> ScanHistoryUiState.Empty(historyNotice)
+            else -> ScanHistoryUiState.Ready(historyEntries, historyConfirming)
+        }
+
     ScanView(
         state =
             ScanViewState(
@@ -235,6 +303,7 @@ fun ScanScreen(
                 hasCamera = hasCamera,
                 torchAvailable = torchAvailable,
                 torchOn = torchOn,
+                history = historyState,
             ),
         siteUrl = siteUrl,
         onStart = ::startScanning,
@@ -249,6 +318,10 @@ fun ScanScreen(
         onCopy = onCopy,
         onOpenRoute = onOpenRoute,
         onOpenExternal = onOpenExternal,
+        onHistoryRetry = { historyToken++ },
+        onHistoryAskClear = { historyConfirming = true },
+        onHistoryClear = ::clearHistory,
+        onHistoryCancel = { historyConfirming = false },
         modifier = modifier,
         cameraPreview = {
             CameraPreview(
@@ -288,6 +361,7 @@ internal data class ScanViewState(
     val hasCamera: Boolean,
     val torchAvailable: Boolean,
     val torchOn: Boolean,
+    val history: ScanHistoryUiState = ScanHistoryUiState.SignedOut,
 )
 
 /**
@@ -312,6 +386,10 @@ internal fun ScanView(
     onOpenRoute: (String) -> Unit,
     onOpenExternal: (String) -> Unit,
     onCopy: (String) -> Unit,
+    onHistoryRetry: () -> Unit = {},
+    onHistoryAskClear: () -> Unit = {},
+    onHistoryClear: () -> Unit = {},
+    onHistoryCancel: () -> Unit = {},
     modifier: Modifier = Modifier,
     cameraPreview: @Composable () -> Unit = {},
 ) {
@@ -319,6 +397,18 @@ internal fun ScanView(
     val type = LocalRoyTypeScale.current
     val status = state.status
     val scanning = status == ScanStatus.Scanning
+
+    // The one block both branches draw, so a result never hides the history it
+    // just wrote (ADR-0205).
+    val history: @Composable () -> Unit = {
+        ScanHistorySection(
+            state = state.history,
+            onRetry = onHistoryRetry,
+            onAskClear = onHistoryAskClear,
+            onClear = onHistoryClear,
+            onCancel = onHistoryCancel,
+        )
+    }
 
     Column(
         modifier =
@@ -357,6 +447,7 @@ internal fun ScanView(
                 onCopy = onCopy,
                 onRescan = onRescan,
             )
+            history()
             return@Column
         }
 
@@ -550,6 +641,8 @@ internal fun ScanView(
                 }
             }
         }
+
+        history()
     }
 }
 

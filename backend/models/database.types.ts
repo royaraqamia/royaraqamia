@@ -3434,6 +3434,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      scan_history: {
+        Row: {
+          created_at: string;
+          format: string;
+          id: string;
+          kind: string;
+          label: string | null;
+          last_seen_at: string;
+          seen_count: number;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          format: string;
+          id?: string;
+          kind: string;
+          label?: string | null;
+          last_seen_at?: string;
+          seen_count?: number;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          format?: string;
+          id?: string;
+          kind?: string;
+          label?: string | null;
+          last_seen_at?: string;
+          seen_count?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       mcp_catalog_latest_verifications: {
         Row: {
           action: string;
@@ -3473,6 +3506,19 @@ export type Database = {
       agent_turns_due: {
         Args: { p_limit?: number };
         Returns: { id: string }[];
+      };
+      record_scan_history: {
+        Args: { p_format: string; p_kind: string; p_label: string | null };
+        Returns: {
+          created_at: string;
+          format: string;
+          id: string;
+          kind: string;
+          label: string | null;
+          last_seen_at: string;
+          seen_count: number;
+          user_id: string;
+        };
       };
       claim_agent_turn: {
         Args: { p_turn_id: string };
