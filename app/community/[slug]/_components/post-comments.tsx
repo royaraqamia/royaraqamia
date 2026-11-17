@@ -22,7 +22,7 @@ import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
 import { PostCommentOwnerActions } from './post-comment-owner-actions';
-import { formatRelativeTime } from '@/shared/relative-time';
+import { PostTime } from '@/app/community/_components/post-time';
 import { POST_COMMENT_MAX_LENGTH, type PostComment } from '@/shared/contracts/community';
 import { COMMUNITY_POST_COPY } from '../community-post-copy';
 
@@ -256,9 +256,7 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
                     ) : (
                       <span className="font-bold text-muted-foreground">—</span>
                     )}
-                    <time dateTime={comment.createdAt} className="text-muted-foreground">
-                      {formatRelativeTime(comment.createdAt)}
-                    </time>
+                    <PostTime iso={comment.createdAt} className="text-muted-foreground" />
                     {comment.editedAt && (
                       <span className="text-[11px] text-muted-foreground/70">
                         {COMMUNITY_POST_COPY.commentEdited}

@@ -1097,6 +1097,54 @@
       ]
     },
     {
+      "id": "post-time",
+      "surface": "community",
+      "issue": "#1580",
+      "web": {
+        "route": "app/community/page.tsx",
+        "component": "app/community/_components/post-time.tsx",
+        "copyModule": "app/community/_components/post-time-copy.ts",
+        "copyExport": "POST_TIME_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/PostTime.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/PostTimeState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/PostTimeCopy.kt",
+        "copyObject": "PostTimeCopy"
+      },
+      "copySource": "shared/copy/post-time.json",
+      "states": [
+        {
+          "name": "Now",
+          "copy": "now"
+        },
+        {
+          "name": "Minutes",
+          "copy": "minuteMany"
+        },
+        {
+          "name": "Hours",
+          "copy": "hourMany"
+        },
+        {
+          "name": "Days",
+          "copy": "dayFew"
+        },
+        {
+          "name": "Weeks",
+          "copy": "weekFew"
+        },
+        {
+          "name": "Months",
+          "copy": "monthFew"
+        },
+        {
+          "name": "Years",
+          "copy": "yearFew"
+        }
+      ]
+    },
+    {
       "id": "community-feed",
       "surface": "community",
       "issue": "#658",

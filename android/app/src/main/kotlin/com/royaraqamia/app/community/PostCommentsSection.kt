@@ -42,7 +42,6 @@ import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.CreateCommentResponseComment
 import com.royaraqamia.app.contracts.generated.PostCommentsResponseCommentsItem
 import com.royaraqamia.app.contracts.generated.PostCommentsResponseCommentsItemAuthor
-import com.royaraqamia.app.plans.PlanDates
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
@@ -382,8 +381,8 @@ private fun CommentRow(
                     style = type.xs.copy(fontWeight = FontWeight.Bold),
                     color = RoyColors.foreground,
                 )
-                Text(
-                    text = PlanDates.label(comment.createdAt),
+                PostTime(
+                    iso = comment.createdAt,
                     style = type.xs,
                     color = RoyColors.mutedForeground,
                 )
