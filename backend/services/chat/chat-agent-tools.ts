@@ -6,6 +6,7 @@ import { createCertificatesRepository } from '@/backend/config/certificates';
 import { createPostsRepository } from '@/backend/config/blogpress';
 import { createHabitService } from '@/backend/config/habitflow';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
+import { colorFromName } from '@/backend/services/spendtrack/spendtrack-csv';
 import { createPublicConsultationService } from '@/backend/config/consultation';
 import { createDefaultTrainingApplicationService } from '@/backend/config/training';
 import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
@@ -44,6 +45,22 @@ import {
   listLinksHandler,
   updateLinkHandler,
 } from '@/backend/services/mcp/tools/linksnap';
+import {
+  deleteHabitHandler,
+  getLogsHandler,
+  listHabitsHandler,
+  toggleLogHandler,
+  updateHabitHandler,
+} from '@/backend/services/mcp/tools/habitflow';
+import {
+  createCategoryHandler,
+  deleteExpenseHandler,
+  getSummaryHandler,
+  listBudgetsHandler,
+  listCategoriesHandler,
+  listTransactionsHandler,
+  setBudgetHandler,
+} from '@/backend/services/mcp/tools/spendtrack';
 import type { ToolResult } from '@/backend/services/mcp/tools/tool-utils';
 import type { McpUserContext } from '@/backend/services/mcp/session';
 import { COURSE_SLUGS } from '@/shared/contracts/training';
@@ -130,6 +147,12 @@ export interface ChatAgentTool {
   kind: ChatAgentToolKind;
   /** Which product owns it: the coverage axis of the registry (ADR-0183). */
   product: CapabilityOwner;
+  /**
+   * The registry short name when the two doors froze different names: the
+   * assistant's `record_expense` is the `create_expense` capability whose MCP
+   * name is `royaraqamia_spendtrack_create_expense` (ADR-0183, decision 4).
+   */
+  capabilityName?: string;
   /** Its blast radius: 0 for a read, 1..3 for a write (ADR-0180). */
   tier: ToolTier;
   /** What the model is told the tool is for. Arabic, one line. */
@@ -205,6 +228,71 @@ const CreateHabitArgs = z.strictObject({
 const HabitReminderArgs = z.strictObject({
   habit_name: z.string().trim().min(1, 'اسم العادة مطلوب').max(80, 'الاسم طويل جداً'),
   reminder_time: ReminderTime.nullable(),
+});
+
+/**
+ * The rest of the two products' hands (issue #1432). The argument shapes are the
+ * ones the model can name — categories by name, dates as the app writes them —
+ * and every object is strict so a member id cannot be passed in from a prompt.
+ */
+const ISODate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'التاريخ بصيغة YYYY-MM-DD');
+const ISODateRange = { start: ISODate.optional(), end: ISODate.optional() };
+const Month = z.string().regex(/^\d{4}-\d{2}$/, 'الشهر بصيغة YYYY-MM');
+
+const PageLimit = z.number().int().min(1).max(100);
+
+const ListHabitsArgs = z.strictObject({ limit: PageLimit.optional() });
+
+const GetLogsArgs = z.strictObject({ ...ISODateRange, start: ISODate, end: ISODate });
+
+const UpdateHabitArgs = z.strictObject({
+  id: z.string().trim().min(1, 'معرّف العادة مطلوب').max(80),
+  name: z.string().trim().min(1).max(80).optional(),
+  frequency: z.enum(['daily', 'weekly']).optional(),
+  target: z.number().int().positive().nullable().optional(),
+  target_period: z.enum(['week', 'month']).nullable().optional(),
+  reminder_time: ReminderTime.nullable().optional(),
+  archived: z.boolean().optional(),
+});
+
+const ToggleLogArgs = z.strictObject({
+  habit_id: z.string().trim().min(1, 'معرّف العادة مطلوب').max(80),
+  date: ISODate,
+  completed: z.boolean(),
+});
+
+const DeleteHabitArgs = z.strictObject({
+  id: z.string().trim().min(1, 'معرّف العادة مطلوب').max(80),
+  // The card names the habit; the handler checks this against the row.
+  name: z.string().trim().min(1, 'اسم العادة مطلوب').max(80),
+});
+
+const ListTransactionsArgs = z.strictObject({
+  ...ISODateRange,
+  search: z.string().trim().min(1).max(100).optional(),
+  limit: PageLimit.optional(),
+});
+
+const MonthArgs = z.strictObject({ month: Month.optional() });
+
+const CreateCategoryArgs = z.strictObject({
+  name: z.string().trim().min(1, 'اسم التصنيف مطلوب').max(50, 'اسم التصنيف طويل جداً'),
+  color_hex: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'اللون بصيغة #RRGGBB')
+    .optional(),
+});
+
+const SetBudgetArgs = z.strictObject({
+  month: Month.optional(),
+  amount: z.number().positive('المبلغ غير صالح').max(1_000_000_000, 'المبلغ كبير جداً'),
+  category: z.string().trim().min(1).max(50).optional(),
+});
+
+const DeleteExpenseArgs = z.strictObject({
+  expense_id: z.string().uuid('معرِّف المصروف غير صالح'),
+  // The card names the expense by its description; the handler checks the row.
+  name: z.string().trim().min(1, 'وصف المصروف مطلوب').max(200),
 });
 
 const BookConsultationArgs = z.strictObject({
@@ -374,11 +462,18 @@ const DeleteNoteArgs = z.strictObject({
  * The assistant's call into an existing MCP handler. The turn is already the
  * member: the only thing the MCP door adds is a scope check, so the context
  * carries the scope this operation needs and nothing else (ADR-0183's amendment).
+ * Both doors then read the same handler's `structuredContent`, which is why a
+ * capability added on one door cannot quietly drift on the other (#1432).
  */
-function linkSnapContext(
-  context: ChatAgentToolContext,
-  scope: 'linksnap.read' | 'linksnap.write'
-): McpUserContext {
+type ProductScope =
+  | 'linksnap.read'
+  | 'linksnap.write'
+  | 'habitflow.read'
+  | 'habitflow.write'
+  | 'spendtrack.read'
+  | 'spendtrack.write';
+
+function mcpContext(context: ChatAgentToolContext, scope: ProductScope): McpUserContext {
   return {
     userId: context.userId,
     email: null,
@@ -391,7 +486,7 @@ function linkSnapContext(
 }
 
 /** The domain value beside the markdown: never parse the handler's rendering. */
-function linkSnapAnswer(result: ToolResult, failure: string): Record<string, unknown> {
+function mcpAnswer(result: ToolResult, failure: string): Record<string, unknown> {
   if (result.isError || !result.structuredContent) return { error: failure };
   return result.structuredContent;
 }
@@ -698,6 +793,123 @@ const tools: ChatAgentTool[] = [
           category_id: expense.category_id,
         })),
       };
+    },
+  },
+  {
+    name: 'list_habits',
+    kind: 'read',
+    product: 'habitflow',
+    tier: 0,
+    description:
+      'قائمة عادات العضو بأسمائها ومعرّفاتها وتكرارها وأهدافها وتذكيراتها. خذ المعرّف من هنا قبل تعديل عادة أو تسجيل إنجاز لها.',
+    schema: ListHabitsArgs,
+    async run(args, context) {
+      const input = ListHabitsArgs.parse(args);
+      return mcpAnswer(
+        await listHabitsHandler(
+          { page_size: input.limit ?? 100, offset: 0, format: 'json' },
+          mcpContext(context, 'habitflow.read')
+        ),
+        'لم أقرأ قائمة عاداتك.'
+      );
+    },
+  },
+  {
+    name: 'get_logs',
+    kind: 'read',
+    product: 'habitflow',
+    tier: 0,
+    description:
+      'سجل إنجازات العادات بين تاريخين (YYYY-MM-DD)، مع تاريخ كل سجل وحالته وملاحظته. استخدمه حين يسأل العضو عمّا أنجزه في نطاق زمني.',
+    schema: GetLogsArgs,
+    async run(args, context) {
+      const input = GetLogsArgs.parse(args);
+      return mcpAnswer(
+        await getLogsHandler(
+          { start: input.start, end: input.end, page_size: 100, offset: 0, format: 'json' },
+          mcpContext(context, 'habitflow.read')
+        ),
+        'لم أقرأ سجل العادات.'
+      );
+    },
+  },
+  {
+    name: 'list_categories',
+    kind: 'read',
+    product: 'spendtrack',
+    tier: 0,
+    description:
+      'تصنيفات المصروفات المتاحة للعضو، بأسمائها ومعرّفاتها. استخدم الاسم حين يسأل العضو عن تصنيف بعينه.',
+    schema: NoArgs,
+    async run(_args, context) {
+      return mcpAnswer(
+        await listCategoriesHandler({ format: 'json' }, mcpContext(context, 'spendtrack.read')),
+        'لم أقرأ تصنيفات المصروفات.'
+      );
+    },
+  },
+  {
+    name: 'list_transactions',
+    kind: 'read',
+    product: 'spendtrack',
+    tier: 0,
+    description:
+      'عمليات المصروفات في نطاق زمني، مع مبلغ كل عملية وتاريخها ووصفها وتصنيفها. اكتب في search كلمة البحث كما قالها العضو (مثل «قهوة») لتقرأ العمليات نفسها وتجمع مبالغها، ولا تكتفِ بملخّص الشهر. إن تركت التاريخين فالنطاق هو هذا الشهر.',
+    schema: ListTransactionsArgs,
+    maxResultChars: 12_000,
+    async run(args, context) {
+      const input = ListTransactionsArgs.parse(args);
+      return mcpAnswer(
+        await listTransactionsHandler(
+          {
+            ...(input.start ? { start: input.start } : {}),
+            ...(input.end ? { end: input.end } : {}),
+            ...(input.search ? { search: input.search } : {}),
+            page_size: input.limit ?? 100,
+            offset: 0,
+            format: 'json',
+          },
+          mcpContext(context, 'spendtrack.read')
+        ),
+        'لم أقرأ عمليات المصروفات.'
+      );
+    },
+  },
+  {
+    name: 'get_summary',
+    kind: 'read',
+    product: 'spendtrack',
+    tier: 0,
+    description:
+      'ملخّص مصروفات شهر: الإجمالي والتفصيل حسب التصنيف والميزانيات ومجاميع الأيام. استخدمه للصورة العامة، واستخدم list_transactions حين يحتاج الجواب عمليات بعينها.',
+    schema: MonthArgs,
+    async run(args, context) {
+      const input = MonthArgs.parse(args);
+      return mcpAnswer(
+        await getSummaryHandler(
+          { ...(input.month ? { month: input.month } : {}), format: 'json' },
+          mcpContext(context, 'spendtrack.read')
+        ),
+        'لم أقرأ ملخّص المصروفات.'
+      );
+    },
+  },
+  {
+    name: 'list_budgets',
+    kind: 'read',
+    product: 'spendtrack',
+    tier: 0,
+    description: 'ميزانيات العضو لشهر، عامّة أو لتصنيف بعينه. الشهر الافتراضي هو هذا الشهر.',
+    schema: MonthArgs,
+    async run(args, context) {
+      const input = MonthArgs.parse(args);
+      return mcpAnswer(
+        await listBudgetsHandler(
+          { ...(input.month ? { month: input.month } : {}), format: 'json' },
+          mcpContext(context, 'spendtrack.read')
+        ),
+        'لم أقرأ ميزانياتك.'
+      );
     },
   },
 
@@ -1030,14 +1242,14 @@ const tools: ChatAgentTool[] = [
     maxResultChars: 8_000,
     async run(args, context) {
       const input = ListLinksArgs.parse(args);
-      return linkSnapAnswer(
+      return mcpAnswer(
         await listLinksHandler(
           {
             page_size: input.limit ?? 20,
             offset: input.offset ?? 0,
             format: 'json',
           },
-          linkSnapContext(context, 'linksnap.read')
+          mcpContext(context, 'linksnap.read')
         ),
         'لم أقرأ روابطك المختصرة.'
       );
@@ -1054,10 +1266,10 @@ const tools: ChatAgentTool[] = [
     maxResultChars: 8_000,
     async run(args, context) {
       const input = LinkAnalyticsArgs.parse(args);
-      return linkSnapAnswer(
+      return mcpAnswer(
         await getAnalyticsHandler(
           { code: input.code, ...(input.days ? { days: input.days } : {}), format: 'json' },
-          linkSnapContext(context, 'linksnap.read')
+          mcpContext(context, 'linksnap.read')
         ),
         'لم أقرأ إحصاءات هذا الرابط.'
       );
@@ -1174,6 +1386,8 @@ const tools: ChatAgentTool[] = [
     name: 'record_expense',
     kind: 'write',
     product: 'spendtrack',
+    // The turn froze this name; the MCP door froze `create_expense` (ADR-0183).
+    capabilityName: 'create_expense',
     tier: 1,
     description: 'تسجيل مصروف بمبلغ وتصنيف بالاسم.',
     schema: RecordExpenseArgs,
@@ -1197,6 +1411,7 @@ const tools: ChatAgentTool[] = [
     name: 'edit_expense',
     kind: 'write',
     product: 'spendtrack',
+    capabilityName: 'update_expense',
     tier: 1,
     description: 'تعديل مبلغ مصروف أو تصنيفه.',
     schema: EditExpenseArgs,
@@ -1255,6 +1470,178 @@ const tools: ChatAgentTool[] = [
 
       await service.updateHabit(habit.id, { reminderTime: input.reminder_time });
       return { habit_id: habit.id, reminder_time: input.reminder_time };
+    },
+  },
+  {
+    name: 'update_habit',
+    kind: 'write',
+    product: 'habitflow',
+    tier: 1,
+    description:
+      'تعديل عادة قائمة بمعرّفها: اسمها أو تكرارها أو هدفها أو تذكيرها. المعرّف من list_habits، وكل حقل يُترك فارغاً يبقى كما هو.',
+    schema: UpdateHabitArgs,
+    async run(args, context) {
+      const input = UpdateHabitArgs.parse(args);
+      return mcpAnswer(
+        await updateHabitHandler(
+          {
+            id: input.id,
+            ...(input.name ? { name: input.name } : {}),
+            ...(input.frequency ? { frequency: input.frequency } : {}),
+            ...('target' in input ? { target: input.target } : {}),
+            ...('target_period' in input ? { target_period: input.target_period } : {}),
+            ...('reminder_time' in input ? { reminder_time: input.reminder_time } : {}),
+            ...('archived' in input ? { archived: input.archived } : {}),
+            format: 'json',
+          },
+          mcpContext(context, 'habitflow.write')
+        ),
+        'لم أعدّل العادة.'
+      );
+    },
+  },
+  {
+    name: 'toggle_log',
+    kind: 'write',
+    product: 'habitflow',
+    tier: 1,
+    description:
+      'تسجيل إنجاز عادة في يوم بعينه، أو إلغاؤه. المعرّف من list_habits، والتاريخ بصيغة YYYY-MM-DD، والحالة مكتملة أو غير مكتملة.',
+    schema: ToggleLogArgs,
+    async run(args, context) {
+      const input = ToggleLogArgs.parse(args);
+      return mcpAnswer(
+        await toggleLogHandler(
+          {
+            habit_id: input.habit_id,
+            date: input.date,
+            completed: input.completed,
+            format: 'json',
+          },
+          mcpContext(context, 'habitflow.write')
+        ),
+        'لم أسجّل إنجاز العادة.'
+      );
+    },
+  },
+  {
+    name: 'delete_habit',
+    kind: 'write',
+    product: 'habitflow',
+    tier: 3,
+    description:
+      'أرشفة عادة يملكها العضو بمعرّفها واسمها كما تظهر في القائمة. لا يُنفَّذ داخل الجولة؛ تُعرض بطاقة تسمّي العادة، ولا تُحذف إلا بعد تأكيد العضو.',
+    schema: DeleteHabitArgs,
+    async run(args, context) {
+      const input = DeleteHabitArgs.parse(args);
+      const habits = await createHabitService(
+        context.userId,
+        context.supabase
+      ).service.getAllHabits();
+      const habit = habits.find((candidate) => candidate.id === input.id);
+      if (!habit) return { error: 'لم أجد هذه العادة' };
+      // The name on the card is a typed target: it must name this very row.
+      if (habit.name.trim().toLocaleLowerCase() !== input.name.trim().toLocaleLowerCase()) {
+        return { error: 'اسم العادة غير مطابق' };
+      }
+      return mcpAnswer(
+        await deleteHabitHandler(
+          { id: input.id, format: 'json' },
+          mcpContext(context, 'habitflow.write')
+        ),
+        'لم أحذف العادة.'
+      );
+    },
+  },
+  {
+    name: 'create_category',
+    kind: 'write',
+    product: 'spendtrack',
+    tier: 1,
+    description:
+      'إنشاء تصنيف مصروفات باسمه، ولونه اختياري؛ إن لم يُذكر اختير له لون من اسمه. يُعرض وصف التصنيف في بطاقة قبل الحفظ.',
+    schema: CreateCategoryArgs,
+    async run(args, context) {
+      const input = CreateCategoryArgs.parse(args);
+      return mcpAnswer(
+        await createCategoryHandler(
+          {
+            name: input.name,
+            color_hex: input.color_hex ?? colorFromName(input.name),
+            format: 'json',
+          },
+          mcpContext(context, 'spendtrack.write')
+        ),
+        'لم أنشئ التصنيف.'
+      );
+    },
+  },
+  {
+    name: 'set_budget',
+    kind: 'write',
+    product: 'spendtrack',
+    tier: 1,
+    description:
+      'تحديد ميزانية شهرية بمبلغ، عامّة أو لتصنيف يُذكر بالاسم. الكتابة على شهر وتصنيف موجودين تعدّل المبلغ، فهي قابلة للرجوع بتحديد مبلغ آخر، ولا تحذف أي سجل.',
+    schema: SetBudgetArgs,
+    async run(args, context) {
+      const input = SetBudgetArgs.parse(args);
+      let categoryId: string | undefined;
+      if (input.category) {
+        const categories = await categoriesByName(context);
+        categoryId = categories.get(input.category);
+        if (!categoryId) return unknownCategory(input.category, categories);
+      }
+      return mcpAnswer(
+        await setBudgetHandler(
+          {
+            month: input.month ?? damascusToday().slice(0, 7),
+            amount: input.amount,
+            ...(categoryId ? { category_id: categoryId } : {}),
+            format: 'json',
+          },
+          mcpContext(context, 'spendtrack.write')
+        ),
+        'لم أحدّد الميزانية.'
+      );
+    },
+  },
+  {
+    name: 'delete_expense',
+    kind: 'write',
+    product: 'spendtrack',
+    tier: 3,
+    description:
+      'حذف مصروف يملكه العضو بمعرّفه ووصفه كما يظهر في القائمة. لا يُنفَّذ داخل الجولة؛ تُعرض بطاقة تسمّي المصروف، ولا يُحذف إلا بعد تأكيد العضو.',
+    schema: DeleteExpenseArgs,
+    async run(args, context) {
+      const input = DeleteExpenseArgs.parse(args);
+      const found = await createSpendtrackService(context.supabase).getTransactions({
+        userId: context.userId,
+        start: '2000-01-01',
+        end: '2100-12-31',
+        filterCategories: [],
+        sort: 'date_desc',
+        pageSize: 100,
+        search: input.name,
+      });
+      const expense = found.expenses.find((candidate) => candidate.id === input.expense_id);
+      if (!expense) return { error: 'لم أجد هذا المصروف' };
+      // The name on the card is a typed target: the description must name this
+      // very row. A mis-targeted card must never delete the expense.
+      if (
+        (expense.description ?? '').trim().toLocaleLowerCase() !==
+        input.name.trim().toLocaleLowerCase()
+      ) {
+        return { error: 'وصف المصروف غير مطابق' };
+      }
+      return mcpAnswer(
+        await deleteExpenseHandler(
+          { id: input.expense_id, format: 'json' },
+          mcpContext(context, 'spendtrack.write')
+        ),
+        'لم أحذف المصروف.'
+      );
     },
   },
   {
@@ -1349,7 +1736,7 @@ const tools: ChatAgentTool[] = [
     schema: CreateLinkArgs,
     async run(args, context) {
       const input = CreateLinkArgs.parse(args);
-      const answer = linkSnapAnswer(
+      const answer = mcpAnswer(
         await createLinkHandler(
           {
             url: input.url,
@@ -1358,7 +1745,7 @@ const tools: ChatAgentTool[] = [
             ...(input.password ? { password: input.password } : {}),
             format: 'json',
           },
-          linkSnapContext(context, 'linksnap.write')
+          mcpContext(context, 'linksnap.write')
         ),
         'لم أختصر الرابط.'
       );
@@ -1377,7 +1764,7 @@ const tools: ChatAgentTool[] = [
     schema: UpdateLinkArgs,
     async run(args, context) {
       const input = UpdateLinkArgs.parse(args);
-      return linkSnapAnswer(
+      return mcpAnswer(
         await updateLinkHandler(
           {
             code: input.code,
@@ -1387,7 +1774,7 @@ const tools: ChatAgentTool[] = [
             ...('password' in input ? { password: input.password } : {}),
             format: 'json',
           },
-          linkSnapContext(context, 'linksnap.write')
+          mcpContext(context, 'linksnap.write')
         ),
         'لم أعدّل الرابط المختصر.'
       );
@@ -1403,10 +1790,10 @@ const tools: ChatAgentTool[] = [
     schema: DeleteLinkArgs,
     async run(args, context) {
       const input = DeleteLinkArgs.parse(args);
-      return linkSnapAnswer(
+      return mcpAnswer(
         await deleteLinkHandler(
           { code: input.code, format: 'json' },
-          linkSnapContext(context, 'linksnap.write')
+          mcpContext(context, 'linksnap.write')
         ),
         'لم أحذف الرابط المختصر.'
       );

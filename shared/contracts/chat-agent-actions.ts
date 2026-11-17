@@ -94,6 +94,22 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'get_post_by_slug',
   'get_habits_summary',
   'get_expenses_summary',
+  // The rest of HabitFlow's and SpendTrack's hands (issue #1432). The two
+  // SpendTrack writes the turn already had keep their names: `record_expense`
+  // and `edit_expense` are the `create_expense` and `update_expense` capabilities
+  // at the registry, whose MCP names are frozen on the other door.
+  'list_habits',
+  'get_logs',
+  'update_habit',
+  'toggle_log',
+  'delete_habit',
+  'list_categories',
+  'list_transactions',
+  'get_summary',
+  'list_budgets',
+  'create_category',
+  'set_budget',
+  'delete_expense',
   // The two content reads (issue #1429): the day's digest and one story of it.
   // Public content, so nothing here depends on the member beyond the plan's
   // card allowance the board already applies.
@@ -208,6 +224,20 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     label: 'قراءة مصروفات هذا الشهر',
     activity: 'تقرأ مصروفات هذا الشهر',
   },
+  list_habits: { kind: 'read', label: 'قراءة قائمة عاداتك', activity: 'تقرأ قائمة عاداتك' },
+  get_logs: { kind: 'read', label: 'قراءة سجل العادات', activity: 'تقرأ سجل العادات' },
+  list_categories: {
+    kind: 'read',
+    label: 'قراءة تصنيفات المصروفات',
+    activity: 'تقرأ تصنيفات المصروفات',
+  },
+  list_transactions: {
+    kind: 'read',
+    label: 'قراءة العمليات في نطاق زمني',
+    activity: 'تقرأ العمليات في نطاق زمني',
+  },
+  get_summary: { kind: 'read', label: 'قراءة ملخّص مصروفات شهر', activity: 'تقرأ ملخّص مصروفات شهر' },
+  list_budgets: { kind: 'read', label: 'قراءة ميزانياتك', activity: 'تقرأ ميزانياتك' },
   get_latest_news: {
     kind: 'read',
     label: 'قراءة آخر الأخبار',
@@ -235,6 +265,12 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     label: 'ضبط تذكير عادة',
     activity: 'تضبط تذكير عادة',
   },
+  update_habit: { kind: 'write', label: 'تعديل عادة', activity: 'تعدّل عادة' },
+  toggle_log: { kind: 'write', label: 'تسجيل إنجاز عادة', activity: 'تسجّل إنجاز عادة' },
+  delete_habit: { kind: 'write', label: 'حذف عادة', activity: 'تحذف عادة' },
+  create_category: { kind: 'write', label: 'إنشاء تصنيف مصروفات', activity: 'تنشئ تصنيف مصروفات' },
+  set_budget: { kind: 'write', label: 'تحديد ميزانية', activity: 'تحدّد ميزانية' },
+  delete_expense: { kind: 'write', label: 'حذف مصروف', activity: 'تحذف مصروفاً' },
   book_consultation: { kind: 'write', label: 'حجز استشارة', activity: 'تحجز استشارة' },
   apply_training: { kind: 'write', label: 'تقديم طلب تدريب', activity: 'تقدّم طلب تدريب' },
   submit_project_request: {
@@ -433,6 +469,26 @@ export function chatAgentActionSentence(
     case 'set_habit_reminder': {
       const at = text(values.reminder_time);
       return at ? `${label} — ${at}` : `${label} — إزالة التذكير`;
+    }
+    case 'toggle_log': {
+      const date = text(values.date);
+      const done =
+        values.completed === true ? 'تمام' : values.completed === false ? 'غير مكتمل' : '';
+      return date ? `${label} — ${date}${done ? ` — ${done}` : ''}` : label;
+    }
+    case 'set_budget': {
+      const month = text(values.month);
+      const sum = amount(values.amount);
+      return month && sum ? `${label} — ${month} — ${sum}` : label;
+    }
+    case 'delete_habit': {
+      const name = text(values.name);
+      return name ? `${label} — «${name.slice(0, 60)}»` : label;
+    }
+    case 'delete_expense': {
+      const name = text(values.name);
+      const sum = amount(values.amount);
+      return name ? `${label} — «${name.slice(0, 60)}»${sum ? ` — ${sum}` : ''}` : label;
     }
     case 'get_post_by_slug':
       return text(values.slug) ? `${label} «${text(values.slug)}»` : label;

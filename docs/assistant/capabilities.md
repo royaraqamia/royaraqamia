@@ -13,7 +13,7 @@ that reads `Turn + MCP` is the same operation reached two ways.
 a read is always tier 0 and runs inside the turn; a write is above it, and
 tier 2 or 3 is always a card. Every write's tier is in the table below.
 
-**77 capabilities** (42 read, 35 write): 46 declared by the turn, 37 by the MCP server.
+**75 capabilities** (42 read, 33 write): 58 declared by the turn, 37 by the MCP server.
 
 | Product | Reads | Writes | Turn | MCP |
 | --- | --- | --- | --- | --- |
@@ -23,8 +23,8 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | `quran` | 4 | 0 | 4 | 0 |
 | `athkar` | 2 | 0 | 2 | 0 |
 | `linksnap` | 2 | 3 | 5 | 5 |
-| `habitflow` | 3 | 5 | 3 | 6 |
-| `spendtrack` | 5 | 7 | 3 | 9 |
+| `habitflow` | 3 | 5 | 8 | 6 |
+| `spendtrack` | 5 | 5 | 10 | 9 |
 | `notes` | 2 | 3 | 5 | 0 |
 | `community` | 4 | 8 | 5 | 7 |
 | `account` | 2 | 3 | 3 | 2 |
@@ -100,32 +100,30 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
 | `habitflow.get_habits_summary` | read | 0 | Turn |
+| `habitflow.list_habits` | read | 0 | Turn + MCP |
+| `habitflow.get_logs` | read | 0 | Turn + MCP |
 | `habitflow.create_habit` | write | 1 | Turn + MCP |
 | `habitflow.set_habit_reminder` | write | 1 | Turn |
-| `habitflow.list_habits` | read | 0 | MCP |
-| `habitflow.get_logs` | read | 0 | MCP |
-| `habitflow.update_habit` | write | 1 | MCP |
-| `habitflow.toggle_log` | write | 1 | MCP |
-| `habitflow.delete_habit` | write | 3 | MCP |
+| `habitflow.update_habit` | write | 1 | Turn + MCP |
+| `habitflow.toggle_log` | write | 1 | Turn + MCP |
+| `habitflow.delete_habit` | write | 3 | Turn + MCP |
 
 ## `spendtrack`
 
-5 read, 7 write.
+5 read, 5 write.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
 | `spendtrack.get_expenses_summary` | read | 0 | Turn |
-| `spendtrack.record_expense` | write | 1 | Turn |
-| `spendtrack.edit_expense` | write | 1 | Turn |
-| `spendtrack.list_categories` | read | 0 | MCP |
-| `spendtrack.list_transactions` | read | 0 | MCP |
-| `spendtrack.get_summary` | read | 0 | MCP |
-| `spendtrack.list_budgets` | read | 0 | MCP |
-| `spendtrack.create_expense` | write | 1 | MCP |
-| `spendtrack.update_expense` | write | 1 | MCP |
-| `spendtrack.delete_expense` | write | 3 | MCP |
-| `spendtrack.create_category` | write | 1 | MCP |
-| `spendtrack.set_budget` | write | 1 | MCP |
+| `spendtrack.list_categories` | read | 0 | Turn + MCP |
+| `spendtrack.list_transactions` | read | 0 | Turn + MCP |
+| `spendtrack.get_summary` | read | 0 | Turn + MCP |
+| `spendtrack.list_budgets` | read | 0 | Turn + MCP |
+| `spendtrack.create_expense` | write | 1 | Turn + MCP |
+| `spendtrack.update_expense` | write | 1 | Turn + MCP |
+| `spendtrack.create_category` | write | 1 | Turn + MCP |
+| `spendtrack.set_budget` | write | 1 | Turn + MCP |
+| `spendtrack.delete_expense` | write | 3 | Turn + MCP |
 
 ## `notes`
 

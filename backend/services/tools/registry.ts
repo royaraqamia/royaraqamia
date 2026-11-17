@@ -59,6 +59,12 @@ export interface Capability {
   tier: ToolTier;
   /** The name the assistant's turn calls it by, when the turn can call it. */
   agentName: string | null;
+  /**
+   * The short name in the capability id, when the two doors froze different
+   * names: `record_expense` is `spendtrack.create_expense` at the registry,
+   * because the MCP public name cannot move (ADR-0183, decision 4).
+   */
+  capabilityName?: string;
   /** The MCP server's public name, when that door declares it. */
   mcpName: string | null;
 }
@@ -82,13 +88,15 @@ export function agentCapabilities(): Capability[] {
   );
 
   return chatAgentTools().map((tool) => {
-    const id = capabilityId(tool.product, tool.name);
+    const capabilityName = tool.capabilityName ?? tool.name;
+    const id = capabilityId(tool.product, capabilityName);
     return {
       id,
       owner: tool.product,
       kind: tool.kind,
       tier: tool.tier,
       agentName: tool.name,
+      ...(tool.capabilityName ? { capabilityName } : {}),
       mcpName: mcpNames.get(id) ?? null,
     };
   });
