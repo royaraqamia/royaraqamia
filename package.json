@@ -25,6 +25,7 @@
     "format:check": "prettier --check .",
     "graph": "node scripts/graph-query.mjs",
     "embeddings:backfill": "node scripts/backfill-agent-embeddings.mjs",
+    "chat:signals": "node scripts/chat-quality-signals.mjs",
     "skills:index": "node scripts/skill-index.mjs",
     "check:skills": "node scripts/skill-index.mjs --check",
     "test": "vitest run",
