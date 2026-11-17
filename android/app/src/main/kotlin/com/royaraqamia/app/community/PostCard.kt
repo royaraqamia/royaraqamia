@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.royaraqamia.app.contracts.generated.CommunityIndexResponsePostsItem
+import com.royaraqamia.app.contracts.generated.PostEngagementBatchItemsItem
 import com.royaraqamia.app.plans.PlanDates
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
@@ -50,7 +51,7 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
  *
  * The card is the feed's cell and, later in this ticket, the account's and a
  * member's profile: the same cover, the same publisher chip, the same clamped
- * body, the same date. What it prints is derived, never retyped — the body and
+ * body, the same footer. What it prints is derived, never retyped — the body and
  * the label come from [PostText] (the site's `stripMarkdown`/`postExcerpt`), the
  * date from [PlanDates] (the site's Umm al-Qura sentence), and every word from
  * the generated [PostCardCopy].
@@ -58,12 +59,15 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
  * A post has no title (the product is a social feed, not a blog), so the body is
  * the card's text: four lines and a toggle, or the whole body and the way back.
  * The toggle is drawn only when the text overflows, which is measured rather
- * than guessed — `onTextLayout` says so, and the answer is latched so expanding
- * the text cannot make the "show less" control disappear.
+ * than guessed.
+ *
+ * The footer is a band on the card's own surface, not a row under a rule (#1573):
+ * the page draws no separators at all, and the band's tone is what says the
+ * footer starts. Inside it sit the two facts (age, views) and the three actions
+ * (like, comment, share) — one control shape, told apart by behaviour rather than
+ * by being rounder than its neighbour.
  *
  * Tapping the card opens the post; tapping the publisher opens their profile.
- * Both are the shell's routes (`/community/<slug>`, `/u/<username>`), so a card
- * says where it goes without knowing who draws the destination.
  */
 @Composable
 fun PostCard(
@@ -72,6 +76,10 @@ fun PostCard(
     onOpen: () -> Unit = {},
     onOpenAuthor: (String) -> Unit = {},
     onEdit: (() -> Unit)? = null,
+    engagement: PostEngagementBatchItemsItem? = null,
+    onToggleLike: (() -> Unit)? = null,
+    onOpenComments: (() -> Unit)? = null,
+    onShare: (() -> Unit)? = null,
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
@@ -214,63 +222,157 @@ fun PostCard(
                         )
                     }
                 }
+            }
 
-                Divider(
-                    color = RoyColors.border.copy(alpha = 0.6f),
-                    thickness = 1.dp,
-                    modifier = Modifier.padding(top = spacing.elementGapSm / 2),
+            CardFooter(
+                post = post,
+                engagement = engagement,
+                onToggleLike = onToggleLike,
+                onOpenComments = onOpenComments,
+                onShare = onShare,
+                onEdit = onEdit,
+            )
+        }
+    }
+}
+
+/**
+ * The band at the bottom of the card (#1573).
+ *
+ * Full-bleed by construction — it is a sibling of the padded content column, not
+ * a row inside it — so its tone runs to the card's own rounded edge. The facts sit
+ * above the actions, and zero draws nothing, the rule [PostViews] already keeps.
+ */
+@Composable
+private fun CardFooter(
+    post: CommunityIndexResponsePostsItem,
+    engagement: PostEngagementBatchItemsItem?,
+    onToggleLike: (() -> Unit)?,
+    onOpenComments: (() -> Unit)?,
+    onShare: (() -> Unit)?,
+    onEdit: (() -> Unit)?,
+) {
+    val type = LocalRoyTypeScale.current
+    val spacing = LocalRoySpacing.current
+
+    Column(
+        modifier =
+            Modifier.fillMaxWidth()
+                .background(RoyColors.muted.copy(alpha = 0.2f))
+                .padding(horizontal = Recipes.Card.padding(spacing), vertical = 10.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            post.published_at?.let { published ->
+                Text(
+                    text = PlanDates.label(published),
+                    style = type.xs.copy(fontWeight = FontWeight.Medium),
+                    color = RoyColors.mutedForeground,
                 )
+            }
+            if (post.view_count > 0) {
+                Icon(
+                    imageVector = LucideVectors.Eye,
+                    contentDescription = null,
+                    tint = RoyColors.mutedForeground.copy(alpha = 0.8f),
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = post.view_count.toString(),
+                    style = type.xs,
+                    color = RoyColors.mutedForeground,
+                )
+            }
+        }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = LucideVectors.Calendar,
-                        contentDescription = null,
-                        tint = RoyColors.mutedForeground,
-                        modifier = Modifier.size(14.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                CardAction(
+                    icon = LucideVectors.Heart,
+                    label =
+                        if (engagement?.liked == true) {
+                            PostCardCopy.UNLIKE_ACTION
+                        } else {
+                            PostCardCopy.LIKE_ACTION
+                        },
+                    count = engagement?.likeCount,
+                    active = engagement?.liked == true,
+                    onClick = onToggleLike,
+                )
+                CardAction(
+                    icon = LucideVectors.MessageCircle,
+                    label = PostCardCopy.COMMENT_ACTION,
+                    count = engagement?.commentCount,
+                    active = false,
+                    onClick = onOpenComments,
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                CardAction(
+                    icon = LucideVectors.Share2,
+                    label = PostCardCopy.SHARE_ACTION,
+                    count = null,
+                    active = false,
+                    onClick = onShare,
+                )
+                if (onEdit != null) {
+                    CardAction(
+                        icon = LucideVectors.PenLine,
+                        label = PostCardCopy.EDIT_ACTION,
+                        count = null,
+                        active = true,
+                        onClick = onEdit,
                     )
-                    post.published_at?.let { published ->
-                        Text(
-                            text = PlanDates.label(published),
-                            style = type.xs.copy(fontWeight = FontWeight.Medium),
-                            color = RoyColors.mutedForeground,
-                        )
-                    }
-                    // The owner's way into the editor (#925). The page draws it
-                    // as the first item of its actions menu; the app names the
-                    // one action this slice ports.
-                    if (onEdit != null) {
-                        Spacer(Modifier.weight(1f))
-                        Row(
-                            modifier =
-                                Modifier.clip(CircleShape)
-                                    .clickable(onClick = onEdit)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                                    .semantics {
-                                        role = Role.Button
-                                        contentDescription = PostCardCopy.EDIT_ACTION
-                                    },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Icon(
-                                imageVector = LucideVectors.PenLine,
-                                contentDescription = null,
-                                tint = RoyColors.primary,
-                                modifier = Modifier.size(14.dp),
-                            )
-                            Text(
-                                text = PostCardCopy.EDIT_ACTION,
-                                style = type.xs.copy(fontWeight = FontWeight.Bold),
-                                color = RoyColors.primary,
-                            )
-                        }
-                    }
                 }
             }
+        }
+    }
+}
+
+/** One control in the footer: the same box for every action, emphasis aside. */
+@Composable
+private fun CardAction(
+    icon: ImageVector,
+    label: String,
+    count: Long?,
+    active: Boolean,
+    onClick: (() -> Unit)?,
+) {
+    val type = LocalRoyTypeScale.current
+    val tint = if (active) RoyColors.primary else RoyColors.mutedForeground
+
+    Row(
+        modifier =
+            Modifier.clip(RoundedCornerShape(12.dp))
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+                .padding(horizontal = 8.dp, vertical = 7.dp)
+                .semantics {
+                    role = Role.Button
+                    contentDescription = label
+                },
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(18.dp),
+        )
+        if (count != null && count > 0) {
+            Text(
+                text = count.toString(),
+                style = type.xs.copy(fontWeight = FontWeight.Bold),
+                color = tint,
+            )
         }
     }
 }

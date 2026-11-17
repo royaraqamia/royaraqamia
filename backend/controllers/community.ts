@@ -2,7 +2,18 @@ import * as Sentry from '@sentry/nextjs';
 import { NO_STORE, publicEdgeCache } from '@/backend/transport/cache-policy';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
-import { recordCommunityPostView } from '@/backend/config/community';
+import { identity } from '@/backend/config/identity';
+import { createPostEngagementService, recordCommunityPostView } from '@/backend/config/community';
+import { PostEngagementRefusedError } from '@/backend/services/blogpress/post-engagement-service';
+import {
+  CreateCommentInputSchema,
+  LikePostInputSchema,
+  POST_COMMENTS_PAGE_SIZE,
+  PostCommentsResponseSchema,
+  PostEngagementRequestSchema,
+  PostSlugSchema,
+  UpdateCommentInputSchema,
+} from '@/shared/contracts/community';
 import {
   loadAccountPosts,
   loadCommunityMember,
@@ -10,7 +21,6 @@ import {
 } from '@/backend/loaders/community';
 import { CommunityPostViewRateLimitError } from '@/backend/services/blogpress/community-view-recorder';
 import { isRepositoryError } from '@/backend/shared/repository-error';
-import { PostSlugSchema } from '@/shared/contracts/community';
 import { UsernameSchema } from '@/shared/contracts/users';
 
 export async function recordPostView(slug: string, ip: string): Promise<HttpResult> {
@@ -143,4 +153,176 @@ export async function getMyAccountPosts(): Promise<HttpResult> {
     },
     { whenFailed: { success: false, error: 'تعذّر تحميل منشوراتك.' } }
   );
+}
+
+/**
+ * The engagement numbers for one page of cards or one post (#1573).
+ *
+ * `no-store`: `liked` is about the caller, so the answer cannot sit in the shared
+ * document the feed is cached as. The counts themselves are public, and the
+ * second read is batched over the same ids, so a page of nine cards costs two
+ * reads rather than eighteen.
+ */
+export async function getPostEngagement(rawBody: unknown): Promise<HttpResult> {
+  const parsed = PostEngagementRequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return jsonResult(
+      400,
+      { success: false, error: parsed.error.issues[0]?.message ?? 'طلب غير صالح.' },
+      { headers: NO_STORE }
+    );
+  }
+
+  try {
+    const { user } = await identity.resolveOptional();
+    const states = await createPostEngagementService().statesFor(
+      user?.id ?? null,
+      parsed.data.postIds
+    );
+
+    return jsonResult(
+      200,
+      { items: parsed.data.postIds.map((id) => states[id]) },
+      { headers: NO_STORE }
+    );
+  } catch (error) {
+    if (!isRepositoryError(error)) Sentry.captureException(error);
+    return jsonResult(500, { error: 'تعذَّر تحميل التفاعل.' }, { headers: NO_STORE });
+  }
+}
+
+/** One member's like, set to the state it asked for rather than toggled. */
+export async function setPostLike(slug: string, rawBody: unknown): Promise<HttpResult> {
+  const parsedSlug = PostSlugSchema.safeParse(slug);
+  const parsed = LikePostInputSchema.safeParse(rawBody);
+  if (!parsedSlug.success || !parsed.success) {
+    return jsonResult(400, { success: false, error: 'طلب غير صالح.' }, { headers: NO_STORE });
+  }
+
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      try {
+        const result = await createPostEngagementService().setLike(
+          userId,
+          parsedSlug.data,
+          parsed.data.liked
+        );
+        return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
+      } catch (error) {
+        return engagementFailure(error) ?? unexpectedEngagementFailure();
+      }
+    },
+    { whenFailed: { success: false, error: 'تعذَّر تحديث الإعجاب.' } }
+  );
+}
+
+/** One keyset page of a post's thread; public, so a reader need not sign in. */
+export async function getPostComments(slug: string, cursor: string | null): Promise<HttpResult> {
+  const parsed = PostSlugSchema.safeParse(slug);
+  if (!parsed.success) {
+    return jsonResult(404, { error: 'المنشور غير موجود.' }, { headers: NO_STORE });
+  }
+
+  try {
+    const page = await createPostEngagementService().thread(
+      parsed.data,
+      cursor,
+      POST_COMMENTS_PAGE_SIZE
+    );
+    // A shape guard on the way out: the page and the app both decode this body,
+    // and a field that silently disappeared would be a blank row, not a failure.
+    const body = PostCommentsResponseSchema.parse(page);
+    return jsonResult(200, body, { headers: NO_STORE });
+  } catch (error) {
+    return engagementFailure(error) ?? unexpectedEngagementFailure('تعذَّر تحميل التعليقات.');
+  }
+}
+
+export async function createPostComment(slug: string, rawBody: unknown): Promise<HttpResult> {
+  const parsedSlug = PostSlugSchema.safeParse(slug);
+  const parsed = CreateCommentInputSchema.safeParse(rawBody);
+  if (!parsedSlug.success || !parsed.success) {
+    return jsonResult(
+      400,
+      {
+        success: false,
+        error: parsed.success ? 'رابط منشور غير صالح.' : parsed.error.issues[0]?.message,
+      },
+      { headers: NO_STORE }
+    );
+  }
+
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      try {
+        const result = await createPostEngagementService().comment(
+          userId,
+          parsedSlug.data,
+          parsed.data.body
+        );
+        return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
+      } catch (error) {
+        return engagementFailure(error) ?? unexpectedEngagementFailure('تعذَّر نشر التعليق.');
+      }
+    },
+    { whenFailed: { success: false, error: 'تعذَّر نشر التعليق.' } }
+  );
+}
+
+export async function editPostComment(id: string, rawBody: unknown): Promise<HttpResult> {
+  const parsed = UpdateCommentInputSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    return jsonResult(
+      400,
+      { success: false, error: parsed.error.issues[0]?.message ?? 'طلب غير صالح.' },
+      { headers: NO_STORE }
+    );
+  }
+
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      try {
+        const result = await createPostEngagementService().editComment(
+          userId,
+          id,
+          parsed.data.body
+        );
+        return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
+      } catch (error) {
+        return engagementFailure(error) ?? unexpectedEngagementFailure('تعذَّر تعديل التعليق.');
+      }
+    },
+    { whenFailed: { success: false, error: 'تعذَّر تعديل التعليق.' } }
+  );
+}
+
+export async function removePostComment(id: string): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      try {
+        const result = await createPostEngagementService().deleteComment(userId, id);
+        return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
+      } catch (error) {
+        return engagementFailure(error) ?? unexpectedEngagementFailure('تعذَّر حذف التعليق.');
+      }
+    },
+    { whenFailed: { success: false, error: 'تعذَّر حذف التعليق.' } }
+  );
+}
+
+/** A refusal the member can act on keeps its own sentence and status. */
+function engagementFailure(error: unknown): HttpResult | null {
+  if (error instanceof PostEngagementRefusedError) {
+    return jsonResult(
+      error.status,
+      { success: false, error: error.message },
+      { headers: NO_STORE }
+    );
+  }
+  if (!isRepositoryError(error)) Sentry.captureException(error);
+  return null;
+}
+
+function unexpectedEngagementFailure(message = 'تعذَّر تنفيذ الطلب.'): HttpResult {
+  return jsonResult(500, { success: false, error: message }, { headers: NO_STORE });
 }

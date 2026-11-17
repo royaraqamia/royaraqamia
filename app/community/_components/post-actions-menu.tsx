@@ -17,6 +17,8 @@ import { useSession } from '@/frontend/state/session-provider';
 import { deletePost, restorePost } from '@/frontend/api/blogpress';
 import { postExcerpt } from '@/shared/reading-time';
 import { PostComposerDialog } from '@/frontend/ui/community/post-composer-dialog';
+import { POST_CARD_COPY } from './post-card-copy';
+import { actionCellClass } from './post-action-cell';
 import type { PostStatus } from '@/shared/contracts/blogpress';
 
 /** Minimal post shape the owner actions need; both `Post` and `PostSummary` satisfy it. */
@@ -41,6 +43,8 @@ interface PostActionsMenuProps {
   post: ActionablePost;
   /** The edit item's word. The feed card passes it from the shared copy source. */
   editLabel?: string;
+  /** The trigger's accessible name. The card owns it, so the parity row reads it. */
+  moreLabel?: string;
   /** Called after a successful delete so the host can hide the post optimistically. */
   onRemoved: () => void;
   /** Called after a successful undo so the host can bring the post back. */
@@ -60,6 +64,7 @@ function buildRestore(post: ActionablePost, updatedAt: string | null) {
 export function PostActionsMenu({
   post,
   editLabel = 'تعديل',
+  moreLabel = POST_CARD_COPY.moreAction,
   onRemoved,
   onRestored,
 }: PostActionsMenuProps) {
@@ -109,10 +114,11 @@ export function PostActionsMenu({
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label="إجراءات المنشور"
-            className="size-9 rounded-full border border-border bg-muted text-muted-foreground hover:border-primary/30 hover:bg-primary/20 hover:text-primary transition-safe"
+            aria-label={moreLabel}
+            title={moreLabel}
+            className={actionCellClass('size-10 min-w-10 px-0')}
           >
-            <MoreHorizontal className="size-4" />
+            <MoreHorizontal className="size-[18px]" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

@@ -1,0 +1,337 @@
+'use client';
+
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Loader2, MessageCircle, Send } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { cn } from '@/frontend/shared/cn';
+import {
+  createPostComment,
+  deletePostComment,
+  fetchPostComments,
+  updatePostComment,
+} from '@/frontend/api/community-engagement';
+import { useSession } from '@/frontend/state/session-provider';
+import { useCommentCountSetter } from '@/frontend/state/community/post-engagement-provider';
+import { EmptyState } from '@/frontend/ui/primitives/empty-state';
+import { Textarea } from '@/frontend/ui/primitives/textarea';
+import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
+import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
+import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
+import { PostCommentOwnerActions } from './post-comment-owner-actions';
+import { formatRelativeTime } from '@/shared/relative-time';
+import { POST_COMMENT_MAX_LENGTH, type PostComment } from '@/shared/contracts/community';
+import { COMMUNITY_POST_COPY } from '../community-post-copy';
+
+interface PostCommentsProps {
+  postId: string;
+  slug: string;
+}
+
+/**
+ * A post's thread (#1573).
+ *
+ * The post document is cached and shared, so the thread is read on the client
+ * after paint: a comment written a second ago must not wait five minutes for the
+ * page's revalidation, and a guest must be able to read it without a session.
+ *
+ * Reads page oldest-last (newest first); a write prepends its own row and settles
+ * the action bar's number from the server's count, so the two never disagree.
+ */
+export function PostComments({ postId, slug }: PostCommentsProps) {
+  const { user } = useSession();
+  const pathname = usePathname();
+  const setCommentCount = useCommentCountSetter();
+  const { requireSignIn, dialog } = useSignInPrompt(COMMUNITY_POST_COPY.commentSignIn);
+
+  const [comments, setComments] = useState<PostComment[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [total, setTotal] = useState<number | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const publishTotal = useCallback(
+    (count: number) => {
+      setTotal(count);
+      setCommentCount(postId, count);
+    },
+    [postId, setCommentCount]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchPostComments(slug)
+      .then((page) => {
+        if (cancelled) return;
+        setComments(page.comments);
+        setNextCursor(page.nextCursor ?? null);
+        publishTotal(page.total);
+        setStatus('ready');
+      })
+      .catch(() => {
+        if (!cancelled) setStatus('failed');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, publishTotal]);
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await fetchPostComments(slug, nextCursor);
+      setComments((current) => [...current, ...page.comments]);
+      setNextCursor(page.nextCursor ?? null);
+      publishTotal(page.total);
+    } catch {
+      toast.error(COMMUNITY_POST_COPY.commentFailed);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    const body = draft.trim();
+    if (!body || sending) return;
+
+    if (!user) {
+      requireSignIn(pathname || `/community/${slug}`);
+      return;
+    }
+
+    setSending(true);
+    try {
+      const result = await createPostComment(slug, body);
+      setComments((current) => [result.comment, ...current]);
+      setDraft('');
+      publishTotal(result.commentCount);
+      toast.success(COMMUNITY_POST_COPY.commentPublished);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : COMMUNITY_POST_COPY.commentFailed);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const startEdit = (comment: PostComment) => {
+    setEditingId(comment.id);
+    setEditDraft(comment.body);
+  };
+
+  const saveEdit = async (comment: PostComment) => {
+    const body = editDraft.trim();
+    if (!body || savingEdit) return;
+
+    setSavingEdit(true);
+    try {
+      const result = await updatePostComment(comment.id, body);
+      setComments((current) =>
+        current.map((row) => (row.id === comment.id ? result.comment : row))
+      );
+      setEditingId(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : COMMUNITY_POST_COPY.commentFailed);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const confirmDelete = async (target: PostComment) => {
+    // The row leaves the thread only when the server says it did: an optimistic
+    // removal that fails would put a comment back under a reader mid-sentence.
+    try {
+      const result = await deletePostComment(target.id);
+      setComments((current) => current.filter((row) => row.id !== target.id));
+      publishTotal(result.commentCount);
+      toast.success(COMMUNITY_POST_COPY.commentDeleted);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : COMMUNITY_POST_COPY.commentFailed);
+    }
+  };
+
+  return (
+    <section
+      id="comments"
+      aria-labelledby="comments-title"
+      data-visual="community-post-comments"
+      className="mt-6 scroll-mt-24 border-t border-border/60 pt-8"
+    >
+      <div className="mb-5 flex items-center gap-2.5">
+        <MessageCircle className="size-5 text-primary/80" aria-hidden="true" />
+        <h2 id="comments-title" className="text-lg font-bold tracking-tight text-foreground">
+          {COMMUNITY_POST_COPY.commentsTitle}
+        </h2>
+        {total !== null && total > 0 && (
+          <span className="font-digits text-sm font-bold text-muted-foreground" dir="ltr">
+            {total.toLocaleString('en-US')}
+          </span>
+        )}
+      </div>
+
+      <form onSubmit={submit} className="mb-8">
+        <Textarea
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder={COMMUNITY_POST_COPY.commentPlaceholder}
+          aria-label={COMMUNITY_POST_COPY.commentPlaceholder}
+          maxLength={POST_COMMENT_MAX_LENGTH}
+          showCount
+          className="min-h-20"
+        />
+        <div className="mt-2.5 flex items-center justify-end gap-2">
+          <button
+            type="submit"
+            disabled={sending || draft.trim().length === 0}
+            aria-label={COMMUNITY_POST_COPY.commentSubmitLabel}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition-safe hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:pointer-events-none disabled:opacity-45"
+          >
+            {sending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Send className="size-4" aria-hidden="true" />
+            )}
+            {COMMUNITY_POST_COPY.commentSubmit}
+          </button>
+        </div>
+        {dialog}
+      </form>
+
+      {status === 'loading' && (
+        <LoadingThread label={COMMUNITY_POST_COPY.commentsTitle} framed={false} />
+      )}
+
+      {status === 'failed' && (
+        <p className="text-sm text-muted-foreground">{COMMUNITY_POST_COPY.commentFailed}</p>
+      )}
+
+      {status === 'ready' && comments.length === 0 && (
+        <EmptyState
+          icon={MessageCircle}
+          title={COMMUNITY_POST_COPY.commentsEmpty}
+          description={COMMUNITY_POST_COPY.commentsEmptyHint}
+        />
+      )}
+
+      {comments.length > 0 && (
+        <ul className="flex flex-col gap-5">
+          {comments.map((comment) => {
+            const mine = user?.id === comment.author?.id;
+            const editing = editingId === comment.id;
+
+            return (
+              <li
+                key={comment.id}
+                className="group/comment flex gap-3"
+                data-visual="community-comment"
+              >
+                <MemberAvatar
+                  name={comment.author?.name ?? comment.author?.username ?? null}
+                  avatarUrl={comment.author?.avatar_url ?? null}
+                  size="xs"
+                  ring={false}
+                  className="mt-0.5"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                    {comment.author ? (
+                      <Link
+                        href={`/u/${encodeURIComponent(comment.author.username)}`}
+                        className="font-bold text-foreground hover:text-primary"
+                      >
+                        {comment.author.name?.trim() || `@${comment.author.username}`}
+                      </Link>
+                    ) : (
+                      <span className="font-bold text-muted-foreground">—</span>
+                    )}
+                    <time dateTime={comment.createdAt} className="text-muted-foreground">
+                      {formatRelativeTime(comment.createdAt)}
+                    </time>
+                    {comment.editedAt && (
+                      <span className="text-[11px] text-muted-foreground/70">
+                        {COMMUNITY_POST_COPY.commentEdited}
+                      </span>
+                    )}
+
+                    {mine && !editing && (
+                      <PostCommentOwnerActions
+                        onEdit={() => startEdit(comment)}
+                        onDelete={() => void confirmDelete(comment)}
+                      />
+                    )}
+                  </div>
+
+                  {editing ? (
+                    <div className="mt-2">
+                      <Textarea
+                        value={editDraft}
+                        onChange={(event) => setEditDraft(event.target.value)}
+                        maxLength={POST_COMMENT_MAX_LENGTH}
+                        aria-label={COMMUNITY_POST_COPY.commentEdit}
+                        className="min-h-20"
+                      />
+                      <div className="mt-2 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void saveEdit(comment)}
+                          disabled={savingEdit || editDraft.trim().length === 0}
+                          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-45"
+                        >
+                          {savingEdit && (
+                            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                          )}
+                          {COMMUNITY_POST_COPY.commentSubmit}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="inline-flex h-9 items-center rounded-lg px-3 text-xs font-bold text-muted-foreground hover:bg-muted/60"
+                        >
+                          {COMMUNITY_POST_COPY.commentCancel}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p
+                      className={cn(
+                        'mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90'
+                      )}
+                    >
+                      <LinkifiedText text={comment.body} />
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {nextCursor && (
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={loadingMore}
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-muted/30 px-4 text-xs font-bold text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+          >
+            {loadingMore && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
+            {COMMUNITY_POST_COPY.commentsLoadMore}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}

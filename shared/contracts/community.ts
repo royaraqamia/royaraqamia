@@ -126,6 +126,142 @@ export const CommunityMemberResponseSchema = z.object({
 
 export type CommunityMemberResponse = z.infer<typeof CommunityMemberResponseSchema>;
 
+/**
+ * The engagement behind one post: two numbers and the viewer's own like.
+ *
+ * Counts are viewer-independent and public; `liked` is the one field that needs
+ * a session, and it is `false` for a guest rather than absent, so a client never
+ * has to tell "not signed in" from "not liked" to draw the button.
+ */
+export const PostEngagementSchema = z.object({
+  postId: z.string(),
+  likeCount: z.number().int(),
+  commentCount: z.number().int(),
+  liked: z.boolean(),
+});
+
+export type PostEngagement = z.infer<typeof PostEngagementSchema>;
+
+/**
+ * `POST /api/community/engagement`: the numbers for one page of cards.
+ *
+ * A feed asks once per page rather than once per card — nine cards would
+ * otherwise be eighteen reads. The body is `postIds` because a page of cards is
+ * a set, and a GET would put that set in a URL (and in a cache key) that grows
+ * with the page.
+ */
+export const PostEngagementBatchSchema = z.object({
+  items: z.array(PostEngagementSchema),
+});
+
+export type PostEngagementBatch = z.infer<typeof PostEngagementBatchSchema>;
+
+export const PostEngagementRequestSchema = z.object({
+  postIds: z.array(z.string().uuid('معرِّف منشور غير صالح')).min(1).max(50),
+});
+
+export type PostEngagementRequest = z.infer<typeof PostEngagementRequestSchema>;
+
+/** The longest comment the composer accepts, and the column's own check. */
+export const POST_COMMENT_MAX_LENGTH = 2000;
+
+/** One page of a thread, newest first; the cursor belongs to the server. */
+export const POST_COMMENTS_PAGE_SIZE = 20;
+
+/** The most a single thread request may ask for, so a cursor cannot be widened into a dump. */
+export const POST_COMMENTS_MAX_PAGE_SIZE = 50;
+
+/**
+ * The write budget for one member.
+ *
+ * A like is a tap and a reader may sweep a whole feed, so its bucket is loose. A
+ * comment is a written sentence and its bucket is tight — ten in five minutes is
+ * one person thinking, not a script.
+ */
+export const POST_ENGAGEMENT_WRITE_WINDOW_MS = 5 * 60 * 1000;
+export const POST_LIKE_WRITE_LIMIT = 240;
+export const POST_COMMENT_WRITE_LIMIT = 10;
+
+/** A comment's public author: the same identity a card's publisher draws. */
+export const PostCommentAuthorSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  name: z.string().nullable(),
+  avatar_url: z.string().nullable(),
+});
+
+/**
+ * One comment, as both clients draw it.
+ *
+ * `editedAt` is how the thread says «عُدّل» without a second row; the body is
+ * the stored text, never a rendered fragment — the client linkifies it with the
+ * same rules the post body uses.
+ */
+export const PostCommentSchema = z.object({
+  id: z.string(),
+  postId: z.string(),
+  body: z.string(),
+  author: PostCommentAuthorSchema.nullable(),
+  createdAt: z.string(),
+  editedAt: z.string().nullable(),
+});
+
+export type PostComment = z.infer<typeof PostCommentSchema>;
+
+/**
+ * `GET /api/community/[slug]/comments`: one keyset page of a thread.
+ *
+ * `total` is the live-comment count the post's action bar prints; `nextCursor`
+ * `null` is the last page. The app and the site page the thread the same way.
+ */
+export const PostCommentsResponseSchema = z.object({
+  comments: z.array(PostCommentSchema),
+  nextCursor: z.string().nullable().optional(),
+  total: z.number().int(),
+});
+
+export type PostCommentsResponse = z.infer<typeof PostCommentsResponseSchema>;
+
+/** `PUT /api/community/[slug]/like`: the state wanted, not a toggle. */
+export const LikePostInputSchema = z.object({
+  liked: z.boolean(),
+});
+
+export const PostLikeResponseSchema = z.object({
+  liked: z.boolean(),
+  likeCount: z.number().int(),
+});
+
+export type PostLikeResponse = z.infer<typeof PostLikeResponseSchema>;
+
+const CommentBodySchema = z
+  .string()
+  .trim()
+  .min(1, 'اكتب تعليقاً أوّلاً.')
+  .max(POST_COMMENT_MAX_LENGTH, `الحدّ الأقصى ${POST_COMMENT_MAX_LENGTH} حرفًا.`);
+
+export const CreateCommentInputSchema = z.object({ body: CommentBodySchema });
+
+export type CreateCommentInput = z.infer<typeof CreateCommentInputSchema>;
+
+export const UpdateCommentInputSchema = CreateCommentInputSchema;
+
+export const CreateCommentResponseSchema = z.object({
+  comment: PostCommentSchema,
+  commentCount: z.number().int(),
+});
+
+export type CreateCommentResponse = z.infer<typeof CreateCommentResponseSchema>;
+
+export const UpdateCommentResponseSchema = z.object({
+  comment: PostCommentSchema,
+});
+
+export const DeleteCommentResponseSchema = z.object({
+  deleted: z.boolean(),
+  commentCount: z.number().int(),
+});
+
 export const PostSchema = z.object({
   slug: z
     .string()

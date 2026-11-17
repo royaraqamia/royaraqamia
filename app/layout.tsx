@@ -8,6 +8,7 @@ import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { UIProvider } from '../frontend/state/UIContext';
 import { NotificationProvider } from '../frontend/state/NotificationContext';
 import { SessionProvider } from '../frontend/state/session-provider';
+import { PostEngagementProvider } from '../frontend/state/community/post-engagement-provider';
 import { HomeServicesProvider } from '../frontend/state/home-services-provider';
 import { DirectionProvider } from '@radix-ui/react-direction';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
@@ -170,38 +171,40 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <DirectionProvider dir={DIRECTION}>
             <QuranPlayerProvider>
               <SessionProvider>
-                <HomeServicesProvider>
-                  <UIProvider>
-                    <NotificationProvider>
-                      {/* No Vercel beacons: the origin is Render (ADR-0174), where
+                <PostEngagementProvider>
+                  <HomeServicesProvider>
+                    <UIProvider>
+                      <NotificationProvider>
+                        {/* No Vercel beacons: the origin is Render (ADR-0174), where
                           their endpoints 404 and the CSP never allowed the ingest
                           host, so each visit paid two failed requests (#1498). */}
-                      <PWAProvider>
-                        <RouteChangeFocus />
-                        <AppPerfObserver />
-                        <ScrollbarReveal />
-                        {/* App chrome is route-aware: primary routes keep the top
+                        <PWAProvider>
+                          <RouteChangeFocus />
+                          <AppPerfObserver />
+                          <ScrollbarReveal />
+                          {/* App chrome is route-aware: primary routes keep the top
                         nav + bottom tab bar, secondary pages swap both for a
                         floating back control. */}
-                        <NavHistoryTracker />
-                        {/* The top nav is shell chrome, not a page's: one mount
+                          <NavHistoryTracker />
+                          {/* The top nav is shell chrome, not a page's: one mount
                             here puts it on every page that wears the app chrome
                             (ADR-0149), and `/` reserves the same band it always
                             did. */}
-                        <Navbar reserveSpace />
-                        <SecondaryHeader />
-                        {children}
-                        <BottomTabBar />
-                        <GlobalPlayer />
-                        {/* The assistant's door is chrome, not a page: one
+                          <Navbar reserveSpace />
+                          <SecondaryHeader />
+                          {children}
+                          <BottomTabBar />
+                          <GlobalPlayer />
+                          {/* The assistant's door is chrome, not a page: one
                             mount here puts it on every screen the member can
                             reach, including the ones added later (ADR-0143). */}
-                        <AssistantLauncher />
-                      </PWAProvider>
-                      <RoyaToaster />
-                    </NotificationProvider>
-                  </UIProvider>
-                </HomeServicesProvider>
+                          <AssistantLauncher />
+                        </PWAProvider>
+                        <RoyaToaster />
+                      </NotificationProvider>
+                    </UIProvider>
+                  </HomeServicesProvider>
+                </PostEngagementProvider>
               </SessionProvider>
             </QuranPlayerProvider>
           </DirectionProvider>

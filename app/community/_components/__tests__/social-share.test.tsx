@@ -17,7 +17,7 @@ describe('SocialShare', () => {
   it('shares an absolute URL resolved from a site-relative path', async () => {
     const share = mockNativeShare();
 
-    render(<SocialShare url="/community/test-post" title="منشور" />);
+    render(<SocialShare url="/community/test-post" title="منشور" label="مشاركة المنشور" />);
     fireEvent.click(screen.getByRole('button', { name: 'مشاركة المنشور' }));
 
     expect(share).toHaveBeenCalledWith({

@@ -221,6 +221,20 @@ export const CONTRACTS = [
       // a field name it typed by hand.
       'CommunityPostCreateResponseSchema',
       'CommunityMemberResponseSchema',
+      // The post's engagement (#1573): the two numbers and the viewer's like,
+      // the batched read a feed page asks once, and the thread's page and
+      // writes. The app draws the same controls and appends the same comment
+      // row, so it decodes the same bodies rather than retyping a field name.
+      'PostEngagementSchema',
+      'PostEngagementBatchSchema',
+      'PostEngagementRequestSchema',
+      'PostCommentsResponseSchema',
+      'PostLikeResponseSchema',
+      'CreateCommentInputSchema',
+      'UpdateCommentInputSchema',
+      'CreateCommentResponseSchema',
+      'UpdateCommentResponseSchema',
+      'DeleteCommentResponseSchema',
     ],
   },
   // The follow graph: the app's profile header draws the viewer's standing and
