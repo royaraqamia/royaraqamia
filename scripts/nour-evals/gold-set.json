@@ -2,6 +2,9 @@
   "version": 1,
   "labelledAt": "2026-11-17",
   "labelledBy": "agent-proposed against docs/assistant/nour-behaviour-spec.md — owner review required before these become a gate",
+  "reviewedAt": "2026-11-18",
+  "status": "calibration-only until a human re-labels 10 cases blind to these scores",
+  "advisoryAxes": ["language_fit", "conciseness"],
   "languagePolicy": "B: mirror casual dialect, simplified MSA for religious and formal answers",
   "note": "30 replies from a three-run baseline. Scores are 0-5 on the axes named in each case; hardGate marks a reply that violates a hard rule.",
   "cases": [
@@ -38,8 +41,8 @@
       "userMessage": "شكراً لك، هذا مفيد جداً.",
       "reply": "على الرحب والسعة، إن احتجت أي شيء آخر فأنا هنا.",
       "gold": { "warmth": 3, "naturalness": 3, "conciseness": 3 },
-      "hardGate": false,
-      "note": "Natural Arabic thanks, but the 'if you need anything else' tail is filler."
+      "hardGate": true,
+      "note": "Same forbidden closing offer as en-03, in Arabic. Gate consistency: both languages are hard gates."
     },
     {
       "id": "ar-msa-05",
@@ -110,8 +113,8 @@
       "userMessage": "الجو حر جداً النهاردة، مش عارف أشتغل.",
       "reply": "الحر بيقلل التركيز فعلاً، فقسّم شغلك على فترات قصيرة وريّح بينها. ابدأ بأهم مهمة بدري قبل ما الحر يشتد، وخد المهام اللي محتاجة مجهود في الصبح أو بعد المغرب. اشرب ماء بانتظام وبلّش الغرفة أو المكتب، وشغّل مروحة أو تكييف لو متاح. قلّل المهام الثقيلة النهاردة وخلّيها ليوم أبرد لو تقدر.",
       "gold": { "naturalness": 4, "warmth": 4, "language_fit": 5 },
-      "hardGate": true,
-      "note": "Warm Egyptian dialect, good under policy B; hard gate failed on non-ASCII digits in another repetition."
+      "hardGate": false,
+      "note": "Warm Egyptian dialect, good under policy B. A different repetition had non-ASCII digits, but this stored reply violates no hard rule; hardGate describes this reply only."
     },
     {
       "id": "dialect-egy-02",
@@ -226,9 +229,9 @@
       "slice": "product",
       "userMessage": "هل نور متاحة في الخطة المجانية؟",
       "reply": "لا أعرف تفاصيل خطط الاشتراك، فبياناتها ليست متاحة لي؛ أدواتي تقرأ بيانات العضو (مثل الملف والمهام) ولا تطّلع على حالة الاشتراك أو مزايا الخطط. تحقّقي من صفحة الخطط والأسعار داخل تطبيق رؤية رقمية، أو راسلي فريق الدعم للتأكيد.",
-      "gold": { "helpfulness": 3, "boundaries": 4 },
+      "gold": { "helpfulness": 4, "boundaries": 4 },
       "hardGate": false,
-      "note": "Safe, but the answer is available in the site's own copy; a model-layer limitation."
+      "note": "Safe and as helpful as the model tier can be: the site copy with the answer is not available here. Do not penalize a harness limitation. Verify on the agent tier."
     },
     {
       "id": "product-03",

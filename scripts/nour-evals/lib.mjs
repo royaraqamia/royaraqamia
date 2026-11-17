@@ -178,6 +178,7 @@ const GLOBAL_BANNED = [
   'let me know if',
   'anything else you need',
   'anything else i can do',
+  'إن احتجت أي شيء آخر',
   'great question',
   "i'm sorry to hear that",
 ];
