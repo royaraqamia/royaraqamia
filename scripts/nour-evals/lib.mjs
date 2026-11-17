@@ -313,7 +313,8 @@ export async function writeReport(root, report, suffix = '') {
   const outDir = resolve(root, 'docs/assistant');
   mkdirSync(outDir, { recursive: true });
   await writeJson(resolve(outDir, `eval-report${suffix}.json`), report);
-  writeFileSync(resolve(outDir, `eval-report${suffix}.md`), markdown(report));
+  const prose = await prettier.format(markdown(report), { parser: 'markdown' });
+  writeFileSync(resolve(outDir, `eval-report${suffix}.md`), prose);
   return outDir;
 }
 
