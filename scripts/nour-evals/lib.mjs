@@ -8,6 +8,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import * as prettier from 'prettier';
 import { behaviourLines } from '../../shared/contracts/agent-behaviour.mjs';
 
 const DEFAULT_BASE = 'https://opencode.ai/inference/go/openai/v1';
@@ -302,13 +303,16 @@ export async function pooled(items, limit, worker) {
   return results;
 }
 
-export function writeReport(root, report, suffix = '') {
+/** Reports are committed, so their JSON must come out in the repo's Prettier style. */
+export async function writeJson(path, value) {
+  const text = await prettier.format(JSON.stringify(value), { parser: 'json' });
+  writeFileSync(path, text);
+}
+
+export async function writeReport(root, report, suffix = '') {
   const outDir = resolve(root, 'docs/assistant');
   mkdirSync(outDir, { recursive: true });
-  writeFileSync(
-    resolve(outDir, `eval-report${suffix}.json`),
-    `${JSON.stringify(report, null, 2)}\n`
-  );
+  await writeJson(resolve(outDir, `eval-report${suffix}.json`), report);
   writeFileSync(resolve(outDir, `eval-report${suffix}.md`), markdown(report));
   return outDir;
 }

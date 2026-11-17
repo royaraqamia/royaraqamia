@@ -25,7 +25,7 @@ const report = summarize({
   tiers: [...model.tiers, ...agent.tiers],
 });
 
-writeReport(root, report);
+await writeReport(root, report);
 process.stdout.write(`combined report: ${resolve(root, 'docs/assistant/eval-report.md')}\n`);
 for (const [axis, mean] of Object.entries(report.summary.axes)) {
   process.stdout.write(`${axis.padEnd(14)} ${mean}\n`);

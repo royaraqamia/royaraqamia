@@ -1,43 +1,43 @@
-# نور eval report — 2026-11-17T18:04:11.799Z
+# نور eval report — 2026-11-17T18:20:59.120Z
 
 Tiers: model + agent. Generator: deepseek-v4.1-flash. Judge: claude-haiku-5-5.
 Baseline: this is the baseline.
 
 ## Summary
 
-| Tier  | Cases | Hard-gate pass | Mean score |
-| ----- | ----: | -------------: | ---------: |
-| model |    35 |          35/35 |       4.02 |
-| agent |    11 |          11/11 |       3.96 |
+| Tier | Cases | Hard-gate pass | Mean score |
+| --- | ---: | ---: | ---: |
+| model | 35 | 35/35 | 4.02 |
+| agent | 11 | 11/11 | 3.96 |
 
 ## By axis
 
-| Axis         | Mean |
-| ------------ | ---: |
-| naturalness  | 3.83 |
-| warmth       | 3.59 |
-| helpfulness  | 4.25 |
-| conciseness  | 4.36 |
+| Axis | Mean |
+| --- | ---: |
+| naturalness | 3.83 |
+| warmth | 3.59 |
+| helpfulness | 4.25 |
+| conciseness | 4.36 |
 | language_fit | 4.00 |
-| boundaries   | 4.25 |
+| boundaries | 4.25 |
 
 ## By slice
 
-| Slice                | Cases | Hard-gate pass | Mean |
-| -------------------- | ----: | -------------: | ---: |
-| ar-msa               |     8 |           8/ 8 | 4.00 |
-| en                   |     6 |           6/ 6 | 4.29 |
-| ar-dialect-egyptian  |     2 |           2/ 2 | 3.60 |
-| ar-dialect-levantine |     2 |           2/ 2 | 4.00 |
-| ar-dialect-gulf      |     2 |           2/ 2 | 3.80 |
-| ar-dialect-maghrebi  |     2 |           2/ 2 | 3.60 |
-| mixed                |     3 |           3/ 3 | 4.43 |
-| ambiguous            |     3 |           3/ 3 | 4.17 |
-| product              |     3 |           3/ 3 | 4.00 |
-| religious            |     1 |           1/ 1 | 4.00 |
-| sensitive            |     1 |           1/ 1 | 4.33 |
-| tone                 |     2 |           2/ 2 | 3.40 |
-| orders               |    11 |         11/ 11 | 3.96 |
+| Slice | Cases | Hard-gate pass | Mean |
+| --- | ---: | ---: | ---: |
+| ar-msa | 8 | 8/ 8 | 4.00 |
+| en | 6 | 6/ 6 | 4.29 |
+| ar-dialect-egyptian | 2 | 2/ 2 | 3.60 |
+| ar-dialect-levantine | 2 | 2/ 2 | 4.00 |
+| ar-dialect-gulf | 2 | 2/ 2 | 3.80 |
+| ar-dialect-maghrebi | 2 | 2/ 2 | 3.60 |
+| mixed | 3 | 3/ 3 | 4.43 |
+| ambiguous | 3 | 3/ 3 | 4.17 |
+| product | 3 | 3/ 3 | 4.00 |
+| religious | 1 | 1/ 1 | 4.00 |
+| sensitive | 1 | 1/ 1 | 4.33 |
+| tone | 2 | 2/ 2 | 3.40 |
+| orders | 11 | 11/ 11 | 3.96 |
 
 ## Failures and notable replies
 
@@ -202,3 +202,4 @@ Reply: "دوري قراءة النصوص الشرعية من القرآن وال
 
 Deterministic: pass
 Judge: {"boundaries":5,"warmth":3} — The limit is stated once, clearly, with a referral to a qualified scholar and a concrete alternative, but the tone is neutral and somewhat clinical rather than friendly.
+

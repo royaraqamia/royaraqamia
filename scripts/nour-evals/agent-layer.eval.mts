@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
@@ -20,7 +20,7 @@ import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent
 import type { SkillTelemetryRepository } from '@/backend/repositories/chat/skill-telemetry-repository';
 import type { ChatAgentAllowance, ChatAgentEvent, ChatMessage } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
-import { deterministic, judge } from './lib.mjs';
+import { deterministic, judge, writeJson } from './lib.mjs';
 
 const here = resolve(process.cwd(), 'scripts/nour-evals');
 const suite = JSON.parse(readFileSync(resolve(here, 'suite.json'), 'utf8')) as {
@@ -365,17 +365,10 @@ describe('نور agent-layer evals (real gateway, real turn assembly)', () => {
   }
 });
 
-afterAll(() => {
-  writeFileSync(
-    resolve(here, 'eval-report-agent.json'),
-    `${JSON.stringify(
-      {
-        generatedAt: new Date().toISOString(),
-        meta: { tiers: ['agent'], model: cfg?.model, judge: cfg?.judge },
-        tiers: [{ name: 'agent', cases: results }],
-      },
-      null,
-      2
-    )}\n`
-  );
+afterAll(async () => {
+  await writeJson(resolve(here, 'eval-report-agent.json'), {
+    generatedAt: new Date().toISOString(),
+    meta: { tiers: ['agent'], model: cfg?.model, judge: cfg?.judge },
+    tiers: [{ name: 'agent', cases: results }],
+  });
 });

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T18:04:11.799Z",
+  "generatedAt": "2026-11-17T18:20:59.120Z",
   "meta": {
     "tiers": ["model", "agent"],
     "model": "deepseek-v4.1-flash",
@@ -50,11 +50,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "naturalness": 3,
-              "language_fit": 3,
-              "helpfulness": 4
-            },
+            "scores": { "naturalness": 3, "language_fit": 3, "helpfulness": 4 },
             "reason": "The reply gives useful, concrete guidance in fluent MSA, but it is structured like a list of rules and switches between singular «اسألي» and plural «احتكموا/واقرأوا» addressing, and it ignores the member's mixed French word."
           }
         },
@@ -73,11 +69,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "warmth": 4,
-              "naturalness": 4,
-              "conciseness": 4
-            },
+            "scores": { "warmth": 4, "naturalness": 4, "conciseness": 4 },
             "reason": "The reply validates the member's tiredness without scolding and opens directly with no preamble, though a few sentences read slightly essayistic and the advice runs a little long."
           }
         },
@@ -96,11 +88,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "warmth": 4,
-              "naturalness": 4,
-              "conciseness": 5
-            },
+            "scores": { "warmth": 4, "naturalness": 4, "conciseness": 5 },
             "reason": "The reply is short and free of filler, and it answers the thanks in a friendly, natural way, though 'هذا واجبي' reads slightly formal."
           }
         },
@@ -119,11 +107,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 4,
-              "conciseness": 5,
-              "naturalness": 5
-            },
+            "scores": { "helpfulness": 4, "conciseness": 5, "naturalness": 5 },
             "reason": "The reply gives the correct distinction in exactly five words, with no preamble or filler, though it is minimal and omits the verb-versus-noun structure detail."
           }
         },
@@ -142,11 +126,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "naturalness": 4,
-              "helpfulness": 4,
-              "warmth": 3
-            },
+            "scores": { "naturalness": 4, "helpfulness": 4, "warmth": 3 },
             "reason": "The reply fluently gives a clear opinion and a useful three-layer idea, but its tone is somewhat detached and impersonal rather than warm."
           }
         },
@@ -165,11 +145,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "warmth": 4,
-              "naturalness": 4,
-              "helpfulness": 4
-            },
+            "scores": { "warmth": 4, "naturalness": 4, "helpfulness": 4 },
             "reason": "The reply apologizes without groveling, explains the gap plainly, and asks the member to resend the question so it can be answered directly; it is calm and natural, though a bit terse and it does not yet give an answer."
           }
         },
@@ -188,10 +164,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "conciseness": 5,
-              "naturalness": 4
-            },
+            "scores": { "conciseness": 5, "naturalness": 4 },
             "reason": "The reply is exactly one sentence with no preamble or filler, and its poetic phrasing reads as human, though slightly ornate."
           }
         },
@@ -234,10 +207,7 @@
             "actualLanguage": "en"
           },
           "judge": {
-            "scores": {
-              "warmth": 4,
-              "naturalness": 5
-            },
+            "scores": { "warmth": 4, "naturalness": 5 },
             "reason": "The reply acknowledges the bad day with calm, genuine empathy and a light closing wish without becoming syrupy, and its phrasing ('kept piling on', 'miserable combination') reads like a person talking rather than a template."
           }
         },
@@ -256,11 +226,7 @@
             "actualLanguage": "en"
           },
           "judge": {
-            "scores": {
-              "naturalness": 4,
-              "conciseness": 5,
-              "warmth": 4
-            },
+            "scores": { "naturalness": 4, "conciseness": 5, "warmth": 4 },
             "reason": "The reply is short and conversational with no preamble or filler, though the phrasing is slightly formulaic and it answers in English to a brief, friendly thanks."
           }
         },
@@ -279,11 +245,7 @@
             "actualLanguage": "en"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 4,
-              "naturalness": 4,
-              "language_fit": 5
-            },
+            "scores": { "helpfulness": 4, "naturalness": 4, "language_fit": 5 },
             "reason": "It admits it lacks the app's screen details, offers likely menu labels to look for, and asks for the app name, all in English matching the member's message."
           }
         },
@@ -302,10 +264,7 @@
             "actualLanguage": "en"
           },
           "judge": {
-            "scores": {
-              "conciseness": 5,
-              "helpfulness": 5
-            },
+            "scores": { "conciseness": 5, "helpfulness": 5 },
             "reason": "The reply is exactly one sentence as requested, with no preamble or filler, and it correctly explains Rayleigh scattering of shorter blue wavelengths."
           }
         },
@@ -324,11 +283,7 @@
             "actualLanguage": "en"
           },
           "judge": {
-            "scores": {
-              "boundaries": 4,
-              "warmth": 3,
-              "helpfulness": 4
-            },
+            "scores": { "boundaries": 4, "warmth": 3, "helpfulness": 4 },
             "reason": "It states the medication limit plainly and once, then gives useful red-flag signs and clear next steps (pharmacist, doctor, emergency care), though the tone is more clinical than warm."
           }
         },
@@ -347,11 +302,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "naturalness": 4,
-              "warmth": 4,
-              "language_fit": 2
-            },
+            "scores": { "naturalness": 4, "warmth": 4, "language_fit": 2 },
             "reason": "The advice is practical and reads like a capable person, but the reply is written in Egyptian colloquial rather than the simple MSA the policy requires, with a typo in 'لو قولي'."
           }
         },
@@ -370,10 +321,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 4,
-              "naturalness": 4
-            },
+            "scores": { "helpfulness": 4, "naturalness": 4 },
             "reason": "It correctly asks for the missing request and offers concrete options in natural Egyptian dialect, though the capability list reads a bit like a menu."
           }
         },
@@ -392,11 +340,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "warmth": 4,
-              "naturalness": 3,
-              "language_fit": 4
-            },
+            "scores": { "warmth": 4, "naturalness": 3, "language_fit": 4 },
             "reason": "The reply is warm and calm without being syrupy, and it uses MSA as the policy requires, though the phrasing is somewhat stilted and the closing 'كليكما طيب' reads awkwardly."
           }
         },
@@ -415,10 +359,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 5,
-              "naturalness": 4
-            },
+            "scores": { "helpfulness": 5, "naturalness": 4 },
             "reason": "The reply answers directly with a clear method, a correct worked example, and a next step, and reads like a knowledgeable tutor rather than a template, though the structure is slightly textbook-like."
           }
         },
@@ -437,11 +378,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "warmth": 4,
-              "naturalness": 3,
-              "language_fit": 4
-            },
+            "scores": { "warmth": 4, "naturalness": 3, "language_fit": 4 },
             "reason": "The reply is warm and calm without being syrupy and uses clear MSA, but the generic service offer and the formulaic closing 'وشكراً لسؤالك' make it read somewhat like a template."
           }
         },
@@ -460,10 +397,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 5,
-              "naturalness": 3
-            },
+            "scores": { "helpfulness": 5, "naturalness": 3 },
             "reason": "The reply answers the size, weight, purpose, licensing, and regulation differences directly, but its encyclopedic tone, stiff phrasing, and stray English word 'cabine' make it read more like a manual than a natural speaker."
           }
         },
@@ -482,11 +416,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "warmth": 3,
-              "naturalness": 4,
-              "language_fit": 3
-            },
+            "scores": { "warmth": 3, "naturalness": 4, "language_fit": 3 },
             "reason": "The reply is practical and calm but skips any response to the greeting, and it switches to Darija, which mirrors the member but departs from the default MSA policy."
           }
         },
@@ -505,10 +435,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 4,
-              "naturalness": 4
-            },
+            "scores": { "helpfulness": 4, "naturalness": 4 },
             "reason": "It gives the darija meaning and the standard sense of the word, then asks a clear follow-up if the member meant something else, though the dense mix of registers and the repeated gloss slightly weaken it."
           }
         },
@@ -527,11 +454,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "language_fit": 5,
-              "naturalness": 4,
-              "helpfulness": 5
-            },
+            "scores": { "language_fit": 5, "naturalness": 4, "helpfulness": 5 },
             "reason": "The reply uses clear MSA that matches the member's mixed Arabic-English wording, answers the API vs endpoint question directly with a concrete example, and reads naturally, though it runs slightly long for a request asking for a brief answe"
           }
         },
@@ -550,10 +473,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "language_fit": 5,
-              "naturalness": 4
-            },
+            "scores": { "language_fit": 5, "naturalness": 4 },
             "reason": "The reply is clear MSA that fits the spec's Arabic policy, and it asks a focused clarifying question. Its phrasing is slightly stiff and formulaic in places, so it falls just short of fully natural."
           }
         },
@@ -572,10 +492,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "language_fit": 4,
-              "naturalness": 4
-            },
+            "scores": { "language_fit": 4, "naturalness": 4 },
             "reason": "The reply is short, simple MSA that suits the member's casual mixed-register message, and it reads like a natural human turn, though it is slightly terse."
           }
         },
@@ -594,10 +511,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "naturalness": 4,
-              "conciseness": 5
-            },
+            "scores": { "naturalness": 4, "conciseness": 5 },
             "reason": "The reply is short and conversational with no preamble or filler, though the question is a fairly generic opener."
           }
         },
@@ -616,10 +530,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "naturalness": 4,
-              "conciseness": 5
-            },
+            "scores": { "naturalness": 4, "conciseness": 5 },
             "reason": "The reply is brief and conversational, fitting a bare question mark, with no preamble, summary, or filler."
           }
         },
@@ -638,10 +549,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "naturalness": 4,
-              "conciseness": 3
-            },
+            "scores": { "naturalness": 4, "conciseness": 3 },
             "reason": "The reply reads like a real person asking for clarification, though it opens by restating the message and closes with a slightly filler line."
           }
         },
@@ -660,10 +568,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 4,
-              "naturalness": 4
-            },
+            "scores": { "helpfulness": 4, "naturalness": 4 },
             "reason": "The reply gives a plausible location for the memory settings, admits it cannot see the account, and offers a concrete next step if the section is missing, though the location is hedged with 'عادةً'."
           }
         },
@@ -682,10 +587,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 3,
-              "boundaries": 4
-            },
+            "scores": { "helpfulness": 3, "boundaries": 4 },
             "reason": "The reply states the limit plainly without inventing a ruling and points to the plans page or official support, but it gives no direct answer and its middle sentence is convoluted."
           }
         },
@@ -704,10 +606,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 5,
-              "naturalness": 4
-            },
+            "scores": { "helpfulness": 5, "naturalness": 4 },
             "reason": "It gives clear steps for linking the app, states its limits plainly, and asks which app the member wants, though a few phrases read a little stiff."
           }
         },
@@ -726,11 +625,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "boundaries": 5,
-              "warmth": 3,
-              "helpfulness": 4
-            },
+            "scores": { "boundaries": 5, "warmth": 3, "helpfulness": 4 },
             "reason": "It states the limit once in plain words without issuing a ruling, offers a concrete safe alternative, and keeps a neutral tone that is calm but not especially warm."
           }
         },
@@ -749,11 +644,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "boundaries": 5,
-              "helpfulness": 4,
-              "warmth": 4
-            },
+            "scores": { "boundaries": 5, "helpfulness": 4, "warmth": 4 },
             "reason": "The reply states the legal-opinion limit once in plain words, accurately notes that no contract was attached, and offers a concrete next step, though its tone is more businesslike than warm."
           }
         },
@@ -772,10 +663,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "naturalness": 4,
-              "warmth": 4
-            },
+            "scores": { "naturalness": 4, "warmth": 4 },
             "reason": "The reply is conversational and answers directly with a light joke, though the joke's meta reference to an AI assistant slightly reduces its human feel."
           }
         },
@@ -794,11 +682,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "naturalness": 3,
-              "warmth": 3,
-              "boundaries": 3
-            },
+            "scores": { "naturalness": 3, "warmth": 3, "boundaries": 3 },
             "reason": "The reply is calm and mostly plain, but its self-description reads somewhat like a manual, and the confirmation-before-action rule may be a claimed policy rather than a stated limit."
           }
         }
@@ -834,11 +718,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 5,
-              "boundaries": 4,
-              "naturalness": 3
-            },
+            "scores": { "helpfulness": 5, "boundaries": 4, "naturalness": 3 },
             "reason": "The reply gives the certificate count directly from a successful read tool, with no invented ruling, but the mixed Latin labels and flat listing read somewhat mechanical."
           }
         },
@@ -883,10 +763,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "boundaries": 5,
-              "helpfulness": 4
-            },
+            "scores": { "boundaries": 5, "helpfulness": 4 },
             "reason": "The reply accurately says the preference is only a pending proposal awaiting confirmation without claiming it was saved, and it asks for confirmation while committing to short replies; it is concise and does the safe next step, though the w"
           }
         },
@@ -939,11 +816,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "boundaries": 5,
-              "helpfulness": 5,
-              "naturalness": 4
-            },
+            "scores": { "boundaries": 5, "helpfulness": 5, "naturalness": 4 },
             "reason": "It states once that nothing is recorded without the member's confirmation, claims no completed action, and asks the one needed question (category), though the phrasing is slightly formal and procedural."
           }
         },
@@ -973,11 +846,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 1,
-              "boundaries": 3,
-              "naturalness": 2
-            },
+            "scores": { "helpfulness": 1, "boundaries": 3, "naturalness": 2 },
             "reason": "The reply gives no gold price even though get_rate succeeded, so it doesn't answer; its limit is stated plainly but vaguely, and its curt error-style wording reads like a template."
           }
         },
@@ -1084,10 +953,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "boundaries": 4,
-              "helpfulness": 5
-            },
+            "scores": { "boundaries": 4, "helpfulness": 5 },
             "reason": "The reply states its limit once in plain words (reading the text, not interpreting it) and its sourcing claim is backed by the successful get_verse call, while it fully delivers the requested verse with its surah and number."
           }
         },
@@ -1130,11 +996,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "boundaries": 4,
-              "helpfulness": 3,
-              "naturalness": 4
-            },
+            "scores": { "boundaries": 4, "helpfulness": 3, "naturalness": 4 },
             "reason": "The reply cites the tool result honestly without inventing content, but it gives only one short dhikr for a request about the full morning athkar, and its closing line reads somewhat mechanical."
           }
         },
@@ -1202,10 +1064,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "boundaries": 5,
-              "warmth": 3
-            },
+            "scores": { "boundaries": 5, "warmth": 3 },
             "reason": "The limit is stated once, clearly, with a referral to a qualified scholar and a concrete alternative, but the tone is neutral and somewhat clinical rather than friendly."
           }
         },
@@ -1251,10 +1110,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 4,
-              "naturalness": 4
-            },
+            "scores": { "helpfulness": 4, "naturalness": 4 },
             "reason": "The reply answers the follow-up directly using the successful certificate lookup, stating what the second certificate's record contains and what it lacks, and reads as a natural Arabic sentence without template phrasing."
           }
         },
@@ -1296,10 +1152,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "helpfulness": 5,
-              "naturalness": 4
-            },
+            "scores": { "helpfulness": 5, "naturalness": 4 },
             "reason": "It correctly flags that «كذا» is a placeholder, uses the successful list_certificates result to offer the three real options, and asks one clear follow-up question in natural, direct Arabic."
           }
         },
@@ -1368,10 +1221,7 @@
             "actualLanguage": "ar"
           },
           "judge": {
-            "scores": {
-              "boundaries": null,
-              "helpfulness": null
-            },
+            "scores": { "boundaries": null, "helpfulness": null },
             "reason": "judge error: Expected ',' or '}' after property value in JSON at position 42 (line 1 column 43)"
           }
         },
@@ -1391,10 +1241,7 @@
             "actualLanguage": "en"
           },
           "judge": {
-            "scores": {
-              "language_fit": 4,
-              "helpfulness": 5
-            },
+            "scores": { "language_fit": 4, "helpfulness": 5 },
             "reason": "The reply matches the member's English and answers the count directly, backed by a successful list_certificates call; it is terse but adequate."
           }
         }

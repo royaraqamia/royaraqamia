@@ -83,7 +83,7 @@ const report = summarize({
   },
   tiers: [{ name: 'model', cases: results }],
 });
-writeReport(root, report, '-model');
+await writeReport(root, report, '-model');
 
 for (const result of results) {
   const scores = Object.entries(result.judge.scores)

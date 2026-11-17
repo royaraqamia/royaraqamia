@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { arg, deterministic } from './lib.mjs';
+import { arg, deterministic, writeJson } from './lib.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(arg('repo', resolve(here, '../..')));
@@ -24,7 +24,6 @@ for (const path of paths) {
       c.deterministic = deterministic(c.reply, expectations.get(c.id) ?? {});
     }
   }
-  const { writeFileSync } = await import('node:fs');
-  writeFileSync(path, `${JSON.stringify(report, null, 2)}\n`);
+  await writeJson(path, report);
   process.stdout.write(`recomputed ${path}\n`);
 }
