@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "exceptions": [
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "scope": "all",
+      "reason": "picomatch ReDoS is reachable only through Sentry's build-time rollup plugins, never from a request path, and the advisory covers every released version (<=4.0.7) with no patched version upstream. The suggested force fix downgrades @sentry/nextjs by major versions.",
+      "owner": "royaraqamia",
+      "upstream": "https://github.com/micromatch/picomatch/pull/194",
+      "expires": "2026-12-17"
+    }
+  ]
+}

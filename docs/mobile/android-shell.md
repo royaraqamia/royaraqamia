@@ -106,7 +106,7 @@ circle. It carries the artwork 1.3x larger — a 78% disc — and it is the only
 and the standalone favicon PNGs stay on the master.
 `scripts/generate-android-assets.mjs` does this by hand rather than through
 `@capacitor/assets`, whose transitive `tar` carries a critical advisory that would fail
-`security-scan.yml`'s `npm audit --audit-level=high`. It measures every asset it writes
+the `security-scan.yml` dependency gate. It measures every asset it writes
 against its surface's target and exits non-zero on a miss, and
 `scripts/__tests__/icon-shape.test.mjs` holds the committed files to the same proportions in
 `npm test` (`scripts/logo-shape.mjs` is the measurement both use).

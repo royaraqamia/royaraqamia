@@ -46,13 +46,15 @@ jobs:
           node-version: '22'
           cache-next: 'false'
 
-      # Blocking on every push/PR: production dependencies only.
+      # Blocking on every push/PR: production dependencies only. Advisories
+      # with a documented, unexpired exception are reported but do not block
+      # (ADR-0207, security/audit-exceptions.json).
       - name: Audit Production Dependencies
-        run: npm audit --omit=dev --audit-level=high
+        run: npm run audit:deps -- --scope=production
 
       # Full dependency audit is inherently flaky on event-driven runs
       # (new CVEs published mid-day break unrelated PRs), so it only
       # gates the scheduled weekly run and reports there.
       - name: Audit All Dependencies
         if: github.event_name == 'schedule'
-        run: npm audit --audit-level=high
+        run: npm run audit:deps -- --scope=all
