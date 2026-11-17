@@ -50,6 +50,7 @@ import com.royaraqamia.app.chats.ChatComposeFile
 import com.royaraqamia.app.chats.ChatComposerAttach
 import com.royaraqamia.app.chats.ChatFailure
 import com.royaraqamia.app.chats.ChatMessageList
+import com.royaraqamia.app.chats.WebSourcesCard
 import com.royaraqamia.app.chats.ChatThreadCopy
 import com.royaraqamia.app.chats.ChatsRepository
 import com.royaraqamia.app.contracts.ApiResult
@@ -414,6 +415,7 @@ fun AssistantSheet(
                             messages = messages,
                             streaming = turn?.streaming.orEmpty(),
                             tools = turn?.tools.orEmpty(),
+                            sources = turn?.sources.orEmpty(),
                             asking = asking,
                             editing = editing,
                             editText = editingText,
@@ -624,6 +626,7 @@ private fun AssistantConversation(
     messages: List<ChatMessagePageResponseMessagesItem>,
     streaming: String,
     tools: List<String>,
+    sources: List<AssistantSource>,
     asking: Boolean,
     editing: String?,
     editText: String,
@@ -673,6 +676,11 @@ private fun AssistantConversation(
                         color = RoyColors.foreground,
                     )
                 }
+                WebSourcesCard(
+                    sources = sources,
+                    type = type,
+                    readNote = !Regex("\\[\\d{1,2}\\]").containsMatchIn(streaming),
+                )
             }
         },
     )

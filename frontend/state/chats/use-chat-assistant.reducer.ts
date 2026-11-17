@@ -1,4 +1,5 @@
 import type { ChatAgentAllowance, ChatAgentPhase, ChatMessage } from '@/shared/contracts/chat';
+import type { WebSource } from '@/shared/contracts/web-search';
 import { withStoredMessage, type PendingTurn } from './pending-turn';
 
 /**
@@ -28,6 +29,11 @@ export interface ChatAssistantTurn {
   /** This turn's own record of what it read or proposed, in the member's words. */
   toolsUsed: string[];
   /**
+   * What the web search read for this answer (ADR-0206). The card draws it
+   * while the answer streams, and the stored row carries the same array.
+   */
+  sources: WebSource[];
+  /**
    * The question as the thread draws it (#1541). It appears on the press and
    * stays until the thread's own read carries the stored row, so the member
    * never watches their words sit in a field waiting for the answer.
@@ -44,6 +50,7 @@ export type ChatAssistantAction =
   | { type: 'toolStarted'; activity: string }
   | { type: 'toolFinished' }
   | { type: 'toolUsed'; label: string }
+  | { type: 'sourcesSeen'; sources: WebSource[] }
   | { type: 'proposalSeen' }
   | { type: 'pendingDismissed' }
   | { type: 'turnSettled'; failure: string | null };
@@ -57,6 +64,7 @@ export function chatAssistantInitialState(): ChatAssistantTurn {
     streamingText: '',
     interrupted: '',
     toolsUsed: [],
+    sources: [],
     pending: null,
     error: null,
   };
@@ -78,6 +86,7 @@ export function chatAssistantReducer(
         streamingText: '',
         interrupted: '',
         toolsUsed: [],
+        sources: [],
         pending: action.pending,
         error: null,
       };
@@ -109,6 +118,9 @@ export function chatAssistantReducer(
       // Provenance is what the answer *used*: a failed read produced nothing to
       // cite, and the answer's own refusal already says what went wrong.
       return { ...state, toolsUsed: [...state.toolsUsed, action.label] };
+
+    case 'sourcesSeen':
+      return { ...state, sources: action.sources };
 
     case 'proposalSeen':
       // The card is the proposal's own record; provenance is what the answer

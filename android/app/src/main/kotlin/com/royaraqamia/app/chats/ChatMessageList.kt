@@ -34,12 +34,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.assistant.AssistantPanelCopy
+import com.royaraqamia.app.assistant.AssistantSource
 import com.royaraqamia.app.community.CommunityMarkdown
 import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItem
+import com.royaraqamia.app.contracts.generated.ChatMessagePageResponseMessagesItemSenderKind
 import com.royaraqamia.app.contracts.generated.ChatThreadResponseThread
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.RoyColors
+import com.royaraqamia.app.theme.RoyTypeScale
 import com.royaraqamia.app.ui.vectors.LucideVectors
 import java.time.Duration
 import java.time.Instant
@@ -292,6 +296,19 @@ private fun MessageRow(
                     )
             }
 
+            if (message.senderKind == ChatMessagePageResponseMessagesItemSenderKind.AGENT &&
+                !message.sources.isNullOrEmpty()
+            ) {
+                WebSourcesCard(
+                    sources = message.sources!!.map {
+                        AssistantSource(it.url, it.title, it.domain, it.publishedDate)
+                    },
+                    type = type,
+                    readNote = message.body?.let { !Regex("\\[\\d{1,2}\\]").containsMatchIn(it) }
+                        ?: true,
+                )
+            }
+
             if (message.attachments.isNotEmpty() && !deleted) {
                 message.attachments.forEach { attachment ->
                     Row(
@@ -422,5 +439,73 @@ private val EDIT_WINDOW: Duration = Duration.ofMinutes(15)
 private fun withinEditWindow(createdAtIso: String): Boolean {
     val createdAt = runCatching { Instant.parse(createdAtIso) }.getOrNull() ?: return false
     return Duration.between(createdAt, Instant.now()) < EDIT_WINDOW
+}
+
+/**
+ * What a web answer was read from (ADR-0206), under the reply in both clients.
+ * The numbers match the markers the server put in the answer; the row itself is
+ * the link, so a citation is one press away.
+ */
+@Composable
+internal fun WebSourcesCard(
+    sources: List<AssistantSource>,
+    type: RoyTypeScale,
+    readNote: Boolean = false,
+) {
+    if (sources.isEmpty()) return
+    Column(
+        modifier =
+            Modifier.fillMaxWidth()
+                .background(RoyColors.mutedForeground.copy(alpha = 0.06f), RoundedCornerShape(10.dp))
+                .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Text(
+            text = AssistantPanelCopy.SOURCES_TITLE,
+            style = type.xs.copy(fontWeight = FontWeight.Bold),
+            color = RoyColors.foreground,
+        )
+        if (readNote) {
+            Text(
+                text = AssistantPanelCopy.SOURCES_READ,
+                style = type.xs,
+                color = RoyColors.mutedForeground,
+            )
+        }
+        sources.forEachIndexed { index, source ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Text(
+                    text = "[${index + 1}]",
+                    style = type.xs,
+                    color = RoyColors.mutedForeground,
+                )
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = source.title.ifBlank { source.domain },
+                        style = type.xs,
+                        color = RoyColors.foreground,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = source.domain,
+                        style = type.xs,
+                        color = RoyColors.mutedForeground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Icon(
+                    imageVector = LucideVectors.ExternalLink,
+                    contentDescription = null,
+                    tint = RoyColors.mutedForeground,
+                    modifier = Modifier.size(12.dp),
+                )
+            }
+        }
+    }
 }
 

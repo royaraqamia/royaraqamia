@@ -54,6 +54,13 @@ export const USAGE_COUNTERS = {
    * limit and a server that loops; what the model costs is `chatAgentTurns`.
    */
   mcpCalls: 'mcp.call',
+  /**
+   * One web search the assistant made (ADR-0206). It is not a second member
+   * budget — the turn is what the member spends — but the vendor's free month is
+   * shared by the deployment, so the ledger row is what the project ceiling
+   * counts.
+   */
+  webSearches: 'web.search',
 } as const;
 
 export type UsageCounterKey = (typeof USAGE_COUNTERS)[keyof typeof USAGE_COUNTERS];
@@ -78,6 +85,8 @@ export const VISITOR_COUNTER_CAPS: Record<UsageCounterKey, number> = {
   // A remote app call happens inside the assistant's turn, so it inherits the
   // same rule: no account, no app (ADR-0155).
   'mcp.call': 0,
+  // The web search rides the assistant's turn: no account, no search (ADR-0206).
+  'web.search': 0,
 };
 
 /**

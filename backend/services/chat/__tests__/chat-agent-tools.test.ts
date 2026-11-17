@@ -81,7 +81,9 @@ describe('the assistant’s tool registry (#818)', () => {
 
   it('declares the screen refresh only when the request brought eyes', () => {
     const names = (input: { hasApps: boolean; hasScreen: boolean }) =>
-      chatAgentToolDefinitionsForTurn(input).map((definition) => definition.function.name);
+      chatAgentToolDefinitionsForTurn({ ...input, hasWebSearch: false }).map(
+        (definition) => definition.function.name
+      );
 
     expect(names({ hasApps: false, hasScreen: false })).not.toContain('get_screen_context');
     expect(names({ hasApps: false, hasScreen: true })).toContain('get_screen_context');

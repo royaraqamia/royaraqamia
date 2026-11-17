@@ -150,6 +150,7 @@ function toMessage(
     clientId: record.clientId,
     attachments,
     replyTo,
+    sources: record.sources ?? null,
   };
 }
 

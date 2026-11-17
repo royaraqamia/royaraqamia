@@ -42,6 +42,7 @@ const freeCaps: PlanCaps = {
     'downloader.job.create': { window: 'lifetime', cap: 5 },
     'chat.agent.turn': { window: 'daily', cap: 0 },
     'mcp.call': { window: 'daily', cap: 5 },
+    'web.search': { window: 'daily', cap: 0 },
   },
 };
 

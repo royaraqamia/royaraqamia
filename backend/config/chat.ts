@@ -44,6 +44,7 @@ import { skillIndexDimensions } from '@/backend/services/chat/skill-index';
 import { projectIdentity } from '@/backend/services/chat/turn-identity';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createAiChatClient } from '@/backend/clients/ai-chat';
+import { createWebSearchClient, searchLanguageFor } from '@/backend/clients/web-search';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { USAGE_COUNTERS } from '@/shared/contracts/plans';
 
@@ -137,6 +138,9 @@ export function createSupabaseChatAgentService(
   // extraction behind the turn answers with it, so the deployment has one key,
   // one model and one place to change either.
   const client = createAiChatClient();
+  // The web, when the deployment has a search key (ADR-0206). No key is no
+  // client, and the turn then declares no search tool at all.
+  const search = createWebSearchClient();
 
   // The specialist shortlist reads the roster's own artifact, so its width is
   // the artifact's, not the memory table's (#1448). A deployment with no
@@ -157,6 +161,19 @@ export function createSupabaseChatAgentService(
     // Every remote call a turn makes is its own counted action (#1226): one
     // counter for both directions, because a read causes the same egress.
     reserveAppCall: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.mcpCalls),
+    // The web is one counted search inside the member's turn (ADR-0206): the
+    // gate releases the count when the vendor call failed, and the project
+    // ceiling is what keeps the shared free month from being spent in a week.
+    ...(search
+      ? {
+          search: {
+            run: (userId: string, query: string, signal: AbortSignal) =>
+              gate.count({ userId }, USAGE_COUNTERS.webSearches, () =>
+                search.search(query, { language: searchLanguageFor(query), signal })
+              ),
+          },
+        }
+      : {}),
     // The composer's app meter reads the same catalogue the pricing page does
     // (ADR-0093), so the number on screen and the number enforced are one.
     usageState: (userId) => usage.state(userId),

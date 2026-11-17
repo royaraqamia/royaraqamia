@@ -26,6 +26,8 @@ export const ASSISTANT_PANEL_COPY = {
   retry: 'إعادة المحاولة',
   unavailable: 'نور غير متاحة حالياً.',
   attachmentOnly: 'مرفق',
+  sourcesTitle: 'المصادر',
+  sourcesRead: 'قرأ نور هذه الصفحات:',
 } as const;
 
 export type AssistantPanelCopyStrings = typeof ASSISTANT_PANEL_COPY;

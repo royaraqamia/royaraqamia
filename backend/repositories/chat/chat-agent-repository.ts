@@ -4,6 +4,7 @@ import type { Database } from '@/backend/models/database.types';
 import type { ChatMessageRecord } from '@/backend/repositories/chat/chat-repository';
 import { repositoryFailure } from '@/backend/shared/repository-error';
 import type { ChatAgentMeters } from '@/shared/contracts/chat';
+import type { WebSource } from '@/shared/contracts/web-search';
 
 type MessageRow = Database['public']['Tables']['chat_messages']['Row'];
 type TurnRow = Database['public']['Tables']['agent_turns']['Row'];
@@ -39,6 +40,7 @@ function toMessage(row: MessageRow): ChatMessageRecord {
     deletedAt: row.deleted_at,
     createdAt: row.created_at,
     clientId: row.client_id,
+    sources: (row.sources as WebSource[] | null) ?? null,
   };
 }
 
@@ -73,7 +75,11 @@ function toTurn(row: TurnRow): AgentTurnRow {
 export interface ChatAgentRepository {
   allowance(userId: string): Promise<ChatAgentMeters>;
   /** Writes the assistant's reply. The conversation is the caller's own thread. */
-  insertAgentMessage(conversationId: string, body: string): Promise<ChatMessageRecord>;
+  insertAgentMessage(
+    conversationId: string,
+    body: string,
+    sources?: WebSource[]
+  ): Promise<ChatMessageRecord>;
   /** Opens the record of one turn and answers its id. */
   startTurn(conversationId: string, memberId: string, question: string): Promise<string>;
   /** The words a voice note turned out to hold, written once it is transcribed. */
@@ -109,7 +115,7 @@ export function createSupabaseChatAgentRepository(
       };
     },
 
-    async insertAgentMessage(conversationId, body) {
+    async insertAgentMessage(conversationId, body, sources) {
       const { data, error } = await supabase
         .from('chat_messages')
         .insert({
@@ -117,6 +123,7 @@ export function createSupabaseChatAgentRepository(
           sender_id: null,
           sender_kind: 'agent',
           body,
+          ...(sources && sources.length > 0 ? { sources } : {}),
         })
         .select()
         .single();

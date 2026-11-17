@@ -4,23 +4,62 @@ import { useMemo } from 'react';
 
 import { parseChatMarkdown, type ChatInline } from '@/shared/text/chat-markdown';
 import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
+import type { WebSource } from '@/shared/contracts/web-search';
 
 /**
  * One message as the reader sees it: the inline marks the field wrote, the
  * addresses and handles the text holds, and its line breaks (ADR-0193).
  *
- * Text leaves go through `LinkifiedText`, so a message follows the same two
- * rules every other surface does (ADR-0192) — a URL is pressable, an `@handle`
- * is pressable only when the directory answers for it — and this file only owns
- * the marks on top of that.
+ * A web answer also carries numbered sources (ADR-0206). When they are passed
+ * in, a `[2]` in the text becomes a link to the second row of that answer's
+ * card; a stray number that names no source stays the plain text it was.
  */
-export function ChatBody({ text }: { text: string }) {
+export function ChatBody({
+  text,
+  sources,
+  sourceAnchor,
+}: {
+  text: string;
+  sources?: WebSource[] | null;
+  /** Unique per bubble, so two answers cannot claim the same row. */
+  sourceAnchor?: string;
+}) {
   const nodes = useMemo(() => parseChatMarkdown(text), [text]);
-  return <>{nodes.map((node, index) => renderInline(node, index))}</>;
+  return <>{nodes.map((node, index) => renderInline(node, index, sources, sourceAnchor))}</>;
 }
 
-function renderInline(node: ChatInline, key: number): React.ReactNode {
-  if (node.kind === 'text') return <LinkifiedText key={key} text={node.value} />;
+function renderInline(
+  node: ChatInline,
+  key: number,
+  sources?: WebSource[] | null,
+  sourceAnchor?: string
+): React.ReactNode {
+  if (node.kind === 'text') {
+    if (!sources?.length || !sourceAnchor) return <LinkifiedText key={key} text={node.value} />;
+
+    const parts = node.value.split(/(\[\d{1,2}\])/g);
+    return (
+      <>
+        {parts.map((part, at) => {
+          const match = /^\[(\d{1,2})\]$/.exec(part);
+          const number = match ? Number(match[1]) : 0;
+          if (number >= 1 && number <= sources.length) {
+            return (
+              <a
+                key={`${key}-${at}`}
+                href={`#${sourceAnchor}-${number}`}
+                dir="ltr"
+                className="font-medium text-primary underline underline-offset-2"
+              >
+                [{number}]
+              </a>
+            );
+          }
+          return <LinkifiedText key={`${key}-${at}`} text={part} />;
+        })}
+      </>
+    );
+  }
   if (node.kind === 'break') return <br key={key} />;
 
   if (node.kind === 'link') {
@@ -33,12 +72,14 @@ function renderInline(node: ChatInline, key: number): React.ReactNode {
         rel="noopener noreferrer nofollow ugc"
         className="font-medium underline underline-offset-2 decoration-1 break-words"
       >
-        {node.children.map((child, index) => renderInline(child, index))}
+        {node.children.map((child, index) => renderInline(child, index, sources, sourceAnchor))}
       </a>
     );
   }
 
-  const children = node.children.map((child, index) => renderInline(child, index));
+  const children = node.children.map((child, index) =>
+    renderInline(child, index, sources, sourceAnchor)
+  );
   switch (node.mark) {
     case 'bold':
       return <strong key={key}>{children}</strong>;

@@ -23,6 +23,8 @@ data class AssistantTurn(
     val streaming: String = "",
     /** What this turn read, in the member's words — provenance, not a live line. */
     val tools: List<String> = emptyList(),
+    /** What the web search read, drawn as the source card (ADR-0206). */
+    val sources: List<AssistantSource> = emptyList(),
     /** The refusal a failed turn carries, already a sentence. */
     val notice: String? = null,
     /** Bumped when the turn ends, so a sheet that is open can re-read the thread. */
@@ -98,6 +100,8 @@ class AssistantTurnStore(
                                     tools = if (event.ok) it.tools + event.label else it.tools,
                                 )
                             }
+                        is AssistantEvent.Sources ->
+                            update(conversationId) { it.copy(sources = event.sources) }
                         is AssistantEvent.Proposal ->
                             update(conversationId) {
                                 it.copy(phase = AssistantPhase.Proposal, toolLabel = null)
@@ -116,6 +120,7 @@ class AssistantTurnStore(
                     phase = null,
                     toolLabel = null,
                     streaming = "",
+                    sources = emptyList(),
                     notice = notice,
                     settledAt = it.settledAt + 1,
                 )

@@ -18,6 +18,7 @@ import { ChatImage } from './chat-image';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { chatTimeAgo } from './chats-panel';
 import { VoiceNotePlayer } from './voice-note-player';
+import { WebSources } from './web-sources';
 import { readReceiptOf, type ChatReadReceipt } from './read-receipt';
 import { formatDaySeparator, isNewDay } from './thread-days';
 import {
@@ -242,9 +243,18 @@ export function ChatMessageList({
           <div className="flex w-full flex-col items-start gap-1">
             <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-xs dark:bg-muted/70">
               <p className="whitespace-pre-wrap wrap-anywhere bidi-lines" dir="auto">
-                <ChatBody text={assistant.streamingText} />
+                <ChatBody
+                  text={assistant.streamingText}
+                  sources={assistant.sources}
+                  sourceAnchor="stream"
+                />
               </p>
             </div>
+            <WebSources
+              sources={assistant.sources}
+              anchorPrefix="stream"
+              readNote={!/\[\d{1,2}\]/.test(assistant.streamingText)}
+            />
           </div>
         )}
 
@@ -389,9 +399,22 @@ export const ChatMessageRow = memo(function ChatMessageRow({
               </div>
             </div>
           ) : message.body ? (
-            <p dir="auto" className="whitespace-pre-wrap wrap-anywhere bidi-lines">
-              <ChatBody text={message.body} />
-            </p>
+            <>
+              <p dir="auto" className="whitespace-pre-wrap wrap-anywhere bidi-lines">
+                <ChatBody
+                  text={message.body}
+                  sources={message.sources}
+                  sourceAnchor={`source-${message.id}`}
+                />
+              </p>
+              {message.senderKind === 'agent' ? (
+                <WebSources
+                  sources={message.sources}
+                  anchorPrefix={`source-${message.id}`}
+                  readNote={!/\[\d{1,2}\]/.test(message.body)}
+                />
+              ) : null}
+            </>
           ) : attachmentOnlyLabel ? (
             <p className="text-xs italic opacity-70">{attachmentOnlyLabel}</p>
           ) : null}

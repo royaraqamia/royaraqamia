@@ -28,4 +28,6 @@ object AssistantPanelCopy {
     const val RETRY = "إعادة المحاولة"
     const val UNAVAILABLE = "نور غير متاحة حالياً."
     const val ATTACHMENT_ONLY = "مرفق"
+    const val SOURCES_TITLE = "المصادر"
+    const val SOURCES_READ = "قرأ نور هذه الصفحات:"
 }

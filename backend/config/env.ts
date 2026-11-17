@@ -32,6 +32,14 @@ export const env = {
   get resendApiKey(): string | undefined {
     return read('RESEND_API_KEY');
   },
+  /**
+   * The assistant's web search (ADR-0206). No key is no tool: a deployment
+   * without one answers the way it always did, and never offers a search it
+   * cannot run.
+   */
+  get tavilyApiKey(): string | undefined {
+    return read('TAVILY_API_KEY');
+  },
   get resendFromName(): string | undefined {
     return read('RESEND_FROM_NAME');
   },

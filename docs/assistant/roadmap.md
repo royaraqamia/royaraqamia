@@ -231,6 +231,8 @@ The budget the work has to fit inside:
 - **Per turn:** +600 tokens of screen, +400 of identity, +800 of memory, against today's
   `CHAT_AGENT_TOKEN_BUDGET`. The turn's ceiling does not rise; the history window shrinks to
   pay for it, and the summary carries what the window drops.
+- **Web evidence:** +1,250 tokens when `search_web` is declared, paid by a 1,300 reserve from
+  `CHAT_AGENT_TOKEN_BUDGET` (ADR-0206). The turn's ceiling does not rise; the history window shrinks.
 - **Recall:** one embedding call per stored item, batched; six items per turn.
 - **Scheduled runs:** one run per member per task, budgeted, and a run that spends its budget
   stops rather than retries.

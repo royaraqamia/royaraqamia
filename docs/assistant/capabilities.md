@@ -13,7 +13,7 @@ that reads `Turn + MCP` is the same operation reached two ways.
 a read is always tier 0 and runs inside the turn; a write is above it, and
 tier 2 or 3 is always a card. Every write's tier is in the table below.
 
-**71 capabilities** (39 read, 32 write): 35 declared by the turn, 37 by the MCP server.
+**72 capabilities** (40 read, 32 write): 36 declared by the turn, 37 by the MCP server.
 
 | Product | Reads | Writes | Turn | MCP |
 | --- | --- | --- | --- | --- |
@@ -33,7 +33,7 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | `training` | 0 | 1 | 1 | 0 |
 | `client-work` | 0 | 1 | 1 | 0 |
 | `admin` | 0 | 0 | 0 | 0 |
-| `assistant` | 5 | 0 | 4 | 1 |
+| `assistant` | 6 | 0 | 5 | 1 |
 
 ## `news`
 
@@ -209,12 +209,13 @@ No capability on either door yet.
 
 ## `assistant`
 
-5 read, 0 write.
+6 read, 0 write.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
 | `assistant.list_specialists` | read | 0 | Turn |
 | `assistant.load_specialist` | read | 0 | Turn |
+| `assistant.search_web` | read | 0 | Turn |
 | `assistant.find_app_tools` | read | 0 | Turn |
 | `assistant.get_screen_context` | read | 0 | Turn |
 | `assistant.server_info` | read | 0 | MCP |
