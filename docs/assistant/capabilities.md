@@ -13,12 +13,12 @@ that reads `Turn + MCP` is the same operation reached two ways.
 a read is always tier 0 and runs inside the turn; a write is above it, and
 tier 2 or 3 is always a card. Every write's tier is in the table below.
 
-**60 capabilities** (28 read, 32 write): 24 declared by the turn, 37 by the MCP server.
+**64 capabilities** (32 read, 32 write): 28 declared by the turn, 37 by the MCP server.
 
 | Product | Reads | Writes | Turn | MCP |
 | --- | --- | --- | --- | --- |
-| `news` | 0 | 0 | 0 | 0 |
-| `rates` | 0 | 0 | 0 | 0 |
+| `news` | 2 | 0 | 2 | 0 |
+| `rates` | 2 | 0 | 2 | 0 |
 | `scan` | 0 | 0 | 0 | 0 |
 | `quran` | 0 | 0 | 0 | 0 |
 | `athkar` | 0 | 0 | 0 | 0 |
@@ -37,11 +37,21 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 
 ## `news`
 
-No capability on either door yet.
+2 read, 0 write.
+
+| Capability | Kind | Tier | Doors |
+| --- | --- | --- | --- |
+| `news.get_latest_news` | read | 0 | Turn |
+| `news.get_news_item` | read | 0 | Turn |
 
 ## `rates`
 
-No capability on either door yet.
+2 read, 0 write.
+
+| Capability | Kind | Tier | Doors |
+| --- | --- | --- | --- |
+| `rates.get_rate` | read | 0 | Turn |
+| `rates.get_rate_history` | read | 0 | Turn |
 
 ## `scan`
 

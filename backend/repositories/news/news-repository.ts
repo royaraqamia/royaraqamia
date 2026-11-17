@@ -29,6 +29,14 @@ export interface NewsRepository {
 
   listStories(digestId: string, category: NewsCategory | null): Promise<StoredStory[]>;
 
+  /**
+   * One story by id, with the day it was published on.
+   *
+   * A story id is what the assistant's news read hands back, so the follow-up
+   * ("read me that one") is a single row rather than a search over headlines.
+   */
+  getStory(id: string): Promise<StoryWithDay | null>;
+
   /** The days that still have a digest, newest first. */
   listDigestDates(limit: number): Promise<string[]>;
 

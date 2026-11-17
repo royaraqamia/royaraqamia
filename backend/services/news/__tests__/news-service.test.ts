@@ -38,6 +38,7 @@ function repository(overrides: Partial<NewsRepository> = {}): NewsRepository {
     getLatestDigest: vi.fn(async () => DIGEST),
     getDigestByDate: vi.fn(async () => DIGEST),
     listStories: vi.fn(async () => [STORY]),
+    getStory: vi.fn(async () => null),
     listDigestDates: vi.fn(async () => [DIGEST.date]),
     searchStories: vi.fn(async () => []),
     listRecentSourceUrls: vi.fn(async () => []),
@@ -172,5 +173,19 @@ describe('news service', () => {
 
     expect(board.search?.hits).toEqual(hits);
     expect(board.preferences).toBeNull();
+  });
+
+  it('reads one story by id, with the day it belongs to', async () => {
+    const hit: StoryWithDay = { ...(STORY as NewsStory), digestDate: '2026-10-23' };
+    const repo = repository({ getStory: vi.fn(async () => hit) });
+
+    await expect(createNewsService(repo).getStory('story-1')).resolves.toEqual(hit);
+    expect(repo.getStory).toHaveBeenCalledWith('story-1');
+  });
+
+  it('answers null for an id the retained window no longer holds', async () => {
+    const repo = repository({ getStory: vi.fn(async () => null) });
+
+    await expect(createNewsService(repo).getStory('gone')).resolves.toBeNull();
   });
 });

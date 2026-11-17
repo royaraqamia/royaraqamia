@@ -29,6 +29,13 @@ export interface NewsService {
    * input to the repository's PostgREST filter.
    */
   searchSuggestions(term: string): Promise<NewsSearchHit[]>;
+
+  /**
+   * One story by id, as the search carries it: the row plus the day it belongs
+   * to. Null when the id is not in the retained window, which is also when the
+   * site no longer has it.
+   */
+  getStory(id: string): Promise<NewsSearchHit | null>;
 }
 
 /**
@@ -149,6 +156,10 @@ export function createNewsService(repository: NewsRepository): NewsService {
         category: null,
         limit: NEWS_SEARCH_SUGGESTION_LIMIT,
       });
+    },
+
+    async getStory(id: string): Promise<NewsSearchHit | null> {
+      return repository.getStory(id);
     },
   };
 }

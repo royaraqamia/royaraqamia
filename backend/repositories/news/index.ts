@@ -101,6 +101,21 @@ export function createNewsRepository(supabase: SupabaseClient<Database>): NewsRe
       return (data ?? []).map(mapStory);
     },
 
+    async getStory(id: string): Promise<StoryWithDay | null> {
+      const { data, error } = await supabase
+        .from('news_stories')
+        .select(`${STORY_COLUMNS}, news_digests!inner (digest_date)`)
+        .eq('id', id)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (!data) return null;
+
+      const joined = data.news_digests;
+      const digest = Array.isArray(joined) ? joined[0] : joined;
+      if (!digest) return null;
+      return { ...mapStory(data), digestDate: digest.digest_date };
+    },
+
     async listDigestDates(limit: number): Promise<string[]> {
       const { data, error } = await supabase
         .from('news_digests')
