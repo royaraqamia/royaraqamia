@@ -62,6 +62,12 @@ jobs:
       - name: Agent Doors Agree
         run: npm run check:agent-behaviour
 
+      # The eval evidence is committed, not re-run in CI (no model calls, no
+      # token spend). Recompute every gate and mean from the stored replies so
+      # a stale report or a hand-edited score fails the pull request.
+      - name: Assistant Eval Evidence Is Reproducible
+        run: npm run check:agent-evals
+
       # A headless run has nobody to answer a permission prompt, so every surface
       # must resolve to allow or deny (ADR-0142): the config is checked against the
       # CLI's own defaults, and one probe that resolves to `ask` fails the job.
