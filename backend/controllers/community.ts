@@ -6,6 +6,7 @@ import { identity } from '@/backend/config/identity';
 import { createPostEngagementService, recordCommunityPostView } from '@/backend/config/community';
 import { PostEngagementRefusedError } from '@/backend/services/blogpress/post-engagement-service';
 import {
+  CommentIdSchema,
   CreateCommentInputSchema,
   LikePostInputSchema,
   POST_COMMENTS_PAGE_SIZE,
@@ -270,6 +271,11 @@ export async function createPostComment(slug: string, rawBody: unknown): Promise
 }
 
 export async function editPostComment(id: string, rawBody: unknown): Promise<HttpResult> {
+  const parsedId = CommentIdSchema.safeParse(id);
+  if (!parsedId.success) {
+    return jsonResult(404, { success: false, error: 'التعليق غير موجود.' }, { headers: NO_STORE });
+  }
+
   const parsed = UpdateCommentInputSchema.safeParse(rawBody);
   if (!parsed.success) {
     return jsonResult(
@@ -284,7 +290,7 @@ export async function editPostComment(id: string, rawBody: unknown): Promise<Htt
       try {
         const result = await createPostEngagementService().editComment(
           userId,
-          id,
+          parsedId.data,
           parsed.data.body
         );
         return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
@@ -297,10 +303,15 @@ export async function editPostComment(id: string, rawBody: unknown): Promise<Htt
 }
 
 export async function removePostComment(id: string): Promise<HttpResult> {
+  const parsedId = CommentIdSchema.safeParse(id);
+  if (!parsedId.success) {
+    return jsonResult(404, { success: false, error: 'التعليق غير موجود.' }, { headers: NO_STORE });
+  }
+
   return withAuthenticatedUser(
     async ({ userId }) => {
       try {
-        const result = await createPostEngagementService().deleteComment(userId, id);
+        const result = await createPostEngagementService().deleteComment(userId, parsedId.data);
         return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
       } catch (error) {
         return engagementFailure(error) ?? unexpectedEngagementFailure('تعذَّر حذف التعليق.');
