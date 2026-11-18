@@ -22,7 +22,6 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `athkar` | `/?tab=/athkar`<br>`/athkar`<br>`/athkar/evening` | static | swr | none | precached | `athkar.spec.ts` |  |  |
 | `account` | `/account` | local-store | store | outbox | precached | _ungated_ |  | #493 |
 | `account-links` | `/account/links` | local-store | store | outbox | precached | _ungated_ |  | #493 |
-| `account-posts` | `/account/posts` | local-store | store | outbox | precached | _ungated_ |  | #493 |
 | `account-submissions` | `/account/submissions` | local-store | store | outbox | precached | _ungated_ |  | #493 |
 | `account-plan` | `/account/plan` | server | needs-connection | none | precached | _ungated_ |  | #493 |
 | `account-connected-apps` | `/account/connected-apps` | server | needs-connection | none | precached | _ungated_ |  | #493 |

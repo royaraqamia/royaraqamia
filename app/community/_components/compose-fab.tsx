@@ -3,10 +3,14 @@
 import { useCallback, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { PenLine } from 'lucide-react';
+import { toast } from 'sonner';
 import { useSession } from '@/frontend/state/session-provider';
 import { useUI } from '@/frontend/state/UIContext';
 import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
-import { PostComposerDialog } from '@/frontend/ui/community/post-composer-dialog';
+import {
+  type ComposerDraftHandle,
+  PostComposerDialog,
+} from '@/frontend/ui/community/post-composer-dialog';
 import { COMMUNITY_COMPOSE_FAB_COPY } from './community-compose-fab-copy';
 
 /**
@@ -21,6 +25,8 @@ export function ComposeFab() {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  /** The draft a writer chose to resume; null means the FAB is writing a new one. */
+  const [resume, setResume] = useState<ComposerDraftHandle | null>(null);
   const { requireSignIn, dialog: signInPrompt } = useSignInPrompt(
     COMMUNITY_COMPOSE_FAB_COPY.guestTitle
   );
@@ -30,6 +36,7 @@ export function ComposeFab() {
       requireSignIn(pathname || '/community');
       return;
     }
+    setResume(null);
     setOpen(true);
   }, [user, pathname, requireSignIn]);
 
@@ -58,9 +65,24 @@ export function ComposeFab() {
         open={open}
         onOpenChange={setOpen}
         onSaved={handleSaved}
-        onDraftSaved={() => {
-          setOpen(false);
-          router.push('/account/posts');
+        mode={resume ? 'edit' : 'create'}
+        postId={resume?.id}
+        slug={resume?.slug ?? undefined}
+        initialBody={resume?.content ?? ''}
+        coverImage={resume?.coverImage ?? ''}
+        metaTitle={resume?.metaTitle ?? ''}
+        initialStatus={resume?.status}
+        initialPublishAt={resume?.publishAt ?? null}
+        onDraftSaved={(draft) => {
+          toast.success(COMMUNITY_COMPOSE_FAB_COPY.draftSaved, {
+            action: {
+              label: COMMUNITY_COMPOSE_FAB_COPY.resumeDraft,
+              onClick: () => {
+                setResume(draft);
+                setOpen(true);
+              },
+            },
+          });
         }}
       />
 

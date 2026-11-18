@@ -12,6 +12,8 @@
 export const COMMUNITY_COMPOSE_FAB_COPY = {
   newPostLabel: 'إضافة منشور جديد',
   guestTitle: 'سجِّل الدُّخول للنَّشر في المجتمع',
+  draftSaved: 'تمَّ حفظ المسودَّة',
+  resumeDraft: 'متابعة التحرير',
 } as const;
 
 export type CommunityComposeFabCopyStrings = typeof COMMUNITY_COMPOSE_FAB_COPY;

@@ -71,7 +71,6 @@ on:
       - 'scripts/build-sw-outbox.mjs'
       - 'frontend/ui/shared/lazy-chunk.ts'
       - 'frontend/ui/linksnap/**'
-      - 'app/account/posts/**'
       - 'app/habitflow/**'
       - 'app/spendtrack/**'
       - 'app/linksnap/**'

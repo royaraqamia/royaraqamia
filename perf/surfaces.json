@@ -141,16 +141,6 @@
       "issue": "#493"
     },
     {
-      "id": "account-posts",
-      "routes": ["/account/posts"],
-      "owner": "local-store",
-      "read": "store",
-      "write": "outbox",
-      "shell": "precached",
-      "specs": [],
-      "issue": "#493"
-    },
-    {
       "id": "account-submissions",
       "routes": ["/account/submissions"],
       "owner": "local-store",

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   Brain,
   ClipboardList,
-  FileText,
   CircleQuestionMark,
   LogOut,
   MessageCircle,
@@ -70,13 +69,6 @@ export function AccountRows({ onSignOut, children }: AccountRowsProps) {
           href="/account/submissions"
           icon={ClipboardList}
           label={ACCOUNT_ROWS_COPY.submissions}
-          onRequireAuth={setPromptHref}
-        />
-
-        <AccountRow
-          href="/account/posts"
-          icon={FileText}
-          label={ACCOUNT_ROWS_COPY.posts}
           onRequireAuth={setPromptHref}
         />
 

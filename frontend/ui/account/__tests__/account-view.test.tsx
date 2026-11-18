@@ -98,7 +98,7 @@ describe('AccountView', () => {
     expect(screen.queryByText('جميع الحقوق محفوظة')).not.toBeInTheDocument();
 
     // Gated rows are visible, but as buttons rather than links.
-    for (const label of ['طلباتي', 'منشوراتي', 'الأعضاء المحظورون', 'ذاكرة نور']) {
+    for (const label of ['طلباتي', 'الأعضاء المحظورون', 'ذاكرة نور']) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: new RegExp(label) })).not.toBeInTheDocument();
     }

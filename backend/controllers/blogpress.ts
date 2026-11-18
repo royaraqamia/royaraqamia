@@ -22,7 +22,7 @@ import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { COMMUNITY_MUTATION_TAGS } from '@/backend/shared/community-cache-tags';
 
 function postRevalidation(slug: string): RevalidationHint[] {
-  return [{ path: '/account/posts' }, { path: `/community/${slug}` }, { path: '/community' }];
+  return [{ path: `/community/${slug}` }, { path: '/community' }];
 }
 
 function publishRevalidation(slug: string): RevalidationHint[] {
@@ -148,19 +148,6 @@ export async function deletePost(
   );
 }
 
-export async function duplicatePost(id: string): Promise<HttpResult> {
-  return withAuthenticatedUser(
-    async ({ userId, supabase }) => {
-      const { posts } = createBlogpressPostsModule(supabase);
-      const plan = createPlanGate();
-      await plan.cap(userId, OWNED_ITEMS.communityDrafts);
-      const { id: newId } = await posts.duplicatePost(id, userId);
-      return jsonResult(200, { success: true, id: newId });
-    },
-    { mapError: errorResult }
-  );
-}
-
 export async function restorePost(body: Record<string, unknown>): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
@@ -263,7 +250,7 @@ export async function setPostFeatured(id: string, featured: boolean): Promise<Ht
     async ({ userId, supabase }) => {
       const { repository } = createBlogpressPostsModule(supabase);
       await repository.setPostFeatured(id, userId, featured);
-      return jsonResult(200, { success: true }, { revalidate: [{ path: '/account/posts' }] });
+      return jsonResult(200, { success: true }, { revalidate: [{ path: '/community' }] });
     },
     { mapError: messageError(500, 'فشل تحديث تثبيت المنشور') }
   );

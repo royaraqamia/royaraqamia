@@ -40,7 +40,7 @@ describe('BottomTabBar', () => {
     expect(screen.queryByRole('navigation', { name: 'التَّنقُّل السُّفليّ' })).not.toBeInTheDocument();
   });
 
-  it.each(['/auth/login', '/account/posts', '/admin', '/quran/2'])(
+  it.each(['/auth/login', '/account/blocked', '/admin', '/quran/2'])(
     'stays out of the way on %s',
     (pathname) => {
       mockPathname.mockReturnValue(pathname);

@@ -189,7 +189,7 @@ submissions page is the request and booking forms
 ([#659](https://github.com/royaraqamia/royaraqamia/issues/659)).
 
 The account area's pages are one row each in `perf/surfaces.json` — `account`, `account-plan`,
-`account-connected-apps`, `account-faq`, `account-news`, `account-links`, `account-posts`,
+`account-connected-apps`, `account-faq`, `account-news`, `account-links`,
 `account-submissions` — rather than the two rows (`account-owned`, `account-server`) that held four
 routes apiece. That is what lets `docs/mobile/screens.json` answer per page: a surface is native only
 when all of its routes are, and a row that grouped four different pages forced one answer for four
@@ -441,8 +441,8 @@ have to be built here rather than assumed:
   one surface in a Custom Tab, off by default, removable once the surface settles. Without it, a
   broken screen is an emergency release.
 
-**Since [ADR-0178](../adr/0178-a-content-surface-ships-as-the-document.md), four of them are not
-ported at all.** `marketing`, `account-posts`, `mcp-guide` and `mcp-connect` are `document` rows in
+**Since [ADR-0178](../adr/0178-a-content-surface-ships-as-the-document.md), three of them are not
+ported at all.** `marketing`, `mcp-guide` and `mcp-connect` are `document` rows in
 `docs/mobile/parity-plan.json`: the page is the deliverable, and the row says why. That is this
 phase's own argument taken to its conclusion - a static policy page or a paste-ready snippet is
 worse in an APK, not merely harder to write. Sign-in is the exception and is not `document`: it is

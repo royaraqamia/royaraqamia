@@ -6,6 +6,10 @@ const mocks = vi.hoisted(() => ({
   user: null as { id: string } | null,
   deletePost: vi.fn(),
   restorePost: vi.fn(),
+  publishPost: vi.fn(),
+  unpublishPost: vi.fn(),
+  setPostFeatured: vi.fn(),
+  downloadPostAsFile: vi.fn(),
   refresh: vi.fn(),
   push: vi.fn(),
   toastSuccess: vi.fn(),
@@ -19,9 +23,16 @@ vi.mock('@/frontend/state/session-provider', () => ({
 vi.mock('@/frontend/api/blogpress', () => ({
   deletePost: mocks.deletePost,
   restorePost: mocks.restorePost,
+  publishPost: mocks.publishPost,
+  unpublishPost: mocks.unpublishPost,
+  setPostFeatured: mocks.setPostFeatured,
   updatePost: vi.fn(),
   createPost: vi.fn(),
   saveAndPublishPost: vi.fn(),
+}));
+
+vi.mock('@/frontend/shared/blogpress/export-post', () => ({
+  downloadPostAsFile: mocks.downloadPostAsFile,
 }));
 
 vi.mock('sonner', () => ({
@@ -187,5 +198,70 @@ describe('PostActionsMenu', () => {
     expect(await screen.findByText('تعديل المنشور')).toBeInTheDocument();
     expect(screen.queryByLabelText(/العنوان/)).not.toBeInTheDocument();
     expect(await screen.findByDisplayValue('هذا هو نص المنشور الكامل.')).toBeInTheDocument();
+  });
+
+  it('offers only the three added owner actions, without the withdrawn ones', async () => {
+    mocks.user = { id: 'a1' };
+    mocks.unpublishPost.mockResolvedValue(undefined);
+
+    render(<PostActionsMenu post={post} onRemoved={vi.fn()} onRestored={vi.fn()} />);
+
+    openMenu();
+    expect(await screen.findByRole('menuitem', { name: /إلغاء الن/ })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'تثبيت' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'تصدير Markdown' })).toBeInTheDocument();
+    for (const withdrawn of ['نسخ المنشور', 'عرض المنشور', 'تصدير HTML']) {
+      expect(screen.queryByRole('menuitem', { name: withdrawn })).not.toBeInTheDocument();
+    }
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /إلغاء الن/ }));
+    await waitFor(() => expect(mocks.unpublishPost).toHaveBeenCalledWith('p1'));
+    expect(mocks.refresh).toHaveBeenCalled();
+  });
+
+  it('publishes a draft now and unpins a featured post', async () => {
+    mocks.user = { id: 'a1' };
+    mocks.publishPost.mockResolvedValue(undefined);
+    mocks.setPostFeatured.mockResolvedValue(undefined);
+
+    render(
+      <PostActionsMenu
+        post={{ ...post, status: 'draft', featured: true }}
+        onRemoved={vi.fn()}
+        onRestored={vi.fn()}
+      />
+    );
+
+    openMenu();
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'نشر' }));
+    await waitFor(() => expect(mocks.publishPost).toHaveBeenCalledWith('p1'));
+
+    cleanup();
+    render(
+      <PostActionsMenu
+        post={{ ...post, featured: true }}
+        onRemoved={vi.fn()}
+        onRestored={vi.fn()}
+      />
+    );
+    openMenu();
+    fireEvent.click(await screen.findByRole('menuitem', { name: /إلغاء الت/ }));
+    await waitFor(() => expect(mocks.setPostFeatured).toHaveBeenCalledWith('p1', false));
+  });
+
+  it('exports Markdown named from the post body', async () => {
+    mocks.user = { id: 'a1' };
+    mocks.downloadPostAsFile.mockResolvedValue(undefined);
+
+    render(<PostActionsMenu post={post} onRemoved={vi.fn()} onRestored={vi.fn()} />);
+
+    openMenu();
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'تصدير Markdown' }));
+    await waitFor(() =>
+      expect(mocks.downloadPostAsFile).toHaveBeenCalledWith(
+        'هذا هو نص المنشور الكامل.',
+        'هذا هو نص المنشور الكامل.'
+      )
+    );
   });
 });

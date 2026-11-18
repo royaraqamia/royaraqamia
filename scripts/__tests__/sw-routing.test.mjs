@@ -135,7 +135,7 @@ describe('sw-routing predicates', () => {
       '/habitflow',
       '/spendtrack',
       '/linksnap',
-      '/account/posts',
+      '/account/blocked',
       '/linksnap/unlock/ABC',
     ]) {
       expect(routing.isNeverCache(u(path))).toBe(false);

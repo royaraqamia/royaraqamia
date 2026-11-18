@@ -75,10 +75,12 @@ fun PostCard(
     onOpen: () -> Unit = {},
     onOpenAuthor: (String) -> Unit = {},
     onEdit: (() -> Unit)? = null,
+    postActions: PostActionHandler? = null,
     engagement: PostEngagementBatchItemsItem? = null,
     onToggleLike: (() -> Unit)? = null,
     onOpenComments: (() -> Unit)? = null,
     onShare: (() -> Unit)? = null,
+    currentUserId: String? = null,
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
@@ -230,6 +232,8 @@ fun PostCard(
                 onOpenComments = onOpenComments,
                 onShare = onShare,
                 onEdit = onEdit,
+                postActions = postActions,
+                currentUserId = currentUserId,
             )
         }
     }
@@ -250,6 +254,8 @@ private fun CardFooter(
     onOpenComments: (() -> Unit)?,
     onShare: (() -> Unit)?,
     onEdit: (() -> Unit)?,
+    postActions: PostActionHandler?,
+    currentUserId: String?,
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
@@ -322,13 +328,17 @@ private fun CardFooter(
                     active = false,
                     onClick = onShare,
                 )
-                if (onEdit != null) {
-                    CardAction(
-                        icon = LucideVectors.PenLine,
-                        label = PostCardCopy.EDIT_ACTION,
-                        count = null,
-                        active = true,
-                        onClick = onEdit,
+                if (postActions != null) {
+                    PostActionsMenu(
+                        target = post.asPostActionTarget(),
+                        currentUserId = currentUserId,
+                        handler =
+                            postActions.copy(
+                                edit =
+                                    onEdit?.let { callback ->
+                                        { _: PostActionTarget -> callback() }
+                                    } ?: postActions.edit
+                            ),
                     )
                 }
             }

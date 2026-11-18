@@ -12,8 +12,8 @@ describe('authLink', () => {
   });
 
   it('appends a single redirect param', () => {
-    expect(authLink('/auth/signup', '/account/posts')).toBe(
-      '/auth/signup?redirect=%2Faccount%2Fposts'
+    expect(authLink('/auth/signup', '/account/blocked')).toBe(
+      '/auth/signup?redirect=%2Faccount%2Fblocked'
     );
   });
 

@@ -152,12 +152,6 @@
       "issue": "#944"
     },
     {
-      "surface": "account-posts",
-      "phase": "core",
-      "state": "document",
-      "why": "The member's own post management, opened rarely: the post card is already native in the feed, and the page's writes are server actions. Revisit when posting from the phone becomes a first-class flow - a creator surface, draft management, or usage that shows people opening it."
-    },
-    {
       "surface": "account-submissions",
       "phase": "core",
       "state": "blocked",

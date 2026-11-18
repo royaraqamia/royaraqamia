@@ -47,6 +47,9 @@ import com.royaraqamia.app.chats.ChatsScreen
 import com.royaraqamia.app.community.CommunityFeedScreen
 import com.royaraqamia.app.community.CommunityPostScreen
 import com.royaraqamia.app.community.CommunityRoutes
+import com.royaraqamia.app.community.PostActionHandler
+import com.royaraqamia.app.community.PostActionStatus
+import com.royaraqamia.app.community.PostActionTarget
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
@@ -77,6 +80,7 @@ import com.royaraqamia.app.spendtrack.SpendtrackCategoriesScreen
 import com.royaraqamia.app.spendtrack.SpendtrackCsvCopy
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.store.Identity
+import com.royaraqamia.app.store.blogpress.BlogpressPostRow
 import com.royaraqamia.app.sync.SyncScheduler
 import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.theme.RoyaraqamiaTheme
@@ -549,6 +553,7 @@ class ShellActivity : ComponentActivity() {
                                     onOpenProfile = { username ->
                                         openRoute(ProfileRoutes.profileOf(username))
                                     },
+                                    postActions = postActions(),
                                 )
                             // A shared certificate (#658): the link a printed QR
                             // carries. The code is the route's own segment, so this
@@ -585,6 +590,10 @@ class ShellActivity : ComponentActivity() {
                                             onOpenProfile = { username ->
                                                 openRoute(ProfileRoutes.profileOf(username))
                                             },
+                                            postActions =
+                                                postActions(edit = { target ->
+                                                    openRoute(CommunityRoutes.postOf(target.slug))
+                                                }),
                                         )
                                     // A public member's profile (#927): the page's
                                     // header and posts, drawn natively and off until
@@ -1035,35 +1044,103 @@ class ShellActivity : ComponentActivity() {
     }
 
     /**
-     * Opens a link's destination in the browser (#654). The site's unlock form
-     * navigates the window to the URL the server returned; the app hands the same
-     * URL to the platform, without putting the member's password anywhere in a
-     * WebView.
-     */
-    /**
-     * The page's Markdown/HTML export, as the app's share sheet (#952).
+     * The post's Markdown export, as the app's share sheet (#952).
      *
-     * The site downloads a file; the app has no Downloads folder it owns, so it
-     * writes the same file to its own cache and hands the platform a read grant
-     * on exactly that file. The words are the page's, and the file is the post's
-     * body, not a rendering of it.
+     * The site downloads a `.md` file; the app has no Downloads folder it owns,
+     * so it writes the same body to its own cache and hands the platform a read
+     * grant on exactly that file. Markdown is the only export left, so there is
+     * no format switch that could still produce an HTML file.
      */
-    private fun sharePost(label: String, content: String, format: String) {
+    private fun sharePostMarkdown(label: String, content: String) {
         runCatching {
-            val extension = if (format == "html") "html" else "md"
-            val mime = if (format == "html") "text/html" else "text/markdown"
             val safe = label.replace(Regex("[^\\p{L}\\p{N} _-]"), "").trim().ifEmpty { "post" }
-            val file = File(cacheDir, "$safe.$extension")
+            val file = File(cacheDir, "$safe.md")
             file.writeText(content)
             val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
             val send =
                 Intent(Intent.ACTION_SEND).apply {
-                    type = mime
+                    type = "text/markdown"
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
             startActivity(Intent.createChooser(send, label))
         }
+    }
+
+    /**
+     * The owner's post actions, over the same BlogPress store the editor uses.
+     *
+     * The publication transitions stay online-only like the page (ADR-0031), but
+     * a delete or an undo is a durable intent first: it commits locally and the
+     * drain then tries the server, so a shut radio cannot lose the member's tap.
+     */
+    private fun postActions(edit: ((PostActionTarget) -> Unit)? = null): PostActionHandler {
+        val store = graph.blogpress
+
+        suspend fun ownedRow(target: PostActionTarget): BlogpressPostRow? {
+            val seed =
+                BlogpressPostRow(
+                    clientId = target.id,
+                    id = target.id,
+                    slug = target.slug,
+                    content = target.content.orEmpty(),
+                    status =
+                        when (target.status) {
+                            PostActionStatus.DRAFT -> "draft"
+                            PostActionStatus.PUBLISHED -> "published"
+                            PostActionStatus.SCHEDULED -> "scheduled"
+                        },
+                    coverImage = "",
+                    metaTitle = target.metaTitle.orEmpty(),
+                    metaDesc = "",
+                    publishAt = null,
+                    publishedAt = null,
+                    viewCount = 0,
+                    featured = target.featured,
+                    communityVisible = true,
+                    readingTimeMinutes = 0,
+                    createdAt = "",
+                    updatedAt = "",
+                    deletedAt = null,
+                )
+            // An existing row wins: it may hold a queued draft the feed never saw.
+            return store.editorPost(target.id) ?: store.rememberPost(seed)
+        }
+
+        return PostActionHandler(
+            edit = edit,
+            publish = { target, publish ->
+                val answer =
+                    if (publish) store.publishPost(target.id) else store.unpublishPost(target.id)
+                answer is ApiResult.Success
+            },
+            featured = { target, featured ->
+                store.setFeatured(target.id, featured) is ApiResult.Success
+            },
+            exportMarkdown = { target ->
+                sharePostMarkdown(target.metaTitle ?: target.slug, target.content.orEmpty())
+            },
+            delete = { target ->
+                val row = ownedRow(target)
+                if (row == null) {
+                    false
+                } else {
+                    val done = store.deletePost(row.clientId)
+                    if (done) store.drain()
+                    done
+                }
+            },
+            restore = { target ->
+                val row = ownedRow(target)
+                if (row == null) {
+                    false
+                } else {
+                    val done = store.restorePost(row.clientId) != null
+                    if (done) store.drain()
+                    done
+                }
+            },
+        )
     }
 
     private fun openExternal(url: String) {

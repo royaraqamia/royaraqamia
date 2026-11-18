@@ -98,6 +98,17 @@ const NoteBodyEditor = dynamic(
   }
 );
 
+/** What a host needs to reopen a draft it just watched being saved. */
+export interface ComposerDraftHandle {
+  id: string;
+  slug: string | null;
+  content: string;
+  coverImage: string;
+  metaTitle: string;
+  status: PostStatus;
+  publishAt: string | null;
+}
+
 export interface PostComposerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -111,8 +122,12 @@ export interface PostComposerDialogProps {
   /** The status the post is in when opened from the account list. */
   initialStatus?: PostStatus;
   initialPublishAt?: string | null;
-  /** Called after a draft is saved or scheduled, so the list can repaint. */
-  onDraftSaved?: () => void;
+  /**
+   * Called after a draft is saved or scheduled. A host that wants to own what
+   * happens next — a toast with a way back into the draft, for instance — gets
+   * the saved draft and owns the success message too.
+   */
+  onDraftSaved?: (draft: ComposerDraftHandle) => void;
 }
 
 /**
@@ -290,9 +305,17 @@ export function PostComposerDialog({
         try {
           const saved = await persistDraft();
           setSaveState('atRest');
-          toast.success('تمَّ حفظ المسودَّة');
+          if (!onDraftSaved) toast.success('تمَّ حفظ المسودَّة');
           onOpenChange(false);
-          onDraftSaved?.();
+          onDraftSaved?.({
+            id: saved.id,
+            slug: saved.slug,
+            content: body.trim(),
+            coverImage,
+            metaTitle,
+            status: draftStatus,
+            publishAt,
+          });
           if (saved.slug) setDraftSlug(saved.slug);
         } catch (error) {
           setSaveState('failed');
@@ -338,12 +361,20 @@ export function PostComposerDialog({
     setSaveState('saving');
     startTransition(async () => {
       try {
-        await persistDraft();
+        const saved = await persistDraft();
         setDraftStatus('draft');
         setSaveState('atRest');
-        toast.success('تمَّ حفظ المسودَّة');
+        if (!onDraftSaved) toast.success('تمَّ حفظ المسودَّة');
         onOpenChange(false);
-        onDraftSaved?.();
+        onDraftSaved?.({
+          id: saved.id,
+          slug: saved.slug,
+          content: body.trim(),
+          coverImage,
+          metaTitle,
+          status: 'draft',
+          publishAt,
+        });
       } catch (error) {
         setSaveState('failed');
         showActionError(error, COMMUNITY_EDITOR_COPY.saveFailed);
@@ -365,7 +396,6 @@ export function PostComposerDialog({
         toast.success(COMMUNITY_COMPOSER_COPY.published);
         onOpenChange(false);
         onSaved(saved.slug);
-        onDraftSaved?.();
       } catch (error) {
         setSaveState('failed');
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -413,10 +443,18 @@ export function PostComposerDialog({
         setDraftStatus('scheduled');
         setPublishAt(at.toISOString());
         setSaveState('atRest');
-        toast.success('تمَّت جدولة المنشور');
+        if (!onDraftSaved) toast.success('تمَّت جدولة المنشور');
         setScheduleOpen(false);
         onOpenChange(false);
-        onDraftSaved?.();
+        onDraftSaved?.({
+          id: saved.id,
+          slug: saved.slug,
+          content: body.trim(),
+          coverImage,
+          metaTitle,
+          status: 'scheduled',
+          publishAt: at.toISOString(),
+        });
       } catch (error) {
         setSaveState('failed');
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {

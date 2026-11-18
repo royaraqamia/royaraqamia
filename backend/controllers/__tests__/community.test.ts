@@ -16,7 +16,6 @@ vi.mock('@/backend/config/community', () => ({
 vi.mock('@/backend/loaders/community', () => ({
   loadCommunityPost: (...args: unknown[]) => mockLoadCommunityPost(...args),
   loadCommunityMember: (...args: unknown[]) => mockLoadCommunityMember(...args),
-  loadAccountPosts: vi.fn(),
 }));
 
 import {

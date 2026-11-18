@@ -17,6 +17,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -95,6 +99,7 @@ fun CommunityFeedScreen(
     currentUserId: String? = null,
     engagementRepository: PostEngagementRepository? = null,
     onSharePost: (String) -> Unit = {},
+    postActions: PostActionHandler? = null,
 ) {
     val spacing = LocalRoySpacing.current
     val scope = rememberCoroutineScope()
@@ -106,6 +111,8 @@ fun CommunityFeedScreen(
     var editing by remember { mutableStateOf<CommunityIndexResponsePostsItem?>(null) }
     var composing by remember { mutableStateOf(false) }
     var publishedSlug by remember { mutableStateOf<String?>(null) }
+    var deletedPost by remember { mutableStateOf<CommunityIndexResponsePostsItem?>(null) }
+    val snackbar = remember { SnackbarHostState() }
     var engagement by remember {
         mutableStateOf<Map<String, PostEngagementBatchItemsItem>>(emptyMap())
     }
@@ -187,6 +194,27 @@ fun CommunityFeedScreen(
         }
     }
 
+    // The undo lives at the screen, not inside the card the delete hides: the
+    // snackbar carries the same DELETED and UNDO words the page's toast carries,
+    // and the restore writes back through the host's handler (#1518).
+    LaunchedEffect(deletedPost) {
+        val post = deletedPost ?: return@LaunchedEffect
+        val result =
+            snackbar.showSnackbar(
+                message = PostCardCopy.DELETED,
+                actionLabel = PostCardCopy.UNDO,
+                duration = SnackbarDuration.Long,
+            )
+        if (result == SnackbarResult.ActionPerformed) {
+            val actions = postActions
+            if (actions?.restore?.invoke(post.asPostActionTarget()) == true) {
+                state = state?.withPostRestored(post)
+                snackbar.showSnackbar(message = PostCardCopy.RESTORED)
+            }
+        }
+        deletedPost = null
+    }
+
     val loadMore: () -> Unit = {
         val live = state as? CommunityFeedUiState.Live
         val cursor = live?.nextCursor
@@ -227,11 +255,17 @@ fun CommunityFeedScreen(
                     onRetryPage = { attempts += 1 },
                     onOpenPost = onOpenPost,
                     onOpenProfile = onOpenProfile,
+                    currentUserId = currentUserId,
                     canEdit = ::canEdit,
                     onEditPost = { editing = it },
                     engagement = engagement,
                     onToggleLike = ::toggleLike,
                     onSharePost = onSharePost,
+                    onDeleted = { post ->
+                        state = state?.withoutPost(post.id)
+                        deletedPost = post
+                    },
+                    postActions = postActions,
                 )
             is CommunityFeedUiState.Live ->
                 Feed(
@@ -244,13 +278,21 @@ fun CommunityFeedScreen(
                     onRetryPage = { attempts += 1 },
                     onOpenPost = onOpenPost,
                     onOpenProfile = onOpenProfile,
+                    currentUserId = currentUserId,
                     canEdit = ::canEdit,
                     onEditPost = { editing = it },
                     engagement = engagement,
                     onToggleLike = ::toggleLike,
                     onSharePost = onSharePost,
+                    onDeleted = { post ->
+                        state = state?.withoutPost(post.id)
+                        deletedPost = post
+                    },
+                    postActions = postActions,
                 )
         }
+
+        SnackbarHost(hostState = snackbar, modifier = Modifier.align(Alignment.BottomCenter))
 
         // The page's compose button, and the guest prompt it opens instead of a
         // redirect (#924). It floats over the cards the way the page's own FAB
@@ -318,11 +360,14 @@ private fun Feed(
     onRetryPage: () -> Unit,
     onOpenPost: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
+    currentUserId: String?,
     canEdit: (CommunityIndexResponsePostsItem) -> Boolean,
     onEditPost: (CommunityIndexResponsePostsItem) -> Unit,
     engagement: Map<String, PostEngagementBatchItemsItem>,
     onToggleLike: (CommunityIndexResponsePostsItem) -> Unit,
     onSharePost: (String) -> Unit,
+    onDeleted: (CommunityIndexResponsePostsItem) -> Unit,
+    postActions: PostActionHandler?,
 ) {
     val spacing = LocalRoySpacing.current
 
@@ -350,6 +395,18 @@ private fun Feed(
         }
 
         items(posts, key = { it.id }) { post ->
+            val ownerActions =
+                if (canEdit(post)) {
+                    postActions?.copy(
+                        delete = { target ->
+                            val done = postActions.delete?.invoke(target) ?: false
+                            if (done) onDeleted(post)
+                            done
+                        },
+                    )
+                } else {
+                    null
+                }
             PostCard(
                 post = post,
                 onOpen = { onOpenPost(post.slug) },
@@ -359,6 +416,8 @@ private fun Feed(
                 } else {
                     null
                 },
+                postActions = ownerActions,
+                currentUserId = currentUserId,
                 engagement = engagement[post.id],
                 onToggleLike = { onToggleLike(post) },
                 onOpenComments = { onOpenPost(post.slug) },
@@ -536,3 +595,24 @@ private fun CommunityFeedUiState.withBody(id: String, body: String): CommunityFe
         else -> this
     }
 }
+
+/** The card a confirmed delete hides, before the undo can answer it. */
+private fun CommunityFeedUiState.withoutPost(id: String): CommunityFeedUiState =
+    when (this) {
+        is CommunityFeedUiState.Live -> copy(posts = posts.filterNot { it.id == id })
+        is CommunityFeedUiState.Snapshot -> copy(posts = posts.filterNot { it.id == id })
+        else -> this
+    }
+
+/** The card an undo brings back, in the same list it left. */
+private fun CommunityFeedUiState.withPostRestored(
+    post: CommunityIndexResponsePostsItem,
+): CommunityFeedUiState =
+    when (this) {
+        is CommunityFeedUiState.Live ->
+            copy(posts = if (posts.any { it.id == post.id }) posts else listOf(post) + posts)
+        is CommunityFeedUiState.Snapshot ->
+            copy(posts = if (posts.any { it.id == post.id }) posts else listOf(post) + posts)
+        CommunityFeedUiState.Empty -> CommunityFeedUiState.Live(listOf(post), null)
+        else -> this
+    }

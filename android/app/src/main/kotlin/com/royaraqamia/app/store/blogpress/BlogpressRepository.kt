@@ -45,7 +45,7 @@ import kotlinx.serialization.json.jsonPrimitive
  *   row with a queued intent is left alone (ADR-0029).
  *
  * The publication transitions the page only offers online (ADR-0031) —
- * publish, unpublish, pin and duplicate — are [ApiResult]s rather than queued
+ * publish, unpublish and pin — are [ApiResult]s rather than queued
  * intents, because the page refuses them with the radio off and a queue that
  * accepted them would promise something the server cannot honour later.
  */
@@ -304,10 +304,6 @@ class BlogpressRepository(
     /** Pin or unpin a post from the dashboard. */
     suspend fun setFeatured(id: String, featured: Boolean): ApiResult<String> =
         client.send("POST", postPath(id, "featured"), """{"featured":$featured}""")
-
-    /** Duplicate a post into a new draft. */
-    suspend fun duplicatePost(id: String): ApiResult<String> =
-        client.send("POST", postPath(id, "duplicate"))
 
     /** One intent, replayed, classified the way the web classifies it. */
     private suspend fun send(entry: OutboxIntentRow): SendOutcome {
