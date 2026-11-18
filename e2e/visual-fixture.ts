@@ -127,6 +127,27 @@ export const VISUAL_POST_PREFIX = 'e2e-visual-post';
 export const VISUAL_POST_TAG_PREFIX = 'e2e-visual-tag';
 
 /**
+ * A post fixture the seed owns end to end. A spec that needs its own published
+ * post passes different slugs and prefixes, so two specs in the visual-gate
+ * project can seed and clean up in the same run without deleting each other's
+ * row; the defaults are the capture's post (#1351).
+ */
+export interface VisualPostFixture {
+  slug: string;
+  content: string;
+  cover: string;
+  tag: { name: string; slug: string };
+  prefix: string;
+  tagPrefix: string;
+}
+
+const DEFAULT_POST_FIXTURE: VisualPostFixture = {
+  ...VISUAL_POST,
+  prefix: VISUAL_POST_PREFIX,
+  tagPrefix: VISUAL_POST_TAG_PREFIX,
+};
+
+/**
  * The digest the news recording reads (#1345).
  *
  * The page's day is pinned to this fixed date (`?date=`), so the card the gate
@@ -411,15 +432,19 @@ export async function clearVisualCommunityPosts(
  * its own for a tag (the editor sends `tagIds` only on restore); the tag is the
  * fixture's fixed row, deleted with the post afterwards.
  */
-export async function seedVisualPost(context: BrowserContext, baseURL: string): Promise<void> {
+export async function seedVisualPost(
+  context: BrowserContext,
+  baseURL: string,
+  fixture: VisualPostFixture = DEFAULT_POST_FIXTURE
+): Promise<void> {
   const userId = await sessionUserId(context, baseURL);
-  await clearVisualPost(context, baseURL);
+  await clearVisualPost(context, baseURL, fixture);
 
   const response = await context.request.post(`${baseURL}/api/community/posts`, {
     data: {
-      slug: VISUAL_POST.slug,
-      content: VISUAL_POST.content,
-      cover_image: VISUAL_POST.cover,
+      slug: fixture.slug,
+      content: fixture.content,
+      cover_image: fixture.cover,
       status: 'published',
     },
     headers: { 'Content-Type': 'application/json' },
@@ -437,7 +462,7 @@ export async function seedVisualPost(context: BrowserContext, baseURL: string): 
   const client = serviceClient();
   const { data: tag, error: tagError } = await client
     .from('community_tags')
-    .insert({ user_id: userId, name: VISUAL_POST.tag.name, slug: VISUAL_POST.tag.slug })
+    .insert({ user_id: userId, name: fixture.tag.name, slug: fixture.tag.slug })
     .select('id')
     .single();
   if (tagError || !tag) {
@@ -459,14 +484,18 @@ export async function seedVisualPost(context: BrowserContext, baseURL: string): 
  * slug could never be written a second time; a hard delete keyed to the account
  * and the fixture prefix is what makes the recording repeatable.
  */
-export async function clearVisualPost(context: BrowserContext, baseURL: string): Promise<void> {
+export async function clearVisualPost(
+  context: BrowserContext,
+  baseURL: string,
+  fixture: VisualPostFixture = DEFAULT_POST_FIXTURE
+): Promise<void> {
   const userId = await sessionUserId(context, baseURL);
   const client = serviceClient();
   const { error: postError } = await client
     .from('posts')
     .delete()
     .eq('author_id', userId)
-    .like('slug', `${VISUAL_POST_PREFIX}%`);
+    .like('slug', `${fixture.prefix}%`);
   if (postError) {
     throw new Error(`could not remove the visual gate post: ${postError.message}`);
   }
@@ -475,7 +504,7 @@ export async function clearVisualPost(context: BrowserContext, baseURL: string):
     .from('community_tags')
     .delete()
     .eq('user_id', userId)
-    .like('slug', `${VISUAL_POST_TAG_PREFIX}%`);
+    .like('slug', `${fixture.tagPrefix}%`);
   if (tagError) {
     throw new Error(`could not remove the visual gate post tag: ${tagError.message}`);
   }

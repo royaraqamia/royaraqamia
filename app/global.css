@@ -1857,6 +1857,20 @@ body:has([data-bottom-tabbar]) {
 }
 
 /* ========================================
+   COMMENT DOCK
+   ======================================== */
+/* `/community/<slug>` pins its comment field to the viewport bottom (#1610).
+   The post is a secondary route, so there is no bottom tab bar to lift the corner
+   floats and the assistant door (ADR-0143) lands inside the dock, over the
+   field's inline-start — where RTL draws the placeholder and the caret (#1611).
+   Lift the floats over the dock instead: the 2.75rem field sits inside 0.75rem
+   of padding on both sides and a 1px border, plus the safe area the dock's own
+   bottom padding reserves. The extra 0.75rem is the clearance the tab bar gives. */
+body:has([data-visual='community-comment-dock']) {
+  --roy-corner-rest: calc(4.25rem + 1px + var(--roy-safe-bottom) + 0.75rem);
+}
+
+/* ========================================
    FLOATING BACK CONTROL
    ======================================== */
 /* Secondary pages wear one floating back control in the top corner instead of a
