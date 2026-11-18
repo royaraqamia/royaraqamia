@@ -121,6 +121,47 @@ describe('the web search client (ADR-0206)', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
+  it('retries one vendor-side failure and stops when it keeps failing', async () => {
+    const fetch = stubFetch([response({ detail: 'busy' }, 503), response({ results: [SOURCE] })]);
+    const result = await createWebSearchClient('tvly-test')!.search('query');
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(result.sources).toHaveLength(1);
+
+    stubFetch([response({ detail: 'busy' }, 502), response({ detail: 'busy' }, 502)]);
+    await expect(createWebSearchClient('tvly-test')!.search('query')).rejects.toMatchObject({
+      kind: 'unavailable',
+    });
+  });
+
+  it('retries a dropped connection once', async () => {
+    const fetch = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+      .mockResolvedValueOnce(response({ results: [SOURCE] }));
+    vi.stubGlobal('fetch', fetch);
+
+    const result = await createWebSearchClient('tvly-test')!.search('query');
+
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(result.sources).toHaveLength(1);
+  });
+
+  it('does not retry once the turn has aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const fetch = vi.fn(async (_url: string, init: RequestInit) => {
+      if (init.signal?.aborted) throw new DOMException('aborted', 'AbortError');
+      return response({ results: [SOURCE] });
+    });
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      createWebSearchClient('tvly-test')!.search('query', { signal: controller.signal })
+    ).rejects.toMatchObject({ kind: 'timeout' });
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
   it('maps a plan wall, a refused key and a bad response to their kinds', async () => {
     stubFetch([response({ detail: 'plan' }, 432)]);
     await expect(createWebSearchClient('tvly-test')!.search('query')).rejects.toMatchObject({

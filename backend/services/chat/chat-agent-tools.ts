@@ -106,8 +106,10 @@ import {
   WEB_SEARCH_QUERY_MAX,
   WEB_SEARCH_QUERY_MIN,
   WEB_SEARCH_UNAVAILABLE,
+  WebSearchError,
   type WebSearchResult,
 } from '@/shared/contracts/web-search';
+import { logger } from '@/backend/shared/logger';
 
 /**
  * The assistant's tools (ADR-0113, #818).
@@ -2206,7 +2208,19 @@ const tools: ChatAgentTool[] = [
     async run(args, context) {
       const input = SearchWebArgs.parse(args);
       if (!context.searchWeb) throw new Error(WEB_SEARCH_UNAVAILABLE);
-      const result = await context.searchWeb(input.query);
+      let result: WebSearchResult;
+      try {
+        result = await context.searchWeb(input.query);
+      } catch (error) {
+        // The model is owed one sentence, never a vendor's status code or an
+        // English network error it would then narrate to the member. The
+        // operator still gets the reason in the log.
+        logger.warn('Web search tool failed', {
+          kind: error instanceof WebSearchError ? error.kind : 'unexpected',
+          error: String(error),
+        });
+        throw new Error(WEB_SEARCH_UNAVAILABLE, { cause: error });
+      }
       return {
         // The full sources go back with the evidence: the card on the message
         // needs the URL and the date the model does not. They are small beside

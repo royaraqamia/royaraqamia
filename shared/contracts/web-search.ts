@@ -29,8 +29,15 @@ export const WEB_SEARCH_EVIDENCE_CHARS = 5_000;
  */
 export const WEB_SEARCH_TOKEN_RESERVE = 1_300;
 
-/** The search's own ceiling, inside the turn's 55 seconds. */
-export const WEB_SEARCH_TIMEOUT_MS = 4_000;
+/**
+ * The search's own ceiling, inside the turn's 55 seconds. A basic search with
+ * three chunks and a detected date can take longer than four seconds; cutting
+ * it there spends a credit without giving the model anything to read.
+ */
+export const WEB_SEARCH_TIMEOUT_MS = 8_000;
+
+/** How long to wait before the one retry of a transient failure. */
+export const WEB_SEARCH_RETRY_DELAY_MS = 250;
 
 /** A query is a sentence, not an essay, and not a word the index cannot use. */
 export const WEB_SEARCH_QUERY_MIN = 3;
