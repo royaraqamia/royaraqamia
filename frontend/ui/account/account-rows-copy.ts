@@ -12,7 +12,6 @@
 export const ACCOUNT_ROWS_COPY = {
   navLabel: 'إجراءات الحساب',
   submissions: 'طلباتي',
-  posts: 'منشوراتي',
   blocked: 'الأعضاء المحظورون',
   memory: 'ذاكرة نور',
   pricing: 'خطط التَّسعير',

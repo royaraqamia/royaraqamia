@@ -20,7 +20,7 @@ class ShellTabTest {
         assertTrue(ShellTab.Home.isActive("/"))
         assertTrue(ShellTab.Home.isActive("/?tab=1"))
         assertFalse(ShellTab.Home.isActive("/community"))
-        assertFalse(ShellTab.Home.isActive("/account/posts"))
+        assertFalse(ShellTab.Home.isActive("/account/blocked"))
     }
 
     @Test

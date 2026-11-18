@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { act, render, screen, fireEvent, cleanup } from '@testing-library/react';
 
 const mocks = vi.hoisted(() => ({
   user: null as { id: string } | null,
   push: vi.fn(),
+  toastSuccess: vi.fn(),
+  composerProps: {} as Record<string, unknown>,
 }));
 
 vi.mock('@/frontend/state/session-provider', () => ({
@@ -19,8 +21,42 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/community',
 }));
 
+vi.mock('sonner', () => ({
+  toast: { success: mocks.toastSuccess, error: vi.fn() },
+}));
+
 vi.mock('@/frontend/ui/community/post-composer-dialog', () => ({
-  PostComposerDialog: ({ open }: { open: boolean }) => (open ? <div>composer</div> : null),
+  PostComposerDialog: ({
+    open,
+    onDraftSaved,
+    ...props
+  }: {
+    open: boolean;
+    onDraftSaved?: (draft: Record<string, unknown>) => void;
+  }) => {
+    mocks.composerProps = props;
+    return open ? (
+      <div>
+        <span>composer</span>
+        <button
+          type="button"
+          onClick={() =>
+            onDraftSaved?.({
+              id: 'draft-1',
+              slug: null,
+              content: 'مسودة محفوظة',
+              coverImage: '',
+              metaTitle: '',
+              status: 'draft',
+              publishAt: null,
+            })
+          }
+        >
+          save draft
+        </button>
+      </div>
+    ) : null;
+  },
 }));
 
 import { ComposeFab } from '../compose-fab';
@@ -66,5 +102,31 @@ describe('ComposeFab', () => {
 
     expect(screen.getByText('composer')).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('keeps a saved draft reachable through a toast action', () => {
+    mocks.user = { id: 'u1' };
+    render(<ComposeFab />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'إضافة منشور جديد' }));
+    fireEvent.click(screen.getByRole('button', { name: 'save draft' }));
+
+    expect(mocks.toastSuccess).toHaveBeenCalledWith(
+      'تمَّ حفظ المسودَّة',
+      expect.objectContaining({
+        action: expect.objectContaining({ label: 'متابعة التحرير' }),
+      })
+    );
+    expect(mocks.push).not.toHaveBeenCalled();
+
+    const action = mocks.toastSuccess.mock.calls[0]?.[1]?.action as { onClick: () => void };
+    act(() => action.onClick());
+
+    expect(mocks.composerProps).toMatchObject({
+      mode: 'edit',
+      postId: 'draft-1',
+      initialBody: 'مسودة محفوظة',
+    });
+    expect(screen.getByText('composer')).toBeInTheDocument();
   });
 });

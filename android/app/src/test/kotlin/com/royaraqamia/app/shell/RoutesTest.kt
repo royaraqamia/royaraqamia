@@ -100,7 +100,7 @@ class RoutesTest {
     fun `up from a sub-route is its nearest real parent`() {
         assertEquals("/community", Routes.parentOf("/community/post"))
         assertEquals("/community/post", Routes.parentOf("/community/post/replies"))
-        assertEquals("/account", Routes.parentOf("/account/posts"))
+        assertEquals("/account", Routes.parentOf("/account/blocked"))
         assertEquals("/", Routes.parentOf("/"))
     }
 

@@ -147,15 +147,6 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
         )
         add(
             AccountLink(
-                id = "posts",
-                icon = LucideVectors.FileText,
-                label = AccountRowsCopy.POSTS,
-                route = "/account/posts",
-                gated = true,
-            )
-        )
-        add(
-            AccountLink(
                 id = "blocked",
                 icon = LucideVectors.ShieldOff,
                 label = AccountRowsCopy.BLOCKED,

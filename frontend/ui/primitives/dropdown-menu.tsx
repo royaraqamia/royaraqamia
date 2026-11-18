@@ -17,9 +17,9 @@ import {
  * Radix opens on `pointerdown`, and its `MenuItem` turns a `pointerup` that did
  * not start on that item into a synthetic `.click()` (react-menu's
  * `onPointerUp` fallback). When the panel appears under the still-held pointer,
- * releasing therefore runs whichever verb happens to be there - a publish on
- * the posts page. Sharing the sequence lets the panel swallow exactly that one
- * release, and no later click.
+ * releasing therefore runs whichever verb happens to be there - a publish in
+ * a post's owner menu. Sharing the sequence lets the panel swallow exactly
+ * that one release, and no later click.
  */
 interface OpeningSequence {
   active: React.MutableRefObject<boolean>;

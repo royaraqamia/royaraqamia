@@ -466,17 +466,17 @@ network, and `/admin` — and both now end in a plain 503, since the page was wi
 
 **Phase 1 (#448) landed the same day:** the `/account` subtree's shells joined the SWR cache. The
 layout is no longer dynamic (`headers()` moved into `AccountFooter`), the guarded children guard
-on the client through the session provider, `/account/posts` read its feed through the
-never-cache `/api/me/posts` seam at the time (it now paints the local-first post store and pulls
-`/api/community/sync`), and the account views render the shared needs-connection state
+on the client through the session provider, the account's post management read its feed through the
+never-cache `/api/me/posts` seam at the time; that page has since been withdrawn, and drafts now
+live in the composer on the Community feed, and the account views render the shared needs-connection state
 for a failed read instead of routing the failure to `/offline`. The boundary the audit guards —
 no account fragment in a cached response — is held by the never-cache API prefixes, not by the
 documents.
 
 **Phase 2 (#449) landed on 2026-10-21:** the four product dashboard roots are static data-free
 shells painted from their Local Stores (ADR-0073). BlogPress was one of them until it retired as a
-UI door: its dashboard, calendar and editor moved to `/account/posts`, which keeps the same
-local-first store and the same never-cache API prefixes. The worker's never-cache list narrows from
+UI door: its editor became the Community composer, whose drafts keep the same local-first store and
+the same never-cache API prefixes. The worker's never-cache list narrows from
 the product prefixes to their APIs and the two data-bearing subroutes. With it, `/offline` serves
 only a brand-new install hit with no network and `/admin`.
 

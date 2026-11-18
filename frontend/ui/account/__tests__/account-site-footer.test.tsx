@@ -23,7 +23,7 @@ describe('AccountSiteFooter', () => {
   });
 
   it('stays off every page behind the front one', () => {
-    mockPathname.mockReturnValue('/account/posts');
+    mockPathname.mockReturnValue('/account/blocked');
 
     const { container } = render(<AccountSiteFooter />);
 

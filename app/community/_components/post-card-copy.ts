@@ -19,6 +19,18 @@ export const POST_CARD_COPY = {
   commentAction: 'التعليقات',
   shareAction: 'مشاركة المنشور',
   moreAction: 'إجراءات المنشور',
+  deleteAction: 'حذف',
+  unpublishAction: 'إلغاء النَّشر',
+  publishAction: 'نشر',
+  publishNowAction: 'نشر الآن',
+  pinAction: 'تثبيت',
+  unpinAction: 'إلغاء التَّثبيت',
+  exportMarkdownAction: 'تصدير Markdown',
+  deleteTitle: 'حذف المنشور',
+  deleteMessage: 'هل أنت متأكد من حذف «{title}»؟ لا يمكن التراجع بعد انتهاء المهلة.',
+  undo: 'تراجع',
+  deleted: 'تمَّ حذف المنشور',
+  restored: 'تمَّ استرجاع المنشور',
 } as const;
 
 export type PostCardCopyStrings = typeof POST_CARD_COPY;

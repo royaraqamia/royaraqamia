@@ -63,7 +63,6 @@ object Screens {
             ScreenRouteRow("/athkar/evening", "athkar", "athkar", null),
             ScreenRouteRow("/account", "account", "account", null),
             ScreenRouteRow("/account/links", "account-links", "account", null),
-            ScreenRouteRow("/account/posts", "account-posts", "account", null),
             ScreenRouteRow("/account/submissions", "account-submissions", "account", null),
             ScreenRouteRow("/account/plan", "account-plan", "account", null),
             ScreenRouteRow("/account/connected-apps", "account-connected-apps", "account", null),

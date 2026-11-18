@@ -231,26 +231,11 @@ const nextConfig = {
         destination: '/account',
         permanent: true,
       },
-      // BlogPress retired as a UI door: its dashboard, calendar and editor now
-      // live on the account's posts page, and old links follow them there.
-      {
-        source: '/blogpress/editor/:id',
-        destination: '/account/posts?edit=:id',
-        permanent: true,
-      },
-      {
-        source: '/blogpress/calendar',
-        destination: '/account/posts?status=scheduled',
-        permanent: true,
-      },
-      {
-        source: '/blogpress/app/:path*',
-        destination: '/account/posts',
-        permanent: true,
-      },
+      // BlogPress retired as a UI door along with its account page. Old links
+      // land on the Community feed, where writing and the owner's actions live.
       {
         source: '/blogpress/:path*',
-        destination: '/account/posts',
+        destination: '/community',
         permanent: true,
       },
       ...productAppRedirects,

@@ -187,14 +187,6 @@ const APPS: readonly AppFixture[] = [
     scopes: [accountScope('/account')],
     expect: { focus: null, fields: {}, overlays: [] },
   },
-  {
-    app: 'account-posts',
-    route: '/account/posts',
-    screenId: 'account-posts',
-    title: 'منشوراتي',
-    scopes: [accountScope('/account/posts')],
-    expect: { focus: null, fields: {} },
-  },
 ];
 
 /** The route provider's half of the snapshot, for one fixture. */

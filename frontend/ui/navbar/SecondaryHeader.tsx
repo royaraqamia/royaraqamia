@@ -13,7 +13,7 @@ import { chromeFor } from './route-kind';
  * the link that brought the visitor (ADR-0149).
  *
  * It is rendered once by the root layout rather than by each page, and that is
- * load-bearing: `/community/[slug]` and `/account/posts` sit under layouts that
+ * load-bearing: `/community/[slug]` and `/account/blocked` sit under layouts that
  * are primary for their index route, so only a route-aware control can tell a
  * section's front page from a page inside it.
  *

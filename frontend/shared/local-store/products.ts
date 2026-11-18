@@ -71,8 +71,10 @@ export const LOCAL_STORE_ROOTS: readonly LocalStoreRoot[] = [
   },
   {
     product: 'blogpress',
-    root: 'frontend/ui/account/account-posts-view.tsx',
+    root: null,
     snapshot: 'frontend/state/blogpress/use-blogpress-dashboard.ts',
+    exemption:
+      'The account posts page is gone: the composer writes its local-first drafts from the Community feed, where the shared identity resolver runs in the composer dialog rather than in a page root.',
   },
   {
     product: 'quran',

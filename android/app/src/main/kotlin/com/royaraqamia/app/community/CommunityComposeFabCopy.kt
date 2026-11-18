@@ -14,4 +14,6 @@ package com.royaraqamia.app.community
 object CommunityComposeFabCopy {
     const val NEW_POST_LABEL = "إضافة منشور جديد"
     const val GUEST_TITLE = "سجِّل الدُّخول للنَّشر في المجتمع"
+    const val DRAFT_SAVED = "تمَّ حفظ المسودَّة"
+    const val RESUME_DRAFT = "متابعة التحرير"
 }

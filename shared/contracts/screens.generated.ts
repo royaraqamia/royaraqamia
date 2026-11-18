@@ -51,7 +51,6 @@ export const SCREEN_ROUTES: readonly ScreenRouteRow[] = [
   { pattern: '/athkar/evening', surface: 'athkar', product: 'athkar', tab: null },
   { pattern: '/account', surface: 'account', product: 'account', tab: null },
   { pattern: '/account/links', surface: 'account-links', product: 'account', tab: null },
-  { pattern: '/account/posts', surface: 'account-posts', product: 'account', tab: null },
   {
     pattern: '/account/submissions',
     surface: 'account-submissions',

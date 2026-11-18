@@ -100,12 +100,6 @@ export async function deletePost(postId: string): Promise<{ updatedAt: string | 
   return { updatedAt: updatedAt ?? null };
 }
 
-export async function duplicatePost(postId: string): Promise<{ id: string }> {
-  return request<{ id: string }>(`/api/community/posts/${encodeURIComponent(postId)}/duplicate`, {
-    method: 'POST',
-  });
-}
-
 export async function setPostFeatured(postId: string, featured: boolean): Promise<void> {
   await request(`/api/community/posts/${encodeURIComponent(postId)}/featured`, {
     method: 'POST',

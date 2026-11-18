@@ -45,7 +45,6 @@ _The account area, notifications and chats: the screens a member opens daily._
 
 - [ ] **account** `/account` — todo · #1063
 - [x] **account-links** `/account/links` — native · #944
-- [-] **account-posts** `/account/posts` — document, by design · The member's own post management, opened rarely: the post card is already native in the feed, and the page's writes are server actions. Revisit when posting from the phone becomes a first-class flow - a creator surface, draft management, or usage that shows people opening it.
 - [ ] **account-submissions** `/account/submissions` — blocked · blocked by no door on the web: the page is the request, booking and training forms, which left the UI in ADR-0148; leads and consultation are blocked for the same reason
 - [x] **account-plan** `/account/plan` — native · #900
 - [x] **account-connected-apps** `/account/connected-apps` — native · #900
@@ -196,4 +195,4 @@ A component is finished when the surface that draws it is native, or when it bel
 
 ## Where this stands
 
-24 native · 5 to do · 5 document · 6 blocked of 40 surfaces. 1 of 9 release items done.
+24 native · 5 to do · 4 document · 6 blocked of 39 surfaces. 1 of 9 release items done.

@@ -76,11 +76,6 @@
       "native": "android/app/src/main/kotlin/com/royaraqamia/app/linksnap/LinksnapScreen.kt"
     },
     {
-      "surface": "account-posts",
-      "native": null,
-      "reason": "The page is the deliverable (ADR-0178): the post card is already native in the feed, and a port would add a second write path for a list opened rarely."
-    },
-    {
       "surface": "account-submissions",
       "native": null,
       "reason": "No door on the web: the submissions page is the request, booking and training forms, and none of them has an entry point since ADR-0148. The row is `blocked` in `parity-plan.json` for the same reason `leads` and `consultation` are."

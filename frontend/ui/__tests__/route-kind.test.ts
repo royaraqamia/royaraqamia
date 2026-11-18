@@ -86,7 +86,7 @@ describe('route kinds', () => {
 
   it.each([
     '/community/some-post',
-    '/account/posts',
+    '/account/blocked',
     '/admin',
     '/auth/login',
     '/blogpress',
@@ -146,7 +146,7 @@ describe('route kinds', () => {
 describe('parentRouteOf', () => {
   it.each([
     ['/community/some-post', '/community'],
-    ['/account/posts', '/account'],
+    ['/account/blocked', '/account'],
     ['/account/connected-apps', '/account'],
     ['/verify/ABC-123', '/verify'],
     ['/rates', '/'],

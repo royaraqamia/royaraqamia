@@ -16,7 +16,7 @@
  *   on the interface, and the wiring is `backend/config`'s job.
  * - `frontend/**` may not import a route's `_components/` folder: that folder is private to
  *   the route that owns it, and a component another layer wants belongs in `frontend/ui/`
- *   (ADR-0196 — `PostList` used to be reachable only through `/account/posts`).
+ *   (ADR-0196 — `PostList` used to be reachable only through the account posts page).
  *
  * Type-only imports are allowed everywhere: a service importing `type OtpRepository` is
  * following the rule, not breaking it, and `import type` is how the repo already says so.

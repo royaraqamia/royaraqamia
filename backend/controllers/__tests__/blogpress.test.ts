@@ -230,11 +230,7 @@ describe('blogpress controller', () => {
     expect(result).toMatchObject({
       status: 200,
       body: { success: true, updatedAt: '2026-10-18T09:00:00.000Z' },
-      revalidate: [
-        { path: '/account/posts' },
-        { path: '/community/hello' },
-        { path: '/community' },
-      ],
+      revalidate: [{ path: '/community/hello' }, { path: '/community' }],
     });
   });
 
@@ -285,11 +281,7 @@ describe('blogpress controller', () => {
     expect(result).toMatchObject({
       status: 200,
       body: { success: true, slug: 'hello' },
-      revalidate: [
-        { path: '/account/posts' },
-        { path: '/community/hello' },
-        { path: '/community' },
-      ],
+      revalidate: [{ path: '/community/hello' }, { path: '/community' }],
     });
   });
 

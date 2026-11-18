@@ -17,7 +17,6 @@ import type { ScreenScope } from '@/frontend/state/screen-scopes';
 const ACCOUNT_SCREENS: Readonly<Record<string, ScreenScope>> = {
   '/account': { id: 'account.page', kind: 'screen' },
   '/account/links': { id: 'account-links.page', kind: 'screen' },
-  '/account/posts': { id: 'account-posts.page', kind: 'screen' },
   '/account/submissions': { id: 'account-submissions.page', kind: 'screen' },
   '/account/plan': { id: 'account-plan.page', kind: 'screen' },
   '/account/connected-apps': { id: 'account-connected-apps.page', kind: 'screen' },

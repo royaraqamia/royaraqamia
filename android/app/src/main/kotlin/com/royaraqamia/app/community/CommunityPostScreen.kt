@@ -103,6 +103,7 @@ fun CommunityPostScreen(
     onSignIn: () -> Unit = {},
     signedIn: Boolean = false,
     currentUserId: String? = null,
+    postActions: PostActionHandler? = null,
 ) {
     var state by remember(slug) { mutableStateOf<CommunityPostUiState?>(null) }
     var failure by remember(slug) { mutableStateOf<ApiError?>(null) }
@@ -169,6 +170,7 @@ fun CommunityPostScreen(
         onCountChanged = { count -> engagement = engagement?.copy(commentCount = count) },
         onRetry = { attempts += 1 },
         onOpenProfile = onOpenProfile,
+        postActions = postActions,
         modifier = modifier,
     )
 }
@@ -196,6 +198,7 @@ internal fun CommunityPostScreen(
         onCountChanged = {},
         onRetry = onRetry,
         onOpenProfile = onOpenProfile,
+        postActions = null,
         modifier = modifier,
     )
 }
@@ -215,6 +218,7 @@ private fun CommunityPostContent(
     onCountChanged: (Long) -> Unit,
     onRetry: () -> Unit,
     onOpenProfile: (String) -> Unit,
+    postActions: PostActionHandler?,
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalRoySpacing.current
@@ -241,6 +245,7 @@ private fun CommunityPostContent(
                     onSignIn = onSignIn,
                     onCountChanged = onCountChanged,
                     onOpenProfile = onOpenProfile,
+                    postActions = postActions,
                     modifier = Modifier.padding(horizontal = spacing.containerPadding),
                 )
         }
@@ -261,6 +266,7 @@ private fun Post(
     onSignIn: () -> Unit,
     onCountChanged: (Long) -> Unit,
     onOpenProfile: (String) -> Unit,
+    postActions: PostActionHandler?,
     modifier: Modifier = Modifier,
 ) {
     val spacing = LocalRoySpacing.current
@@ -367,13 +373,22 @@ private fun Post(
                     onClick = { scope.launch { scroll.animateScrollTo(Int.MAX_VALUE) } },
                 )
             }
-            PostAction(
-                icon = LucideVectors.Share2,
-                label = PostCardCopy.SHARE_ACTION,
-                count = null,
-                active = false,
-                onClick = onSharePost,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                PostAction(
+                    icon = LucideVectors.Share2,
+                    label = PostCardCopy.SHARE_ACTION,
+                    count = null,
+                    active = false,
+                    onClick = onSharePost,
+                )
+                if (postActions != null) {
+                    PostActionsMenu(
+                        target = post.asPostActionTarget(),
+                        handler = postActions,
+                        currentUserId = currentUserId,
+                    )
+                }
+            }
         }
 
             if (engagementRepository != null) {

@@ -1,25 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { BlogpressPostsService } from '@/backend/services/blogpress/posts-service';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
-import type { Post, RestorePostSnapshot } from '@/shared/contracts/blogpress';
-
-const postFixture = {
-  id: 'p-1',
-  author_id: 'u-1',
-  slug: 'post-1',
-  content: null,
-  status: 'published',
-  cover_image: null,
-  meta_title: null,
-  meta_desc: null,
-  published_at: '2026-08-01T00:00:00.000Z',
-  publish_at: null,
-  view_count: 3,
-  featured: false,
-  community_visible: true,
-  created_at: '2026-08-01T00:00:00.000Z',
-  updated_at: '2026-08-01T00:00:00.000Z',
-} as unknown as Post;
+import type { RestorePostSnapshot } from '@/shared/contracts/blogpress';
 
 function makeRepo(overrides: Partial<PostsRepository> = {}) {
   const repository: PostsRepository = {
@@ -194,54 +176,5 @@ describe('BlogpressPostsService.restorePost', () => {
     );
 
     await expect(service.restorePost('u-1', snapshotBase)).rejects.toThrow('فشل استرجاع المنشور');
-  });
-});
-
-describe('BlogpressPostsService.duplicatePost', () => {
-  it('clones fields, tags and categories into a fresh draft', async () => {
-    const { repository, service } = makeRepo();
-    (repository.getPostForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ...postFixture,
-      content: '# محتوى',
-      cover_image: 'https://img/cover.png',
-      meta_title: 'عنوان SEO',
-      meta_desc: 'وصف',
-    });
-    (repository.createPost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-copy' });
-    (repository.updatePost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-    (repository.getPostTags as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { id: 'tag-1', name: 'تقنية', slug: 'tech' },
-    ]);
-    (repository.setPostTags as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-    (repository.getPostCategories as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { id: 'cat-1', name: 'أخبار', slug: 'news' },
-    ]);
-    (repository.setPostCategories as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-
-    const result = await service.duplicatePost('p-1', 'u-1');
-
-    expect(result).toEqual({ id: 'p-copy' });
-    expect(repository.createPost).toHaveBeenCalledWith('u-1');
-    expect(repository.updatePost).toHaveBeenCalledWith(
-      'p-copy',
-      'u-1',
-      expect.objectContaining({
-        content: '# محتوى',
-        cover_image: 'https://img/cover.png',
-        meta_title: 'عنوان SEO',
-        meta_desc: 'وصف',
-        slug: expect.stringMatching(/^post-1-copy-[a-z0-9]{4}$/),
-      })
-    );
-    expect(repository.setPostTags).toHaveBeenCalledWith('p-copy', 'u-1', ['tag-1']);
-    expect(repository.setPostCategories).toHaveBeenCalledWith('p-copy', 'u-1', ['cat-1']);
-  });
-
-  it('throws when the source post does not exist or is not owned', async () => {
-    const { repository, service } = makeRepo();
-    (repository.getPostForUser as ReturnType<typeof vi.fn>).mockResolvedValue(null);
-
-    await expect(service.duplicatePost('p-1', 'u-2')).rejects.toThrow('المنشور غير موجود');
-    expect(repository.createPost).not.toHaveBeenCalled();
   });
 });

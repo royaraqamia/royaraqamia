@@ -13,7 +13,6 @@ describe('accountScreenScope', () => {
   it('names each account page by the surface the matrix gives it', () => {
     expect(accountScreenScope('/account')?.id).toBe('account.page');
     expect(accountScreenScope('/account/links')?.id).toBe('account-links.page');
-    expect(accountScreenScope('/account/posts')?.id).toBe('account-posts.page');
     expect(accountScreenScope('/account/submissions')?.id).toBe('account-submissions.page');
     expect(accountScreenScope('/account/plan')?.id).toBe('account-plan.page');
     expect(accountScreenScope('/account/connected-apps')?.id).toBe('account-connected-apps.page');
@@ -24,7 +23,7 @@ describe('accountScreenScope', () => {
 
   it('reads a trailing slash as the page it names', () => {
     expect(accountScreenScope('/account/')?.id).toBe('account.page');
-    expect(accountScreenScope('/account/posts/')?.id).toBe('account-posts.page');
+    expect(accountScreenScope('/account/blocked/')?.id).toBe('account-blocked.page');
   });
 
   it('registers nothing outside the subtree or for a path it does not carry', () => {

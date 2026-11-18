@@ -215,7 +215,6 @@ class BlogpressWritesTest {
         repository.publishPost(row.id)
         repository.unpublishPost(row.id)
         repository.setFeatured(row.id, true)
-        repository.duplicatePost(row.id)
 
         val sent = transport.requests.map { it.method to it.url.substringAfter("/api/community") }
         assertEquals(
@@ -223,7 +222,6 @@ class BlogpressWritesTest {
                 "POST" to "/posts/post-1/publish",
                 "POST" to "/posts/post-1/unpublish",
                 "POST" to "/posts/post-1/featured",
-                "POST" to "/posts/post-1/duplicate",
             ),
             sent,
         )
