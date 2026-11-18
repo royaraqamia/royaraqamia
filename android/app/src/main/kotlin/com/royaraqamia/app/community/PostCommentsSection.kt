@@ -32,12 +32,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.royaraqamia.app.chats.insertChatLink
+import com.royaraqamia.app.chats.toggleChatMark
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.contracts.generated.CreateCommentResponseComment
 import com.royaraqamia.app.contracts.generated.PostCommentsResponseCommentsItem
@@ -64,9 +68,8 @@ import kotlinx.coroutines.launch
 internal fun PostCommentsSection(
     slug: String,
     repository: PostEngagementRepository,
-    signedIn: Boolean,
+    composer: CommentComposerState,
     currentUserId: String?,
-    onSignIn: () -> Unit,
     onCountChanged: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -80,8 +83,6 @@ internal fun PostCommentsSection(
     var loading by remember(slug) { mutableStateOf(true) }
     var failed by remember(slug) { mutableStateOf(false) }
     var openingMore by remember(slug) { mutableStateOf(false) }
-    var draft by remember(slug) { mutableStateOf("") }
-    var sending by remember(slug) { mutableStateOf(false) }
     var editingId by remember(slug) { mutableStateOf<String?>(null) }
     var editDraft by remember(slug) { mutableStateOf("") }
     var pendingDelete by remember(slug) { mutableStateOf<PostCommentsResponseCommentsItem?>(null) }
@@ -92,6 +93,12 @@ internal fun PostCommentsSection(
         total = count
         onCountChanged(count)
     }
+
+    composer.onPublished = { row, count ->
+        comments = listOf(row.toRow()) + comments
+        publish(comments, nextCursor, count)
+    }
+    composer.onFailed = { failed = true }
 
     LaunchedEffect(slug) {
         loading = true
@@ -133,68 +140,6 @@ internal fun PostCommentsSection(
         }
 
         Spacer(Modifier.height(spacing.elementGapSm))
-
-        if (!signedIn) {
-            Row(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable(onClick = onSignIn)
-                        .padding(vertical = 10.dp)
-                        .semantics {
-                            role = Role.Button
-                            contentDescription = CommunityPostCopy.COMMENT_SIGN_IN
-                        },
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = CommunityPostCopy.COMMENT_SIGN_IN,
-                    style = type.xs.copy(fontWeight = FontWeight.Bold),
-                    color = RoyColors.primary,
-                )
-            }
-        } else {
-            OutlinedTextField(
-                value = draft,
-                onValueChange = { draft = it },
-                placeholder = { Text(CommunityPostCopy.COMMENT_PLACEHOLDER) },
-                minLines = 2,
-                enabled = !sending,
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .testTag(CommunityPostMetrics.COMMENT_FIELD)
-                        .semantics { contentDescription = CommunityPostCopy.COMMENT_PLACEHOLDER },
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ActionPill(
-                    icon = LucideVectors.Send,
-                    label = CommunityPostCopy.COMMENT_SUBMIT_LABEL,
-                    text = CommunityPostCopy.COMMENT_SUBMIT,
-                    enabled = draft.isNotBlank() && !sending,
-                    onClick = {
-                        val body = draft.trim()
-                        if (body.isEmpty()) return@ActionPill
-                        scope.launch {
-                            sending = true
-                            when (val answer = repository.comment(slug, body)) {
-                                is ApiResult.Success -> {
-                                    comments = listOf(answer.value.comment.toRow()) + comments
-                                    draft = ""
-                                    publish(comments, nextCursor, answer.value.commentCount)
-                                }
-                                is ApiResult.Failure -> failed = true
-                            }
-                            sending = false
-                        }
-                    },
-                )
-            }
-        }
 
         Spacer(Modifier.height(spacing.elementGapSm))
 
@@ -344,6 +289,12 @@ private fun CommentRow(
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
     val author = comment.author
+    var field by remember { mutableStateOf(TextFieldValue(editDraft, TextRange(editDraft.length))) }
+    LaunchedEffect(editDraft) {
+        if (field.text != editDraft) {
+            field = TextFieldValue(editDraft, TextRange(editDraft.length))
+        }
+    }
 
     Row(horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm)) {
         if (!author?.avatar_url.isNullOrBlank()) {
@@ -401,9 +352,24 @@ private fun CommentRow(
             }
 
             if (editing) {
+                if (field.selection.length > 0) {
+                    CommentFormatStrip(
+                        onMark = { mark ->
+                            field = toggleChatMark(field, mark)
+                            onEditDraft(field.text)
+                        },
+                        onLink = {
+                            field = insertChatLink(field)
+                            onEditDraft(field.text)
+                        },
+                    )
+                }
                 OutlinedTextField(
-                    value = editDraft,
-                    onValueChange = onEditDraft,
+                    value = field,
+                    onValueChange = {
+                        field = it
+                        onEditDraft(it.text)
+                    },
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 )
@@ -420,7 +386,9 @@ private fun CommentRow(
                 }
             } else {
                 Text(
-                    text = comment.body,
+                    // The same inline renderer the message bubble uses: the
+                    // comment field writes the chat marks (ADR-0193).
+                    text = remember(comment.body) { CommunityMarkdown.inline(comment.body) },
                     style = type.small,
                     color = RoyColors.foreground.copy(alpha = 0.9f),
                     modifier = Modifier.padding(top = 2.dp),
@@ -450,48 +418,6 @@ private fun IconAction(
                     contentDescription = label
                 },
     )
-}
-
-@Composable
-private fun ActionPill(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    label: String,
-    text: String,
-    enabled: Boolean,
-    onClick: () -> Unit,
-) {
-    val type = LocalRoyTypeScale.current
-
-    Row(
-        modifier =
-            Modifier.clip(RoundedCornerShape(12.dp))
-                .background(if (enabled) RoyColors.primary else RoyColors.muted.copy(alpha = 0.4f))
-                .clickable(enabled = enabled, onClick = onClick)
-                .padding(horizontal = 14.dp, vertical = 9.dp)
-                .semantics {
-                    role = Role.Button
-                    contentDescription = label
-                },
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint =
-                if (enabled) {
-                    RoyColors.background
-                } else {
-                    RoyColors.mutedForeground
-                },
-            modifier = Modifier.size(16.dp),
-        )
-        Text(
-            text = text,
-            style = type.xs.copy(fontWeight = FontWeight.Bold),
-            color = if (enabled) RoyColors.background else RoyColors.mutedForeground,
-        )
-    }
 }
 
 @Composable

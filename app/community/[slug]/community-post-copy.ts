@@ -30,7 +30,15 @@ export const COMMUNITY_POST_COPY = {
   commentFailed: 'تعذَّر نشر التعليق. أعد المحاولة.',
   commentsLoadMore: 'عرض تعليقات أقدم',
   commentSignIn: 'سجّل الدخول للتعليق',
-  readingTime: '{minutes} د قراءة',
+  commentRemaining: 'متبقٍ {count} حرف',
+  formatToolbar: 'تنسيق التعليق',
+  formatBold: 'عريض',
+  formatItalic: 'مائل',
+  formatUnderline: 'تسطير',
+  formatStrike: 'يتوسطه خط',
+  formatCode: 'كود',
+  formatLink: 'رابط',
+  formatLinkPrompt: 'عنوان الرَّابط',
 } as const;
 
 export type CommunityPostCopyStrings = typeof COMMUNITY_POST_COPY;

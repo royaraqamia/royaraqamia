@@ -22,6 +22,7 @@ import { WebSources } from './web-sources';
 import { readReceiptOf, type ChatReadReceipt } from './read-receipt';
 import { formatDaySeparator, isNewDay } from './thread-days';
 import {
+  CHAT_BODY_MAX,
   canEditChatMessage,
   chatAttachmentIsAudio,
   chatAttachmentIsInlineImage,
@@ -388,6 +389,7 @@ export const ChatMessageRow = memo(function ChatMessageRow({
                 onChange={setDraft}
                 ariaLabel={CHAT_THREAD_COPY.editLabel}
                 labels={CHAT_FIELD_LABELS}
+                maxLength={CHAT_BODY_MAX}
                 className="w-full rounded-lg bg-background/90 px-2 py-1 text-foreground"
               />
               <div className="flex justify-end gap-2">

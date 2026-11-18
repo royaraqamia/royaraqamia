@@ -31,6 +31,7 @@ async function open(value = '', onChange = vi.fn()) {
       ariaLabel="نص الرسالة"
       placeholder="اكتب"
       labels={LABELS}
+      maxLength={4000}
     />
   );
   return { field: await screen.findByRole('textbox', { name: 'نص الرسالة' }), onChange };
@@ -55,7 +56,13 @@ describe('ChatField', () => {
 
   it('opens on the marks the stored text holds', async () => {
     render(
-      <ChatField value="**عريض**" onChange={vi.fn()} ariaLabel="نص الرسالة" labels={LABELS} />
+      <ChatField
+        value="**عريض**"
+        onChange={vi.fn()}
+        ariaLabel="نص الرسالة"
+        labels={LABELS}
+        maxLength={4000}
+      />
     );
 
     const field = await screen.findByRole('textbox', { name: 'نص الرسالة' });
@@ -73,7 +80,14 @@ describe('ChatField', () => {
 
   it('keeps the field read-only when it is disabled', async () => {
     render(
-      <ChatField value="سلام" onChange={vi.fn()} ariaLabel="نص الرسالة" labels={LABELS} disabled />
+      <ChatField
+        value="سلام"
+        onChange={vi.fn()}
+        ariaLabel="نص الرسالة"
+        labels={LABELS}
+        maxLength={4000}
+        disabled
+      />
     );
 
     const field = await screen.findByRole('textbox', { name: 'نص الرسالة' });

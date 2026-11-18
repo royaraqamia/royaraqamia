@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Lock, Mic, Square, X } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import { CHAT_BODY_MAX } from '@/shared/contracts/chat';
 import { Button } from '@/frontend/ui/primitives/button';
 import { holdUnrequestedReload } from '@/frontend/shared/sw-update';
 import { useVoiceRecorder, VOICE_NOTE_MAX_MS } from '@/frontend/state/chats/use-voice-recorder';
@@ -347,6 +348,7 @@ export function ChatComposer({
                 placeholder={placeholder}
                 disabled={disabled}
                 labels={fieldLabels}
+                maxLength={CHAT_BODY_MAX}
                 className="w-full min-h-11 resize-none rounded-xl border border-border/70 bg-background py-2 pl-10 pr-3 text-base leading-[26px] text-foreground focus-visible:ring-2 focus-visible:ring-primary/40"
               />
               <ChatAttachButton
