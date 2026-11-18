@@ -12,6 +12,10 @@ import { PostCard } from './post-card';
 import { LoadMore } from './load-more';
 
 interface CommunityResultsProps {
+  /** The page that owns this feed, for the no-JS "load more" link. */
+  path: string;
+  /** False once the session's appended-page budget is spent. */
+  canLoadMore?: boolean;
   posts: PostSummary[];
   nextCursor: string | null;
   query: string;
@@ -52,6 +56,8 @@ interface CommunityResultsProps {
  * source rather than a string it typed.
  */
 export function CommunityResults({
+  path,
+  canLoadMore = true,
   posts,
   nextCursor,
   query,
@@ -145,6 +151,7 @@ export function CommunityResults({
           </div>
 
           {nextCursor &&
+            canLoadMore &&
             (loadFailure ? (
               <ReadFailureNotice
                 failure={loadFailure}
@@ -154,6 +161,7 @@ export function CommunityResults({
               />
             ) : (
               <LoadMore
+                path={path}
                 cursor={nextCursor}
                 query={query}
                 isLoading={isLoadingMore}

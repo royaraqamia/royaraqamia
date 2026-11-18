@@ -7,7 +7,7 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 import { toast } from 'sonner';
@@ -28,7 +28,9 @@ export interface EngagementEntry {
 }
 
 interface PostEngagementContextValue {
-  entryOf(postId: string): EngagementEntry | undefined;
+  /** Subscribe to one post's numbers, not to the whole page's batch. */
+  subscribe(postId: string, listener: () => void): () => void;
+  get(postId: string): EngagementEntry | undefined;
   /** Ask for a post's numbers. Every card on a page joins one batch. */
   track(postId: string): void;
   /** Set the like wanted, optimistically, and settle on the server's count. */
@@ -53,7 +55,42 @@ const BATCH_DELAY_MS = 60;
  * not of the component that happens to be mounted.
  */
 export function PostEngagementProvider({ children }: { children: ReactNode }) {
-  const [entries, setEntries] = useState<Record<string, EngagementEntry>>({});
+  // An external store lets one card re-render when its own numbers land instead
+  // of every card when the page's 60ms batch arrives.
+  const entries = useRef<Record<string, EngagementEntry>>({});
+  const listeners = useRef(new Map<string, Set<() => void>>());
+
+  const apply = useCallback((next: Record<string, EngagementEntry>) => {
+    const previous = entries.current;
+    entries.current = next;
+    for (const [id, listenerSet] of listeners.current) {
+      const before = previous[id];
+      const after = next[id];
+      if (
+        before === after ||
+        (before &&
+          after &&
+          before.likeCount === after.likeCount &&
+          before.commentCount === after.commentCount &&
+          before.liked === after.liked)
+      ) {
+        continue;
+      }
+      for (const listener of listenerSet) listener();
+    }
+  }, []);
+
+  const subscribe = useCallback((postId: string, listener: () => void) => {
+    const set = listeners.current.get(postId) ?? new Set<() => void>();
+    set.add(listener);
+    listeners.current.set(postId, set);
+    return () => {
+      set.delete(listener);
+      if (set.size === 0) listeners.current.delete(postId);
+    };
+  }, []);
+
+  const get = useCallback((postId: string) => entries.current[postId], []);
 
   const tracked = useRef(new Set<string>());
   const queue = useRef(new Set<string>());
@@ -78,24 +115,22 @@ export function PostEngagementProvider({ children }: { children: ReactNode }) {
       const items = await fetchPostEngagement(ids);
       if (!mounted.current) return;
 
-      setEntries((previous) => {
-        const next = { ...previous };
-        for (const item of items) {
-          next[item.postId] = {
-            likeCount: item.likeCount,
-            commentCount: item.commentCount,
-            liked: item.liked,
-          };
-        }
-        return next;
-      });
+      const next = { ...entries.current };
+      for (const item of items) {
+        next[item.postId] = {
+          likeCount: item.likeCount,
+          commentCount: item.commentCount,
+          liked: item.liked,
+        };
+      }
+      apply(next);
     } catch {
       // The read is an enhancement: a card whose numbers did not arrive draws
       // its controls without them, and a retry is the next page load. Nothing a
       // reader did is lost, so this is not a toast.
       for (const id of ids) tracked.current.delete(id);
     }
-  }, []);
+  }, [apply]);
 
   const track = useCallback(
     (postId: string) => {
@@ -110,65 +145,62 @@ export function PostEngagementProvider({ children }: { children: ReactNode }) {
     [flush]
   );
 
-  const like = useCallback(async (postId: string, slug: string, liked: boolean) => {
-    let previous: EngagementEntry | undefined;
-
-    setEntries((current) => {
-      previous = current[postId];
-      return {
-        ...current,
+  const like = useCallback(
+    async (postId: string, slug: string, liked: boolean) => {
+      const previous = entries.current[postId];
+      apply({
+        ...entries.current,
         [postId]: {
           likeCount: Math.max(0, (previous?.likeCount ?? 0) + (liked ? 1 : -1)),
           commentCount: previous?.commentCount ?? 0,
           liked,
         },
-      };
-    });
+      });
 
-    try {
-      const result = await setPostLike(slug, liked);
-      if (!mounted.current) return;
+      try {
+        const result = await setPostLike(slug, liked);
+        if (!mounted.current) return;
 
-      setEntries((current) => ({
-        ...current,
-        [postId]: {
-          likeCount: result.likeCount,
-          commentCount: current[postId]?.commentCount ?? 0,
-          liked: result.liked,
-        },
-      }));
-    } catch (error) {
-      if (!mounted.current) return;
+        apply({
+          ...entries.current,
+          [postId]: {
+            likeCount: result.likeCount,
+            commentCount: entries.current[postId]?.commentCount ?? 0,
+            liked: result.liked,
+          },
+        });
+      } catch (error) {
+        if (!mounted.current) return;
 
-      setEntries((current) => {
-        const next = { ...current };
+        const next = { ...entries.current };
         if (previous) next[postId] = previous;
         else delete next[postId];
-        return next;
+        apply(next);
+        toast.error(error instanceof Error ? error.message : 'تعذَّر تحديث الإعجاب.');
+      }
+    },
+    [apply]
+  );
+
+  const setCommentCount = useCallback(
+    (postId: string, count: number) => {
+      apply({
+        ...entries.current,
+        [postId]: {
+          likeCount: entries.current[postId]?.likeCount ?? 0,
+          commentCount: count,
+          liked: entries.current[postId]?.liked ?? false,
+        },
       });
-      toast.error(error instanceof Error ? error.message : 'تعذَّر تحديث الإعجاب.');
-    }
-  }, []);
+    },
+    [apply]
+  );
 
-  const setCommentCount = useCallback((postId: string, count: number) => {
-    setEntries((current) => ({
-      ...current,
-      [postId]: {
-        likeCount: current[postId]?.likeCount ?? 0,
-        commentCount: count,
-        liked: current[postId]?.liked ?? false,
-      },
-    }));
-  }, []);
-
+  // Stable for the life of the provider: a card subscribes to its own entry, so
+  // a batch that changes one post does not re-render the other eight.
   const value = useMemo<PostEngagementContextValue>(
-    () => ({
-      entryOf: (postId: string) => entries[postId],
-      track,
-      like,
-      setCommentCount,
-    }),
-    [entries, track, like, setCommentCount]
+    () => ({ subscribe, get, track, like, setCommentCount }),
+    [subscribe, get, track, like, setCommentCount]
   );
 
   return <PostEngagementContext.Provider value={value}>{children}</PostEngagementContext.Provider>;
@@ -185,7 +217,8 @@ export function PostEngagementProvider({ children }: { children: ReactNode }) {
  * failed engagement read.
  */
 const DETACHED: PostEngagementContextValue = {
-  entryOf: () => undefined,
+  subscribe: () => () => {},
+  get: () => undefined,
   track: () => {},
   like: async () => {},
   setCommentCount: () => {},
@@ -197,13 +230,18 @@ function useEngagementContext(): PostEngagementContextValue {
 
 /** One post's numbers, registered with the page's batch on mount. */
 export function usePostEngagement(postId: string): EngagementEntry | undefined {
-  const { entryOf, track } = useEngagementContext();
+  const { subscribe, get, track } = useEngagementContext();
 
   useEffect(() => {
     track(postId);
   }, [track, postId]);
 
-  return entryOf(postId);
+  const subscribeToPost = useCallback(
+    (listener: () => void) => subscribe(postId, listener),
+    [subscribe, postId]
+  );
+  const snapshot = useCallback(() => get(postId), [get, postId]);
+  return useSyncExternalStore(subscribeToPost, snapshot, snapshot);
 }
 
 /** The like action, for a control that already knows its post. */

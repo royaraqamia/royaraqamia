@@ -28,6 +28,28 @@ export async function listNotifications(): Promise<HttpResult> {
   }
 }
 
+/**
+ * One auth resolution and one response for the shell's badge and the feed.
+ * The two reads the bell used to make separately each resolved the session on
+ * its own server round trip, so every page paid twice before its own content
+ * could settle; the list and the count are both account-scoped and both come
+ * from the same service instance here.
+ */
+export async function listNotificationsWithCount(): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) return jsonResult(200, { notifications: [], count: 0 }, { headers: NO_STORE });
+    const service = createSupabaseNotificationService(supabase);
+    const [notifications, count] = await Promise.all([
+      service.getNotifications(user.id),
+      service.getUnreadCount(user.id),
+    ]);
+    return jsonResult(200, { notifications, count }, { headers: NO_STORE });
+  } catch {
+    return jsonResult(500, { error: 'فشل تحميل الإشعارات' }, { headers: NO_STORE });
+  }
+}
+
 export async function markAllNotificationsRead(): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();

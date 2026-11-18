@@ -50,6 +50,7 @@ vi.mock('@/backend/config/notifications', () => ({
 }));
 
 import { GET as listGET, PATCH as markAllPATCH } from '@/app/api/notifications/route';
+import { GET as summaryGET } from '@/app/api/notifications/summary/route';
 import { GET as unreadGET } from '@/app/api/notifications/unread-count/route';
 import { PATCH as markOnePATCH, DELETE as deleteOne } from '@/app/api/notifications/[id]/route';
 import { GET as versionGET } from '@/app/api/version/route';
@@ -105,6 +106,40 @@ describe('GET /api/notifications', () => {
 
     const res = await listGET({} as NextRequest);
 
+    expect(res.status).toBe(500);
+    expect(readBody(res)).toEqual({ error: 'فشل تحميل الإشعارات' });
+    expectNoStore(res);
+  });
+});
+
+describe('GET /api/notifications/summary', () => {
+  it('answers a guest with an empty list and zero in one auth resolution', async () => {
+    mockGetAuthUser.mockResolvedValue({ user: null, client: null });
+    const res = await summaryGET({} as NextRequest);
+    expect(res.status).toBe(200);
+    expect(readBody(res)).toEqual({ notifications: [], count: 0 });
+    expect(mockGetAuthUser).toHaveBeenCalledTimes(1);
+    expectNoStore(res);
+  });
+
+  it('answers the feed and the badge from one auth resolution', async () => {
+    mockGetAuthUser.mockResolvedValue({ user, client: {} });
+    mockService.getNotifications.mockResolvedValue([notification]);
+    mockService.getUnreadCount.mockResolvedValue(3);
+
+    const res = await summaryGET({} as NextRequest);
+
+    expect(readBody(res)).toEqual({ notifications: [notification], count: 3 });
+    expect(mockGetAuthUser).toHaveBeenCalledTimes(1);
+    expect(mockService.getNotifications).toHaveBeenCalledWith('u-1');
+    expect(mockService.getUnreadCount).toHaveBeenCalledWith('u-1');
+    expectNoStore(res);
+  });
+
+  it('returns 500, not an empty summary, when either read throws', async () => {
+    mockGetAuthUser.mockResolvedValue({ user, client: {} });
+    mockService.getNotifications.mockRejectedValue(new Error('db down'));
+    const res = await summaryGET({} as NextRequest);
     expect(res.status).toBe(500);
     expect(readBody(res)).toEqual({ error: 'فشل تحميل الإشعارات' });
     expectNoStore(res);

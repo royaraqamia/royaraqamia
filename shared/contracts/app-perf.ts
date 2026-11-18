@@ -48,9 +48,28 @@ export const AppPerfTapReportSchema = z.object({
 
 export type AppPerfTapReport = z.infer<typeof AppPerfTapReportSchema>;
 
+/**
+ * Field Core Web Vitals (#1498 follow-up): one record per page life, sent when
+ * the document is hidden. No URL, path, user, session or device id — the same
+ * boundary as the launch and tap records, so a log line stays greppable and
+ * safe to keep. A page with no interaction reports `inpMs: 0`.
+ */
+export const AppPerfVitalsReportSchema = z.object({
+  version: z.literal(1),
+  kind: z.literal('vitals'),
+  platform: AppPerfPlatformSchema,
+  lcpMs: z.number().int().nonnegative().max(60_000),
+  cls: z.number().nonnegative().max(10),
+  inpMs: z.number().int().nonnegative().max(60_000),
+  ttfbMs: z.number().int().nonnegative().max(60_000),
+});
+
+export type AppPerfVitalsReport = z.infer<typeof AppPerfVitalsReportSchema>;
+
 export const AppPerfReportSchema = z.discriminatedUnion('kind', [
   AppPerfLaunchReportSchema,
   AppPerfTapReportSchema,
+  AppPerfVitalsReportSchema,
 ]);
 
 export type AppPerfReport = z.infer<typeof AppPerfReportSchema>;

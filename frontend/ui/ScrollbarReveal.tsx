@@ -37,15 +37,29 @@ export function ScrollbarReveal() {
       );
     };
 
+    // A fling fires many scroll events per frame. Mark once per frame so the
+    // attribute write and the timer reset cost one pass, not one per event.
+    const pending = new Set<Element>();
+    let frame: number | null = null;
+    const flush = () => {
+      frame = null;
+      for (const target of pending) mark(target);
+      pending.clear();
+    };
+
     const onScroll = (event: Event) => {
       const target = event.target instanceof Element ? event.target : document.scrollingElement;
-      if (target) mark(target);
+      if (!target) return;
+      pending.add(target);
+      if (frame === null) frame = requestAnimationFrame(flush);
     };
 
     document.addEventListener('scroll', onScroll, { capture: true, passive: true });
 
     return () => {
       document.removeEventListener('scroll', onScroll, { capture: true });
+      if (frame !== null) cancelAnimationFrame(frame);
+      pending.clear();
       for (const [target, timer] of timers) {
         window.clearTimeout(timer);
         target.removeAttribute(SCROLLING_ATTRIBUTE);

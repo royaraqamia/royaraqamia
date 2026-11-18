@@ -21,6 +21,16 @@ import { SPENDTRACK_EXPENSES_COPY } from './spendtrack-expenses-copy';
 import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
 import { formatMoney } from '@/shared/currency';
 
+// One formatter for the whole list: constructing one per row on every render
+// showed up as allocation work while scrolling a long history.
+const AR_SA_DATE = new Intl.DateTimeFormat('ar-SA', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  calendar: 'islamic-umalqura',
+  numberingSystem: 'latn',
+});
+
 export function ExpenseList({
   expenses: initialExpenses,
   categories,
@@ -52,6 +62,12 @@ export function ExpenseList({
     search,
   });
   const hasFilters = filterCategories.length > 0 || sort !== 'date_desc' || Boolean(search);
+  // The local store can hold years of rows. Rendering all of them allocated a
+  // formatter, a delete hook and a dialog per row on every render; reveal them
+  // in batches instead, with the same control the server pages already use.
+  const [visible, setVisible] = useState(40);
+  const shown = expenses.slice(0, visible);
+  const moreLocal = expenses.length > visible;
 
   if (expenses.length === 0) {
     return (
@@ -78,7 +94,7 @@ export function ExpenseList({
       aria-label={SPENDTRACK_EXPENSES_COPY.listLabel}
       aria-live="polite"
     >
-      {expenses.map((expense) => (
+      {shown.map((expense) => (
         <ExpenseRow
           key={expense.id}
           expense={expense}
@@ -86,11 +102,14 @@ export function ExpenseList({
           currency={currency}
         />
       ))}
-      {hasMore && (
+      {moreLocal || hasMore ? (
         <div className="flex justify-center pt-5 pb-2">
           <Button
             variant="outline"
-            onClick={loadMore}
+            onClick={() => {
+              if (moreLocal) setVisible((count) => count + 40);
+              else void loadMore();
+            }}
             disabled={loading}
             className="group relative inline-flex items-center justify-center h-10 px-6 text-xs font-medium tracking-wide transition-safe duration-300 ease-out border rounded-full border-border/70 bg-background/80 hover:bg-accent hover:text-accent-foreground hover:border-border hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
           >
@@ -100,7 +119,7 @@ export function ExpenseList({
             </span>
           </Button>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -116,13 +135,7 @@ function ExpenseRow({
 }) {
   const { formAction, pending, error } = useDeleteExpense(expense, expense.description || '');
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const formattedDate = new Intl.DateTimeFormat('ar-SA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    calendar: 'islamic-umalqura',
-    numberingSystem: 'latn',
-  }).format(parseISO(expense.date));
+  const formattedDate = AR_SA_DATE.format(parseISO(expense.date));
   const effectiveCurrency = expense.currency ?? currency;
   const description = expense.description || SPENDTRACK_EXPENSES_COPY.noDescription;
   const rowLabel = `${description}، ${formatMoney(expense.amount, effectiveCurrency)}، ${formattedDate}`;

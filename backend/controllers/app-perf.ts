@@ -37,6 +37,16 @@ export async function recordAppPerf(body: unknown, ip: string): Promise<HttpResu
       shellMs: report.shellMs,
       contentMs: report.contentMs,
     });
+  } else if (report.kind === 'vitals') {
+    logger.info('[app-perf]', {
+      version: report.version,
+      kind: report.kind,
+      platform: report.platform,
+      lcpMs: report.lcpMs,
+      cls: report.cls,
+      inpMs: report.inpMs,
+      ttfbMs: report.ttfbMs,
+    });
   } else {
     logger.info('[app-perf]', {
       version: report.version,

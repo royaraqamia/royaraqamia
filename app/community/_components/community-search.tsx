@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, FileText, Loader2, Search, X } from 'lucide-react';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
@@ -18,6 +18,7 @@ type Row = { kind: 'person'; index: number } | { kind: 'post'; index: number } |
 const SEARCH_ERROR = 'تعذَّر تحميل نتائج البحث. أعد المحاولة.';
 
 export function CommunitySearch() {
+  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const query = searchParams.get('q') ?? '';
@@ -40,9 +41,9 @@ export function CommunitySearch() {
         params.delete('q');
       }
       params.delete('cursor');
-      router.push(`/community?${params.toString()}`);
+      router.push(`${pathname}?${params.toString()}`);
     },
-    [router, searchParams]
+    [pathname, router, searchParams]
   );
 
   // Keep the field in step with the URL (back/forward, external links).

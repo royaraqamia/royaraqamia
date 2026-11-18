@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import { CommunityResults } from '../community-results';
 
 const emptyFeed = {
+  path: '/community',
   posts: [],
   nextCursor: null,
   query: '',

@@ -15,6 +15,12 @@ import {
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
+import {
+  halveList,
+  screenful,
+  useSnapshot,
+  useSnapshotRecorder,
+} from '@/frontend/shared/local-store/snapshot';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { markContent } from '@/frontend/shared/perf-marks';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
@@ -25,6 +31,18 @@ import { useLocalIdentity } from '@/frontend/state/use-local-identity';
  * `supabase/migrations/20261028120100_publish_notes_for_realtime_hints.sql`.
  */
 export const SYNC_HINT_TABLES = ['notes'] as const;
+
+/** The rows this identity last painted (#495). */
+export const NOTES_SNAPSHOT_ROUTE = 'notes';
+
+interface NotesSnapshot {
+  notes: Note[];
+}
+
+function trimNotesSnapshot(data: NotesSnapshot): NotesSnapshot | null {
+  const notes = halveList(screenful(data.notes));
+  return notes.length === 0 ? null : { notes };
+}
 
 export interface NotesStoreState {
   /** The store answered: writes and the sync engine are available. */
@@ -40,6 +58,8 @@ export interface NotesStoreState {
   lastFailedType: string | null;
   retry: () => void;
   refresh: () => Promise<void>;
+  /** Rows are renderable: the store answered, or the last painted screen stands in. */
+  painted: boolean;
   /** Why the last pull from the account failed (#369), painted by the pill. */
   refreshError: string | null;
   /** Runs that pull again. */
@@ -89,6 +109,9 @@ export function useNotes(): NotesStoreState {
   const { identity, isLoading } = useLocalIdentity();
   const isSignedIn = identity !== GUEST_IDENTITY;
   const ready = readyFor === identity;
+  // A member with notes on this device can read them while the store opens and
+  // reconciles; a skeleton in front of rows already painted is the old cost.
+  const snapshot = useSnapshot<NotesSnapshot>(identity, NOTES_SNAPSHOT_ROUTE);
 
   const readIntoState = useCallback(async (target: NotesLocalStore) => {
     setNotes(await target.getNotes());
@@ -246,13 +269,24 @@ export function useNotes(): NotesStoreState {
     void engineRef.current?.retry();
   }, []);
 
+  const rendered = useMemo(
+    () => (ready ? notes : (snapshot?.notes ?? [])),
+    [ready, notes, snapshot]
+  );
+  const recorded = useMemo(
+    () => (ready ? { notes: screenful(notes) as Note[] } : null),
+    [ready, notes]
+  );
+  useSnapshotRecorder(identity, NOTES_SNAPSHOT_ROUTE, recorded, { trim: trimNotesSnapshot });
+
   return useMemo(
     () => ({
       ready,
+      painted: ready || snapshot !== null,
       online,
       isSignedIn,
       store,
-      notes,
+      notes: rendered,
       syncing: status.syncing,
       pending: status.pending,
       failed: status.failed,
@@ -263,6 +297,18 @@ export function useNotes(): NotesStoreState {
       refreshError,
       retryRefresh,
     }),
-    [ready, online, isSignedIn, store, notes, status, retry, refresh, refreshError, retryRefresh]
+    [
+      ready,
+      snapshot,
+      rendered,
+      online,
+      isSignedIn,
+      store,
+      status,
+      retry,
+      refresh,
+      refreshError,
+      retryRefresh,
+    ]
   );
 }

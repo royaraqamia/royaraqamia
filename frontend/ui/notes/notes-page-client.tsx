@@ -68,6 +68,7 @@ export function NotesPageClient({ embedded = false }: { embedded?: boolean } = {
 function NotesContent({ embedded }: { embedded: boolean }) {
   const {
     ready,
+    painted,
     online,
     store,
     notes,
@@ -183,7 +184,7 @@ function NotesContent({ embedded }: { embedded: boolean }) {
         />
       </div>
 
-      {!ready || !store ? (
+      {!painted ? (
         <NotesSkeleton />
       ) : (
         <NotesList

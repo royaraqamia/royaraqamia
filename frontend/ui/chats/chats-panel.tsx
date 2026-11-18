@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, MessagesSquare, Plus, X } from 'lucide-react';
 
-import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
+import { useChatThreads, type ChatThreadsState } from '@/frontend/state/chats/use-chat-threads';
 import { useChatPresenceList } from '@/frontend/state/chats/use-chat-presence-list';
 import { useAssistantPhase } from '@/frontend/state/chats/assistant-turn';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
@@ -66,12 +66,27 @@ export function chatTimeAgo(iso: string): string {
  * free one and the paid day beside it (#1456), so there is no lock to draw. The
  * thread itself says when a spent day returns.
  */
-export function ChatsPanel() {
+/**
+ * The panel can be handed the page's one Chats list. The notifications page
+ * needs the same rows for its tab badge and its panel, and a second hook call
+ * would open the store, fetch and subscribe a second time at tap time.
+ */
+export function ChatsPanel({ chats }: { chats?: ChatThreadsState }) {
+  return chats ? <ChatsPanelView chats={chats} /> : <ChatsPanelConnected />;
+}
+
+function ChatsPanelConnected() {
+  const { identity } = useLocalIdentity();
+  const chats = useChatThreads(true, identity);
+  return <ChatsPanelView chats={chats} />;
+}
+
+function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
   const router = useRouter();
   // The store is partitioned by identity, resolved before the session answers
   // (#493), so the tab paints the rows this device already holds (#1033).
   const { identity } = useLocalIdentity();
-  const { threads, isLoading, painted, error, refresh, respond } = useChatThreads(true, identity);
+  const { threads, isLoading, painted, error, refresh, respond } = chats;
   const presence = useChatPresenceList(threads, identityUserId(identity));
   const [panel, setPanel] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);

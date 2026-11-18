@@ -22,6 +22,15 @@ const LAUNCH = {
   contentMs: 240,
 };
 const TAP = { version: 1, kind: 'tap', platform: 'shell', paintMs: 40 };
+const VITALS = {
+  version: 1,
+  kind: 'vitals',
+  platform: 'web',
+  lcpMs: 2100,
+  cls: 0.04,
+  inpMs: 120,
+  ttfbMs: 300,
+};
 
 describe('recordAppPerf', () => {
   beforeEach(() => {
@@ -51,6 +60,20 @@ describe('recordAppPerf', () => {
       kind: 'tap',
       platform: 'shell',
       paintMs: 40,
+    });
+  });
+
+  it('writes field vitals as one log line with no page or user context', async () => {
+    await recordAppPerf({ ...VITALS, url: '/account', userId: 'x' }, IP);
+
+    expect(mockInfo).toHaveBeenCalledWith('[app-perf]', {
+      version: 1,
+      kind: 'vitals',
+      platform: 'web',
+      lcpMs: 2100,
+      cls: 0.04,
+      inpMs: 120,
+      ttfbMs: 300,
     });
   });
 

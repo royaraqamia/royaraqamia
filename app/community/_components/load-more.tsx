@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 
 interface LoadMoreProps {
+  /** The page that owns this feed, so the no-JS link stays on it. */
+  path: string;
   cursor: string;
   query: string;
   isLoading: boolean;
@@ -24,6 +26,7 @@ interface LoadMoreProps {
  * check failure on the other.
  */
 export function LoadMore({
+  path,
   cursor,
   query,
   isLoading,
@@ -38,7 +41,7 @@ export function LoadMore({
   return (
     <div className="mt-16 sm:mt-20 flex justify-center" data-visual="community-load-more-region">
       <Link
-        href={`/community?${params.toString()}`}
+        href={`${path}?${params.toString()}`}
         rel="next"
         data-visual="community-load-more"
         aria-label={ariaLabel}

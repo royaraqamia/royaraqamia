@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Share2, Check } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
@@ -26,6 +26,14 @@ interface SocialShareProps {
  */
 export function SocialShare({ url, title, label, className }: SocialShareProps) {
   const [copied, setCopied] = useState(false);
+  const resetTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetTimer.current !== null) clearTimeout(resetTimer.current);
+    },
+    []
+  );
 
   const resolveUrl = () => {
     try {
@@ -37,7 +45,11 @@ export function SocialShare({ url, title, label, className }: SocialShareProps) 
 
   const markCopied = () => {
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
+    if (resetTimer.current !== null) clearTimeout(resetTimer.current);
+    resetTimer.current = window.setTimeout(() => {
+      resetTimer.current = null;
+      setCopied(false);
+    }, 1600);
   };
 
   const handleCopyLink = async () => {

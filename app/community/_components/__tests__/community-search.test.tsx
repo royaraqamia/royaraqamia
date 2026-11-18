@@ -6,6 +6,7 @@ import type { CommunitySearchResult } from '@/shared/contracts/community';
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 
 vi.mock('next/navigation', () => ({
+  usePathname: () => '/community',
   useRouter: () => ({ push }),
   useSearchParams: () => new URLSearchParams(),
 }));

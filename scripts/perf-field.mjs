@@ -79,6 +79,15 @@ export function parseRecord(line) {
     return { kind: 'tap', platform: payload.platform, paintMs };
   }
 
+  if (payload.kind === 'vitals') {
+    const lcpMs = duration(payload.lcpMs);
+    const cls = duration(payload.cls);
+    const inpMs = duration(payload.inpMs);
+    const ttfbMs = duration(payload.ttfbMs);
+    if (lcpMs === null || cls === null || inpMs === null || ttfbMs === null) return null;
+    return { kind: 'vitals', platform: payload.platform, lcpMs, cls, inpMs, ttfbMs };
+  }
+
   return null;
 }
 
@@ -97,6 +106,7 @@ export function percentile(values, p = 0.75) {
 export function summarize(records) {
   const launches = new Map();
   const taps = new Map();
+  const vitals = new Map();
 
   for (const record of records) {
     if (record.kind === 'launch') {
@@ -110,10 +120,23 @@ export function summarize(records) {
       group.shell.push(record.shellMs);
       group.content.push(record.contentMs);
       launches.set(key, group);
-    } else {
+    } else if (record.kind === 'tap') {
       const group = taps.get(record.platform) ?? { platform: record.platform, paint: [] };
       group.paint.push(record.paintMs);
       taps.set(record.platform, group);
+    } else {
+      const group = vitals.get(record.platform) ?? {
+        platform: record.platform,
+        lcp: [],
+        cls: [],
+        inp: [],
+        ttfb: [],
+      };
+      group.lcp.push(record.lcpMs);
+      group.cls.push(record.cls);
+      group.inp.push(record.inpMs);
+      group.ttfb.push(record.ttfbMs);
+      vitals.set(record.platform, group);
     }
   }
 
@@ -148,6 +171,24 @@ export function summarize(records) {
     });
   }
 
+  for (const group of [...vitals.values()].sort(
+    (a, b) => platformRank(a.platform) - platformRank(b.platform)
+  )) {
+    rows.push({
+      kind: 'vitals',
+      platform: group.platform,
+      cold: null,
+      samples: group.lcp.length,
+      shellMs: null,
+      contentMs: null,
+      paintMs: null,
+      lcpMs: percentile(group.lcp),
+      cls: percentile(group.cls),
+      inpMs: percentile(group.inp),
+      ttfbMs: percentile(group.ttfb),
+    });
+  }
+
   return rows;
 }
 
@@ -157,7 +198,19 @@ function cell(value) {
 
 /** The terminal table. Fixed widths keep it readable without a dependency. */
 export function formatTable(rows) {
-  const header = ['kind', 'platform', 'open', 'n', 'shell p75', 'content p75', 'paint p75'];
+  const header = [
+    'kind',
+    'platform',
+    'open',
+    'n',
+    'shell p75',
+    'content p75',
+    'paint p75',
+    'lcp p75',
+    'cls p75',
+    'inp p75',
+    'ttfb p75',
+  ];
   const body = rows.map((row) => [
     row.kind,
     row.platform,
@@ -166,6 +219,10 @@ export function formatTable(rows) {
     cell(row.shellMs),
     cell(row.contentMs),
     cell(row.paintMs),
+    cell(row.lcpMs),
+    row.cls === null || row.cls === undefined ? '—' : row.cls.toFixed(3),
+    cell(row.inpMs),
+    cell(row.ttfbMs),
   ]);
 
   const widths = header.map((title, index) =>

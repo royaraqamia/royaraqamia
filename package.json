@@ -83,6 +83,7 @@
     "check:edge": "node scripts/check-edge-cache.mjs",
     "prune:runs": "node scripts/prune-workflow-runs.mjs",
     "perf:field": "node scripts/perf-field.mjs",
+    "perf:pages": "cross-env CI=1 PERF_PAGES=1 playwright test e2e/perf-pages.spec.ts --project=existing-tests --workers=1 --retries=0",
     "perf:paint": "node scripts/perf-paint.mjs",
     "perf:paint:update": "node scripts/perf-paint.mjs --update",
     "android:sync": "cap sync android",

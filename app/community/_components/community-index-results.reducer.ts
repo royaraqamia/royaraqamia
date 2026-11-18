@@ -29,6 +29,8 @@ export interface CommunityFeedState {
   /** False while page one of a filtered or paginated view is still in flight. */
   ready: boolean;
   loadingMore: boolean;
+  /** How many pages were appended in this session; the DOM is capped below. */
+  appended: number;
   pageError: unknown | null;
   loadMoreError: unknown | null;
   /** What the local snapshot recorder should keep, if anything. */
@@ -55,6 +57,7 @@ export function communityFeedInitialState(
     nextCursor: initialNextCursor,
     ready: isDefault,
     loadingMore: false,
+    appended: 0,
     pageError: null,
     loadMoreError: null,
     recordable: null,
@@ -118,6 +121,7 @@ export function communityFeedReducer(
       return {
         ...state,
         posts,
+        appended: state.appended + 1,
         nextCursor: action.data.nextCursor,
         // Only a keepable answer replaces the record; a `no-store` one leaves the
         // previous snapshot in place.
