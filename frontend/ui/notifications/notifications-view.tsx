@@ -111,8 +111,11 @@ export function NotificationsView() {
     deleteNotification,
     refresh,
   } = useNotifications();
-  // The badge reads the same device-first list the tab draws (#1033).
-  const chats = useChatThreads(Boolean(user), identity);
+  // One device-first list serves both the badge and the panel (#1033). The
+  // second hook call here used to reopen the store, refetch and resubscribe on
+  // the same tap that switched to Chats. Guests still see a zero badge: their
+  // local threads belong to the panel, not to an account's unread total.
+  const chats = useChatThreads(true, identity);
 
   const baseId = useId();
   const [chosen, setChosen] = useState<TabId | null>(null);
@@ -144,8 +147,8 @@ export function NotificationsView() {
    * paints the list.
    */
   const unreadByTab = useMemo<Record<TabId, number>>(
-    () => ({ chats: chats.unreadCount, alerts: unreadCount }),
-    [chats.unreadCount, unreadCount]
+    () => ({ chats: user ? chats.unreadCount : 0, alerts: unreadCount }),
+    [user, chats.unreadCount, unreadCount]
   );
 
   const selectTab = useCallback(
@@ -166,19 +169,21 @@ export function NotificationsView() {
 
   return (
     <main id="main-content" className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6">
-      {user && unreadCount > 0 && (
-        <div className="mb-3 flex items-center justify-end">
-          <button
-            type="button"
-            data-visual="notifications-mark-all"
-            onClick={() => markAllAsRead()}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-primary transition-safe duration-150 hover:bg-primary/10 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
-          >
-            <Check size={14} className="shrink-0" />
-            <span>{NOTIFICATIONS_COPY.markAllRead}</span>
-          </button>
+      {user ? (
+        <div className="mb-3 flex min-h-7 items-center justify-end">
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              data-visual="notifications-mark-all"
+              onClick={() => markAllAsRead()}
+              className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-primary transition-safe duration-150 hover:bg-primary/10 hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
+            >
+              <Check size={14} className="shrink-0" />
+              <span>{NOTIFICATIONS_COPY.markAllRead}</span>
+            </button>
+          )}
         </div>
-      )}
+      ) : null}
 
       {activeTab === null ? (
         <div className="h-10 w-full animate-pulse rounded-full bg-muted/60 sm:w-72" />
@@ -220,7 +225,7 @@ export function NotificationsView() {
             rows={4}
           />
         ) : activeTab === 'chats' ? (
-          <ChatsPanel />
+          <ChatsPanel chats={chats} />
         ) : failed ? (
           <PanelState icon={<Bell size={24} />} testId="notifications-failed">
             <p className="text-sm font-bold text-foreground">{NOTIFICATIONS_COPY.listError}</p>

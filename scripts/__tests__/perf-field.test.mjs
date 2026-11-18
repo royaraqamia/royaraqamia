@@ -10,6 +10,15 @@ const LAUNCH = {
   contentMs: 820,
 };
 const TAP = { version: 1, kind: 'tap', platform: 'web', paintMs: 38 };
+const VITALS = {
+  version: 1,
+  kind: 'vitals',
+  platform: 'web',
+  lcpMs: 2100,
+  cls: 0.04,
+  inpMs: 120,
+  ttfbMs: 300,
+};
 
 /** A Vercel JSON log line, with the record where `logger.info` puts it. */
 function line(payload) {
@@ -30,6 +39,17 @@ describe('parseRecord', () => {
       contentMs: 820,
     });
     expect(parseRecord(line(TAP))).toEqual({ kind: 'tap', platform: 'web', paintMs: 38 });
+  });
+
+  it('reads field vitals and keeps their four numbers', () => {
+    expect(parseRecord(line(VITALS))).toEqual({
+      kind: 'vitals',
+      platform: 'web',
+      lcpMs: 2100,
+      cls: 0.04,
+      inpMs: 120,
+      ttfbMs: 300,
+    });
   });
 
   it('finds the record whatever field the CLI puts the message in', () => {
@@ -118,6 +138,25 @@ describe('summarize', () => {
         shellMs: null,
         contentMs: null,
         paintMs: 30,
+      },
+    ]);
+  });
+
+  it('groups vitals by platform and reports their p75', () => {
+    const rows = summarize([
+      { ...VITALS, lcpMs: 1000 },
+      { ...VITALS, lcpMs: 2000 },
+    ]);
+
+    expect(rows).toMatchObject([
+      {
+        kind: 'vitals',
+        platform: 'web',
+        samples: 2,
+        lcpMs: 2000,
+        cls: 0.04,
+        inpMs: 120,
+        ttfbMs: 300,
       },
     ]);
   });

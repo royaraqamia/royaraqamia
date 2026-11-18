@@ -40,7 +40,17 @@ export function CodeBlockEnhancer() {
     };
 
     addButtons();
-    const observer = new MutationObserver(addButtons);
+    // The post page's live comment thread and toasts mutate the document while
+    // reading. Re-scan every `<pre>` only when an added node can actually hold
+    // one, instead of on every DOM change for the page's whole lifetime.
+    const observer = new MutationObserver((records) => {
+      const mayContainCode = records.some((record) =>
+        Array.from(record.addedNodes).some(
+          (node) => node instanceof Element && (node.tagName === 'PRE' || node.querySelector('pre'))
+        )
+      );
+      if (mayContainCode) addButtons();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
 
     return () => observer.disconnect();

@@ -78,7 +78,10 @@ export function HomeTabStrip({ selected, onSelect, onReorder }: HomeTabStripProp
     if (arranging) return;
     const target = selectedRef.current;
     if (typeof target?.scrollIntoView === 'function') {
-      target.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+      // `block: 'nearest'` leaves the page where it is; only the strip's own
+      // horizontal position is corrected. Doing that instantly keeps a tab tap
+      // from running a second smooth scroll against the page's scroll-to-top.
+      target.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'auto' });
     }
   }, [selected, arranging]);
 

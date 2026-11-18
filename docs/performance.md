@@ -188,13 +188,15 @@ The ceilings are the Web Vitals "good" thresholds. `perf/runtime-budget.json` is
 the single source of truth: it holds the ceilings, the aggregation (`p75`), the
 window (`7d`) and the recorded baseline, so this page cannot drift from it.
 
-**Source.** Nothing reports field Web Vitals today. Vercel Speed Insights was
-the source, reported by `<SpeedInsights />` in the root layout and aggregated as
-the 75th percentile over a rolling 7-day window; the origin moved to Render
-(ADR-0174) and the beacon left with its package, because it 404s there and the
-CSP never allowed Vercel's ingest host (#1498). The percentile is still the
-aggregation a reporter has to produce: a mean would hide the slow tail this
-program targets.
+**Source.** `<WebVitalsReporter />` in the root layout observes LCP, CLS, INP
+and TTFB and posts one `kind: 'vitals'` record to `/api/app-perf` when the
+document is hidden. The controller writes it as one `[app-perf]` log line with
+the same four numbers and the platform — no URL, path, user or session. Filter
+the log with `kind:vitals` and aggregate the p75; a mean would hide the slow
+tail this program targets. This replaces Vercel Speed Insights, which left with
+the origin's move to Render (ADR-0174) because its beacon 404s there and the CSP
+never allowed Vercel's ingest host (#1498). The reporter is same-origin, so no
+`connect-src` change is needed.
 
 **Reading it.** A field number needs a reporter again, and whatever reports has
 to be allowed by `connect-src` in `next.config.js`. Until then the dashboard and
@@ -278,7 +280,9 @@ tap     shell     —     41       —           —      42 ms
 ```
 
 `npm run perf:field` is a nearest-rank p75 by platform (and by cold/warm for
-launches); pass `--file <path>` to read saved JSON lines instead of stdin.
+launches); pass `--file <path>` to read saved JSON lines instead of stdin. It
+also reads `kind:vitals` records and prints their LCP, CLS, INP and TTFB p75,
+which is how the table above is now populated.
 
 **Window limit.** Vercel keeps runtime logs for an hour on the Hobby plan, so
 this is a recent-window read — the number just after a deploy, not a historical
@@ -364,6 +368,25 @@ mark yet, so nothing measures their paint path; `docs/specs/surfaces.md` shows a
 empty Paint cell for each, and `perf/surfaces.json` carries an `ungated` reason.
 The account views and the fifth product's remaining routes are #493's; the public
 ones arrive with #555.
+
+## Page-level lab evidence
+
+The paint gate measures the app's own `content` mark, which only the local-store
+dashboards write. The four main pages are server-rendered or read on the client,
+so they have no such mark; `e2e/perf-pages.spec.ts` covers them instead:
+
+```bash
+npm run perf:pages
+```
+
+It builds and serves a production document, then measures `/`, the habitflow
+tab, `/community`, `/community/explore`, `/account` and `/notifications` under
+4x CPU throttling and a ~1.6 Mbps / 150 ms link at 390x844. LCP, CLS, long
+tasks, TTFB and wire bytes are written to `node_modules/.playwright/perf-pages.json`
+and printed per route. Signed-in routes use the E2E account, so the same
+credentials as the paint gate are needed. This is a measurement, not a gate:
+the numbers move with the runner, so compare them against a recorded run rather
+than treating one sample as a regression.
 
 ## CI
 

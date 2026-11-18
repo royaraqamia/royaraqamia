@@ -1,10 +1,10 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 
 import { cn } from '@/frontend/shared/cn';
-import { MotionRoot } from '@/frontend/ui/MotionRoot';
+import { HomeMotionRoot } from '@/frontend/ui/home/HomeMotionRoot';
 import type { HomeServiceKey } from '@/shared/contracts/home-services-catalog';
 
 import { HOME_COPY } from './home-copy';
@@ -22,80 +22,144 @@ import { HOME_COPY } from './home-copy';
  * a route and its tab cannot drift apart by a padding class.
  */
 
-function SurfaceSkeleton() {
+const block = 'animate-pulse rounded-xl border border-border/40 bg-muted/20';
+
+/** Rows of a shape a tab actually draws, instead of one fixed-height box. */
+function SkeletonRows({ rows, height }: { rows: number; height: string }) {
   return (
-    <div
-      aria-busy="true"
-      aria-label={HOME_COPY.surfaceLoading}
-      className="mx-auto w-full max-w-5xl px-4 pt-6"
-    >
-      <div className="h-96 animate-pulse rounded-3xl border border-border/40 bg-muted/20" />
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: rows }, (_, index) => (
+        <div key={index} className={block} style={{ height }} />
+      ))}
     </div>
   );
 }
 
-const loading = () => <SurfaceSkeleton />;
+/** The first screen of each tab, so its frame does not jump when the chunk lands. */
+const SKELETON_SHAPES: Record<HomeServiceKey, ReactNode> = {
+  '/news': (
+    <>
+      <div className={`${block} h-11 w-2/3`} />
+      <SkeletonRows rows={3} height="10rem" />
+    </>
+  ),
+  '/rates': <SkeletonRows rows={7} height="3.5rem" />,
+  '/scan': (
+    <>
+      <div className={`${block} aspect-video w-full`} />
+      <SkeletonRows rows={3} height="3.5rem" />
+    </>
+  ),
+  '/quran': (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {Array.from({ length: 12 }, (_, index) => (
+        <div key={index} className={`${block} h-20`} />
+      ))}
+    </div>
+  ),
+  '/athkar': <SkeletonRows rows={8} height="3.5rem" />,
+  '/notes': <SkeletonRows rows={5} height="4rem" />,
+  '/habitflow': (
+    <>
+      <div className={`${block} mb-4 h-12`} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, index) => (
+          <div key={index} className={`${block} h-28`} />
+        ))}
+      </div>
+    </>
+  ),
+  '/spendtrack': (
+    <>
+      <div className={`${block} mb-4 h-12`} />
+      <div className="grid grid-cols-2 gap-3">
+        <div className={`${block} h-44`} />
+        <div className={`${block} h-44`} />
+      </div>
+    </>
+  ),
+  '/linksnap': (
+    <>
+      <div className={`${block} h-48`} />
+      <SkeletonRows rows={4} height="4rem" />
+    </>
+  ),
+};
+
+function SurfaceSkeleton({ tab }: { tab: HomeServiceKey }) {
+  return (
+    <div
+      aria-busy="true"
+      aria-label={HOME_COPY.surfaceLoading}
+      className="mx-auto flex w-full flex-col gap-3 px-4 pt-6"
+    >
+      {SKELETON_SHAPES[tab]}
+    </div>
+  );
+}
+
+const loadingFor = (tab: HomeServiceKey) => () => <SurfaceSkeleton tab={tab} />;
 
 const NewsSurface = dynamic(
   () =>
     import('@/frontend/ui/news/news-surface').then((module) => ({ default: module.NewsSurface })),
-  { loading, ssr: false }
+  { loading: loadingFor('/news'), ssr: false }
 );
 const RatesSurface = dynamic(
   () =>
     import('@/frontend/ui/rates/rates-surface').then((module) => ({
       default: module.RatesSurface,
     })),
-  { loading, ssr: false }
+  { loading: loadingFor('/rates'), ssr: false }
 );
 const ScanSurface = dynamic(
   () =>
     import('@/frontend/ui/scan/scan-surface').then((module) => ({
       default: module.ScanSurface,
     })),
-  { loading, ssr: false }
+  { loading: loadingFor('/scan'), ssr: false }
 );
 const QuranSurface = dynamic(
   () =>
     import('@/frontend/ui/quran/quran-surface').then((module) => ({
       default: module.QuranSurface,
     })),
-  { loading, ssr: false }
+  { loading: loadingFor('/quran'), ssr: false }
 );
 const AthkarSurface = dynamic(
   () =>
     import('@/frontend/ui/athkar/athkar-surface').then((module) => ({
       default: module.AthkarSurface,
     })),
-  { loading, ssr: false }
+  { loading: loadingFor('/athkar'), ssr: false }
 );
 const NotesSurface = dynamic(
   () =>
     import('@/frontend/ui/notes/notes-surface').then((module) => ({
       default: module.NotesSurface,
     })),
-  { loading, ssr: false }
+  { loading: loadingFor('/notes'), ssr: false }
 );
 const HabitflowSurface = dynamic(
   () =>
     import('@/frontend/ui/habitflow/habitflow-surface').then((module) => ({
       default: module.HabitflowSurface,
     })),
-  { loading, ssr: false }
+  { loading: loadingFor('/habitflow'), ssr: false }
 );
 const SpendtrackSurface = dynamic(
   () =>
     import('@/frontend/ui/spendtrack/spendtrack-surface').then((module) => ({
       default: module.SpendtrackSurface,
     })),
-  { loading, ssr: false }
+  { loading: loadingFor('/spendtrack'), ssr: false }
 );
 const LinkSnapSurface = dynamic(
   () =>
     import('@/frontend/ui/linksnap/linksnap-surface').then((module) => ({
       default: module.LinkSnapSurface,
     })),
-  { loading, ssr: false }
+  { loading: loadingFor('/linksnap'), ssr: false }
 );
 
 function NotesTab() {
@@ -138,7 +202,7 @@ export function HomeAppSurface({ tab }: { tab: HomeServiceKey | null }) {
 
   return (
     <div className={cn('pb-28', FRAMES[tab])}>
-      {MOTION_ROUTES.has(tab) ? <MotionRoot>{content}</MotionRoot> : content}
+      {MOTION_ROUTES.has(tab) ? <HomeMotionRoot>{content}</HomeMotionRoot> : content}
     </div>
   );
 }

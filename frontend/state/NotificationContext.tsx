@@ -14,8 +14,7 @@ import { useSession } from '@/frontend/state/session-provider';
 import type { Notification, NotificationWithMeta } from '@/shared/contracts/notifications';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import {
-  getNotifications,
-  getUnreadCount,
+  getNotificationSummary,
   markAsRead,
   markAllAsRead,
   deleteNotification,
@@ -60,7 +59,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const [data, count] = await Promise.all([getNotifications(), getUnreadCount()]);
+      const { notifications: data, count } = await getNotificationSummary();
       if (controller.signal.aborted) return;
       const withMeta = data.map((n: Notification) => ({
         ...n,

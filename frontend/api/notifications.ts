@@ -27,6 +27,20 @@ export async function getUnreadCount(): Promise<number> {
   return data.count ?? 0;
 }
 
+/**
+ * The bell's badge and the feed come from one request, so the shell resolves
+ * the caller once instead of twice on every page.
+ */
+export async function getNotificationSummary(): Promise<{
+  notifications: Notification[];
+  count: number;
+}> {
+  const data = await request<{ notifications?: Notification[]; count?: number }>(
+    '/api/notifications/summary'
+  );
+  return { notifications: data.notifications ?? [], count: data.count ?? 0 };
+}
+
 export async function markAsRead(id: string) {
   try {
     await request(`/api/notifications/${id}`, { method: 'PATCH' });

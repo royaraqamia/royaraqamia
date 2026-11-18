@@ -4,7 +4,10 @@ import { loadCommunityIndex, loadCommunityMembers } from '@/backend/loaders/comm
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { CommunityIndexResults } from '../_components/community-index-results';
 import { CommunitySearch } from '../_components/community-search';
-import { CommunityMembersPanel, CommunityMembersStrip } from '../_components/community-members';
+import {
+  ResponsiveCommunityMembersPanel,
+  ResponsiveCommunityMembersStrip,
+} from '../_components/community-members-responsive';
 import { ComposeFab } from '../_components/compose-fab';
 import { COMMUNITY_PAGE_SIZE } from '../_components/constants';
 
@@ -60,7 +63,10 @@ export default async function CommunityExplorePage() {
               </div>
             </Suspense>
 
-            <CommunityMembersStrip members={members} signInReturnTo="/community/explore" />
+            <ResponsiveCommunityMembersStrip
+              members={members}
+              signInReturnTo="/community/explore"
+            />
 
             <Suspense
               fallback={
@@ -85,9 +91,7 @@ export default async function CommunityExplorePage() {
             </Suspense>
           </div>
 
-          <aside className="sticky top-24 max-lg:hidden self-start" aria-label="أعضاء المجتمع">
-            <CommunityMembersPanel members={members} signInReturnTo="/community/explore" />
-          </aside>
+          <ResponsiveCommunityMembersPanel members={members} signInReturnTo="/community/explore" />
         </div>
       </div>
 

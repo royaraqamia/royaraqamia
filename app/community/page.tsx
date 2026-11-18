@@ -6,9 +6,13 @@ import { createFollowsService } from '@/backend/config/follows';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { CommunityIndexResults } from './_components/community-index-results';
 import { CommunitySearch } from './_components/community-search';
-import { CommunityMembersPanel, CommunityMembersStrip } from './_components/community-members';
+import {
+  ResponsiveCommunityMembersPanel,
+  ResponsiveCommunityMembersStrip,
+} from './_components/community-members-responsive';
 import { ComposeFab } from './_components/compose-fab';
 import { COMMUNITY_PAGE_SIZE } from './_components/constants';
+import { CommunityIndexQuerySchema } from '@/shared/contracts/community';
 
 /**
  * The member's own feed: their posts and the posts of the members they follow,
@@ -32,14 +36,28 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
-export default async function CommunityPage() {
+export default async function CommunityPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   // The session is resolved once: the feed, the roster's states and the
   // following count all need this member, and each resolution is an auth round
   // trip - three of them would be the heaviest thing on the page.
-  const session = await resolveFollowingSession();
+  const [session, params] = await Promise.all([resolveFollowingSession(), searchParams]);
+  // A filtered or paginated URL used to render the default feed here and then
+  // read the right one again in the browser, paying two server reads and a
+  // second auth resolution for a list the document threw away. The same
+  // validation the API uses keeps attacker-controlled cursors bounded.
+  const parsed = CommunityIndexQuerySchema.safeParse({
+    q: typeof params.q === 'string' ? params.q : '',
+    cursor: typeof params.cursor === 'string' ? params.cursor || null : null,
+  });
+  const query = parsed.success ? parsed.data.q : '';
+  const cursor = parsed.success ? parsed.data.cursor : null;
 
   const [{ posts, nextCursor, signedIn }, members] = await Promise.all([
-    loadFollowingFeed(session, null, '', COMMUNITY_PAGE_SIZE),
+    loadFollowingFeed(session, cursor, query, COMMUNITY_PAGE_SIZE),
     loadCommunityMembers(),
   ]);
 
@@ -92,7 +110,7 @@ export default async function CommunityPage() {
               </div>
             </Suspense>
 
-            <CommunityMembersStrip
+            <ResponsiveCommunityMembersStrip
               members={members}
               states={rosterStates}
               signInReturnTo="/community"
@@ -120,6 +138,8 @@ export default async function CommunityPage() {
               <CommunityIndexResults
                 initialPosts={posts}
                 initialNextCursor={nextCursor}
+                initialQuery={query}
+                initialCursor={cursor}
                 source="following"
                 emptyKind={emptyKind}
               />
@@ -131,13 +151,11 @@ export default async function CommunityPage() {
               is immune to whichever stylesheet wins, the shell's or this surface's
               (ADR-0132). An `aside` is already `display: block` at
               `lg`, so there is nothing to restore. */}
-          <aside className="sticky top-24 max-lg:hidden self-start" aria-label="أعضاء المجتمع">
-            <CommunityMembersPanel
-              members={members}
-              states={rosterStates}
-              signInReturnTo="/community"
-            />
-          </aside>
+          <ResponsiveCommunityMembersPanel
+            members={members}
+            states={rosterStates}
+            signInReturnTo="/community"
+          />
         </div>
       </div>
 

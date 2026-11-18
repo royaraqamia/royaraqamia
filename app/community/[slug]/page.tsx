@@ -26,11 +26,7 @@ import { PostPublishedAt } from '../_components/post-published-at';
 import { PostEngagementBar } from './_components/post-engagement-bar';
 import { PostComments } from './_components/post-comments';
 import { PostViews } from '@/frontend/ui/shared/post-views';
-import {
-  loadPublishedPostBySlug,
-  loadCommunityPost,
-  loadPublishedPostSlugs,
-} from '@/backend/loaders/community';
+import { loadCommunityPost, loadPublishedPostSlugs } from '@/backend/loaders/community';
 import { getCanonicalOrigin } from '@/frontend/shared/constants';
 import { postExcerpt } from '@/shared/reading-time';
 import { markdownHeadings, remarkHeadingIds } from '@/shared/markdown/heading-ids';
@@ -78,7 +74,10 @@ export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await props.params;
-  const post = await loadPublishedPostBySlug(slug);
+  // The page's cache entry already carries the post and its author; a second
+  // loader with its own key used to read the same row again on a cold cache.
+  const loaded = await loadCommunityPost(slug);
+  const post = loaded?.post;
 
   if (!post) {
     return {

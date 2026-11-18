@@ -4,8 +4,7 @@ import { NotificationProvider, useNotifications } from '@/frontend/state/Notific
 import type { PostgresChangeHandlers } from '@/frontend/transport/supabase/realtime';
 
 const mocks = vi.hoisted(() => ({
-  getNotifications: vi.fn(),
-  getUnreadCount: vi.fn(),
+  getNotificationSummary: vi.fn(),
   markAsRead: vi.fn(),
   markAllAsRead: vi.fn(),
   deleteNotification: vi.fn(),
@@ -19,8 +18,7 @@ vi.mock('@/frontend/state/session-provider', () => ({
 }));
 
 vi.mock('@/frontend/api/notifications', () => ({
-  getNotifications: mocks.getNotifications,
-  getUnreadCount: mocks.getUnreadCount,
+  getNotificationSummary: mocks.getNotificationSummary,
   markAsRead: mocks.markAsRead,
   markAllAsRead: mocks.markAllAsRead,
   deleteNotification: mocks.deleteNotification,
@@ -60,12 +58,25 @@ beforeEach(() => {
       return () => {};
     }
   );
-  mocks.getNotifications.mockResolvedValue([makeNotif('n-1'), makeNotif('n-2')]);
-  mocks.getUnreadCount.mockResolvedValue(2);
+  mocks.getNotificationSummary.mockResolvedValue({
+    notifications: [makeNotif('n-1'), makeNotif('n-2')],
+    count: 2,
+  });
   mocks.markAsRead.mockResolvedValue(undefined);
 });
 
 describe('NotificationProvider unread count', () => {
+  it('reads the badge and the feed in one request', async () => {
+    render(
+      <NotificationProvider>
+        <Harness />
+      </NotificationProvider>
+    );
+
+    expect(await screen.findByTestId('unread')).toHaveTextContent('2');
+    expect(mocks.getNotificationSummary).toHaveBeenCalledTimes(1);
+  });
+
   it('decrements the unread count exactly once when a single notification is marked read', async () => {
     render(
       <NotificationProvider>

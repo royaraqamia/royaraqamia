@@ -12,6 +12,7 @@ import {
 import { normaliseSnapshotRoute } from '@/frontend/shared/local-store/snapshot-route';
 import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { requestWithMeta } from '@/frontend/transport/http';
+import { COMMUNITY_MAX_APPENDED_PAGES } from './constants';
 import { CommunityResults } from './community-results';
 import { CommunitySearchSummary } from './community-search-summary';
 import { communityFeedScope } from '@/frontend/ui/community/community-screen-scope';
@@ -25,6 +26,13 @@ import {
 interface CommunityIndexResultsProps {
   initialPosts: PostSummary[];
   initialNextCursor: string | null;
+  /**
+   * The query and cursor the server used to draw `initialPosts`. When the URL
+   * still names that page the rows are already correct, so the island must not
+   * spend a second server read replacing them.
+   */
+  initialQuery?: string;
+  initialCursor?: string | null;
   /**
    * Which feed this island is showing: the member's own (`following`) or the
    * public hub's (`index`). The two read different routes - one is per-viewer and
@@ -103,6 +111,8 @@ function CommunityFeedSkeleton() {
 export function CommunityIndexResults({
   initialPosts,
   initialNextCursor,
+  initialQuery = '',
+  initialCursor = null,
   source = 'index',
   emptyKind = 'none',
 }: CommunityIndexResultsProps) {
@@ -111,7 +121,9 @@ export function CommunityIndexResults({
   const path = source === 'following' ? '/api/community/following' : '/api/community/index';
   const cursor = searchParams.get('cursor');
   const query = searchParams.get('q')?.trim() ?? '';
-  const isDefault = !cursor && !query;
+  // "Default" means the URL matches the page the server rendered, not merely
+  // that no filter is present: a `?q=` document now carries that query's rows.
+  const isDefault = cursor === initialCursor && query === initialQuery;
   // The feed the member is reading is the one thing this path does not carry
   // once the island is reused for the other route (ADR-0181, #1421).
   useScreenScope(communityFeedScope(source));
@@ -127,7 +139,9 @@ export function CommunityIndexResults({
     ({ initialPosts: posts, initialNextCursor: next, isDefault: isDefaultView }) =>
       communityFeedInitialState(posts, next, isDefaultView)
   );
-  const { posts, nextCursor, ready, loadingMore, pageError, loadMoreError, recordable } = feed;
+  const { posts, nextCursor, ready, loadingMore, appended, pageError, loadMoreError, recordable } =
+    feed;
+  const canLoadMore = appended < COMMUNITY_MAX_APPENDED_PAGES;
   // Only a trigger for the effect below: nothing renders it.
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -162,10 +176,20 @@ export function CommunityIndexResults({
       });
 
     return () => controller.abort();
-  }, [path, cursor, query, isDefault, initialPosts, initialNextCursor, reloadKey]);
+  }, [
+    path,
+    cursor,
+    query,
+    isDefault,
+    initialPosts,
+    initialNextCursor,
+    initialQuery,
+    initialCursor,
+    reloadKey,
+  ]);
 
   const handleLoadMore = useCallback(() => {
-    if (loadingMore || !nextCursor) return;
+    if (loadingMore || !nextCursor || !canLoadMore) return;
     const requestCursor = nextCursor;
     dispatch({ type: 'moreStarted' });
     fetchIndex(path, requestCursor, query)
@@ -181,7 +205,7 @@ export function CommunityIndexResults({
         dispatch({ type: 'moreFailed', error });
       })
       .finally(() => dispatch({ type: 'moreFinished' }));
-  }, [path, loadingMore, nextCursor, query]);
+  }, [path, loadingMore, nextCursor, query, canLoadMore]);
 
   const handleRetryPage = useCallback(() => setReloadKey((key) => key + 1), []);
 
@@ -200,7 +224,9 @@ export function CommunityIndexResults({
   if (pageError) {
     return (
       <CommunityResults
+        path={pathname}
         posts={snapshot ? snapshot.posts : []}
+        canLoadMore={false}
         nextCursor={null}
         query={query}
         onLoadMore={handleLoadMore}
@@ -219,7 +245,9 @@ export function CommunityIndexResults({
     <>
       {query && <CommunitySearchSummary query={query} />}
       <CommunityResults
+        path={pathname}
         posts={posts}
+        canLoadMore={canLoadMore}
         nextCursor={nextCursor}
         query={query}
         onLoadMore={handleLoadMore}

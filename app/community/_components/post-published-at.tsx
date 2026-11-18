@@ -42,7 +42,25 @@ export function PostPublishedAt({ publishedAt }: { publishedAt: string }) {
     setValue(formatLocal(publishedAt));
   }, [publishedAt]);
 
-  if (!value) return null;
+  if (!value) {
+    // Reserve the byline's exact shape while the reader's timezone resolves:
+    // the row used to appear a frame later and push the article down.
+    return (
+      <span
+        className="inline-flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-muted-foreground"
+        aria-hidden="true"
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <Calendar className="size-3.5 text-primary/70 shrink-0" />
+          <span className="h-4 w-28 animate-pulse rounded bg-muted/60" />
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Clock className="size-3.5 text-primary/70 shrink-0" />
+          <span className="h-4 w-16 animate-pulse rounded bg-muted/60" />
+        </span>
+      </span>
+    );
+  }
 
   return (
     <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm text-muted-foreground">

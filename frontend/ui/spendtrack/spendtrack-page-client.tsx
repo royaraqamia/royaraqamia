@@ -129,7 +129,14 @@ function SpendtrackPageContent() {
   }, [isLoading, sessionUserId]);
 
   const range = searchParams.get('range') || 'this_month';
-  const filterCategories = (searchParams.get('categories') ?? '').split(',').filter(Boolean);
+  // A fresh array here used to invalidate four dashboard memos and the expense
+  // pagination memo on every render, recomputing all local rows for a state
+  // change that had nothing to do with the filter.
+  const categoriesParam = searchParams.get('categories') ?? '';
+  const filterCategories = useMemo(
+    () => categoriesParam.split(',').filter(Boolean),
+    [categoriesParam]
+  );
   const sort = searchParams.get('sort') || 'date_desc';
   const search = searchParams.get('search')?.trim() || undefined;
   const { start, end } = getDateRange(

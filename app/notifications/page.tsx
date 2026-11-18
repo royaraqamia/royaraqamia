@@ -43,8 +43,14 @@ export default function NotificationsPage() {
 function NotificationsFallback() {
   return (
     <main id="main-content" className="mx-auto w-full max-w-3xl px-4 pb-16 pt-6 sm:px-6">
-      <div className="h-11 w-full animate-pulse rounded-2xl bg-muted/60 sm:w-72" />
-      <LoadingList label="جاري التَّحميل..." rows={4} className="mt-4" />
+      {/* The view's frame reserves the mark-all row and the tab row before the
+          feed answers, so the list does not push them down when it lands. */}
+      <div className="mb-3 h-7" aria-hidden="true" />
+      <div
+        className="h-10 w-full animate-pulse rounded-full bg-muted/60 sm:w-72"
+        aria-hidden="true"
+      />
+      <LoadingList label="جاري التَّحميل..." rows={4} showTrailing={false} className="mt-4" />
     </main>
   );
 }

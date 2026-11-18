@@ -67,12 +67,6 @@ export const loadPublishedPostCategories = unstable_cache(
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.postCategories] }
 );
 
-export const loadPublishedPostBySlug = unstable_cache(
-  (slug: string) => pub().getPublishedPostBySlug(slug),
-  ['community-post-by-slug'],
-  { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.postBySlug] }
-);
-
 export const loadCommunityPost = unstable_cache(
   async (
     slug: string

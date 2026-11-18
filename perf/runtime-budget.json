@@ -1,6 +1,6 @@
 {
   "note": "Runtime (field) budget. These are Web Vitals ceilings measured from real users via Vercel Speed Insights, not build artifacts, so `perf:check` cannot enforce them. Review them against the dashboard. See docs/performance.md#runtime-budget.",
-  "source": "vercel.speed_insights",
+  "source": "app-perf:vitals",
   "aggregation": "p75",
   "window": "7d",
   "scope": "site-wide (all routes)",

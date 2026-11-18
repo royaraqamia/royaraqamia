@@ -2,23 +2,18 @@
 
    Loaded by `app/page.tsx`, so it only reaches a visitor on that surface. It
    carries the utilities Landing renders and nothing the shell already ships in
-   `app/global.css`: same layer order, same tokens, nothing redefined. */
+   `app/global.css`: same layer order, same tokens, nothing redefined.
+
+   The old landing sections (hero, metric cards, services, testimonials) are no
+   longer rendered by `/`, so their sources were dropped: Tailwind was compiling
+   their utilities into the door page's stylesheet for components nobody draws. */
 
 @import './surface.css';
 
 @source './page.tsx';
 @source '../frontend/ui/Navbar.tsx';
 @source '../frontend/ui/HomePageContent.tsx';
-@source '../frontend/ui/Hero.tsx';
-@source '../frontend/ui/MetricCards.tsx';
-@source '../frontend/ui/Services.tsx';
-@source '../frontend/ui/Testimonials.tsx';
-@source '../frontend/ui/TestimonialsCarousel.tsx';
-@source '../frontend/ui/testimonials-meta.tsx';
-@source '../frontend/ui/MotionReveal.tsx';
 @source '../frontend/ui/HorizontalScrollArrows.tsx';
-@source '../frontend/ui/TestimonialReviewDialog.tsx';
-@source '../frontend/ui/lazy-sections.ts';
 @source '../frontend/ui/services';
 @source '../frontend/ui/plans';
 @source '../frontend/ui/app-shell';
