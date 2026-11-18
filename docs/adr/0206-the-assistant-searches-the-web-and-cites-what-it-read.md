@@ -1,5 +1,9 @@
 # 0206. The assistant searches the web and cites what it read
 
+> **Amended 2026-11-18.** A search now gets one retry of a transient failure, an
+> eight-second ceiling instead of four, and a single failure sentence per turn.
+> Vendor status codes never reach the model. See the amendment at the end.
+
 ## Status
 
 Accepted (program). Phase 0 is the client, the tool and the turn wiring; phase 1 is the citation
@@ -140,3 +144,32 @@ The provider landscape on 2026-11-17, checked rather than remembered:
   normalized query with a 24-hour expiry is the first lever; it is cheaper than a provider change
   and it makes a repeated question instant. That decision is deferred until a measurement asks for
   it, not taken speculatively now.
+
+## Amendment (2026-11-18) — one failure, one sentence
+
+A real turn showed the model answering that the web search "did not respond three times". The
+vendor had recorded three requests; the four-second ceiling cut them off before their answers
+arrived, and the turn passed the raw English error text (`search answered 403`, a timeout string)
+into the tool message. The model had no single sentence to work with and spent three rounds
+narrating the retries.
+
+Three changes follow from that:
+
+- The client's own ceiling is eight seconds, still well inside the turn's 55. A basic search with
+  three chunks and a detected date is not reliably answered in four.
+- The one retry is no longer limited to a short `429`. It also covers a `5xx`, a dropped connection
+  and our own timeout — the failures a second attempt actually fixes. A refused key, a spent plan
+  and a malformed answer are still final, and a turn that has already aborted is never retried.
+- `search_web` turns any failure into `WEB_SEARCH_UNAVAILABLE` before the answer reaches the model;
+  the operator still gets the kind and the error in the log. A search that failed is not called
+  again later in the same turn, so a dead vendor costs one attempt rather than three.
+
+The budget, the citation payload and the tool contract are unchanged. A refused credential is now
+logged at error level so it reaches the operator's alerts as the turn's own refused credential
+already does.
+
+One deployment constraint was measured during the same check: Tavily answers a keyed request from a
+US or European egress and returns a CloudFront 403 from a Syrian one. The call is made by the server,
+so a member's own address never reaches the vendor — a Syrian member of a deployment on Vercel
+`dub1` or Render `frankfurt` searches without a VPN. Running `npm run dev` from a blocked region is
+the one case that needs the Node process itself routed through an allowed proxy.

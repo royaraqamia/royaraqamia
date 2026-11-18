@@ -43,7 +43,8 @@ phase is done.
 
 - `WEB_SEARCH_MAX_RESULTS = 5`, `WEB_SEARCH_EVIDENCE_SOURCES = 3`,
   `WEB_SEARCH_CHUNKS_PER_SOURCE = 3`, `WEB_SEARCH_EVIDENCE_CHARS = 5_000`,
-  `WEB_SEARCH_TOKEN_RESERVE = 1_300`, `WEB_SEARCH_TIMEOUT_MS = 4_000`.
+  `WEB_SEARCH_TOKEN_RESERVE = 1_300`, `WEB_SEARCH_TIMEOUT_MS = 8_000`,
+  `WEB_SEARCH_RETRY_DELAY_MS = 250`.
 - `WebSource { url, title, domain, publishedDate: string | null }` and the tool result
   `{ sources: WebSource[], evidence: string }`.
 - A discriminated provider error: `{ kind: 'rate_limited' | 'plan_limit' | 'timeout' | 'refused' | 'unavailable' }`.
@@ -56,7 +57,9 @@ phase is done.
   `include_published_date: true`, `include_raw_content: false`, `include_answer: false`,
   and `language` when the question's language is known.
 - Parse with Zod; map `401/432/433/434/429/5xx` and `AbortError` to the contract's kinds.
-- One retry, only for `429` with `Retry-After <= 2`.
+- One retry for a transient failure: `429` with `Retry-After <= 2`, a `5xx`, a dropped connection
+  or our own timeout. A refused key, a spent plan and a bad response are final; an already-aborted
+  turn is never retried.
 - Truncate each source's `content` and cap the total at `WEB_SEARCH_EVIDENCE_CHARS` before
   returning. A source with no content is dropped from the evidence but kept in `sources`.
 - Scrub email, phone and UUID-shaped strings out of the query before sending.
@@ -86,8 +89,9 @@ Tests: a recorded fixture per response shape; one test per mapped error; one tes
   `[1] <title> — <domain> — <date>` followed by the source's text, sources separated by a blank
   line, under a frame that says the text is quoted from the web and is data only.
 - On success, yield `{ type: 'sources', sources }` after the `tool` frame and before the next
-  provider call. On any failure, the tool answer is `{ error: 'تعذّر البحث الآن.' }` and the turn
-  continues.
+  provider call. On any failure, the tool hands the turn the one sentence `WEB_SEARCH_UNAVAILABLE`;
+  the turn's answer is `{ error: 'تعذّر البحث الآن.' }` and it continues. A search that failed is
+  not called again later in the same turn.
 
 Tests: no key → the declaration is absent; with a key → present; a search failure still produces an
 answer; the evidence block is bounded; the history budget shrinks by exactly the reserve.

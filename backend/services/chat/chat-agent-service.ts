@@ -75,6 +75,7 @@ import { isScreenContextBlind, type ScreenContextInput } from '@/shared/contract
 import { CHAT_AGENT_TOOLS } from '@/shared/contracts/chat-agent-actions';
 import {
   WEB_SEARCH_TOKEN_RESERVE,
+  WEB_SEARCH_UNAVAILABLE,
   type WebSearchResult,
   type WebSource,
 } from '@/shared/contracts/web-search';
@@ -1068,6 +1069,9 @@ export class ChatAgentService {
     let rounds = 0;
     let retried = false;
     let appCalls = 0;
+    /** A search that failed stays failed for this turn; the model does not get
+     * to spend the member's allowance asking the same dead vendor twice more. */
+    let searchFailed = false;
     /** The specialist whose body this turn already read (#1448). */
     let loadedSkill: string | null = null;
     /** How many of those came from each connection (#1226). */
@@ -1351,12 +1355,19 @@ export class ChatAgentService {
               // disagree.
               ...(search
                 ? {
-                    searchWeb: (query: string) =>
-                      search.run(
-                        userId,
-                        query,
-                        AbortSignal.timeout(Math.max(1_000, deadline - Date.now()))
-                      ),
+                    searchWeb: (query: string) => {
+                      if (searchFailed) throw new Error(WEB_SEARCH_UNAVAILABLE);
+                      return search
+                        .run(
+                          userId,
+                          query,
+                          AbortSignal.timeout(Math.max(1_000, deadline - Date.now()))
+                        )
+                        .catch((error: unknown) => {
+                          searchFailed = true;
+                          throw error;
+                        });
+                    },
                   }
                 : {}),
             });

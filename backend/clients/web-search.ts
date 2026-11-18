@@ -8,6 +8,7 @@ import {
   WEB_SEARCH_EVIDENCE_SOURCES,
   WEB_SEARCH_MAX_RESULTS,
   WEB_SEARCH_QUERY_MIN,
+  WEB_SEARCH_RETRY_DELAY_MS,
   WEB_SEARCH_TIMEOUT_MS,
   WebSearchError,
   type WebSearchErrorKind,
@@ -136,6 +137,9 @@ class TavilyWebSearchClient implements WebSearchClient {
     const timer = setTimeout(() => controller.abort(), WEB_SEARCH_TIMEOUT_MS);
     const forwardAbort = () => controller.abort();
     options.signal?.addEventListener('abort', forwardAbort, { once: true });
+    // A listener added after an abort never fires: carry an already-dead turn
+    // signal into the fetch so it stops before leaving the deployment.
+    if (options.signal?.aborted) controller.abort();
 
     try {
       const response = await fetch(TAVILY_SEARCH_URL, {
@@ -159,30 +163,51 @@ class TavilyWebSearchClient implements WebSearchClient {
         signal: controller.signal,
       });
 
-      // One retry, and only when the vendor says the wait is shorter than the
-      // turn would notice. A longer window is a search that did not happen.
-      if (response.status === 429 && attempt === 0) {
-        const wait = Number(response.headers.get('retry-after') ?? '');
-        if (Number.isFinite(wait) && wait > 0 && wait <= 2) {
-          await sleep(wait * 1_000);
-          return this.request(query, options, 1);
-        }
-      }
-
       if (!response.ok) {
         const kind = errorKindForStatus(response.status);
-        logger.warn('Web search refused', { kind, status: response.status });
+        // A short rate limit or a vendor-side failure is worth one more request;
+        // a refused key, a spent plan and a bad request are not. The turn's own
+        // abort wins over any of them.
+        const wait = Number(response.headers.get('retry-after') ?? '');
+        const shortWait = Number.isFinite(wait) && wait > 0 && wait <= 2 ? wait : null;
+        const transient = (kind === 'rate_limited' && shortWait !== null) || response.status >= 500;
+        if (attempt === 0 && transient && !options.signal?.aborted) {
+          await sleep(shortWait === null ? WEB_SEARCH_RETRY_DELAY_MS : shortWait * 1_000);
+          return this.request(query, options, 1);
+        }
+        // A refused credential is the deployment's fault and belongs in the
+        // operator's alerts, not among the turn-by-turn warnings.
+        if (kind === 'refused') {
+          logger.error('Web search refused a credential', { status: response.status });
+        } else {
+          logger.warn('Web search refused', { kind, status: response.status });
+        }
         throw new WebSearchError(kind, `search answered ${response.status}`);
       }
 
-      const parsed = TavilyResponseSchema.safeParse(await response.json());
+      let body: unknown;
+      try {
+        body = await response.json();
+      } catch {
+        // An unreadable body will be the same on the second request. Retrying
+        // it would spend another credit without changing the answer.
+        throw new WebSearchError('unavailable', 'the search response was not readable');
+      }
+      const parsed = TavilyResponseSchema.safeParse(body);
       if (!parsed.success) {
         throw new WebSearchError('unavailable', 'the search response was not the shape we read');
       }
       return parsed.data;
     } catch (error) {
       if (error instanceof WebSearchError) throw error;
-      if (controller.signal.aborted) {
+      const timedOut = controller.signal.aborted;
+      // A slow vendor or a dropped connection is the case a second attempt
+      // actually fixes. An abort from the turn is not: the answer is over.
+      if (attempt === 0 && !options.signal?.aborted) {
+        await sleep(WEB_SEARCH_RETRY_DELAY_MS);
+        return this.request(query, options, 1);
+      }
+      if (timedOut) {
         throw new WebSearchError('timeout', 'the search did not answer in time');
       }
       throw new WebSearchError(

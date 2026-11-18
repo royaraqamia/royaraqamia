@@ -1972,4 +1972,23 @@ describe('web search in the turn (ADR-0206)', () => {
     expect(events.some((event) => event.type === 'sources')).toBe(false);
     expect(events.at(-1)).toMatchObject({ type: 'done', message: { body: 'لا أستطيع التأكيد.' } });
   });
+
+  it('does not ask a failed search again in a later round', async () => {
+    const client = scriptedClient([
+      [toolCall('search_web', { query: 'سعر الذهب اليوم' })],
+      [toolCall('search_web', { query: 'سعر الذهب اليوم' })],
+      textStream('لا أستطيع التأكيد.'),
+    ]);
+    const search = {
+      run: vi.fn(async () => {
+        throw new Error('search answered 403');
+      }),
+    };
+    const { service } = makeService({ client, search });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤالي', TURN_CONTEXT));
+
+    expect(search.run).toHaveBeenCalledTimes(1);
+    expect(events.at(-1)).toMatchObject({ type: 'done', message: { body: 'لا أستطيع التأكيد.' } });
+  });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   chatAgentTool,
@@ -8,6 +8,7 @@ import {
   type ChatAgentToolContext,
 } from '@/backend/services/chat/chat-agent-tools';
 import type { ScreenContext } from '@/shared/contracts/screen-context';
+import { WEB_SEARCH_UNAVAILABLE } from '@/shared/contracts/web-search';
 import {
   CHAT_AGENT_TOOLS,
   CHAT_AGENT_TOOL_NAMES,
@@ -142,5 +143,21 @@ describe('the assistant’s tool registry (#818)', () => {
     expect(
       remember!.schema.safeParse({ text: 'أحبّ القهوة', user_id: 'someone-else' }).success
     ).toBe(false);
+  });
+});
+
+describe('search_web failure (ADR-0206)', () => {
+  it('hands the model the one Arabic sentence, never the vendor’s error text', async () => {
+    const searchWeb = vi.fn(async () => {
+      throw new Error('search answered 403');
+    });
+    const tool = chatAgentTool('search_web')!;
+
+    await expect(tool.run({ query: 'سعر الذهب' }, turnContext({ searchWeb }))).rejects.toThrow(
+      WEB_SEARCH_UNAVAILABLE
+    );
+    await expect(tool.run({ query: 'سعر الذهب' }, turnContext({ searchWeb }))).rejects.not.toThrow(
+      '403'
+    );
   });
 });
