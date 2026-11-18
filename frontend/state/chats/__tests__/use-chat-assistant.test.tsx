@@ -103,6 +103,118 @@ describe('useChatAssistant', () => {
     expect(result.current.error).toBe('ثلاث صور في السؤال الواحد');
   });
 
+  it('stops a running answer without losing the question or the text already written', async () => {
+    let rejectStream: ((error: Error) => void) | null = null;
+    let seenSignal: AbortSignal | undefined;
+    api.streamChatAgentTurn.mockImplementation(
+      async (_id, _body, onEvent: (event: unknown) => void, _attachments, _screen, signal) => {
+        seenSignal = signal;
+        onEvent({ type: 'delta', text: 'جزء من الرد' });
+        await new Promise<void>((_resolve, reject) => {
+          rejectStream = reject;
+        });
+      }
+    );
+
+    const { result } = renderHook(() => useChatAssistant('c-1', true, () => undefined));
+    let asking!: Promise<boolean>;
+    act(() => {
+      asking = result.current.ask('سؤال', []);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.isStreaming).toBe(true);
+    expect(seenSignal).toBeDefined();
+
+    await act(async () => {
+      result.current.stop();
+      rejectStream?.(new Error('Aborted'));
+      await asking;
+    });
+
+    expect(seenSignal?.aborted).toBe(true);
+    expect(result.current.isStreaming).toBe(false);
+    expect(result.current.error).toBeNull();
+    expect(result.current.interrupted).toBe('جزء من الرد');
+  });
+
+  it('a follow-up stops the running answer and starts its own turn', async () => {
+    const bodies: string[] = [];
+    const rejects: Array<(error: Error) => void> = [];
+    api.streamChatAgentTurn.mockImplementation(
+      async (_id, body, _onEvent, _attachments, _screen, signal) => {
+        bodies.push(body);
+        void signal;
+        await new Promise<void>((_resolve, reject) => {
+          rejects.push(reject);
+        });
+      }
+    );
+
+    const { result } = renderHook(() => useChatAssistant('c-1', true, () => undefined));
+    act(() => {
+      void result.current.ask('الأول', []);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(bodies).toEqual(['الأول']);
+
+    await act(async () => {
+      void result.current.ask('الثاني', []);
+    });
+    await act(async () => {
+      for (let tick = 0; tick < 5; tick += 1) await Promise.resolve();
+    });
+    expect(bodies).toEqual(['الأول', 'الثاني']);
+    expect(result.current.isStreaming).toBe(true);
+    expect(result.current.pending?.message.body).toBe('الثاني');
+
+    await act(async () => {
+      rejects.forEach((reject) => reject(new Error('Aborted')));
+    });
+  });
+
+  it('keeps the uploaded bytes when the question was stored before a network drop', async () => {
+    const uploaded = {
+      storagePath: 'c-1/uuid/shot.webp',
+      fileName: 'shot.webp',
+      mimeType: 'image/webp',
+      byteSize: 12_345,
+    };
+    transport.uploadChatAttachment.mockResolvedValue(uploaded);
+    api.streamChatAgentTurn.mockImplementation(
+      async (_id, _body, onEvent: (event: unknown) => void) => {
+        onEvent({
+          type: 'question',
+          message: {
+            id: 'message-9',
+            conversationId: 'c-1',
+            senderId: 'user-1',
+            senderKind: 'user',
+            body: 'سؤال',
+            replyToId: null,
+            editedAt: null,
+            deletedAt: null,
+            createdAt: '2026-11-09T10:00:00.000Z',
+            attachments: [],
+            replyTo: null,
+          },
+        });
+        throw new Error('انقطع الاتصال');
+      }
+    );
+
+    const { result } = renderHook(() => useChatAssistant('c-1', true, () => undefined));
+    await act(async () => {
+      await result.current.ask('سؤال', [new File(['bytes'], 'shot.png', { type: 'image/png' })]);
+    });
+
+    expect(transport.removeChatAttachmentObjects).not.toHaveBeenCalled();
+    expect(result.current.pending?.stored).toBe(true);
+  });
+
   it('keeps the text that arrived before a turn failed', async () => {
     api.streamChatAgentTurn.mockImplementation(
       async (_id: string, _body: string, onEvent: (event: unknown) => void) => {

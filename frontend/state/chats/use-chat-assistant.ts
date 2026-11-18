@@ -12,6 +12,7 @@ import type {
   ChatAgentEvent,
   ChatAgentPhase,
   ChatAttachment,
+  ChatAttachmentInput,
 } from '@/shared/contracts/chat';
 import type { WebSource } from '@/shared/contracts/web-search';
 import { publishedScreen } from '@/frontend/state/screen-context';
@@ -51,6 +52,8 @@ export interface ChatAssistantState {
   pending: PendingTurn | null;
   /** The bytes a staged file's preview reads, while the bubble is still local. */
   pendingUrl: (attachment: ChatAttachment) => Promise<string | null>;
+  /** Stop the answer in flight; its question and any text already written stay. */
+  stop: () => void;
   /** Send the failed question again, files included. */
   retryPending: () => void;
   /** The thread drew the stored row: the local copy has done its job. */
@@ -105,6 +108,14 @@ export function useChatAssistant(
     files: File[];
     previews: Record<string, string>;
   } | null>(null);
+  /** The request in flight, so a stop reaches the fetch and a follow-up can interrupt it. */
+  const abortRef = useRef<AbortController | null>(null);
+  /** The newest turn wins: a stopped turn's cleanup never clears its successor. */
+  const turnSeqRef = useRef(0);
+
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   const releasePreviews = useCallback(() => {
     const staged = stagedRef.current;
@@ -134,7 +145,14 @@ export function useChatAssistant(
   const ask = useCallback(
     async (body: string, files: File[]) => {
       const question = body.trim();
-      if ((!question && files.length === 0) || isStreaming) return false;
+      if (!question && files.length === 0) return false;
+
+      // A follow-up sent while an answer is running stops that answer first —
+      // the way ChatGPT, Claude and Gemini behave — then starts its own turn.
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const turn = ++turnSeqRef.current;
 
       // A retry replaces the failed bubble, so its bytes go with it.
       releasePreviews();
@@ -153,67 +171,81 @@ export function useChatAssistant(
       beginAssistantTurn(conversationId);
 
       let failure: string | null = null;
+      let stopped = false;
+      let questionStored = false;
+      let uploaded: ChatAttachmentInput[] = [];
 
       try {
         // Files go up before the turn so the thread can show them and the server
         // can read their bytes back — a recording to transcribe, an image or a
         // text file to hand the model (ADR-0126, ADR-0127).
-        const attachments = await Promise.all(
+        uploaded = await Promise.all(
           files.map((file) => uploadChatAttachment(conversationId, file))
         );
 
-        try {
-          await streamChatAgentTurn(
-            conversationId,
-            question,
-            (event: ChatAgentEvent) => {
-              if (event.type === 'question') {
-                dispatch({ type: 'questionStored', message: event.message });
-              } else if (event.type === 'delta') {
-                dispatch({ type: 'delta', text: event.text });
-                if (event.text) setAssistantPhase(conversationId, { kind: 'writing' });
-              } else if (event.type === 'error') failure = event.error;
-              else if (event.type === 'sources') {
-                dispatch({ type: 'sourcesSeen', sources: event.sources });
-              } else if (event.type === 'tool_start') {
-                dispatch({ type: 'toolStarted', activity: event.activity });
-                setAssistantPhase(conversationId, { kind: 'tool', label: event.activity });
-              } else if (event.type === 'tool') {
-                dispatch({ type: 'toolFinished' });
-                // The row's provenance is what the answer used; a failed read
-                // produced nothing to cite.
-                if (event.ok) dispatch({ type: 'toolUsed', label: event.label });
-              } else if (event.type === 'proposal') {
-                dispatch({ type: 'proposalSeen' });
-                setAssistantPhase(conversationId, { kind: 'proposal' });
-              }
-            },
-            attachments,
-            // Read at send time rather than at render time: the page may have
-            // settled after the composer was drawn (ADR-0181).
-            publishedScreen()
-          );
-        } catch (caught) {
-          // The objects are already in the bucket and no message will ever name
-          // them, so they go back before the refusal is shown.
-          await removeChatAttachmentObjects(attachments.map((file) => file.storagePath));
-          throw caught;
-        }
+        await streamChatAgentTurn(
+          conversationId,
+          question,
+          (event: ChatAgentEvent) => {
+            if (event.type === 'question') {
+              questionStored = true;
+              dispatch({ type: 'questionStored', message: event.message });
+            } else if (event.type === 'delta') {
+              dispatch({ type: 'delta', text: event.text });
+              if (event.text) setAssistantPhase(conversationId, { kind: 'writing' });
+            } else if (event.type === 'error') failure = event.error;
+            else if (event.type === 'sources') {
+              dispatch({ type: 'sourcesSeen', sources: event.sources });
+            } else if (event.type === 'tool_start') {
+              dispatch({ type: 'toolStarted', activity: event.activity });
+              setAssistantPhase(conversationId, { kind: 'tool', label: event.activity });
+            } else if (event.type === 'tool') {
+              dispatch({ type: 'toolFinished' });
+              // The row's provenance is what the answer used; a failed read
+              // produced nothing to cite.
+              if (event.ok) dispatch({ type: 'toolUsed', label: event.label });
+            } else if (event.type === 'proposal') {
+              dispatch({ type: 'proposalSeen' });
+              setAssistantPhase(conversationId, { kind: 'proposal' });
+            }
+          },
+          uploaded,
+          // Read at send time rather than at render time: the page may have
+          // settled after the composer was drawn (ADR-0181).
+          publishedScreen(),
+          controller.signal
+        );
       } catch (caught) {
-        failure = caught instanceof Error && caught.message ? caught.message : 'تعذّر إرسال السؤال';
+        if (controller.signal.aborted) {
+          stopped = true;
+        } else {
+          failure =
+            caught instanceof Error && caught.message ? caught.message : 'تعذّر إرسال السؤال';
+        }
       } finally {
-        dispatch({ type: 'turnSettled', failure });
-        endAssistantTurn(conversationId);
+        // Only a question the server never stored owns these objects. A network
+        // drop after the question event must not delete files its row names.
+        if (failure && !questionStored && uploaded.length > 0) {
+          await removeChatAttachmentObjects(uploaded.map((file) => file.storagePath));
+        }
+        if (turnSeqRef.current === turn) {
+          if (abortRef.current === controller) abortRef.current = null;
+          dispatch({ type: 'turnSettled', failure, stopped });
+          endAssistantTurn(conversationId);
+        }
       }
+
+      // A stopped turn is a successor's business now; do not re-read on its behalf.
+      if (turnSeqRef.current !== turn) return false;
 
       // Both outcomes spend or return allowance, so the meter is re-read either
       // way — and the stored reply is the thread's own read, not a local guess.
       await refresh();
       onAnswered();
 
-      return failure === null;
+      return failure === null && !stopped;
     },
-    [conversationId, isStreaming, onAnswered, refresh, releasePreviews]
+    [conversationId, onAnswered, refresh, releasePreviews]
   );
 
   const pendingUrl = useCallback(async (attachment: ChatAttachment) => {
@@ -242,6 +274,7 @@ export function useChatAssistant(
     sources,
     pending,
     pendingUrl,
+    stop,
     retryPending,
     dismissPending,
     error,

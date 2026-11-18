@@ -320,13 +320,15 @@ export async function streamChatAgentTurn(
   body: string,
   onEvent: (event: ChatAgentEvent) => void,
   attachments?: ChatAttachmentInput[] | null,
-  screen?: ScreenContextInput | null
+  screen?: ScreenContextInput | null,
+  signal?: AbortSignal
 ): Promise<void> {
   let response: Response;
   try {
     response = await fetch(`/api/chats/${id}/assistant`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      ...(signal ? { signal } : {}),
       body: JSON.stringify({
         body,
         ...(attachments && attachments.length > 0 ? { attachments } : {}),

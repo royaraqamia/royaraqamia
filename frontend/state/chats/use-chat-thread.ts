@@ -130,6 +130,8 @@ export function useChatThread(
   const markedRef = useRef<string | null>(null);
   /** One Wi-Fi prefetch per open, not one per revalidation. */
   const prefetchedRef = useRef(false);
+  /** A press is in flight before React has re-rendered the disabled composer. */
+  const sendingRef = useRef(false);
 
   /**
    * A hidden tab has shown nobody anything, so it stamps nothing: the watermark
@@ -349,7 +351,8 @@ export function useChatThread(
   const send = useCallback(
     async (body: string, files: File[] = []) => {
       const trimmed = body.trim();
-      if (!trimmed && files.length === 0) return false;
+      if ((!trimmed && files.length === 0) || sendingRef.current) return false;
+      sendingRef.current = true;
 
       const store = storeRef.current;
       const senderId = identityUserId(identity);
@@ -382,6 +385,7 @@ export function useChatThread(
           return false;
         } finally {
           dispatch({ type: 'sendFinished' });
+          sendingRef.current = false;
         }
       }
 
@@ -416,6 +420,7 @@ export function useChatThread(
         return false;
       } finally {
         dispatch({ type: 'sendFinished' });
+        sendingRef.current = false;
       }
     },
     [conversationId, identity, refresh]

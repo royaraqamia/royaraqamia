@@ -53,7 +53,7 @@ export type ChatAssistantAction =
   | { type: 'sourcesSeen'; sources: WebSource[] }
   | { type: 'proposalSeen' }
   | { type: 'pendingDismissed' }
-  | { type: 'turnSettled'; failure: string | null };
+  | { type: 'turnSettled'; failure: string | null; stopped?: boolean };
 
 export function chatAssistantInitialState(): ChatAssistantTurn {
   return {
@@ -141,7 +141,9 @@ export function chatAssistantReducer(
         phase: null,
         streamingText: '',
         interrupted:
-          action.failure && state.streamingText.trim() ? state.streamingText : state.interrupted,
+          (action.failure || action.stopped) && state.streamingText.trim()
+            ? state.streamingText
+            : state.interrupted,
         pending:
           action.failure && state.pending && !state.pending.stored
             ? { ...state.pending, status: 'failed' }

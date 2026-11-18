@@ -631,6 +631,7 @@ class ChatsRepository(
         files: List<ChatComposeFile>,
         screen: ScreenContextInput?,
         onEvent: (com.royaraqamia.app.assistant.AssistantEvent) -> Unit,
+        onStopped: (() -> Boolean)? = null,
     ): ApiResult<Unit> =
         withContext(Dispatchers.IO) {
             val storage = attachmentStorage
@@ -682,8 +683,12 @@ class ChatsRepository(
                     com.royaraqamia.app.assistant.parseAssistantEvent(data)?.let(onEvent)
                 }
 
-            // A turn that never landed leaves no message naming those objects.
-            if (result is ApiResult.Failure) storage?.remove(uploaded.map { it.storagePath })
+            // A turn that never landed leaves no message naming those objects —
+            // unless the member stopped it: the question is already stored and
+            // its row still names them.
+            if (result is ApiResult.Failure && onStopped?.invoke() != true) {
+                storage?.remove(uploaded.map { it.storagePath })
+            }
             result
         }
 

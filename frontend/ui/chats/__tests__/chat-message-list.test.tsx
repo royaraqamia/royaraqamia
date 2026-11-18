@@ -60,6 +60,7 @@ const assistant: ChatAssistantState = {
   pending: null,
   pendingUrl: async () => null,
   retryPending: vi.fn(),
+  stop: vi.fn(),
   dismissPending: vi.fn(),
   error: null,
   ask: vi.fn(),
@@ -120,6 +121,16 @@ describe('ChatMessageList', () => {
 
     expect(screen.getByText(/منذ/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'حذف الرسالة' })).toBeInTheDocument();
+  });
+
+  it('says nothing about a queued line but keeps the failure and its retry', () => {
+    const queued = message({ id: 'm-1', body: 'مرحباً', clientId: 'client-1' });
+    const { rerender } = render(list([queued], { pending: { 'client-1': 'queued' } }));
+    expect(screen.queryByText('قيد الإرسال')).toBeNull();
+
+    rerender(list([queued], { pending: { 'client-1': 'failed' } }));
+    expect(screen.getByText('تعذّر إرسال الرسالة')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'إعادة المحاولة' })).toBeInTheDocument();
   });
 
   it('separates the days a conversation crosses', () => {

@@ -325,7 +325,7 @@ fun AssistantSheet(
 
     fun send() {
         val id = threadId ?: return
-        if (asking) return
+        // A follow-up while the answer runs stops it; the turn store owns that.
         val body = draft.trim()
         val files = staged
         if (body.isEmpty() && files.isEmpty()) return
@@ -458,6 +458,7 @@ fun AssistantSheet(
                             onActionAnswer = ::answerAction,
                             actionBusy = actionBusy,
                             streaming = turn?.streaming.orEmpty(),
+                            interrupted = turn?.interrupted.orEmpty(),
                             tools = turn?.tools.orEmpty(),
                             sources = turn?.sources.orEmpty(),
                             asking = asking,
@@ -513,7 +514,7 @@ fun AssistantSheet(
                     if (quota != null) {
                         ChatComposerAttach(
                             files = staged,
-                            enabled = !asking,
+                            enabled = true,
                             onPicked = ::stage,
                             onRemove = { index ->
                                 staged = staged.filterIndexed { at, _ -> at != index }
@@ -529,7 +530,7 @@ fun AssistantSheet(
                             value = draft,
                             onValueChange = { draft = it },
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp, max = 128.dp),
-                            enabled = !asking,
+                            enabled = true,
                             placeholder = {
                                 Text(
                                     text = AssistantPanelCopy.PLACEHOLDER,
@@ -541,24 +542,34 @@ fun AssistantSheet(
                             shape = RoundedCornerShape(12.dp),
                             maxLines = 5,
                         )
-                        IconButton(
-                            onClick = ::send,
-                            enabled =
-                                !asking &&
-                                    (draft.isNotBlank() || staged.isNotEmpty()),
-                            modifier = Modifier.size(48.dp),
-                        ) {
-                            Icon(
-                                imageVector = LucideVectors.Send,
-                                contentDescription = AssistantPanelCopy.SEND,
-                                tint =
-                                    if (draft.isNotBlank() || staged.isNotEmpty()) {
-                                        RoyColors.primary
-                                    } else {
-                                        RoyColors.mutedForeground
-                                    },
-                                modifier = Modifier.size(20.dp),
-                            )
+                        val hasQuestion = draft.isNotBlank() || staged.isNotEmpty()
+                        if (asking && !hasQuestion) {
+                            IconButton(
+                                onClick = { threadId?.let(turns::stop) },
+                                modifier = Modifier.size(48.dp),
+                            ) {
+                                Icon(
+                                    imageVector = LucideVectors.Square,
+                                    contentDescription = AssistantPanelCopy.STOP,
+                                    tint = RoyColors.primary,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
+                        } else {
+                            IconButton(
+                                onClick = ::send,
+                                enabled = hasQuestion,
+                                modifier = Modifier.size(48.dp),
+                            ) {
+                                Icon(
+                                    imageVector = LucideVectors.Send,
+                                    contentDescription = AssistantPanelCopy.SEND,
+                                    tint =
+                                        if (hasQuestion) RoyColors.primary
+                                        else RoyColors.mutedForeground,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -672,6 +683,7 @@ private fun AssistantConversation(
     onActionAnswer: (String, String) -> Unit,
     actionBusy: Boolean,
     streaming: String,
+    interrupted: String,
     tools: List<String>,
     sources: List<AssistantSource>,
     asking: Boolean,
@@ -707,7 +719,7 @@ private fun AssistantConversation(
         hasOlder = hasOlder,
         onLoadOlder = onLoadOlder,
         emptyBody = AssistantPanelCopy.ATTACHMENT_ONLY,
-        followKey = listOf(messages.size, asking, streaming.length, tools.size),
+        followKey = listOf(messages.size, asking, streaming.length, interrupted.length, tools.size),
         modifier = Modifier.fillMaxWidth().fillMaxHeight(),
         intro = if (messages.isEmpty() && !asking) {
             { AssistantIntro() }
@@ -730,6 +742,22 @@ private fun AssistantConversation(
                     sources = sources,
                     type = type,
                     readNote = !Regex("\\[\\d{1,2}\\]").containsMatchIn(streaming),
+                )
+            }
+            // A stopped answer keeps what the member already read, named as
+            // unfinished — the same line the site draws under a partial answer.
+            if (interrupted.isNotEmpty()) {
+                AssistantBubble {
+                    Text(
+                        text = interrupted,
+                        style = type.small,
+                        color = RoyColors.foreground,
+                    )
+                }
+                Text(
+                    text = AssistantPanelCopy.INTERRUPTED,
+                    style = type.xs,
+                    color = RoyColors.mutedForeground,
                 )
             }
         },

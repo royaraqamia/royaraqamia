@@ -36,6 +36,7 @@ const ASSISTANT = {
   pending: null,
   pendingUrl: vi.fn(async () => null),
   retryPending: vi.fn(),
+  stop: vi.fn(),
   dismissPending: vi.fn(),
   error: null,
   ask: vi.fn(async () => true),
@@ -110,6 +111,40 @@ describe('AssistantComposer pictures', () => {
     // Three decodes, not four: the refusal happens before the work.
     expect(shrink.shrinkChatImage).toHaveBeenCalledTimes(3);
     expect(screen.queryByText('shot-4.png')).toBeNull();
+  });
+});
+
+/**
+ * While the answer runs the field stays live: an empty row offers stop, and the
+ * first keystroke turns that same slot back into send (ChatGPT/Claude/Gemini).
+ */
+describe('AssistantComposer while an answer streams', () => {
+  it('offers stop while the field is empty and send once there is a question', () => {
+    const { rerender } = render(
+      <AssistantComposer
+        assistant={{ ...ASSISTANT, isStreaming: true }}
+        quota={QUOTA}
+        draft=""
+        onDraft={() => undefined}
+        onAsk={() => undefined}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'إيقاف الرد' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox')).toHaveAttribute('contenteditable', 'true');
+
+    rerender(
+      <AssistantComposer
+        assistant={{ ...ASSISTANT, isStreaming: true }}
+        quota={QUOTA}
+        draft="سؤال تالٍ"
+        onDraft={() => undefined}
+        onAsk={() => undefined}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: 'إيقاف الرد' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'إرسال السؤال' })).toBeInTheDocument();
   });
 });
 

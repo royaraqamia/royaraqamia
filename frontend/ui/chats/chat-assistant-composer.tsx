@@ -17,6 +17,7 @@ import {
   stageFiles,
 } from './attachment-quota';
 import { ASSISTANT_COPY } from './assistant-copy';
+import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { ChatComposer } from './chat-composer';
 import { shrinkChatImage } from './image-downscale';
@@ -69,6 +70,7 @@ export function AssistantComposer({
   onAsk,
   placeholder = ASSISTANT_COPY.placeholder,
   sendLabel = ASSISTANT_COPY.send,
+  stopLabel = ASSISTANT_PANEL_COPY.stop,
 }: {
   assistant: ChatAssistantState;
   quota: ChatAttachmentQuota;
@@ -78,6 +80,7 @@ export function AssistantComposer({
   /** The thread says "اكتب سؤالك..."; the floating panel names نور (ADR-0143). */
   placeholder?: string;
   sendLabel?: string;
+  stopLabel?: string;
 }) {
   const allowance = assistant.allowance;
   const [files, setFiles] = useState<File[]>([]);
@@ -127,7 +130,8 @@ export function AssistantComposer({
 
   /** Sends the draft and everything staged; a recorded clip is staged first. */
   function send(staged: File[] = files) {
-    if (assistant.isStreaming || (!draft.trim() && staged.length === 0)) return;
+    if (!draft.trim() && staged.length === 0) return;
+    // A follow-up while the answer runs stops it; the hook owns that decision.
     onAsk(draft, staged);
     setStaged([]);
   }
@@ -230,7 +234,10 @@ export function AssistantComposer({
           }
           send(staged.files);
         }}
-        disabled={assistant.isStreaming || preparing}
+        disabled={preparing}
+        streaming={assistant.isStreaming}
+        onStop={assistant.stop}
+        stopAnswerLabel={stopLabel}
         placeholder={placeholder}
         ariaLabel={placeholder}
         sendLabel={sendLabel}

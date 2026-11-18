@@ -61,7 +61,6 @@ export const CHAT_THREAD_COPY = {
   cancelRecording: 'إلغاء التسجيل',
   reportSent: 'تم إرسال الإبلاغ',
   reportFailed: 'تعذّر الإبلاغ',
-  queued: 'قيد الإرسال',
   sendFailed: 'تعذّر إرسال الرسالة',
   retry: 'إعادة المحاولة',
   loadFailed: 'تعذّر تحميل المحادثة. أعد المحاولة.',

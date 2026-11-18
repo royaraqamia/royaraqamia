@@ -14,6 +14,8 @@ export const ASSISTANT_PANEL_COPY = {
   intro: 'أهلاً، أنا نور. اسألني عن أي شيء، وسيصلك الرد هنا.',
   placeholder: 'اكتب سؤالك لنور...',
   send: 'إرسال السؤال',
+  stop: 'إيقاف الرد',
+  interrupted: 'توقّف الرد قبل أن يكتمل.',
   thinking: 'تفكّر...',
   writing: 'تكتب...',
   needsYou: 'بانتظار موافقتك...',

@@ -795,6 +795,7 @@ function ThreadFooter({
         draft={draft}
         onDraft={onDraft}
         onAsk={onAsk}
+        stopLabel={ASSISTANT_PANEL_COPY.stop}
       />
     );
   }

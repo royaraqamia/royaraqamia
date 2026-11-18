@@ -16,6 +16,8 @@ object AssistantPanelCopy {
     const val INTRO = "أهلاً، أنا نور. اسألني عن أي شيء، وسيصلك الرد هنا."
     const val PLACEHOLDER = "اكتب سؤالك لنور..."
     const val SEND = "إرسال السؤال"
+    const val STOP = "إيقاف الرد"
+    const val INTERRUPTED = "توقّف الرد قبل أن يكتمل."
     const val THINKING = "تفكّر..."
     const val WRITING = "تكتب..."
     const val NEEDS_YOU = "بانتظار موافقتك..."
