@@ -14,7 +14,7 @@ vi.mock('@/frontend/api/scan-history', () => ({
 
 import { ScanHistory } from '@/frontend/ui/scan/scan-history';
 import { SCAN_HISTORY_COPY } from '@/frontend/ui/scan/scan-history-copy';
-import type { ScanHistoryEntry } from '@/shared/contracts/scan-history';
+import { SCAN_HISTORY_KIND_LABELS, type ScanHistoryEntry } from '@/shared/contracts/scan-history';
 
 /**
  * The section's three promises (#1430): a guest is told what sign-in would do
@@ -39,6 +39,12 @@ function renderHistory(signedIn = true, reloadToken = 0) {
   return render(<ScanHistory signedIn={signedIn} loading={false} reloadToken={reloadToken} />);
 }
 
+/** The meta line: optional kind, count and day, joined by U+00B7. */
+function historyMeta(...parts: string[]): string {
+  const lastSeen = SCAN_HISTORY_COPY.lastSeen.replace('{date}', '2026/12/12');
+  return [...parts, lastSeen].join(' · ');
+}
+
 beforeEach(() => {
   getScanHistory.mockReset();
   clearScanHistory.mockReset();
@@ -60,12 +66,12 @@ describe('ScanHistory', () => {
 
     expect(await screen.findByText('cafe.example')).toBeInTheDocument();
     expect(
-      screen.getByText(SCAN_HISTORY_COPY.seenMany.replace('{count}', '3'), { exact: false })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(SCAN_HISTORY_COPY.lastSeen.replace('{date}', '2026/12/12'), {
-        exact: false,
-      })
+      screen.getByText(
+        historyMeta(
+          SCAN_HISTORY_KIND_LABELS.link,
+          SCAN_HISTORY_COPY.seenMany.replace('{count}', '3')
+        )
+      )
     ).toBeInTheDocument();
   });
 
@@ -74,8 +80,8 @@ describe('ScanHistory', () => {
 
     renderHistory();
 
-    expect(await screen.findByText('نصّ')).toBeInTheDocument();
-    expect(screen.getByText(SCAN_HISTORY_COPY.seenOnce, { exact: false })).toBeInTheDocument();
+    expect(await screen.findByText(SCAN_HISTORY_KIND_LABELS.text)).toBeInTheDocument();
+    expect(screen.getByText(historyMeta(SCAN_HISTORY_COPY.seenOnce))).toBeInTheDocument();
   });
 
   it('says so when the read failed, and retries on the same route', async () => {

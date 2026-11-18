@@ -108,11 +108,11 @@ export function ScanHistory({
                     {entry.label ?? SCAN_HISTORY_KIND_LABELS[entry.kind]}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {entry.label ? `${SCAN_HISTORY_KIND_LABELS[entry.kind]} Â· ` : ''}
+                    {entry.label ? `${SCAN_HISTORY_KIND_LABELS[entry.kind]} · ` : ''}
                     {entry.seenCount === 1
                       ? SCAN_HISTORY_COPY.seenOnce
                       : SCAN_HISTORY_COPY.seenMany.replace('{count}', String(entry.seenCount))}
-                    {' Â· '}
+                    {' · '}
                     {SCAN_HISTORY_COPY.lastSeen.replace('{date}', entry.lastSeenDate)}
                   </p>
                 </li>
