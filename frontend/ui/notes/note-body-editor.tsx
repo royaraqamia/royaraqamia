@@ -165,7 +165,7 @@ export function NoteBodyEditor({
           // page, which reads Markdown without `remark-breaks`), but prose's
           // 1.14em either side turned every one of them into a visible gap. The
           // line, the list and the heading keep prose's own spacing.
-          'prose prose-sm dark:prose-invert h-full max-w-none w-full rounded-xl p-4 sm:p-5 selection:bg-primary/20 focus:outline-none prose-p:my-1.5',
+          'prose prose-sm dark:prose-invert h-full max-w-none w-full rounded-xl max-sm:p-4 sm:p-5 selection:bg-primary/20 focus:outline-none prose-p:my-1.5',
           surfaceClassName
         ),
         dir: 'auto',
@@ -216,8 +216,13 @@ export function NoteBodyEditor({
     // A phone stacks the tools *under* the text, so the row lands directly above
     // the keyboard and the first lines of the note are never pushed down by a
     // toolbar (ADR-0109). Above `sm` the keyboard is not in play and the tools
-    // stay above the text they format.
-    <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col-reverse sm:flex-col', className)}>
+    // stay above the text they format. Both steps are variants, never a bare
+    // base beside a breakpoint step: the shell does not compile this component,
+    // so a surface appended later could otherwise win the property with its own
+    // base copy and strip the `sm:` step (ADR-0132).
+    <div
+      className={cn('flex min-h-0 min-w-0 flex-1 max-sm:flex-col-reverse sm:flex-col', className)}
+    >
       <div
         role="toolbar"
         aria-label="تنسيق النَّصّ"
@@ -226,7 +231,11 @@ export function NoteBodyEditor({
         // that scroll — `min-w-0` keeps its widest state from widening the
         // dialogue's grid track, which used to scroll the whole composer
         // sideways instead of the tools.
-        className="scrollbar-toolbar flex min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto border-t border-border/50 px-2 py-1.5 sm:border-t-0 sm:border-b"
+        //
+        // Both steps are variants. The shell does not compile this component, so
+        // its bare `.border-t` is shipped by whichever surface does and a sheet
+        // appended later can win the property and strip `sm:border-t-0` (ADR-0132).
+        className="scrollbar-toolbar flex min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto max-sm:border-t border-border/50 px-2 py-1.5 sm:border-t-0 sm:border-b"
       >
         <ToolbarButton
           label="عريض"
