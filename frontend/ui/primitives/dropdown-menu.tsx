@@ -11,8 +11,49 @@ import {
   ResponsiveSheetScrim,
 } from '@/frontend/ui/primitives/responsive-sheet';
 
-function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+/**
+ * The pointer sequence that opened a menu.
+ *
+ * Radix opens on `pointerdown`, and its `MenuItem` turns a `pointerup` that did
+ * not start on that item into a synthetic `.click()` (react-menu's
+ * `onPointerUp` fallback). When the panel appears under the still-held pointer,
+ * releasing therefore runs whichever verb happens to be there - a publish on
+ * the posts page. Sharing the sequence lets the panel swallow exactly that one
+ * release, and no later click.
+ */
+interface OpeningSequence {
+  active: React.MutableRefObject<boolean>;
+}
+
+const OpeningSequenceContext = React.createContext<OpeningSequence | null>(null);
+
+function DropdownMenu({
+  children,
+  ...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+  const active = React.useRef(false);
+  const sequence = React.useMemo<OpeningSequence>(() => ({ active }), []);
+
+  React.useEffect(() => {
+    // A release outside the panel never reaches its capture handler.
+    const clear = () => {
+      active.current = false;
+    };
+    window.addEventListener('pointerup', clear);
+    window.addEventListener('pointercancel', clear);
+    return () => {
+      window.removeEventListener('pointerup', clear);
+      window.removeEventListener('pointercancel', clear);
+    };
+  }, []);
+
+  return (
+    <OpeningSequenceContext.Provider value={sequence}>
+      <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props}>
+        {children}
+      </DropdownMenuPrimitive.Root>
+    </OpeningSequenceContext.Provider>
+  );
 }
 
 function DropdownMenuPortal({
@@ -22,16 +63,29 @@ function DropdownMenuPortal({
 }
 
 function DropdownMenuTrigger({
+  onPointerDown,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
-  return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
+  const sequence = React.useContext(OpeningSequenceContext);
+  return (
+    <DropdownMenuPrimitive.Trigger
+      data-slot="dropdown-menu-trigger"
+      {...props}
+      onPointerDown={(event) => {
+        if (sequence) sequence.active.current = true;
+        onPointerDown?.(event);
+      }}
+    />
+  );
 }
 
 function DropdownMenuContent({
   className,
   sideOffset = 6,
+  onPointerUpCapture,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+  const sequence = React.useContext(OpeningSequenceContext);
   return (
     <DropdownMenuPrimitive.Portal>
       <div className="contents">
@@ -40,6 +94,16 @@ function DropdownMenuContent({
           data-slot="dropdown-menu-content"
           {...RESPONSIVE_SHEET_PROPS}
           sideOffset={sideOffset}
+          onPointerUpCapture={(event) => {
+            if (sequence?.active.current) {
+              // The release belongs to the pointerdown that opened this menu.
+              // Swallow it before Radix can turn it into an item selection.
+              sequence.active.current = false;
+              event.stopPropagation();
+              event.preventDefault();
+            }
+            onPointerUpCapture?.(event);
+          }}
           className={cn(
             'bg-popover text-popover-foreground',
             'border border-border/60 shadow-2xl shadow-black/40 ring-1 ring-white/10',

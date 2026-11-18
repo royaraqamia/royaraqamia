@@ -116,7 +116,7 @@ export function PostRowMenu({ post, title, onEdit, onChanged }: PostRowMenuProps
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-44">
-          <DropdownMenuItem onClick={() => onEdit(post)}>
+          <DropdownMenuItem onSelect={() => onEdit(post)}>
             <PenLine className="me-2 size-4" />
             تعديل
           </DropdownMenuItem>
@@ -130,21 +130,21 @@ export function PostRowMenu({ post, title, onEdit, onChanged }: PostRowMenuProps
           ) : null}
           {post.status === 'published' ? (
             <DropdownMenuItem
-              onClick={() => void act(() => unpublishPost(post.id), 'فشل إلغاء نشر المنشور')}
+              onSelect={() => void act(() => unpublishPost(post.id), 'فشل إلغاء نشر المنشور')}
             >
               <EyeOff className="me-2 size-4" />
               إلغاء النَّشر
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem
-              onClick={() => void act(() => publishPost(post.id), 'فشل نشر المنشور')}
+              onSelect={() => void act(() => publishPost(post.id), 'فشل نشر المنشور')}
             >
               <Eye className="me-2 size-4" />
               {post.status === 'scheduled' ? 'نشر الآن' : 'نشر'}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem
-            onClick={() =>
+            onSelect={() =>
               void act(() => setPostFeatured(post.id, !post.featured), 'فشل تحديث التَّثبيت')
             }
           >
@@ -152,27 +152,23 @@ export function PostRowMenu({ post, title, onEdit, onChanged }: PostRowMenuProps
             {post.featured ? 'إلغاء التَّثبيت' : 'تثبيت'}
           </DropdownMenuItem>
           <DropdownMenuItem
-            onClick={() => void act(() => duplicatePost(post.id), 'فشل نسخ المنشور')}
+            onSelect={() => void act(() => duplicatePost(post.id), 'فشل نسخ المنشور')}
           >
             <CopyPlus className="me-2 size-4" />
             نسخ المنشور
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => exportAs('markdown', 'تمَّ تصدير المنشور بصيغة Markdown')}>
+          <DropdownMenuItem
+            onSelect={() => exportAs('markdown', 'تمَّ تصدير المنشور بصيغة Markdown')}
+          >
             <FileDown className="me-2 size-4" />
             تصدير Markdown
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => exportAs('html', 'تمَّ تصدير المنشور بصيغة HTML')}>
+          <DropdownMenuItem onSelect={() => exportAs('html', 'تمَّ تصدير المنشور بصيغة HTML')}>
             <FileCodeCorner className="me-2 size-4" />
             تصدير HTML
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            variant="destructive"
-            onSelect={(event) => {
-              event.preventDefault();
-              setDeleteOpen(true);
-            }}
-          >
+          <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
             <Trash className="me-2 size-4" />
             حذف
           </DropdownMenuItem>

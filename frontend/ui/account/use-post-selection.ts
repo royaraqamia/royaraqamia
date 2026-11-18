@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { Post } from '@/shared/contracts/blogpress';
 
@@ -17,8 +17,9 @@ export interface SelectionScope {
  *
  * A selection belongs to the list it was made on: changing `scope` drops it, so
  * filtering a row away can never leave an id a bulk action would still reach.
- * The reset is a render after the new rows, never a guard inside `toggle` — the
- * ids are the list's, not the set's.
+ * A repaint after a delete or a publish prunes ids that are no longer rows for
+ * the same reason. The reset is a render after the new rows, never a guard
+ * inside `toggle` — the ids are the list's, not the set's.
  */
 export function usePostSelection(rows: Post[], scope: SelectionScope) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
@@ -28,22 +29,36 @@ export function usePostSelection(rows: Post[], scope: SelectionScope) {
     setSelected(new Set());
   }, [scope.filter, scope.query]);
 
-  const toggle = (id: string) => {
+  useEffect(() => {
+    const present = new Set(rows.map((row) => row.id));
+    setSelected((current) => {
+      let next: Set<string> | null = null;
+      for (const id of current) {
+        if (!present.has(id)) {
+          next ??= new Set(current);
+          next.delete(id);
+        }
+      }
+      return next ?? current;
+    });
+  }, [rows]);
+
+  const toggle = useCallback((id: string) => {
     setSelected((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const toggleAll = () => {
+  const toggleAll = useCallback(() => {
     setSelected(allSelected ? new Set<string>() : new Set(rows.map((row) => row.id)));
-  };
+  }, [allSelected, rows]);
 
-  const clear = () => {
+  const clear = useCallback(() => {
     setSelected(new Set<string>());
-  };
+  }, []);
 
   return { selected, allSelected, toggle, toggleAll, clear };
 }
