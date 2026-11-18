@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 
 import { atoms, classAtoms, classLists, expandBraces, maskComments } from '../check-layers.mjs';
@@ -97,5 +99,43 @@ describe('classLists', () => {
   it('does not read the same class twice when a literal sits inside a className', () => {
     const known2 = new Set(['grid', 'max-sm:flex']);
     expect(classLists("className={cn('grid max-sm:flex')}", known2)).toHaveLength(1);
+  });
+});
+
+describe('the shared editor keeps each responsive step as a variant', () => {
+  // The shell does not @source `frontend/ui/notes`: these utilities ship only in
+  // the sheets that do. A bare base beside a breakpoint step can then be won by
+  // a sheet appended later on navigation, stripping the step and flipping the
+  // composer's toolbar to the wrong side (ADR-0132). `check:layers` only scans
+  // shell-compiled files, so the pair is checked here instead.
+  const STEPS = new Set([
+    'flex-col-reverse',
+    'max-sm:flex-col-reverse',
+    'sm:flex-col',
+    'border-t',
+    'max-sm:border-t',
+    'sm:border-t-0',
+    'sm:border-b',
+    'p-4',
+    'max-sm:p-4',
+    'sm:p-5',
+  ]);
+
+  it('never pairs a bare step with a breakpoint step on one element', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'frontend/ui/notes/note-body-editor.tsx'),
+      'utf8'
+    );
+    const offenders = classLists(source, STEPS).flatMap(({ tokens, line }) => {
+      const bases = tokens.filter((token) => !token.includes(':'));
+      const variants = tokens.filter(
+        (token) => token.startsWith('max-sm:') || token.startsWith('sm:')
+      );
+      return bases.length > 0 && variants.length > 0
+        ? [`${line}: ${bases.join(' ')} + ${variants.join(' ')}`]
+        : [];
+    });
+
+    expect(offenders).toEqual([]);
   });
 });
