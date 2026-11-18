@@ -4,11 +4,13 @@ import { CommunityPostViewRateLimitError } from '@/backend/services/blogpress/co
 const mockRecordCommunityPostView = vi.fn();
 const mockLoadCommunityPost = vi.fn();
 const mockLoadCommunityMember = vi.fn();
+const mockCreatePostEngagementService = vi.fn();
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
 vi.mock('@/backend/config/community', () => ({
   recordCommunityPostView: (...args: unknown[]) => mockRecordCommunityPostView(...args),
+  createPostEngagementService: (...args: unknown[]) => mockCreatePostEngagementService(...args),
 }));
 
 vi.mock('@/backend/loaders/community', () => ({
@@ -18,9 +20,11 @@ vi.mock('@/backend/loaders/community', () => ({
 }));
 
 import {
+  editPostComment,
   getCommunityMember,
   getCommunityPost,
   recordPostView,
+  removePostComment,
 } from '@/backend/controllers/community';
 
 describe('community view controller', () => {
@@ -242,5 +246,35 @@ describe('community member controller', () => {
         body: expect.objectContaining({ error: 'تعذَّر تحميل الملف.' }),
       })
     );
+  });
+});
+
+describe('community comment controller', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('answers 404 for a malformed comment id on edit without calling the service', async () => {
+    const result = await editPostComment('not-a-uuid', { body: 'تعليق' });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 404,
+        body: { success: false, error: 'التعليق غير موجود.' },
+      })
+    );
+    expect(mockCreatePostEngagementService).not.toHaveBeenCalled();
+  });
+
+  it('answers 404 for a malformed comment id on delete without calling the service', async () => {
+    const result = await removePostComment('not-a-uuid');
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 404,
+        body: { success: false, error: 'التعليق غير موجود.' },
+      })
+    );
+    expect(mockCreatePostEngagementService).not.toHaveBeenCalled();
   });
 });

@@ -246,6 +246,12 @@ export type CreateCommentInput = z.infer<typeof CreateCommentInputSchema>;
 
 export const UpdateCommentInputSchema = CreateCommentInputSchema;
 
+/**
+ * A comment id keys a uuid column. A path segment that cannot be one would fail
+ * the cast at the repository seam, before the service's own 404 could answer.
+ */
+export const CommentIdSchema = z.string().uuid('معرِّف تعليق غير صالح');
+
 export const CreateCommentResponseSchema = z.object({
   comment: PostCommentSchema,
   commentCount: z.number().int(),
