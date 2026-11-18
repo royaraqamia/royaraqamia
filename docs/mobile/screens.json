@@ -28,11 +28,7 @@
       "enabled": true,
       "native": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackScreen.kt"
     },
-    {
-      "surface": "spendtrack-categories",
-      "enabled": true,
-      "native": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoriesScreen.kt"
-    },
+
     {
       "surface": "linksnap",
       "enabled": true,

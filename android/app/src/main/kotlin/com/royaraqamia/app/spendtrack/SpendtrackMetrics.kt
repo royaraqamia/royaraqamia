@@ -29,8 +29,7 @@ object SpendtrackMetrics {
     val CSV_HEIGHT = 40.dp
     val CSV_GAP = 8.dp
 
-    // The two dialogs (#960): the page's own boxes, from `expense-dialog.tsx`
-    // and `create-category-dialog.tsx` at the app's 393 CSS px viewport.
+    // The dialog's own boxes, from `expense-dialog.tsx` at the app's 393 CSS px viewport.
     const val EXPENSE_DIALOG = "spendtrack-expense-dialog"
     const val EXPENSE_FORM = "spendtrack-expense-form"
     const val EXPENSE_AMOUNT = "spendtrack-expense-amount"
@@ -42,13 +41,6 @@ object SpendtrackMetrics {
     const val EXPENSE_SUBMIT = "spendtrack-expense-submit"
     const val EXPENSE_ERROR = "spendtrack-expense-error"
 
-    const val CATEGORY_DIALOG = "spendtrack-category-dialog"
-    const val CATEGORY_FORM = "spendtrack-category-form"
-    const val CATEGORY_NAME = "spendtrack-category-name"
-    const val CATEGORY_COLOR = "spendtrack-category-color"
-    const val CATEGORY_ACTIONS = "spendtrack-category-actions"
-    const val CATEGORY_SUBMIT = "spendtrack-category-submit"
-    const val CATEGORY_ERROR = "spendtrack-category-error"
 
     /** The page's dialog: `w-[calc(100%-2rem)] max-w-md` at 393 is 361. */
     val DIALOG_WIDTH = 361.dp
@@ -65,13 +57,10 @@ object SpendtrackMetrics {
     val ACTION_SUBMIT_HEIGHT = 48.dp
     val ACTION_CANCEL_HEIGHT = 52.dp
 
-    /** `space-y-5` on the expense form, `space-y-4` on the category form. */
+    /** `space-y-5` on the expense form. */
     val EXPENSE_FORM_GAP = 20.dp
-    val CATEGORY_FORM_GAP = 16.dp
 
-    /** The page's refused sentence: `text-xs` (16px line) and `text-sm` (20px). */
+    /** The page's refused sentence: `text-xs` (16px line). */
     val EXPENSE_ERROR_LINE: TextUnit = 16.sp
-    val CATEGORY_ERROR_LINE: TextUnit = 20.sp
     val EXPENSE_ERROR_HEIGHT = 16.dp
-    val CATEGORY_ERROR_HEIGHT = 20.dp
 }

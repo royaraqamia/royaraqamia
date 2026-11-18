@@ -3,9 +3,7 @@ package com.royaraqamia.app.spendtrack
 import com.royaraqamia.app.store.spendtrack.SpendtrackExpenseRow
 import java.util.Locale
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -57,13 +55,6 @@ class SpendtrackMoneyTest {
             )
 
         assertEquals(15.5, monthTotal(rows, "2026-01"), 0.0)
-    }
-
-    @Test
-    fun `a category colour is the site's hex or the muted surface`() {
-        assertTrue(isHexColor("#8f6fe5"))
-        assertFalse(isHexColor("8f6fe5"))
-        assertFalse(isHexColor("#8f6fe"))
     }
 
     private fun expense(date: String, amount: Double): SpendtrackExpenseRow =

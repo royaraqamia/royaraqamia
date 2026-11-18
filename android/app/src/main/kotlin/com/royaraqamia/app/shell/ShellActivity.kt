@@ -76,7 +76,7 @@ import com.royaraqamia.app.news.NewsDigestScreen
 import com.royaraqamia.app.notifications.NotificationsScreen
 import com.royaraqamia.app.rates.RatesScreen
 import com.royaraqamia.app.scan.ScanScreen
-import com.royaraqamia.app.spendtrack.SpendtrackCategoriesScreen
+
 import com.royaraqamia.app.spendtrack.SpendtrackCsvCopy
 import com.royaraqamia.app.spendtrack.SpendtrackScreen
 import com.royaraqamia.app.store.Identity
@@ -347,19 +347,12 @@ class ShellActivity : ComponentActivity() {
                             // Notes (#1390): drawn from the device store and its
                             // Outbox, switched on only after `check:visual` passes.
                             "/notes" -> NotesScreen(repository = graph.notes)
-                            // SpendTrack's two routes share one implementation
-                            // (#653): the dashboard, and the categories that
-                            // list files against. Each route has its own gate
-                            // row and its own screen name (#958, #959).
                             "/spendtrack" ->
                                 SpendtrackScreen(
                                     route = Routes.normalize(current),
                                     repository = graph.spendtrack,
-                                    onOpenCategories = { openRoute("/spendtrack/categories") },
                                     onShareCsv = ::shareCsv,
                                 )
-                            "/spendtrack/categories" ->
-                                SpendtrackCategoriesScreen(repository = graph.spendtrack)
                             "/account/faq" -> AccountFaqScreen()
                             // The Quran reader (#955): the sura index, the
                             // reader's last place, and the vendored text. The

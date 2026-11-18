@@ -165,7 +165,7 @@ object ScreenTitles {
         mapOf(
             "/account/links" to "the links list is a section of the account page; its heading is the document's",
             "/spendtrack" to "the expenses screen opens on the month's total, not on a title",
-            "/spendtrack/categories" to "the categories list sits under its chart without a heading of its own",
+
             "/community" to "the feed draws rows; the page's heading is the document's",
             "/scan" to "the scanner's heading is its camera state line, which is not a screen title",
             "/notifications" to "the bell screen opens on its tabs",

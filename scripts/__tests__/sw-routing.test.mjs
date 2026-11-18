@@ -104,9 +104,7 @@ describe('sw-routing predicates', () => {
       '/auth/callback',
       '/admin/training',
       // The product dashboard roots are cached shells since #449 (ADR-0073);
-      // their APIs and the two server-rendered subroutes keep the prefix.
-      '/spendtrack/categories',
-      '/spendtrack/categories/new',
+      // their APIs keep the prefix.
       '/habitflow/api/habits',
       '/spendtrack/api/sync',
       '/linksnap/api/links',

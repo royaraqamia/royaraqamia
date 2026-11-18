@@ -91,7 +91,7 @@ describe('route kinds', () => {
     '/auth/login',
     '/blogpress',
     '/quran/2',
-    '/spendtrack/categories',
+
     '/mcp/guide#install',
   ])('treats %s as a drill-down', (pathname) => {
     expect(isPrimaryRoute(pathname)).toBe(false);
@@ -167,7 +167,7 @@ describe('parentRouteOf', () => {
     ['/admin/mcp/marketplace', '/admin'],
     ['/admin/training/cohorts', '/admin'],
     ['/admin/certificates/ABC/edit', '/admin/certificates'],
-    ['/spendtrack/categories', '/spendtrack'],
+
     ['/athkar/evening', '/athkar'],
   ])('%s goes up to %s', (pathname, expected) => {
     const parent = parentRouteOf(pathname);

@@ -48,7 +48,7 @@ object NativeSurfaces {
             "/rates",
             "/habitflow",
             "/spendtrack",
-            "/spendtrack/categories",
+
             "/community",
             "/scan",
             "/news",

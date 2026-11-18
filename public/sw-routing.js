@@ -206,7 +206,7 @@
     '/spendtrack/api',
     '/notes/api',
     '/linksnap/api',
-    '/spendtrack/categories',
+
   ];
 
   // Paths that are exactly a never-cache surface: a prefix would also swallow

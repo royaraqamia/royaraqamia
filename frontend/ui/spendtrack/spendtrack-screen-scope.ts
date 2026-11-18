@@ -13,16 +13,9 @@ import type { ScreenFieldCandidate } from '@/shared/contracts/screen-context-fie
  */
 const EXPENSE_FIELDS = ['amount', 'category_id', 'date', 'description', 'currency'] as const;
 
-const CATEGORY_FIELDS = ['name', 'colorHex'] as const;
-
 /** The dashboard's own chip: the range the totals are counted over. */
 export function spendtrackScreenScope(range: string): ScreenScope {
   return { id: 'spendtrack.page', kind: 'screen', tab: range };
-}
-
-/** The categories page: the list of rows the member edits. */
-export function spendtrackCategoriesScreenScope(): ScreenScope {
-  return { id: 'spendtrack-categories.page', kind: 'screen' };
 }
 
 /** A form's values as candidates; the allowlist decides what survives. */
@@ -43,18 +36,5 @@ export function spendtrackExpenseScope(
     kind: 'dialog',
     focus: expenseId ? { kind: 'expense', id: expenseId } : null,
     fields: candidates(EXPENSE_FIELDS, values),
-  };
-}
-
-/** The create or edit category dialog, with the row it edits. */
-export function spendtrackCategoryScope(
-  values: Readonly<Record<string, unknown>>,
-  categoryId: string | null = null
-): ScreenScope {
-  return {
-    id: 'spendtrack-categories.category',
-    kind: 'dialog',
-    focus: categoryId ? { kind: 'category', id: categoryId } : null,
-    fields: candidates(CATEGORY_FIELDS, values),
   };
 }

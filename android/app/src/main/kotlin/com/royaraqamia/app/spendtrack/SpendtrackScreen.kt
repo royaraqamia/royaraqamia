@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -35,12 +34,9 @@ import kotlinx.coroutines.launch
 /**
  * SpendTrack, drawn from the device (#653).
  *
- * Two routes, one implementation: `/spendtrack` is the total and the expense
- * list, `/spendtrack/categories` is the categories, which is the same pair the
- * site splits its surface into. They share the store, the sync pill and the
- * dialogs, so the categories route is [SpendtrackCategoriesScreen]'s name over
- * this same composable; the surface matrix gives each route its own gate row
- * (#958, #959).
+ * One route: `/spendtrack` is the total and the expense list. The store, the
+ * sync pill and the dialogs all belong to this screen; the surface matrix
+ * gives it one gate row (#958).
  *
  * The order of the reads is HabitFlow's (#649, #650), not a second opinion:
  * [SpendtrackRepository.expenses] and [SpendtrackRepository.categories] answer
@@ -66,7 +62,6 @@ fun SpendtrackScreen(
     route: String,
     repository: SpendtrackRepository,
     modifier: Modifier = Modifier,
-    onOpenCategories: () -> Unit = {},
     onShareCsv: (String, String) -> Unit = { _, _ -> },
 ) {
     val context = LocalContext.current
@@ -87,7 +82,6 @@ fun SpendtrackScreen(
 
     var addingExpense by remember { mutableStateOf(false) }
     var editingExpense by remember { mutableStateOf<SpendtrackExpenseRow?>(null) }
-    var categoryForm by remember { mutableStateOf<SpendtrackCategoryFormTarget?>(null) }
 
     /** Repaint from the store alone: no network, no session, no wait. */
     suspend fun paint() {
@@ -146,7 +140,6 @@ fun SpendtrackScreen(
 
     val header: @Composable () -> Unit = {
         SpendtrackHeader(
-            route = route,
             pill = pill,
             currency = currency,
             onCsvImport =
@@ -175,104 +168,87 @@ fun SpendtrackScreen(
                     sync()
                 }
             },
-            onAdd = {
-                if (route == CATEGORIES_ROUTE) {
-                    categoryForm = SpendtrackCategoryFormTarget.New
-                } else {
-                    addingExpense = true
-                }
-            },
-            onOpenCategories = onOpenCategories,
+            onAdd = { addingExpense = true },
         )
     }
 
-    if (route == CATEGORIES_ROUTE) {
-        SpendtrackCategoryList(
-            state = categories,
-            onEdit = { categoryForm = SpendtrackCategoryFormTarget.Edit(it) },
-            onDelete = { row -> scope.launch { repository.deleteCategory(row.id); sync() } },
-            modifier = modifier,
-            header = header,
-        )
-    } else {
-        SpendtrackExpenseList(
-            state = visibleExpenses,
-            categories = categoryById,
-            currency = currency,
-            onEdit = { editingExpense = it },
-            onDelete = { row -> scope.launch { repository.deleteExpense(row.id); sync() } },
-            modifier = modifier,
-            header = {
-                header()
-                SpendtrackFilterBar(
-                    state = filter,
-                    categories = categoryRows,
-                    onChange = { filter = it },
+    SpendtrackExpenseList(
+        state = visibleExpenses,
+        categories = categoryById,
+        currency = currency,
+        onEdit = { editingExpense = it },
+        onDelete = { row -> scope.launch { repository.deleteExpense(row.id); sync() } },
+        modifier = modifier,
+        header = {
+            header()
+            SpendtrackFilterBar(
+                state = filter,
+                categories = categoryRows,
+                onChange = { filter = it },
+            )
+            val rows = filteredRows
+            val spent = SpendtrackStats.total(rows, "1900-01-01", "2099-12-31")
+            val insights =
+                SpendtrackStats.insights(
+                    rows,
+                    categoryRows,
+                    filterWindow.first,
+                    filterWindow.second,
                 )
-                val rows = filteredRows
-                val spent = SpendtrackStats.total(rows, "1900-01-01", "2099-12-31")
-                val insights =
-                    SpendtrackStats.insights(
+            val categoryChart =
+                SpendtrackCategoryChartUiState.of(
+                    SpendtrackStats.categoryBreakdown(
                         rows,
                         categoryRows,
                         filterWindow.first,
                         filterWindow.second,
                     )
-                val categoryChart =
-                    SpendtrackCategoryChartUiState.of(
-                        SpendtrackStats.categoryBreakdown(
-                            rows,
-                            categoryRows,
-                            filterWindow.first,
-                            filterWindow.second,
-                        )
+                )
+            val dailyChart =
+                SpendtrackDailyChartUiState.of(
+                    SpendtrackStats.dailyTotals(
+                        rows,
+                        filterWindow.first,
+                        filterWindow.second,
                     )
-                val dailyChart =
-                    SpendtrackDailyChartUiState.of(
-                        SpendtrackStats.dailyTotals(
-                            rows,
-                            filterWindow.first,
-                            filterWindow.second,
-                        )
-                    )
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    SpendtrackTotalCard(
-                        total = spent,
-                        currency = currency,
-                        start = monthStart(),
-                        end = monthEnd(),
-                    )
-                    SpendtrackBudgetCard(
-                        state = budget,
-                        spent = spent,
-                        currency = currency,
-                        month = currentMonth(),
-                        onSave = { amount ->
-                            scope.launch {
-                                repository.setBudget(currentMonth(), amount)
-                                sync()
-                            }
-                            true
-                        },
-                    )
-                    SpendtrackInsightsStrip(insights = insights, currency = currency)
-                    SpendtrackCategoryChart(state = categoryChart, currency = currency)
-                    SpendtrackDailyChart(state = dailyChart, currency = currency)
-                    SpendtrackRecurringCard(
-                        state = recurring,
-                        categories = categoryRows,
-                        currency = currency,
-                        onDelete = { row -> scope.launch { repository.deleteRecurring(row.id); sync() } },
-                        onEdit = { row -> recurringForm = SpendtrackRecurringTarget.Edit(row) },
-                        onAdd = { recurringForm = SpendtrackRecurringTarget.New },
-                    )
-                }
-            },
-        )
-    }
+                )
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SpendtrackTotalCard(
+                    total = spent,
+                    currency = currency,
+                    start = monthStart(),
+                    end = monthEnd(),
+                )
+                SpendtrackBudgetCard(
+                    state = budget,
+                    spent = spent,
+                    currency = currency,
+                    month = currentMonth(),
+                    onSave = { amount ->
+                        scope.launch {
+                            repository.setBudget(currentMonth(), amount)
+                            sync()
+                        }
+                        true
+                    },
+                )
+                SpendtrackInsightsStrip(insights = insights, currency = currency)
+                SpendtrackCategoryChart(state = categoryChart, currency = currency)
+                SpendtrackDailyChart(state = dailyChart, currency = currency)
+                SpendtrackRecurringCard(
+                    state = recurring,
+                    categories = categoryRows,
+                    currency = currency,
+                    onDelete = { row -> scope.launch { repository.deleteRecurring(row.id); sync() } },
+                    onEdit = { row -> recurringForm = SpendtrackRecurringTarget.Edit(row) },
+                    onAdd = { recurringForm = SpendtrackRecurringTarget.New },
+                )
+            }
+        },
+    )
 
     val editing = editingExpense
     if (addingExpense || editing != null) {
@@ -322,27 +298,6 @@ fun SpendtrackScreen(
             )
         }
     }
-
-    categoryForm?.let { target ->
-        androidx.compose.ui.window.Dialog(onDismissRequest = { categoryForm = null }) {
-            SpendtrackCategoryDialog(
-                editing = (target as? SpendtrackCategoryFormTarget.Edit)?.row,
-                onDismiss = { categoryForm = null },
-                onSave = { name, colorHex ->
-                    scope.launch {
-                        if (target is SpendtrackCategoryFormTarget.Edit) {
-                            repository.updateCategory(target.row.id, name, colorHex)
-                        } else {
-                            repository.createCategory(name, colorHex)
-                        }
-                        sync()
-                    }
-                    true
-                },
-            )
-        }
-    }
-
 
     recurringForm?.let { target ->
         val editing = (target as? SpendtrackRecurringTarget.Edit)?.row
@@ -395,27 +350,16 @@ private sealed interface SpendtrackRecurringTarget {
     data class Edit(val row: SpendtrackRecurringRow) : SpendtrackRecurringTarget
 }
 
-/** Which category dialog is open: a new row, or an existing one. */
-private sealed interface SpendtrackCategoryFormTarget {
-    data object New : SpendtrackCategoryFormTarget
-
-    data class Edit(val row: SpendtrackCategoryRow) : SpendtrackCategoryFormTarget
-}
-
 /** The screen's title row: the destination's name, the add action and the pill. */
 @Composable
 private fun SpendtrackHeader(
-    route: String,
     pill: SyncPillState?,
     currency: String?,
     onRetry: () -> Unit,
     onAdd: () -> Unit,
-    onOpenCategories: () -> Unit,
     onSelectCurrency: (String) -> Unit,
     onCsvImport: CsvSlot?,
 ) {
-    val categoriesRoute = route == CATEGORIES_ROUTE
-
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -426,44 +370,33 @@ private fun SpendtrackHeader(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text =
-                    if (categoriesRoute) SpendtrackCategoriesCopy.LIST_LABEL
-                    else ServicesCopy.SPEND_TRACK,
+                text = ServicesCopy.SPEND_TRACK,
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            if (categoriesRoute) {
-                SpendtrackAddCategoryButton(onClick = onAdd)
-            } else {
-                SpendtrackAddExpenseButton(onClick = onAdd)
-            }
+            SpendtrackAddExpenseButton(onClick = onAdd)
         }
 
-        if (!categoriesRoute) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextButton(onClick = onOpenCategories) {
-                    Text(SpendtrackCategoriesCopy.LIST_LABEL)
-                }
-                SpendtrackCurrencyPicker(
-                    currency = currency,
-                    onSelect = onSelectCurrency,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            onCsvImport?.let {
-                SpendtrackCsvActions(
-                    repository = it.repository,
-                    start = it.start,
-                    end = it.end,
-                    categories = it.categories,
-                    onImported = it.onImported,
-                    onShare = it.onShare,
-                )
-            }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SpendtrackCurrencyPicker(
+                currency = currency,
+                onSelect = onSelectCurrency,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        onCsvImport?.let {
+            SpendtrackCsvActions(
+                repository = it.repository,
+                start = it.start,
+                end = it.end,
+                categories = it.categories,
+                onImported = it.onImported,
+                onShare = it.onShare,
+            )
         }
 
         pill?.let { SyncPill(state = it, onRetry = onRetry) }
@@ -502,5 +435,3 @@ internal fun monthEnd(month: String = currentMonth()): String {
 internal fun monthTotal(rows: List<SpendtrackExpenseRow>, month: String = currentMonth()): Double =
     rows.filter { it.date.startsWith(month) }.sumOf { it.amount }
 
-/** The categories route, spelled once. */
-const val CATEGORIES_ROUTE = "/spendtrack/categories"

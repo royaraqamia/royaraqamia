@@ -54,7 +54,6 @@ object Screens {
             ScreenRouteRow("/app-info", "marketing", "marketing", null),
             ScreenRouteRow("/habitflow", "habitflow", "habitflow", null),
             ScreenRouteRow("/spendtrack", "spendtrack", "spendtrack", null),
-            ScreenRouteRow("/spendtrack/categories", "spendtrack-categories", "spendtrack", null),
             ScreenRouteRow("/linksnap/unlock/[code]", "linksnap-unlock", "linksnap", null),
             ScreenRouteRow("/quran", "quran", "quran", null),
             ScreenRouteRow("/notes", "notes", "notes", null),

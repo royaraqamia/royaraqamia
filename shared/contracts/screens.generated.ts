@@ -33,12 +33,6 @@ export const SCREEN_ROUTES: readonly ScreenRouteRow[] = [
   { pattern: '/habitflow', surface: 'habitflow', product: 'habitflow', tab: null },
   { pattern: '/spendtrack', surface: 'spendtrack', product: 'spendtrack', tab: null },
   {
-    pattern: '/spendtrack/categories',
-    surface: 'spendtrack-categories',
-    product: 'spendtrack',
-    tab: null,
-  },
-  {
     pattern: '/linksnap/unlock/[code]',
     surface: 'linksnap-unlock',
     product: 'linksnap',

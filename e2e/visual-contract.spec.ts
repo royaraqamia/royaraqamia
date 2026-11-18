@@ -532,20 +532,7 @@ const PREPARE: Record<
     await page.waitForTimeout(600);
     await page.evaluate(() => document.fonts.ready);
   },
-  // The categories page with the same fixture's categories (#959). The page
-  // paints them from the Local Store and pulls on open, so the rows are written
-  // through the page's own route first and the row is what makes the recording
-  // that state. The empty state is the same list with no rows; this state is the
-  // populated one the page opens on for an account that has categories.
-  'spendtrack-categories/at-rest': async (page, visit) => {
-    const baseURL = projectBaseURL();
-    await signInAsVisualAccount(page.context(), baseURL);
-    await seedSpendtrack(page.context(), baseURL);
-    await visit(baseURL);
-    await page.locator('[data-visual="spendtrack-category-row"]').first().waitFor({
-      timeout: 30_000,
-    });
-  },
+
   // The create-expense dialog with a refused field (#960). `?create=1` is the
   // page's own way to open it, and submitting the empty amount draws the page's
   // own sentence under the field; the recording is the field, because the page's
@@ -564,23 +551,7 @@ const PREPARE: Record<
     await page.waitForTimeout(600);
     await page.evaluate(() => document.fonts.ready);
   },
-  // The create-category dialog with a refused name (#960), reached through the
-  // categories page's own control. The dialog is the same surface's second
-  // state; the page's sentence is what the refused field draws.
-  'spendtrack/category-dialog': async (page) => {
-    const baseURL = projectBaseURL();
-    await signInAsVisualAccount(page.context(), baseURL);
-    await seedSpendtrack(page.context(), baseURL);
-    await page.goto(new URL('/spendtrack/categories', baseURL).toString(), {
-      waitUntil: 'domcontentloaded',
-    });
-    await page.locator('[data-visual="spendtrack-category-create"]').click();
-    await page.locator('[data-visual="spendtrack-category-dialog"]').waitFor({ timeout: 30_000 });
-    await page.locator('[data-visual="spendtrack-category-submit"]').click();
-    await page.locator('[data-visual="spendtrack-category-error"]').waitFor({ timeout: 10_000 });
-    await page.waitForTimeout(600);
-    await page.evaluate(() => document.fonts.ready);
-  },
+
   // The CSV flow's two controls (#961). The page draws them for a signed-in
   // account beside the same filter the dashboard is reading; the export asks the
   // page's own route, so the recording is the control and the file it hands out

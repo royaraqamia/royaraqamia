@@ -61,7 +61,6 @@ _The local-store products, where the app has a real reason to be native: offline
 
 - [x] **habitflow** `/?tab=/habitflow` `/habitflow` — native · #898
 - [x] **spendtrack** `/?tab=/spendtrack` `/spendtrack` — native
-- [x] **spendtrack-categories** `/spendtrack/categories` — native · #959
 - [x] **linksnap** `/?tab=/linksnap` — native
 - [x] **quran** `/?tab=/quran` `/quran` — native · #955
 - [x] **quran-surah** `/quran/[surah]` — native · #955
@@ -102,7 +101,7 @@ The things a surface row cannot hold: the cutover, the screens the app needs to 
 
 ## Components
 
-A component is finished when the surface that draws it is native, or when it belongs to the shell frame the visual gate measures: 88 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native, or when it belongs to the shell frame the visual gate measures: 86 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `scan-history` on **scan** · #1430
 - [x] `habit-list` on **habitflow** · #649
@@ -123,8 +122,6 @@ A component is finished when the surface that draws it is native, or when it bel
 - [x] `spendtrack-total` on **spendtrack** · #653
 - [x] `spendtrack-expenses` on **spendtrack** · #653
 - [x] `spendtrack-expense-dialog` on **spendtrack** · #653
-- [x] `spendtrack-categories` on **spendtrack-categories** · #653
-- [x] `spendtrack-category-create` on **spendtrack-categories** · #653
 - [x] `spendtrack-budget` on **spendtrack** · #653
 - [x] `spendtrack-recurring` on **spendtrack** · #653
 - [x] `spendtrack-currency` on **spendtrack** · #653
@@ -195,4 +192,4 @@ A component is finished when the surface that draws it is native, or when it bel
 
 ## Where this stands
 
-24 native · 5 to do · 4 document · 6 blocked of 39 surfaces. 1 of 9 release items done.
+23 native · 5 to do · 4 document · 6 blocked of 38 surfaces. 1 of 9 release items done.
