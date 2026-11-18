@@ -1217,6 +1217,7 @@
           "app/community/_components/post-action-cell.tsx",
           "app/community/[slug]/_components/post-engagement-bar.tsx",
           "app/community/[slug]/_components/post-comments.tsx",
+          "app/community/[slug]/_components/post-comment-field.tsx",
           "app/community/[slug]/_components/post-comment-owner-actions.tsx"
         ],
         "copyModule": "app/community/[slug]/community-post-copy.ts",
@@ -1225,7 +1226,8 @@
       "native": {
         "component": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityPostScreen.kt",
         "also": [
-          "android/app/src/main/kotlin/com/royaraqamia/app/community/PostCommentsSection.kt"
+          "android/app/src/main/kotlin/com/royaraqamia/app/community/PostCommentsSection.kt",
+          "android/app/src/main/kotlin/com/royaraqamia/app/community/CommentComposer.kt"
         ],
         "state": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityPostUiState.kt",
         "copy": "android/app/src/main/kotlin/com/royaraqamia/app/community/CommunityPostCopy.kt",

@@ -165,7 +165,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
       <CodeBlockEnhancer />
 
       <div className="max-w-5xl mx-auto">
-        <article aria-label={excerpt} data-visual="community-post">
+        <article aria-label={excerpt} data-visual="community-post" className="pb-32">
           {/* The publisher, the facts, and the one action that belongs to the
               whole post. The date used to sit in its own right-aligned row above
               the body, which read as an orphan; it is now the caption of the
@@ -181,7 +181,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                       author.name
                     )}
                     data-visual="community-post-author"
-                    className="flex w-fit items-center gap-2.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40 hover:bg-muted/50 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    className="flex w-fit items-center gap-2.5 hover:opacity-85 transition-opacity duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                   >
                     {author.avatar_url?.trim() ? (
                       <Image
@@ -208,14 +208,6 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
                   {p.published_at && <PostPublishedAt publishedAt={p.published_at} />}
                   <PostViews count={p.view_count} />
-                  {p.reading_time_minutes > 0 && (
-                    <span>
-                      {COMMUNITY_POST_COPY.readingTime.replace(
-                        '{minutes}',
-                        String(p.reading_time_minutes)
-                      )}
-                    </span>
-                  )}
                 </div>
               </div>
 

@@ -14,9 +14,6 @@ import {
   type ProseMirrorNode,
 } from '@/shared/text/chat-markdown';
 
-/** The body ceiling the contract enforces; the field refuses to outgrow it. */
-export const CHAT_FIELD_MAX = 4000;
-
 /** The surface's words for the six marks: the field draws them, it does not own them. */
 export interface ChatFieldLabels {
   toolbar: string;
@@ -56,9 +53,15 @@ export function ChatField({
   className,
   onFocus,
   labels,
+  maxLength,
 }: {
   value: string;
   onChange: (value: string) => void;
+  /**
+   * The surface's own ceiling — `CHAT_BODY_MAX` here, `POST_COMMENT_MAX_LENGTH`
+   * on a post's thread. The editor refuses to outgrow what the server accepts.
+   */
+  maxLength: number;
   /** A keystroke, for the member thread's typing channel. */
   onTyping?: () => void;
   /** The field became empty: the member stopped rather than pausing. */
@@ -82,7 +85,7 @@ export function ChatField({
 
   const notify = useCallback(
     (next: string) => {
-      if (next.length > CHAT_FIELD_MAX) return false;
+      if (next.length > maxLength) return false;
       if (next === emitted.current) return true;
       emitted.current = next;
       onChange(next);
@@ -91,7 +94,7 @@ export function ChatField({
       else onDraftEmpty?.();
       return true;
     },
-    [onChange, onDraftEmpty, onTyping]
+    [maxLength, onChange, onDraftEmpty, onTyping]
   );
 
   const editor = useEditor({

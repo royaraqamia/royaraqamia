@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Loader2, MessageCircle, Send } from 'lucide-react';
+import { Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { cn } from '@/frontend/shared/cn';
@@ -15,15 +15,15 @@ import {
 } from '@/frontend/api/community-engagement';
 import { useSession } from '@/frontend/state/session-provider';
 import { useCommentCountSetter } from '@/frontend/state/community/post-engagement-provider';
+import { ChatBody } from '@/frontend/ui/chats/chat-body';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
-import { Textarea } from '@/frontend/ui/primitives/textarea';
-import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
+import { PostCommentField } from './post-comment-field';
 import { PostCommentOwnerActions } from './post-comment-owner-actions';
 import { PostTime } from '@/app/community/_components/post-time';
-import { POST_COMMENT_MAX_LENGTH, type PostComment } from '@/shared/contracts/community';
+import { type PostComment } from '@/shared/contracts/community';
 import { COMMUNITY_POST_COPY } from '../community-post-copy';
 
 interface PostCommentsProps {
@@ -101,8 +101,7 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
     }
   };
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  const submit = async () => {
     const body = draft.trim();
     if (!body || sending) return;
 
@@ -162,136 +161,98 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
   };
 
   return (
-    <section
-      id="comments"
-      aria-labelledby="comments-title"
-      data-visual="community-post-comments"
-      className="mt-6 scroll-mt-24 border-t border-border/60 pt-8"
-    >
-      <div className="mb-5 flex items-center gap-2.5">
-        <MessageCircle className="size-5 text-primary/80" aria-hidden="true" />
-        <h2 id="comments-title" className="text-lg font-bold tracking-tight text-foreground">
-          {COMMUNITY_POST_COPY.commentsTitle}
-        </h2>
-        {total !== null && total > 0 && (
-          <span className="font-digits text-sm font-bold text-muted-foreground" dir="ltr">
-            {total.toLocaleString('en-US')}
-          </span>
-        )}
-      </div>
-
-      <form onSubmit={submit} className="mb-8">
-        <Textarea
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder={COMMUNITY_POST_COPY.commentPlaceholder}
-          aria-label={COMMUNITY_POST_COPY.commentPlaceholder}
-          maxLength={POST_COMMENT_MAX_LENGTH}
-          showCount
-          className="min-h-20"
-        />
-        <div className="mt-2.5 flex items-center justify-end gap-2">
-          <button
-            type="submit"
-            disabled={sending || draft.trim().length === 0}
-            aria-label={COMMUNITY_POST_COPY.commentSubmitLabel}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition-safe hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:pointer-events-none disabled:opacity-45"
-          >
-            {sending ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Send className="size-4" aria-hidden="true" />
-            )}
-            {COMMUNITY_POST_COPY.commentSubmit}
-          </button>
+    <>
+      <section
+        id="comments"
+        aria-labelledby="comments-title"
+        data-visual="community-post-comments"
+        className="mt-6 scroll-mt-24 border-t border-border/60 pt-8"
+      >
+        <div className="mb-5 flex items-center gap-2.5">
+          <MessageCircle className="size-5 text-primary/80" aria-hidden="true" />
+          <h2 id="comments-title" className="text-lg font-bold tracking-tight text-foreground">
+            {COMMUNITY_POST_COPY.commentsTitle}
+          </h2>
+          {total !== null && total > 0 && (
+            <span className="font-digits text-sm font-bold text-muted-foreground" dir="ltr">
+              {total.toLocaleString('en-US')}
+            </span>
+          )}
         </div>
-        {dialog}
-      </form>
 
-      {status === 'loading' && (
-        <LoadingThread label={COMMUNITY_POST_COPY.commentsTitle} framed={false} />
-      )}
+        {status === 'loading' && (
+          <LoadingThread label={COMMUNITY_POST_COPY.commentsTitle} framed={false} />
+        )}
 
-      {status === 'failed' && (
-        <p className="text-sm text-muted-foreground">{COMMUNITY_POST_COPY.commentFailed}</p>
-      )}
+        {status === 'failed' && (
+          <p className="text-sm text-muted-foreground">{COMMUNITY_POST_COPY.commentFailed}</p>
+        )}
 
-      {status === 'ready' && comments.length === 0 && (
-        <EmptyState
-          icon={MessageCircle}
-          title={COMMUNITY_POST_COPY.commentsEmpty}
-          description={COMMUNITY_POST_COPY.commentsEmptyHint}
-        />
-      )}
+        {status === 'ready' && comments.length === 0 && (
+          <EmptyState
+            icon={MessageCircle}
+            title={COMMUNITY_POST_COPY.commentsEmpty}
+            description={COMMUNITY_POST_COPY.commentsEmptyHint}
+          />
+        )}
 
-      {comments.length > 0 && (
-        <ul className="flex flex-col gap-5">
-          {comments.map((comment) => {
-            const mine = user?.id === comment.author?.id;
-            const editing = editingId === comment.id;
+        {comments.length > 0 && (
+          <ul className="flex flex-col gap-5">
+            {comments.map((comment) => {
+              const mine = user?.id === comment.author?.id;
+              const editing = editingId === comment.id;
 
-            return (
-              <li
-                key={comment.id}
-                className="group/comment flex gap-3"
-                data-visual="community-comment"
-              >
-                <MemberAvatar
-                  name={comment.author?.name ?? comment.author?.username ?? null}
-                  avatarUrl={comment.author?.avatar_url ?? null}
-                  size="xs"
-                  ring={false}
-                  className="mt-0.5"
-                />
+              return (
+                <li
+                  key={comment.id}
+                  className="group/comment flex gap-3"
+                  data-visual="community-comment"
+                >
+                  <MemberAvatar
+                    name={comment.author?.name ?? comment.author?.username ?? null}
+                    avatarUrl={comment.author?.avatar_url ?? null}
+                    size="xs"
+                    ring={false}
+                    className="mt-0.5"
+                  />
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                    {comment.author ? (
-                      <Link
-                        href={`/u/${encodeURIComponent(comment.author.username)}`}
-                        className="font-bold text-foreground hover:text-primary"
-                      >
-                        {comment.author.name?.trim() || `@${comment.author.username}`}
-                      </Link>
-                    ) : (
-                      <span className="font-bold text-muted-foreground">—</span>
-                    )}
-                    <PostTime iso={comment.createdAt} className="text-muted-foreground" />
-                    {comment.editedAt && (
-                      <span className="text-[11px] text-muted-foreground/70">
-                        {COMMUNITY_POST_COPY.commentEdited}
-                      </span>
-                    )}
-
-                    {mine && !editing && (
-                      <PostCommentOwnerActions
-                        onEdit={() => startEdit(comment)}
-                        onDelete={() => void confirmDelete(comment)}
-                      />
-                    )}
-                  </div>
-
-                  {editing ? (
-                    <div className="mt-2">
-                      <Textarea
-                        value={editDraft}
-                        onChange={(event) => setEditDraft(event.target.value)}
-                        maxLength={POST_COMMENT_MAX_LENGTH}
-                        aria-label={COMMUNITY_POST_COPY.commentEdit}
-                        className="min-h-20"
-                      />
-                      <div className="mt-2 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void saveEdit(comment)}
-                          disabled={savingEdit || editDraft.trim().length === 0}
-                          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-45"
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                      {comment.author ? (
+                        <Link
+                          href={`/u/${encodeURIComponent(comment.author.username)}`}
+                          className="font-bold text-foreground hover:text-primary"
                         >
-                          {savingEdit && (
-                            <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
-                          )}
-                          {COMMUNITY_POST_COPY.commentSubmit}
-                        </button>
+                          {comment.author.name?.trim() || `@${comment.author.username}`}
+                        </Link>
+                      ) : (
+                        <span className="font-bold text-muted-foreground">—</span>
+                      )}
+                      <PostTime iso={comment.createdAt} className="text-muted-foreground" />
+                      {comment.editedAt && (
+                        <span className="text-[11px] text-muted-foreground/70">
+                          {COMMUNITY_POST_COPY.commentEdited}
+                        </span>
+                      )}
+
+                      {mine && !editing && (
+                        <PostCommentOwnerActions
+                          onEdit={() => startEdit(comment)}
+                          onDelete={() => void confirmDelete(comment)}
+                        />
+                      )}
+                    </div>
+
+                    {editing ? (
+                      <div className="mt-2 space-y-2">
+                        <PostCommentField
+                          value={editDraft}
+                          onChange={setEditDraft}
+                          onSend={() => void saveEdit(comment)}
+                          disabled={savingEdit}
+                          sending={savingEdit}
+                          sendLabel={COMMUNITY_POST_COPY.commentEdit}
+                        />
                         <button
                           type="button"
                           onClick={() => setEditingId(null)}
@@ -300,36 +261,52 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
                           {COMMUNITY_POST_COPY.commentCancel}
                         </button>
                       </div>
-                    </div>
-                  ) : (
-                    <p
-                      className={cn(
-                        'mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90'
-                      )}
-                    >
-                      <LinkifiedText text={comment.body} />
-                    </p>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                    ) : (
+                      <p
+                        className={cn(
+                          'mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90'
+                        )}
+                      >
+                        <ChatBody text={comment.body} />
+                      </p>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
-      {nextCursor && (
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={() => void loadMore()}
-            disabled={loadingMore}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-muted/30 px-4 text-xs font-bold text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
-          >
-            {loadingMore && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
-            {COMMUNITY_POST_COPY.commentsLoadMore}
-          </button>
+        {nextCursor && (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              disabled={loadingMore}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-muted/30 px-4 text-xs font-bold text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+            >
+              {loadingMore && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
+              {COMMUNITY_POST_COPY.commentsLoadMore}
+            </button>
+          </div>
+        )}
+      </section>
+
+      <div
+        data-visual="community-comment-dock"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+      >
+        <div className="mx-auto max-w-2xl">
+          <PostCommentField
+            value={draft}
+            onChange={setDraft}
+            onSend={() => void submit()}
+            disabled={sending}
+            sending={sending}
+          />
         </div>
-      )}
-    </section>
+        {dialog}
+      </div>
+    </>
   );
 }

@@ -268,14 +268,22 @@ private fun Post(
     val post = response.post
     val scroll = rememberScrollState()
     val scope = rememberCoroutineScope()
+    val composer =
+        rememberCommentComposerState(
+            slug = slug,
+            repository = engagementRepository,
+            signedIn = signedIn,
+            onSignIn = onSignIn,
+        )
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .verticalScroll(scroll)
-                .testTag(CommunityPostMetrics.POST),
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier =
+                Modifier.fillMaxSize()
+                    .verticalScroll(scroll)
+                    .padding(bottom = 96.dp)
+                    .testTag(CommunityPostMetrics.POST),
+        ) {
         // The page's rhythm, at the phone width: the chip and its facts are one
         // block (`gap-2`), the header closes with `mb-8`, and each of the cover
         // and the tags carries the same `mb-8` (#1573).
@@ -284,7 +292,7 @@ private fun Post(
             Spacer(Modifier.height(8.dp))
         }
 
-        PostFacts(post.published_at, post.view_count, post.reading_time_minutes)
+        PostFacts(post.published_at, post.view_count)
         Spacer(Modifier.height(32.dp))
 
         val cover = post.cover_image?.takeIf { it.isNotBlank() }
@@ -368,24 +376,32 @@ private fun Post(
             )
         }
 
-        if (engagementRepository != null) {
-            PostCommentsSection(
-                slug = slug,
-                repository = engagementRepository,
-                signedIn = signedIn,
-                currentUserId = currentUserId,
-                onSignIn = onSignIn,
-                onCountChanged = onCountChanged,
-            )
+            if (engagementRepository != null) {
+                PostCommentsSection(
+                    slug = slug,
+                    repository = engagementRepository,
+                    composer = composer,
+                    currentUserId = currentUserId,
+                    onCountChanged = onCountChanged,
+                )
+            }
+
+            Spacer(Modifier.height(spacing.elementGap))
         }
 
-        Spacer(Modifier.height(spacing.elementGap))
+        if (engagementRepository != null) {
+            PostCommentDock(
+                state = composer,
+                onSend = { composer.send(scope) },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
     }
 }
 
-/** Date, views and reading time: the caption of the identity above it. */
+/** Date and views: the caption of the identity above it. */
 @Composable
-private fun PostFacts(publishedAt: String?, viewCount: Long, readingMinutes: Long) {
+private fun PostFacts(publishedAt: String?, viewCount: Long) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
 
@@ -415,14 +431,6 @@ private fun PostFacts(publishedAt: String?, viewCount: Long, readingMinutes: Lon
                 modifier = Modifier.size(14.dp),
             )
             Text(text = viewCount.toString(), style = type.xs, color = RoyColors.mutedForeground)
-        }
-
-        if (readingMinutes > 0) {
-            Text(
-                text = CommunityPostCopy.READING_TIME.replace("{minutes}", readingMinutes.toString()),
-                style = type.xs,
-                color = RoyColors.mutedForeground,
-            )
         }
     }
 }
@@ -474,19 +482,13 @@ private fun AuthorChip(
     onOpenProfile: (String) -> Unit,
 ) {
     val type = LocalRoyTypeScale.current
-    val spacing = LocalRoySpacing.current
     val name = author.name.orEmpty()
 
-    // The page's chip is 42.75px at the phone width: the app pins that height so
-    // the line box's own font padding cannot make the pill taller than the page's.
+    // No pill: the page's author line is plain, so the app draws the avatar,
+    // the name and the handle on the background with the same gap.
     Row(
         modifier =
-            Modifier.height(42.75.dp)
-                .clip(CircleShape)
-                .background(RoyColors.muted.copy(alpha = 0.3f))
-                .border(1.dp, RoyColors.border.copy(alpha = 0.4f), CircleShape)
-                .clickable { onOpenProfile(author.username) }
-                .padding(horizontal = spacing.elementGapSm, vertical = 6.dp)
+            Modifier.clickable { onOpenProfile(author.username) }
                 .testTag(CommunityPostMetrics.AUTHOR)
                 .semantics {
                     role = Role.Button
