@@ -353,19 +353,10 @@ private fun MessageRow(
             modifier = Modifier.padding(top = 2.dp),
         ) {
             when (pending) {
-                MessagePending.Queued -> {
-                    Icon(
-                        imageVector = LucideVectors.Clock,
-                        contentDescription = null,
-                        tint = RoyColors.mutedForeground.copy(alpha = 0.6f),
-                        modifier = Modifier.size(12.dp),
-                    )
-                    Text(
-                        text = ChatThreadCopy.QUEUED,
-                        style = type.xs,
-                        color = RoyColors.mutedForeground.copy(alpha = 0.6f),
-                    )
-                }
+                // A queued line looks sent: the clock was a status nobody asked
+                // for, and a line the device owes the server still reads as the
+                // member's own words. A refused line keeps its own sentence.
+                MessagePending.Queued -> Unit
 
                 MessagePending.Failed -> {
                     Icon(

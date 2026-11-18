@@ -17,8 +17,6 @@ export const ASSISTANT_COPY = {
   send: 'إرسال السؤال',
   unavailable: 'نور غير متاحة حالياً.',
   failure: 'تعذّر الحصول على ردّ من نور. حاول مرة أخرى.',
-  /** Under text that arrived before a turn failed, so it is not read as whole. */
-  interrupted: 'توقّف الرد قبل أن يكتمل.',
   /** `{remaining}` and `{cap}` are filled from the server's own numbers. */
   remaining: 'المتبقي اليوم: {remaining} من {cap}',
   /**

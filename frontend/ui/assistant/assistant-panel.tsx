@@ -360,6 +360,7 @@ export function AssistantPanel({
             onAsk={(body, files) => void ask(body, files)}
             placeholder={ASSISTANT_PANEL_COPY.placeholder}
             sendLabel={ASSISTANT_PANEL_COPY.send}
+            stopLabel={ASSISTANT_PANEL_COPY.stop}
           />
         ) : null}
       </DialogContent>

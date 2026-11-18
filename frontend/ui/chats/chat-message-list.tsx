@@ -1,13 +1,12 @@
 'use client';
 
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Check, CircleAlert, Clock, Pencil, Trash } from 'lucide-react';
+import { Check, CircleAlert, Pencil, Trash } from 'lucide-react';
 
 import type { ChatMessageState } from '@/frontend/api/chats/local-store';
 import { pendingIsStored } from '@/frontend/state/chats/pending-turn';
 import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assistant';
 import { cn } from '@/frontend/shared/cn';
-import { ASSISTANT_COPY } from './assistant-copy';
 import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
 import { ActionCard, type ActionCardLabels } from './chat-agent-action-card';
 import { AttachmentChip } from './attachment-chip';
@@ -279,7 +278,9 @@ export function ChatMessageList({
                 <ChatBody text={assistant.interrupted} />
               </p>
             </div>
-            <p className="text-[11px] italic text-muted-foreground">{ASSISTANT_COPY.interrupted}</p>
+            <p className="text-[11px] italic text-muted-foreground">
+              {ASSISTANT_PANEL_COPY.interrupted}
+            </p>
           </div>
         )}
 
@@ -477,12 +478,6 @@ export const ChatMessageRow = memo(function ChatMessageRow({
 
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
         <span>{chatTimeAgo(message.createdAt)}</span>
-        {state === 'queued' && (
-          <span className="inline-flex items-center gap-1">
-            <Clock size={12} />
-            {CHAT_THREAD_COPY.queued}
-          </span>
-        )}
         {state === 'failed' && (
           <span className="inline-flex items-center gap-1 text-destructive/80">
             <CircleAlert size={12} />

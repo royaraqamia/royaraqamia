@@ -22,10 +22,11 @@ const IDLE_LEVELS = 16;
  * (ADR-0127).
  *
  * One field, and two controls: the paperclip sits *inside* the field at its end
- * edge, and the far end of the row is one slot that is a microphone while the
- * field is empty and a send button the moment there is something to send — the
- * row WhatsApp and Telegram trained everyone to expect, and the row that stops
- * the microphone from sitting beside a button nobody presses yet.
+ * edge, and the far end of the row is one slot — a microphone while the field
+ * is empty, a send button the moment there is something to send, and a stop
+ * button while an assistant answer is streaming into an empty field. That is
+ * the row WhatsApp and Telegram trained everyone to expect, with the slot
+ * Claude, ChatGPT and Gemini give a running answer.
  *
  * Return adds a line and nothing on the keyboard sends: the send button is the
  * only way to send, and the field grows with the draft until it scrolls.
@@ -58,6 +59,10 @@ export function ChatComposer({
   recordLabel = VOICE_COPY.record,
   stopLabel = VOICE_COPY.stopAndSend,
   cancelLabel = VOICE_COPY.cancelRecording,
+  /** The assistant's answer is still arriving: the end slot is a stop, not a mic. */
+  streaming = false,
+  onStop,
+  stopAnswerLabel,
   fieldLabels,
 }: {
   value: string;
@@ -90,6 +95,11 @@ export function ChatComposer({
   recordLabel?: string;
   stopLabel?: string;
   cancelLabel?: string;
+  /** While streaming the field stays editable and the end slot becomes a stop. */
+  streaming?: boolean;
+  /** Stop the answer in flight. */
+  onStop?: () => void;
+  stopAnswerLabel?: string;
   /** The field's six marks, worded by the surface that draws the row (ADR-0193). */
   fieldLabels: ChatFieldLabels;
 }) {
@@ -372,6 +382,17 @@ export function ChatComposer({
                 }}
               >
                 {sendIcon}
+              </Button>
+            ) : streaming ? (
+              <Button
+                type="button"
+                variant="hero"
+                size="icon-sm"
+                aria-label={stopAnswerLabel ?? VOICE_COPY.stopAndSend}
+                className="size-11"
+                onClick={onStop}
+              >
+                <Square size={14} />
               </Button>
             ) : (
               <Button
