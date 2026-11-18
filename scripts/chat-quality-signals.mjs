@@ -8,13 +8,17 @@
  *   node scripts/chat-quality-signals.mjs --env D:\Projects\royaraqamia\.env --days 30
  *
  * Only aggregates are printed. Message bodies are read to detect a repeated
- * question, but never leave this process.
+ * question, emails are read to separate harness traffic, and neither leaves
+ * this process.
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as prettier from 'prettier';
+
+import { FAILURE_CODES } from '../shared/contracts/chat-agent-failures.mjs';
+import { categorize, classifyAccount, harnessEmails } from './chat-quality-signals-lib.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '..');
@@ -53,13 +57,13 @@ const days = Math.max(1, Number(arg('days', '30')) || 30);
 const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 const PAGE = 1000;
 
-async function readTable(table, select) {
+async function readTable(table, select, windowed = true) {
   const rows = [];
   let offset = 0;
   for (;;) {
     const url = new URL(`${base}/rest/v1/${table}`);
     url.searchParams.set('select', select);
-    url.searchParams.set('created_at', `gte.${since}`);
+    if (windowed) url.searchParams.set('created_at', `gte.${since}`);
     url.searchParams.set('order', 'created_at.asc');
     url.searchParams.set('limit', String(PAGE));
     url.searchParams.set('offset', String(offset));
@@ -76,11 +80,18 @@ async function readTable(table, select) {
   }
 }
 
-const turns = await readTable('agent_turns', 'id,conversation_id,attempts,state,error,created_at');
+const turns = await readTable(
+  'agent_turns',
+  'id,conversation_id,member_id,attempts,state,error,created_at'
+);
 const messages = await readTable(
   'chat_messages',
   'id,conversation_id,sender_kind,body,created_at,deleted_at,edited_at'
 );
+// Accounts, not turns: the owners of the rows above were created before the window.
+const users = await readTable('users', 'id,email', false);
+const harness = harnessEmails(process.env);
+const accountOf = new Map(users.map((user) => [user.id, classifyAccount(user.email, harness)]));
 
 const byThread = new Map();
 for (const message of messages) {
@@ -118,22 +129,32 @@ for (const thread of byThread.values()) {
 
 const failed = turns.filter((turn) => turn.state === 'failed').length;
 const retried = turns.filter((turn) => turn.attempts > 0).length;
-const errors = new Map();
-const categorize = (error) => {
-  const text = String(error);
-  if (text.includes('تعذّر الحصول على ردّ')) return 'provider_failure';
-  if (text.includes('غير متاحة')) return 'unavailable';
-  if (text.includes(' تحويل الصوت') || text.includes('تحويل الصوت')) return 'transcription_failure';
-  if (text.includes('المستند') || text.includes('المرفق')) return 'file_failure';
-  if (text.includes('الاشتراك') || text.includes('الخطط')) return 'allowance';
-  return 'other';
+const accounts = {
+  harness: { turns: 0, failed: 0 },
+  member: { turns: 0, failed: 0 },
 };
+const errors = new Map();
+let namedFailures = 0;
 for (const turn of turns) {
+  // An owner we cannot identify stays in the member bucket: never hide a failure.
+  const account = accountOf.get(turn.member_id) ?? 'member';
+  accounts[account].turns += 1;
+  if (turn.state === 'failed') accounts[account].failed += 1;
   if (!turn.error) continue;
   const code = categorize(turn.error);
-  errors.set(code, (errors.get(code) ?? 0) + 1);
+  if (turn.state === 'failed' && code !== 'other') namedFailures += 1;
+  const entry = errors.get(code) ?? {
+    code,
+    count: 0,
+    cause: FAILURE_CODES[code].cause,
+    harness: 0,
+    member: 0,
+  };
+  entry.count += 1;
+  entry[account] += 1;
+  errors.set(code, entry);
 }
-const topErrors = [...errors.entries()].sort((a, b) => b[1] - a[1]);
+const topErrors = [...errors.values()].sort((a, b) => b.count - a.count);
 const rate = (part, whole) => (whole ? `${((part / whole) * 100).toFixed(1)}%` : 'n/a');
 const report = {
   generatedAt: new Date().toISOString(),
@@ -141,6 +162,8 @@ const report = {
   turns: turns.length,
   failedTurns: failed,
   failedRate: rate(failed, turns.length),
+  namedFailures,
+  namedFailureRate: rate(namedFailures, failed),
   retriedTurns: retried,
   retriedRate: rate(retried, turns.length),
   answeredFollowUpPairs: answeredTurns,
@@ -148,7 +171,8 @@ const report = {
   repeatedRate: rate(repeatedQuestions, answeredTurns),
   shortFollowUps,
   shortFollowUpRate: rate(shortFollowUps, answeredTurns),
-  topErrors: Object.fromEntries(topErrors),
+  accounts,
+  failures: topErrors,
 };
 
 const lines = [
@@ -156,13 +180,17 @@ const lines = [
   '',
   `${report.windowDays} day window, generated ${report.generatedAt}.`,
   '',
-  'Derived from `agent_turns` and `chat_messages` only. No schema, UI or extra',
-  'model call: zero token cost to members. Bodies are read but never printed.',
+  'Derived from `agent_turns`, `chat_messages` and `users` only. No schema, UI',
+  'or extra model call: zero token cost to members. Bodies and emails are read',
+  'to classify rows, but neither is ever printed.',
   '',
   '| Signal | Count | Rate |',
   '| --- | ---: | ---: |',
   `| Assistant turns | ${report.turns} | - |`,
   `| Failed turns | ${report.failedTurns} | ${report.failedRate} |`,
+  `| Failed turns with a named cause | ${report.namedFailures} | ${report.namedFailureRate} |`,
+  `| Failed turns from harness accounts (of ${accounts.harness.turns}) | ${accounts.harness.failed} | ${rate(accounts.harness.failed, accounts.harness.turns)} |`,
+  `| Failed turns from members (of ${accounts.member.turns}) | ${accounts.member.failed} | ${rate(accounts.member.failed, accounts.member.turns)} |`,
   `| Turns retried at least once | ${report.retriedTurns} | ${report.retriedRate} |`,
   `| Answered user-to-user pairs | ${report.answeredFollowUpPairs} | - |`,
   `| Repeated question after an answer | ${report.repeatedQuestions} | ${report.repeatedRate} |`,
@@ -171,8 +199,22 @@ const lines = [
   '## Failure codes',
   '',
   ...(topErrors.length
-    ? topErrors.map(([code, count]) => `- ${code}: ${count}`)
+    ? topErrors.map(
+        (failure) =>
+          `- ${failure.code}: ${failure.count} (harness ${failure.harness}, member ${failure.member}) — ${failure.cause}`
+      )
     : ['None in this window.']),
+  '',
+  '## Account split',
+  '',
+  'Harness accounts are `E2E_TEST_EMAIL`, `E2E_VISUAL_EMAIL` and `ADMIN_EMAILS`.',
+  'Their turns are test traffic, not member experience; an unknown owner stays',
+  'in the member bucket so a failure is never hidden.',
+  '',
+  '| Account class | Turns | Failed | Failed rate |',
+  '| --- | ---: | ---: | ---: |',
+  `| harness | ${accounts.harness.turns} | ${accounts.harness.failed} | ${rate(accounts.harness.failed, accounts.harness.turns)} |`,
+  `| member | ${accounts.member.turns} | ${accounts.member.failed} | ${rate(accounts.member.failed, accounts.member.turns)} |`,
   '',
   'A repeated question is a weak dissatisfaction proxy; a short follow-up such',
   'as "no" or "?" is weaker still. Neither is a verdict on one reply — they are',

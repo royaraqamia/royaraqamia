@@ -80,6 +80,7 @@ import {
   type WebSource,
 } from '@/shared/contracts/web-search';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
+import { FAILURE_SENTENCES } from '@/shared/contracts/chat-agent-failures.mjs';
 
 /**
  * The assistant's turn (ADR-0113, #817, #818).
@@ -230,24 +231,22 @@ const SPOKEN_NOTE = [
   'لا تعلّق على أنها نص، وتعامل معها ككلام العضو.',
 ].join(' ');
 
-const UNAVAILABLE = 'نور غير متاحة حالياً.';
-const COULD_NOT_ANSWER = 'تعذّر الحصول على ردّ من نور. حاول مرّة أخرى.';
+const UNAVAILABLE = FAILURE_SENTENCES.unavailable;
+const COULD_NOT_ANSWER = FAILURE_SENTENCES.provider;
 /** A recording no model would transcribe. */
-const COULD_NOT_TRANSCRIBE = 'لم أستطع تحويل الصوت إلى نص. أعد إرساله أو اكتبه.';
+const COULD_NOT_TRANSCRIBE = FAILURE_SENTENCES.transcription;
 /** A file whose bytes could not be read back from the bucket. */
-const COULD_NOT_READ = 'لم أستطع قراءة المرفق. أعد إرساله أو اكتب سؤالك.';
+const COULD_NOT_READ = FAILURE_SENTENCES.attachmentRead;
 /** A format no reader on this deployment can open: archives and the like. */
-const UNREADABLE_FILE =
-  'لا أستطيع قراءة هذا النوع من الملفات. أرسل صورة أو مستنداً أو ملفاً نصياً أو رسالة صوتية.';
+const UNREADABLE_FILE = FAILURE_SENTENCES.unreadableFile;
 /** A PDF whose pages are a scan: no text layer, so the answer names the remedy. */
-const NO_TEXT_LAYER =
-  'هذا المستند صور ممسوحة بلا نصّ يمكن قراءته. أرسل صور الصفحات نفسها، حتى ثلاث صور في الرسالة الواحدة، وسأقرأها.';
+const NO_TEXT_LAYER = FAILURE_SENTENCES.noTextLayer;
 /** A document that opened and says nothing at all. */
-const EMPTY_DOCUMENT = 'لا أجد نصاً في هذا المستند. أرسل نسخة أخرى أو اكتب سؤالك.';
+const EMPTY_DOCUMENT = FAILURE_SENTENCES.emptyDocument;
 /** A document no reader could open. */
-const BROKEN_DOCUMENT = 'لم أستطع فتح هذا المستند. أرسل نسخة أخرى أو اكتب سؤالك.';
+const BROKEN_DOCUMENT = FAILURE_SENTENCES.brokenDocument;
 /** A document that asks for a password. */
-const LOCKED_DOCUMENT = 'هذا المستند محمي بكلمة سر، ولا أستطيع فتحه. أرسل نسخة غير محمية.';
+const LOCKED_DOCUMENT = FAILURE_SENTENCES.lockedDocument;
 /** The label a document's words carry inside the turn, so the model knows their origin. */
 const DOCUMENT_FRAME = 'هذا نصّ المستند الذي أرفقه العضو:';
 /** What the model is told when the reading stopped at one of the caps. */
@@ -259,7 +258,7 @@ const ATTACHMENT_TEXT_MAX = 20_000;
 /** An image's ceiling in a turn, because base64 rides inside the request body. */
 const ATTACHMENT_IMAGE_MAX = 5 * 1024 * 1024;
 /** A picture the provider would refuse after the turn already spent its count. */
-const IMAGE_TOO_LARGE = 'الصورة كبيرة جداً على نور. أرسل صورة أصغر أو اكتب سؤالك.';
+const IMAGE_TOO_LARGE = FAILURE_SENTENCES.imageTooLarge;
 
 /** A ledger row the project's ceiling refused (`private.enforce_chat_agent_project_cap`). */
 function isProjectAllowanceRefusal(error: unknown): boolean {
@@ -1488,7 +1487,7 @@ function classifiedFailure(error: unknown, partialText: string): ChatAgentTurnFa
   return new ChatAgentTurnFailure(
     502,
     error instanceof AiChatProviderError && (error.status === 402 || error.status === 429)
-      ? 'نور مشغولة الآن، حاول بعد قليل.'
+      ? FAILURE_SENTENCES.busy
       : COULD_NOT_ANSWER,
     partialText
   );

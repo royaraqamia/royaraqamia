@@ -37,6 +37,7 @@ import {
   type ChatThread,
 } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+import { FAILURE_SENTENCES } from '@/shared/contracts/chat-agent-failures.mjs';
 
 /**
  * The chats surface: what the notifications page's second tab and `/chats/[id]`
@@ -665,7 +666,7 @@ export async function streamChatAgentTurn(
 /** A turn's failure, in the one sentence its stream carries to the composer. */
 function agentTurnFailure(error: unknown): string {
   if (error instanceof ChatAgentError) return error.message;
-  return 'تعذّر الحصول على ردّ من نور. حاول مرّة أخرى.';
+  return FAILURE_SENTENCES.provider;
 }
 
 /**
