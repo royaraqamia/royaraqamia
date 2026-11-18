@@ -196,7 +196,7 @@ describe('the generated route table', () => {
     surfaces: [
       { id: 'home', routes: ['/'] },
       { id: 'notes', routes: ['/?tab=/notes', '/notes'] },
-      { id: 'spendtrack-categories', routes: ['/spendtrack/categories'] },
+      { id: 'account-links', routes: ['/account/links'] },
       { id: 'admin', prefix: '/admin' },
     ],
   };
@@ -207,7 +207,7 @@ describe('the generated route table', () => {
   });
 
   it('names the product by the surface id’s own first segment', () => {
-    expect(productOf('spendtrack-categories')).toBe('spendtrack');
+    expect(productOf('account-links')).toBe('account');
     expect(productOf('notes')).toBe('notes');
   });
 
@@ -232,7 +232,9 @@ describe('the generated route table', () => {
     expect(routes).toContain(
       "  { pattern: '/notes', surface: 'notes', product: 'notes', tab: null },"
     );
-    expect(routes).toContain("    pattern: '/spendtrack/categories',");
+    expect(routes).toContain(
+      "  { pattern: '/account/links', surface: 'account-links', product: 'account', tab: null },"
+    );
   });
 });
 
@@ -242,7 +244,7 @@ describe('the app’s copy of the route table', () => {
     surfaces: [
       { id: 'home', routes: ['/'] },
       { id: 'notes', routes: ['/?tab=/notes', '/notes'] },
-      { id: 'spendtrack-categories', routes: ['/spendtrack/categories'] },
+      { id: 'account-links', routes: ['/account/links'] },
       { id: 'admin', prefix: '/admin' },
     ],
   };
@@ -267,9 +269,7 @@ describe('the app’s copy of the route table', () => {
   it('writes the matrix’s own ids, with a prefix subtree as its own row', () => {
     const file = renderKotlinRoutes(routed);
 
-    expect(file).toContain(
-      'ScreenRouteRow("/spendtrack/categories", "spendtrack-categories", "spendtrack", null),'
-    );
+    expect(file).toContain('ScreenRouteRow("/account/links", "account-links", "account", null),');
     expect(file).toContain('ScreenPrefixRow("/admin", "admin", "admin"),');
   });
 

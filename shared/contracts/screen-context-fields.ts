@@ -129,10 +129,7 @@ export const SCREEN_CONTENT_POLICIES: Readonly<Record<string, ScreenContentPolic
     fields: ['amount', 'category_id', 'date', 'description', 'currency'],
     text: false,
   },
-  'spendtrack-categories': {
-    fields: ['name', 'colorHex'],
-    text: false,
-  },
+
   // The page's own wording, for the surfaces whose words are public and are the
   // subject of the question ("what does this verse say?"). Cap at the contract's
   // excerpt, never the page.

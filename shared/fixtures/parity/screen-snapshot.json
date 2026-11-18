@@ -51,10 +51,10 @@
     },
     {
       "name": "a row's own surface, not its product's",
-      "route": "/spendtrack/categories",
+      "route": "/account/links",
       "tab": null,
-      "screenId": "spendtrack-categories",
-      "product": "spendtrack"
+      "screenId": "account-links",
+      "product": "account"
     },
     {
       "name": "a whole subtree one surface owns",

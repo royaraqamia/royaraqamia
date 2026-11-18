@@ -368,7 +368,7 @@ export function splitRoute(route) {
 
 /**
  * The product a surface belongs to, as its id's own first segment —
- * `spendtrack-categories` belongs to `spendtrack`. One id, one product, so a
+ * `account-links` belongs to `account`. One id, one product, so a
  * new row never needs a second list kept in step by hand.
  */
 export function productOf(surface) {

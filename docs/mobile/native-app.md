@@ -407,9 +407,9 @@ contributes a table, a payload and a transport, and the delivery rules stay in o
 queued write is delivered by the launch drain, the reconnection drain and the worker, all of which
 go through `AppGraph.drainOutbox` — which is what makes "one queue per product" safe to add.
 
-The screen is a pair with the site, seven times over (`docs/mobile/parity.json`): the total card,
-the budget card, the expense list, the expense form, the recurring list with its dialog, the
-category list and the category create dialog. What the site draws and this slice does not is named
+The screen is a pair with the site, five times over (`docs/mobile/parity.json`): the total card,
+the budget card, the expense list, the expense form and the recurring list with its dialog. What
+the site draws and this slice does not is named
 in that pull request rather than implied by a missing button: the split editor (the app shows a
 split marker and re-sends the splits untouched), CSV import and export, the charts, the insights
 strip and the filter bar.

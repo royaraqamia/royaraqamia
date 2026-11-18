@@ -29,8 +29,6 @@ import {
 import { ratesScreenScope } from '@/frontend/ui/rates/rates-screen-scope';
 import { scanScreenScope } from '@/frontend/ui/scan/scan-screen-scope';
 import {
-  spendtrackCategoriesScreenScope,
-  spendtrackCategoryScope,
   spendtrackExpenseScope,
   spendtrackScreenScope,
 } from '@/frontend/ui/spendtrack/spendtrack-screen-scope';
@@ -147,14 +145,7 @@ const APPS: readonly AppFixture[] = [
     scopes: [spendtrackScreenScope('last_7')],
     expect: { tab: 'last_7' },
   },
-  {
-    app: 'spendtrack-categories',
-    route: '/spendtrack/categories',
-    screenId: 'spendtrack-categories',
-    title: 'تصنيفات المصروفات',
-    scopes: [spendtrackCategoriesScreenScope()],
-    expect: { tab: null, focus: null, fields: {} },
-  },
+
   {
     app: 'notes',
     route: '/notes',
@@ -259,20 +250,6 @@ describe('the records a surface puts in hand', () => {
       currency: 'SYP',
     });
     expect(JSON.stringify(snapshot)).not.toContain('hunter2');
-  });
-
-  it('reports a category’s two allowlisted fields and the row being edited', () => {
-    const snapshot = composeScreenContext(
-      baseOf(APPS.find(({ app }) => app === 'spendtrack-categories') as AppFixture),
-      [
-        spendtrackCategoriesScreenScope(),
-        spendtrackCategoryScope({ name: 'طعام', colorHex: '#8f6fe5' }, 'category-1'),
-      ]
-    );
-
-    expect(snapshot.fields).toEqual({ name: 'طعام', colorHex: '#8f6fe5' });
-    expect(snapshot.focus).toEqual({ kind: 'category', id: 'category-1' });
-    expect(snapshot.overlays).toEqual([{ id: 'spendtrack-categories.category', kind: 'dialog' }]);
   });
 
   it('reports the habit the edit dialog holds, above the dashboard', () => {

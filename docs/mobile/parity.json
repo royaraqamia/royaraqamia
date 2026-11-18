@@ -629,62 +629,7 @@
         }
       ]
     },
-    {
-      "id": "spendtrack-categories",
-      "surface": "spendtrack-categories",
-      "issue": "#653",
-      "web": {
-        "route": "app/spendtrack/(app)/categories/page.tsx",
-        "component": "app/spendtrack/(app)/categories/category-list.tsx",
-        "copyModule": "app/spendtrack/(app)/categories/spendtrack-categories-copy.ts",
-        "copyExport": "SPENDTRACK_CATEGORIES_COPY"
-      },
-      "native": {
-        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryList.kt",
-        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoriesUiState.kt",
-        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoriesCopy.kt",
-        "copyObject": "SpendtrackCategoriesCopy"
-      },
-      "copySource": "shared/copy/spendtrack-categories.json",
-      "states": [
-        {
-          "name": "Painted",
-          "copy": "listLabel"
-        },
-        {
-          "name": "Empty",
-          "copy": "emptyTitle"
-        }
-      ]
-    },
-    {
-      "id": "spendtrack-category-create",
-      "surface": "spendtrack-categories",
-      "issue": "#653",
-      "web": {
-        "route": "app/spendtrack/(app)/categories/page.tsx",
-        "component": "app/spendtrack/(app)/categories/create-category-dialog.tsx",
-        "copyModule": "app/spendtrack/(app)/categories/spendtrack-category-create-copy.ts",
-        "copyExport": "SPENDTRACK_CATEGORY_CREATE_COPY"
-      },
-      "native": {
-        "component": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryList.kt",
-        "state": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryFormUiState.kt",
-        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/spendtrack/SpendtrackCategoryCreateCopy.kt",
-        "copyObject": "SpendtrackCategoryCreateCopy"
-      },
-      "copySource": "shared/copy/spendtrack-category-create.json",
-      "states": [
-        {
-          "name": "Idle",
-          "copy": "addAction"
-        },
-        {
-          "name": "Busy",
-          "copy": "creating"
-        }
-      ]
-    },
+
     {
       "id": "spendtrack-budget",
       "surface": "spendtrack",

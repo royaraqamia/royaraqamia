@@ -45,14 +45,7 @@ const PRERENDERED = Object.fromEntries(
   Object.values(APP_PATHS).map((route) => [route, { srcRoute: null }])
 );
 
-const NEVER_CACHE = [
-  '/auth/api',
-  '/auth/callback',
-  '/admin',
-  '/mcp/connect',
-  '/spendtrack/api',
-  '/spendtrack/categories',
-];
+const NEVER_CACHE = ['/auth/api', '/auth/callback', '/admin', '/mcp/connect', '/spendtrack/api'];
 
 function select(overrides = {}) {
   return selectPrecacheRoutes({

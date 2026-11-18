@@ -37,9 +37,9 @@ describe('resolveScreen', () => {
   });
 
   it('reads a nested route as its own surface', () => {
-    expect(resolveScreen('/spendtrack/categories')).toEqual({
-      screenId: 'spendtrack-categories',
-      product: 'spendtrack',
+    expect(resolveScreen('/account/links')).toEqual({
+      screenId: 'account-links',
+      product: 'account',
       tab: null,
     });
   });

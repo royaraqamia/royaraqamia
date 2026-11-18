@@ -341,10 +341,7 @@ export async function createCategory(body: Record<string, unknown>): Promise<Htt
         200,
         { success: true },
         {
-          revalidate: [
-            { path: '/spendtrack/categories', type: 'layout' },
-            ...SPENDTRACK_LAYOUT_REVALIDATION,
-          ],
+          revalidate: SPENDTRACK_LAYOUT_REVALIDATION,
         }
       );
     },
@@ -372,10 +369,7 @@ export async function updateCategory(
         200,
         { success: true },
         {
-          revalidate: [
-            { path: '/spendtrack/categories', type: 'layout' },
-            ...SPENDTRACK_LAYOUT_REVALIDATION,
-          ],
+          revalidate: SPENDTRACK_LAYOUT_REVALIDATION,
         }
       );
     },
@@ -395,10 +389,7 @@ export async function deleteCategory(
         200,
         { success: true },
         {
-          revalidate: [
-            { path: '/spendtrack/categories', type: 'layout' },
-            ...SPENDTRACK_LAYOUT_REVALIDATION,
-          ],
+          revalidate: SPENDTRACK_LAYOUT_REVALIDATION,
         }
       );
     },

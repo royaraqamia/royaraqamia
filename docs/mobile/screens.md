@@ -14,7 +14,6 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | _web only_ | The page is the deliverable (ADR-0178): five static pages whose words the site owns, so a policy edit costs a deploy and no release. |
 | `habitflow` | `/?tab=/habitflow`<br>`/habitflow` | `HabitflowScreen.kt` |  |
 | `spendtrack` | `/?tab=/spendtrack`<br>`/spendtrack` | `SpendtrackScreen.kt` |  |
-| `spendtrack-categories` | `/spendtrack/categories` | `SpendtrackCategoriesScreen.kt` |  |
 | `linksnap` | `/?tab=/linksnap` | `LinksnapShortenerScreen.kt` |  |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | `LinksnapUnlockScreen.kt` |  |
 | `quran` | `/?tab=/quran`<br>`/quran` | `QuranIndexScreen.kt` |  |

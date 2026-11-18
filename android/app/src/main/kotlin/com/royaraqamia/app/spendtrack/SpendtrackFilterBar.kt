@@ -117,7 +117,7 @@ fun SpendtrackFilterBar(
                     onValueChange = {},
                     readOnly = true,
                     singleLine = true,
-                    leadingIcon = { Icon(LucideVectors.Tags, contentDescription = null) },
+                    leadingIcon = { Icon(LucideVectors.Tag, contentDescription = null) },
                     trailingIcon = {
                         Icon(LucideVectors.ChevronDown, contentDescription = null)
                     },

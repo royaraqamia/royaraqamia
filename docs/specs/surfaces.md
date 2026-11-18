@@ -13,7 +13,6 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | static | swr | none | precached | `public-offline.spec.ts` |  |  |
 | `habitflow` | `/?tab=/habitflow`<br>`/habitflow` | local-store | store | outbox | none | `product-offline-render.spec.ts`<br>`habitflow-sync-resume.spec.ts` | `paint:habitflow` | #493 |
 | `spendtrack` | `/?tab=/spendtrack`<br>`/spendtrack` | local-store | store | outbox | none | `product-offline-render.spec.ts`<br>`spendtrack-offline.spec.ts` | `paint:spendtrack` | #493 |
-| `spendtrack-categories` | `/spendtrack/categories` | local-store | store | outbox | precached | `product-offline-render.spec.ts`<br>`spendtrack-offline.spec.ts` | `paint:spendtrack` | #959 |
 | `linksnap` | `/?tab=/linksnap` | local-store | store | outbox | none | `product-offline-render.spec.ts`<br>`linksnap-offline.spec.ts` | `paint:linksnap` | #493 |
 | `linksnap-unlock` | `/linksnap/unlock/[code]` | server | needs-connection | none | swr | _ungated_ |  |  |
 | `quran` | `/?tab=/quran`<br>`/quran` | local-store | store | outbox | none | `quran-reader.spec.ts`<br>`quran-marks.spec.ts`<br>`quran-sync.spec.ts` | `paint:quran` | #493 |

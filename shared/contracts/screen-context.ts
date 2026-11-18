@@ -51,7 +51,7 @@ export interface ScreenContext {
   route: string;
   /** The product the surface belongs to: `spendtrack`, `quran`, `site`. */
   product: string;
-  /** The surface's id in the one registry: `spendtrack-categories`. Empty when
+  /** The surface's id in the one registry: `account-links`. Empty when
    * the path is not in the registry â€” a route-only snapshot, never a made-up id. */
   screenId: string;
   /** The screen's own title, as drawn. Empty when the screen has none. */
