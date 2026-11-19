@@ -29,8 +29,6 @@
 #     idempotent: `setWebhook` on the same URL and secret is a no-op.
 #   - `workflow_dispatch` is what the function calls (through the Vault PAT), and
 #     what the owner can run by hand.
-#   - `workflow_run` on completion is what makes the digest a reaction instead
-#     of a clock; the planner and the implementer finish when they finish.
 #
 # Setup (repository secrets):
 #   TELEGRAM_BOT_TOKEN        - BotFather
@@ -51,28 +49,13 @@ on:
       mode:
         description: 'What to do in this run'
         type: choice
-        options:
-          [drain, merge, remember, remind, probe, agent-probe, digest-audits, digest-implementer]
+        options: [drain, merge, remember, remind, probe, agent-probe]
         default: drain
       confirmation:
         description: 'The confirmation row a merge completes (mode=merge only)'
         type: string
         required: false
         default: ''
-  workflow_run:
-    workflows:
-      [
-        'Performance Audit',
-        'Security Audit',
-        'UI/UX Audit',
-        'Scalability Audit',
-        'Maintainability Audit',
-        'Product Audit',
-        'Issue Implementer',
-        'Release Health',
-        'Migration Drift',
-      ]
-    types: [completed]
   push:
     branches: [main]
     paths:
@@ -145,7 +128,6 @@ jobs:
     name: Drain, answer and remind
     # The button-driven merge has its own job with the one permission it needs.
     if: >-
-      github.event_name != 'workflow_run' &&
       github.event_name != 'push' &&
       inputs.mode != 'merge'
     runs-on: ubuntu-latest
@@ -249,21 +231,6 @@ jobs:
         env: *agent-env
         run: node scripts/agent-probe.mjs
 
-      - name: Digest on demand - audits
-        if: inputs.mode == 'digest-audits'
-        env: *agent-env
-        run: |
-          set -euo pipefail
-          for workflow in "Performance Audit" "Security Audit" "UI/UX Audit" \
-            "Scalability Audit" "Maintainability Audit" "Product Audit"; do
-            node scripts/telegram-bridge.mjs digest --workflow "$workflow"
-          done
-
-      - name: Digest on demand - implementer
-        if: inputs.mode == 'digest-implementer'
-        env: *agent-env
-        run: node scripts/telegram-bridge.mjs digest --workflow "Issue Implementer"
-
       - name: Record what the turn spent
         # Best-effort and never blocking: an interactive turn is what the owner
         # asked for, so it is measured after the fact and never gated. ADR 0133.
@@ -311,72 +278,3 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           CONFIRMATION: ${{ inputs.confirmation }}
         run: node scripts/telegram-bridge.mjs merge --confirmation "$CONFIRMATION"
-
-  digest:
-    name: Digest on completion
-    if: >-
-      github.event_name == 'workflow_run' &&
-       (github.event.workflow_run.name == 'Performance Audit' ||
-        github.event.workflow_run.name == 'Security Audit' ||
-        github.event.workflow_run.name == 'UI/UX Audit' ||
-        github.event.workflow_run.name == 'Scalability Audit' ||
-        github.event.workflow_run.name == 'Maintainability Audit' ||
-        github.event.workflow_run.name == 'Product Audit' ||
-        github.event.workflow_run.name == 'Issue Implementer')
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Send the digest
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
-          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
-          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
-        run: >-
-          node scripts/telegram-bridge.mjs digest
-          --workflow "$WORKFLOW_NAME"
-          --url "$WORKFLOW_URL"
-          --run-id "$WORKFLOW_RUN_ID"
-
-  alerts:
-    name: Alert on a red check
-    if: >-
-      github.event_name == 'workflow_run' &&
-      (github.event.workflow_run.name == 'Release Health' ||
-       github.event.workflow_run.name == 'Migration Drift')
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Report a failure
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
-          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
-        run: >-
-          node scripts/telegram-bridge.mjs alerts
-          --workflow "$WORKFLOW_NAME"
-          --conclusion "$WORKFLOW_CONCLUSION"
-          --url "$WORKFLOW_URL"
