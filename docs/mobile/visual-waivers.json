@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "notes": "Dated exceptions to the pull-request visual-drift check. A waiver is for a web change that provably does not alter what the surface shows (for example a refactor with no layout or copy change), never for a redesign. It names the surface, why, the issue that carries the decision and the date after which it no longer applies. `npm run check:visual-drift` fails on a malformed or expired waiver.",
+  "waivers": []
+}

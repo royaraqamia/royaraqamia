@@ -22,6 +22,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The visual-drift check diffs the pull request against its base.
+          fetch-depth: 0
 
       - name: Setup Build Environment
         uses: ./.github/actions/setup-environment
@@ -133,6 +136,11 @@ jobs:
       # on (docs/mobile/parity-plan.json): this refuses a surface nobody planned.
       - name: Screen Plan
         run: npm run check:plan
+
+      # A native surface must be re-recorded when its web side changes; this
+      # refuses a pull request that would leave check:visual green on old evidence.
+      - name: Visual Drift
+        run: npm run check:visual-drift -- --base ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
 
       - name: Lint
         run: npm run lint

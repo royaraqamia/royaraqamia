@@ -45,6 +45,9 @@ import { inflateSync } from 'node:zlib';
  * pixels are the page's hero, an avatar the page floats over the tab bar, and a
  * `backdrop-filter` Compose has no equivalent for. A frame that does not say
  * `raster: "none"` is measured like a surface - a baseline or it does not pass.
+ *
+ * A pull request that changes the web side of a gated surface must re-record its
+ * evidence; check:visual-drift enforces that on the diff (docs/mobile/visual-drift.md).
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
