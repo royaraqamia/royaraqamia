@@ -86,6 +86,7 @@
     "perf:field": "node scripts/perf-field.mjs",
     "perf:pages": "cross-env CI=1 PERF_PAGES=1 playwright test e2e/perf-pages.spec.ts --project=existing-tests --workers=1 --retries=0",
     "perf:paint": "node scripts/perf-paint.mjs",
+    "perf:shell": "node scripts/perf-shell.mjs",
     "perf:paint:update": "node scripts/perf-paint.mjs --update",
     "android:sync": "cap sync android",
     "android:apk": "npm run android:sync && node scripts/android.mjs apk",

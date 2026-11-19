@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
@@ -64,10 +65,13 @@ public class MainActivity extends BridgeActivity {
     private static final long SKELETON_FADE_MS = 150;
 
     /**
-     * The launch line the shell's numbers are read from (#499). Debug builds only:
-     * Capacitor's logger is silent in a release.
+     * The launch line the shell's numbers are read from (#499).
+     *
+     * These go straight to `Log.d` rather than Capacitor's logger: the logger is
+     * silenced by the production config, which is exactly the build whose launch
+     * #1639 has to be measurable on. The lines carry no URL, user or session.
      */
-    private static final String LAUNCH_TAG = "RoyLaunch";
+    static final String LAUNCH_TAG = "RoyLaunch";
 
     /** The launch skeleton, or null once it has been released. */
     private View skeleton;
@@ -95,6 +99,10 @@ public class MainActivity extends BridgeActivity {
         // bridge that Capacitor has just created.
         announceShellVersion();
         installUpdateBridge(getBridge());
+        // The page reports its own launch marks here (#1639), so the shell can
+        // attribute the gap between the document's commit and owned rows to the
+        // document or to the app on the same fork-relative timeline.
+        installPerfBridge(getBridge());
         // The background drain (ADR-0059): the page signals through the bridge
         // when a flush leaves work behind, and the periodic floor covers what the
         // signal cannot — a shell that was killed before it could ask.
@@ -185,6 +193,16 @@ public class MainActivity extends BridgeActivity {
         bridge.addWebViewListener(
             new WebViewListener() {
                 @Override
+                public void onPageStarted(WebView view) {
+                    logLaunch("page started");
+                }
+
+                @Override
+                public void onPageLoaded(WebView view) {
+                    logLaunch("page loaded");
+                }
+
+                @Override
                 public void onPageCommitVisible(WebView view, String url) {
                     // A blank or internal document commits before the site's own
                     // frame does; releasing on that would put the empty surface back
@@ -244,8 +262,21 @@ public class MainActivity extends BridgeActivity {
      */
     private static void logLaunch(String moment) {
         long elapsed = SystemClock.uptimeMillis() - Process.getStartUptimeMillis();
-        Logger.debug(LAUNCH_TAG, moment + " at " + elapsed + "ms");
+        Log.d(LAUNCH_TAG, moment + " at " + elapsed + "ms");
     }
+
+    /**
+     * The wall clock the document's marks are compared with (#1639).
+     *
+     * The page reports `performance.timeOrigin + duration`; subtracting this
+     * instant puts that mark on the same fork-relative timeline as the document
+     * callbacks above.
+     */
+    private static long forkWallClockMs() {
+        return System.currentTimeMillis()
+                - (SystemClock.uptimeMillis() - Process.getStartUptimeMillis());
+    }
+
 
     /**
      * Lets the system back button close the app once there is nothing left to go
@@ -335,6 +366,24 @@ public class MainActivity extends BridgeActivity {
         if (!current.startsWith(WEB_ORIGIN)) return null;
 
         return appUrl.endsWith("/") ? appUrl : appUrl + "/";
+    }
+
+    /**
+     * Exposes `RoyShellPerf.mark()` to the page (#1639).
+     *
+     * The page writes the same `shell` and `content` measures the field beacon
+     * reports. On the installed shell those marks are the only way to tell how
+     * long the app took after the document committed; logging them here puts
+     * that half of the launch beside the document callbacks on one timeline.
+     * No data crosses the boundary beyond a name and a timestamp.
+     */
+    private void installPerfBridge(@Nullable Bridge bridge) {
+        WebView webView = bridge != null ? bridge.getWebView() : null;
+        if (webView == null) return;
+        webView.addJavascriptInterface(
+            new ShellPerfBridge(forkWallClockMs()),
+            ShellPerfBridge.NAME
+        );
     }
 
     /**

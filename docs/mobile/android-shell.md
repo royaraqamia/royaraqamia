@@ -300,6 +300,24 @@ Two things stay from that experiment, because the measurements above are read th
 mode, and the fact that the commit line is logged inside the listener that releases the skeleton, after
 the `about:` guard.
 
+**The page's own marks now join them (#1639).** The field beacon reports `shellMs`
+and `contentMs` from `performance.timeOrigin`, but those lines live in the Render
+logs where the shell cannot read them. `RoyShellPerf` forwards the page's `boot`,
+`shell` and `content` marks to logcat on the shell's fork-relative clock, and the
+document callbacks write `page started`, `page committed` and `page loaded`.
+Together they split the launch the budget judges: fork → document commit is the
+shell's, and commit → `content` is the page's. `npm run perf:shell` reads them
+from the reference phone and fails on a breach of the `shell` row in
+`perf/paint-budget.json`.
+
+Measured this way on the RMX3195 (release-signed, 2026-11-19) a cold launch of
+the document reached `onCreate` at 300 ms, `page committed` at 2,257 ms, with the
+page's own clock (`boot mark`) at roughly the same instant — so the multi-second
+field number is spent after commit, in a first navigation the service worker
+does not control and whose assets therefore come from the network. A launch that
+never paints owned rows has no `content` mark and is not a sample; the runner
+needs a member signed in to one of the Local-Store surfaces.
+
 Install on a device or emulator:
 
 ```powershell

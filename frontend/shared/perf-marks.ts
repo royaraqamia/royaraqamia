@@ -25,6 +25,34 @@ export interface PerformanceLike {
   measure(name: string, start?: string, end?: string): { duration: number };
   clearMarks(name?: string): void;
   clearMeasures(name?: string): void;
+  /** Needed only to put the mark on the shell's fork-relative timeline. */
+  timeOrigin?: number;
+}
+
+/** The bridge the installed shell injects; absent on the web and in tests. */
+interface ShellPerfBridge {
+  mark(name: 'boot' | 'shell' | 'content', wallClockMs: number): void;
+}
+
+/**
+ * Reports the two launch marks to the shell (#1639). The page's beacon goes to
+ * the Render logs, where it cannot tell the shell how much of a slow launch was
+ * the document and how much was the app; the bridge writes the same marks to
+ * logcat on the shell's own clock. Optional and silent everywhere else.
+ */
+function reportShellMark(
+  perf: PerformanceLike,
+  name: 'boot' | 'shell' | 'content',
+  durationMs: number
+): void {
+  const origin = perf.timeOrigin;
+  if (typeof origin !== 'number') return;
+  const bridge = (globalThis as { RoyShellPerf?: ShellPerfBridge }).RoyShellPerf;
+  try {
+    bridge?.mark(name, origin + durationMs);
+  } catch {
+    // A mark is never worth breaking a paint over.
+  }
 }
 
 export interface AppPerfMarksDeps {
@@ -113,6 +141,9 @@ export function createAppPerfMarks(deps: AppPerfMarksDeps = {}): AppPerfMarks {
     if (booted) return;
     booted = true;
     mark(APP_PERF_MARK.boot);
+    // The shell needs the page's own zero point to turn its fork-relative marks
+    // back into the budget's `boot → content` duration (#1639).
+    reportShellMark(perf, 'boot', 0);
   }
 
   function markShell(): void {
@@ -138,6 +169,8 @@ export function createAppPerfMarks(deps: AppPerfMarksDeps = {}): AppPerfMarks {
       );
       if (shellMs === null || contentMs === null) return;
       if (shellMs > APP_PERF_LAUNCH_MAX_MS || contentMs > APP_PERF_LAUNCH_MAX_MS) return;
+      reportShellMark(perf, 'shell', shellMs);
+      reportShellMark(perf, 'content', contentMs);
       remember({
         version: 1,
         kind: 'launch',

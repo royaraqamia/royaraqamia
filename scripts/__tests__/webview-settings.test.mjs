@@ -60,6 +60,25 @@ describe('the launch numbers', () => {
     expect(activity).toContain('Process.getStartUptimeMillis()');
     expect(activity).toContain('LAUNCH_TAG = "RoyLaunch"');
     expect(activity).toContain('logLaunch("onCreate")');
+    // Capacitor's logger is silenced in the production build (#1639), which is
+    // the build whose launch has to be measurable on the reference phone.
+    expect(activity).toContain('Log.d(LAUNCH_TAG');
+    expect(activity).not.toContain('Logger.debug(LAUNCH_TAG');
+  });
+
+  it('bracket the document and the app on one fork-relative timeline', () => {
+    // #1639: `shellMs` to `contentMs` is the gap the budget judges. The
+    // document's own callbacks and the page's two marks have to be readable in
+    // the same log or the gap cannot be attributed.
+    expect(activity).toContain('logLaunch("page started")');
+    expect(activity).toContain('logLaunch("page loaded")');
+    expect(activity).toContain('installPerfBridge(getBridge())');
+    expect(activity).toContain('new ShellPerfBridge(forkWallClockMs())');
+    const bridge = readFileSync(join(PACKAGE_DIR, 'ShellPerfBridge.java'), 'utf8');
+    expect(bridge).toContain('NAME = "RoyShellPerf"');
+    expect(bridge).toContain('@JavascriptInterface');
+    expect(bridge).toContain('"shell".equals(name)');
+    expect(bridge).toContain('"content".equals(name)');
   });
 
   it('mark the document, which is the moment the acceptance is about', () => {

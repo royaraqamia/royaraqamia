@@ -105,6 +105,33 @@ describe('app perf marks', () => {
     ]);
   });
 
+  it('reports both launch marks to the installed shell on its own clock', () => {
+    // #1639: the field beacon cannot attribute a slow launch from the Render
+    // logs. The shell reads these two marks on a fork-relative timeline instead.
+    const timing = userTiming();
+    const bridge = { mark: vi.fn() };
+    (globalThis as { RoyShellPerf?: typeof bridge }).RoyShellPerf = bridge;
+    try {
+      const marks = createAppPerfMarks({
+        perf: { ...timing.perf, timeOrigin: 1_000_000 },
+        platform: 'shell',
+        cold: true,
+        isOnline: () => false,
+        afterPaint: (run) => run(),
+      });
+      marks.markBoot();
+      timing.advance(40);
+      marks.markShell();
+      timing.advance(85);
+      marks.markContent();
+      expect(bridge.mark).toHaveBeenCalledWith('boot', 1_000_000);
+      expect(bridge.mark).toHaveBeenCalledWith('shell', 1_000_040);
+      expect(bridge.mark).toHaveBeenCalledWith('content', 1_000_125);
+    } finally {
+      delete (globalThis as { RoyShellPerf?: unknown }).RoyShellPerf;
+    }
+  });
+
   it('writes the marks a profiler can read, once each', () => {
     const { marks, timing } = harness();
 

@@ -52,11 +52,14 @@ const baseline = JSON.parse(
   readFileSync(join(ROOT, 'perf', 'paint-baseline.json'), 'utf8')
 ) as PaintBaseline;
 
+/** A shell row is measured on a device by `perf:shell`, not in a browser (#1639). */
+const WEB_SURFACES = budget.surfaces.filter((surface) => (surface.platform ?? 'web') === 'web');
+
 /** Kept samples plus the one the run always throws away (worker install, cold store). */
 const SAMPLES = budget.runs + 1;
 
 /** A run that gates only public surfaces must not spend a sign-in on nothing. */
-const NEEDS_ACCOUNT = budget.surfaces.some((surface) => surface.auth === true);
+const NEEDS_ACCOUNT = WEB_SURFACES.some((surface) => surface.auth === true);
 
 /** Every surface's median, written to `PAINT_E2E_OUT` for `perf:paint:update`. */
 const collected: Record<string, PaintMeasurement> = {};
@@ -232,7 +235,7 @@ async function warmSamples(
   return { warm, tap };
 }
 
-for (const surface of budget.surfaces) {
+for (const surface of WEB_SURFACES) {
   test(`${surface.id} paints within its budget`, async ({ browser, baseURL }) => {
     test.skip(
       surface.auth === true && !ACCOUNT,
