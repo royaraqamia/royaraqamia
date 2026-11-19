@@ -8,7 +8,7 @@ body:
       value: |
         One issue, one thing somebody can finish and a check can prove. If this adds or changes a
         screen, the three rows below are part of the work, not paperwork: they are what makes the
-        APK the web ([#882](https://github.com/royaraqamia/royaraqamia/issues/882)).
+        APK the web ([docs/mobile/parity-plan.json](https://github.com/royaraqamia/royaraqamia/blob/main/docs/mobile/parity-plan.json)).
 
   - type: textarea
     id: what

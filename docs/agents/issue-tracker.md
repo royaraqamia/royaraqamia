@@ -28,7 +28,7 @@ double quotes.
 ### A screen issue carries its rows
 
 Any issue that adds or changes a screen names the rows it will add, because the APK is the web and
-that is checked, not judged (#882):
+that is checked, not judged (docs/mobile/parity-plan.json):
 
 - a row in `docs/mobile/screens.json` — the Kotlin screen, or the reason there is none;
 - a row in `docs/mobile/parity-plan.json` — its phase, and `todo` (the document draws it) or

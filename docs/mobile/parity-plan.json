@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "notes": "The todo list for making the APK the web (#882): one row per surface in perf/surfaces.json, in the order the work is meant to happen, and the state of each. `native` is only when the row in docs/mobile/screens.json says `enabled: true` and its evidence passes check:visual (ADR-0118); `todo` is a surface the app still opens in the document and means to port; `document` is one where the page is the deliverable, and `why` says what makes a native copy wrong (ADR-0178); `blocked` is one that cannot be worked yet, and `blockedBy` says why. `release` is the half a surface list cannot hold - the cutover, the diagnostics screen, the device measurements - each `done` with its evidence or `open` with what closes it. check:plan fails when a surface has no row, a row names a surface that does not exist, the two files disagree about what is on, a document row gives no reason, a release item is done without evidence, or a ported component in docs/mobile/parity.json belongs to a surface this plan does not know. docs/mobile/parity-plan.md and the tracking issue are generated from this file - do not hand-edit either.",
+  "notes": "The todo list for making the APK the web: one row per surface in perf/surfaces.json, in the order the work is meant to happen, and the state of each. `native` is only when the row in docs/mobile/screens.json says `enabled: true` and its evidence passes check:visual (ADR-0118); `todo` is a surface the app still opens in the document and means to port; `document` is one where the page is the deliverable, and `why` says what makes a native copy wrong (ADR-0178); `blocked` is one that cannot be worked yet, and `blockedBy` says why. `release` is the half a surface list cannot hold - the cutover, the diagnostics screen, the device measurements - each `done` with its evidence or `open` with what closes it. check:plan fails when a surface has no row, a row names a surface that does not exist, the two files disagree about what is on, a document row gives no reason, a release item is done without evidence, or a ported component in docs/mobile/parity.json belongs to a surface this plan does not know. docs/mobile/parity-plan.md is generated from this file - do not hand-edit either.",
   "phases": [
     {
       "id": "gate",
@@ -237,7 +237,7 @@
       "surface": "notes",
       "phase": "products",
       "state": "todo",
-      "issue": "#1390"
+      "issue": "#1628"
     },
     {
       "surface": "leads",
@@ -255,13 +255,13 @@
       "surface": "admin",
       "phase": "operator",
       "state": "todo",
-      "issue": "#974"
+      "issue": "#1627"
     },
     {
       "surface": "home",
       "phase": "door",
       "state": "blocked",
-      "blockedBy": "the nine tabs need nine native screens: `athkar` and `notes` are the two that do not have one",
+      "blockedBy": "the nine tabs need nine native screens: `notes` is the one that does not have one",
       "issue": "#1399"
     }
   ],
