@@ -78,6 +78,12 @@ were — `perf/runtime-budget.json`, explained in `docs/performance.md`.
   pair the capture skips with a message naming both variables and writes no evidence, so a missing
   account is a state declared and not captured rather than a recording of the wrong member (#920).
 
+- `npm run check:visual-drift -- --base <ref>` — the pull-request companion to `check:visual`. It reads
+  the diff against the base and refuses a change to a gated surface's web component, route, copy or
+  contract unless the same pull request re-records that surface's evidence, or carries a dated waiver
+  from `docs/mobile/visual-waivers.json`. It is scoped to the diff, so the old-evidence backlog in
+  #1631 does not fail unrelated pull requests (docs/mobile/visual-drift.md).
+
 ## Load testing
 
 - `npm run load-test -- --url <endpoint> --concurrency 100 --total 200` — concurrency smoke test for `POST /api/training/applications`. Writes real rows and triggers notifications, so point it at a local app backed by a throwaway database; production is refused unless `--allow-prod` is passed.

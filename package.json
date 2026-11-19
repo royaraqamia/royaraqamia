@@ -55,6 +55,7 @@
     "check:layers": "node scripts/check-layers.mjs",
     "check:screens": "node scripts/check-screens.mjs",
     "check:visual": "node scripts/check-visual.mjs",
+    "check:visual-drift": "node scripts/check-visual-drift.mjs",
     "check:plan": "node scripts/check-plan.mjs",
     "check:contracts": "node scripts/generate-contracts.mjs --check",
     "contracts:generate": "node scripts/generate-contracts.mjs",
