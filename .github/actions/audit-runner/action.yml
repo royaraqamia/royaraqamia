@@ -207,7 +207,6 @@ runs:
       id: audit
       if: steps.guard.outputs.run == 'true'
       shell: bash
-      timeout-minutes: 45
       env:
         OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: '250000'
         TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
@@ -217,7 +216,9 @@ runs:
       run: |
         set +e
         export PATH="$HOME/.opencode/bin:$PATH"
-        opencode run --model opencode-go/deepseek-v4.1-flash "$(cat /tmp/audit-prompt.txt)"
+        # Composite steps reject `timeout-minutes`; bound the agent with the shell
+        # instead, well inside the 90-minute job cap.
+        timeout 45m opencode run --model opencode-go/deepseek-v4.1-flash "$(cat /tmp/audit-prompt.txt)"
         status=$?
         set -e
         echo "status=$status" >> "$GITHUB_OUTPUT"
