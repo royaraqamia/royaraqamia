@@ -62,7 +62,28 @@ export async function signIn(
       },
       headers: { 'Content-Type': 'application/json' },
     });
-    if (response.ok()) return response;
+    if (response.ok()) {
+      // A 200 is not proof of a session. The login endpoint answers 200 both
+      // when it established one and when it only sent an OTP, and a cookie
+      // mutation that does not reach the response has the same shape. The
+      // visual gate used to lose 25 signed-in captures to this (#1574), so the
+      // helper now says which of the two happened instead of letting the first
+      // signed-in read fail with "no session (200)" much later.
+      const payload = (await response.json().catch(() => null)) as { needsOtp?: boolean } | null;
+      if (payload?.needsOtp === true) {
+        throw new Error(`sign-in for ${email} needs OTP verification; confirm the account`);
+      }
+
+      const session = await context.request.get(`${baseURL}/auth/api/session`);
+      const sessionBody = (await session.json().catch(() => null)) as { userId?: unknown } | null;
+      if (!session.ok() || typeof sessionBody?.userId !== 'string') {
+        throw new Error(
+          `sign-in for ${email} answered ${response.status()} but /auth/api/session answers ` +
+            `${session.status()} with ${JSON.stringify(sessionBody)}; the login response carried no session cookie`
+        );
+      }
+      return response;
+    }
 
     const body = await response.text();
     if (body.includes(RATE_LIMIT_MESSAGE) && attempt < MAX_TRIES) {
