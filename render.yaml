@@ -37,10 +37,10 @@ services:
     # A merge does not build. Hobby includes 500 pipeline minutes a month, and
     # this repository merges ~22 deploy-triggering commits a day: at the
     # recorded ~2m45 a build that is ~1,800 minutes, gone in the first week.
-    # `.github/workflows/deploy.yml` calls the deploy hook four times a day
-    # (ADR-0186) — ~330 minutes — and keeps a manual lane for hotfixes. A
-    # deploy hook ignores the build filter below; the filter only governs an
-    # automatic deploy, so turning auto-deploys back on stays safe.
+    # `.github/workflows/deploy.yml` calls the deploy hook only when it is
+    # dispatched by hand (ADR-0209). A deploy hook ignores the build filter
+    # below; the filter only governs an automatic deploy, so turning
+    # auto-deploys back on stays safe.
     autoDeployTrigger: 'off'
     # A push that cannot change the running app does not spend a build when
     # auto-deploys return. `scripts/**` and `next.config.js` are deliberately

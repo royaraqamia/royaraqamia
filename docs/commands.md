@@ -105,31 +105,30 @@ Ten `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash): six audit
 ## Deployment
 
 **Primary path:** A push to `main` runs CI. The origin does not deploy on that push:
-`.github/workflows/deploy.yml` calls Render's deploy hook on a four-a-day train — 00:00, 06:00,
-12:00 and 18:00 UTC (03:00, 09:00, 15:00, 21:00 in Baghdad) — and on `workflow_dispatch` for a fix
-that cannot wait. There is no release workflow, tag or GitHub Release for the web (ADR-0090); the
+`.github/workflows/deploy.yml` calls Render's deploy hook only when someone dispatches it by hand on
+`main` (ADR-0209). There is no release workflow, tag or GitHub Release for the web (ADR-0090); the
 deploy identity is the generated `<semver>+build.<N>.<sha>`.
 
-**Why a train.** Hobby includes 500 build-pipeline minutes a month. At the recorded cadence
-(~22 deploy-triggering merges a day, ~2m45 a build) that is ~1,800 minutes; four builds a day is
-~330 and leaves ~170 for the manual lane
-([ADR-0186](adr/0186-the-origin-deploys-on-a-clock-not-on-every-merge.md)). A train with no new
-commit costs nothing: the workflow reads the running build's `<7-char-sha>` from `sw-version.js` and
-stops before calling the hook. Merge cadence is unchanged; only time-to-production is bounded (at
-most six hours, or one dispatch). A dispatch also takes **`purge_only`**, which skips the build and
-re-runs the discovery check and the purge — the recovery for a purge that failed after a build had
-already landed.
+**Why a hand dispatch.** Hobby includes 500 build-pipeline minutes a month. At the recorded cadence
+(~22 deploy-triggering merges a day, ~2m45 a build) a deploy on every push would be ~1,800 minutes,
+and the four-a-day train of ADR-0186 spent ~330 of the 500 at that cadence, shipping whatever was on
+`main` at four fixed hours. A dispatch spends a build only when a deploy is wanted, and leaves what
+goes live to the person who runs it. Time-to-production is no longer bounded by a clock: a merge stays undeployed until someone
+dispatches the workflow. A dispatch whose commit is already serving costs nothing: the workflow
+reads the running build's `<7-char-sha>` from `sw-version.js` and stops before calling the hook. A
+dispatch also takes **`purge_only`**, which skips the build and re-runs the discovery check and the
+purge — the recovery for a purge that failed after a build had already landed.
 
 **Render is the origin** ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md)).
 `render.yaml` is the blueprint: a free native-Node service, built with `npm ci && npm run build:render`
 and started with `npm start`, health-checked on `/manifest.json`, with `autoDeployTrigger: 'off'` so
-only the train deploys. `build:render` is `npm run build` without `tsc --noEmit` — the pull request
+only a dispatch deploys. `build:render` is `npm run build` without `tsc --noEmit` — the pull request
 already gates types — so the build machine spends its minutes on the artifact, not a second type
 check. Native rather than Docker because the assistant's roster is read from
 `.opencode/skills/agency/` at request time. Cloudflare proxies the custom domain and caches
 `/_next/static/*`, fonts and images: that caching is what keeps the origin inside the 5 GB monthly
 bandwidth allowance, after which a workspace with no payment method is suspended for the rest of the
-month. The train needs `RENDER_DEPLOY_HOOK_URL` as an Actions secret (Render → service → Settings →
+month. The deploy needs `RENDER_DEPLOY_HOOK_URL` as an Actions secret (Render → service → Settings →
 Deploy Hook); with it absent the workflow fails loudly rather than skipping silently.
 
 **Crons are GitHub Actions, not the platform.** `.github/workflows/scheduled-jobs.yml` calls the
@@ -156,8 +155,9 @@ someone purged by hand. The deploy job waits for the new build to answer (`sw-ve
 ([ADR-0177](adr/0177-the-edge-is-purged-when-a-deploy-lands.md)). It needs `CLOUDFLARE_API_TOKEN`
 (Zone → Cache Purge) as a secret and `CLOUDFLARE_ZONE_ID` as a variable; with the token absent the
 job fails loudly rather than skipping silently. `purge-cache.yml` no longer exists: the purge is a
-step of the deploy the train triggers
-([ADR-0186](adr/0186-the-origin-deploys-on-a-clock-not-on-every-merge.md)).
+step of the deploy the workflow runs by hand
+([ADR-0186](adr/0186-the-origin-deploys-on-a-clock-not-on-every-merge.md),
+[ADR-0209](adr/0209-the-origin-deploys-only-when-dispatched.md)).
 
 **The edge caches the public document.** The four Cache Rules and the warm Worker are in
 [edge-cache.md](edge-cache.md); `npm run check:edge` asserts the public documents and the explicit
