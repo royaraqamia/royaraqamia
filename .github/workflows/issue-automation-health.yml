@@ -1,7 +1,7 @@
 # Heartbeat and catch-up for the autonomous issue automation.
 #
 # GitHub's `schedule` trigger is best-effort: it lands hours late and is sometimes
-# dropped for a whole day, which is exactly the failure the planner/implementer
+# dropped for a whole day, which is exactly the failure the audit/implementer
 # pipeline cannot detect on its own (a run that never starts cannot report that it
 # never started). This workflow is the dead-man's switch: every six hours it checks
 # the age of each agent workflow's last heartbeat, re-dispatches any that lapsed, and
@@ -15,7 +15,7 @@
 # so it is the durable half of the signal.
 #
 # A run that failed is re-dispatched too, and on a shorter fuse than the 26-hour
-# heartbeat: the planner dies on a transient upstream refusal often enough to matter
+# heartbeat: an audit dies on a transient upstream refusal often enough to matter
 # (`[prefill_cap_refused] the cell is at capacity`, an upstream 429 that its own five
 # attempts at five seconds cannot outlast), and waiting a day to retry a five-minute
 # job leaves the pipeline idle for a day. The retry is quiet — the schedule itself is
@@ -30,7 +30,7 @@
 # silent drop is caught within hours, not a day.
 #
 # Re-dispatching works with the default GITHUB_TOKEN: `workflow_dispatch` is exempt
-# from the "token-triggered events do not start workflows" rule the planner and
+# from the "token-triggered events do not start workflows" rule the audits and
 # implementer rely on, so no extra PAT is needed here. See ADR 0032.
 
 name: 'Issue Automation Health'
@@ -39,7 +39,7 @@ on:
   schedule:
     # Every six hours, so a missed heartbeat is caught within hours rather than a day.
     # The ticks are 05/11/17/23 UTC rather than 00/06/12/18: this workflow re-dispatches
-    # the planner and the implementer, and 06:00 is the first minute of DeepSeek's
+    # the audits and the implementer, and 06:00 is the first minute of DeepSeek's
     # second peak window, so a catch-up there started a whole agent day at double
     # price. Every tick below is inside the off-peak stretch (10:00-01:00 UTC plus the
     # 04:00-06:00 gap). ADR 0133.
@@ -75,7 +75,12 @@ jobs:
             // a heartbeat's.
             const FAILED = new Set(['failure', 'timed_out']);
             const targets = [
-              { name: 'Issue Planner', file: 'issue-planner.yml' },
+              { name: 'Performance Audit', file: 'audit-performance.yml' },
+              { name: 'Security Audit', file: 'audit-security.yml' },
+              { name: 'UI/UX Audit', file: 'audit-ui-ux.yml' },
+              { name: 'Scalability Audit', file: 'audit-scalability.yml' },
+              { name: 'Maintainability Audit', file: 'audit-maintainability.yml' },
+              { name: 'Product Audit', file: 'audit-product.yml' },
               {
                 name: 'Issue Implementer',
                 file: 'issue-implementer.yml',

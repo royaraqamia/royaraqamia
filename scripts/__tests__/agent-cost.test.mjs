@@ -17,7 +17,12 @@ import { describe, expect, it } from 'vitest';
  */
 
 const WORKFLOWS = [
-  'issue-planner.yml',
+  'audit-performance.yml',
+  'audit-security.yml',
+  'audit-ui-ux.yml',
+  'audit-scalability.yml',
+  'audit-maintainability.yml',
+  'audit-product.yml',
   'issue-implementer.yml',
   'pr-land.yml',
   'opencode.yml',
@@ -61,13 +66,17 @@ describe('agent cost is chosen in the workflow, not discovered on the invoice', 
 
   it('records what each agent workflow spent, and gates only the optional work', () => {
     for (const name of WORKFLOWS) {
+      if (name.startsWith('audit-')) continue; // recorded by the shared audit runner
       expect(read(name), `${name} does not record its spend`).toContain(
         './.github/actions/agent-usage'
       );
     }
-    // The planner and the two interactive surfaces are measured but never gated:
-    // a person asked for the run, and the planner is one run a day.
-    expect(read('issue-planner.yml')).not.toContain('mode: gate');
+    expect(read('../actions/audit-runner/action.yml')).toContain('./.github/actions/agent-usage');
+    // The audits and the two interactive surfaces are measured but never gated:
+    // a budget skip would break the "no way to miss a day" contract (ADR 0208).
+    for (const name of WORKFLOWS.filter((name) => name.startsWith('audit-'))) {
+      expect(read(name), `${name} must not be budget-gated`).not.toContain('mode: gate');
+    }
     expect(read('opencode.yml')).not.toContain('mode: gate');
     expect(read('telegram.yml')).not.toContain('mode: gate');
   });

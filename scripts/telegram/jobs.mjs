@@ -316,7 +316,12 @@ export async function catchUpDigests() {
   const seen = new Set(receipts.map((row) => Number(row.run_id)));
 
   for (const [workflow, file] of [
-    ['Issue Planner', 'issue-planner.yml'],
+    ['Performance Audit', 'audit-performance.yml'],
+    ['Security Audit', 'audit-security.yml'],
+    ['UI/UX Audit', 'audit-ui-ux.yml'],
+    ['Scalability Audit', 'audit-scalability.yml'],
+    ['Maintainability Audit', 'audit-maintainability.yml'],
+    ['Product Audit', 'audit-product.yml'],
     ['Issue Implementer', 'issue-implementer.yml'],
   ]) {
     const runs =
