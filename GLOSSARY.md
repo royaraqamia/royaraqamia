@@ -24,9 +24,11 @@ _Avoid_: acceptance, permission prompt
 
 ### Automation
 
-**Issue Planner**:
-The scheduled system that reads the repository and files high-confidence findings as
-`ready-for-agent` issues in the tracker.
+**Specialised Audit**:
+One of six scheduled systems that review the whole codebase in a single domain —
+performance, security, UI/UX, scalability, maintainability or product — across web and
+Android, and file three evidence-backed issues a day. An audit never implements and
+never labels its findings `ready-for-agent`; that is a maintainer's decision.
 _Avoid_: triager, backlog bot, maintenance agent
 
 **Issue Implementer**:

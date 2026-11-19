@@ -1,0 +1,391 @@
+name: 'Specialised Audit Runner'
+description: >-
+  Runs one unattended domain audit: an idempotent daily guard measured on the issues
+  actually filed, the full web + Android evidence toolchain, a pinned OpenCode CLI,
+  and publication of three evidence-backed issues from /tmp/issues.json. Nothing in
+  this action commits, pushes, opens a pull request or touches Vercel.
+
+inputs:
+  domain:
+    description: 'The audit domain, also used in the shared audit:* label'
+    required: true
+  label:
+    description: 'The source label this workflow owns, e.g. audit:performance'
+    required: true
+  workflow-file:
+    description: 'The workflow file name, for the Actions API day guard'
+    required: true
+  prompt-file:
+    description: 'Repository-relative path to the domain prompt'
+    required: true
+  supabase-project-ref:
+    description: 'Supabase project reference for the read-only MCP server'
+    required: true
+  security-advisories:
+    description: 'Whether confidential findings become private security advisories'
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Daily guard
+      # The contract is three issues filed today, not "a run succeeded". A run that
+      # published one issue before its clock ran out must be retried by the health
+      # monitor; a late backstop must not file a fourth. The window is the UTC
+      # calendar day, so a catch-up cannot suppress the next day's punctual run.
+      id: guard
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        WORKFLOW_FILE: ${{ inputs.workflow-file }}
+        SOURCE_LABEL: ${{ inputs.label }}
+      with:
+        script: |
+          const force = context.eventName === 'workflow_dispatch' &&
+            String((context.payload.inputs || {}).force) === 'true';
+          const startOfDayUtc = new Date();
+          startOfDayUtc.setUTCHours(0, 0, 0, 0);
+          const filed = await github.paginate(github.rest.issues.listForRepo, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'all',
+            labels: process.env.SOURCE_LABEL,
+            since: startOfDayUtc.toISOString(),
+            per_page: 100,
+          });
+          const today = filed.filter(
+            (issue) => !issue.pull_request && Date.parse(issue.created_at) >= startOfDayUtc.getTime()
+          );
+          if (today.length >= 3 && !force) {
+            core.notice(
+              process.env.SOURCE_LABEL + ' already filed ' + today.length +
+              ' issue(s) today (UTC); skipping this ' + context.eventName + ' trigger.'
+            );
+            core.setOutput('run', 'false');
+          } else {
+            core.notice(
+              process.env.SOURCE_LABEL + ' has filed ' + today.length + '/3 issue(s) today (UTC)'
+            );
+            core.setOutput('run', 'true');
+          }
+          core.setOutput('already', String(today.length));
+
+    - name: Checkout
+      if: steps.guard.outputs.run == 'true'
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      with:
+        fetch-depth: 1
+        persist-credentials: false
+
+    - name: Setup Build Environment
+      if: steps.guard.outputs.run == 'true'
+      uses: ./.github/actions/setup-environment
+      with:
+        node-version: '22'
+        cache-next: 'false'
+
+    - name: OpenCode Runner Setup
+      if: steps.guard.outputs.run == 'true'
+      # Supabase MCP, compaction pruning and the headless permission block. Vercel is
+      # deliberately not installed: this repository deploys on Render (ADR-0174).
+      uses: ./.github/actions/opencode-runner
+      with:
+        supabase-project-ref: ${{ inputs.supabase-project-ref }}
+        install-vercel: 'false'
+
+    - name: Install OpenCode 2.3.2
+      if: steps.guard.outputs.run == 'true'
+      shell: bash
+      # The `anomalyco/opencode/github` action directory was removed in OpenCode 2.x,
+      # so the 1.x pin the other workflows use cannot run 2.3.2. Install the pinned
+      # CLI itself; audits publish issues with github-script and need no app token.
+      run: |
+        set -euo pipefail
+        curl -fsSL https://opencode.ai/v2/install | bash -s -- --version 2.3.2 --no-modify-path
+        echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
+        export PATH="$HOME/.opencode/bin:$PATH"
+        opencode --version
+
+    - name: Setup JDK 21
+      if: steps.guard.outputs.run == 'true'
+      uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+
+    - name: Setup Android SDK
+      if: steps.guard.outputs.run == 'true'
+      uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      with:
+        packages: 'platforms;android-36 build-tools;36.0.0'
+
+    - name: Accept the SDK licences
+      if: steps.guard.outputs.run == 'true'
+      shell: bash
+      run: yes | sdkmanager --licenses > /dev/null || true
+
+    - name: Cache Gradle
+      if: steps.guard.outputs.run == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.gradle/caches/modules-2
+          ~/.gradle/wrapper/dists
+        key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+        restore-keys: |
+          gradle-${{ runner.os }}-
+
+    - name: Install the Playwright browser
+      if: steps.guard.outputs.run == 'true'
+      shell: bash
+      run: npx playwright install --with-deps chromium
+
+    - name: Build the Graphify code graph
+      if: steps.guard.outputs.run == 'true'
+      uses: ./.github/actions/graphify
+
+    - name: Prefetch issue and pull request context
+      if: steps.guard.outputs.run == 'true'
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      with:
+        script: |
+          const fs = require('fs');
+          const issues = await github.paginate(github.rest.issues.listForRepo, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            per_page: 100,
+          });
+          const pulls = await github.paginate(github.rest.pulls.list, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            per_page: 100,
+          });
+          const clip = (s) => (s || '').replace(/\s+/g, ' ').slice(0, 500);
+          const payload = {
+            openIssues: issues
+              .filter((issue) => !issue.pull_request)
+              .map((issue) => ({
+                number: issue.number,
+                title: issue.title,
+                labels: issue.labels.map((label) => label.name),
+                updatedAt: issue.updated_at,
+                body: clip(issue.body),
+              })),
+            openPullRequests: pulls.map((pull) => ({
+              number: pull.number,
+              title: pull.title,
+              head: pull.head.ref,
+              body: clip(pull.body),
+            })),
+          };
+          fs.writeFileSync('/tmp/context.json', JSON.stringify(payload));
+          core.info(
+            'Prefetched ' + payload.openIssues.length + ' issue(s) and ' +
+            payload.openPullRequests.length + ' pull request(s).'
+          );
+
+    - name: Assemble the prompt
+      if: steps.guard.outputs.run == 'true'
+      shell: bash
+      env:
+        PROMPT_FILE: ${{ inputs.prompt-file }}
+      run: |
+        set -euo pipefail
+        mkdir -p /tmp/audit-evidence
+        {
+          cat "$PROMPT_FILE"
+          printf '\n\n<current-state>\n'
+          cat /tmp/context.json
+          printf '\n</current-state>\n\n'
+          printf 'The current UTC date is %s. Put it in every title you write.\n' "$(date -u +%F)"
+        } > /tmp/audit-prompt.txt
+        wc -c /tmp/audit-prompt.txt
+
+    - name: Run the audit
+      id: audit
+      if: steps.guard.outputs.run == 'true'
+      shell: bash
+      timeout-minutes: 45
+      env:
+        OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: '250000'
+        TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA'
+        NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+        NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+      run: |
+        set +e
+        export PATH="$HOME/.opencode/bin:$PATH"
+        opencode run --model opencode-go/deepseek-v4.1-flash "$(cat /tmp/audit-prompt.txt)"
+        status=$?
+        set -e
+        echo "status=$status" >> "$GITHUB_OUTPUT"
+        echo "The audit step exited $status; /tmp/issues.json is the deliverable."
+
+    - name: Record what the audit spent
+      if: always() && steps.guard.outputs.run == 'true'
+      continue-on-error: true
+      uses: ./.github/actions/agent-usage
+      with:
+        mode: record
+        workflow: ${{ inputs.domain }} Audit
+
+    - name: Publish three issues
+      # `always()`: the agent writes each accepted entry as it is proved, so a run the
+      # clock stops must still file what it verified. The day guard below counts what
+      # this step actually created, which is how the health monitor fills a gap.
+      if: always() && steps.guard.outputs.run == 'true'
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        SOURCE_LABEL: ${{ inputs.label }}
+        DOMAIN: ${{ inputs.domain }}
+        SECURITY_ADVISORIES: ${{ inputs.security-advisories }}
+        ALREADY_FILED: ${{ steps.guard.outputs.already }}
+      with:
+        script: |
+          const fs = require('fs');
+          const path = '/tmp/issues.json';
+          const sourceLabel = process.env.SOURCE_LABEL;
+          const domain = process.env.DOMAIN;
+          let payload = { entries: [], updates: [] };
+          if (fs.existsSync(path)) {
+            let raw = fs.readFileSync(path, 'utf8').trim();
+            raw = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+            try {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) payload = { entries: parsed, updates: [] };
+              else if (parsed && typeof parsed === 'object') payload = parsed;
+            } catch (error) {
+              core.warning('Could not parse /tmp/issues.json: ' + error.message);
+            }
+          }
+          const candidates = Array.isArray(payload.entries) ? payload.entries : [];
+          const updates = Array.isArray(payload.updates) ? payload.updates : [];
+
+          // Public repository: a second line of defence behind the prompt's redaction
+          // rule. Nothing that looks like a credential or a member's contact detail
+          // reaches a public issue, even if the agent copied it from a log.
+          const scrub = (text) =>
+            String(text || '')
+              .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email redacted]')
+              .replace(/(?:\+?\d[\d\s().-]{8,}\d)/g, '[number redacted]')
+              .replace(/\b(?:ghp|gho|github_pat|sb_secret|sk|AKIA)[A-Za-z0-9_-]{12,}\b/g, '[secret redacted]')
+              .replace(/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, '[token redacted]');
+
+          for (const label of [
+            { name: 'opencode:audit', color: '5319e7', description: 'Created by a specialised audit workflow' },
+            { name: sourceLabel, color: '1d76db', description: domain + ' audit: evidence-backed daily findings' },
+          ]) {
+            try {
+              await github.rest.issues.createLabel({ owner: context.repo.owner, repo: context.repo.repo, ...label });
+            } catch (error) {
+              if (error.status !== 422) throw error;
+            }
+          }
+
+          const open = await github.paginate(github.rest.issues.listForRepo, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            per_page: 100,
+          });
+          const pulls = await github.paginate(github.rest.pulls.list, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            per_page: 100,
+          });
+          const existing = open.filter((issue) => !issue.pull_request);
+          const existingTitles = new Set(
+            [...existing, ...pulls].map((item) => String(item.title || '').trim().toLowerCase())
+          );
+          const byNumber = new Map(existing.map((issue) => [issue.number, issue]));
+
+          // Explicit edits are append-only: the original evidence and its history stay
+          // readable, and a bad update can be reverted without losing the finding.
+          for (const update of updates) {
+            const number = Number(update.number);
+            if (!byNumber.has(number)) {
+              core.info('Skipping update to #' + number + ': not an open issue.');
+              continue;
+            }
+            const body = scrub(update.body);
+            if (!body) continue;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body:
+                '<!-- audit:update:' + domain + ':' + new Date().toISOString().slice(0, 10) + ' -->\n' +
+                body,
+            });
+            core.info('Appended an audit update to #' + number + '.');
+          }
+
+          const startOfDayUtc = new Date();
+          startOfDayUtc.setUTCHours(0, 0, 0, 0);
+          let created = 0;
+          for (const candidate of candidates.slice(0, 3)) {
+            if (created >= 3) break;
+            const title = scrub(candidate.title).trim();
+            const body = scrub(candidate.body).trim();
+            if (!title || !body) continue;
+            const key = title.toLowerCase();
+            if (existingTitles.has(key)) {
+              core.info('Skipping duplicate issue: ' + title);
+              continue;
+            }
+            if (candidate.confidential === true && process.env.SECURITY_ADVISORIES === 'true') {
+              // Exploitable findings are never public. The private advisory is the real
+              // report; a redacted hardening issue still satisfies the public count.
+              try {
+                await github.request('POST /repos/{owner}/{repo}/security-advisories', {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  summary: title,
+                  description: body,
+                  severity: ['low', 'medium', 'high', 'critical'].includes(candidate.severity)
+                    ? candidate.severity
+                    : 'medium',
+                });
+                core.info('Opened a private security advisory for ' + title);
+              } catch (error) {
+                core.warning('Private advisory could not be opened: ' + error.message);
+              }
+            }
+            const extra = Array.isArray(candidate.labels) ? candidate.labels : [];
+            const labels = Array.from(new Set(['opencode:audit', sourceLabel, ...extra]));
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels,
+            });
+            existingTitles.add(key);
+            created += 1;
+            core.info('Created issue #' + issue.data.number + ': ' + title);
+          }
+          const already = Number(process.env.ALREADY_FILED || '0');
+          const total = already + created;
+          core.info(domain + ' audit published ' + created + ' issue(s) this run; ' + total + '/3 today.');
+          if (total < 3) {
+            // A successful-looking run that filed one issue is a missed day. Failing here
+            // is what makes the health monitor re-dispatch it within six hours; the guard
+            // on that retry sees the shortfall and fills it instead of standing down.
+            core.setFailed(
+              domain + ' audit filed only ' + total + ' of 3 required issues today (UTC).'
+            );
+          }
+
+    - name: Save the evidence
+      if: always() && steps.guard.outputs.run == 'true'
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: audit-evidence-${{ inputs.domain }}-${{ github.run_id }}
+        path: |
+          /tmp/audit-evidence/**
+          /tmp/issues.json
+        if-no-files-found: ignore
+        retention-days: 14

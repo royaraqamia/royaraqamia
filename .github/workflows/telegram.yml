@@ -52,7 +52,7 @@ on:
         description: 'What to do in this run'
         type: choice
         options:
-          [drain, merge, remember, remind, probe, agent-probe, digest-planner, digest-implementer]
+          [drain, merge, remember, remind, probe, agent-probe, digest-audits, digest-implementer]
         default: drain
       confirmation:
         description: 'The confirmation row a merge completes (mode=merge only)'
@@ -60,7 +60,18 @@ on:
         required: false
         default: ''
   workflow_run:
-    workflows: ['Issue Planner', 'Issue Implementer', 'Release Health', 'Migration Drift']
+    workflows:
+      [
+        'Performance Audit',
+        'Security Audit',
+        'UI/UX Audit',
+        'Scalability Audit',
+        'Maintainability Audit',
+        'Product Audit',
+        'Issue Implementer',
+        'Release Health',
+        'Migration Drift',
+      ]
     types: [completed]
   push:
     branches: [main]
@@ -238,10 +249,15 @@ jobs:
         env: *agent-env
         run: node scripts/agent-probe.mjs
 
-      - name: Digest on demand - planner
-        if: inputs.mode == 'digest-planner'
+      - name: Digest on demand - audits
+        if: inputs.mode == 'digest-audits'
         env: *agent-env
-        run: node scripts/telegram-bridge.mjs digest --workflow "Issue Planner"
+        run: |
+          set -euo pipefail
+          for workflow in "Performance Audit" "Security Audit" "UI/UX Audit" \
+            "Scalability Audit" "Maintainability Audit" "Product Audit"; do
+            node scripts/telegram-bridge.mjs digest --workflow "$workflow"
+          done
 
       - name: Digest on demand - implementer
         if: inputs.mode == 'digest-implementer'
@@ -300,8 +316,13 @@ jobs:
     name: Digest on completion
     if: >-
       github.event_name == 'workflow_run' &&
-      (github.event.workflow_run.name == 'Issue Planner' ||
-       github.event.workflow_run.name == 'Issue Implementer')
+       (github.event.workflow_run.name == 'Performance Audit' ||
+        github.event.workflow_run.name == 'Security Audit' ||
+        github.event.workflow_run.name == 'UI/UX Audit' ||
+        github.event.workflow_run.name == 'Scalability Audit' ||
+        github.event.workflow_run.name == 'Maintainability Audit' ||
+        github.event.workflow_run.name == 'Product Audit' ||
+        github.event.workflow_run.name == 'Issue Implementer')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

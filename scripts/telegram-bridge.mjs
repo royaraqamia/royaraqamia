@@ -99,7 +99,7 @@ async function main() {
   if (mode === 'merge') return runMerge(arg('confirmation'));
   if (mode === 'digest') {
     return digest({
-      workflow: arg('workflow') ?? 'Issue Planner',
+      workflow: arg('workflow') ?? 'Performance Audit',
       url: arg('url'),
       runId: arg('run-id') ? Number(arg('run-id')) : undefined,
     });

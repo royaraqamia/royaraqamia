@@ -13,12 +13,19 @@ inputs:
     description: 'Pinned Vercel CLI version'
     required: false
     default: '63.1.0'
+  install-vercel:
+    description: >-
+      Whether to install the Vercel CLI. The audit workflows set this to false:
+      this repository deploys on Render (ADR-0174) and they need no Vercel access.
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
   steps:
     - name: Install Vercel CLI
-      # Pinned, global so the agent can call it directly.
+      # Pinned, global so the agent can call it directly. Skipped for the audits.
+      if: inputs.install-vercel == 'true'
       shell: bash
       run: |
         npm install --global vercel@${{ inputs.vercel-version }}

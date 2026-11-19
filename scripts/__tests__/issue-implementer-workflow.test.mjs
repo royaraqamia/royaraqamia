@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
  *   conflict first - a conflicted pull request is never measured at all;
  * - an unmeasured pull request is not called green;
  * - the picker reads the blocker edges and the plan instead of taking the lowest number;
- * - six rounds run one after another;
+ * - three rounds run one after another;
  * - the job installs the e2e and visual toolchain, because that is the evidence;
  * - nothing is ever handed to a person: the queue is the implementer's.
  *
@@ -121,12 +121,12 @@ describe('the issue implementer merges what it watched go green', () => {
     expect(workflow).toContain('secrets.E2E_VISUAL_PASSWORD');
   });
 
-  it('runs six rounds one after another, so each branch is cut from the merge before it', () => {
-    expect(workflow).toContain('round: [1, 2, 3, 4, 5, 6]');
+  it('runs three rounds one after another, so each branch is cut from the merge before it', () => {
+    expect(workflow).toContain('round: [1, 2, 3]');
     expect(workflow).toContain('max-parallel: 1');
-    // Six by default, and a manual run can ask for fewer without editing the matrix.
+    // Three by default, and a manual run can ask for fewer without editing the matrix.
     // The gate is in the guard step because a job-level `if` cannot read `matrix`.
-    expect(workflow).toContain("default: '6'");
+    expect(workflow).toContain("default: '3'");
     expect(workflow).toContain('REQUESTED_ROUNDS: ${{ github.event.inputs.rounds }}');
     expect(workflow).toContain('round > requested');
   });

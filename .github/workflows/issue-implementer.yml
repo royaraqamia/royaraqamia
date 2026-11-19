@@ -1,4 +1,4 @@
-# Autonomous issue implementer: takes up to six ready-for-agent issues a day, one after
+# Autonomous issue implementer: takes up to three ready-for-agent issues a day, one after
 # another, implements each, opens a pull request that closes it, and merges that pull
 # request as soon as every check on it is green (ADR 0120, which supersedes ADR 0066 for
 # this workflow alone - a session and `/oc` still stop at the open pull request).
@@ -21,28 +21,24 @@
 # `Blocked by: #12` is read as the fallback for the issues filed before the edges
 # existed. Within what is unblocked the plan's phase decides, then the number.
 #
-# Six rounds run as one matrix with `max-parallel: 1`, so no two rounds can claim one
+# Three rounds run as one matrix with `max-parallel: 1`, so no two rounds can claim one
 # issue and each one starts from the merge the round before it landed. Ordering alone does
 # not move the base, though: this job's checkout is the commit the run was dispatched on, so
 # every round re-cuts its branch from the live `main` before the agent runs (one merge into
 # `docs/mobile/parity-plan.md` between two rounds is enough to conflict otherwise).
 #
-# Triggers (see ADR 0032). The implementer is woken by the Issue Planner dispatching
-# it the moment it finishes (`workflow_dispatch` via the Actions API), so it always
-# sees that day's freshly filed issues — no fixed three-hour clock offset to race
-# against. The 12:45 UTC schedule is a no-config backstop for the case where the
-# planner never completes, and the `issue-automation-health` workflow can re-dispatch
-# directly. The `Daily guard` step makes those redundant triggers idempotent — only
-# the first successful run on a given UTC day does any work, preserving the
-# one-issue-a-day contract and never letting a late backstop suppress the next day's
-# run.
+# Triggers (see ADR 0032, ADR 0208). The six specialised audits publish issues but
+# never wake the implementer: only a human applies `ready-for-agent` to a finding they
+# want implemented. The 12:45 UTC schedule is the primary trigger and the
+# `issue-automation-health` workflow re-dispatches a missed or failed day directly. The
+# `Daily guard` step makes those redundant triggers idempotent — only the first
+# successful run on a given UTC day does any work, and a late backstop can never
+# suppress the next day's run.
 #
-# The planner cannot chain the implementer with a `workflow_run` trigger: opencode's
-# GitHub runner rejects that event type, so the planner calls the Actions dispatch API
-# instead. It polls (schedule/dispatch) rather than reacting to the `issues: [labeled]`
+# The pipeline polls (schedule/dispatch) rather than reacting to the `issues: [labeled]`
 # event on purpose: GitHub does not run workflows in response to events caused by the
-# default GITHUB_TOKEN, so a label-event trigger would never fire for planner-created
-# issues. `workflow_dispatch` is exempt from that rule. See ADR 0026.
+# default GITHUB_TOKEN, so a label-event trigger would never fire for issues a workflow
+# created. `workflow_dispatch` is exempt from that rule. See ADR 0026.
 #
 # Setup (repo secrets), shared with the other OpenCode workflows:
 #   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
@@ -66,19 +62,14 @@ name: 'Issue Implementer'
 
 on:
   schedule:
-    # 12:45 UTC = 15:45 Damascus (UTC+3, no DST) — daily backstop. The primary
-    # trigger is the planner dispatching this workflow once it finishes.
-    #
-    # 12:45, not the old 06:00 or the previous 10:45: the planner's primary trigger
-    # is now 10:15 UTC and a run takes up to seventy minutes plus setup, so the
-    # dispatch normally lands around 11:30. A backstop at 10:45 started the day's six
-    # rounds on the previous queue, and the planner's own dispatch then queued behind
-    # it and was suppressed by the daily guard. 12:45 leaves the chain room and is
-    # still inside the off-peak stretch.
+    # 12:45 UTC = 15:45 Damascus (UTC+3, no DST) — daily. The six audits run between
+    # 10:10 and 15:10 UTC and never dispatch this workflow; a human applies
+    # `ready-for-agent` to a finding they want implemented. The health monitor can
+    # re-dispatch this workflow directly when a day is missed.
     #
     # Off-peak because DeepSeek V4.1 Flash is priced double inside its peak windows
     # (01:00-04:00 and 06:00-10:00 UTC, Monday to Friday), and the Go plan's monthly
-    # limit counts those dollars: the six rounds run one after another, so starting
+    # limit counts those dollars: the three rounds run one after another, so starting
     # at 10:00-01:00 UTC is what keeps the whole day's work at half the allowance.
     # See ADR 0133.
     - cron: '45 12 * * *'
@@ -89,9 +80,9 @@ on:
         type: boolean
         default: false
       rounds:
-        description: 'How many issues this run may take. The daily run takes 6; lower it to debug one round.'
+        description: 'How many issues this run may take. The daily run takes 3; lower it to debug one round.'
         type: string
-        default: '6'
+        default: '3'
 
 permissions:
   id-token: write
@@ -116,7 +107,7 @@ jobs:
       max-parallel: 1
       fail-fast: false
       matrix:
-        round: [1, 2, 3, 4, 5, 6]
+        round: [1, 2, 3]
 
     steps:
       - name: Checkout
@@ -150,10 +141,10 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Daily guard
-        # Idempotency for the redundant triggers: the planner's dispatch, the 12:45
-        # schedule and the health-monitor catch-up all point here. Only the first
+        # Idempotency for the redundant triggers: the 12:45 schedule and the
+        # health-monitor catch-up both point here. Only the first
         # successful run on a given UTC day does work; the rest exit immediately, and
-        # the run that does work carries the day's six rounds. The
+        # the run that does work carries the day's three rounds. The
         # window is the calendar day, not a rolling one, so a backstop that lands
         # hours late can never push the next day's punctual run inside the window and
         # suppress it.

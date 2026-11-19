@@ -1,0 +1,64 @@
+# Daily security audit. Publishes exactly three evidence-backed issues to the public
+# tracker, including one dated audit report; never implements, commits or deploys.
+# Exploitable findings are opened as private security advisories first and appear in
+# public issues only in redacted form. Private vulnerability reporting must be enabled.
+#
+# The punctual trigger is Supabase pg_cron calling the Actions dispatch API; GitHub's
+# `schedule` is the no-config backstop and `issue-automation-health.yml` re-dispatches a
+# missed or partial day. The guard counts issues actually filed with this label today.
+# ADR 0207 judges an advisory by reachability as well as severity; ADR 0174 puts the
+# origin on Render, so no Vercel credential or CLI is present.
+
+name: 'Security Audit'
+
+on:
+  schedule:
+    - cron: '10 11 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Run even if three issues were already filed today (UTC)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  actions: read
+  security-events: write
+
+concurrency:
+  group: audit-security-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      E2E_VISUAL_EMAIL: ${{ secrets.E2E_VISUAL_EMAIL }}
+      E2E_VISUAL_PASSWORD: ${{ secrets.E2E_VISUAL_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run the audit
+        uses: ./.github/actions/audit-runner
+        with:
+          domain: security
+          label: audit:security
+          workflow-file: audit-security.yml
+          prompt-file: .github/opencode/audits/security.md
+          supabase-project-ref: ${{ secrets.SUPABASE_PROJECT_REF }}
+          security-advisories: 'true'
