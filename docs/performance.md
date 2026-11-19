@@ -294,9 +294,15 @@ is this table, copied by hand from the query above after a deploy. Read it, then
 replace the row: the ceilings in the first table do not move, only the recorded
 number does.
 
-| Read on | cold open → content | warm open → content | tap → paint      |
-| ------- | ------------------- | ------------------- | ---------------- |
-| —       | not yet recorded    | not yet recorded    | not yet recorded |
+| Read on    | cold open → content        | warm open → content       | tap → paint      |
+| ---------- | -------------------------- | ------------------------- | ---------------- |
+| 2026-11-19 | 8,631 ms (shell p75, n=47) | 6,620 ms (shell p75, n=9) | not yet recorded |
+
+Read from the Render logs API over the seven days to 2026-11-19 (200 records),
+aggregated with `node scripts/perf-field.mjs --file <jsonl>`. Both shell rows
+breach the 900 ms / 150 ms ceilings; the web vitals in the same window are inside
+theirs (LCP 1,596 ms, CLS 0.052, INP 128 ms), so this is the shell's launch path
+and not the page's weight (#1639). Tap has no sample yet.
 
 **Cost.** One function invocation per launch and per tap, bounded by the limiter.
 A launch only sends when a content surface paints owned rows; a public/SEO route
@@ -324,6 +330,16 @@ wrong reason.
 The `E2E: Offline` workflow runs it and uploads
 `node_modules/.playwright/paint-measurements.json`, which is the file the
 `--from` form takes.
+
+**The shell is measured on a device, not in a browser.** The `shell` row in
+`perf/paint-budget.json` is the one surface the Playwright runner skips: it is
+the installed WebView, whose launch the web runner cannot reach. `npm run
+perf:shell` drives ten cold launches on the attached reference phone, reads the
+`RoyLaunch` lines the document writes, and reduces the page's `boot`, `shell`
+and `content` marks to the same `boot → content` p75 the field report uses. Its
+ceiling is #486's design target (900 ms), not the relaxed CI line. The
+measurement itself is recorded in
+[android-shell.md](mobile/android-shell.md#what-the-document-costs-under-the-skeleton).
 
 **What each number is here.** The three marks are the ones the client writes, so
 the gate asserts what `/api/app-perf` reports rather than a second definition:

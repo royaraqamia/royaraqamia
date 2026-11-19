@@ -24,6 +24,11 @@ export interface PaintStep {
 
 export interface PaintSurface {
   id: string;
+  /**
+   * What measures the row. Web rows are driven by the Playwright gate; a shell
+   * row is measured on a device by `npm run perf:shell` (#1639).
+   */
+  platform?: 'web' | 'shell';
   /** The route the shell is opened at. */
   path: string;
   /** Whether the surface needs the signed-in test account. */
