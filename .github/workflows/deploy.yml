@@ -1,11 +1,11 @@
-# Deploys the origin on a clock, not on every merge.
+# Deploys the origin on demand, never on a clock or on a merge.
 #
 # Render's Hobby workspace includes 500 build-pipeline minutes a month, and this
 # repository merges far more often than that pays for: ~22 deploy-triggering
 # merges a day at the recorded ~2m45 a build is ~1,800 minutes. So the service
-# no longer builds on a push (`autoDeployTrigger: off` in `render.yaml`); this
-# workflow calls the deploy hook four times a day, and on demand for a fix that
-# cannot wait for the next train.
+# does not build on a push (`autoDeployTrigger: off` in `render.yaml`); this
+# workflow calls the deploy hook only when someone dispatches it on `main`
+# (ADR-0209).
 #
 # The hook builds whatever `main` is when it fires. The job then waits for
 # `sw-version.js` to stop naming the build that was serving before it — that
@@ -20,22 +20,14 @@
 # Variables:
 #   CLOUDFLARE_ZONE_ID     - royaraqamia.com
 #   SITE_BASE_URL          - optional, defaults to https://royaraqamia.com
-#
-# GitHub disables a schedule after 60 days without repository activity. This
-# repository merges daily, so that only matters for a fork.
 
 name: 'Deploy'
 
 on:
-  schedule:
-    # 00:00, 06:00, 12:00, 18:00 UTC = 03:00, 09:00, 15:00, 21:00 in Baghdad.
-    # Four builds a day is ~330 of the 500 minutes at the recorded build time,
-    # which leaves about 170 minutes for the manual lane below.
-    - cron: '0 0,6,12,18 * * *'
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Why this deploy cannot wait for the next train'
+        description: 'Why this deploy is being run now'
         required: false
       purge_only:
         description: 'Skip the build: re-read the discovery documents and purge the edge'
@@ -94,10 +86,10 @@ jobs:
               echo "version=$version" >> "$GITHUB_OUTPUT"
               echo "serving $version"
               # The last seven characters of the service-worker version are the
-              # commit the running build was made from. A train with no new
-              # commit would rebuild the same tree and then wait forever for a
-              # version that cannot change, so it stops here and spends no
-              # build minute.
+              # commit the running build was made from. A dispatch whose commit
+              # is already serving would rebuild the same tree and then wait
+              # forever for a version that cannot change, so it stops here and
+              # spends no build minute.
               target="${GITHUB_SHA:0:7}"
               if [ "${version##*-}" = "$target" ]; then
                 echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -177,4 +169,4 @@ jobs:
             echo "### Deployed ${{ steps.wait.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
           fi
           echo "Trigger: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Reason: ${{ github.event.inputs.reason || 'scheduled train' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Reason: ${{ github.event.inputs.reason || 'no reason given' }}" >> "$GITHUB_STEP_SUMMARY"
