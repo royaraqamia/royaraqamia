@@ -5,7 +5,8 @@ The owner's phone, wired to an agent that has the repository. One workflow
 `scripts/telegram/*`, one Edge Function (`supabase/functions/telegram`). Design and reasoning:
 [ADR 0129](../adr/0129-the-telegram-bot-is-an-agent.md) (why it is an agent, and what replaced the
 commands), [ADR 0122](../adr/0122-the-webhook-replaces-the-poll-because-the-poll-was-a-clock.md) (why
-the door is a webhook).
+the door is a webhook), [ADR 0209](../adr/0209-the-telegram-bot-stops-reporting-on-workflows.md) (why
+there are no workflow notices).
 
 ## How a message travels
 
@@ -57,7 +58,7 @@ fail at once for a message to write `main`.
 | `scripts/telegram/prompt.mjs`         | the instructions: language, length, assumptions, tools, confirmations, formatting |
 | `scripts/telegram/publish.mjs`        | issue, branch, push, pull request                                                 |
 | `scripts/telegram/merge.mjs`          | the confirmed merge, and the step machine behind it                               |
-| `scripts/telegram/jobs.mjs`           | drain, reminders, digests, alerts, distillation, probe                            |
+| `scripts/telegram/jobs.mjs`           | drain, reminders, distillation, probe                                             |
 | `scripts/telegram/store.mjs`          | the message log, context, memory, confirmations                                   |
 | `scripts/telegram/text.mjs`           | markdown to Telegram HTML, chunking, time and language parsing                    |
 | `scripts/telegram/guard-decision.mjs` | which command is refused, and why                                                 |
@@ -87,7 +88,6 @@ one, deterministically, without giving the agent a `DELETE`.
   a failure that might pass is retried, three times.
 - Every delivered message is recorded, and `recordOutbound` refuses an empty body — the crash that
   sent a PostgREST 400 into the chat.
-- An alert repeats at most once per thirty minutes per workflow.
 
 ## When something is wrong
 

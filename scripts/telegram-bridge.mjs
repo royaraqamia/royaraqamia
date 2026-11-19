@@ -20,8 +20,6 @@
  * Modes (the workflow's `mode` input):
  *   drain     answer what the webhook stored
  *   remind    deliver due reminders
- *   digest    report what the owner has not been told yet
- *   alerts    report a red check, once per window
  *   remember  distil the conversation into summary + facts
  *   probe     measure the transcription endpoint
  *   merge     complete a confirmed merge (a button, never a sentence)
@@ -29,7 +27,7 @@
 
 import { pathToFileURL } from 'node:url';
 
-import { alerts, digest, drain, probe, remember, remind } from './telegram/jobs.mjs';
+import { drain, probe, remember, remind } from './telegram/jobs.mjs';
 import { mergeConfirmed } from './telegram/merge.mjs';
 import { recordOutbound } from './telegram/store.mjs';
 import { sendMarkdown } from './telegram/progress.mjs';
@@ -48,7 +46,7 @@ export {
   withPartNumbers,
 } from './telegram/text.mjs';
 export { formatContext, formatHistory, formatMemories } from './telegram/store.mjs';
-export { formatAlert, formatDigest, pullState, unseen, silenceWav } from './telegram/jobs.mjs';
+export { silenceWav } from './telegram/jobs.mjs';
 
 function arg(name) {
   const index = process.argv.indexOf(`--${name}`);
@@ -97,20 +95,6 @@ async function main() {
   if (mode === 'remember') return remember();
   if (mode === 'probe') return probe();
   if (mode === 'merge') return runMerge(arg('confirmation'));
-  if (mode === 'digest') {
-    return digest({
-      workflow: arg('workflow') ?? 'Performance Audit',
-      url: arg('url'),
-      runId: arg('run-id') ? Number(arg('run-id')) : undefined,
-    });
-  }
-  if (mode === 'alerts') {
-    return alerts({
-      workflow: arg('workflow') ?? 'Release Health',
-      conclusion: arg('conclusion') ?? 'failure',
-      url: arg('url'),
-    });
-  }
 
   throw new Error(`Unknown mode: ${mode}`);
 }
