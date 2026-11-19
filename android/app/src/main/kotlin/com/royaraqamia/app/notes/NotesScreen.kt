@@ -13,11 +13,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -36,7 +41,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -54,11 +58,6 @@ import com.royaraqamia.app.ui.vectors.LucideVectors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private const val LIST = "notes-list"
-private const val SEARCH = "notes-search"
-private const val EMPTY = "notes-empty"
-private const val ROW = "notes-row"
-private const val EDITOR = "notes-editor"
 private const val AUTOSAVE_DELAY_MS = 500L
 
 /**
@@ -75,8 +74,8 @@ private const val AUTOSAVE_DELAY_MS = 500L
  * sees has already survived the process before the request is attempted. The
  * queue drains when the radio returns, not only when this screen is open.
  *
- * The surface is drawn but not switched on: `docs/mobile/screens.json` records it
- * with `enabled: false` until `check:visual` passes (ADR-0117, ADR-0118).
+ * The surface is drawn from [NotesMetrics], the same measured design the page
+ * serves at `/?tab=/notes`; the visual gate compares the two (#1628, ADR-0118).
  */
 @Composable
 fun NotesScreen(repository: NotesRepository, modifier: Modifier = Modifier) {
@@ -122,37 +121,96 @@ fun NotesScreen(repository: NotesRepository, modifier: Modifier = Modifier) {
         onDispose { watch.close() }
     }
 
+    NotesSurface(
+        state = state,
+        pill = pill,
+        query = query,
+        selected = selected,
+        onQueryChange = { query = it },
+        onOpen = { row ->
+            selectedId = row.clientId
+            selected = row
+        },
+        onCreate = {
+            scope.launch {
+                val created = repository.createNote("")
+                selectedId = created.clientId
+                selected = created
+                paint()
+            }
+        },
+        onBack = {
+            selectedId = null
+            selected = null
+        },
+        onSave = { body ->
+            selected?.let { note -> scope.launch { repository.updateNote(note.clientId, body); paint() } }
+        },
+        onDelete = {
+            selected?.let { note ->
+                scope.launch {
+                    repository.deleteNote(note.clientId)
+                    selectedId = null
+                    selected = null
+                    paint()
+                }
+            }
+        },
+        modifier = modifier,
+    )
+}
+
+/**
+ * The two halves of the surface, without the store. The visual test composes
+ * this with a fixed state; the shell composes it with the rows the device holds.
+ */
+@Composable
+internal fun NotesSurface(
+    state: NotesUiState,
+    pill: SyncPillState?,
+    query: String,
+    selected: NoteRow?,
+    onQueryChange: (String) -> Unit,
+    onOpen: (NoteRow) -> Unit,
+    onCreate: () -> Unit,
+    onBack: () -> Unit,
+    onSave: (String) -> Unit,
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    editorEditable: Boolean = true,
+) {
     Column(
         modifier =
             modifier
                 .fillMaxSize()
                 .background(RoyColors.background)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = NotesMetrics.screenPaddingX, vertical = NotesMetrics.screenPaddingY),
     ) {
-        Text(
-            text = ServicesCopy.NOTES,
-            modifier = Modifier.testTag("notes-title"),
-            style =
-                TextStyle(
-                    fontFamily = RoyFonts.ui,
-                    fontSize = 24.sp,
-                    lineHeight = 32.sp,
-                    fontWeight = FontWeight(700),
-                ),
-            color = RoyColors.foreground,
-        )
+        Box(
+            modifier =
+                Modifier.fillMaxWidth().height(NotesMetrics.titleHeight).testTag(NotesMetrics.TITLE),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = ServicesCopy.NOTES,
+                style =
+                    TextStyle(
+                        fontFamily = RoyFonts.ui,
+                        fontSize = NotesMetrics.titleSize,
+                        lineHeight = NotesMetrics.titleLineHeight,
+                        fontWeight = NotesMetrics.titleWeight,
+                    ),
+                color = RoyColors.foreground,
+                textAlign = TextAlign.Center,
+            )
+        }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(NotesMetrics.titleToList))
 
-        pill?.let {
+        if (pill != null) {
             SyncPill(
-                state = it,
-                onRetry =
-                    if (it is SyncPillState.Failed) {
-                        { scope.launch { repository.retryFailed(); sync() } }
-                    } else {
-                        null
-                    },
+                state = pill,
+                onRetry = null,
             )
             Spacer(Modifier.height(12.dp))
         }
@@ -161,19 +219,11 @@ fun NotesScreen(repository: NotesRepository, modifier: Modifier = Modifier) {
         if (editor != null) {
             NoteEditor(
                 note = editor,
-                onBack = {
-                    selectedId = null
-                    selected = null
-                },
-                onSave = { body -> scope.launch { repository.updateNote(editor.clientId, body); paint() } },
-                onDelete = {
-                    scope.launch {
-                        repository.deleteNote(editor.clientId)
-                        selectedId = null
-                        selected = null
-                        paint()
-                    }
-                },
+                onBack = onBack,
+                onSave = onSave,
+                onDelete = onDelete,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                editable = editorEditable,
             )
         } else {
             val filtered =
@@ -181,18 +231,55 @@ fun NotesScreen(repository: NotesRepository, modifier: Modifier = Modifier) {
                     val needle = NotesText.normalizeForSearch(query.trim())
                     needle.isEmpty() || NotesText.searchText(row.body).contains(needle)
                 }
-            Box(modifier = Modifier.fillMaxSize()) {
-                Column(modifier = Modifier.fillMaxSize()) {
+            NotesListSurface(
+                notes = filtered,
+                query = query,
+                onQueryChange = onQueryChange,
+                onOpen = onOpen,
+                onCreate = onCreate,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+/** The bordered list the page draws: search, then rows or the empty block. */
+@Composable
+internal fun NotesListSurface(
+    notes: List<NoteRow>,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onOpen: (NoteRow) -> Unit,
+    onCreate: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .border(
+                            width = NotesMetrics.listBorder,
+                            color = RoyColors.border,
+                            shape = RoundedCornerShape(NotesMetrics.listRadius),
+                        )
+                        .clip(RoundedCornerShape(NotesMetrics.listRadius))
+                        .testTag(NotesMetrics.LIST),
+            ) {
+                Box(Modifier.fillMaxWidth().padding(NotesMetrics.searchPad)) {
                     OutlinedTextField(
                         value = query,
-                        onValueChange = { query = it },
-                        modifier = Modifier.fillMaxWidth().testTag(SEARCH),
+                        onValueChange = onQueryChange,
+                        modifier =
+                            Modifier.fillMaxWidth().height(NotesMetrics.searchHeight).testTag(NotesMetrics.SEARCH),
                         singleLine = true,
+                        shape = RoundedCornerShape(NotesMetrics.searchRadius),
+                        textStyle = TextStyle(fontFamily = RoyFonts.ui, fontSize = NotesMetrics.searchSize),
                         placeholder = { Text(NotesListCopy.SEARCH_PLACEHOLDER) },
                         leadingIcon = { Icon(LucideVectors.Search, contentDescription = null) },
                         trailingIcon = {
                             if (query.isNotEmpty()) {
-                                IconButton(onClick = { query = "" }) {
+                                IconButton(onClick = { onQueryChange("") }) {
                                     Icon(
                                         LucideVectors.X,
                                         contentDescription = NotesListCopy.CLEAR_SEARCH,
@@ -201,65 +288,61 @@ fun NotesScreen(repository: NotesRepository, modifier: Modifier = Modifier) {
                             }
                         },
                     )
+                }
 
-                    Spacer(Modifier.height(12.dp))
+                HorizontalDivider(thickness = NotesMetrics.listBorder, color = RoyColors.border)
 
-                    if (filtered.isEmpty()) {
-                        NotesEmpty(searched = query.isNotEmpty())
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize().testTag(LIST),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            items(filtered, key = { it.clientId }) { row ->
-                                NoteRowView(row) {
-                                    selectedId = row.clientId
-                                    selected = row
-                                }
-                            }
-                        }
+                if (notes.isEmpty()) {
+                    // The page gives the empty block a 40vh floor, not the rest of
+                    // the list: centring inside a stretched block moves its two
+                    // sentences away from the card's search field.
+                    Spacer(Modifier.height(1.dp))
+                    Box(Modifier.fillMaxWidth().padding(horizontal = NotesMetrics.listBorder)) {
+                        NotesEmpty(
+                            searched = query.isNotEmpty(),
+                            modifier = Modifier.height(NotesMetrics.emptyMinHeight),
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        items(notes, key = { it.clientId }) { row -> NoteRowView(row, onOpen) }
                     }
                 }
-
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            val created = repository.createNote("")
-                            selectedId = created.clientId
-                            selected = created
-                            paint()
-                        }
-                    },
-                    modifier =
-                        Modifier.align(Alignment.BottomEnd)
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(RoyColors.primary),
-                ) {
-                    Icon(LucideVectors.Plus, contentDescription = NotesCopy.NEW_NOTE, tint = RoyColors.primaryForeground)
-                }
             }
+        }
+
+        androidx.compose.material3.FloatingActionButton(
+            onClick = onCreate,
+            modifier = Modifier.align(Alignment.BottomEnd).size(56.dp),
+            containerColor = RoyColors.primary,
+            contentColor = RoyColors.primaryForeground,
+            shape = CircleShape,
+        ) {
+            Icon(LucideVectors.Plus, contentDescription = NotesCopy.NEW_NOTE)
         }
     }
 }
 
 @Composable
-private fun NoteRowView(row: NoteRow, onOpen: () -> Unit) {
+private fun NoteRowView(row: NoteRow, onOpen: (NoteRow) -> Unit) {
     val name = NotesText.noteName(row.body).ifEmpty { NotesListCopy.UNTITLED }
     val preview = NotesText.notePreview(row.body)
     Column(
         modifier =
-            Modifier.testTag(ROW)
+            Modifier.testTag(NotesMetrics.ROW)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .clickable(onClick = onOpen)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .clip(RoundedCornerShape(NotesMetrics.rowRadius))
+                .clickable(onClick = { onOpen(row) })
+                .padding(horizontal = NotesMetrics.rowPaddingX, vertical = NotesMetrics.rowPaddingY),
     ) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
                 text = name,
                 modifier = Modifier.weight(1f),
-                style = TextStyle(fontFamily = RoyFonts.ui, fontSize = 14.sp, fontWeight = FontWeight(700)),
+                style = TextStyle(fontFamily = RoyFonts.ui, fontSize = 14.sp, fontWeight = androidx.compose.ui.text.font.FontWeight(700)),
                 color = RoyColors.foreground,
                 maxLines = 1,
             )
@@ -282,27 +365,44 @@ private fun NoteRowView(row: NoteRow, onOpen: () -> Unit) {
 }
 
 @Composable
-private fun NotesEmpty(searched: Boolean) {
+private fun NotesEmpty(searched: Boolean, modifier: Modifier = Modifier) {
     Column(
         modifier =
-            Modifier.testTag(EMPTY)
+            modifier
+                .testTag(NotesMetrics.EMPTY)
                 .fillMaxWidth()
-                .padding(24.dp),
+                .padding(
+                    start = NotesMetrics.emptyPadding,
+                    top = NotesMetrics.emptyPadding,
+                    end = NotesMetrics.emptyPadding,
+                    bottom = NotesMetrics.emptyPaddingBottom,
+                ),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = if (searched) NotesListCopy.NO_RESULTS_TITLE else NotesListCopy.EMPTY_TITLE,
-            modifier = Modifier.testTag("notes-empty-title"),
-            style = TextStyle(fontFamily = RoyFonts.ui, fontSize = 14.sp, fontWeight = FontWeight(700)),
+            modifier = Modifier.testTag(NotesMetrics.EMPTY_TITLE).height(NotesMetrics.emptyTitleHeight),
+            style =
+                TextStyle(
+                    fontFamily = RoyFonts.ui,
+                    fontSize = NotesMetrics.emptyTitleSize,
+                    lineHeight = NotesMetrics.emptyTitleLineHeight,
+                    fontWeight = NotesMetrics.emptyTitleWeight,
+                ),
             color = RoyColors.foreground,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(NotesMetrics.emptyTitleToBody))
         Text(
             text = if (searched) NotesListCopy.NO_RESULTS_BODY else NotesListCopy.EMPTY_BODY,
-            modifier = Modifier.testTag("notes-empty-body"),
-            style = TextStyle(fontFamily = RoyFonts.ui, fontSize = 12.sp, lineHeight = 20.sp),
+            modifier = Modifier.testTag(NotesMetrics.EMPTY_BODY).width(NotesMetrics.emptyBodyWidth),
+            style =
+                TextStyle(
+                    fontFamily = RoyFonts.ui,
+                    fontSize = NotesMetrics.emptyBodySize,
+                    lineHeight = NotesMetrics.emptyBodyLineHeight,
+                ),
             color = RoyColors.mutedForeground,
             textAlign = TextAlign.Center,
         )
@@ -310,18 +410,21 @@ private fun NotesEmpty(searched: Boolean) {
 }
 
 /**
- * One note, as a plain Markdown editor over the same body the page stores.
+ * One note, as a plain text editor over the same body the page stores.
  *
  * Every keystroke lands in local state and a short debounce writes it to the
  * store, so there is no Save button to forget — the web's editor behaves the
- * same way (`frontend/ui/notes/note-editor-dialog.tsx`).
+ * same way (`frontend/ui/notes/note-editor-dialog.tsx`). Its measured shell is
+ * the phone sheet the page draws: label, text surface, meta line.
  */
 @Composable
-private fun NoteEditor(
+internal fun NoteEditor(
     note: NoteRow,
     onBack: () -> Unit,
     onSave: (String) -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
+    editable: Boolean = true,
 ) {
     var body by remember(note.clientId) { mutableStateOf(note.body) }
     var saved by remember(note.clientId) { mutableStateOf(note.body) }
@@ -333,7 +436,11 @@ private fun NoteEditor(
         saved = body
     }
 
-    Column(modifier = Modifier.fillMaxSize().testTag(EDITOR)) {
+    val scroll = rememberScrollState()
+    val words = body.trim().ifEmpty { null }?.split(Regex("\\s+"))?.size ?: 0
+    Column(modifier = modifier.width(NotesMetrics.editorWidth)) {
+        // The note's actions belong to the dialog's header on the page; the gate
+        // measures the text region below it, so they sit outside that region.
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -346,14 +453,75 @@ private fun NoteEditor(
                 Icon(LucideVectors.Trash2, contentDescription = NotesCopy.DELETE, tint = RoyColors.destructive)
             }
         }
-
-        OutlinedTextField(
-            value = body,
-            onValueChange = { body = it },
-            modifier = Modifier.fillMaxWidth().weight(1f).testTag("notes-editor-body"),
-            placeholder = { Text(NotesCopy.NEW_NOTE_HINT) },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-            textStyle = TextStyle(fontFamily = RoyFonts.ui, fontSize = 15.sp, lineHeight = 24.sp),
+        Column(
+            modifier =
+                Modifier.height(NotesMetrics.editorHeight)
+                    .verticalScroll(scroll)
+                    .testTag(NotesMetrics.EDITOR),
+        ) {
+        Text(
+            text = NotesCopy.EDITOR_LABEL,
+            modifier = Modifier.height(NotesMetrics.editorLabelHeight),
+            style =
+                TextStyle(
+                    fontFamily = RoyFonts.ui,
+                    fontSize = NotesMetrics.editorLabelSize,
+                    lineHeight = NotesMetrics.editorLabelLineHeight,
+                    fontWeight = NotesMetrics.editorLabelWeight,
+                ),
+            color = RoyColors.foreground,
         )
+        Spacer(Modifier.height(NotesMetrics.editorGap))
+        Box(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(NotesMetrics.editorBodyHeight)
+                    .border(
+                        width = NotesMetrics.editorBodyBorder,
+                        color = RoyColors.border,
+                        shape = RoundedCornerShape(NotesMetrics.editorBodyRadius),
+                    )
+                    .clip(RoundedCornerShape(NotesMetrics.editorBodyRadius))
+                    .background(RoyColors.card.copy(alpha = 0.8f))
+                    .testTag(NotesMetrics.EDITOR_BODY),
+        ) {
+            Column(Modifier.fillMaxSize()) {
+                Spacer(Modifier.height(NotesMetrics.editorBodyTextTop))
+                BasicTextField(
+                    value = body,
+                    onValueChange = { body = it },
+                    readOnly = !editable,
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(horizontal = NotesMetrics.editorBodyTextPad)
+                            .weight(1f),
+                    textStyle =
+                        TextStyle(
+                            fontFamily = RoyFonts.ui,
+                            fontSize = NotesMetrics.editorBodyTextSize,
+                            lineHeight = NotesMetrics.editorBodyLineHeight,
+                            color = RoyColors.foreground,
+                        ),
+                )
+            }
+        }
+        Spacer(Modifier.height(NotesMetrics.editorGap))
+        Text(
+            text =
+                if (words > 0) {
+                    "$words ${NotesCopy.WORD} · ${NotesCopy.LAST_EDIT} ${NotesText.timeAgo(note.updatedAt)} · ${NotesCopy.AUTOSAVES}"
+                } else {
+                    "${NotesCopy.LAST_EDIT} ${NotesText.timeAgo(note.updatedAt)} · ${NotesCopy.AUTOSAVES}"
+                },
+            modifier = Modifier.height(NotesMetrics.editorMetaHeight),
+            style =
+                TextStyle(
+                    fontFamily = RoyFonts.ui,
+                    fontSize = NotesMetrics.editorMetaSize,
+                    lineHeight = NotesMetrics.editorMetaLineHeight,
+                ),
+            color = RoyColors.mutedForeground,
+        )
+        }
     }
 }

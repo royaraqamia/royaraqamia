@@ -2653,7 +2653,7 @@
     {
       "id": "notes-list",
       "surface": "notes",
-      "issue": "#1390",
+      "issue": "#1628",
       "web": {
         "route": "app/notes/(app)/page.tsx",
         "component": "frontend/ui/notes/notes-list.tsx",

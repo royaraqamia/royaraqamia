@@ -12,4 +12,11 @@ internal object NotesCopy {
     const val NEW_NOTE_HINT = "اكتب ملاحظتك هنا…"
     const val DELETE = "حذف الملاحظة"
     const val BACK = "رجوع"
+
+    // The editor's shell mirrors the page's note dialog. These belong to that
+    // surface rather than the copied list, so they stay beside the screen.
+    const val EDITOR_LABEL = "النَّصّ"
+    const val WORD = "كلمة"
+    const val LAST_EDIT = "آخر تعديل"
+    const val AUTOSAVES = "يُحفظ تلقائيًّا"
 }

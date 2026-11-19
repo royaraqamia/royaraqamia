@@ -661,6 +661,36 @@ const PREPARE: Record<
     await page.locator('[data-visual="news-unavailable"]').waitFor({ timeout: 30_000 });
     await page.evaluate(() => document.fonts.ready);
   },
+  // The notes list at rest (#1628): a fresh browser context, so the Local Store
+  // has no rows and the page draws its own empty block. The surface is the
+  // door's notes tab - `/notes` is a redirect to this address (ADR-0168).
+  'notes/at-rest': async (page, visit) => {
+    await visit();
+    await expect(page.locator('[data-visual="notes-empty"]')).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+  },
+  // The same surface with one note open (#1628). The note is written through the
+  // page's own composer, so the editor's body, word count and relative time are
+  // what a member sees rather than a store poked from outside. The capture
+  // region only exists after the create, so this routine navigates itself.
+  'notes/open-note': async (page) => {
+    const baseURL = projectBaseURL();
+    await page.goto(new URL('/?tab=/notes', baseURL).toString(), {
+      waitUntil: 'domcontentloaded',
+    });
+    await page.locator('[data-notes-ready="true"]').waitFor({ state: 'attached', timeout: 30_000 });
+    await page.locator('#btn-new-note').dispatchEvent('click');
+    await page.locator('#composer-note-body').waitFor({ timeout: 30_000 });
+    await page.locator('#composer-note-body').click();
+    await page.keyboard.type('ملاحظة قياس');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type('نص القياس على الشاشتين.');
+    await page.getByRole('button', { name: 'إنشاء الملاحظة' }).click();
+    await page.locator('[data-visual="notes-editor"]').waitFor({ timeout: 30_000 });
+    await page.waitForTimeout(600);
+    await page.evaluate(() => document.fonts.ready);
+  },
+
   // The Scanner at rest (#1344): the public route, with the camera not started.
   // Nothing is seeded - the state is the page's own first paint - so the card's
   // viewfinder, start control and upload box are the recording.

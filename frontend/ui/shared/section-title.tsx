@@ -49,6 +49,8 @@ interface SectionTitleProps {
   tone?: SectionTitleTone;
   className?: string;
   id?: string;
+  /** The visual-gate name of this heading, when a contract measures it. */
+  dataVisual?: string;
 }
 
 export function SectionTitle({
@@ -58,9 +60,14 @@ export function SectionTitle({
   tone = 'foreground',
   className,
   id,
+  dataVisual,
 }: SectionTitleProps) {
   return (
-    <Tag id={id} className={cn(SIZE_CLASSES[size], TONE_CLASSES[tone], className)}>
+    <Tag
+      id={id}
+      data-visual={dataVisual}
+      className={cn(SIZE_CLASSES[size], TONE_CLASSES[tone], className)}
+    >
       {children}
     </Tag>
   );

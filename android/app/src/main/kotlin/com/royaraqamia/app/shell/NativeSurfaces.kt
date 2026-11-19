@@ -53,6 +53,7 @@ object NativeSurfaces {
             "/scan",
             "/news",
             "/notifications",
+            "/notes",
             "/athkar",
             "/athkar/evening",
         )
