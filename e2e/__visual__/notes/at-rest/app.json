@@ -1,0 +1,38 @@
+{
+  "surface": "notes",
+  "elements": {
+    "title": {
+      "top": 12,
+      "height": 46.545456,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "list": {
+      "top": 106.545456,
+      "width": 360.72726,
+      "radius": 24
+    },
+    "search": {
+      "height": 44,
+      "fontSize": 14,
+      "radius": 12
+    },
+    "empty": {
+      "top": 176.72728,
+      "width": 358.54544,
+      "paddingTop": 32
+    },
+    "empty-title": {
+      "top": 311.27274,
+      "height": 20,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "empty-body": {
+      "top": 343.27274,
+      "width": 158.54544,
+      "fontSize": 12,
+      "lineHeight": 19.5
+    }
+  }
+}

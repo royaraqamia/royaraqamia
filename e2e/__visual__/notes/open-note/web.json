@@ -1,0 +1,21 @@
+{
+  "surface": "notes",
+  "state": "open-note",
+  "route": "/?tab=/notes",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "editor": {
+      "top": 65,
+      "width": 343
+    },
+    "editor-body": {
+      "top": 85,
+      "width": 343,
+      "radius": 12
+    }
+  }
+}

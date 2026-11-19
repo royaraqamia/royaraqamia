@@ -1,0 +1,14 @@
+{
+  "surface": "notes",
+  "elements": {
+    "editor": {
+      "top": 154.54546,
+      "width": 342.9091
+    },
+    "editor-body": {
+      "top": 174.90909,
+      "width": 342.9091,
+      "radius": 12
+    }
+  }
+}

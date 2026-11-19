@@ -64,7 +64,7 @@ _The local-store products, where the app has a real reason to be native: offline
 - [x] **linksnap** `/?tab=/linksnap` — native
 - [x] **quran** `/?tab=/quran` `/quran` — native · #955
 - [x] **quran-surah** `/quran/[surah]` — native · #955
-- [ ] **notes** `/?tab=/notes` `/notes` — todo · #1628
+- [x] **notes** `/?tab=/notes` `/notes` — native · #1628
 
 ## Requests and bookings
 
@@ -186,10 +186,10 @@ A component is finished when the surface that draws it is native, or when it bel
 - [x] `news-page` on **news** · #926
 - [x] `athkar-page` on **athkar** · #1389
 - [x] `athkar-card` on **athkar** · #1389
-- [ ] `notes-list` on **notes** · #1390
+- [x] `notes-list` on **notes** · #1628
 - [x] `notifications-list` on **notifications** · #1391
 - [ ] `admin-console` on **admin** · #974
 
 ## Where this stands
 
-23 native · 5 to do · 4 document · 6 blocked of 38 surfaces. 1 of 9 release items done.
+24 native · 4 to do · 4 document · 6 blocked of 38 surfaces. 1 of 9 release items done.

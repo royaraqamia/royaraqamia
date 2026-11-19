@@ -13,6 +13,7 @@ import com.royaraqamia.app.news.NewsPageCopy
 import com.royaraqamia.app.plans.PlanCardCopy
 import com.royaraqamia.app.rates.RatesPageCopy
 import com.royaraqamia.app.shell.Routes
+import com.royaraqamia.app.shell.ServicesCopy
 import com.royaraqamia.app.shell.Screens
 import com.royaraqamia.app.verify.VerifyCopy
 import java.time.Instant
@@ -156,6 +157,7 @@ object ScreenTitles {
             "/rates" to RatesPageCopy.PAGE_TITLE,
             "/habitflow" to HabitflowCopy.LIST_TITLE,
             "/news" to NewsPageCopy.PAGE_TITLE,
+            "/notes" to ServicesCopy.NOTES,
             "/athkar" to AthkarPageCopy.PAGE_TITLE,
             "/athkar/evening" to AthkarPageCopy.PAGE_TITLE,
         )

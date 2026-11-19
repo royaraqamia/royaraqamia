@@ -1,0 +1,45 @@
+{
+  "surface": "notes",
+  "state": "at-rest",
+  "route": "/?tab=/notes",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 172,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "list": {
+      "top": 266.5,
+      "width": 361,
+      "radius": 24
+    },
+    "search": {
+      "height": 44,
+      "fontSize": 14,
+      "radius": 12
+    },
+    "empty": {
+      "top": 336.5,
+      "width": 359,
+      "paddingTop": 32
+    },
+    "empty-title": {
+      "top": 471.39,
+      "height": 20,
+      "fontSize": 14,
+      "fontWeight": 700
+    },
+    "empty-body": {
+      "top": 503.39,
+      "width": 158.39,
+      "fontSize": 12,
+      "lineHeight": 19.5
+    }
+  }
+}
