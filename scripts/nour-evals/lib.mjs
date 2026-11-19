@@ -7,7 +7,7 @@
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import * as prettier from 'prettier';
 import { behaviourLines } from '../../shared/contracts/agent-behaviour.mjs';
 
