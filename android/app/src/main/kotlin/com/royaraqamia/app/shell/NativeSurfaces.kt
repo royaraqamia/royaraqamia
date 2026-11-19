@@ -56,6 +56,7 @@ object NativeSurfaces {
             "/notes",
             "/athkar",
             "/athkar/evening",
+            "/admin",
         )
 
     /**

@@ -1,6 +1,7 @@
 package com.royaraqamia.app.assistant
 
 import com.royaraqamia.app.account.AccountFaqCopy
+import com.royaraqamia.app.admin.AdminConsoleCopy
 import com.royaraqamia.app.account.BlockedMembersCopy
 import com.royaraqamia.app.accountnews.AccountNewsPreferencesCopy
 import com.royaraqamia.app.athkar.AthkarPageCopy
@@ -158,6 +159,7 @@ object ScreenTitles {
             "/habitflow" to HabitflowCopy.LIST_TITLE,
             "/news" to NewsPageCopy.PAGE_TITLE,
             "/notes" to ServicesCopy.NOTES,
+            "/admin" to AdminConsoleCopy.PAGE_TITLE,
             "/athkar" to AthkarPageCopy.PAGE_TITLE,
             "/athkar/evening" to AthkarPageCopy.PAGE_TITLE,
         )

@@ -1,0 +1,26 @@
+{
+  "surface": "admin",
+  "elements": {
+    "title": {
+      "top": 12,
+      "height": 46.545456,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "list": {
+      "top": 82.545456,
+      "width": 360.72726
+    },
+    "section-certificates": {
+      "top": 82.545456,
+      "width": 360.72726,
+      "height": 88.36363,
+      "radius": 16
+    },
+    "section-reports": {
+      "width": 360.72726,
+      "height": 88.36365,
+      "radius": 16
+    }
+  }
+}

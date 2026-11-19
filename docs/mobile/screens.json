@@ -194,9 +194,8 @@
     {
       "surface": "admin",
       "native": "android/app/src/main/kotlin/com/royaraqamia/app/admin/AdminScreen.kt",
-      "reason": "The console index is ported (#974) and switched off until it is the page pixel for pixel (#872, ADR-0117, ADR-0118). The rows only open the page's own routes; its announcement broadcast, plan activation, certificate edits, news and catalog decisions, consultation/admin writes and deletion actions stay the page, where their confirmations live (ADR-0193 decision 3).",
-      "enabled": false,
-      "issue": "#974"
+      "enabled": true,
+      "issue": "#1627"
     }
   ]
 }
