@@ -1,7 +1,7 @@
 {
   "surface": "admin",
   "route": "/admin",
-  "notes": "The Admin Console's section index at rest (#974, ADR-0193). `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the first section card, the region both clients draw identically. The at-rest state needs an admin session, so a recording has to sign in as an account the deployment's allowlist names; the surface is in `docs/mobile/screens.json` with the port off and is not yet under `docs/mobile/visual-gate.json` - it joins the gate when this state has evidence (ADR-0117, ADR-0118). Widths of a label's own words are left out deliberately: they are the run of the text, not a decision. Colours are left out too, because they are what the raster proves.",
+  "notes": "The Admin Console's section index at rest (#974, #1627, ADR-0193). `origin` is the title, because the page's frame and the app's frame are different heights and the design is the gaps between these boxes, not where the first one lands. `capture` is the first section card, the region both clients draw identically. The at-rest state needs an admin session, so a re-recording needs the gate's fixture account named in the deployment's `ADMIN_EMAILS`; the allowlist is the deployment's, and a spec must not grant it. Widths of a label's own words are left out deliberately: they are the run of the text, not a decision. The reports card's `top` is left out for the same reason it is measured at the far end of the list: every card above it is one sentence wrapping to one or two lines, so the sum is the run of ten sentences rather than the card design. Its width, height and radius are measured so the card family still has a second witness. Colours are left out too, because they are what the raster proves.",
   "states": [
     {
       "name": "at-rest",
@@ -46,7 +46,7 @@
           "app": {
             "tag": "admin-section-reports"
           },
-          "properties": ["top", "width", "height", "radius"]
+          "properties": ["width", "height", "radius"]
         }
       ]
     }

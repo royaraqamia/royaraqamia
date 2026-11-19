@@ -1,0 +1,33 @@
+{
+  "surface": "admin",
+  "state": "at-rest",
+  "route": "/admin",
+  "viewport": {
+    "width": 393,
+    "height": 852,
+    "deviceScaleFactor": 2.75
+  },
+  "elements": {
+    "title": {
+      "top": 80,
+      "height": 46.5,
+      "fontSize": 30,
+      "fontWeight": 800
+    },
+    "list": {
+      "top": 150.5,
+      "width": 361
+    },
+    "section-certificates": {
+      "top": 150.5,
+      "width": 361,
+      "height": 88.75,
+      "radius": 16
+    },
+    "section-reports": {
+      "width": 361,
+      "height": 88.75,
+      "radius": 16
+    }
+  }
+}

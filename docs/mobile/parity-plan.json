@@ -254,7 +254,7 @@
     {
       "surface": "admin",
       "phase": "operator",
-      "state": "todo",
+      "state": "native",
       "issue": "#1627"
     },
     {

@@ -325,6 +325,17 @@ const PREPARE: Record<
   'at-rest': async (_page, visit) => {
     await visit();
   },
+  // The console index is behind the admin allowlist (#1627, ADR-0193), and the
+  // allowlist is the deployment's `ADMIN_EMAILS`, not something a spec may grant.
+  // A re-recording therefore needs the gate's fixture account named there; without
+  // it the page redirects to the member's home and this state times out rather
+  // than recording somebody else's page.
+  'admin/at-rest': async (page, visit) => {
+    const baseURL = projectBaseURL();
+    await signInAsVisualAccount(page.context(), baseURL);
+    await visit(baseURL);
+    await page.locator('[data-visual="admin-sections"]').waitFor({ timeout: 20_000 });
+  },
   // The evening sitting is its own route (ADR-0147): the same reader and the
   // same boxes, with the second collection behind it.
   'athkar/evening': async (_page, visit) => {

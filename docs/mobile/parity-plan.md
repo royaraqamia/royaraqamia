@@ -77,7 +77,7 @@ _Forms that end in a server write, so a port has to bring the same validation an
 
 _One decision first: the admin area's security review (#971, ADR-0193). It allows the console's server-authorized reads and its reversible or internal moderation natively, and leaves the irreversible, money, public-copy and deletion actions on the page._
 
-- [ ] **admin** `/admin/**` — todo · #1627
+- [x] **admin** `/admin/**` — native · #1627
 
 ## The door
 
@@ -189,8 +189,8 @@ A component is finished when the surface that draws it is native, or when it bel
 - [x] `athkar-card` on **athkar** · #1389
 - [x] `notes-list` on **notes** · #1628
 - [x] `notifications-list` on **notifications** · #1391
-- [ ] `admin-console` on **admin** · #974
+- [x] `admin-console` on **admin** · #1627
 
 ## Where this stands
 
-24 native · 4 to do · 4 document · 6 blocked of 38 surfaces. 1 of 9 release items done.
+25 native · 3 to do · 4 document · 6 blocked of 38 surfaces. 1 of 9 release items done.

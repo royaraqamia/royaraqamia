@@ -2717,7 +2717,7 @@
     {
       "id": "admin-console",
       "surface": "admin",
-      "issue": "#974",
+      "issue": "#1627",
       "web": {
         "route": "app/admin/page.tsx",
         "component": "frontend/ui/admin/admin-console-view.tsx",

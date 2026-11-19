@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -32,24 +34,23 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.account.AccountProfileRepository
 import com.royaraqamia.app.contracts.ApiResult
-import com.royaraqamia.app.theme.LocalRoySpacing
-import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
-import com.royaraqamia.app.theme.RoyShape
+import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.ui.vectors.LucideVectors
 
 /** The test tags the console's own tests press, named once (#974). */
 object AdminConsoleTags {
-    const val TITLE = "admin-title"
-    const val LIST = "admin-sections"
+    const val TITLE = AdminMetrics.TITLE
+    const val LIST = AdminMetrics.LIST
 
-    fun section(id: String): String = "admin-section-$id"
+    fun section(id: String): String = AdminMetrics.section(id)
 }
 
 /** One console destination: its words, its glyph and the route it opens. */
@@ -76,10 +77,10 @@ private data class AdminSection(
  * are drawn open the page's own routes; the irreversible, money, public-copy and
  * deletion actions stay where the page's confirmation already lives.
  *
- * **Switched off until it is measured.** `docs/mobile/screens.json` carries this
- * screen as `enabled: false` and `docs/mobile/parity-plan.json` keeps the surface
- * `todo`: the document still draws `/admin` until `check:visual` finds the same
- * boxes and the same pixels as the page (ADR-0117, ADR-0118).
+ * **Measured before it was switched on.** The screen draws from [AdminMetrics],
+ * the boxes `shared/visual/admin.json` records on the page at the app's viewport,
+ * and `docs/mobile/visual-gate.json` carries the pair's baseline (#1627,
+ * ADR-0117, ADR-0118).
  */
 @Composable
 fun AdminConsoleRoute(
@@ -112,32 +113,44 @@ fun AdminConsoleRoute(
 /** The console index: the title, then one card per section the review allows. */
 @Composable
 fun AdminScreen(onOpenRoute: (String) -> Unit, modifier: Modifier = Modifier) {
-    val spacing = LocalRoySpacing.current
-    val scale = LocalRoyTypeScale.current
-
     Column(
         modifier =
             modifier
                 .fillMaxSize()
+                .background(RoyColors.background)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = spacing.elementGap, vertical = spacing.elementGapSm),
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                .padding(
+                    horizontal = AdminMetrics.screenPaddingX,
+                    vertical = AdminMetrics.screenPaddingY,
+                ),
     ) {
-        Text(
-            text = AdminConsoleCopy.PAGE_TITLE,
+        Box(
             modifier =
                 Modifier.fillMaxWidth()
-                    .testTag(AdminConsoleTags.TITLE)
-                    .semantics { heading() },
-            style = scale.h2,
-            color = RoyColors.foreground,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
+                    .height(AdminMetrics.titleHeight)
+                    .testTag(AdminConsoleTags.TITLE),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = AdminConsoleCopy.PAGE_TITLE,
+                modifier = Modifier.semantics { heading() },
+                style =
+                    TextStyle(
+                        fontFamily = RoyFonts.ui,
+                        fontSize = AdminMetrics.titleSize,
+                        lineHeight = AdminMetrics.titleLineHeight,
+                        fontWeight = AdminMetrics.titleWeight,
+                    ),
+                color = RoyColors.foreground,
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        Spacer(Modifier.height(AdminMetrics.titleToList))
 
         Column(
             modifier = Modifier.fillMaxWidth().testTag(AdminConsoleTags.LIST),
-            verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+            verticalArrangement = Arrangement.spacedBy(AdminMetrics.listGap),
         ) {
             for (section in sections) {
                 SectionCard(section = section, onClick = { onOpenRoute(section.route) })
@@ -224,55 +237,70 @@ private val sections: List<AdminSection> =
 /** One card: the section's glyph, its label and its sentence, and the way in. */
 @Composable
 private fun SectionCard(section: AdminSection, onClick: () -> Unit) {
-    val spacing = LocalRoySpacing.current
-    val scale = LocalRoyTypeScale.current
-
     Surface(
         modifier =
             Modifier.fillMaxWidth()
                 .testTag(AdminConsoleTags.section(section.id))
-                .clip(RoyShape.card)
+                .clip(RoundedCornerShape(AdminMetrics.cardRadius))
                 .clickable(role = Role.Button, onClick = onClick),
-        shape = Recipes.Card.radius,
+        shape = RoundedCornerShape(AdminMetrics.cardRadius),
         color = Recipes.Card.container,
         border = Recipes.Card.border,
     ) {
         Row(
             modifier =
                 Modifier.fillMaxWidth()
-                    .padding(horizontal = spacing.elementGap, vertical = spacing.elementGapSm),
-            horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-            verticalAlignment = Alignment.CenterVertically,
+                    .padding(
+                        horizontal = AdminMetrics.cardPaddingX,
+                        vertical = AdminMetrics.cardPaddingY,
+                    ),
+            horizontalArrangement = Arrangement.spacedBy(AdminMetrics.cardGap),
+            verticalAlignment = Alignment.Top,
         ) {
             Box(
                 modifier =
-                    Modifier.size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                    Modifier.size(AdminMetrics.iconBox)
+                        .clip(RoundedCornerShape(AdminMetrics.iconRadius))
                         .background(RoyColors.muted)
-                        .border(1.dp, RoyColors.border, RoundedCornerShape(12.dp)),
+                        .border(
+                            AdminMetrics.cardBorder,
+                            RoyColors.border,
+                            RoundedCornerShape(AdminMetrics.iconRadius),
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = section.icon,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(AdminMetrics.iconSize),
                     tint = RoyColors.primary,
                 )
             }
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
+                verticalArrangement = Arrangement.spacedBy(AdminMetrics.labelBodyGap),
             ) {
                 Text(
                     text = section.label,
-                    style = scale.body,
+                    style =
+                        TextStyle(
+                            fontFamily = RoyFonts.ui,
+                            fontSize = AdminMetrics.labelSize,
+                            lineHeight = AdminMetrics.labelLineHeight,
+                            fontWeight = AdminMetrics.labelWeight,
+                        ),
                     color = RoyColors.foreground,
-                    fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = section.description,
-                    style = scale.small,
+                    style =
+                        TextStyle(
+                            fontFamily = RoyFonts.ui,
+                            fontSize = AdminMetrics.descriptionSize,
+                            lineHeight = AdminMetrics.descriptionLineHeight,
+                            fontWeight = FontWeight.Normal,
+                        ),
                     color = RoyColors.mutedForeground,
                 )
             }
@@ -280,7 +308,7 @@ private fun SectionCard(section: AdminSection, onClick: () -> Unit) {
             Icon(
                 imageVector = LucideVectors.ArrowLeft,
                 contentDescription = null,
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(AdminMetrics.arrowSize).padding(top = 1.dp),
                 tint = RoyColors.mutedForeground,
             )
         }
@@ -290,7 +318,10 @@ private fun SectionCard(section: AdminSection, onClick: () -> Unit) {
 /** The server has not answered yet; the page's layout would still be resolving too. */
 @Composable
 private fun Checking() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(RoyColors.background),
+        contentAlignment = Alignment.Center,
+    ) {
         CircularProgressIndicator(color = RoyColors.primary)
     }
 }
