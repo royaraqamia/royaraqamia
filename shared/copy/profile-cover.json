@@ -1,0 +1,19 @@
+{
+  "surface": "profile",
+  "component": "profile-cover",
+  "web": {
+    "file": "app/u/[username]/_components/profile-cover-copy.ts",
+    "export": "PROFILE_COVER_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileCoverCopy.kt",
+    "object": "ProfileCoverCopy"
+  },
+  "notes": {
+    "source": "The cover band is decorative: it carries no words, no image and no content description (ADR-0201). What the two clients do share is the band's own name - the page's `data-visual` selector and the app's Compose test tag - so the one string that identifies it is generated here rather than spelled twice.",
+    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a tag neither client renders."
+  },
+  "strings": {
+    "tag": "profile-cover"
+  }
+}

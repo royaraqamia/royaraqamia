@@ -1,5 +1,7 @@
 import { coverVars } from '@/shared/profile-cover';
 
+import { PROFILE_COVER_COPY } from './profile-cover-copy';
+
 /**
  * The band a member's identity is drawn on (ADR-0201).
  *
@@ -12,7 +14,7 @@ import { coverVars } from '@/shared/profile-cover';
 export function ProfileCover({ memberId }: { memberId: string }) {
   return (
     <div
-      data-visual="profile-cover"
+      data-visual={PROFILE_COVER_COPY.tag}
       aria-hidden="true"
       style={coverVars(memberId)}
       className="relative h-[132px] overflow-hidden border-b border-border/35 [box-shadow:inset_0_-24px_30px_-22px_rgba(0,0,0,0.75)] sm:h-[160px]"

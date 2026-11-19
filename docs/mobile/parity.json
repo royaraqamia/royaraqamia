@@ -1195,6 +1195,30 @@
       ]
     },
     {
+      "id": "profile-cover",
+      "surface": "profile",
+      "issue": "#1564",
+      "web": {
+        "route": "app/u/[username]/page.tsx",
+        "component": "app/u/[username]/_components/profile-cover.tsx",
+        "copyModule": "app/u/[username]/_components/profile-cover-copy.ts",
+        "copyExport": "PROFILE_COVER_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileCover.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileCoverUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/profile/ProfileCoverCopy.kt",
+        "copyObject": "ProfileCoverCopy"
+      },
+      "copySource": "shared/copy/profile-cover.json",
+      "states": [
+        {
+          "name": "Painted",
+          "copy": "tag"
+        }
+      ]
+    },
+    {
       "id": "profile-chat-cta",
       "surface": "profile",
       "web": {

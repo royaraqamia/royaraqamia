@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -459,109 +460,124 @@ private fun Profile(
     }
 }
 
-/** The page's header card: the avatar, the display name, the handle and the bio. */
+/** The page's header card: the cover band, then the avatar sunk into its lower edge. */
 @Composable
 private fun Header(member: CommunityMemberResponseMember, name: String, chrome: ProfileChrome) {
     val spacing = LocalRoySpacing.current
     val type = LocalRoyTypeScale.current
     val initial = member.name?.trim()?.firstOrNull()
+    val avatarSize = ProfileCoverMetrics.AVATAR_SIZE_DP.dp
 
-    Column(
-        modifier =
-            Modifier.fillMaxWidth()
-                .testTag(ProfileMetrics.HEADER)
-                .clip(RoundedCornerShape(ProfileMetrics.HEADER_RADIUS.dp))
-                .background(RoyColors.card.copy(alpha = 0.4f))
-                .border(
-                    1.dp,
-                    RoyColors.border.copy(alpha = 0.6f),
-                    RoundedCornerShape(ProfileMetrics.HEADER_RADIUS.dp),
-                )
-                .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-    ) {
-        Box(
-            modifier =
-                Modifier.size(80.dp)
-                    .clip(CircleShape)
-                    .background(RoyColors.muted.copy(alpha = 0.6f))
-                    .border(2.dp, RoyColors.primary.copy(alpha = 0.35f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            when {
-                !member.avatar_url.isNullOrBlank() ->
-                    AsyncImage(
-                        model = member.avatar_url,
-                        contentDescription = name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(80.dp).clip(CircleShape),
-                    )
-                initial != null ->
-                    Text(
-                        text = initial.toString(),
-                        style = type.h2.copy(fontWeight = FontWeight.Bold),
-                        color = RoyColors.primary,
-                    )
-                else ->
-                    Icon(
-                        imageVector = LucideVectors.User,
-                        contentDescription = null,
-                        tint = RoyColors.mutedForeground,
-                        modifier = Modifier.size(32.dp),
-                    )
-            }
-        }
-
-        Box(
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val contentTop = ProfileCoverMetrics.contentTop(maxWidth)
+        Column(
             modifier =
                 Modifier.fillMaxWidth()
-                    .height(ProfileMetrics.NAME_LINE_HEIGHT.dp)
-                    .testTag(ProfileMetrics.NAME),
-            contentAlignment = Alignment.Center,
+                    .testTag(ProfileMetrics.HEADER)
+                    .clip(RoundedCornerShape(ProfileMetrics.HEADER_RADIUS.dp))
+                    .background(RoyColors.card.copy(alpha = 0.4f))
+                    .border(
+                        1.dp,
+                        RoyColors.border.copy(alpha = 0.6f),
+                        RoundedCornerShape(ProfileMetrics.HEADER_RADIUS.dp),
+                    ),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = name,
-                style = ProfileMetrics.nameStyle,
-                color = RoyColors.foreground,
-                textAlign = TextAlign.Center,
-            )
-        }
-        Text(
-            text = "@${member.username}",
-            style = type.small.copy(textDirection = TextDirection.Ltr),
-            color = RoyColors.mutedForeground,
-        )
-        member.bio?.trim()?.takeIf { it.isNotEmpty() }?.let { bio ->
-            Text(
-                text = bio,
-                style = ProfileMetrics.bioStyle,
-                color = RoyColors.mutedForeground,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.testTag(ProfileMetrics.BIO),
-            )
-        }
+            ProfileCover(memberId = member.id)
 
-        // The page's two doors: the follow control and the quiet «مراسلة». The
-        // viewer's own page draws the «أنت» pill and no chat, because there is
-        // nothing to follow and nobody to write to.
-        val face = FollowButtonUiState.of(chrome.standing)
-        if (face != null) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            // The page pulls this block up by 40dp with `-mt-10`; Compose has no
+            // negative padding, so the block starts at the band's lower edge less
+            // the sunk half-avatar and the band stays behind it (ADR-0201).
+            Column(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(top = contentTop, start = 24.dp, end = 24.dp, bottom = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
             ) {
-                FollowButton(
-                    state = face,
-                    name = name,
-                    busy = chrome.busy,
-                    error = chrome.error,
-                    onFollow = chrome.onFollow,
-                    onUnfollow = chrome.onUnfollow,
-                    onUnblock = chrome.onUnblock,
+                Box(
+                    modifier =
+                        Modifier.size(avatarSize)
+                            .clip(CircleShape)
+                            .background(RoyColors.muted.copy(alpha = 0.6f))
+                            .border(2.dp, RoyColors.primary.copy(alpha = 0.35f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when {
+                        !member.avatar_url.isNullOrBlank() ->
+                            AsyncImage(
+                                model = member.avatar_url,
+                                contentDescription = name,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(avatarSize).clip(CircleShape),
+                            )
+                        initial != null ->
+                            Text(
+                                text = initial.toString(),
+                                style = type.h2.copy(fontWeight = FontWeight.Bold),
+                                color = RoyColors.primary,
+                            )
+                        else ->
+                            Icon(
+                                imageVector = LucideVectors.User,
+                                contentDescription = null,
+                                tint = RoyColors.mutedForeground,
+                                modifier = Modifier.size(32.dp),
+                            )
+                    }
+                }
+
+                Box(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(ProfileMetrics.NAME_LINE_HEIGHT.dp)
+                            .testTag(ProfileMetrics.NAME),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = name,
+                        style = ProfileMetrics.nameStyle,
+                        color = RoyColors.foreground,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                Text(
+                    text = "@${member.username}",
+                    style = type.small.copy(textDirection = TextDirection.Ltr),
+                    color = RoyColors.mutedForeground,
                 )
-                if (face != FollowButtonUiState.Self) {
-                    ProfileChatCta(onClick = chrome.onOpenChat)
+                member.bio?.trim()?.takeIf { it.isNotEmpty() }?.let { bio ->
+                    Text(
+                        text = bio,
+                        style = ProfileMetrics.bioStyle,
+                        color = RoyColors.mutedForeground,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.testTag(ProfileMetrics.BIO),
+                    )
+                }
+
+                // The page's two doors: the follow control and the quiet «مراسلة». The
+                // viewer's own page draws the «أنت» pill and no chat, because there is
+                // nothing to follow and nobody to write to.
+                val face = FollowButtonUiState.of(chrome.standing)
+                if (face != null) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FollowButton(
+                            state = face,
+                            name = name,
+                            busy = chrome.busy,
+                            error = chrome.error,
+                            onFollow = chrome.onFollow,
+                            onUnfollow = chrome.onUnfollow,
+                            onUnblock = chrome.onUnblock,
+                        )
+                        if (face != FollowButtonUiState.Self) {
+                            ProfileChatCta(onClick = chrome.onOpenChat)
+                        }
+                    }
                 }
             }
         }
