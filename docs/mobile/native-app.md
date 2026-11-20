@@ -439,7 +439,9 @@ have to be built here rather than assumed:
   DTOs from the same contract, so a copy change is a server change where it can be.
 - **An escape hatch exists for a screen that must change now.** A remote-config switch that opens
   one surface in a Custom Tab, off by default, removable once the surface settles. Without it, a
-  broken screen is an emergency release.
+  broken screen is an emergency release. Built in [#661](https://github.com/royaraqamia/royaraqamia/issues/661):
+  `public/android/config.json` names the surfaces, and `shell/BrowserEscape.kt` is the decision the
+  shell asks before it draws a route.
 
 **Since [ADR-0178](../adr/0178-a-content-surface-ships-as-the-document.md), three of them are not
 ported at all.** `marketing`, `mcp-guide` and `mcp-connect` are `document` rows in
