@@ -26,7 +26,7 @@ import java.nio.charset.StandardCharsets;
  * the URL arithmetic is the part worth pinning on the JVM, because both features
  * inherit whatever it gets wrong.
  */
-final class ShellServer {
+public final class ShellServer {
 
     /** Written by `cap sync`; the only place the shell states its own origin. */
     static final String CONFIG_ASSET = "capacitor.config.json";
@@ -52,7 +52,7 @@ final class ShellServer {
     }
 
     /** An absolute URL on the configured origin, e.g. `/sync-flush.html`. */
-    static String pageUrl(String serverUrl, String path) {
+    public static String pageUrl(String serverUrl, String path) {
         String origin = originOf(serverUrl);
         return origin == null ? null : origin + path;
     }

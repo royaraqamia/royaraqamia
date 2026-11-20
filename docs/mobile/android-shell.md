@@ -1027,6 +1027,23 @@ release, because it cannot know the device's bucket; the native prompt does. A d
 ignores the percentage — its update is not optional. `npm run android:publish -- --rollout 10` stages
 one; the release cut publishes at 100.
 
+**The escape hatch (#661).** One surface can be sent to the system browser without a release.
+`public/android/config.json` is served beside the manifest from the same origin the update check
+already trusts, and it names the surfaces whose native screen must not be drawn:
+
+```json
+{ "browserSurfaces": [] }
+```
+
+The empty list is the app as shipped. A name is a surface id from `docs/mobile/screens.json`
+(`community`, `rates`, `auth`, …) or a route (`/community/explore`); a route the switch names opens
+in a Custom Tab against the live site, and the shell stays on the screen the member was reading, so
+closing the tab returns there. Every other surface is untouched, and removing the name restores the
+native screen with a deploy. The app reads the document on launch (bounded at 1.2 s, so an
+unreachable config server is the native answer) and again on every return to the front; an empty,
+missing or broken document means "draw it natively". The decision is `shell/BrowserEscape.kt`, the
+document is `shell/ShellConfig.kt`, and the one hand-off is `shell/CustomTab.kt`.
+
 **Installing it.** «تنزيل وتثبيت» runs `ShellDownload`, which streams the published APK into `updates/`
 under the app's own internal files directory, hashing as it writes, and renames it into place only when
 the byte count and the `sha256` match what the manifest published. `ShellInstaller` then opens the system

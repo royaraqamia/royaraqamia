@@ -34,6 +34,9 @@ import com.royaraqamia.app.account.AccountUiState
 import com.royaraqamia.app.admin.AdminConsoleRoute
 import com.royaraqamia.app.accountnews.NewsScreen
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import kotlinx.coroutines.launch
 import com.royaraqamia.app.BuildConfig
@@ -240,6 +243,15 @@ class ShellActivity : ComponentActivity() {
 
     /** The radio-returns trigger for the Outbox (#650); closed with the activity. */
     private var networkWatch: java.io.Closeable? = null
+
+    /**
+     * The last route the escape hatch opened (#661).
+     *
+     * A route the switch sends to the browser is not a destination the frame
+     * navigates to, so this is what keeps a second [handOver] for the same screen
+     * from opening a second tab under a member who closed the first.
+     */
+    private var browserRoute: String? = null
 
     /**
      * The document, launched for result (#872).
@@ -755,7 +767,20 @@ class ShellActivity : ComponentActivity() {
                     // the hand-over would replace the frame before it was seen, and
                     // the splash would lift onto the document instead.
                     withFrameNanos { }
+                    // The escape hatch (#661): read beside the session, so the
+                    // first hand-over already knows which surfaces the operator
+                    // sent to the system browser. A config server that is slow or
+                    // unreachable is the native answer after this cap rather than
+                    // a launch held open, and the frame underneath is already
+                    // drawn, so the cap costs the document no paint.
+                    val escapeHatch =
+                        async(Dispatchers.IO) {
+                            ShellConfig.read(ShellConfig.configUrl(BuildConfig.SITE_URL))
+                        }
                     signedIn = graph.start()
+                    BrowserEscape.publish(
+                        withTimeoutOrNull(CONFIG_WAIT_MS) { escapeHatch.await() } ?: emptySet()
+                    )
                     handOver()
                     // The launch half of "a queued write survives the process"
                     // (#650): the queue is on disk, so a process that was killed
@@ -874,12 +899,16 @@ class ShellActivity : ComponentActivity() {
         // a configuration change recreates the activity from this intent.
         setIntent(intent)
         val target = DeepLink.targetOf(intent.data?.toString()) ?: return
+        // The escape hatch (#661): a switched surface opens in the system browser
+        // and the frame stays where the member was, so closing the tab returns to
+        // the screen they came from rather than a native screen being bypassed.
+        val addressed = Routes.appTabOf(target)
+        if (openInBrowserIfSwitched(addressed ?: target)) return
         // A link can arrive while the document is in front; the session it holds
         // is what the route it names needs (#1194).
         lifecycleScope.launch { refreshSession() }
         // A door address selects a tab at `/` rather than becoming a route of
         // its own (#1399, ADR-0151): the door is the native screen now.
-        val addressed = Routes.appTabOf(target)
         stack.reset(if (addressed != null) Routes.HOME else target)
         if (addressed != null) {
             homeTab = addressed
@@ -905,6 +934,17 @@ class ShellActivity : ComponentActivity() {
         // cheap and needs no radio, so it runs on every return rather than only
         // when the app was signed out.
         lifecycleScope.launch { refreshSession() }
+        // The escape hatch (#661) is a server-side switch, so a shell that comes
+        // back to the front reads it again: turning one surface on or off costs a
+        // deploy, not a release. The next navigation applies it, and a failed
+        // read is the native answer (ShellConfig answers the empty set).
+        lifecycleScope.launch {
+            BrowserEscape.publish(
+                withContext(Dispatchers.IO) {
+                    ShellConfig.read(ShellConfig.configUrl(BuildConfig.SITE_URL))
+                }
+            )
+        }
         update.maybeCheck(false)
         update.resume()
     }
@@ -962,8 +1002,16 @@ class ShellActivity : ComponentActivity() {
      * strip the page keeps.
      */
     private fun openRoute(route: String) {
+        // The escape hatch (#661): a surface the remote switch sent to the
+        // browser is one the app does not navigate to at all, so the frame stays
+        // on the screen the member was reading and the tab opens over it.
+        if (openInBrowserIfSwitched(route)) return
+
         val addressed = Routes.appTabOf(route)
         if (addressed != null) {
+            // The tab's own route is what the switch names: `/?tab=/rates` is the
+            // door's address for `/rates`, and it is `/rates` the operator switches.
+            if (openInBrowserIfSwitched(addressed)) return
             selectHomeTab(addressed)
             if (stack.route != Routes.HOME) {
                 stack.open(Routes.HOME)
@@ -984,6 +1032,10 @@ class ShellActivity : ComponentActivity() {
      * so a tab the strip holds no longer counts as an address.
      */
     private fun selectHomeTab(route: String) {
+        // The door draws a switched app in the system browser rather than under
+        // its strip (#661): a tab is a destination, and this one is the page.
+        if (openInBrowserIfSwitched(route)) return
+
         homeTab = route
         homeDoorAddressed = false
         homeTabStore.write(route)
@@ -1340,12 +1392,50 @@ class ShellActivity : ComponentActivity() {
     private fun handOver() {
         if (isFinishing || isDestroyed) return
         if (update.blocksHandover) return
+        // The escape hatch outranks the native screen too (#661): the switch
+        // exists for the case where the native screen is the broken thing, so a
+        // switched route never reaches NativeSurfaces or the document.
+        if (BrowserEscape.opensInBrowser(stack.route)) {
+            // One screen opens one tab: the shell re-hands a destination over on
+            // several paths (a card, a return from sign-in), and a member who just
+            // closed the tab must not be sent straight back into it.
+            if (browserRoute != stack.current) {
+                browserRoute = stack.current
+                CustomTab.open(this, DeepLink.webUrl(stack.current))
+            }
+            return
+        }
+        browserRoute = null
         if (NativeSurfaces.isNative(stack.route)) return
         document.launch(WebSurface.intentFor(this, stack.current))
+    }
+
+    /**
+     * Opens [route] in the system browser when the remote switch names it (#661),
+     * and answers whether it did.
+     *
+     * The app stays on the screen it was on: a switched surface is a page the app
+     * does not draw, not a destination it navigates to, so a back from the tab
+     * lands where the member was (the acceptance the issue states).
+     */
+    private fun openInBrowserIfSwitched(route: String): Boolean {
+        // A build below the site's floor is told to update before any destination
+        // opens (#652, ADR-0114), and the escape hatch is a destination.
+        if (update.blocksHandover) return false
+        if (!BrowserEscape.opensInBrowser(route)) return false
+        CustomTab.open(this, DeepLink.webUrl(route))
+        return true
     }
 
     private companion object {
         /** What the clipboard entry is labelled on the device. */
         const val CLIPBOARD_LABEL = "certificate-code"
+
+        /**
+         * How long a launch waits for the escape hatch before it answers "native"
+         * (#661). The switch is one small JSON document on our own origin, and the
+         * cap is what keeps an unreachable config server from holding the launch.
+         */
+        const val CONFIG_WAIT_MS = 1_200L
     }
 }

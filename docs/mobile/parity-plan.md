@@ -93,7 +93,7 @@ The things a surface row cannot hold: the cutover, the screens the app needs to 
 - [ ] **cutover** — Remove the Capacitor bridge: MainActivity, ShellPlugins, capacitor.config.ts, WebSurface and DocumentCookies · #938 · open: Phase 5 (ADR-0089). Until the bridge leaves, the APK ships a WebView and every `document` route is the live site inside it.
 - [ ] **browser-surface** — Give every `document` surface a renderer after the WebView goes · #1393 · open: A Custom Tab is the system browser rather than an in-APK WebView, so it keeps the `document` rows as the page through the cutover (ADR-0178).
 - [ ] **diagnostics** — A diagnostics screen replacing /device · #1394 · open: Phase 2 exit (ADR-0084): an APK has no console and no page to inspect.
-- [ ] **escape-hatch** — A remote-config switch that opens one surface in a Custom Tab · #661 · open: Phase 4 exit (native-app.md): without it a broken native screen is an emergency release.
+- [x] **escape-hatch** — A remote-config switch that opens one surface in a Custom Tab · #661 · done: shell/ShellConfig.kt reads public/android/config.json from the origin the update check already trusts; shell/BrowserEscape.kt is the one decision and shell/CustomTab.kt the hand-off, wired in shell/ShellActivity.kt. JVM tests BrowserEscapeTest, ShellConfigTest and CustomTabTest.
 - [ ] **guest-claim** — A sign-in claims the guest Local Store's rows · #1395 · open: Owed since #768 (ADR-0107): the guest store exists and is empty until a guest can write, and a guest's rows would be stranded at sign-in.
 - [ ] **habitflow-form** — HabitFlow's add form and delete affordance · #1396 · open: Owed since #650: the store, transport and fixtures cover create, update, toggle and delete; the screen exposes the toggle.
 - [ ] **fcm-matrix** — The FCM wake on a real device, backgrounded and killed, and the 15-minute floor · #1397 · open: Three rows of the real-device matrix are unverified; google-services.json is present, so the build they need exists (docs/mobile/android-shell.md).
@@ -193,4 +193,4 @@ A component is finished when the surface that draws it is native, or when it bel
 
 ## Where this stands
 
-26 native · 3 to do · 4 document · 5 blocked of 38 surfaces. 1 of 9 release items done.
+26 native · 3 to do · 4 document · 5 blocked of 38 surfaces. 2 of 9 release items done.
