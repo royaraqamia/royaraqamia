@@ -81,9 +81,9 @@ _One decision first: the admin area's security review (#971, ADR-0193). It allow
 
 ## The door
 
-_The homepage hosts the nine apps as tabs under the strip (ADR-0146), so it comes after every app it can host: a tab whose app is still the document is a tab that leaves the door._
+_The homepage hosts the nine apps as tabs under the strip (ADR-0146), so it comes after every app it can host: a tab whose app is still the document is a tab that leaves the door. All nine are native now, so the door draws them under its strip and `/` stays the destination._
 
-- [ ] **home** `/` — blocked · #1399 · blocked by the nine tabs need nine native screens: `notes` is the one that does not have one
+- [x] **home** `/` — native · #1399
 
 ## Release readiness
 
@@ -115,10 +115,10 @@ A component is finished when the surface that draws it is native, or when it bel
 - [ ] `apps-surface` on **mcp-apps** · #1256
 - [ ] `apps-store` on **mcp-apps** · #1256
 - [x] `mcp-connection` on **mcp-app-detail** · #1256
-- [ ] `home-strip` on **home** · #1194
-- [ ] `home-empty` on **home** · #1194
-- [ ] `home-picker` on **home** · #1194
-- [ ] `notification-bell` on **home** · #659
+- [x] `home-strip` on **home** · #1194
+- [x] `home-empty` on **home** · #1194
+- [x] `home-picker` on **home** · #1194
+- [x] `notification-bell` on **home** · #659
 - [x] `spendtrack-total` on **spendtrack** · #653
 - [x] `spendtrack-expenses` on **spendtrack** · #653
 - [x] `spendtrack-expense-dialog` on **spendtrack** · #653
@@ -193,4 +193,4 @@ A component is finished when the surface that draws it is native, or when it bel
 
 ## Where this stands
 
-25 native · 3 to do · 4 document · 6 blocked of 38 surfaces. 1 of 9 release items done.
+26 native · 3 to do · 4 document · 5 blocked of 38 surfaces. 1 of 9 release items done.

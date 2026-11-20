@@ -37,6 +37,8 @@ object NativeSurfaces {
      */
     private val routes: Set<String> =
         setOf(
+            // The door (#1399): the one route that hosts the nine apps as tabs.
+            "/",
             "/verify",
             "/account/faq",
             "/account/plan",
@@ -82,7 +84,7 @@ object NativeSurfaces {
      * but a port that brings a guest prompt back reads the list here instead of
      * rebuilding it, and #872's feed already asserts against it.
      */
-    private val publicRoutes: Set<String> = setOf("/verify", "/rates", "/community")
+    private val publicRoutes: Set<String> = setOf("/", "/verify", "/rates", "/community")
 
     /** Whether the shell can draw [route] without the document. */
     fun isNative(route: String): Boolean {

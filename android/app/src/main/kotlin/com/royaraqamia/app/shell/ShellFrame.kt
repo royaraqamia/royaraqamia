@@ -17,10 +17,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -121,9 +117,18 @@ fun ShellFrame(
     onConnectNew: () -> Unit = {},
     /** What the secondary frame's floating control does; the page's own back. */
     onBack: () -> Unit = {},
+    /**
+     * Whether the apps picker is open (#1399).
+     *
+     * It is hoisted out of the frame because the door's first-run card opens the
+     * same sheet as the top bar's trigger: one list adds the first app and the
+     * tenth, and a screen inside the frame has to be able to ask for it.
+     */
+    servicesOpen: Boolean = false,
+    onOpenServices: () -> Unit = {},
+    onDismissServices: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit = {},
 ) {
-    var servicesOpen by remember { mutableStateOf(false) }
     val spacing = LocalRoySpacing.current
     val primary = Routes.isPrimary(currentRoute)
 
@@ -131,7 +136,7 @@ fun ShellFrame(
         if (primary) {
             Column(Modifier.fillMaxSize()) {
                 ShellTopBar(
-                    onOpenServices = { servicesOpen = true },
+                    onOpenServices = onOpenServices,
                     showServices = ServicesEntry.rows.isNotEmpty(),
                     unreadCount = unreadCount,
                     onOpenNotifications = { onOpenRoute(Routes.NOTIFICATIONS_ROUTE) },
@@ -155,7 +160,7 @@ fun ShellFrame(
                 busy = homeBusy,
                 error = homeError,
                 onToggle = onToggleHomeService,
-                onDismiss = { servicesOpen = false },
+                onDismiss = onDismissServices,
                 // The store tab is a panel now (#1256): the sheet owns its data.
                 marketplace = marketplace,
                 signedIn = signedIn,
