@@ -10,6 +10,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -54,8 +55,13 @@ import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.connectedapps.ConnectedAppsScreen
 import com.royaraqamia.app.habitflow.HabitflowScreen
 import com.royaraqamia.app.notes.NotesScreen
+import com.royaraqamia.app.home.HomeDoor
+import com.royaraqamia.app.home.HomeScreen
 import com.royaraqamia.app.home.HomeServicesController
+import com.royaraqamia.app.home.HomeServicesStatus
+import com.royaraqamia.app.home.HomeTabStore
 import com.royaraqamia.app.home.PreferencesHomeServicesStore
+import com.royaraqamia.app.home.PreferencesHomeTabStore
 import com.royaraqamia.app.linksnap.LinksnapAnalyticsExportCopy
 import com.royaraqamia.app.athkar.AthkarPeriod
 import com.royaraqamia.app.athkar.AthkarRoute
@@ -201,6 +207,37 @@ class ShellActivity : ComponentActivity() {
      */
     private lateinit var homeServices: HomeServicesController
 
+    /**
+     * The tab the door draws under its strip (#1399, ADR-0151).
+     *
+     * The address (`/?tab=/<app>`) is read once into this state, then a tab tap
+     * replaces it: the selection is a view of the door, not a route, so it never
+     * pushes the back stack and `/` stays the destination. The device remembers
+     * it so a cold launch paints the tab the member was last in, exactly as the
+     * page's own `royaraqamia:home-tab:v1` preference does.
+     */
+    private var homeTab by mutableStateOf<String?>(null)
+
+    /**
+     * Whether [homeTab] came from an address rather than the stored preference.
+     *
+     * An address draws the app it names even when the strip does not hold it
+     * (the page's rule for a shared LinkSnap link), while a remembered tab the
+     * strip no longer holds falls back to the first app left.
+     */
+    private var homeDoorAddressed = false
+
+    private lateinit var homeTabStore: HomeTabStore
+
+    /**
+     * Whether the apps picker is open (#1399).
+     *
+     * The door's own frame draws the sheet, but the first-run card inside the
+     * door is what opens it for a member with no apps. Hoisting the flag here is
+     * what lets the card and the top bar's trigger be one sheet rather than two.
+     */
+    private var servicesOpen by mutableStateOf(false)
+
     /** The radio-returns trigger for the Outbox (#650); closed with the activity. */
     private var networkWatch: java.io.Closeable? = null
 
@@ -245,9 +282,14 @@ class ShellActivity : ComponentActivity() {
             fonts.preload(RoyFonts.digits)
         }
 
-        stack = ShellBackStack(
-            DeepLink.targetOf(intent?.data?.toString())?.let { Routes.appTabOf(it) ?: it } ?: Routes.HOME
-        )
+        val launch =
+            DeepLink.targetOf(intent?.data?.toString()) ?: Routes.HOME
+        stack = ShellBackStack(launch)
+        // The door is native now, so `/?tab=/<app>` stays the door and selects
+        // its tab (ADR-0151): the query is a view, not a route to push.
+        homeTabStore = PreferencesHomeTabStore(this)
+        homeTab = Routes.appTabOf(launch) ?: homeTabStore.read()
+        homeDoorAddressed = Routes.appTabOf(launch) != null
         current = stack.route
         graph = AppGraph.create(this, BuildConfig.SITE_URL, BuildConfig.SUPABASE_AUTH_URL, BuildConfig.SUPABASE_ANON_KEY)
         update = ShellUpdateController(this, BuildConfig.SITE_URL, lifecycleScope)
@@ -293,6 +335,16 @@ class ShellActivity : ComponentActivity() {
                     // sends, never before.
                     LaunchedEffect(current) { PublishedScreen.follow(current) }
 
+                    // The tab the door draws under its strip (#1399): the
+                    // address names one, else the remembered tab when the strip
+                    // still holds it, else the first app the member kept.
+                    val doorTab =
+                        HomeDoor.selected(
+                            requested = homeTab.takeIf { homeDoorAddressed },
+                            remembered = homeTab.takeIf { !homeDoorAddressed },
+                            order = homeServices.order,
+                        )
+
                     ShellFrame(
                         currentRoute = current,
                         unreadCount = unreadCount,
@@ -302,6 +354,9 @@ class ShellActivity : ComponentActivity() {
                         },
                         onSelect = { tab -> openRoute(tab.route) },
                         onOpenRoute = ::openRoute,
+                        servicesOpen = servicesOpen,
+                        onOpenServices = { servicesOpen = true },
+                        onDismissServices = { servicesOpen = false },
                         homeOrder = homeServices.order,
                         homeBusy = homeServices.busy,
                         homeError = homeServices.error,
@@ -324,6 +379,22 @@ class ShellActivity : ComponentActivity() {
                         // identity, so a recomposition cannot re-PUT the set.
                         LaunchedEffect(signedIn) { homeServices.identityChanged() }
                         when (Routes.normalize(current)) {
+                            // The door (#1399): the nine apps as tabs under the
+                            // strip, the selected one drawn beneath it, and the
+                            // first-run card when the member has kept none. A tab
+                            // is a selection, so `/` stays the destination.
+                            "/" ->
+                                HomeScreen(
+                                    order = homeServices.order,
+                                    status = homeServices.status,
+                                    selected = doorTab,
+                                    onSelect = ::selectHomeTab,
+                                    onAddApp = { servicesOpen = true },
+                                    onReorder = { next ->
+                                        lifecycleScope.launch { homeServices.reorder(next) }
+                                    },
+                                    surface = { route -> HomeSurface(route) },
+                                )
                             "/account" ->
                                 AccountScreen(
                                     state = AccountUiState.of(signedIn),
@@ -806,7 +877,14 @@ class ShellActivity : ComponentActivity() {
         // A link can arrive while the document is in front; the session it holds
         // is what the route it names needs (#1194).
         lifecycleScope.launch { refreshSession() }
-        stack.reset(Routes.appTabOf(target) ?: target)
+        // A door address selects a tab at `/` rather than becoming a route of
+        // its own (#1399, ADR-0151): the door is the native screen now.
+        val addressed = Routes.appTabOf(target)
+        stack.reset(if (addressed != null) Routes.HOME else target)
+        if (addressed != null) {
+            homeTab = addressed
+            homeDoorAddressed = true
+        }
         current = stack.route
         handOver()
     }
@@ -878,15 +956,106 @@ class ShellActivity : ComponentActivity() {
      * Navigate to a route: a tab, a services row, or anything else the frame
      * offers. The route decides whether the shell draws it or hands it over.
      *
-     * A door address (`/?tab=/<app>`) is the app's own route (ADR-0156): resolving
-     * it here is what keeps a port reachable when the web retires the root.
+     * A door address (`/?tab=/<app>`) no longer becomes the app's own route
+     * (#1399): `/` is the door and the query selects its tab (ADR-0151), so the
+     * app still renders natively, under the strip, and a shared link keeps the
+     * strip the page keeps.
      */
     private fun openRoute(route: String) {
-        stack.open(Routes.appTabOf(route) ?: route)
+        val addressed = Routes.appTabOf(route)
+        if (addressed != null) {
+            selectHomeTab(addressed)
+            if (stack.route != Routes.HOME) {
+                stack.open(Routes.HOME)
+            }
+        } else {
+            stack.open(route)
+        }
         current = stack.route
         // A tap is a navigation, so a web-backed destination is opened again even
         // when it is the one already showing.
         handOver()
+    }
+
+    /**
+     * A tab was chosen on the door (#1399): the selection is a view, so it
+     * replaces the remembered tab and never the route — back leaves the door
+     * rather than walking the tabs. Choosing a tab is the member's own action,
+     * so a tab the strip holds no longer counts as an address.
+     */
+    private fun selectHomeTab(route: String) {
+        homeTab = route
+        homeDoorAddressed = false
+        homeTabStore.write(route)
+    }
+
+    /**
+     * The surface a door tab draws (#1399): each app is the same native screen
+     * its own route draws, handed the same repositories and the same callbacks.
+     *
+     * The door owns the strip and the selection; the screen under it owns its
+     * data, so a tab cannot drift from its route by being composed from a second
+     * copy of the layout. A route the catalog does not hold draws nothing, which
+     * is the strip's own rule for a retired app.
+     */
+    @Composable
+    private fun HomeSurface(route: String) {
+        when (route) {
+            "/news" ->
+                NewsDigestScreen(
+                    repository = graph.newsDigest,
+                    onOpenUrl = ::openExternal,
+                    onSignIn = ::showSignIn,
+                    onSeePlans = { openRoute("/pricing") },
+                    onManageSources = { openRoute("/account/news") },
+                )
+            "/rates" -> RatesScreen(repository = graph.rates)
+            "/scan" ->
+                ScanScreen(
+                    siteUrl = BuildConfig.SITE_URL,
+                    repository = graph.scanHistory,
+                    signedIn = signedIn,
+                    onOpenRoute = ::openRoute,
+                    onOpenExternal = ::openExternal,
+                    onCopy = ::copyToClipboard,
+                )
+            "/quran" ->
+                QuranIndexRoute(
+                    repository = graph.quran,
+                    onOpenSurah = { surah -> openRoute(QuranRoutes.routeOf(surah)) },
+                    onOpenAyah = { surah, ayah ->
+                        openRoute(QuranRoutes.routeOf(surah, ayah))
+                    },
+                )
+            "/athkar" ->
+                AthkarRoute(
+                    repository = graph.athkar,
+                    period = AthkarPeriod.Morning,
+                    onSelectPeriod = { option -> openRoute(option.route) },
+                )
+            "/linksnap" ->
+                LinksnapShortenerScreen(
+                    repository = graph.linksnap,
+                    siteUrl = BuildConfig.SITE_URL,
+                    signedIn = signedIn,
+                    onCopy = ::copyToClipboard,
+                    onShare = ::shareText,
+                    onSignIn = ::showSignIn,
+                    onOpenLinks = { openRoute("/account/links") },
+                    onSignInForLinks = {
+                        pendingAfterSignIn = "/account/links"
+                        showSignIn()
+                    },
+                )
+            "/habitflow" -> HabitflowScreen(repository = graph.habitflow)
+            "/spendtrack" ->
+                SpendtrackScreen(
+                    route = route,
+                    repository = graph.spendtrack,
+                    onShareCsv = { name, content -> shareCsv(name, content) },
+                )
+            "/notes" -> NotesScreen(repository = graph.notes)
+        }
     }
 
     /**

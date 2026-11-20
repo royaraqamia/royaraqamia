@@ -167,6 +167,7 @@ object ScreenTitles {
     /** The routes whose screen draws no heading, and why that is the decision. */
     val untitled: Map<String, String> =
         mapOf(
+            "/" to "the door opens on the member's strip; the app under it is the title",
             "/account/links" to "the links list is a section of the account page; its heading is the document's",
             "/spendtrack" to "the expenses screen opens on the month's total, not on a title",
 

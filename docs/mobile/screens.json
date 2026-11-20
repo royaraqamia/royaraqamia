@@ -10,8 +10,8 @@
     },
     {
       "surface": "home",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
+      "native": "android/app/src/main/kotlin/com/royaraqamia/app/home/HomeScreen.kt",
+      "enabled": true
     },
     {
       "surface": "marketing",

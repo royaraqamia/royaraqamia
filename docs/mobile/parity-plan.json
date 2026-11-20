@@ -40,7 +40,7 @@
     {
       "id": "door",
       "title": "The door",
-      "why": "The homepage hosts the nine apps as tabs under the strip (ADR-0146), so it comes after every app it can host: a tab whose app is still the document is a tab that leaves the door."
+      "why": "The homepage hosts the nine apps as tabs under the strip (ADR-0146), so it comes after every app it can host: a tab whose app is still the document is a tab that leaves the door. All nine are native now, so the door draws them under its strip and `/` stays the destination."
     }
   ],
   "surfaces": [
@@ -260,8 +260,7 @@
     {
       "surface": "home",
       "phase": "door",
-      "state": "blocked",
-      "blockedBy": "the nine tabs need nine native screens: `notes` is the one that does not have one",
+      "state": "native",
       "issue": "#1399"
     }
   ],

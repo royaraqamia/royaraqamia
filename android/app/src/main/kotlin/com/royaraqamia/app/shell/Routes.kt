@@ -80,12 +80,13 @@ object Routes {
     /**
      * The app a door address names, or null: `/?tab=/habitflow` means `/habitflow`.
      *
-     * The door's address is a query (`/?tab=/<app>`, ADR-0156) and the app's port
-     * is a route, so a shared link, a notification and a redirect that arrive as
-     * the query would otherwise draw the document and leave the native screen
-     * unreachable - the bug `/linksnap` had after its root became a tab. Only a
-     * value the catalog holds is accepted: `/notifications?tab=alerts` names a tab
-     * of the notification centre, not an app, and the document keeps it.
+     * The door's address is a query (`/?tab=/<app>`, ADR-0156) and the app's own
+     * port is a route. Since the door itself is native (#1399, ADR-0151) the
+     * shell no longer rewrites the query into a route: `/` stays the door and
+     * this value selects the tab drawn under its strip. The same read still
+     * names the app a shared link, a notification or a retired route means, and
+     * only a value the catalog holds is accepted: `/notifications?tab=alerts`
+     * names a tab of the notification centre, not an app.
      */
     fun appTabOf(path: String?): String? {
         if (path.isNullOrBlank() || normalize(path) != HOME) return null
