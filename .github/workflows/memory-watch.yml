@@ -1,0 +1,111 @@
+# An OOM restart is reported by email, but the graph that leads to one is only
+# visible in the dashboard. This reads both from the Render API every six hours
+# and keeps one GitHub issue up to date: opened on the first warning, edited on
+# each later one, commented and closed when the origin is calm again.
+#
+# The threshold (400 MiB p95) and the OOM test come from docs/memory-budget.md.
+# The script is read-only against Render; the only write is to this repository's
+# issues, through the same pattern issue-automation-health.yml uses.
+
+name: 'Origin Memory Watch'
+
+on:
+  # 00, 06, 12 and 18 UTC - four reads a day, well inside the API rate limit.
+  schedule:
+    - cron: '0 0,6,12,18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: origin-memory-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    name: Read the memory graph and raise or clear the alert
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Read Render memory and restart events
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: node scripts/memory-watch.mjs > "$RUNNER_TEMP/memory-report.json"
+
+      - name: Raise or clear the alert issue
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          REPORT_FILE: ${{ runner.temp }}/memory-report.json
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync(process.env.REPORT_FILE, 'utf8'));
+            const { owner, repo } = context.repo;
+            const TITLE = 'Origin memory is over budget';
+            const LABEL = 'origin-memory';
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: LABEL, per_page: 100,
+            });
+            const existing = open.find((issue) => !issue.pull_request && issue.title === TITLE);
+            const body = [
+              'The origin crossed the memory budget recorded in docs/memory-budget.md.',
+              '',
+              '- Checked: ' + report.checkedAt + ' (last ' + report.windowHours + ' hours)',
+              '- Memory samples: ' + report.samples,
+              '- p95: ' + report.p95Mb + ' MiB (threshold ' + report.thresholdMb + ' MiB)',
+              '- Peak: ' + report.maxMb + ' MiB (limit 512 MiB)',
+              '- OOM restarts: ' + report.oomCount,
+              '- Reasons: ' + report.reasons.join('; '),
+              '',
+              'Read the Render metrics and events before changing the plan: a request',
+              'spike and a slow ramp have different fixes. The caps in',
+              'backend/services/chat/document-text.ts bound the request spike.',
+              '',
+              '_Maintained by `.github/workflows/memory-watch.yml`._',
+            ].join('\n');
+
+            if (report.alert) {
+              if (existing) {
+                await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+                core.info('Updated memory alert #' + existing.number + '.');
+                return;
+              }
+              try {
+                await github.rest.issues.createLabel({
+                  owner, repo, name: LABEL, color: 'b60205',
+                  description: 'The Render origin is over its memory budget',
+                });
+              } catch (error) {
+                if (error.status !== 422) throw error;
+              }
+              const created = await github.rest.issues.create({
+                owner, repo, title: TITLE, body, labels: [LABEL],
+              });
+              core.info('Opened memory alert #' + created.data.number + '.');
+              return;
+            }
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: existing.number,
+                body: 'Memory is back inside budget: p95 ' + report.p95Mb +
+                  ' MiB, no OOM restarts in the last ' + report.windowHours + ' hours.',
+              });
+              await github.rest.issues.update({
+                owner, repo, issue_number: existing.number, state: 'closed',
+              });
+              core.info('Closed memory alert #' + existing.number + '.');
+            } else {
+              core.info('Origin memory is inside budget; no alert to raise.');
+            }

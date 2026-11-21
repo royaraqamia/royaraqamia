@@ -92,7 +92,7 @@ describe('buildMemorySample', () => {
         heapTotal: 300 * 1024 * 1024,
         heapUsed: 123.4 * 1024 * 1024,
         external: 12 * 1024 * 1024,
-        arrayBuffers: 0,
+        arrayBuffers: 48 * 1024 * 1024,
       } as NodeJS.MemoryUsage,
       384 * 1024 * 1024,
       5 * 60 + 40
@@ -103,6 +103,7 @@ describe('buildMemorySample', () => {
       heapUsedMb: 123,
       heapLimitMb: 384,
       externalMb: 12,
+      arrayBuffersMb: 48,
       uptimeMin: 5,
     });
   });

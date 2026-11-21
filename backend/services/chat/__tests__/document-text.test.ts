@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import JSZip from 'jszip';
 
 import {
+  DOCUMENT_ARCHIVE_MAX_BYTES,
   DOCUMENT_ENTRIES_MAX,
   DOCUMENT_ENTRY_MAX_BYTES,
   DOCUMENT_PAGES_MAX,
+  DOCUMENT_PDF_MAX_BYTES,
   DOCUMENT_SHEETS_MAX,
   DOCUMENT_TEXT_MAX,
   DocumentReadError,
@@ -212,6 +214,24 @@ describe('the list of documents', () => {
 });
 
 describe('an archive that asks for too much memory', () => {
+  it('refuses a PDF larger than the file budget before opening it', async () => {
+    const bytes = new Uint8Array(DOCUMENT_PDF_MAX_BYTES + 1);
+    bytes.set(Buffer.from('%PDF-1.7'));
+
+    await expect(readDocumentText(bytes, PDF)).rejects.toBeInstanceOf(DocumentReadError);
+  });
+
+  it('keeps the whole document inside a one megabyte inflation budget', () => {
+    expect(DOCUMENT_ENTRY_MAX_BYTES).toBe(1024 * 1024);
+    expect(DOCUMENT_ARCHIVE_MAX_BYTES).toBe(2 * 1024 * 1024);
+  });
+
+  it('decodes XML entities instead of reading the markup', async () => {
+    const reading = await readDocumentText(await docxDocument(['أحمد & سارة <رؤية>']), DOCX);
+
+    expect(reading?.text).toContain('أحمد & سارة <رؤية>');
+  });
+
   it('refuses an entry larger than the inflation budget', async () => {
     const zip = new JSZip();
     zip.file('word/document.xml', 'a'.repeat(DOCUMENT_ENTRY_MAX_BYTES + 1024));

@@ -10,16 +10,16 @@ that floor; the numbers are ceilings, not reservations.
 
 ## What a request may hold
 
-| Path                               | Ceiling                                                                                         | Where it is enforced                                               |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Avatar upload (multipart)          | 5 MB + 64 KB overhead                                                                           | `readMultipartWithin` in `app/api/me/avatar/route.ts`              |
-| Post image upload (multipart)      | 5 MB + 64 KB overhead                                                                           | `readMultipartWithin` in `app/api/community/media/route.ts`        |
-| Chat attachment upload             | 25 MB                                                                                           | **client → Supabase Storage**; the bytes never pass through Render |
-| Chat inline image (assistant turn) | 5 MB                                                                                            | `ATTACHMENT_IMAGE_MAX` in `chat-agent-service.ts`                  |
-| Chat document (assistant turn)     | 25 MB compressed; 8 MB per inflated entry; 16 MB across entries; 2,000 entries; 100k characters | `document-text.ts`                                                 |
-| Concurrent document reads          | 2                                                                                               | `withDocumentSlot` in `document-text.ts`                           |
-| Optimized image (first hit)        | one source at a time; edge-cached afterwards                                                    | `next/image` + `sharp`                                             |
-| Exports, boards, feeds             | page-bounded reads; no whole-table materialisation                                              | the query contracts                                                |
+| Path                               | Ceiling                                                                                              | Where it is enforced                                               |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Avatar upload (multipart)          | 5 MB + 64 KB overhead                                                                                | `readMultipartWithin` in `app/api/me/avatar/route.ts`              |
+| Post image upload (multipart)      | 5 MB + 64 KB overhead                                                                                | `readMultipartWithin` in `app/api/community/media/route.ts`        |
+| Chat attachment upload             | 25 MB                                                                                                | **client → Supabase Storage**; the bytes never pass through Render |
+| Chat inline image (assistant turn) | 5 MB                                                                                                 | `ATTACHMENT_IMAGE_MAX` in `chat-agent-service.ts`                  |
+| Chat document (assistant turn)     | 25 MB upload; 5 MB PDF; 1 MB per inflated entry; 2 MB across entries; 2,000 entries; 100k characters | `document-text.ts`                                                 |
+| Concurrent document reads          | 1                                                                                                    | `withDocumentSlot` in `document-text.ts`                           |
+| Optimized image (first hit)        | one source at a time; edge-cached afterwards                                                         | `next/image` + `sharp`                                             |
+| Exports, boards, feeds             | page-bounded reads; no whole-table materialisation                                                   | the query contracts                                                |
 
 The multipart rows used to be unbounded before the controller's own `file.size` check: `formData()`
 buffers the whole body first, so a body the edge let through was already resident. `readMultipartWithin`
@@ -32,21 +32,25 @@ not be.
 A chat document is downloaded only for the assistant turn that reads it, extracted to text, and
 dropped with the turn (ADR-0140). The caps are about the extractor, not the bucket:
 
-- **8 MB per inflated entry.** A memo's `word/document.xml` is far below this. The check reads the
-  size the archive's own directory declares, before JSZip inflates it, so a zip bomb is refused
-  without the allocation it was built to cause.
-- **16 MB across entries**, so a workbook cannot read five 8 MB sheets in one turn.
+- **1 MB per inflated entry, 2 MB across entries.** A memo's `word/document.xml` is a few kilobytes.
+  The check reads the size the archive's own directory declares, before JSZip inflates it, so a zip
+  bomb is refused without the allocation it was built to cause. The old 8 MB ceiling was measured to
+  add 166 MB of RSS for one document in this process; 1 MB adds roughly a twentieth of that.
+- **5 MB for a PDF.** A PDF has no archive entry to budget: its object graph and embedded images are
+  bounded by the file itself, so the reader refuses a larger file before PDF.js opens it.
 - **2,000 entries**, so a directory with a million names is refused before the reader walks it.
-- **2 concurrent reads.** PDF.js holds the file and the XML parser holds a tree many times its bytes;
-  a third read queues rather than doubling the peak.
+- **1 concurrent read.** A second read queues rather than spending two halves of the 512 MB budget at
+  the same time.
+- **SAX events, not a DOM tree.** Memos and decks feed `Words` straight from parser events; workbooks
+  and ODS build a compact element tree only for the attributes and subtrees they need. No reader
+  holds a `fast-xml-parser` tree many times the size of its input.
 
 A refused archive answers the existing "the document could not be read" sentence — no new copy.
 
 ## Residual risks
 
-- **PDF.js on a 25 MB PDF.** The page cap (20) bounds the text, not the file's object graph or its
-  embedded images. One such PDF at a time is the supported case; two are serialised by the concurrency
-  slot.
+- **PDF.js on a PDF under 5 MB.** The page cap (20) bounds the text, not the file's object graph or
+  its embedded images; the 5 MB file budget bounds the file. A larger PDF is an ordinary refusal.
 - **`sharp` on a large source image.** The first request for a `next/image` variant pays the decode;
   the edge pays it once per variant. The allowlisted hosts are the source of truth for which images
   can arrive.
@@ -69,18 +73,37 @@ The log stream carries the two readings the dashboard graph would give:
   the process actually has, the previous start and how long that process had been running, and
   whether this start came off the same commit (`false` is a deploy, `true` is the same build coming
   back).
-- `[memory]`, every five minutes: RSS, heap used, the heap limit, external memory and uptime.
+- `[memory]`, every five minutes: RSS, heap used, the heap limit, external memory, native buffers
+  (`arrayBuffersMb`, the part a heap snapshot cannot show) and uptime.
 
 A `heapUsedMb` that climbs toward `heapLimitMb` over hours is the leak question answered; one that
 sits flat near the limit through an ordinary day is the plan question. The previous-boot fields need
 `UPSTASH_REDIS_REST_URL`/`_TOKEN` and are `null` without them — local development and CI.
 
+**The cap in this file is a blueprint intention, not a live fact.** Every boot line observed on the
+origin in November 2026 reported `heapLimitMb: 259`, and the service's live environment does not
+contain `NODE_OPTIONS` at all — V8 is using the limit it derives from the 512 MB container. Raising
+it to the blueprint's 384 (a 576 MiB limit) while RSS already reaches 425 MB would let the heap grow
+into the wall; on Free, do not "fix" this by applying the variable. Set it deliberately only after
+moving to a larger instance.
+
+## Early warning
+
+`.github/workflows/memory-watch.yml` reads the memory graph and the restart events from the Render
+API every six hours (`scripts/memory-watch.mjs`), and keeps one issue labelled `origin-memory`: it
+opens on the first OOM restart or a p95 at or above 400 MiB, edits the issue on each later warning,
+and comments and closes it when the origin is calm again. `RENDER_API_KEY` is an Actions secret. The
+script is read-only against Render and has no dependencies beyond Node's own `fetch`.
+
 ## When to buy the 2 GB plan
 
 The `1c-2g` compute plan ($25) is the memory wall, not the CPU one. The trigger is evidence, not a
 feeling: an OOM restart in Render's events, or a memory graph that sits above roughly 350–400 MB
-through an ordinary day. Until then the caps above are what keep 512 MB honest, and the $7
-`0.5c-512mb` plan does not change this table — it only doubles the CPU.
+through an ordinary day. In the seven days to 2026-11-21 there were three OOM kills (11-15, 11-16
+and 11-20) and the app's own RSS samples reached 425 MB, so that trigger is met. The caps above are
+the attempt to stay on Free; if a warning comes back after they land, buy the plan rather than
+lowering the caps further. The $7 `0.5c-512mb` plan does not change this table — it only doubles CPU.
 
-Watch **Render → service → Metrics → Memory**, and Sentry for the restart-shaped gaps. The edge
-verifier (`npm run check:edge`) does not cover this budget; it covers the cache.
+Watch **Render → service → Metrics → Memory**, the `origin-memory` issue, and Sentry for the
+restart-shaped gaps. The edge verifier (`npm run check:edge`) does not cover this budget; it covers
+the cache.

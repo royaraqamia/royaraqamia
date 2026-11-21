@@ -77,6 +77,8 @@ export type MemorySample = {
   heapUsedMb: number;
   heapLimitMb: number;
   externalMb: number;
+  /** Native buffers held outside V8's heap — the part a heap snapshot cannot show. */
+  arrayBuffersMb: number;
   uptimeMin: number;
 };
 
@@ -123,6 +125,7 @@ export function buildMemorySample(
     heapUsedMb: megabytes(usage.heapUsed),
     heapLimitMb: megabytes(heapLimitBytes),
     externalMb: megabytes(usage.external),
+    arrayBuffersMb: megabytes(usage.arrayBuffers),
     uptimeMin: Math.floor(uptimeSeconds / 60),
   };
 }
