@@ -10,6 +10,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.CompositionLocalProvider
@@ -17,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontFamily
@@ -357,7 +361,18 @@ class ShellActivity : ComponentActivity() {
                             order = homeServices.order,
                         )
 
-                    ShellFrame(
+                    if (!NATIVE_SURFACES_VISIBLE) {
+                        // The ports are held off (#872, ADR-0117), so the shell
+                        // draws no native screen while the document loads. The
+                        // splash lifts onto this plain surface and the WebView
+                        // opens over it: a cold start never paints a second copy
+                        // of the homepage.
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background,
+                        ) {}
+                    } else
+                        ShellFrame(
                         currentRoute = current,
                         unreadCount = unreadCount,
                         showAssistant = assistantVisible(current),
@@ -763,10 +778,16 @@ class ShellActivity : ComponentActivity() {
                 }
                 LaunchedEffect(Unit) {
                     // One drawn frame first: the splash lifts onto the app's own
-                    // chrome, and only then does the destination open. Without this
-                    // the hand-over would replace the frame before it was seen, and
-                    // the splash would lift onto the document instead.
+                    // surface, and only then does the destination open. With the
+                    // ports held off that surface is the plain one above, still
+                    // the app's own colour rather than the platform's.
                     withFrameNanos { }
+                    // No native screen is drawn while the ports are held off, so
+                    // there is nothing to wait for: the document opens on this
+                    // frame before the session and the config read. Both still
+                    // run - the shell is the navigation root and the update gate
+                    // reads them - but neither holds the WebView back.
+                    if (!NATIVE_SURFACES_VISIBLE) handOver()
                     // The escape hatch (#661): read beside the session, so the
                     // first hand-over already knows which surfaces the operator
                     // sent to the system browser. A config server that is slow or
@@ -781,7 +802,7 @@ class ShellActivity : ComponentActivity() {
                     BrowserEscape.publish(
                         withTimeoutOrNull(CONFIG_WAIT_MS) { escapeHatch.await() } ?: emptySet()
                     )
-                    handOver()
+                    if (NATIVE_SURFACES_VISIBLE) handOver()
                     // The launch half of "a queued write survives the process"
                     // (#650): the queue is on disk, so a process that was killed
                     // with writes pending drains as soon as the session answers.
