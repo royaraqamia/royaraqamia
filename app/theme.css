@@ -14,6 +14,9 @@
   --color-secondary-foreground: hsl(var(--secondary-foreground));
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
+  /* The search hint: an opaque token, so the AA ratio is one value in both
+     clients rather than an alpha copied into four class strings (issue #1648). */
+  --color-placeholder: hsl(var(--placeholder));
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
   --color-destructive: hsl(var(--destructive));

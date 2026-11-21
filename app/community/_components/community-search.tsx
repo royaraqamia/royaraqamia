@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, FileText, Loader2, Search, X } from 'lucide-react';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { SearchField } from '@/frontend/ui/shared/search-field';
 import {
   ReadFailureNotice,
   toReadFailure,
@@ -190,8 +191,7 @@ export function CommunitySearch() {
         className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40"
         aria-hidden="true"
       />
-      <input
-        type="text"
+      <SearchField
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onFocus={() => value.trim() && setOpen(true)}
@@ -205,8 +205,6 @@ export function CommunitySearch() {
         aria-activedescendant={
           showPanel && active >= 0 ? `community-search-option-${active}` : undefined
         }
-        autoComplete="off"
-        className="h-11 w-full rounded-xl border border-border/50 bg-background/60 ps-10 pe-10 text-sm outline-none transition-safe placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
       />
 
       {loading ? (

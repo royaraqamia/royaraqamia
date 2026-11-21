@@ -40,6 +40,13 @@
     --secondary-foreground: 0 0% 96%;
     --muted: 240 5% 18%;
     --muted-foreground: 0 0% 68%;
+    /*
+       The search hint, one step below muted-foreground and still AA on
+       --background: 0 0% 52% is rgb(133, 133, 133), 4.96:1 on #121216. It is
+       opaque so both clients read one value instead of composing an alpha in a
+       class string and in Kotlin (issue #1648).
+     */
+    --placeholder: 0 0% 52%;
     --accent: 240 6% 16%;
     --accent-foreground: 0 0% 96%;
     --destructive: 0 84.2% 60.2%;

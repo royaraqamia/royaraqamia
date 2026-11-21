@@ -26,6 +26,7 @@ object DesignTokens {
         const val secondaryForeground: Long = 0xFFF5F5F5
         const val muted: Long = 0xFF2C2C30
         const val mutedForeground: Long = 0xFFADADAD
+        const val placeholder: Long = 0xFF858585
         const val accent: Long = 0xFF26262B
         const val accentForeground: Long = 0xFFF5F5F5
         const val destructive: Long = 0xFFEF4444
