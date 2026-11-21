@@ -243,7 +243,88 @@ so the caps are on files (ADR-0113, #852).
     to Pro.
 - **RLS testing:** Verify policies with `supabase list_tables verbose=true`
 - **Edge functions:** `supabase functions deploy <name>` (`verify_jwt=true` by default)
-- **Backups/Point-in-time:** Configure in Supabase dashboard (not CLI)
+- **Backups/Point-in-time:** the free plan has neither — see [Backup and restore](#backup-and-restore)
+
+## Backup and restore
+
+The production project is on the free plan. Supabase backs up Pro, Team and
+Enterprise projects daily and sells PITR as an add-on; on this project the
+Management API reports `backups: []` and `pitr_enabled: false` (measured
+2026-11-21, #1700). There is no platform restore point. The recovery contract
+is the artifact plus a drill, not a plan in prose.
+
+**Artifact.** `.github/workflows/database-backup.yml` runs daily at 02:00 UTC.
+With CLI v3 it uses `--remote=<project ref>` and `SUPABASE_ACCESS_TOKEN` — the
+CLI mints a temporary login role, so no database-password secret is needed —
+and writes five files: `roles.sql`, `schema.sql`, `data.sql` (COPY data), and
+the `supabase_migrations` schema and data. `scripts/verify-database-dump.mjs`
+fails the run when any file is missing, below its size floor, or when any of
+the five recorded tables is below its row floor; the floors live in
+`scripts/backup-contract.mjs`. The verified directory is compressed, uploaded
+to a dedicated R2 bucket under `database/` with 30-day retention, and checked
+by re-downloading it. A failed upload is a red job with a Telegram notice.
+
+**One-time setup.** Create a dedicated R2 bucket (not the audio bucket), mint a
+token scoped to object read/write/list/delete under `database/`, and add the
+secrets `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` and
+`R2_BACKUP_BUCKET`. The drill also needs `SCRATCH_DB_URL`. Until they exist the
+jobs fail closed rather than report a backup that was never stored.
+
+**Recovery point.** Rows have a 24-hour RPO at this size: the newest successful
+daily dump is the restore point. Storage bytes are outside that contract — see
+the Storage decision below.
+
+**Storage RPO — decision.** Database dumps never contain Storage objects. The
+four buckets `avatars`, `post-images`, `android` and `chat-attachments` are
+outside every backup, paid or free. Their bytes may be lost: the RPO for
+objects is unbounded, and this is accepted at the current scale. Concretely, a
+restored `chat_attachments` row whose object is gone shows the message with a
+file that will not open; the nightly sweep does not remove the row because its
+path is still referenced. A periodic copy of those four buckets would be an
+addition to this contract, with its own recorded RPO — it is not a substitute
+for the drill.
+
+**Restore procedure.** Never restore into production.
+
+1. Create a scratch Supabase project and get its direct Postgres connection
+   string. Enable the extensions and Database Webhooks the source uses.
+2. If Vault or pgsodium columns are in use, copy the root encryption key from
+   the source **before** pausing or deleting it: read it with
+   `GET https://api.supabase.com/v1/projects/$OLD_REF/pgsodium` and write the
+   same 64-character hex value to the new project with `PUT .../pgsodium`.
+   Backups hold ciphertext, not the key.
+3. Download the newest archive from R2 and unpack it into a directory.
+4. Empty the scratch `public` schema and re-grant it:
+   `drop schema if exists public cascade; create schema public;`
+   then `grant all on schema public to postgres, anon, authenticated, service_role;`.
+   Drop `cli_login_postgres` first if a previous drill created it.
+5. Replay the dump with psql, in this order:
+
+   ```sh
+   psql --single-transaction --variable ON_ERROR_STOP=1 \
+     --file roles.sql --file schema.sql \
+     --command 'SET session_replication_role = replica' \
+     --file data.sql --dbname "$SCRATCH_DB_URL"
+
+   psql --single-transaction --variable ON_ERROR_STOP=1 \
+     --file history_schema.sql --file history_data.sql --dbname "$SCRATCH_DB_URL"
+   ```
+
+6. Verify with `node scripts/restore-database.mjs --dir <dir> --db-url "$SCRATCH_DB_URL"`.
+   It replays the same files, compares every restored count against the
+   artifact's manifest and its floor, and exits non-zero on any mismatch. The
+   monthly `.github/workflows/database-restore-drill.yml` runs this end to end
+   and records the pass date and duration in its job summary.
+7. Custom roles with `LOGIN` need new passwords after a restore — backups do
+   not store them. Supabase handles its own Realtime slot on a platform restore;
+   for a logical restore, re-enable the Database publications the app needs.
+   If `roles.sql` grants `postgres` to `cli_login_postgres` and psql refuses,
+   remove that one grant line and let the CLI recreate the role.
+
+**Measured RTO.** Pending the first live drill: no restore has been executed
+yet, so there is no number to put here. The scheduled drill's green run and its
+summary are the evidence; replace this paragraph with that measurement once the
+scratch project exists, rather than substituting an estimate.
 
 ## Data & access control
 

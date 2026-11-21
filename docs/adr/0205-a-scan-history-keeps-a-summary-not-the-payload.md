@@ -57,8 +57,8 @@ payload, and the route's schema has no field for one either.
 - **Store the payload and let the tool redact it.** The redaction then runs inside the same process
   that answers the model, one bug from shipping a Wi-Fi password to a third party, and the table is a
   credential store for the sake of a field no legitimate reader ever sees.
-- **Encrypt the payload in Postgres with an app key.** Backups, point-in-time recovery copies and a
-  support query all keep working on the ciphertext's key, so the blast radius barely changes; the key
+- **Encrypt the payload in Postgres with an app key.** A database dump, an off-site backup and a
+  support query all keep working on the same ciphertext, so the blast radius barely changes; the key
   management, rotation and retention of a 90-day credential vault is a years-long liability for a
   feature whose value decays in weeks.
 - **A hash and no text.** It cannot say "the café's Wi-Fi"; a history that answers only a count is a

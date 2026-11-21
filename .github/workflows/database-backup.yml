@@ -1,0 +1,118 @@
+# Daily logical dump of the production database (#1700).
+#
+# Supabase backs up Pro, Team and Enterprise projects; this project is on the
+# free plan, so the export is the operator's job. The dump goes to an R2 bucket
+# this repository does not own, and the verifier's exit code is the gate: an
+# absent, empty or under-floor artifact fails the run before it is uploaded.
+#
+# Secrets:
+#   SUPABASE_ACCESS_TOKEN  - scoped token; the CLI mints a temporary login role
+#   SUPABASE_PROJECT_REF   - production project
+#   R2_ENDPOINT            - https://<account>.r2.cloudflarestorage.com
+#   R2_ACCESS_KEY_ID       - backups-bucket scoped token
+#   R2_SECRET_ACCESS_KEY   - backups-bucket scoped token
+#   R2_BACKUP_BUCKET       - dedicated bucket, not the audio bucket
+#   TELEGRAM_BOT_TOKEN     - run-failure notification
+#   TELEGRAM_CHAT_ID       - run-failure notification
+
+name: 'Database Backup'
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-backup
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    name: Dump, verify and store
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: '^3'
+
+      - name: Dump schema and data
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          mkdir -p dump
+          ref="$SUPABASE_PROJECT_REF"
+          supabase db dump --remote="$ref" -f dump/roles.sql --role-only
+          supabase db dump --remote="$ref" -f dump/schema.sql
+          supabase db dump --remote="$ref" -f dump/data.sql --use-copy --data-only \
+            -x "storage.buckets_vectors" -x "storage.vector_indexes"
+          supabase db dump --remote="$ref" -f dump/history_schema.sql --schema supabase_migrations
+          supabase db dump --remote="$ref" -f dump/history_data.sql --use-copy --data-only \
+            --schema supabase_migrations
+
+      - name: Verify and package
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          archive="royaraqamia-db-$(date -u +%Y%m%dT%H%M%SZ).tar.gz"
+          node scripts/verify-database-dump.mjs --dir dump \
+            --manifest dump/manifest.json \
+            --archive "$archive" \
+            --source "${SUPABASE_PROJECT_REF:-production}"
+          tar -czf "$archive" -C dump .
+          test -s "$archive"
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+          echo "ARCHIVE_BYTES=$(stat -c %s "$archive")" >> "$GITHUB_ENV"
+
+      - name: Upload to R2 and apply 30-day retention
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+        run: |
+          set -euo pipefail
+          aws s3 cp "$ARCHIVE" "s3://$R2_BACKUP_BUCKET/database/$ARCHIVE" \
+            --endpoint-url "$R2_ENDPOINT"
+          aws s3 cp "s3://$R2_BACKUP_BUCKET/database/$ARCHIVE" - \
+            --endpoint-url "$R2_ENDPOINT" >/dev/null
+          cutoff="$(date -u -d '30 days ago' +%Y-%m-%d)"
+          aws s3 ls "s3://$R2_BACKUP_BUCKET/database/" --endpoint-url "$R2_ENDPOINT" |
+            while read -r day _time _size key; do
+              if [[ "$day" < "$cutoff" ]]; then
+                echo "Pruning $key (stored $day)"
+                aws s3 rm "s3://$R2_BACKUP_BUCKET/$key" --endpoint-url "$R2_ENDPOINT"
+              fi
+            done
+
+      - name: Workflow summary
+        run: |
+          {
+            echo '## Database backup'
+            echo
+            jq -r '"- Created: \(.createdAt)\n- Source: \(.source)\n- Archive: \(.archive)"' dump/manifest.json
+            jq -r '.sizes | to_entries[] | "- \(.key): \(.value) bytes"' dump/manifest.json
+            jq -r '.counts | to_entries[] | "- \(.key): \(.value) rows"' dump/manifest.json
+            echo "- Uploaded bytes: $ARCHIVE_BYTES"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -sS --fail-with-body --max-time 30 \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=Database backup failed: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
