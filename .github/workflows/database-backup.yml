@@ -88,7 +88,7 @@ jobs:
             --endpoint-url "$R2_ENDPOINT" >/dev/null
           cutoff="$(date -u -d '30 days ago' +%Y-%m-%d)"
           aws s3 ls "s3://$R2_BACKUP_BUCKET/database/" --endpoint-url "$R2_ENDPOINT" |
-            while read -r day time size key; do
+            while read -r day _time _size key; do
               if [[ "$day" < "$cutoff" ]]; then
                 echo "Pruning $key (stored $day)"
                 aws s3 rm "s3://$R2_BACKUP_BUCKET/$key" --endpoint-url "$R2_ENDPOINT"
