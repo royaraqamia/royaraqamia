@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Download } from 'lucide-react';
 
+import { Button } from '@/frontend/ui/primitives/button';
+import { openInSystemBrowser } from '@/frontend/shared/native-shell';
 import { fetchShellManifest, shellVersionFromUserAgent } from '@/frontend/shared/shell-update';
 
 /**
@@ -16,6 +19,11 @@ import { fetchShellManifest, shellVersionFromUserAgent } from '@/frontend/shared
  *
  * Delete this component, its render in `HomePageContent` and its test once the
  * old shells are gone. It exists for one migration, not as a second channel.
+ *
+ * The hand-off goes through the system browser: this app's WebView has no
+ * DownloadListener, so a same-origin `download` link is ignored. The Capacitor
+ * plugin is tried first, then the WebView's own `_system` target (which needs no
+ * injected bridge), then an ordinary navigation as the last resort.
  */
 const CORRECTED_VERSION_CODE = 20300;
 
@@ -39,21 +47,45 @@ export function ShellUpdateBridgeBanner() {
 
   if (!affected || !apkUrl) return null;
 
+  const open = async () => {
+    if (await openInSystemBrowser(apkUrl)) return;
+    const external = window.open(apkUrl, '_system');
+    if (!external) window.location.assign(apkUrl);
+  };
+
   return (
-    <a
-      href={apkUrl}
-      download
-      className="mx-auto mb-4 flex w-full max-w-7xl items-center gap-3 rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3 text-start text-sm font-bold text-foreground transition-safe hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+    <div
+      role="status"
+      className="relative mx-auto mb-5 w-full max-w-7xl overflow-hidden rounded-2xl border border-primary/30 bg-linear-to-br from-primary/12 via-primary/6 to-accent-indigo/10 p-4 shadow-lg shadow-primary/5 sm:p-5"
     >
-      <span className="min-w-0 flex-1">
-        <span className="block">يتوفَّر تحديث للتطبيق</span>
-        <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-          اضغط لتنزيل الإصدار الجديد وتثبيته.
-        </span>
-      </span>
-      <span aria-hidden="true" className="text-primary">
-        ←
-      </span>
-    </a>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <span
+            aria-hidden="true"
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/25"
+          >
+            <Download className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold leading-snug text-foreground sm:text-base">
+              تحديث التطبيق جاهز
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+              ثبِّت الإصدار الجديد مرة واحدة؛ بعدها ستأتي التحديثات من داخل التطبيق.
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="hero"
+          size="sm"
+          onClick={() => void open()}
+          className="w-full sm:w-auto"
+        >
+          تنزيل وتثبيت
+          <Download aria-hidden="true" className="size-4" />
+        </Button>
+      </div>
+    </div>
   );
 }
