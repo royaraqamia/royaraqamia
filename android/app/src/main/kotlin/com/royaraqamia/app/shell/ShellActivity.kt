@@ -1383,11 +1383,13 @@ class ShellActivity : ComponentActivity() {
      * update card able to come forward over the document (#652) and back from a web
      * surface land on the frame rather than closing the app (ADR-0105).
      *
-     * A destination with a native screen - none today - stays on the frame when
-     * [NativeSurfaces.isNative] says so. A build below the site's floor never gets
-     * there (#652, ADR-0114): every owned route would answer `426`, so the blocking
-     * card is the honest screen rather than a document that refuses everything it
-     * is asked.
+     * A destination with a native screen stays on the frame when
+     * [NativeSurfaces.isNative] and [NATIVE_SURFACES_VISIBLE] both say so. The hold
+     * is deliberate: the ports stay in the tree and keep their gates, but a member
+     * must not see a half-drawn screen until the native set is complete. A build
+     * below the site's floor never gets there (#652, ADR-0114): every owned route
+     * would answer `426`, so the blocking card is the honest screen rather than a
+     * document that refuses everything it is asked.
      */
     private fun handOver() {
         if (isFinishing || isDestroyed) return
@@ -1406,6 +1408,13 @@ class ShellActivity : ComponentActivity() {
             return
         }
         browserRoute = null
+        // The document-only hold: every route opens the site's page until the
+        // native set is complete. Removing this branch is the whole revert - the
+        // ports and their visual gates stay untouched underneath it.
+        if (!NATIVE_SURFACES_VISIBLE) {
+            document.launch(WebSurface.intentFor(this, stack.current))
+            return
+        }
         if (NativeSurfaces.isNative(stack.route)) return
         document.launch(WebSurface.intentFor(this, stack.current))
     }
@@ -1428,6 +1437,13 @@ class ShellActivity : ComponentActivity() {
     }
 
     private companion object {
+        /**
+         * Whether the shell may draw its own ports. Held off so the cut ships one
+         * client: the Kotlin screens stay compiled and gated, but the site's page
+         * is what a member sees on every route until the ports are complete.
+         */
+        const val NATIVE_SURFACES_VISIBLE = false
+
         /** What the clipboard entry is labelled on the device. */
         const val CLIPBOARD_LABEL = "certificate-code"
 

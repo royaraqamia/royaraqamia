@@ -300,6 +300,12 @@
       "evidence": "shell/ShellConfig.kt reads public/android/config.json from the origin the update check already trusts; shell/BrowserEscape.kt is the one decision and shell/CustomTab.kt the hand-off, wired in shell/ShellActivity.kt. JVM tests BrowserEscapeTest, ShellConfigTest and CustomTabTest."
     },
     {
+      "id": "document-only-cut",
+      "title": "One client on screen: the document draws every surface until the native set is complete",
+      "state": "done",
+      "evidence": "shell/ShellActivity.kt holds NATIVE_SURFACES_VISIBLE false; handOver() opens WebSurface for every route, leaving NativeSurfaces and its visual gates intact for the cutover."
+    },
+    {
       "id": "guest-claim",
       "title": "A sign-in claims the guest Local Store's rows",
       "state": "open",
