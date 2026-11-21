@@ -23,9 +23,10 @@ and the max at 425 MB, while the live V8 heap limit is 259 MiB (the blueprint's
    earlier than the blueprint's 384 (576 MiB total). Raising it while RSS reaches
    425 MB would let the heap grow into the container wall. Set it deliberately
    only after moving to a larger instance.
-3. **Report native bytes.** `[memory]` now carries `arrayBuffersMb`, so the part
-   of RSS a heap snapshot cannot see is visible in the log stream the owner
-   already reads.
+3. **Report the unexplained bytes.** `[memory]` now carries `heapTotalMb` and
+   `remainderMb` (RSS minus heap total minus external), so the part of RSS a
+   heap snapshot cannot see is visible in the log stream the owner reads.
+   `arrayBuffersMb` is a breakdown of `externalMb`, not an extra bucket.
 4. **Give the graph a voice.** `scripts/memory-watch.mjs` reads Render's memory
    metrics, restart events and the app's own `[memory]` lines without
    dependencies, and `.github/workflows/memory-watch.yml` keeps one issue

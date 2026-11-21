@@ -73,8 +73,9 @@ The log stream carries the two readings the dashboard graph would give:
   the process actually has, the previous start and how long that process had been running, and
   whether this start came off the same commit (`false` is a deploy, `true` is the same build coming
   back).
-- `[memory]`, every five minutes: RSS, heap used, the heap limit, external memory, native buffers
-  (`arrayBuffersMb`, the part a heap snapshot cannot show) and uptime.
+- `[memory]`, every five minutes: RSS, heap used and total, the heap limit, external memory, native
+  buffers (`arrayBuffersMb`, a **breakdown** of external memory, not an extra bucket), `remainderMb`
+  (RSS minus heap total minus external — the part a heap snapshot cannot show) and uptime.
 
 A `heapUsedMb` that climbs toward `heapLimitMb` over hours is the leak question answered; one that
 sits flat near the limit through an ordinary day is the plan question. The previous-boot fields need
@@ -83,8 +84,9 @@ sits flat near the limit through an ordinary day is the plan question. The previ
 **Baseline recorded 2026-11-21.** Over the seven days to that date the app's `[memory]` samples put
 RSS at p50 296 / p75 341 / p95 411 / max 425 MB, with `heapUsedMb` around 200, the live heap limit
 259 and `externalMb` 35. Roughly 190 MB of RSS was therefore neither the JS heap nor reported
-external memory; the field `arrayBuffersMb` now separates native buffers from that remainder on
-future boots. Render's own memory metric over the same window was p50 313 / p75 357 / p95 400 /
+external memory. `[memory]` now logs `heapTotalMb` and a computed `remainderMb` (RSS minus heap
+total minus external) so that part can be watched on future boots; `arrayBuffersMb` only breaks down
+the external figure and does not explain the remainder. Render's own memory metric over the same window was p50 313 / p75 357 / p95 400 /
 max 449 MiB of a 512 MiB limit, and the origin OOM-killed three times. That is the baseline against
 which the caps in this file are judged; it is not a second budget.
 

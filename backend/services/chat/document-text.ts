@@ -253,8 +253,10 @@ function isWordSkip(tag: string): boolean {
 }
 
 function walkWord(xml: string, words: Words): void {
-  let cells: string[] = [];
-  let cellsOpen: CellAccumulator[] = [];
+  // rowCells holds committed text by column; openCells is the stack of cells
+  // whose tags have opened but not closed. A nested cell has its own slot.
+  let rowCells: string[] = [];
+  const openCells: CellAccumulator[] = [];
   let rowsDeep = 0;
   let skippedElementsDeep = 0;
 
@@ -264,20 +266,20 @@ function walkWord(xml: string, words: Words): void {
       if (isWordSkip(tag)) skippedElementsDeep += 1;
       if (tag === 'tr') rowsDeep += 1;
       if (tag === 'p') {
-        for (const cell of cellsOpen) {
+        for (const cell of openCells) {
           cell.paragraphs.push([]);
           cell.openParagraphs += 1;
         }
       }
       if (tag === 'tc') {
-        const slot = cells.length;
-        cells.push('');
-        cellsOpen.push({ paragraphs: [], direct: [], openParagraphs: 0, slot });
+        const slot = rowCells.length;
+        rowCells.push('');
+        openCells.push({ paragraphs: [], direct: [], openParagraphs: 0, slot });
       }
       // A tab or a manual break is an empty element: no text event will carry
       // it. The old tree reader pushed it in the body but elementText ignored
       // it inside a cell, so cells keep their own text path.
-      if (skippedElementsDeep === 0 && cellsOpen.length === 0) {
+      if (skippedElementsDeep === 0 && openCells.length === 0) {
         if (tag === 'tab') words.push('\t');
         else if (tag === 'br' || tag === 'cr') words.push('\n');
       }
@@ -287,34 +289,30 @@ function walkWord(xml: string, words: Words): void {
       // A cell's text is every descendant paragraph, not just its direct
       // children — the old cellTexts walked the whole subtree. Text inside a
       // nested cell therefore belongs to both the inner and the outer cell.
-      for (const cell of cellsOpen) {
+      for (const cell of openCells) {
         if (cell.openParagraphs > 0) cell.paragraphs.at(-1)?.push(text);
         else cell.direct.push(text);
       }
-      if (cellsOpen.length === 0 && skippedElementsDeep === 0) words.push(text);
+      if (openCells.length === 0 && skippedElementsDeep === 0) words.push(text);
     },
     (tag) => {
       if (isWordSkip(tag)) skippedElementsDeep -= 1;
       if (tag === 'p') {
-        for (const cell of cellsOpen) cell.openParagraphs -= 1;
-        if (rowsDeep === 0 && cellsOpen.length === 0 && !words.full) words.push('\n');
+        for (const cell of openCells) cell.openParagraphs -= 1;
+        if (rowsDeep === 0 && openCells.length === 0 && !words.full) words.push('\n');
       }
       if (tag === 'tc') {
-        const cell = cellsOpen.pop();
+        const cell = openCells.pop();
         if (!cell) return;
-        const text =
-          cell.paragraphs.length > 0
-            ? cell.paragraphs.map((parts) => parts.join('')).join(' ')
-            : cell.direct.join('');
-        cells[cell.slot] = text.replace(/\s+/g, ' ').trim();
+        rowCells[cell.slot] = cellText(cell.paragraphs, () => cell.direct.join(''));
       }
       if (tag === 'tr') {
         rowsDeep -= 1;
         // Only the outermost row is a line. The old reader did not recurse
         // into a nested tr, so nested rows never flushed the row's cells.
         if (rowsDeep === 0) {
-          words.push(cells.join(' | '), '\n');
-          cells = [];
+          words.push(rowCells.join(' | '), '\n');
+          rowCells = [];
         }
       }
     }
@@ -412,6 +410,13 @@ function elementText(nodes: XmlContent): string {
   return text;
 }
 
+/** The shared cell shape: paragraphs when present, else the whole subtree, then normalize. */
+function cellText(paragraphs: string[][], fallback: () => string): string {
+  const text =
+    paragraphs.length > 0 ? paragraphs.map((parts) => parts.join('')).join(' ') : fallback();
+  return text.replace(/\s+/g, ' ').trim();
+}
+
 /**
  * The workbook's sheets, in the order they are drawn, resolved to zip paths.
  */
@@ -487,12 +492,10 @@ function odsRows(nodes: XmlContent): Row[] {
  */
 function cellTexts(nodes: XmlContent, tag: string): string[] {
   return collect(nodes, tag).map((cell) => {
-    const paragraphs = collect(cell.content, 'p');
-    const text =
-      paragraphs.length > 0
-        ? paragraphs.map((paragraph) => elementText(paragraph.content)).join(' ')
-        : elementText(cell.content);
-    return text.replace(/\s+/g, ' ').trim();
+    const paragraphs = collect(cell.content, 'p').map((paragraph) => [
+      elementText(paragraph.content),
+    ]);
+    return cellText(paragraphs, () => elementText(cell.content));
   });
 }
 

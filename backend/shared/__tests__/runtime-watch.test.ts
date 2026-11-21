@@ -101,9 +101,11 @@ describe('buildMemorySample', () => {
     expect(sample).toEqual({
       rssMb: 512,
       heapUsedMb: 123,
+      heapTotalMb: 300,
       heapLimitMb: 384,
       externalMb: 12,
       arrayBuffersMb: 48,
+      remainderMb: 200,
       uptimeMin: 5,
     });
   });
