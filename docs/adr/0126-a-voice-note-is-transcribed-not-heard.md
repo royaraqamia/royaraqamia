@@ -50,3 +50,43 @@ The note assumed the recording existed to be transcribed. It is also played — 
 thread and, now, in a member's — so the clip is re-rendered at 24 kHz mono rather than 16 kHz, and
 the member's thread records one without a model at all. The rest of the decision stands: one WAV
 file, uploaded as an attachment, transcribed on the turn that reads it (ADR-0127).
+
+## Amendment (2026-11-21): the mirror is not built, because the gateway has no speech model
+
+The reverse of this decision — the assistant answering with a voice note (#1038) — starts with a
+measurement rather than code, and the measurement says no. The gateway takes text, images and audio
+input; nothing on it turns text into audio.
+
+Measured on 2026-11-21 against `https://opencode.ai/inference/go/openai/v1` with
+`node scripts/agent-probe.mjs --only models,speech`, plus one call per alternative route:
+
+- `POST /audio/speech` answers **404**, for `tts-1`, `gpt-4o-mini-tts`, `gemini-4-argon`,
+  `mimo-v2.6-flash` and `deepseek-v4.1-flash`.
+- `POST /audio/generations`, `/audio/tts`, `/tts`, `/speech` and `/audio/transcriptions` all answer
+  **404**; `GET` on each is **404** too.
+- `GET /models` answers **200** with 31 ids, every one a chat or vision model. No text-to-speech
+  model is on the plan. (#1038 was written when this endpoint did not exist; it does now, and its
+  list is the answer.)
+- `POST /chat/completions` with `modalities: ["text","audio"]` — the OpenAI-compatible alternative —
+  is not a speech route either. `qwen4-max` validates Qwen's own voices (`Cherry`, `Ethan`,
+  `Serena`, `Chelsie` pass; `Nofish` is refused by name), then answers **text only**, with no
+  `audio` field on the message and no `delta.audio` in a stream. `mimo-v2.6-flash` and `minimax-m3`
+  answer 200 with text only. `gemini-4-argon`, `gpt-5.6-luna` and `gpt-6-luna` refuse the parameter
+  (`modalities: cannot be represented by …`).
+
+So the text answer stands and nothing is synthesised: a reply with no audio is the honest result,
+not a half-built toggle. The shape #1038 describes — the opt-in toggle, the clip as an attachment
+written by the member as uploader, the text-hash cache, and a failed synthesis as a sentence — is
+unchanged and waits on a model, not on design.
+
+Two ways to buy one, both the owner's decision and neither taken here:
+
+- **A second vendor's speech API.** One more credential (a speech key nobody has provisioned) and a
+  bill metered per character or per minute, outside the OpenCode Go allowance that pays for every
+  other model in this product. It needs its own ADR before a secret is added.
+- **A self-hosted model.** The app's runtime has no GPU, no model binary and no ffmpeg — the same
+  reason decision 1 hands decoding to the browser — so this is a separate host with its own storage
+  and cold-start cost, not a route on the running service.
+
+When the plan gains an audio-output model, `node scripts/agent-probe.mjs --only speech` asks the
+route again; when it answers, #1038 applies as written and this amendment is superseded.
