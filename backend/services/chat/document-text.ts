@@ -242,7 +242,7 @@ async function readDocx(bytes: Uint8Array): Promise<DocumentReading | null> {
  */
 interface CellAccumulator {
   paragraphs: string[][];
-  direct: string[];
+  directText: string[];
   openParagraphs: number;
   /** Position in the row, reserved when the cell opens so nested cells keep document order. */
   slot: number;
@@ -274,7 +274,7 @@ function walkWord(xml: string, words: Words): void {
       if (tag === 'tc') {
         const slot = rowCells.length;
         rowCells.push('');
-        openCells.push({ paragraphs: [], direct: [], openParagraphs: 0, slot });
+        openCells.push({ paragraphs: [], directText: [], openParagraphs: 0, slot });
       }
       // A tab or a manual break is an empty element: no text event will carry
       // it. The old tree reader pushed it in the body but elementText ignored
@@ -291,7 +291,7 @@ function walkWord(xml: string, words: Words): void {
       // nested cell therefore belongs to both the inner and the outer cell.
       for (const cell of openCells) {
         if (cell.openParagraphs > 0) cell.paragraphs.at(-1)?.push(text);
-        else cell.direct.push(text);
+        else cell.directText.push(text);
       }
       if (openCells.length === 0 && skippedElementsDeep === 0) words.push(text);
     },
@@ -304,7 +304,7 @@ function walkWord(xml: string, words: Words): void {
       if (tag === 'tc') {
         const cell = openCells.pop();
         if (!cell) return;
-        rowCells[cell.slot] = cellText(cell.paragraphs, () => cell.direct.join(''));
+        rowCells[cell.slot] = cellText(cell.paragraphs, () => cell.directText.join(''));
       }
       if (tag === 'tr') {
         rowsDeep -= 1;

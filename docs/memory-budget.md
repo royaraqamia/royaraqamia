@@ -83,12 +83,13 @@ sits flat near the limit through an ordinary day is the plan question. The previ
 
 **Baseline recorded 2026-11-21.** Over the seven days to that date the app's `[memory]` samples put
 RSS at p50 296 / p75 341 / p95 411 / max 425 MB, with `heapUsedMb` around 200, the live heap limit
-259 and `externalMb` 35. Roughly 190 MB of RSS was therefore neither the JS heap nor reported
-external memory. `[memory]` now logs `heapTotalMb` and a computed `remainderMb` (RSS minus heap
-total minus external) so that part can be watched on future boots; `arrayBuffersMb` only breaks down
-the external figure and does not explain the remainder. Render's own memory metric over the same window was p50 313 / p75 357 / p95 400 /
-max 449 MiB of a 512 MiB limit, and the origin OOM-killed three times. That is the baseline against
-which the caps in this file are judged; it is not a second budget.
+259 and `externalMb` 35. Subtracting `heapUsed` and external from RSS gives roughly 190 MB, but that
+overstates the unexplained part: RSS carries the whole V8 heap, not only the bytes in use. `[memory]`
+now logs `heapTotalMb` and a computed `remainderMb` (RSS minus heap **total** minus external), which
+will give the accurate figure on future boots; `arrayBuffersMb` only breaks down the external figure
+and does not explain the remainder. Render's own memory metric over the same window was p50 313 /
+p75 357 / p95 400 / max 449 MiB of a 512 MiB limit, and the origin OOM-killed three times. That is
+the baseline against which the caps in this file are judged; it is not a second budget.
 
 **The cap in this file is a blueprint intention, not a live fact.** Every boot line observed on the
 origin in November 2026 reported `heapLimitMb: 259`, and the service's live environment does not

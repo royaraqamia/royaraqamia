@@ -7,7 +7,7 @@ instance is 0.1 CPU / 512 MB, and the request was enough.
 
 > **Conflict flagged, 2026-11-21.** Decision 1 below describes the blueprint, not the live service.
 > The running service has no `NODE_OPTIONS`, so V8 reports 259 MiB rather than the 576 MiB that the
-> 384 flag would give, and three further OOM kills followed on 11-15, 11-16 and 11-20. Raising the
+> 384 flag would give, and two further OOM kills followed on 11-16 and 11-20. Raising the
 > flag on a 512 MB container whose RSS reaches 425 MB would let the heap grow into the wall.
 > [ADR 0210](0210-a-request-spike-is-bounded-before-the-plan-is-bought.md) supersedes the runtime
 > half of this decision on the free plan; the build cap and the two logging decisions still stand.

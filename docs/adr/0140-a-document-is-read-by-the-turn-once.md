@@ -7,6 +7,12 @@ the file is uploaded and stored, the bubble shows its name — and the turn answ
 «لا أستطيع قراءة هذا النوع من الملفات». A PDF is the one attachment whose bytes
 never reached the model.
 
+> **Conflict flagged, 2026-11-21.** Decision 2 below still names `fast-xml-parser`,
+> but the memo and deck readers now feed `Words` from `saxes` events and only
+> workbooks and ODS build a compact tree. The unpdf/JSZip split and the "no
+> native build" promise are unchanged; see
+> [ADR 0210](0210-a-request-spike-is-bounded-before-the-plan-is-bought.md).
+
 ## Decision
 
 1. **The turn reads the file, not the page.** `ChatAgentService.readAttachments`
