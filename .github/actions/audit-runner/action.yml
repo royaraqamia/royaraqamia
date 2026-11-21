@@ -30,21 +30,26 @@ runs:
   using: composite
   steps:
     - name: Daily guard
-      # The contract is three issues filed today, not "a run succeeded". A run that
-      # published one issue before its clock ran out must be retried by the health
-      # monitor; a late backstop must not file a fourth. The window is the UTC
-      # calendar day, so a catch-up cannot suppress the next day's punctual run.
+      # The contract is three entries published today: findings are issues, report
+      # entries are dated comments on the domain's rolling report issue. Counting
+      # both keeps a partial day retryable without letting a late backstop file a
+      # fourth. The window is the UTC calendar day, so a catch-up cannot suppress
+      # the next day's punctual run.
       id: guard
       uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
       env:
         WORKFLOW_FILE: ${{ inputs.workflow-file }}
         SOURCE_LABEL: ${{ inputs.label }}
+        DOMAIN: ${{ inputs.domain }}
       with:
         script: |
+          const helpers = require(process.env.GITHUB_WORKSPACE + '/scripts/audit/github-helpers.cjs');
+          const domain = process.env.DOMAIN;
           const force = context.eventName === 'workflow_dispatch' &&
             String((context.payload.inputs || {}).force) === 'true';
           const startOfDayUtc = new Date();
           startOfDayUtc.setUTCHours(0, 0, 0, 0);
+          const date = helpers.utcDate(startOfDayUtc.getTime());
           const filed = await github.paginate(github.rest.issues.listForRepo, {
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -53,22 +58,36 @@ runs:
             since: startOfDayUtc.toISOString(),
             per_page: 100,
           });
-          const today = filed.filter(
-            (issue) => !issue.pull_request && Date.parse(issue.created_at) >= startOfDayUtc.getTime()
+          const rollingTitle = helpers.reportTitle(domain);
+          const todayFindings = filed.filter(
+            (issue) => !issue.pull_request && issue.title !== rollingTitle &&
+              Date.parse(issue.created_at) >= startOfDayUtc.getTime()
           );
-          if (today.length >= 3 && !force) {
+          const rolling = filed.find((issue) => !issue.pull_request && issue.title === rollingTitle);
+          let todayReports = 0;
+          if (rolling) {
+            const comments = await helpers.listComments(
+              github, context, rolling.number, startOfDayUtc.toISOString()
+            );
+            const prefix = helpers.reportDatePrefix(domain, date);
+            todayReports = comments.filter((comment) =>
+              String(comment.body || '').includes(prefix)
+            ).length;
+          }
+          const total = todayFindings.length + todayReports;
+          if (total >= 3 && !force) {
             core.notice(
-              process.env.SOURCE_LABEL + ' already filed ' + today.length +
-              ' issue(s) today (UTC); skipping this ' + context.eventName + ' trigger.'
+              process.env.SOURCE_LABEL + ' already published ' + total +
+              ' entr(ies) today (UTC); skipping this ' + context.eventName + ' trigger.'
             );
             core.setOutput('run', 'false');
           } else {
             core.notice(
-              process.env.SOURCE_LABEL + ' has filed ' + today.length + '/3 issue(s) today (UTC)'
+              process.env.SOURCE_LABEL + ' has published ' + total + '/3 entries today (UTC)'
             );
             core.setOutput('run', 'true');
           }
-          core.setOutput('already', String(today.length));
+          core.setOutput('already', String(total));
 
     - name: Checkout
       if: steps.guard.outputs.run == 'true'
@@ -147,9 +166,13 @@ runs:
     - name: Prefetch issue and pull request context
       if: steps.guard.outputs.run == 'true'
       uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+      env:
+        DOMAIN: ${{ inputs.domain }}
+        SOURCE_LABEL: ${{ inputs.label }}
       with:
         script: |
           const fs = require('fs');
+          const helpers = require(process.env.GITHUB_WORKSPACE + '/scripts/audit/github-helpers.cjs');
           const issues = await github.paginate(github.rest.issues.listForRepo, {
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -180,10 +203,43 @@ runs:
               body: clip(pull.body),
             })),
           };
+          // Reports are comments now, so rotation needs them explicitly: the
+          // issue list above carries no comment bodies. Until a domain has a
+          // rolling log, and after its old report issues are closed, fall back
+          // to recent report issues in any state so rotation has history.
+          const domain = process.env.DOMAIN;
+          const rollingTitle = helpers.reportTitle(domain);
+          const rolling = issues.find((issue) => !issue.pull_request && issue.title === rollingTitle);
+          const fromLog = rolling
+            ? (await helpers.listComments(github, context, rolling.number))
+                .filter((comment) => String(comment.body || '').includes('<!-- audit:report:'))
+                .map((comment) => ({ number: rolling.number, body: clip(comment.body) }))
+            : [];
+          if (fromLog.length < 3) {
+            const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            const older = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: process.env.SOURCE_LABEL,
+              since,
+              per_page: 100,
+            });
+            const reportPrefix = ('audit(' + domain + '): daily report').toLowerCase();
+            fromLog.push(
+              ...older
+                .filter((issue) => !issue.pull_request &&
+                  String(issue.title || '').toLowerCase().startsWith(reportPrefix))
+                .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))
+                .map((issue) => ({ number: issue.number, body: clip(issue.body) }))
+            );
+          }
+          payload.recentReports = fromLog.slice(0, 3);
           fs.writeFileSync('/tmp/context.json', JSON.stringify(payload));
           core.info(
-            'Prefetched ' + payload.openIssues.length + ' issue(s) and ' +
-            payload.openPullRequests.length + ' pull request(s).'
+            'Prefetched ' + payload.openIssues.length + ' issue(s), ' +
+            payload.openPullRequests.length + ' pull request(s) and ' +
+            (payload.recentReports || []).length + ' recent report(s).'
           );
 
     - name: Assemble the prompt
@@ -246,9 +302,20 @@ runs:
       with:
         script: |
           const fs = require('fs');
+          const helpers = require(process.env.GITHUB_WORKSPACE + '/scripts/audit/github-helpers.cjs');
           const path = '/tmp/issues.json';
           const sourceLabel = process.env.SOURCE_LABEL;
           const domain = process.env.DOMAIN;
+          const date = helpers.utcDate();
+          const server = process.env.GITHUB_SERVER_URL || 'https://github.com';
+          const runUrl = server + '/' + context.repo.owner + '/' + context.repo.repo +
+            '/actions/runs/' + context.runId;
+          const artifact = 'audit-evidence-' + domain + '-' + context.runId;
+          // Every published entry points at the run and its evidence artifact. The
+          // captures themselves stay out of the body; /tmp paths mean nothing to a
+          // reader and the artifact is retained for 90 days.
+          const provenance = '\n\n---\n_Audit [run ' + context.runId + '](' + runUrl +
+            ') · evidence artifact `' + artifact + '` (90-day retention)._';
           let payload = { entries: [], updates: [] };
           if (fs.existsSync(path)) {
             let raw = fs.readFileSync(path, 'utf8').trim();
@@ -265,14 +332,9 @@ runs:
           const updates = Array.isArray(payload.updates) ? payload.updates : [];
 
           // Public repository: a second line of defence behind the prompt's redaction
-          // rule. Nothing that looks like a credential or a member's contact detail
-          // reaches a public issue, even if the agent copied it from a log.
-          const scrub = (text) =>
-            String(text || '')
-              .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email redacted]')
-              .replace(/(?:\+?\d[\d\s().-]{8,}\d)/g, '[number redacted]')
-              .replace(/\b(?:ghp|gho|github_pat|sb_secret|sk|AKIA)[A-Za-z0-9_-]{12,}\b/g, '[secret redacted]')
-              .replace(/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, '[token redacted]');
+          // rule. The shared helper also spares ISO dates and migration filename
+          // prefixes, which are identifiers a reader needs, not contact details.
+          const scrub = helpers.redact;
 
           for (const label of [
             { name: 'opencode:audit', color: '5319e7', description: 'Created by a specialised audit workflow' },
@@ -303,6 +365,15 @@ runs:
           );
           const byNumber = new Map(existing.map((issue) => [issue.number, issue]));
 
+          // Reports are non-actionable coverage evidence. They go to one rolling
+          // issue per domain as dated comments, so the tracker holds findings only.
+          // Created lazily: a run that proves nothing still creates no report issue.
+          const rollingTitle = helpers.reportTitle(domain);
+          let rolling = existing.find((issue) => !issue.pull_request && issue.title === rollingTitle);
+          const reportComments = rolling
+            ? await helpers.listComments(github, context, rolling.number)
+            : [];
+
           // Explicit edits are append-only: the original evidence and its history stay
           // readable, and a bad update can be reverted without losing the finding.
           for (const update of updates) {
@@ -318,20 +389,50 @@ runs:
               repo: context.repo.repo,
               issue_number: number,
               body:
-                '<!-- audit:update:' + domain + ':' + new Date().toISOString().slice(0, 10) + ' -->\n' +
-                body,
+                '<!-- audit:update:' + domain + ':' + date + ' -->\n' +
+                body + provenance,
             });
             core.info('Appended an audit update to #' + number + '.');
           }
 
-          const startOfDayUtc = new Date();
-          startOfDayUtc.setUTCHours(0, 0, 0, 0);
           let created = 0;
           for (const candidate of candidates.slice(0, 3)) {
             if (created >= 3) break;
             const title = scrub(candidate.title).trim();
             const body = scrub(candidate.body).trim();
             if (!title || !body) continue;
+            if (candidate.kind === 'report') {
+              if (!rolling) {
+                const triageUrl = server + '/' + context.repo.owner + '/' + context.repo.repo +
+                  '/blob/main/docs/agents/audit-triage.md';
+                const made = await github.rest.issues.create({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  title: rollingTitle,
+                  body: 'One dated report per audit run is appended below by the ' + domain +
+                    ' audit. Findings are separate issues; this log is the coverage ' +
+                    'record, not work for the implementer. See [the triage contract](' +
+                    triageUrl + ').',
+                  labels: ['opencode:audit', sourceLabel],
+                });
+                rolling = made.data;
+              }
+              const marker = helpers.reportMarker(domain, date, title);
+              if (reportComments.some((comment) => String(comment.body || '').includes(marker))) {
+                core.info('Report "' + title + '" is already logged on #' + rolling.number + '.');
+                continue;
+              }
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: rolling.number,
+                body: marker + '\n\n' + body + provenance,
+              });
+              reportComments.push({ body: marker });
+              created += 1;
+              core.info('Logged daily report on #' + rolling.number + ': ' + title);
+              continue;
+            }
             const key = title.toLowerCase();
             if (existingTitles.has(key)) {
               core.info('Skipping duplicate issue: ' + title);
@@ -345,7 +446,7 @@ runs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   summary: title,
-                  description: body,
+                  description: body + provenance,
                   severity: ['low', 'medium', 'high', 'critical'].includes(candidate.severity)
                     ? candidate.severity
                     : 'medium',
@@ -361,7 +462,7 @@ runs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title,
-              body,
+              body: body + provenance,
               labels,
             });
             existingTitles.add(key);
@@ -370,13 +471,13 @@ runs:
           }
           const already = Number(process.env.ALREADY_FILED || '0');
           const total = already + created;
-          core.info(domain + ' audit published ' + created + ' issue(s) this run; ' + total + '/3 today.');
+          core.info(domain + ' audit published ' + created + ' entr(ies) this run; ' + total + '/3 today.');
           if (total < 3) {
-            // A successful-looking run that filed one issue is a missed day. Failing here
-            // is what makes the health monitor re-dispatch it within six hours; the guard
-            // on that retry sees the shortfall and fills it instead of standing down.
+            // A successful-looking run that published one entry is a missed day. Failing
+            // here is what makes the health monitor re-dispatch it within six hours; the
+            // guard on that retry sees the shortfall and fills it instead of standing down.
             core.setFailed(
-              domain + ' audit filed only ' + total + ' of 3 required issues today (UTC).'
+              domain + ' audit published only ' + total + ' of 3 required entries today (UTC).'
             );
           }
 
@@ -389,4 +490,4 @@ runs:
           /tmp/audit-evidence/**
           /tmp/issues.json
         if-no-files-found: ignore
-        retention-days: 14
+        retention-days: 90

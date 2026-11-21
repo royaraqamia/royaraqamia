@@ -94,6 +94,7 @@ The graph is generated, ignored, and never committed, so a stale one is a local 
 - [Landing the work](docs/agents/landing.md)
 - [Driving the owner's browser](docs/agents/browser.md)
 - [Agent cost & the Go allowance](docs/agents/cost.md)
+- [Audit triage contract](docs/agents/audit-triage.md)
 
 ## Agent skills
 

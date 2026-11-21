@@ -4,6 +4,11 @@
 
 Accepted (2026-11-19).
 
+_Amended by [ADR 0210](0210-an-audit-report-is-a-log-not-an-issue.md): reports
+are dated comments on one rolling issue per domain, the day guard counts entries
+rather than issues, and a never-run workflow has a schedule-aware clock. The
+cadence and the evidence bar are unchanged._
+
 ## Context
 
 The generic Issue Planner reviewed the whole repository once a day and filed three

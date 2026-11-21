@@ -34,6 +34,10 @@ Write `/tmp/issues.json` with the Write tool. Nothing else you say is read. The 
   other two are either a `finding` (a reproduced defect/gap/risk) or a `report` for a
   distinct subsystem whose check was clean. A clean report is evidence, not filler: it
   carries the commands you ran and what they returned.
+- `kind` decides where an entry lands. A `finding` becomes its own issue. A `report`
+  is appended as a dated comment to this domain's rolling report issue, not filed as
+  work: the tracker holds findings only. Write reports for coverage and rotation,
+  never as a way to fill a quota with prose.
 - A `finding` needs `confidence: "high"` and at least two independent pieces of evidence
   (for example the line in source and the runtime output, or the policy SQL and the
   request it allowed). A lower-confidence observation belongs in a `report` as an open
@@ -92,8 +96,9 @@ What "reproduce" means by claim:
 You cannot honestly inspect the entire codebase in one 45-minute run, and claiming you did
 is the failure this rule exists to prevent. Work like this:
 
-1. Read `<current-state>` and find your own last three daily report issues (same label).
-   Choose a subsystem, route group or Android surface those reports did **not** cover.
+1. Read `recentReports` in `<current-state>` — your domain's last three daily
+   reports, now dated comments on its rolling report issue. Choose a subsystem,
+   route group or Android surface those reports did **not** cover.
 2. Inspect that focus deeply, on both clients, until you have at least five checks with
    commands and results. Follow callers and data flow; do not just grep for a keyword.
 3. In the daily report, list **checked** areas and **deferred** areas explicitly. A reader
@@ -145,9 +150,11 @@ the areas deferred.
 
 ## Evidence
 The file:line, the exact command, query or capture, and its verbatim result. For a web
-finding include the capture path under /tmp/audit-evidence/ and the measured values. For
-Android include the check:visual output. For Render/Supabase include the request and the
-redacted response. This section is evidence, not prose.
+finding name the capture as `audit-evidence/<file>` (the artifact root) and give the
+measured values. The publisher links the run and the artifact; a bare `/tmp/` path means
+nothing to a reader, so never leave one in a body. For Android include the check:visual
+output. For Render/Supabase include the request and the redacted response. This section is
+evidence, not prose.
 
 ## Task
 The concrete change a senior engineer should make.

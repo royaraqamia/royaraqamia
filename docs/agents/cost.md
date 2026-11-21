@@ -105,6 +105,26 @@ A failed or empty answer reads as "not soft". To change the thresholds, edit the
 `cap-5h-usd` / `cap-weekly-usd` / `cap-monthly-usd` inputs on the gate step of the
 workflow in question.
 
+## Audit cadence review
+
+The six audits are deliberately **not** gated by the soft gate: a budget gate
+could skip a day, which is the one contract ADR-0208 makes absolute. Six full
+toolchains (Chromium, JDK 21, Android SDK, Gradle) install every day, and each
+agent run is bounded at 45 minutes. That spend is real and unbounded by design,
+so it has to be measured rather than assumed.
+
+Read it by workflow with the ledger query above, or for the whole plan with
+`node scripts/agents/usage.mjs gate` (the Console's **Activity → Usage** CSV is
+the wider truth). A `null` `allowance_usd` is an unmeasured step, not zero.
+
+**Review point:** after 30 days of the current cadence, compare the six audit
+workflows' total allowance against the findings that were labelled
+`ready-for-agent` and landed. Decide then whether daily × six domains still
+buys its keep, or whether one deep domain per day or a weekly rotation is the
+better trade. No cadence change is made here: the evidence bar, the six hours
+and the three-entries-a-day contract stay as they are until that measurement
+exists (ADR-0210 decision 7).
+
 ## A refusal is not a repair
 
 A 429, a budget or a capacity refusal is detected before a repair starts and

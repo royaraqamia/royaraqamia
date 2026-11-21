@@ -109,8 +109,8 @@ describe('the specialised audits file only what they reproduced', () => {
     expect(runner).toContain('candidates.slice(0, 3)');
   });
 
-  it('counts the issues actually filed, so a partial day is filled', () => {
-    expect(runner).toContain('if (today.length >= 3 && !force)');
+  it('counts the entries actually published, so a partial day is filled', () => {
+    expect(runner).toContain('if (total >= 3 && !force)');
     expect(runner).toContain('Date.parse(issue.created_at) >= startOfDayUtc.getTime()');
     expect(runner).toContain('created += 1');
     expect(runner).toContain('if (total < 3)');
@@ -122,7 +122,7 @@ describe('the specialised audits file only what they reproduced', () => {
     expect(runner).toContain('existingTitles.has(key)');
     expect(runner).toContain('github.rest.issues.createComment');
     expect(runner).toContain('audit:update:');
-    expect(runner).toContain('[email redacted]');
+    expect(read('scripts/audit/github-helpers.cjs')).toContain('[email redacted]');
     expect(base).toContain('Do not re-file it');
   });
 
