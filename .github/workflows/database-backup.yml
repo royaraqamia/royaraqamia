@@ -87,13 +87,18 @@ jobs:
           aws s3 cp "s3://$R2_BACKUP_BUCKET/database/$ARCHIVE" - \
             --endpoint-url "$R2_ENDPOINT" >/dev/null
           cutoff="$(date -u -d '30 days ago' +%Y-%m-%d)"
-          aws s3 ls "s3://$R2_BACKUP_BUCKET/database/" --endpoint-url "$R2_ENDPOINT" |
-            while read -r day _time _size key; do
+          if listing="$(aws s3 ls "s3://$R2_BACKUP_BUCKET/database/" --endpoint-url "$R2_ENDPOINT" 2>&1)"; then
+            printf '%s\n' "$listing" | while read -r day _time _size key; do
+              if [[ -z "$day" ]]; then continue; fi
               if [[ "$day" < "$cutoff" ]]; then
                 echo "Pruning $key (stored $day)"
                 aws s3 rm "s3://$R2_BACKUP_BUCKET/$key" --endpoint-url "$R2_ENDPOINT"
               fi
             done
+          else
+            echo "::warning title=R2 retention listing unavailable::The scoped token cannot list objects. Configure a 30-day lifecycle rule on database/ in the R2 bucket (see docs/supabase.md)."
+            echo "$listing"
+          fi
 
       - name: Workflow summary
         run: |

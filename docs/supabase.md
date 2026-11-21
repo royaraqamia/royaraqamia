@@ -261,8 +261,11 @@ the `supabase_migrations` schema and data. `scripts/verify-database-dump.mjs`
 fails the run when any file is missing, below its size floor, or when any of
 the five recorded tables is below its row floor; the floors live in
 `scripts/backup-contract.mjs`. The verified directory is compressed, uploaded
-to a dedicated R2 bucket under `database/` with 30-day retention, and checked
-by re-downloading it. A failed upload is a red job with a Telegram notice.
+to a dedicated R2 bucket under `database/`, and checked by re-downloading it.
+A failed upload is a red job with a Telegram notice. Thirty-day retention comes
+from an R2 **lifecycle rule** on the bucket — prefix `database/`, expire objects
+after 30 days — set up once in the dashboard; the workflow prunes older objects
+too when the token can list them, and warns when it cannot.
 
 **One-time setup.** Create a dedicated R2 bucket (not the audio bucket), mint a
 token scoped to object read/write/list/delete under `database/`, and add the
