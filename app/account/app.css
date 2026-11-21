@@ -2,22 +2,63 @@
 
    Loaded by `app/account/layout.tsx`, so it only reaches a visitor on that surface. It carries
    the utilities Account renders and nothing the shell already ships in
-   `app/global.css`: same layer order, same tokens, nothing redefined. */
+   `app/global.css`: same layer order, same tokens, nothing redefined.
+
+   The sources are the files in this subtree's import graph, not whole product
+   directories (issue #1663). A whole-tree `@source` made `/account` compile
+   every Community route and every Leads wizard, and re-emit the shell navbar,
+   for a sheet that renders a profile card. Keep this list to the files a page
+   under /account actually draws; the shell's navbar lives in `global.css`. */
 
 @import '../surface.css';
 
 @source './';
-@source '../community';
 @source '../../frontend/ui/account';
-@source '../../frontend/ui/consultation';
-@source '../../frontend/ui/linksnap';
-@source '../../frontend/ui/project-requests';
-@source '../../frontend/ui/retainers';
-@source '../../frontend/ui/training';
+
+/* Components another surface owns that an account view actually renders. */
 @source '../../frontend/ui/FAQAccordion.tsx';
 @source '../../frontend/ui/Footer.tsx';
 @source '../../frontend/ui/MotionRoot.tsx';
-@source '../../frontend/ui/Navbar.tsx';
 @source '../../frontend/ui/ScrollAnimations.tsx';
-@source '../../frontend/ui/app-shell';
-@source '../../frontend/ui/plans';
+
+/* The edit forms reuse the wizards' step files, not their route layouts. */
+@source '../../frontend/ui/consultation/steps/details-step.tsx';
+@source '../../frontend/ui/consultation/steps/package-step.tsx';
+@source '../../frontend/ui/consultation/steps/slot-step.tsx';
+@source '../../frontend/ui/project-requests/project-request-wizard.tsx';
+@source '../../frontend/ui/project-requests/steps/project-contact-step.tsx';
+@source '../../frontend/ui/project-requests/steps/project-details-step.tsx';
+@source '../../frontend/ui/project-requests/steps/project-type-step.tsx';
+@source '../../frontend/ui/retainers/retainer-request-wizard.tsx';
+@source '../../frontend/ui/retainers/steps/retainer-contact-step.tsx';
+@source '../../frontend/ui/retainers/steps/retainer-needs-step.tsx';
+@source '../../frontend/ui/retainers/steps/retainer-projects-step.tsx';
+@source '../../frontend/ui/training/steps/cohort-step.tsx';
+@source '../../frontend/ui/training/steps/details-step.tsx';
+@source '../../frontend/ui/training/training-application-wizard.tsx';
+@source '../../frontend/ui/plans/pro-price.tsx';
+
+/* /account/links renders the LinkSnap dashboard, not the LinkSnap route. */
+@source '../../frontend/ui/linksnap/analytics-chart-copy.ts';
+@source '../../frontend/ui/linksnap/analytics-chart.tsx';
+@source '../../frontend/ui/linksnap/analytics-export-copy.ts';
+@source '../../frontend/ui/linksnap/bulk-action-bar-copy.ts';
+@source '../../frontend/ui/linksnap/bulk-action-bar.tsx';
+@source '../../frontend/ui/linksnap/csv-export.ts';
+@source '../../frontend/ui/linksnap/dashboard-empty-state.tsx';
+@source '../../frontend/ui/linksnap/link-analytics-content-copy.ts';
+@source '../../frontend/ui/linksnap/link-analytics-content.tsx';
+@source '../../frontend/ui/linksnap/link-analytics-drawer.tsx';
+@source '../../frontend/ui/linksnap/link-dashboard.tsx';
+@source '../../frontend/ui/linksnap/link-edit-dialog-copy.ts';
+@source '../../frontend/ui/linksnap/link-edit-dialog.reducer.ts';
+@source '../../frontend/ui/linksnap/link-edit-dialog.tsx';
+@source '../../frontend/ui/linksnap/link-qr-modal-copy.ts';
+@source '../../frontend/ui/linksnap/link-qr-modal.tsx';
+@source '../../frontend/ui/linksnap/link-row-card-copy.ts';
+@source '../../frontend/ui/linksnap/link-row-card.tsx';
+@source '../../frontend/ui/linksnap/link-row-summary-copy.ts';
+@source '../../frontend/ui/linksnap/link-row-summary.tsx';
+@source '../../frontend/ui/linksnap/linksnap-copy.ts';
+@source '../../frontend/ui/linksnap/linksnap-sync-status.tsx';
+@source '../../frontend/ui/linksnap/loading-skeletons.tsx';
