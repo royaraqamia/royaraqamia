@@ -24,6 +24,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 concurrency:
   group: database-backup
@@ -99,6 +100,13 @@ jobs:
             echo "::warning title=R2 retention listing unavailable::The scoped token cannot list objects. Configure a 30-day lifecycle rule on database/ in the R2 bucket (see docs/supabase.md)."
             echo "$listing"
           fi
+
+      - name: Publish newest archive for the drill
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh variable set LATEST_DB_BACKUP --repo "$GITHUB_REPOSITORY" --body "$ARCHIVE" ||
+            echo "::warning::Cannot publish LATEST_DB_BACKUP; pass the archive name to the drill manually."
 
       - name: Workflow summary
         run: |

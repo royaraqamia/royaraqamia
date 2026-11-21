@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       archive:
-        description: 'Archive key under database/ to drill (default: newest).'
+        description: 'Archive key under database/ (default: LATEST_DB_BACKUP).'
         required: false
         type: string
 
@@ -49,15 +49,11 @@ jobs:
           AWS_DEFAULT_REGION: auto
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
-          DRILL_ARCHIVE: ${{ inputs.archive }}
+          DRILL_ARCHIVE: ${{ inputs.archive || vars.LATEST_DB_BACKUP }}
         run: |
           set -euo pipefail
           archive="$DRILL_ARCHIVE"
-          if [[ -z "$archive" ]]; then
-            archive="$(aws s3 ls "s3://$R2_BACKUP_BUCKET/database/" --endpoint-url "$R2_ENDPOINT" \
-              | awk '{print $4}' | grep '\.tar\.gz$' | sort | tail -1)"
-          fi
-          test -n "$archive"
+          test -n "$archive" || { echo 'No LATEST_DB_BACKUP variable and no archive input.' >&2; exit 1; }
           echo "Drilling $archive"
           aws s3 cp "s3://$R2_BACKUP_BUCKET/database/$archive" \
             "$RUNNER_TEMP/$archive" --endpoint-url "$R2_ENDPOINT"
