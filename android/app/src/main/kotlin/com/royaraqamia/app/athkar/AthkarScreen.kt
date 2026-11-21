@@ -292,6 +292,7 @@ private fun CountButton(
     onClick: () -> Unit,
 ) {
     val shape = RoundedCornerShape(percent = 50)
+    val state = if (complete) AthkarCardUiState.Completed else AthkarCardUiState.AtRest
     val label =
         if (ready) {
             AthkarCopy.COUNT_OF
@@ -321,7 +322,11 @@ private fun CountButton(
                     else RoyColors.primary.copy(alpha = 0.4f),
                     shape,
                 )
-                .clickable(enabled = ready && !complete, onClick = onClick)
+                // A spent counter stays in the semantics tree and reports
+                // Disabled, the way the site's aria-disabled button stays in
+                // the tab order. Neither client hides the control or moves
+                // focus away when the count finishes (#1670).
+                .clickable(enabled = ready && state == AthkarCardUiState.AtRest, onClick = onClick)
                 .padding(horizontal = AthkarMetrics.countPadding),
         horizontalArrangement = Arrangement.spacedBy(AthkarMetrics.countGap),
         verticalAlignment = Alignment.CenterVertically,
