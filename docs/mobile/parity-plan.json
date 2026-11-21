@@ -303,7 +303,7 @@
       "id": "document-only-cut",
       "title": "One client on screen: the document draws every surface until the native set is complete",
       "state": "done",
-      "evidence": "shell/ShellActivity.kt holds NATIVE_SURFACES_VISIBLE false; handOver() opens WebSurface for every route, leaving NativeSurfaces and its visual gates intact for the cutover."
+      "evidence": "shell/ShellActivity.kt holds NATIVE_SURFACES_VISIBLE false: handOver() opens WebSurface for every navigable route and the Custom Tab escape hatch is held too, so the native surface rows describe compiled ports rather than what a member sees. NativeSurfaces and its gates stay intact for the cutover; this cut is online-only by decision, with the blank offline fallback until then."
     },
     {
       "id": "guest-claim",
