@@ -189,6 +189,17 @@ so the caps are on files (ADR-0113, #852).
 - The 25 MB in `shared/contracts/chat.ts` (`CHAT_ATTACHMENT_MAX_BYTES`) is the absolute ceiling a
   deployment may configure, not the effective cap.
 
+## Post image allowances
+
+`post-images` now has the same two storage meters as chat (issue #1691): 100 MB per member and
+500 MB project-wide, both columns on `app_settings` (`post_image_member_bytes`,
+`post_image_project_bytes`). The 5 MB `file_size_limit` on the bucket still bounds one file;
+these bound the count. `private.enforce_post_image_quota` fires when Storage records an object's
+size, so the bytes it sums are the ones Storage kept rather than the upload's declared size.
+`public.post_image_allowance()` is the service's preflight, and the service deletes an object when
+the post that referenced it is tombstoned or its cover is replaced. The chat caps are unchanged;
+the two paths still have separate triggers.
+
 ## Operations
 
 - **pgvector:** `agent_memory_embeddings_1024` holds one vector per saved fact, in

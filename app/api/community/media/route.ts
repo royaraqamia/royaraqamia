@@ -8,7 +8,7 @@ import { MultipartTooLargeError, readMultipartWithin } from '@/backend/transport
 export async function POST(req: NextRequest) {
   try {
     const formData = await readMultipartWithin(req, POST_IMAGE_MAX_BYTES);
-    return toNextResponse(await uploadMedia(formData));
+    return toNextResponse(await uploadMedia(formData, req.headers));
   } catch (error) {
     if (error instanceof MultipartTooLargeError) {
       return toNextResponse(

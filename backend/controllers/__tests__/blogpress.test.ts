@@ -13,9 +13,14 @@ const mockPosts = {
   bulkActionPosts: vi.fn(),
   restorePost: vi.fn(),
 };
+const mockMedia = {
+  uploadImage: vi.fn(),
+  deleteOrphanedImages: vi.fn(),
+};
 const mockRepository = {
   createPost: vi.fn(),
   getPostByClientId: vi.fn(),
+  getPostForUser: vi.fn(),
   updatePost: vi.fn(),
   deletePost: vi.fn(),
   unpublishPost: vi.fn(),
@@ -39,7 +44,7 @@ vi.mock('@/backend/config/identity', async () => {
 
 vi.mock('@/backend/config/blogpress', () => ({
   createBlogpressPostsModule: () => ({ posts: mockPosts, repository: mockRepository }),
-  createBlogpressMediaService: () => ({}),
+  createBlogpressMediaService: () => mockMedia,
 }));
 
 vi.mock('@/backend/config/plans', () => ({
@@ -62,6 +67,7 @@ import {
   saveAndPublishPost,
   unpublishPost,
   updatePost,
+  uploadMedia,
 } from '@/backend/controllers/blogpress';
 import { AppError } from '@/backend/shared/errors';
 import { OwnedItemCapReachedError } from '@/backend/services/plans/usage-service';
@@ -83,6 +89,8 @@ describe('blogpress controller', () => {
       slug: 'hello',
       updatedAt: '2026-10-18T09:00:00.000Z',
     });
+    mockRepository.getPostForUser.mockResolvedValue(null);
+    mockMedia.deleteOrphanedImages.mockResolvedValue(undefined);
     mockRepository.unpublishPost.mockResolvedValue({ slug: 'hello' });
     mockRepository.countPostsInStatus.mockResolvedValue(0);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
@@ -321,6 +329,52 @@ describe('blogpress controller', () => {
         },
       })
     );
+  });
+
+  it('removes the images a deleted post orphaned', async () => {
+    mockRepository.getPostForUser.mockResolvedValue({
+      content: '![cover](https://cdn/storage/v1/object/public/post-images/u-1/old.png)',
+      cover_image: 'https://cdn/storage/v1/object/public/post-images/u-1/cover.png',
+    });
+
+    const result = await deletePost('p-1');
+
+    expect(result).toMatchObject({ status: 200 });
+    expect(mockMedia.deleteOrphanedImages).toHaveBeenCalledWith(
+      {
+        content: '![cover](https://cdn/storage/v1/object/public/post-images/u-1/old.png)',
+        coverImage: 'https://cdn/storage/v1/object/public/post-images/u-1/cover.png',
+      },
+      null,
+      'u-1'
+    );
+  });
+
+  it('answers 403 for a media upload that is not same-origin', async () => {
+    mockMedia.uploadImage.mockResolvedValue({ url: 'https://cdn' });
+
+    const result = await uploadMedia(new FormData(), {
+      get: (name: string) => (name === 'origin' ? 'https://evil.example' : null),
+    } as Headers);
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 403,
+        body: { success: false, error: 'طلب غير مسموح' },
+      })
+    );
+    expect(mockMedia.uploadImage).not.toHaveBeenCalled();
+  });
+
+  it('uploads a same-origin media request', async () => {
+    mockMedia.uploadImage.mockResolvedValue({ url: 'https://cdn' });
+
+    const result = await uploadMedia(new FormData(), {
+      get: (name: string) => (name === 'sec-fetch-site' ? 'same-origin' : null),
+    } as Headers);
+
+    expect(result).toMatchObject({ status: 200, body: { url: 'https://cdn' } });
+    expect(mockMedia.uploadImage).toHaveBeenCalledWith(expect.any(FormData), 'u-1');
   });
 });
 
