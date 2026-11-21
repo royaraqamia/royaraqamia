@@ -26,12 +26,9 @@ import { Badge } from '@/frontend/ui/primitives/badge';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import type { ScannedCertificateState } from '@/frontend/state/scan/use-scanned-certificate';
-import {
-  SCAN_RESULT_KIND_LABELS,
-  contactName,
-  truncateForDisplay,
-  type ScanClassification,
-} from '@/shared/contracts/scan';
+import { contactName, truncateForDisplay, type ScanClassification } from '@/shared/contracts/scan';
+import { SCAN_COPY } from './scan-copy';
+import { scanActionLabel, scanKindLabel } from './scan-labels';
 
 /**
  * The Certificate card belongs to the verify surface and drags its motion
@@ -72,28 +69,30 @@ function detailRows(classification: ScanClassification): DetailRow[] {
   if (classification.wifi) {
     const { ssid, password, encryption, hidden } = classification.wifi;
     return [
-      { icon: Wifi, label: 'اسم الشَّبكة', value: ssid },
-      ...(password ? [{ icon: KeyRound, label: 'كلمة المرور', value: password, ltr: true }] : []),
-      ...(encryption
-        ? [{ icon: ShieldAlert, label: 'نوع التَّشفير', value: encryption, ltr: true }]
+      { icon: Wifi, label: SCAN_COPY.wifiNetwork, value: ssid },
+      ...(password
+        ? [{ icon: KeyRound, label: SCAN_COPY.wifiPassword, value: password, ltr: true }]
         : []),
-      ...(hidden ? [{ icon: Wifi, label: 'شبكة مخفيَّة', value: 'نعم' }] : []),
+      ...(encryption
+        ? [{ icon: ShieldAlert, label: SCAN_COPY.wifiEncryption, value: encryption, ltr: true }]
+        : []),
+      ...(hidden ? [{ icon: Wifi, label: SCAN_COPY.wifiHidden, value: SCAN_COPY.yes }] : []),
     ];
   }
 
   if (classification.otp) {
     const { issuer, label, type, secret } = classification.otp;
     return [
-      ...(issuer ? [{ icon: KeyRound, label: 'الجهة', value: issuer }] : []),
-      ...(label ? [{ icon: KeyRound, label: 'الحساب', value: label }] : []),
-      { icon: KeyRound, label: 'النَّوع', value: type, ltr: true },
-      { icon: KeyRound, label: 'المفتاح السِّرِّي', value: secret, ltr: true },
+      ...(issuer ? [{ icon: KeyRound, label: SCAN_COPY.otpIssuer, value: issuer }] : []),
+      ...(label ? [{ icon: KeyRound, label: SCAN_COPY.otpAccount, value: label }] : []),
+      { icon: KeyRound, label: SCAN_COPY.otpType, value: type, ltr: true },
+      { icon: KeyRound, label: SCAN_COPY.otpSecret, value: secret, ltr: true },
     ];
   }
 
   if (classification.kind === 'contact') {
     const name = contactName(classification.value);
-    return name ? [{ icon: Contact, label: 'الاسم', value: name }] : [];
+    return name ? [{ icon: Contact, label: SCAN_COPY.contactName, value: name }] : [];
   }
 
   return [];
@@ -156,7 +155,7 @@ export function ScanResultCard({
         <div data-visual="result-badges" className="flex flex-wrap items-center gap-2">
           <Badge variant="glow" className="gap-1.5">
             <KindIcon className="size-3.5" />
-            {SCAN_RESULT_KIND_LABELS[classification.kind]}
+            {scanKindLabel(classification.kind)}
           </Badge>
           <Badge variant="outline" dir="ltr">
             {formatLabel}
@@ -185,7 +184,7 @@ export function ScanResultCard({
 
             {classification.host && (
               <p className="text-xs text-muted-foreground">
-                الوجهة الحقيقيَّة:{' '}
+                {SCAN_COPY.destination}{' '}
                 <span dir="ltr" className="font-mono font-semibold text-foreground">
                   {classification.host}
                 </span>
@@ -198,8 +197,7 @@ export function ScanResultCard({
                 className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
               >
                 <ShieldAlert className="mt-0.5 size-4 shrink-0" />
-                هذا الرَّابط يخفي وجهته الحقيقيَّة: نطاق مُشابه أو معلومات دخول مضمَّنة. لا تُدخِل عليه أيَّ
-                بيانات.
+                {SCAN_COPY.deceptive}
               </p>
             )}
 
@@ -209,8 +207,7 @@ export function ScanResultCard({
                 className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400"
               >
                 <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-                الماسح لا يفتح روابط من نوع «{classification.refusedScheme}» لأنَّها قد تُنفِّذ أوامر على
-                جهازك.
+                {SCAN_COPY.refusedScheme.replace('{scheme}', classification.refusedScheme)}
               </p>
             )}
 
@@ -228,7 +225,7 @@ export function ScanResultCard({
                     </dd>
                     <CopyButton
                       value={row.value}
-                      label={`نسخ ${row.label}`}
+                      label={SCAN_COPY.copyRow.replace('{label}', row.label)}
                       copied={copied}
                       onCopy={(value) => void copy(value)}
                     />
@@ -242,15 +239,14 @@ export function ScanResultCard({
         {certificate.status === 'loading' && (
           <p className="flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
             <Loader2 className="size-3.5 animate-spin" />
-            جاري التَّحقُّق من الشَّهادة…
+            {SCAN_COPY.verifying}
           </p>
         )}
 
         {certificate.status === 'unavailable' && (
           <p className="text-xs text-muted-foreground">
-            تعذَّر جلب بيانات الشَّهادة الآن
-            {certificate.message ? ` (${certificate.message})` : ''}. يمكنك فتح الرَّابط للتَّحقُّق
-            مباشرة.
+            {SCAN_COPY.certificateUnavailable}
+            {certificate.message ? ` (${certificate.message})` : ''}. {SCAN_COPY.certificateHint}
           </p>
         )}
 
@@ -263,7 +259,7 @@ export function ScanResultCard({
                   ? { target: '_blank', rel: 'noopener noreferrer external' }
                   : {})}
               >
-                {classification.actionLabel}
+                {scanActionLabel(classification.actionHref)}
                 {isExternalLink && <ExternalLink />}
               </a>
             </Button>
@@ -276,12 +272,12 @@ export function ScanResultCard({
             onClick={() => void copy(classification.value)}
           >
             {copied === classification.value ? <Check className="text-emerald-600" /> : <Copy />}
-            نسخ المحتوى
+            {SCAN_COPY.copy}
           </Button>
 
           <Button data-visual="result-rescan" type="button" variant="ghost" onClick={onRescan}>
             <RefreshCw />
-            مسح رمز آخر
+            {SCAN_COPY.rescan}
           </Button>
         </div>
       </CardContent>

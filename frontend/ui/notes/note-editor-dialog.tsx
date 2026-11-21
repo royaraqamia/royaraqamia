@@ -20,6 +20,7 @@ import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { NoteBodyEditor } from './note-body-editor';
+import { NOTES_EDITOR_COPY } from './notes-editor-copy';
 
 const AUTOSAVE_DELAY_MS = 500;
 
@@ -140,7 +141,7 @@ function NoteEditorDialogBody({
 
   return (
     <Dialog open onOpenChange={(next) => (next ? undefined : onClose())}>
-      <DialogContent phone="sheet">
+      <DialogContent phone="sheet" aria-label={NOTES_EDITOR_COPY.back}>
         <DialogHeader>
           <DialogTitle className="text-center">الملاحظة</DialogTitle>
         </DialogHeader>
@@ -171,7 +172,7 @@ function NoteEditorDialogBody({
           data-visual="notes-editor"
           className="flex min-w-0 flex-col gap-1.5 max-sm:min-h-0 max-sm:flex-1"
         >
-          <Label htmlFor="note-body">النَّصّ</Label>
+          <Label htmlFor="note-body">{NOTES_EDITOR_COPY.editorLabel}</Label>
           <div
             data-visual="notes-editor-body"
             className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-input/80 bg-background/80"
@@ -185,8 +186,9 @@ function NoteEditorDialogBody({
           </div>
 
           <p data-slot="composer-meta" className="text-[11px] text-muted-foreground">
-            {wordCount > 0 ? `${wordCount} كلمة · ` : ''}
-            آخر تعديل {calculateTimeAgo(note.updatedAt)} · يُحفظ تلقائيًّا
+            {wordCount > 0 ? `${wordCount} ${NOTES_EDITOR_COPY.word} · ` : ''}
+            {NOTES_EDITOR_COPY.lastEdit} {calculateTimeAgo(note.updatedAt)} ·{' '}
+            {NOTES_EDITOR_COPY.autosaves}
           </p>
         </div>
 
@@ -201,7 +203,7 @@ function NoteEditorDialogBody({
 
       <ConfirmDialog
         open={confirmOpen}
-        title="حذف الملاحظة؟"
+        title={`${NOTES_EDITOR_COPY.delete}؟`}
         message={`سيُحذف «${noteName(note.body) || 'ملاحظة بلا نصّ'}» من هذا الجهاز، ومن أجهزتك الأخرى عند المزامنة. يمكنك التَّراجع عنه بعد الحذف لثوانٍ.`}
         confirmLabel="حذف"
         cancelLabel="إلغاء"

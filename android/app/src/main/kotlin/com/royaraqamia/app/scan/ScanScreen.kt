@@ -33,11 +33,16 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -55,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -67,6 +73,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -237,7 +244,7 @@ fun ScanScreen(
                 status = ScanStatus.Starting
             } else {
                 status = ScanStatus.Idle
-                message = ScanMessages.PERMISSION_DENIED
+                message = ScanCopy.PERMISSION_DENIED_APP
             }
         }
 
@@ -245,7 +252,7 @@ fun ScanScreen(
     fun startScanning() {
         message = null
         if (!hasCamera) {
-            message = ScanMessages.NO_CAMERA
+            message = ScanCopy.NO_CAMERA
             status = ScanStatus.Idle
             return
         }
@@ -269,8 +276,8 @@ fun ScanScreen(
                 val answer = withContext(Dispatchers.IO) { decodePicture(context, uri) }
                 busy = false
                 when (answer) {
-                    PictureAnswer.NotAnImage -> message = ScanMessages.NOT_AN_IMAGE
-                    null -> message = ScanMessages.NO_CODE_IN_IMAGE
+                    PictureAnswer.NotAnImage -> message = ScanCopy.NOT_AN_IMAGE
+                    null -> message = ScanCopy.NO_CODE_IN_IMAGE
                     is PictureAnswer.Found -> accept(answer.hit)
                 }
             }
@@ -338,7 +345,7 @@ fun ScanScreen(
                     main.post {
                         if (controller.value != null) {
                             stopCamera()
-                            message = ScanMessages.CAMERA_FAILED
+                            message = ScanCopy.CAMERA_FAILED
                         }
                     }
                 },
@@ -421,7 +428,7 @@ internal fun ScanView(
         verticalArrangement = Arrangement.spacedBy(ScanMetrics.titleToCard),
     ) {
         Text(
-            text = ScanMessages.TITLE,
+            text = ScanCopy.TITLE,
             style =
                 type.h1.copy(
                     fontSize = ScanMetrics.titleSize,
@@ -502,10 +509,9 @@ internal fun ScanView(
                                         ),
                                 ) {
                                     if (status == ScanStatus.Starting) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(18.dp),
-                                            strokeWidth = 2.dp,
-                                            color = RoyColors.primaryForeground,
+                                        ScanSpinner(
+                                            size = 18.dp,
+                                            tint = RoyColors.primaryForeground,
                                         )
                                     } else {
                                         Icon(
@@ -517,9 +523,9 @@ internal fun ScanView(
                                     Text(
                                         text =
                                             if (status == ScanStatus.Starting) {
-                                                ScanMessages.STARTING
+                                                ScanCopy.STARTING
                                             } else {
-                                                ScanMessages.START
+                                                ScanCopy.START
                                             },
                                         style =
                                             type.body.copy(fontWeight = FontWeight.Bold),
@@ -528,7 +534,7 @@ internal fun ScanView(
                                 }
                             } else {
                                 Text(
-                                    text = ScanMessages.NO_CAMERA,
+                                    text = ScanCopy.NO_CAMERA,
                                     style = type.xs.copy(lineHeight = 16.sp),
                                     color = Color.White.copy(alpha = 0.8f),
                                     textAlign = TextAlign.Center,
@@ -551,7 +557,7 @@ internal fun ScanView(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = ScanMessages.SCANNING_HINT,
+                                text = ScanCopy.SCANNING_HINT,
                                 style = type.xs.copy(lineHeight = 16.sp),
                                 color = Color.White.copy(alpha = 0.8f),
                             )
@@ -561,18 +567,31 @@ internal fun ScanView(
                             ) {
                                 if (state.torchAvailable) {
                                     TextButton(onClick = onTorch) {
+                                        Icon(
+                                            imageVector =
+                                                if (state.torchOn) LucideVectors.FlashlightOff
+                                                else LucideVectors.Flashlight,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(Recipes.Glyph.sm),
+                                        )
                                         Text(
                                             text =
                                                 if (state.torchOn) {
-                                                    ScanMessages.TORCH_OFF
+                                                    ScanCopy.TORCH_OFF
                                                 } else {
-                                                    ScanMessages.TORCH_ON
-                                                }
+                                                    ScanCopy.TORCH_ON
+                                                },
+                                            modifier = Modifier.padding(start = 6.dp),
                                         )
                                     }
                                 }
                                 OutlinedButton(onClick = onStop) {
-                                    Text(ScanMessages.STOP)
+                                    Icon(
+                                        imageVector = LucideVectors.Square,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(Recipes.Glyph.sm),
+                                    )
+                                    Text(ScanCopy.STOP, modifier = Modifier.padding(start = 6.dp))
                                 }
                             }
                         }
@@ -602,7 +621,7 @@ internal fun ScanView(
                     verticalArrangement = Arrangement.spacedBy(ScanMetrics.uploadGap),
                 ) {
                     Text(
-                        text = ScanMessages.UPLOAD_HINT,
+                        text = ScanCopy.UPLOAD_HINT,
                         style = type.xs.copy(lineHeight = 16.sp),
                         color = RoyColors.mutedForeground,
                         textAlign = TextAlign.Center,
@@ -633,7 +652,7 @@ internal fun ScanView(
                             )
                         }
                         Text(
-                            text = if (state.busy) ScanMessages.READING else ScanMessages.UPLOAD,
+                            text = if (state.busy) ScanCopy.READING else ScanCopy.UPLOAD,
                             style = type.body.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.padding(start = 10.dp),
                         )
@@ -723,6 +742,7 @@ private fun ScanResultCard(
         }
     val action = classification.actionHref
     val actionLabel = classification.actionLabel
+    var copied by remember(hit) { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth().testTag(ScanMetrics.RESULT_CARD),
@@ -749,6 +769,11 @@ private fun ScanResultCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Icon(
+                        imageVector = scanKindGlyph(classification.kind),
+                        contentDescription = null,
+                        modifier = Modifier.size(Recipes.Glyph.sm),
+                    )
                     Text(
                         text = ScanClassifier.kindLabel(classification.kind),
                         style = type.xs.copy(fontWeight = FontWeight.Bold),
@@ -795,7 +820,7 @@ private fun ScanResultCard(
 
             classification.host?.let { host ->
                 Text(
-                    text = "${ScanMessages.DESTINATION} $host",
+                    text = "${ScanCopy.DESTINATION} $host",
                     style = type.xs.copy(lineHeight = 16.sp),
                     color = RoyColors.mutedForeground,
                     modifier = Modifier.fillMaxWidth(),
@@ -803,24 +828,34 @@ private fun ScanResultCard(
             }
 
             if (classification.deceptive) {
-                Notice(ScanMessages.DECEPTIVE, destructive = true)
+                Notice(ScanCopy.DECEPTIVE, destructive = true)
             }
 
             classification.refusedScheme?.let { scheme ->
-                Notice(ScanMessages.refusedScheme(scheme), destructive = false)
+                Notice(
+                    ScanCopy.REFUSED_SCHEME.replace("{scheme}", scheme),
+                    destructive = false,
+                )
             }
 
             classification.wifi?.let { wifi ->
-                DetailRow(ScanMessages.WIFI_NETWORK, wifi.ssid)
-                wifi.password?.let { DetailRow(ScanMessages.WIFI_PASSWORD, it, ltr = true) }
-                wifi.encryption?.let { DetailRow(ScanMessages.WIFI_ENCRYPTION, it, ltr = true) }
-                if (wifi.hidden) DetailRow(ScanMessages.WIFI_HIDDEN, ScanMessages.YES)
+                DetailRow(ScanCopy.WIFI_NETWORK, wifi.ssid)
+                wifi.password?.let { DetailRow(ScanCopy.WIFI_PASSWORD, it, ltr = true) }
+                wifi.encryption?.let { DetailRow(ScanCopy.WIFI_ENCRYPTION, it, ltr = true) }
+                if (wifi.hidden) DetailRow(ScanCopy.WIFI_HIDDEN, ScanCopy.YES)
             }
 
             classification.otp?.let { otp ->
-                otp.issuer?.let { DetailRow(ScanMessages.OTP_ISSUER, it) }
-                otp.label?.let { DetailRow(ScanMessages.OTP_ACCOUNT, it) }
-                DetailRow(ScanMessages.OTP_TYPE, otp.type, ltr = true)
+                otp.issuer?.let { DetailRow(ScanCopy.OTP_ISSUER, it) }
+                otp.label?.let { DetailRow(ScanCopy.OTP_ACCOUNT, it) }
+                DetailRow(ScanCopy.OTP_TYPE, otp.type, ltr = true)
+                DetailRow(ScanCopy.OTP_SECRET, otp.secret, ltr = true)
+            }
+
+            if (classification.kind == ScanResultKind.Contact) {
+                ScanClassifier.contactName(classification.value)?.let { name ->
+                    DetailRow(ScanCopy.CONTACT_NAME, name)
+                }
             }
 
             FlowRow(
@@ -842,11 +877,25 @@ private fun ScanResultCard(
                         shape = RoyShape.pill,
                         contentPadding = PaddingValues(horizontal = 24.dp),
                     ) {
-                        Text(actionLabel, style = type.body.copy(fontWeight = FontWeight.Bold))
+                        Text(
+                            text = actionLabel,
+                            style = type.body.copy(fontWeight = FontWeight.Bold),
+                            modifier = Modifier.padding(end = if (action?.startsWith("http") == true) 6.dp else 0.dp),
+                        )
+                        if (action?.startsWith("http") == true) {
+                            Icon(
+                                imageVector = LucideVectors.ExternalLink,
+                                contentDescription = null,
+                                modifier = Modifier.size(Recipes.Glyph.sm),
+                            )
+                        }
                     }
                 }
                 OutlinedButton(
-                    onClick = { onCopy(classification.value) },
+                    onClick = {
+                        onCopy(classification.value)
+                        copied = true
+                    },
                     modifier =
                         Modifier.height(ScanMetrics.smallButtonHeight)
                             .testTag(ScanMetrics.RESULT_COPY),
@@ -854,12 +903,12 @@ private fun ScanResultCard(
                     contentPadding = PaddingValues(horizontal = 26.dp),
                 ) {
                     Icon(
-                        imageVector = LucideVectors.Copy,
+                        imageVector = if (copied) LucideVectors.Check else LucideVectors.Copy,
                         contentDescription = null,
                         modifier = Modifier.size(Recipes.Glyph.sm),
                     )
                     Text(
-                        text = ScanMessages.COPY,
+                        text = ScanCopy.COPY,
                         style = type.body.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(start = 10.dp),
                     )
@@ -877,7 +926,7 @@ private fun ScanResultCard(
                         modifier = Modifier.size(Recipes.Glyph.sm),
                     )
                     Text(
-                        text = ScanMessages.RESCAN,
+                        text = ScanCopy.RESCAN,
                         style = type.body.copy(fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(start = 10.dp),
                     )
@@ -1077,42 +1126,36 @@ private fun displayRotation(context: Context): Int =
     }
         .getOrDefault(Surface.ROTATION_0)
 
-/** The page's words, in one place until the gate slice pairs the screen. */
-internal object ScanMessages {
-    const val TITLE = "ماسح QR و Barcode"
-    const val START = "تشغيل الكاميرا"
-    const val STARTING = "جاري تشغيل الكاميرا…"
-    const val STOP = "إيقاف"
-    const val SCANNING_HINT = "وجِّه الرَّمز داخل الإطار…"
-    const val TORCH_ON = "الكشَّاف"
-    const val TORCH_OFF = "إطفاء الكشَّاف"
-    const val UPLOAD_HINT = "أو ارفع صورة تحتوي على الرَّمز"
-    const val UPLOAD = "اختيار صورة"
-    const val READING = "جاري القراءة…"
-    const val RESCAN = "مسح رمز آخر"
-    const val COPY = "نسخ المحتوى"
-    const val DESTINATION = "الوجهة الحقيقيَّة:"
-    const val YES = "نعم"
-    const val WIFI_NETWORK = "اسم الشَّبكة"
-    const val WIFI_PASSWORD = "كلمة المرور"
-    const val WIFI_ENCRYPTION = "نوع التَّشفير"
-    const val WIFI_HIDDEN = "شبكة مخفيَّة"
-    const val OTP_ISSUER = "الجهة"
-    const val OTP_ACCOUNT = "الحساب"
-    const val OTP_TYPE = "النَّوع"
-    const val FIXTURE_PAYLOAD = "royaraqamia.com/scan-fixture"
-    const val DECEPTIVE =
-        "هذا الرَّابط يخفي وجهته الحقيقيَّة: نطاق مُشابه أو معلومات دخول مضمَّنة. لا تُدخِل عليه أيَّ بيانات."
-    const val NO_CAMERA =
-        "لا توجد كاميرا مُتاحة على هذا الجهاز. ارفع صورة للرَّمز بدلًا من ذلك."
-    const val PERMISSION_DENIED =
-        "لم يُسمَح للتَّطبيق بالوصول إلى الكاميرا. فعِّل إذن الكاميرا للتَّطبيق من إعدادات النِّظام، أو ارفع صورة للرَّمز."
-    const val CAMERA_FAILED =
-        "تعذَّر تشغيل الكاميرا. ارفع صورة للرَّمز بدلًا من ذلك."
-    const val NOT_AN_IMAGE = "الملف المختار ليس صورة."
-    const val NO_CODE_IN_IMAGE =
-        "لم نعثر على رمز في هذه الصُّورة. جرِّب صورة أوضح وأقرب للرَّمز."
+/** The glyph the page puts beside each kind's name in the result badge. */
+private fun scanKindGlyph(kind: ScanResultKind) =
+    when (kind) {
+        ScanResultKind.Link -> LucideVectors.Link2
+        ScanResultKind.Email -> LucideVectors.Mail
+        ScanResultKind.Phone -> LucideVectors.Phone
+        ScanResultKind.Sms -> LucideVectors.MessageSquare
+        ScanResultKind.Wifi -> LucideVectors.Wifi
+        ScanResultKind.Contact -> LucideVectors.Contact
+        ScanResultKind.Location -> LucideVectors.MapPin
+        ScanResultKind.Otp -> LucideVectors.KeyRound
+        ScanResultKind.Text -> LucideVectors.Type
+    }
 
-    fun refusedScheme(scheme: String): String =
-        "الماسح لا يفتح روابط من نوع «$scheme» لأنَّها قد تُنفِّذ أوامر على جهازك."
+/** The site's turning `Loader2` while the camera or a picture is being read. */
+@Composable
+private fun ScanSpinner(size: Dp, tint: Color) {
+    val transition = rememberInfiniteTransition(label = "scan-spinner")
+    val angle by
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing), RepeatMode.Restart),
+            label = "scan-spinner-angle",
+        )
+    Icon(
+        imageVector = LucideVectors.Loader2,
+        contentDescription = null,
+        tint = tint,
+        modifier = Modifier.size(size).rotate(angle),
+    )
 }
+

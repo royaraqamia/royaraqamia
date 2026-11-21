@@ -43,6 +43,8 @@ import org.robolectric.annotation.GraphicsMode
     application = android.app.Application::class
 )
 class ScanScreenVisualTest {
+    /** The fixture both clients decode; it is test data, not the screen's copy. */
+    private val fixturePayload = "royaraqamia.com/scan-fixture"
     @get:Rule val compose = createComposeRule()
 
     private fun compose(state: ScanViewState) {
@@ -130,11 +132,13 @@ class ScanScreenVisualTest {
         """
 
 
-    private fun state(message: String? = null) =
+    private fun state(which: ScanVisualState = ScanVisualState.AtRest) =
         ScanViewState(
-            status = ScanStatus.Idle,
-            message = message,
-            hit = null,
+            status = if (which is ScanVisualState.Result) ScanStatus.Result else ScanStatus.Idle,
+            message =
+                if (which is ScanVisualState.Denied) ScanCopy.PERMISSION_DENIED_APP else null,
+            hit =
+                if (which is ScanVisualState.Result) ScanHit(fixturePayload, "QR_CODE") else null,
             busy = false,
             hasCamera = true,
             torchAvailable = false,
@@ -143,13 +147,13 @@ class ScanScreenVisualTest {
 
     @Test
     fun `the scanner at rest records the page's boxes`() {
-        compose(state())
+        compose(state(ScanVisualState.AtRest))
         record("scan", "at-rest", ScanMetrics.CARD, frameElements())
     }
 
     @Test
     fun `the denied scanner records the page's boxes and its sentence`() {
-        compose(state(message = ScanMessages.PERMISSION_DENIED))
+        compose(state(ScanVisualState.Denied))
         val notice =
             """
             "notice": {
@@ -165,12 +169,7 @@ class ScanScreenVisualTest {
 
     @Test
     fun `the result records the page's boxes for the fixture payload`() {
-        compose(
-            state().copy(
-                status = ScanStatus.Result,
-                hit = ScanHit(ScanMessages.FIXTURE_PAYLOAD, "QR_CODE"),
-            )
-        )
+        compose(state(ScanVisualState.Result))
         val elements =
             """
             "title": {

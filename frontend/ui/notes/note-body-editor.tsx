@@ -34,6 +34,7 @@ import {
 import { Button } from '@/frontend/ui/primitives/button';
 import { cn } from '@/frontend/shared/cn';
 import { resolveMentionHandles } from '@/frontend/api/usernames';
+import { NOTES_EDITOR_COPY } from './notes-editor-copy';
 
 const turndown = new TurndownService({
   headingStyle: 'atx',
@@ -134,7 +135,7 @@ interface NoteBodyEditorProps {
 export function NoteBodyEditor({
   initialMarkdown,
   onChange,
-  placeholder = 'اكتب ملاحظتك هنا…',
+  placeholder = NOTES_EDITOR_COPY.newNoteHint,
   id,
   ariaLabel = 'نصّ الملاحظة',
   surfaceClassName = 'min-h-[45vh]',

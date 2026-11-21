@@ -8,6 +8,7 @@ import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Label } from '@/frontend/ui/primitives/label';
 import { NoteBodyEditor } from './note-body-editor';
+import { NOTES_EDITOR_COPY } from './notes-editor-copy';
 
 interface NoteComposerDialogProps {
   open: boolean;
@@ -53,17 +54,17 @@ export function NoteComposerDialog({ open, onOpenChange, onCreate }: NoteCompose
     <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
       <DialogContent phone="sheet">
         <DialogHeader>
-          <DialogTitle className="text-center">ملاحظة جديدة</DialogTitle>
+          <DialogTitle className="text-center">{NOTES_EDITOR_COPY.newNote}</DialogTitle>
         </DialogHeader>
 
         <div className="flex min-w-0 flex-col gap-1.5 max-sm:min-h-0 max-sm:flex-1">
-          <Label htmlFor="composer-note-body">النَّصّ</Label>
+          <Label htmlFor="composer-note-body">{NOTES_EDITOR_COPY.editorLabel}</Label>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-input/80 bg-background/80">
             <NoteBodyEditor
               initialMarkdown=""
               onChange={setBody}
               id="composer-note-body"
-              placeholder="اكتب ملاحظتك هنا…"
+              placeholder={NOTES_EDITOR_COPY.newNoteHint}
               surfaceClassName="min-h-40 max-sm:min-h-0"
             />
           </div>

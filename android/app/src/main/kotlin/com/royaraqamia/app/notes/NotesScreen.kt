@@ -40,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -452,6 +454,11 @@ internal fun NoteEditor(
                 Icon(LucideVectors.ArrowRight, contentDescription = NotesCopy.BACK)
             }
             IconButton(onClick = onDelete) {
+                Icon(
+                    LucideVectors.MoreHorizontal,
+                    contentDescription = null,
+                    tint = RoyColors.mutedForeground,
+                )
                 Icon(LucideVectors.Trash2, contentDescription = NotesCopy.DELETE, tint = RoyColors.destructive)
             }
         }
@@ -485,6 +492,7 @@ internal fun NoteEditor(
                     )
                     .clip(RoundedCornerShape(NotesMetrics.editorBodyRadius))
                     .background(RoyColors.card.copy(alpha = 0.8f))
+                    .semantics { contentDescription = NotesCopy.NEW_NOTE_HINT }
                     .testTag(NotesMetrics.EDITOR_BODY),
         ) {
             Column(Modifier.fillMaxSize()) {

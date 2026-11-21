@@ -1,0 +1,26 @@
+{
+  "surface": "notes",
+  "component": "notes-editor",
+  "web": {
+    "file": "frontend/ui/notes/notes-editor-copy.ts",
+    "export": "NOTES_EDITOR_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/notes/NotesCopy.kt",
+    "object": "NotesCopy"
+  },
+  "notes": {
+    "source": "The notes editor's own labels (#1707). `NotesCopy.kt` carried eight hand-written constants outside every parity row while the page retyped the same words in four components. The generated object keeps the file's name, so the screen reads generated copy and the gate pairs the two sides.",
+    "gate": "`npm run check:copy` fails a stale output and `npm run check:parity` fails a key the page's components do not render."
+  },
+  "strings": {
+    "newNote": "ملاحظة جديدة",
+    "newNoteHint": "اكتب ملاحظتك هنا…",
+    "delete": "حذف الملاحظة",
+    "back": "رجوع",
+    "editorLabel": "النَّصّ",
+    "word": "كلمة",
+    "lastEdit": "آخر تعديل",
+    "autosaves": "يُحفظ تلقائيًّا"
+  }
+}

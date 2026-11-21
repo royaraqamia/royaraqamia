@@ -9,6 +9,12 @@
       "until": "2026-12-21"
     },
     {
+      "surface": "scan",
+      "reason": "The web change is a copy refactor: literals and the contract table's kind and action labels move into one generated copy module with byte-identical rendered values, and the torch label plus the OTP-secret and contact rows are app-side changes that bring the native screen up to the page. No page layout, colour or user-facing word changed, so neither the recorded boxes nor the captures can move. #1707 pairs the two clients and records the visual re-record of the native icons.",
+      "issue": "#1707",
+      "until": "2026-12-21"
+    },
+    {
       "surface": "profile",
       "reason": "The web band's data-visual tag moved to a generated constant with the same rendered value, and its copy source was added for that constant; no layout, colour or user-facing word changed. The profile evidence re-record is carried by #1631.",
       "issue": "#1631",
