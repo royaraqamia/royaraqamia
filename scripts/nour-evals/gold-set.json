@@ -185,8 +185,8 @@
       "userMessage": "Can you explain الفرق بين API و endpoint باختصار؟",
       "reply": "الـ API هو الواجهة أو العقد الكامل الذي يحدّد كيف يتخاطب نظامان: أي طلبات مسموحة، وأي بيانات تُرسل وتُستقبل، وأي تنسيق. أما الـ endpoint فهو مسار واحد محدّد داخل هذه الواجهة، أي عنوان URL معيّن مع نوع الطلب الذي يستقبله. مثال: `https://api.example.com/users` هو endpoint، و`GET /users` و`POST /users` عمليتان مختلفتان على مسار واحد ضمن الـ API نفسه. بعبارة أخرى: كل endpoint جزء من الـ API، وليس كل ما في الـ API endpoint (فيه المصادقة وتنسيق الأخطاء والإصدارات مثلاً).",
       "gold": { "language_fit": 2, "naturalness": 4, "helpfulness": 5 },
-      "hardGate": false,
-      "note": "The question is mostly English; the Arabic answer ignores the dominant language."
+      "hardGate": true,
+      "note": "The question is mostly English; the Arabic answer ignores the dominant language and fails the dominant-language gate."
     },
     {
       "id": "mixed-02",

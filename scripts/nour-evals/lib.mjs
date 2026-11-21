@@ -146,11 +146,7 @@ export function realSystemPrompt(repoRoot) {
 const ARABIC = /[\u0600-\u06FF]/;
 const LATIN = /[A-Za-z]/;
 
-/**
- * Word-based, because an Arabic answer listing API names or certificate titles
- * can contain more Latin letters than Arabic ones and still be an Arabic reply.
- */
-export function detectLanguage(text) {
+function scriptCounts(text) {
   const tokens = text.split(/[\s\d\p{P}\p{S}]+/u).filter(Boolean);
   let ar = 0;
   let en = 0;
@@ -162,8 +158,30 @@ export function detectLanguage(text) {
     ar = (text.match(/[\u0600-\u06FF]/g) ?? []).length;
     en = (text.match(/[A-Za-z]/g) ?? []).length;
   }
+  return { ar, en };
+}
+
+/**
+ * Word-based, because an Arabic answer listing API names or certificate titles
+ * can contain more Latin letters than Arabic ones and still be an Arabic reply.
+ */
+export function detectLanguage(text) {
+  const { ar, en } = scriptCounts(text);
   if (ar > en * 1.2) return 'ar';
   if (en > ar * 1.2) return 'en';
+  return 'mixed';
+}
+
+/**
+ * The majority script, without detectLanguage's neutral band. A case that
+ * declares an expected dominant language is gated on this: a code-switched
+ * reply may keep the member's few technical terms in the other script, but it
+ * cannot answer in the other script's language outright (#1608).
+ */
+export function dominantLanguage(text) {
+  const { ar, en } = scriptCounts(text);
+  if (ar > en) return 'ar';
+  if (en > ar) return 'en';
   return 'mixed';
 }
 
@@ -192,6 +210,13 @@ export function deterministic(reply, expectation) {
   const expected = expectation.language;
   if (expected === 'ar' && actual !== 'ar') failures.push(`language: expected ar, got ${actual}`);
   if (expected === 'en' && actual !== 'en') failures.push(`language: expected en, got ${actual}`);
+
+  const expectedDominant = expectation.expectDominantLanguage;
+  if (expectedDominant) {
+    const dominant = dominantLanguage(reply);
+    if (dominant !== expectedDominant)
+      failures.push(`dominant language: expected ${expectedDominant}, got ${dominant}`);
+  }
 
   if (/[\u0660-\u0669\u06F0-\u06F9]/.test(reply)) failures.push('digits: non-ASCII numerals');
 

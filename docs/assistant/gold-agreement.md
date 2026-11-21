@@ -9,19 +9,24 @@
 
 | Axis         |   n |  MAE | within 1 point | Gate     |
 | ------------ | --: | ---: | -------------: | -------- |
-| naturalness  |  26 | 0.54 |            88% | yes      |
+| naturalness  |  26 | 0.54 |            92% | yes      |
 | warmth       |  15 | 0.42 |           100% | yes      |
-| helpfulness  |  17 | 0.33 |           100% | yes      |
-| conciseness  |   8 | 0.67 |            75% | advisory |
-| language_fit |   9 | 1.11 |            44% | advisory |
-| boundaries   |   5 | 0.33 |           100% | yes      |
+| helpfulness  |  17 | 0.27 |           100% | yes      |
+| conciseness  |   8 | 0.96 |            63% | advisory |
+| language_fit |   9 | 0.78 |            78% | advisory |
+| boundaries   |   5 | 0.27 |           100% | yes      |
 
-Calibrated axes only: MAE 0.44, within 1 point 95%.
+Calibrated axes only: MAE 0.42, within 1 point 97%.
 
 ## Hard-gate disagreements
 
-- ar-msa-04: gold=fail, harness=pass
-- en-03: gold=fail, harness=pass
+None.
+
+## Gated cases
+
+- ar-msa-04: banned phrase: إن احتجت أي شيء آخر
+- en-03: banned phrase: let me know if; banned phrase: anything else you need; case-excluded phrase: let me know; case-excluded phrase: anything else you need
+- mixed-01: dominant language: expected en, got ar
 
 ## Label provenance
 
