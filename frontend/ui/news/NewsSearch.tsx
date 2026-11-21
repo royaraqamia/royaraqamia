@@ -9,6 +9,7 @@ import {
   toReadFailure,
   type ReadFailure,
 } from '@/frontend/ui/shared/read-failure';
+import { SearchField } from '@/frontend/ui/shared/search-field';
 import { newsHref, type NewsView } from '@/frontend/ui/news/news-url';
 import { request } from '@/frontend/transport/http';
 import {
@@ -201,8 +202,7 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
         className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40"
         aria-hidden="true"
       />
-      <input
-        type="text"
+      <SearchField
         value={value}
         disabled={disabled}
         onChange={(event) => setValue(event.target.value)}
@@ -217,8 +217,6 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
         aria-activedescendant={
           showPanel && active >= 0 ? `news-search-option-${active}` : undefined
         }
-        autoComplete="off"
-        className="h-11 w-full rounded-xl border border-border/50 bg-background/60 ps-10 pe-10 text-sm outline-none transition-safe placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
       />
 
       {loading ? (

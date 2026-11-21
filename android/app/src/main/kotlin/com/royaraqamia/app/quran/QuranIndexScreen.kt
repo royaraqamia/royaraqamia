@@ -291,7 +291,7 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit, onFocus:
                     if (query.isEmpty()) {
                         Text(
                             text = QuranIndexCopy.SEARCH_PLACEHOLDER,
-                            color = RoyColors.mutedForeground.copy(alpha = 0.4f),
+                            color = RoyColors.placeholder,
                             fontSize = QuranIndexMetrics.searchTextSize,
                         )
                     }

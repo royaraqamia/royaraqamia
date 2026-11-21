@@ -5,6 +5,7 @@ import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Search, X } from 'lucide-react';
 
 import { loadSearchCorpus } from '@/frontend/api/quran/search';
+import { SearchField } from '@/frontend/ui/shared/search-field';
 import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { quranScreenScope } from './quran-screen-scope';
 import { QURAN_INDEX_COPY } from './quran-index-copy';
@@ -192,8 +193,7 @@ export function QuranSearch({ surahs, search, copy = DEFAULT_COPY }: QuranSearch
           className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40"
           aria-hidden="true"
         />
-        <input
-          type="text"
+        <SearchField
           name="q"
           value={query}
           onChange={(event) => {
@@ -205,13 +205,11 @@ export function QuranSearch({ surahs, search, copy = DEFAULT_COPY }: QuranSearch
           data-visual="quran-search"
           placeholder={copy.placeholder}
           aria-label={copy.label}
-          autoComplete="off"
           // Arabic is the input, so the keyboard should be Arabic; the text is not
           // a name, so no browser autofill. An empty field is RTL, which is what
           // puts the placeholder on the right; once there is a value, `auto` lets
           // a Latin query keep its own direction instead of forcing Arabic's.
           dir={query ? 'auto' : 'rtl'}
-          className="h-11 w-full rounded-xl border border-border/50 bg-background/60 ps-10 pe-10 text-sm outline-none transition-safe placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
         />
 
         {query ? (

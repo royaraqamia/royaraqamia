@@ -146,6 +146,43 @@ describe('the focus ring', () => {
   });
 });
 
+describe('the search hint', () => {
+  const channels = (hsl) => {
+    const argb = hslToArgbValue(hsl);
+    return [(argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff];
+  };
+
+  const luminance = ([red, green, blue]) => {
+    const linear = (value) => {
+      const c = value / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+  };
+
+  const contrast = (foreground, background) => {
+    const [light, dark] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+    return (light + 0.05) / (dark + 0.05);
+  };
+
+  it('is generated for both clients, not just the stylesheet', () => {
+    expect(declarations(renderCss(tokens)).get('--placeholder')).toBe(tokens.color.placeholder);
+    expect(renderKotlin(tokens)).toContain(
+      `const val placeholder: Long = ${hslToArgb(tokens.color.placeholder)}`
+    );
+    expect(renderThemeColors(tokens)).toContain(
+      'val placeholder = Color(DesignTokens.Colors.placeholder.toInt())'
+    );
+  });
+
+  it('clears AA against every surface a search field sits on', () => {
+    const hint = channels(tokens.color.placeholder);
+    for (const surface of ['background', 'card', 'popover']) {
+      expect(contrast(hint, channels(tokens.color[surface]))).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
 describe('renderCss', () => {
   const css = renderCss(tokens);
 

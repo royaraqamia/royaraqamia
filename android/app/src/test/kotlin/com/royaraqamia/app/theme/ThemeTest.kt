@@ -8,7 +8,9 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.pow
 
 /**
  * The theme, held to the token source.
@@ -121,6 +123,14 @@ class ThemeTest {
     }
 
     @Test
+    fun `the search hint clears AA on the app background`() {
+        // The colour the Quran decoration box and the notes field paint their
+        // hint with: one generated token, shared with the site (issue #1648).
+        assertEquals(color(DesignTokens.Colors.placeholder), RoyColors.placeholder)
+        assertTrue(contrast(RoyColors.placeholder, RoyColors.background) >= 4.5f)
+    }
+
+    @Test
     fun `the digit helper swaps the face and nothing else`() {
         val scale = royTypeScale(320f)
         val digits = scale.digits(scale.body)
@@ -158,4 +168,18 @@ class ThemeTest {
     }
 
     private fun color(argb: Long): Color = Color(argb.toInt())
+
+    private fun luminance(color: Color): Float {
+        fun channel(value: Float): Float {
+            val srgb = value.coerceIn(0f, 1f)
+            return if (srgb <= 0.04045f) srgb / 12.92f else ((srgb + 0.055f) / 1.055f).pow(2.4f)
+        }
+        return 0.2126f * channel(color.red) + 0.7152f * channel(color.green) + 0.0722f * channel(color.blue)
+    }
+
+    private fun contrast(foreground: Color, background: Color): Float {
+        val light = maxOf(luminance(foreground), luminance(background))
+        val dark = minOf(luminance(foreground), luminance(background))
+        return (light + 0.05f) / (dark + 0.05f)
+    }
 }

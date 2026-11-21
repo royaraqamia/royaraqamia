@@ -275,7 +275,9 @@ internal fun NotesListSurface(
                         singleLine = true,
                         shape = RoundedCornerShape(NotesMetrics.searchRadius),
                         textStyle = TextStyle(fontFamily = RoyFonts.ui, fontSize = NotesMetrics.searchSize),
-                        placeholder = { Text(NotesListCopy.SEARCH_PLACEHOLDER) },
+                        placeholder = {
+                            Text(NotesListCopy.SEARCH_PLACEHOLDER, color = RoyColors.placeholder)
+                        },
                         leadingIcon = { Icon(LucideVectors.Search, contentDescription = null) },
                         trailingIcon = {
                             if (query.isNotEmpty()) {

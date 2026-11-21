@@ -7,6 +7,7 @@ import { calculateTimeAgo } from '@/frontend/shared/format';
 import { noteName, notePreview } from '@/frontend/shared/notes/text';
 import { cn } from '@/frontend/shared/cn';
 import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
+import { SearchField } from '@/frontend/ui/shared/search-field';
 import { NOTES_LIST_COPY } from './notes-list-copy';
 
 interface NotesListProps {
@@ -39,8 +40,7 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
             className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40"
             aria-hidden="true"
           />
-          <input
-            type="text"
+          <SearchField
             data-visual="notes-search"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
@@ -49,8 +49,6 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
             }}
             placeholder={NOTES_LIST_COPY.searchPlaceholder}
             aria-label={NOTES_LIST_COPY.searchLabel}
-            autoComplete="off"
-            className="h-11 w-full rounded-xl border border-border/50 bg-background/60 ps-10 pe-10 text-sm outline-none transition-safe placeholder:text-muted-foreground/40 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
           />
           {query !== '' && (
             <button
