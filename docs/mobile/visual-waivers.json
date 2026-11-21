@@ -13,6 +13,12 @@
       "reason": "The web band's data-visual tag moved to a generated constant with the same rendered value, and its copy source was added for that constant; no layout, colour or user-facing word changed. The profile evidence re-record is carried by #1631.",
       "issue": "#1631",
       "until": "2026-12-19"
+    },
+    {
+      "surface": "athkar",
+      "reason": "The counter stays the same <button> with the same classes, text and copy: native `disabled` was replaced by `aria-disabled` plus a guarded handler so focus survives completion. No layout, colour or user-facing word changed, and the recorded at-rest states are unfocused, so neither the contract numbers nor the captures can move. The keyboard behaviour is asserted in #1670.",
+      "issue": "#1670",
+      "until": "2026-12-21"
     }
   ]
 }
