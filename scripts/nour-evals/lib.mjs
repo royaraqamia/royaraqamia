@@ -74,7 +74,7 @@ export async function callGateway(
   messages,
   { model = cfg.model, tools, maxTokens, responseFormat } = {}
 ) {
-  const body = { model, stream: true, messages };
+  const body = { model, stream: true, stream_options: { include_usage: true }, messages };
   if (tools?.length) {
     body.tools = tools;
     body.tool_choice = 'auto';
@@ -85,6 +85,9 @@ export async function callGateway(
   let text = '';
   const toolCalls = [];
   const byIndex = new Map();
+  // The gateway reports token counts and cost on the last streamed frame.
+  // Capturing it here makes latency and spend measurable instead of assumed.
+  let usage = null;
   for (const line of raw.split(/\r?\n/)) {
     if (!line.startsWith('data:')) continue;
     const data = line.slice(5).trim();
@@ -95,6 +98,7 @@ export async function callGateway(
     } catch {
       continue;
     }
+    if (payload?.usage && typeof payload.usage === 'object') usage = payload.usage;
     const delta = payload?.choices?.[0]?.delta ?? {};
     if (typeof delta.content === 'string') text += delta.content;
     if (Array.isArray(delta.tool_calls)) {
@@ -109,7 +113,7 @@ export async function callGateway(
     }
   }
   for (const call of byIndex.values()) toolCalls.push(call);
-  return { text: text.trim(), toolCalls };
+  return { text: text.trim(), toolCalls, usage };
 }
 
 /**
