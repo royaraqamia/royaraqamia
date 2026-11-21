@@ -3,6 +3,12 @@
   "notes": "Dated exceptions to the pull-request visual-drift check. A waiver is for a web change that provably does not alter what the surface shows (for example a refactor with no layout or copy change), never for a redesign. It names the surface, why, the issue that carries the decision and the date after which it no longer applies. `npm run check:visual-drift` fails on a malformed or expired waiver.",
   "waivers": [
     {
+      "surface": "notes",
+      "reason": "The only web change is the colour of the keyboard focus ring on the notes row overlay. The recorded at-rest and open-note states are unfocused, and their contract measures boxes, font and radius rather than a ring, so neither the recorded values nor the captures can change. The ring's contrast is asserted against both surfaces by the generated-token test in issue #1696.",
+      "issue": "#1696",
+      "until": "2026-12-21"
+    },
+    {
       "surface": "profile",
       "reason": "The web band's data-visual tag moved to a generated constant with the same rendered value, and its copy source was added for that constant; no layout, colour or user-facing word changed. The profile evidence re-record is carried by #1631.",
       "issue": "#1631",
