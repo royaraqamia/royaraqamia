@@ -91,8 +91,10 @@ moving to a larger instance.
 
 `.github/workflows/memory-watch.yml` reads the memory graph and the restart events from the Render
 API every six hours (`scripts/memory-watch.mjs`), and keeps one issue labelled `origin-memory`: it
-opens on the first OOM restart or a p95 at or above 400 MiB, edits the issue on each later warning,
-and comments and closes it when the origin is calm again. `RENDER_API_KEY` is an Actions secret. The
+opens on the first OOM restart, a p95 at or above 400 MiB, or one `[memory]` sample above 400 MiB,
+edits the issue on each later warning, and comments and closes it when the origin is calm again. The
+per-sample test matters because the 11-20 kill followed a 257 MB reading by 39 seconds — an averaged
+graph would have missed the spike. `RENDER_API_KEY` is an Actions secret. The
 script is read-only against Render and has no dependencies beyond Node's own `fetch`.
 
 ## When to buy the 2 GB plan

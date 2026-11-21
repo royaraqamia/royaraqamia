@@ -82,6 +82,40 @@ describe('a memo', () => {
     expect(reading?.cut).toBeNull();
   });
 
+  it('keeps explicit tabs and manual line breaks', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'word/document.xml',
+      '<w:document><w:body><w:p><w:r><w:t>one</w:t><w:tab/><w:t>two</w:t>' +
+        '<w:br/><w:t>three</w:t><w:cr/><w:t>four</w:t></w:r></w:p></w:body></w:document>'
+    );
+
+    const reading = await readDocumentText(
+      new Uint8Array(await zip.generateAsync({ type: 'uint8array' })),
+      DOCX
+    );
+
+    expect(reading?.text).toContain('one\ttwo\nthree\nfour');
+  });
+
+  it('normalizes cell whitespace and reads cell text outside a paragraph', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'word/document.xml',
+      '<w:document><w:body><w:tbl><w:tr>' +
+        '<w:tc><w:p><w:r><w:t>  البند   الأول  </w:t></w:r></w:p></w:tc>' +
+        '<w:tc>مباشر</w:tc>' +
+        '</w:tr></w:tbl></w:body></w:document>'
+    );
+
+    const reading = await readDocumentText(
+      new Uint8Array(await zip.generateAsync({ type: 'uint8array' })),
+      DOCX
+    );
+
+    expect(reading?.text).toContain('البند الأول | مباشر');
+  });
+
   it('stops at the character ceiling, and says it did', async () => {
     const reading = await readDocumentText(
       await docxDocument(['a'.repeat(DOCUMENT_TEXT_MAX + 20_000)]),
@@ -221,7 +255,7 @@ describe('an archive that asks for too much memory', () => {
     await expect(readDocumentText(bytes, PDF)).rejects.toBeInstanceOf(DocumentReadError);
   });
 
-  it('keeps the whole document inside a one megabyte inflation budget', () => {
+  it('keeps inflated entries and the whole package inside their budgets', () => {
     expect(DOCUMENT_ENTRY_MAX_BYTES).toBe(1024 * 1024);
     expect(DOCUMENT_ARCHIVE_MAX_BYTES).toBe(2 * 1024 * 1024);
   });

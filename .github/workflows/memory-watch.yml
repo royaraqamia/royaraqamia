@@ -65,6 +65,8 @@ jobs:
               '- Memory samples: ' + report.samples,
               '- p95: ' + report.p95Mb + ' MiB (threshold ' + report.thresholdMb + ' MiB)',
               '- Peak: ' + report.maxMb + ' MiB (limit 512 MiB)',
+              '- App samples: ' + report.rssSamples + ', peak ' + report.rssPeakMb +
+                ' MiB, above threshold ' + report.rssOverCount,
               '- OOM restarts: ' + report.oomCount,
               '- Reasons: ' + report.reasons.join('; '),
               '',

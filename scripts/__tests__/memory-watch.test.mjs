@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { summarize } from '../memory-watch.mjs';
+import { rssSamplesFromLogs, summarize } from '../memory-watch.mjs';
 
 const NOW = new Date('2026-11-21T12:00:00Z');
 const mb = (value) => Math.round(value * 1024 * 1024);
@@ -50,6 +50,31 @@ describe('the origin memory watch', () => {
 
     expect(report.alert).toBe(true);
     expect(report.reasons).toContain('p95 410 MiB at or above 400 MiB');
+  });
+
+  it('reads the app memory lines, including a wrapped Render log response', () => {
+    const logs = [
+      {
+        log: {
+          timestamp: '2026-11-21T07:36:00Z',
+          message: '[INFO] [memory] {"rssMb":425,"heapUsedMb":200}',
+        },
+      },
+      { log: { timestamp: '2026-11-21T07:41:00Z', message: '[INFO] [boot] {"rssMb":131}' } },
+    ];
+
+    expect(rssSamplesFromLogs(logs)).toEqual([{ timestamp: '2026-11-21T07:36:00Z', rssMb: 425 }]);
+  });
+
+  it('alerts on one app sample over the threshold even when the graph is calm', () => {
+    const samples = [{ timestamp: '2026-11-21T07:36:00Z', rssMb: 425 }];
+
+    const report = summarize(series([250, 260, 255]), [], { now: NOW, rssSamples: samples });
+
+    expect(report.alert).toBe(true);
+    expect(report.reasons).toContain('1 [memory] sample(s) above 400 MiB');
+    expect(report.rssPeakMb).toBe(425);
+    expect(report.rssOverCount).toBe(1);
   });
 
   it('ignores a failed server that was not killed for memory', () => {

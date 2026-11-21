@@ -5,9 +5,10 @@ import { pathToFileURL } from 'node:url';
  * prints one JSON report. The workflow turns that report into a single GitHub
  * issue; the script itself is read-only and never writes to Render.
  *
- * The threshold is the one already written down in docs/memory-budget.md: a
- * graph that sits above ~400 MB through an ordinary day, or an OOM restart.
- * Neither is a feeling — both come from Render's own metrics and events.
+ * The threshold is the one already written down in docs/memory-budget.md: an
+ * OOM restart, a graph that sits above ~400 MB through an ordinary day, or one
+ * `[memory]` sample above 400 MB. The last one matters because an OOM here was
+ * a single brief spike that the dashboard's averaged graph never showed.
  */
 
 export const DEFAULT_THRESHOLD_MB = 400;
@@ -27,9 +28,34 @@ function megabytes(bytes) {
     : null;
 }
 
+/** Render wraps some list responses in `{service}`, `{event}` or `{log}`. */
+function unwrap(rows) {
+  return rows.map((entry) => entry.service ?? entry.event ?? entry.log ?? entry);
+}
+
+/** The app's own five-minute `[memory]` lines, which catch a brief spike. */
+export function rssSamplesFromLogs(logs) {
+  const samples = [];
+  for (const entry of unwrap(logs)) {
+    const text = String(entry.message ?? '');
+    const match = text.match(/\[memory\]\s*(\{[^}]*\})/);
+    if (!match) continue;
+    try {
+      const rssMb = JSON.parse(match[1]).rssMb;
+      if (typeof rssMb === 'number' && Number.isFinite(rssMb)) {
+        samples.push({ timestamp: entry.timestamp, rssMb });
+      }
+    } catch {
+      // A half-written line is not a sample; the next one arrives in five minutes.
+    }
+  }
+  return samples;
+}
+
 /**
  * Pure half of the watch, so the decision can be tested without network calls.
- * `series` is the `/metrics/memory` response; `events` is the `/events` response.
+ * `series` is the `/metrics/memory` response; `events` is the `/events` response;
+ * `options.rssSamples` is the output of `rssSamplesFromLogs`.
  */
 export function summarize(series, events, options = {}) {
   const thresholdMb = options.thresholdMb ?? DEFAULT_THRESHOLD_MB;
@@ -41,14 +67,20 @@ export function summarize(series, events, options = {}) {
     .map((point) => megabytes(point.value))
     .filter((value) => value !== null);
   const ooms = events
-    .filter((entry) => (entry.type ?? entry.event?.type) === 'server_failed')
-    .filter((entry) => (entry.details ?? entry.event?.details)?.reason?.oomKilled)
-    .map((entry) => entry.timestamp ?? entry.event?.timestamp);
+    .filter((entry) => entry.type === 'server_failed')
+    .filter((entry) => entry.details?.reason?.oomKilled)
+    .map((entry) => entry.timestamp);
+  const rssSamples = options.rssSamples ?? [];
+  const rssOver = rssSamples.filter((sample) => sample.rssMb > thresholdMb);
+  const rssPeak = rssSamples.length === 0 ? null : Math.max(...rssSamples.map((s) => s.rssMb));
 
   const p95Mb = percentile(samples, 0.95);
   const maxMb = samples.length === 0 ? null : Math.max(...samples);
   const reasons = [];
   if (ooms.length > 0) reasons.push(`${ooms.length} OOM restart(s)`);
+  if (rssOver.length > 0) {
+    reasons.push(`${rssOver.length} [memory] sample(s) above ${thresholdMb} MiB`);
+  }
   if (p95Mb !== null && p95Mb >= thresholdMb) {
     reasons.push(`p95 ${p95Mb} MiB at or above ${thresholdMb} MiB`);
   }
@@ -60,6 +92,9 @@ export function summarize(series, events, options = {}) {
     samples: samples.length,
     p95Mb,
     maxMb,
+    rssSamples: rssSamples.length,
+    rssPeakMb: rssPeak,
+    rssOverCount: rssOver.length,
     oomCount: ooms.length,
     oomAt: ooms,
     alert: reasons.length > 0,
@@ -95,9 +130,7 @@ async function main() {
   });
 
   const services = await get('https://api.render.com/v1/services?limit=100', headers);
-  const service = services
-    .map((entry) => entry.service ?? entry)
-    .find((entry) => entry.name === name);
+  const service = unwrap(services).find((entry) => entry.name === name);
   if (!service) throw new Error(`no Render service named ${name}`);
 
   const series = await get(
@@ -113,15 +146,28 @@ async function main() {
     headers
   );
 
-  const report = summarize(
-    series,
-    events.map((entry) => entry.event ?? entry),
-    {
-      now: end,
-      windowHours: hours,
-      thresholdMb,
-    }
+  // The dashboard's memory graph averages over minutes; an OOM here was one
+  // brief spike. The app's own `[memory]` lines are the per-sample witness.
+  const detail = await get(`https://api.render.com/v1/services/${service.id}`, headers);
+  const ownerId = (detail.service ?? detail).ownerId;
+  if (!ownerId) throw new Error(`no owner id for ${name}`);
+  const logs = await get(
+    `https://api.render.com/v1/logs?${new URLSearchParams({
+      ...Object.fromEntries(query),
+      ownerId,
+      resource: service.id,
+      text: '[memory]',
+      limit: '100',
+    })}`,
+    headers
   );
+
+  const report = summarize(series, unwrap(events), {
+    now: end,
+    windowHours: hours,
+    thresholdMb,
+    rssSamples: rssSamplesFromLogs(logs.logs ?? []),
+  });
   console.log(JSON.stringify({ ...report, service: service.name, serviceId: service.id }, null, 2));
 }
 

@@ -244,34 +244,48 @@ function walkWord(xml: string, words: Words): void {
   const stack: string[] = [];
   let cells: string[] = [];
   let paragraphs: string[][] = [];
-  let skipped = 0;
+  let directCellText: string[] = [];
+  let skippedElementsDeep = 0;
+  const inCell = () => stack.includes('tc');
 
   streamXml(
     xml,
     (tag) => {
       stack.push(tag);
-      if (tag === 'delText' || tag === 'instrText') skipped += 1;
-      if (tag === 'tc') paragraphs = [];
-      if (tag === 'p' && stack.includes('tc')) paragraphs.push([]);
+      if (tag === 'delText' || tag === 'instrText') skippedElementsDeep += 1;
+      if (tag === 'tc') {
+        paragraphs = [];
+        directCellText = [];
+      }
+      if (tag === 'p' && inCell()) paragraphs.push([]);
+      // A tab or a manual break is an empty element: no text event will carry
+      // it, so the old tree reader's two cases have to be pushed explicitly.
+      if (skippedElementsDeep === 0 && !inCell()) {
+        if (tag === 'tab') words.push('\t');
+        else if (tag === 'br' || tag === 'cr') words.push('\n');
+      }
     },
     (text) => {
-      if (skipped > 0 || words.full) return;
-      if (stack.includes('tc') && stack.includes('p')) {
-        paragraphs.at(-1)?.push(text);
-      } else if (!stack.includes('tc')) {
+      if (words.full) return;
+      if (inCell()) {
+        // The tree reader's cellTexts used the paragraphs when there were any
+        // and fell back to the whole subtree otherwise — including tracked
+        // deletions, which the body walk skips but the cell walk did not.
+        if (stack.includes('p') && paragraphs.length > 0) paragraphs.at(-1)?.push(text);
+        else directCellText.push(text);
+      } else if (skippedElementsDeep === 0) {
         words.push(text);
       }
     },
     (tag) => {
-      if (tag === 'delText' || tag === 'instrText') skipped -= 1;
+      if (tag === 'delText' || tag === 'instrText') skippedElementsDeep -= 1;
       stack.pop();
       if (tag === 'tc') {
-        cells.push(
-          paragraphs
-            .map((parts) => parts.join(''))
-            .join(' ')
-            .trim()
-        );
+        const text =
+          paragraphs.length > 0
+            ? paragraphs.map((parts) => parts.join('')).join(' ')
+            : directCellText.join('');
+        cells.push(text.replace(/\s+/g, ' ').trim());
       } else if (tag === 'tr') {
         words.push(cells.join(' | '), '\n');
         cells = [];

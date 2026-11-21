@@ -27,10 +27,11 @@ and the max at 425 MB, while the live V8 heap limit is 259 MiB (the blueprint's
    of RSS a heap snapshot cannot see is visible in the log stream the owner
    already reads.
 4. **Give the graph a voice.** `scripts/memory-watch.mjs` reads Render's memory
-   metrics and restart events without dependencies, and
-   `.github/workflows/memory-watch.yml` keeps one issue labelled `origin-memory`
-   — opened on an OOM or a p95 at or above 400 MiB, edited on later warnings,
-   closed when calm.
+   metrics, restart events and the app's own `[memory]` lines without
+   dependencies, and `.github/workflows/memory-watch.yml` keeps one issue
+   labelled `origin-memory` — opened on an OOM, a p95 at or above 400 MiB, or
+   one app sample above 400 MiB; edited on later warnings; closed when calm.
+   The per-sample test is the one that would have seen the 11-20 spike.
 5. **Keep the documented upgrade trigger.** `1c-2g` ($25) is the only Render plan
    that raises the 512 MB wall; `0.5c-512mb` ($7) only adds CPU. If the watch
    opens another issue after these caps land, buy the plan rather than lowering
