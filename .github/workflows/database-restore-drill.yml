@@ -1,0 +1,113 @@
+# Monthly restore drill (#1700). A backup nobody has restored is a hope, so this
+# job replays the newest R2 artifact into a disposable scratch project and fails
+# on any row-count mismatch. The green run and its summary are the record of the
+# last successful restore; no claim in prose substitutes for it.
+#
+# Secrets (all required):
+#   SCRATCH_DB_URL         - direct Postgres URL of a disposable scratch project
+#   SUPABASE_PROJECT_REF   - production ref, used only as a guard against a
+#                            scratch URL that accidentally points at production
+#   R2_*                   - same read credentials as database-backup.yml
+#   TELEGRAM_*             - run-failure notification
+
+name: 'Database Restore Drill'
+
+on:
+  schedule:
+    - cron: '0 3 1 * *'
+  workflow_dispatch:
+    inputs:
+      archive:
+        description: 'Archive key under database/ to drill (default: newest).'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-restore-drill
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    name: Replay newest dump into scratch
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Download newest artifact
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_BACKUP_BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+          DRILL_ARCHIVE: ${{ inputs.archive }}
+        run: |
+          set -euo pipefail
+          archive="$DRILL_ARCHIVE"
+          if [[ -z "$archive" ]]; then
+            archive="$(aws s3 ls "s3://$R2_BACKUP_BUCKET/database/" --endpoint-url "$R2_ENDPOINT" \
+              | awk '{print $4}' | grep '\.tar\.gz$' | sort | tail -1)"
+          fi
+          test -n "$archive"
+          echo "Drilling $archive"
+          aws s3 cp "s3://$R2_BACKUP_BUCKET/database/$archive" \
+            "$RUNNER_TEMP/$archive" --endpoint-url "$R2_ENDPOINT"
+          mkdir -p restore
+          tar -xzf "$RUNNER_TEMP/$archive" -C restore
+          echo "DRILL_ARCHIVE=$archive" >> "$GITHUB_ENV"
+
+      - name: Reset scratch database
+        env:
+          SCRATCH_DB_URL: ${{ secrets.SCRATCH_DB_URL }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          set -euo pipefail
+          if [[ "$SCRATCH_DB_URL" == *"db.${SUPABASE_PROJECT_REF}.supabase.co"* ]]; then
+            echo 'SCRATCH_DB_URL points at production; refusing to drill.' >&2
+            exit 1
+          fi
+          psql --dbname "$SCRATCH_DB_URL" --variable ON_ERROR_STOP=1 \
+            --command 'drop schema if exists public cascade; create schema public;' \
+            --command 'drop role if exists cli_login_postgres;' \
+            --command 'grant all on schema public to postgres, anon, authenticated, service_role;'
+
+      - name: Replay and verify
+        id: drill
+        env:
+          SCRATCH_DB_URL: ${{ secrets.SCRATCH_DB_URL }}
+        run: |
+          set -euo pipefail
+          node scripts/restore-database.mjs --dir restore --db-url "$SCRATCH_DB_URL" | tee drill.log
+          duration="$(grep -o 'in [0-9]*s' drill.log | head -1)"
+          echo "duration=${duration:-unknown}" >> "$GITHUB_OUTPUT"
+
+      - name: Workflow summary
+        run: |
+          {
+            echo '## Database restore drill'
+            echo
+            echo "- Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "- Artifact: $DRILL_ARCHIVE"
+            echo "- Duration: ${{ steps.drill.outputs.duration }}"
+            echo "- Result: passed (row counts matched the artifact and its floors)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -sS --fail-with-body --max-time 30 \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=Database restore drill failed: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
