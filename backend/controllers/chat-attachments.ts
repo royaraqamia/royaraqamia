@@ -19,6 +19,18 @@ export async function sweepChatAttachments(headers: Headers): Promise<HttpResult
 
   try {
     const result = await createChatAttachmentSweepService().run();
+    if (!result.complete) {
+      // The workflow gates on `complete`; this event is the other half of the
+      // remainder's alarm, for a manual run that has no workflow to turn red.
+      Sentry.captureMessage('chat attachment sweep stopped before the bucket was drained', {
+        level: 'warning',
+        extra: {
+          scanned: result.scanned,
+          cursor: result.cursor,
+          bucketObjects: result.bucketObjects,
+        },
+      });
+    }
     return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
   } catch (error) {
     Sentry.captureException(error);

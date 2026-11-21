@@ -431,6 +431,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      chat_attachment_sweep_state: {
+        Row: {
+          bucket: string;
+          last_path: string;
+          swept_at: string | null;
+        };
+        Insert: {
+          bucket: string;
+          last_path?: string;
+          swept_at?: string | null;
+        };
+        Update: {
+          bucket?: string;
+          last_path?: string;
+          swept_at?: string | null;
+        };
+        Relationships: [];
+      };
       chat_attachments: {
         Row: {
           byte_size: number;
@@ -3566,6 +3584,23 @@ export type Database = {
       chat_attachment_bytes_used: {
         Args: Record<string, never>;
         Returns: number;
+      };
+      chat_attachment_sweep_page: {
+        Args: { p_after: string; p_limit: number };
+        Returns: {
+          name: string;
+          size_bytes: number;
+          updated_at: string | null;
+        }[];
+      };
+      chat_attachment_sweep_stats: {
+        Args: Record<string, never>;
+        Returns: {
+          bucket_bytes: number;
+          bucket_objects: number;
+          row_bytes: number;
+          row_objects: number;
+        }[];
       };
       chat_direct_peer: {
         Args: { p_conversation_id: string };
