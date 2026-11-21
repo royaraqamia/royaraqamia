@@ -33,6 +33,7 @@ object DesignTokens {
         const val border: Long = 0xFF35353B
         const val input: Long = 0xFF35353B
         const val ring: Long = 0xFF8F70E6
+        const val focus: Long = 0xFF8F70E6
         const val success: Long = 0xFF16A249
         const val successForeground: Long = 0xFFFFFFFF
         const val warning: Long = 0xFFFFC105

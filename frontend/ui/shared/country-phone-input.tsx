@@ -181,7 +181,7 @@ export function CountryPhoneInput({
         'flex h-full min-h-11 shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-s-xl ps-3 pe-2.5',
         'text-sm font-medium text-foreground transition-colors duration-150 ease-out',
         'hover:bg-accent/40 focus-visible:bg-accent/40 focus-visible:outline-none',
-        'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50',
+        'focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus',
         'disabled:cursor-not-allowed disabled:hover:bg-transparent'
       )}
     >

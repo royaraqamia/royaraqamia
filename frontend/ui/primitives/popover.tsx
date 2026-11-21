@@ -22,7 +22,7 @@ function PopoverTrigger({
     <PopoverPrimitive.Trigger
       data-slot="popover-trigger"
       className={cn(
-        'inline-flex items-center justify-center text-sm font-medium transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center text-sm font-medium transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
         className
       )}
       {...props}
@@ -74,7 +74,7 @@ function PopoverClose({
     <PopoverPrimitive.Close
       data-slot="popover-close"
       className={cn(
-        'text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 focus-visible:ring-offset-background absolute end-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none',
+        'text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-focus focus-visible:ring-offset-background absolute end-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none',
         className
       )}
       {...props}

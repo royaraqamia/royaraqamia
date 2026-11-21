@@ -9,6 +9,7 @@ import {
   fluid,
   generate,
   hslToArgb,
+  hslToArgbValue,
   ownedProperties,
   remToDp,
   renderAndroidColors,
@@ -102,6 +103,45 @@ describe('the source', () => {
     const files = await generate();
     for (const [file, expected] of files) {
       expect(await readFile(path.join(ROOT, file), 'utf8'), file).toBe(expected);
+    }
+  });
+});
+
+describe('the focus ring', () => {
+  /** The 8-bit channels of a generated HSL token, as the browser paints them. */
+  const channels = (hsl) => {
+    const argb = hslToArgbValue(hsl);
+    return [(argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff];
+  };
+
+  /** WCAG relative luminance, from those same channels. */
+  const luminance = ([red, green, blue]) => {
+    const linear = (value) => {
+      const c = value / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+  };
+
+  const contrast = (foreground, background) => {
+    const [light, dark] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+    return (light + 0.05) / (dark + 0.05);
+  };
+
+  it('is generated for both clients, not just the stylesheet', () => {
+    expect(declarations(renderCss(tokens)).get('--focus')).toBe(tokens.color.focus);
+    expect(renderKotlin(tokens)).toContain(
+      `const val focus: Long = ${hslToArgb(tokens.color.focus)}`
+    );
+    expect(renderThemeColors(tokens)).toContain(
+      'val focus = Color(DesignTokens.Colors.focus.toInt())'
+    );
+  });
+
+  it('clears 3:1 against both surfaces it is drawn on', () => {
+    const ring = channels(tokens.color.focus);
+    for (const surface of ['card', 'background']) {
+      expect(contrast(ring, channels(tokens.color[surface]))).toBeGreaterThanOrEqual(3);
     }
   });
 });
