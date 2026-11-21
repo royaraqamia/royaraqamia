@@ -61,10 +61,19 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Checkout
+        # The script requires the shared helper from the workspace. Without a
+        # checkout GITHUB_WORKSPACE has no files and the dead-man's switch
+        # would fail before it could read a single heartbeat.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
       - name: Check heartbeats and recover
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
+            const helpers = require(process.env.GITHUB_WORKSPACE + '/scripts/audit/github-helpers.cjs');
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const ALERT_LABEL = 'opencode:alert';
@@ -74,16 +83,21 @@ jobs:
             // counts: the job hit its own wall, which is a retry's job to answer, not
             // a heartbeat's.
             const FAILED = new Set(['failure', 'timed_out']);
+            // The UTC hour of each workflow's own cron. A target that has never run is
+            // not late before its first scheduled tick; treating "no heartbeat" as
+            // lapsed on day one re-dispatched two workflows before they were due (#1654).
             const targets = [
-              { name: 'Performance Audit', file: 'audit-performance.yml' },
-              { name: 'Security Audit', file: 'audit-security.yml' },
-              { name: 'UI/UX Audit', file: 'audit-ui-ux.yml' },
-              { name: 'Scalability Audit', file: 'audit-scalability.yml' },
-              { name: 'Maintainability Audit', file: 'audit-maintainability.yml' },
-              { name: 'Product Audit', file: 'audit-product.yml' },
+              { name: 'Performance Audit', file: 'audit-performance.yml', scheduleHourUtc: 10, scheduleMinuteUtc: 10 },
+              { name: 'Security Audit', file: 'audit-security.yml', scheduleHourUtc: 11, scheduleMinuteUtc: 10 },
+              { name: 'UI/UX Audit', file: 'audit-ui-ux.yml', scheduleHourUtc: 12, scheduleMinuteUtc: 10 },
+              { name: 'Scalability Audit', file: 'audit-scalability.yml', scheduleHourUtc: 13, scheduleMinuteUtc: 10 },
+              { name: 'Maintainability Audit', file: 'audit-maintainability.yml', scheduleHourUtc: 14, scheduleMinuteUtc: 10 },
+              { name: 'Product Audit', file: 'audit-product.yml', scheduleHourUtc: 15, scheduleMinuteUtc: 10 },
               {
                 name: 'Issue Implementer',
                 file: 'issue-implementer.yml',
+                scheduleHourUtc: 12,
+                scheduleMinuteUtc: 45,
                 // Run history is the weaker proof for this target, twice over. Its six
                 // rounds run as a matrix, so a single round that times out marks the whole
                 // run `failure` after the other five merged; and a run can leave the record
@@ -153,14 +167,33 @@ jobs:
                   !newest || Date.parse(candidate.at) > Date.parse(newest.at) ? candidate : newest,
                 null
               );
-              const ageMs = beat ? Date.now() - Date.parse(beat.at) : Number.POSITIVE_INFINITY;
+              const now = Date.now();
+              // A workflow with no run at all still needs a clock. Its introduction
+              // commit is the earliest point it could have been due; the first
+              // scheduled tick after that is when a silent workflow starts to be late.
+              const commits = (await github.rest.repos.listCommits({
+                owner,
+                repo,
+                path: '.github/workflows/' + target.file,
+                per_page: 100,
+              })).data;
+              const introducedAtMs = commits.length
+                ? Date.parse(commits[commits.length - 1].commit.author.date)
+                : null;
+              const firstAtMs = introducedAtMs
+                ? helpers.firstExpectedAt(target, introducedAtMs).getTime()
+                : null;
+              const ageMs = beat
+                ? now - Date.parse(beat.at)
+                : firstAtMs ? now - firstAtMs : 0;
               return {
                 success,
                 latest,
                 beat,
+                firstAt: firstAtMs ? new Date(firstAtMs).toISOString() : null,
                 inFlight: runs.some((r) => r.status === 'queued' || r.status === 'in_progress'),
-                ageHours: beat ? (ageMs / 3600000).toFixed(1) : 'never',
-                lapsed: !beat || ageMs > STALE_MS,
+                ageHours: (ageMs / 3600000).toFixed(1),
+                lapsed: helpers.isLapsed(beat && beat.at, target, now, STALE_MS, introducedAtMs),
                 failed: latest ? FAILED.has(latest.conclusion) : false,
               };
             };
@@ -176,7 +209,10 @@ jobs:
                     ? 'run ' + state.beat.run.id
                     : 'merged pull request #' + state.beat.number) +
                   ')'
-                : 'no heartbeat on record';
+                : state.firstAt
+                  ? 'no heartbeat on record (' + state.ageHours +
+                    'h since its first scheduled slot, ' + state.firstAt + ')'
+                  : 'no heartbeat on record (no workflow history yet)';
               const latest = state.latest && (!state.success || state.latest.id !== state.success.id)
                 ? '; most recent run ' + state.latest.id + ' (' + state.latest.conclusion +
                   ', `' + state.latest.created_at + '`)'
