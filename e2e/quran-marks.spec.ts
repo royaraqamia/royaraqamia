@@ -41,3 +41,46 @@ test('the silent-letter marks add no advance', async ({ page }) => {
     expect(width).toBeLessThan(measured.fontSize * 0.2);
   }
 });
+
+/**
+ * The marks face is small enough to fetch at paint, but a sura that contains
+ * none of its three code points should not fetch it at all. `preload: false`
+ * is what makes that decision the browser's rather than the build's. Captured
+ * at the reader's measured phone size (393 x 852 @ 2.75), like the audit.
+ */
+test.describe('the marks face on the wire', () => {
+  test.use({
+    viewport: { width: 393, height: 852 },
+    deviceScaleFactor: 2.75,
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  test('a sura with no marks requests no marks face', async ({ page }) => {
+    const requests: string[] = [];
+    page.on('request', (request) => {
+      if (/AmiriQuran/i.test(request.url())) requests.push(request.url());
+    });
+
+    await page.goto('/quran/1');
+    await page.evaluate(() => document.fonts.ready);
+
+    expect(requests).toEqual([]);
+  });
+
+  test('a sura with the marks fetches one face under a kilobyte', async ({ page }) => {
+    const bodies: Promise<number>[] = [];
+    page.on('response', (response) => {
+      if (/AmiriQuran/i.test(response.url())) {
+        bodies.push(response.body().then((body) => body.length));
+      }
+    });
+
+    await page.goto('/quran/2');
+    await page.evaluate(() => document.fonts.ready);
+    const sizes = await Promise.all(bodies);
+
+    expect(sizes).toHaveLength(1);
+    expect(sizes[0]).toBeLessThanOrEqual(1024);
+  });
+});
