@@ -47,6 +47,14 @@
     --border: 240 5% 22%;
     --input: 240 5% 22%;
     --ring: 256 70% 67%;
+    /*
+       The keyboard focus ring, drawn at full strength. Where focus is the only
+       indicator (the note row, the popover controls, the country field), WCAG
+       1.4.11 requires 3:1 against the surface, so no alpha is composed onto this
+       token. The generator asserts the composite against --card and --background;
+       see issue #1696.
+     */
+    --focus: 256 70% 67%;
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
     --warning: 45 100% 51%;

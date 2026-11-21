@@ -105,7 +105,7 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
                   onClick={() => onSelect(note.id)}
                   aria-current={selected ? 'true' : undefined}
                   aria-label={name}
-                  className="absolute inset-0 z-10 rounded-2xl hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                  className="absolute inset-0 z-10 rounded-2xl hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                 />
                 <div className="pointer-events-none relative px-3 py-2.5">
                   <span className="flex items-baseline justify-between gap-2">

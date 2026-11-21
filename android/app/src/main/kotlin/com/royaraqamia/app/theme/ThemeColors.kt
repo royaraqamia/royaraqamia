@@ -35,6 +35,7 @@ object RoyColors {
     val border = Color(DesignTokens.Colors.border.toInt())
     val input = Color(DesignTokens.Colors.input.toInt())
     val ring = Color(DesignTokens.Colors.ring.toInt())
+    val focus = Color(DesignTokens.Colors.focus.toInt())
     val success = Color(DesignTokens.Colors.success.toInt())
     val successForeground = Color(DesignTokens.Colors.successForeground.toInt())
     val warning = Color(DesignTokens.Colors.warning.toInt())
