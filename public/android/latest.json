@@ -1,11 +1,11 @@
 {
-  "versionCode": 20200,
-  "versionName": "1.2.0",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.2.0.apk",
-  "sha256": "0a441b14a0d46d581e93b60318786653b96d7fa719c68fe904085ad2e2cd9c9d",
-  "sizeBytes": 7793678,
+  "versionCode": 20300,
+  "versionName": "1.3.0",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.3.0.apk",
+  "sha256": "8e51f64deedd90d396aaa4208d0a53c38199dea10b463198494021a58a9ed218",
+  "sizeBytes": 9940620,
   "minSupportedVersionCode": 20000,
   "rollout": 100,
-  "notes": "ميزة: إنشاء محادثات جماعية باسم، ودعوة الأعضاء إليها",
-  "releasedAt": "2026-11-02"
+  "notes": "ميزة: صفحة مصادر الأخبار في التطبيق: اختيار المصادر وإدارة مصادرك الخاصة وإضافة مصدر جديد.",
+  "releasedAt": "2026-11-21"
 }
