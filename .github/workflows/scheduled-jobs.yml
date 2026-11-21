@@ -81,9 +81,15 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -sS --fail-with-body --max-time 300 \
+          # Keep the body on both success and a partial run: the logs must show
+          # the bucket's bytes beside the rows' bytes every day, and `complete`
+          # is what turns a partial drain into a red job (#1701).
+          response="$(mktemp)"
+          curl -sS --fail-with-body --max-time 300 -o "$response" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             "${BASE_URL}/api/cron/chat-attachments"
+          cat "$response"
+          jq -e '.complete' "$response"
 
   mcp-catalog:
     name: MCP catalogue mirror

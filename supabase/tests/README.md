@@ -220,6 +220,15 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
 - `chat_attachment_allowance()` answers the caller's day and total plus the project's, which is
   what the composer draws.
 
+`chat_attachment_sweep_test.sql` (#1701):
+
+- A keyset page starts strictly after the persisted name, so a resumed run cannot walk the same
+  object twice.
+- The stats read the bucket's own object count and bytes beside the row-summed bytes the quota
+  counts, which is the divergence the sweep exists to report.
+- The cursor survives an upsert between runs.
+- The page is executable by `service_role` alone and the cursor is not writable by a member.
+
 `habit_reminders_damascus_test.sql` (#604, #1678):
 
 - The reminder window on the Damascus clock: 08:00 is due at 08:00:00 and 08:14:59, not at
@@ -323,6 +332,11 @@ comments beside each assertion; the risk is the settings update between role swi
 Its fixtures now carry `metadata->>'size'` for every object (#1077), which is the one thing the
 trigger reads instead of the row's declared number — if a first run refuses with
 `chat attachment size is unknown`, that is the fixture to look at.
+
+`chat_attachment_sweep_test.sql` (#1701) is unrun for the same reason (no Docker). Its fixtures
+mirror `chat_attachment_allowances_test.sql` (replica-role seeding, `metadata->>'size'`, a rolled-back
+file); the parts most likely to need a first-run adjustment are the `set local role service_role`
+block and the storage triggers' own `NOT NULL` columns on the two seeded objects.
 
 `chat_participants_test.sql` (#840) is unrun for the same reason. The parts most likely to need a
 first-run adjustment are the `current_user` owner check inside the guard (it compares against
