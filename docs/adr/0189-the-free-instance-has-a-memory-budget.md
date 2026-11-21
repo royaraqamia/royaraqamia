@@ -4,6 +4,13 @@ The free Render instance is 0.1 CPU and **512 MB**. ADR-0186 and ADR-0187 spent 
 train and an edge cache); this is the other meter, and it fails harder: an OOM restart drops every
 open assistant stream and every request in flight, where a slow render only waits.
 
+> **Conflict flagged, 2026-11-21.** Decisions 2 and 3 below are superseded by
+> [ADR 0210](0210-a-request-spike-is-bounded-before-the-plan-is-bought.md):
+> the inflated-entry ceilings are now 1 MB per entry and 2 MB across a package,
+> and only one document is read at a time. The shape of the guard is unchanged —
+> refuse before allocating, before the second reader starts — only the numbers
+> moved, after three OOM kills in seven days showed the old ones were too high.
+
 Two paths made the risk concrete:
 
 - **A multipart body before its file check.** `/api/me/avatar` and `/api/community/media` called

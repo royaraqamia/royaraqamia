@@ -75,8 +75,13 @@ export type BootReport = {
 export type MemorySample = {
   rssMb: number;
   heapUsedMb: number;
+  heapTotalMb: number;
   heapLimitMb: number;
   externalMb: number;
+  /** A breakdown of externalMb, not an extra bucket — Node counts buffers in both. */
+  arrayBuffersMb: number;
+  /** RSS not accounted for by V8's heap or reported external memory. */
+  remainderMb: number;
   uptimeMin: number;
 };
 
@@ -118,11 +123,18 @@ export function buildMemorySample(
   heapLimitBytes: number,
   uptimeSeconds: number
 ): MemorySample {
+  const rssMb = megabytes(usage.rss);
+  const heapTotalMb = megabytes(usage.heapTotal);
+  const externalMb = megabytes(usage.external);
+
   return {
-    rssMb: megabytes(usage.rss),
+    rssMb,
     heapUsedMb: megabytes(usage.heapUsed),
+    heapTotalMb,
     heapLimitMb: megabytes(heapLimitBytes),
-    externalMb: megabytes(usage.external),
+    externalMb,
+    arrayBuffersMb: megabytes(usage.arrayBuffers),
+    remainderMb: rssMb - heapTotalMb - externalMb,
     uptimeMin: Math.floor(uptimeSeconds / 60),
   };
 }

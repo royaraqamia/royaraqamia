@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import JSZip from 'jszip';
 
 import {
+  DOCUMENT_ARCHIVE_MAX_BYTES,
   DOCUMENT_ENTRIES_MAX,
   DOCUMENT_ENTRY_MAX_BYTES,
   DOCUMENT_PAGES_MAX,
+  DOCUMENT_PDF_MAX_BYTES,
   DOCUMENT_SHEETS_MAX,
   DOCUMENT_TEXT_MAX,
   DocumentReadError,
@@ -78,6 +80,59 @@ describe('a memo', () => {
     expect(reading?.text).toContain('المبلغ الإجمالي 120 ليرة');
     expect(reading?.text).toContain('البند | المبلغ');
     expect(reading?.cut).toBeNull();
+  });
+
+  it('keeps explicit tabs and manual line breaks', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'word/document.xml',
+      '<w:document><w:body><w:p><w:r><w:t>one</w:t><w:tab/><w:t>two</w:t>' +
+        '<w:br/><w:t>three</w:t><w:cr/><w:t>four</w:t></w:r></w:p></w:body></w:document>'
+    );
+
+    const reading = await readDocumentText(
+      new Uint8Array(await zip.generateAsync({ type: 'uint8array' })),
+      DOCX
+    );
+
+    expect(reading?.text).toContain('one\ttwo\nthree\nfour');
+  });
+
+  it('normalizes cell whitespace and reads cell text outside a paragraph', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'word/document.xml',
+      '<w:document><w:body><w:tbl><w:tr>' +
+        '<w:tc><w:p><w:r><w:t>  البند   الأول  </w:t></w:r></w:p></w:tc>' +
+        '<w:tc>مباشر</w:tc>' +
+        '</w:tr></w:tbl></w:body></w:document>'
+    );
+
+    const reading = await readDocumentText(
+      new Uint8Array(await zip.generateAsync({ type: 'uint8array' })),
+      DOCX
+    );
+
+    expect(reading?.text).toContain('البند الأول | مباشر');
+  });
+
+  it('keeps a nested table in document order', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'word/document.xml',
+      '<w:document><w:body><w:tbl><w:tr>' +
+        '<w:tc><w:p><w:r><w:t>outer</w:t></w:r></w:p>' +
+        '<w:tbl><w:tr><w:tc><w:p><w:r><w:t>inner</w:t></w:r></w:p></w:tc></w:tr></w:tbl>' +
+        '</w:tc>' +
+        '</w:tr></w:tbl></w:body></w:document>'
+    );
+
+    const reading = await readDocumentText(
+      new Uint8Array(await zip.generateAsync({ type: 'uint8array' })),
+      DOCX
+    );
+
+    expect(reading?.text).toContain('outer inner | inner');
   });
 
   it('stops at the character ceiling, and says it did', async () => {
@@ -212,6 +267,24 @@ describe('the list of documents', () => {
 });
 
 describe('an archive that asks for too much memory', () => {
+  it('refuses a PDF larger than the file budget before opening it', async () => {
+    const bytes = new Uint8Array(DOCUMENT_PDF_MAX_BYTES + 1);
+    bytes.set(Buffer.from('%PDF-1.7'));
+
+    await expect(readDocumentText(bytes, PDF)).rejects.toBeInstanceOf(DocumentReadError);
+  });
+
+  it('keeps inflated entries and the whole package inside their budgets', () => {
+    expect(DOCUMENT_ENTRY_MAX_BYTES).toBe(1024 * 1024);
+    expect(DOCUMENT_ARCHIVE_MAX_BYTES).toBe(2 * 1024 * 1024);
+  });
+
+  it('decodes XML entities instead of reading the markup', async () => {
+    const reading = await readDocumentText(await docxDocument(['أحمد & سارة <رؤية>']), DOCX);
+
+    expect(reading?.text).toContain('أحمد & سارة <رؤية>');
+  });
+
   it('refuses an entry larger than the inflation budget', async () => {
     const zip = new JSZip();
     zip.file('word/document.xml', 'a'.repeat(DOCUMENT_ENTRY_MAX_BYTES + 1024));

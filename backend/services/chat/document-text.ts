@@ -1,4 +1,4 @@
-import { XMLParser } from 'fast-xml-parser';
+import { SaxesParser, type SaxesTagPlain } from 'saxes';
 import JSZip from 'jszip';
 import { getDocumentProxy } from 'unpdf';
 
@@ -13,8 +13,8 @@ import { CHAT_DOCUMENT_MIME_TYPES } from '@/shared/contracts/chat';
  * again, or sent anywhere but the bucket it already lives in: what this module
  * returns exists for the one turn that asked.
  *
- * The three readers are pure JavaScript on purpose (unpdf bundles a serverless
- * PDF.js, JSZip opens a zip, and the XML is walked in order). No native build,
+ * The readers are pure JavaScript on purpose (unpdf bundles a serverless
+ * PDF.js, JSZip opens a zip, and the XML is read as events). No native build,
  * no ffmpeg, nothing to compile on the deploy.
  */
 
@@ -28,17 +28,24 @@ export const DOCUMENT_SHEETS_MAX = 5;
  */
 export const DOCUMENT_TEXT_MAX = 100_000;
 /**
- * Bytes one archive entry may inflate to. A memo's `word/document.xml` is far
- * below this; the ceiling is what keeps a zip bomb from turning one upload into
- * gigabytes of XML before the text cap ever sees it.
+ * Bytes one archive entry may inflate to. A memo's `word/document.xml` is a few
+ * kilobytes; this ceiling is what keeps one upload from spending the free
+ * instance's 512 MB on a parser tree (measured: 7.5 MB of XML cost 166 MB of
+ * RSS with the old DOM parser).
  */
-export const DOCUMENT_ENTRY_MAX_BYTES = 8 * 1024 * 1024;
+export const DOCUMENT_ENTRY_MAX_BYTES = 1 * 1024 * 1024;
 /** Inflation across every entry one document reads, not just the largest. */
-export const DOCUMENT_ARCHIVE_MAX_BYTES = 16 * 1024 * 1024;
+export const DOCUMENT_ARCHIVE_MAX_BYTES = 2 * 1024 * 1024;
+/**
+ * A PDF is not a zip: its object graph is bounded by the file, not by an entry
+ * budget, and PDF.js holds the whole document. Above this size the reader
+ * refuses before PDF.js allocates anything.
+ */
+export const DOCUMENT_PDF_MAX_BYTES = 5 * 1024 * 1024;
 /** Entries one package may carry; a normal document is a few dozen. */
 export const DOCUMENT_ENTRIES_MAX = 2_000;
-/** Documents read at once: the free instance has 512 MB, and a parser tree is many times its bytes. */
-const DOCUMENT_READS_MAX = 2;
+/** Documents read at once: the free instance has one 512 MB budget, not two. */
+const DOCUMENT_READS_MAX = 1;
 
 /** What a document says, and the one sentence naming what was left out. */
 export interface DocumentReading {
@@ -67,10 +74,9 @@ let activeReads = 0;
 const waitingReads: Array<() => void> = [];
 
 /**
- * A process-wide ceiling on concurrent document reads. Nothing here streams:
- * PDF.js holds the file and the XML parser holds a tree many times its size, so
- * two large documents at once would spend most of the free instance's 512 MB
- * before either one answers.
+ * A process-wide ceiling on concurrent document reads. PDF.js holds the file
+ * and a parser holds more than its bytes; a second read queues rather than
+ * spending two halves of the free instance's 512 MB at the same time.
  */
 async function withDocumentSlot<T>(work: () => Promise<T>): Promise<T> {
   if (activeReads >= DOCUMENT_READS_MAX) {
@@ -93,7 +99,7 @@ const [PDF_MIME, DOCX_MIME, XLSX_MIME, ODS_MIME, PPTX_MIME] = CHAT_DOCUMENT_MIME
 /**
  * The words of one document, or `null` when it carries none a reader can see —
  * a scanned PDF, an empty memo. The caller owns the sentence each of those
- * states gets, because it knows what the member sent.
+ * states gets, because it knows the member sent.
  *
  * The MIME type decides the reader; the list is `CHAT_DOCUMENT_MIME_TYPES`, so a
  * format the contract accepts is a format this module reads.
@@ -169,6 +175,10 @@ function cutAtCeiling(): string {
 /* ------------------------------------------------------------------ PDF --- */
 
 async function readPdf(bytes: Uint8Array): Promise<DocumentReading | null> {
+  // The page cap bounds the text, not the file's object graph or its embedded
+  // images: refuse a large file before PDF.js holds any of it.
+  if (bytes.byteLength > DOCUMENT_PDF_MAX_BYTES) throw new DocumentReadError('broken');
+
   const pdf = await getDocumentProxy(new Uint8Array(bytes)).catch((error: unknown) => {
     throw refusal(error);
   });
@@ -219,47 +229,94 @@ async function readDocx(bytes: Uint8Array): Promise<DocumentReading | null> {
   if (body === null) throw new DocumentReadError('broken');
 
   const words = new Words();
-  walkWord(parseXml(body), words);
+  walkWord(body, words);
   return words.read();
 }
 
 /**
  * The body of a memo, in order: paragraphs end a line, and a table row is one
  * line with its cells side by side. A tracked deletion and a field's code are
- * not words the author wrote, so neither is read.
+ * not words the author wrote, so neither is read. The XML is fed as events —
+ * no tree is held, which is what keeps a document's bytes from becoming tens
+ * of times their size in RSS.
  */
-function walkWord(nodes: XmlNode[], words: Words): void {
-  for (const node of nodes) {
-    for (const [tag, value] of Object.entries(node)) {
-      if (tag === '#text') {
-        words.push(String(value));
-        continue;
-      }
-      if (tag === ':@') continue;
-      if (tag === 'delText' || tag === 'instrText') continue;
+interface CellAccumulator {
+  paragraphs: string[][];
+  directText: string[];
+  openParagraphs: number;
+  /** Position in the row, reserved when the cell opens so nested cells keep document order. */
+  slot: number;
+}
 
-      const children = value as XmlNode[];
-      if (tag === 'tab') {
-        words.push('\t');
-        continue;
+function isWordSkip(tag: string): boolean {
+  return tag === 'delText' || tag === 'instrText';
+}
+
+function walkWord(xml: string, words: Words): void {
+  // rowCells holds committed text by column; openCells is the stack of cells
+  // whose tags have opened but not closed. A nested cell has its own slot.
+  let rowCells: string[] = [];
+  const openCells: CellAccumulator[] = [];
+  let rowsDeep = 0;
+  let skippedElementsDeep = 0;
+
+  streamXml(
+    xml,
+    (tag) => {
+      if (isWordSkip(tag)) skippedElementsDeep += 1;
+      if (tag === 'tr') rowsDeep += 1;
+      if (tag === 'p') {
+        for (const cell of openCells) {
+          cell.paragraphs.push([]);
+          cell.openParagraphs += 1;
+        }
       }
-      if (tag === 'br' || tag === 'cr') {
-        words.push('\n');
-        continue;
+      if (tag === 'tc') {
+        const slot = rowCells.length;
+        rowCells.push('');
+        openCells.push({ paragraphs: [], directText: [], openParagraphs: 0, slot });
+      }
+      // A tab or a manual break is an empty element: no text event will carry
+      // it. The old tree reader pushed it in the body but elementText ignored
+      // it inside a cell, so cells keep their own text path.
+      if (skippedElementsDeep === 0 && openCells.length === 0) {
+        if (tag === 'tab') words.push('\t');
+        else if (tag === 'br' || tag === 'cr') words.push('\n');
+      }
+    },
+    (text) => {
+      if (words.full) return;
+      // A cell's text is every descendant paragraph, not just its direct
+      // children — the old cellTexts walked the whole subtree. Text inside a
+      // nested cell therefore belongs to both the inner and the outer cell.
+      for (const cell of openCells) {
+        if (cell.openParagraphs > 0) cell.paragraphs.at(-1)?.push(text);
+        else cell.directText.push(text);
+      }
+      if (openCells.length === 0 && skippedElementsDeep === 0) words.push(text);
+    },
+    (tag) => {
+      if (isWordSkip(tag)) skippedElementsDeep -= 1;
+      if (tag === 'p') {
+        for (const cell of openCells) cell.openParagraphs -= 1;
+        if (rowsDeep === 0 && openCells.length === 0 && !words.full) words.push('\n');
+      }
+      if (tag === 'tc') {
+        const cell = openCells.pop();
+        if (!cell) return;
+        rowCells[cell.slot] = cellText(cell.paragraphs, () => cell.directText.join(''));
       }
       if (tag === 'tr') {
-        words.push(cellTexts(children, 'tc').join(' | '), '\n');
-        continue;
+        rowsDeep -= 1;
+        // Only the outermost row is a line. The old reader did not recurse
+        // into a nested tr, so nested rows never flushed the row's cells.
+        if (rowsDeep === 0) {
+          words.push(rowCells.join(' | '), '\n');
+          rowCells = [];
+        }
       }
-      if (tag === 'p') {
-        walkWord(children, words);
-        words.push('\n');
-        continue;
-      }
-      walkWord(children, words);
     }
-    if (words.full) return;
-  }
+  );
 }
 
 /* ------------------------------------------------------------ workbooks --- */
@@ -288,7 +345,7 @@ async function readWorkbook(
 
     const tables = collect(parseXml(content), 'table');
     for (const [index, table] of tables.slice(0, DOCUMENT_SHEETS_MAX).entries()) {
-      pushRows(words, table.attrs['@_name'] ?? `Sheet${index + 1}`, odsRows(table.children));
+      pushRows(words, table.attrs.name ?? `Sheet${index + 1}`, odsRows(table.content));
       if (words.full) break;
     }
     if (tables.length > DOCUMENT_SHEETS_MAX) words.reached(cutSheets(tables.length));
@@ -332,7 +389,37 @@ interface Row {
   cells: string[];
 }
 
-/** The workbook's sheets, in the order they are drawn, resolved to zip paths. */
+/** Every element called `tag`, at any depth, in document order. */
+function collect(nodes: XmlContent, tag: string): XmlNode[] {
+  const found: XmlNode[] = [];
+  const visit = (node: XmlNode | string): void => {
+    if (typeof node === 'string') return;
+    if (node.tag === tag) found.push(node);
+    for (const child of node.content) visit(child);
+  };
+  for (const node of nodes) visit(node);
+  return found;
+}
+
+/** All the words an element holds, wherever they sit inside it. */
+function elementText(nodes: XmlContent): string {
+  let text = '';
+  for (const node of nodes) {
+    text += typeof node === 'string' ? node : elementText(node.content);
+  }
+  return text;
+}
+
+/** The shared cell shape: paragraphs when present, else the whole subtree, then normalize. */
+function cellText(paragraphs: string[][], fallback: () => string): string {
+  const text =
+    paragraphs.length > 0 ? paragraphs.map((parts) => parts.join('')).join(' ') : fallback();
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * The workbook's sheets, in the order they are drawn, resolved to zip paths.
+ */
 async function xlsxSheets(zip: JSZip, budget: ArchiveBudget): Promise<Sheet[]> {
   const workbook = await entryText(zip, XLSX_WORKBOOK, budget);
   const rels = await entryText(zip, XLSX_RELS, budget);
@@ -340,14 +427,14 @@ async function xlsxSheets(zip: JSZip, budget: ArchiveBudget): Promise<Sheet[]> {
 
   const targets = new Map<string, string>();
   for (const relation of collect(parseXml(rels), 'Relationship')) {
-    const id = relation.attrs['@_Id'];
-    const target = relation.attrs['@_Target'];
+    const id = relation.attrs.Id;
+    const target = relation.attrs.Target;
     if (id && target) targets.set(id, target.startsWith('/') ? target.slice(1) : `xl/${target}`);
   }
 
   return collect(parseXml(workbook), 'sheet').map((sheet, index) => ({
-    name: sheet.attrs['@_name'] ?? `Sheet${index + 1}`,
-    path: targets.get(sheet.attrs['@_id'] ?? '') ?? `xl/worksheets/sheet${index + 1}.xml`,
+    name: sheet.attrs.name ?? `Sheet${index + 1}`,
+    path: targets.get(sheet.attrs.id ?? '') ?? `xl/worksheets/sheet${index + 1}.xml`,
   }));
 }
 
@@ -355,59 +442,60 @@ async function xlsxSheets(zip: JSZip, budget: ArchiveBudget): Promise<Sheet[]> {
 async function xlsxStrings(zip: JSZip, budget: ArchiveBudget): Promise<string[]> {
   const xml = await entryText(zip, XLSX_SHARED_STRINGS, budget);
   if (xml === null) return [];
-  return collect(parseXml(xml), 'si').map((entry) => elementText(entry.children));
+  return collect(parseXml(xml), 'si').map((entry) => elementText(entry.content));
 }
 
-/** A spreadsheet's cells, a shared string resolved to the word it stands for. */
-function xlsxRows(tree: XmlNode[], shared: string[]): Row[] {
-  return collect(tree, 'row').map((row, index) => {
+/** A spreadsheet's cells, one row at a time, with shared strings resolved. */
+function xlsxRows(root: XmlNode[], shared: string[]): Row[] {
+  return collect(root, 'row').map((row, index) => {
     const cells: string[] = [];
-    for (const cell of collect(row.children, 'c')) {
+    for (const cell of collect(row.content, 'c')) {
       const value = cellValue(cell, shared);
       if (value.trim().length > 0) cells.push(value.trim());
     }
-    return { index: row.attrs['@_r'] ?? String(index + 1), cells };
+    return { index: row.attrs.r ?? String(index + 1), cells };
   });
 }
 
 /**
  * A cell's words: the `<v>` value it cached, never the `<f>` formula beside it.
  * A formula cell carries both — `<f>SUM(B1:B3)</f><v>42</v>` — and the whole
- * subtree read as text is `SUM(B1:B3)42`, which is not what the sheet shows.
+ * subtree read as text would be `SUM(B1:B3)42`, which is not what the sheet shows.
  */
-function cellValue(cell: Element, shared: string[]): string {
-  const type = cell.attrs['@_t'];
+function cellValue(cell: XmlNode, shared: string[]): string {
+  const type = cell.attrs.t;
   if (type === 'inlineStr') {
-    return collect(cell.children, 'is')
-      .map((inline) => elementText(inline.children))
+    return collect(cell.content, 'is')
+      .map((entry) => elementText(entry.content))
       .join('');
   }
 
-  const value = collect(cell.children, 'v')
-    .map((cached) => elementText(cached.children))
+  const value = collect(cell.content, 'v')
+    .map((entry) => elementText(entry.content))
     .join('');
   if (type === 's') return shared[Number(value)] ?? '';
   if (type === 'b') return value === '1' ? 'TRUE' : 'FALSE';
   return value;
 }
 
-/** The rows of one ODS table, by the name the sheet gave. */
-function odsRows(nodes: XmlNode[]): Row[] {
+/** The rows of one ODS table, by the name of the sheet that owns them. */
+function odsRows(nodes: XmlContent): Row[] {
   return collect(nodes, 'table-row').map((row, index) => {
-    const cells = cellTexts(row.children, 'table-cell').filter((cell) => cell.length > 0);
+    const cells = cellTexts(row.content, 'table-cell').filter((cell) => cell.length > 0);
     return { index: String(index + 1), cells };
   });
 }
 
-/** The words of each cell in a row, one string apiece. */
-function cellTexts(nodes: XmlNode[], tag: string): string[] {
+/**
+ * A cell's text, one string per paragraph. ODS rows carry no number, so the
+ * position in the row is the index the reader shows.
+ */
+function cellTexts(nodes: XmlContent, tag: string): string[] {
   return collect(nodes, tag).map((cell) => {
-    const paragraphs = collect(cell.children, 'p');
-    const text =
-      paragraphs.length > 0
-        ? paragraphs.map((paragraph) => elementText(paragraph.children)).join(' ')
-        : elementText(cell.children);
-    return text.replace(/\s+/g, ' ').trim();
+    const paragraphs = collect(cell.content, 'p').map((paragraph) => [
+      elementText(paragraph.content),
+    ]);
+    return cellText(paragraphs, () => elementText(cell.content));
   });
 }
 
@@ -431,7 +519,7 @@ async function readSlides(bytes: Uint8Array): Promise<DocumentReading | null> {
     const xml = await entryText(zip, path, budget);
     if (xml === null) continue;
     if (index > 0) words.push('\n\n');
-    walkSlide(parseXml(xml), words);
+    walkSlide(xml, words);
     if (words.full) break;
   }
 
@@ -446,58 +534,117 @@ function slideNumber(path: string): number {
   return Number(PPTX_SLIDE.exec(path)?.[1] ?? 0);
 }
 
-/** A slide's text boxes, in the order the deck paints them. */
-function walkSlide(nodes: XmlNode[], words: Words): void {
-  for (const node of nodes) {
-    for (const [tag, value] of Object.entries(node)) {
-      if (tag === '#text') {
-        words.push(String(value));
-        continue;
-      }
-      if (tag === ':@') continue;
-
-      const children = value as XmlNode[];
-      if (tag === 'p') {
-        walkSlide(children, words);
-        words.push('\n');
-        continue;
-      }
-      walkSlide(children, words);
+/** A slide's text boxes, in the order the deck paints them, read as events. */
+function walkSlide(xml: string, words: Words): void {
+  streamXml(
+    xml,
+    () => undefined,
+    (text) => words.push(text),
+    (tag) => {
+      if (tag === 'p' && !words.full) words.push('\n');
     }
-    if (words.full) return;
-  }
+  );
 }
 
 /* --------------------------------------------------------------- shared --- */
 
 /**
- * An ordered XML tree: one object per element, its children under its own tag,
- * its attributes under `:@`, and its text under `#text`
- * (`fast-xml-parser`'s `preserveOrder` shape). The order is the point — a
- * document's words only read as words in it.
+ * A compact XML event tree for the readers that need attributes and subtrees
+ * (workbooks and ODS). One object per element, its children in document order,
+ * namespace prefixes removed — the same shape everywhere, without the old
+ * object-per-text-node overhead.
  */
-type XmlNode = Record<string, unknown>;
-
-interface Element {
+interface XmlNode {
+  tag: string;
   attrs: Record<string, string>;
-  children: XmlNode[];
+  content: XmlContent;
 }
 
-const XML = new XMLParser({
-  preserveOrder: true,
-  removeNSPrefix: true,
-  ignoreAttributes: false,
-  attributeNamePrefix: '@_',
-  parseTagValue: false,
-  trimValues: false,
-});
+type XmlContent = Array<XmlNode | string>;
+
+function localName(name: string): string {
+  return name.slice(name.lastIndexOf(':') + 1);
+}
+
+function attributesOf(attributes: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    if (key === 'xmlns' || key.startsWith('xmlns:')) continue;
+    out[localName(key)] = value;
+  }
+  return out;
+}
+
+/**
+ * One SAX event stream, shared by both readers. A broken entry is an ordinary
+ * refusal, never a throw from the parser into a route handler.
+ */
+function feedXml(
+  xml: string,
+  onOpen: (tag: SaxesTagPlain) => void,
+  onText: (text: string) => void,
+  onClose: (tag: SaxesTagPlain) => void
+): void {
+  const parser = new SaxesParser();
+  let broken = false;
+
+  parser.on('error', () => {
+    broken = true;
+  });
+  parser.on('opentag', onOpen);
+  parser.on('text', onText);
+  parser.on('cdata', onText);
+  parser.on('closetag', onClose);
+
+  try {
+    parser.write(xml).close();
+  } catch {
+    broken = true;
+  }
+  if (broken) throw new DocumentReadError('broken');
+}
+
+/**
+ * The memo and deck readers feed `Words` straight from parser events — no
+ * tree is held at all. The workbook readers use `parseXml` below for the few
+ * attributes and subtrees they need.
+ */
+function streamXml(
+  xml: string,
+  onOpen: (tag: string) => void,
+  onText: (text: string) => void,
+  onClose: (tag: string) => void
+): void {
+  feedXml(
+    xml,
+    (tag) => onOpen(localName(tag.name)),
+    onText,
+    (tag) => onClose(localName(tag.name))
+  );
+}
 
 function parseXml(xml: string): XmlNode[] {
-  try {
-    return XML.parse(xml) as XmlNode[];
-  } catch {
-    throw new DocumentReadError('broken');
-  }
+  const roots: XmlNode[] = [];
+  const stack: XmlNode[] = [];
+
+  feedXml(
+    xml,
+    (tag) => {
+      const node: XmlNode = {
+        tag: localName(tag.name),
+        attrs: attributesOf(tag.attributes),
+        content: [],
+      };
+      const parent = stack.at(-1);
+      if (parent) parent.content.push(node);
+      else roots.push(node);
+      stack.push(node);
+    },
+    (text) => stack.at(-1)?.content.push(text),
+    () => stack.pop()
+  );
+
+  return roots;
 }
 
 interface ArchiveBudget {
@@ -549,42 +696,4 @@ async function openZip(bytes: Uint8Array): Promise<JSZip> {
   }
 
   return zip;
-}
-
-/** Every element called `tag`, at any depth, in document order. */
-function collect(nodes: XmlNode[], tag: string): Element[] {
-  const found: Element[] = [];
-  visit(nodes, tag, found);
-  return found;
-}
-
-function visit(nodes: XmlNode[], tag: string, found: Element[]): void {
-  for (const node of nodes) {
-    for (const [key, value] of Object.entries(node)) {
-      if (key === '#text' || key === ':@' || !Array.isArray(value)) continue;
-      const children = value as XmlNode[];
-      if (key === tag) {
-        found.push({ attrs: attributesOf(node), children });
-      }
-      visit(children, tag, found);
-      break;
-    }
-  }
-}
-
-function attributesOf(node: XmlNode): Record<string, string> {
-  const attrs = node[':@'];
-  return typeof attrs === 'object' && attrs !== null ? (attrs as Record<string, string>) : {};
-}
-
-/** All the words an element holds, wherever they sit inside it. */
-function elementText(nodes: XmlNode[]): string {
-  let text = '';
-  for (const node of nodes) {
-    for (const [tag, value] of Object.entries(node)) {
-      if (tag === '#text') text += String(value);
-      else if (tag !== ':@') text += elementText(value as XmlNode[]);
-    }
-  }
-  return text;
 }
