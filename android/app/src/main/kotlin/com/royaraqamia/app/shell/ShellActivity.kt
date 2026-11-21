@@ -1384,11 +1384,13 @@ class ShellActivity : ComponentActivity() {
      * surface land on the frame rather than closing the app (ADR-0105).
      *
      * A destination with a native screen stays on the frame when
-     * [NativeSurfaces.isNative] and [NATIVE_SURFACES_VISIBLE] both say so. The hold
-     * is deliberate: the ports stay in the tree and keep their gates, but a member
-     * must not see a half-drawn screen until the native set is complete. A build
-     * below the site's floor never gets there (#652, ADR-0114): every owned route
-     * would answer `426`, so the blocking card is the honest screen rather than a
+     * [NativeSurfaces.isNative] and [NATIVE_SURFACES_VISIBLE] both say so. While the
+     * hold stands, the Custom Tab escape hatch (#661) is held too: a tab that
+     * dismisses back into the frame would put a Compose screen in front of a
+     * member again. The ports stay in the tree and keep their gates; a member must
+     * not see a half-drawn screen until the native set is complete. A build below
+     * the site's floor never gets there (#652, ADR-0114): every owned route would
+     * answer `426`, so the blocking card is the honest screen rather than a
      * document that refuses everything it is asked.
      */
     private fun handOver() {
@@ -1396,8 +1398,9 @@ class ShellActivity : ComponentActivity() {
         if (update.blocksHandover) return
         // The escape hatch outranks the native screen too (#661): the switch
         // exists for the case where the native screen is the broken thing, so a
-        // switched route never reaches NativeSurfaces or the document.
-        if (BrowserEscape.opensInBrowser(stack.route)) {
+        // switched route never reaches NativeSurfaces or the document. The
+        // document-only hold outranks both: there is no native screen to escape.
+        if (NATIVE_SURFACES_VISIBLE && BrowserEscape.opensInBrowser(stack.route)) {
             // One screen opens one tab: the shell re-hands a destination over on
             // several paths (a card, a return from sign-in), and a member who just
             // closed the tab must not be sent straight back into it.
@@ -1408,14 +1411,7 @@ class ShellActivity : ComponentActivity() {
             return
         }
         browserRoute = null
-        // The document-only hold: every route opens the site's page until the
-        // native set is complete. Removing this branch is the whole revert - the
-        // ports and their visual gates stay untouched underneath it.
-        if (!NATIVE_SURFACES_VISIBLE) {
-            document.launch(WebSurface.intentFor(this, stack.current))
-            return
-        }
-        if (NativeSurfaces.isNative(stack.route)) return
+        if (NATIVE_SURFACES_VISIBLE && NativeSurfaces.isNative(stack.route)) return
         document.launch(WebSurface.intentFor(this, stack.current))
     }
 
@@ -1431,6 +1427,7 @@ class ShellActivity : ComponentActivity() {
         // A build below the site's floor is told to update before any destination
         // opens (#652, ADR-0114), and the escape hatch is a destination.
         if (update.blocksHandover) return false
+        if (!NATIVE_SURFACES_VISIBLE) return false
         if (!BrowserEscape.opensInBrowser(route)) return false
         CustomTab.open(this, DeepLink.webUrl(route))
         return true
@@ -1438,9 +1435,11 @@ class ShellActivity : ComponentActivity() {
 
     private companion object {
         /**
-         * Whether the shell may draw its own ports. Held off so the cut ships one
-         * client: the Kotlin screens stay compiled and gated, but the site's page
-         * is what a member sees on every route until the ports are complete.
+         * Whether the shell may draw its own ports or send a surface to a Custom
+         * Tab. Held off so the cut ships one client: the Kotlin screens stay
+         * compiled and gated, but the site's page is what a member sees on every
+         * route until the ports are complete. A below-floor build still sees the
+         * blocking update card.
          */
         const val NATIVE_SURFACES_VISIBLE = false
 
