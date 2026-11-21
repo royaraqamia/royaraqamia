@@ -11,11 +11,13 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as prettier from 'prettier';
-import { arg } from './lib.mjs';
+import { arg, deterministic } from './lib.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(arg('repo', resolve(here, '../..')));
 const gold = JSON.parse(readFileSync(resolve(here, 'gold-set.json'), 'utf8'));
+const suite = JSON.parse(readFileSync(resolve(here, 'suite.json'), 'utf8'));
+const expectations = new Map([...suite.model, ...suite.agent].map((c) => [c.id, c.expect]));
 const report = JSON.parse(
   readFileSync(resolve(root, 'docs/assistant/eval-report-model.json'), 'utf8')
 );
@@ -69,16 +71,30 @@ lines.push(
   ''
 );
 
-const gateDisagreements = gold.cases.filter((entry) => {
-  const actualFail = !byId.get(entry.id).deterministic.pass;
-  return actualFail !== entry.hardGate;
-});
+// The gate is checked on the stored gold reply, not on a fresh model reply:
+// these fixtures are fixed text, and a live run's pass/fail is both stale and
+// noisy. That is what makes a case like mixed-01 a hard gate rather than an
+// advisory axis that happens to pass in one run (#1608).
+const gates = new Map(
+  gold.cases.map((entry) => [
+    entry.id,
+    deterministic(entry.reply, expectations.get(entry.id) ?? {}),
+  ])
+);
+const gateDisagreements = gold.cases.filter(
+  (entry) => !gates.get(entry.id).pass !== entry.hardGate
+);
 lines.push('## Hard-gate disagreements', '');
 if (!gateDisagreements.length) lines.push('None.');
 for (const entry of gateDisagreements) {
+  const gate = gates.get(entry.id);
   lines.push(
-    `- ${entry.id}: gold=${entry.hardGate ? 'fail' : 'pass'}, harness=${byId.get(entry.id).deterministic.pass ? 'pass' : `fail (${byId.get(entry.id).deterministic.failures.join('; ')})`}`
+    `- ${entry.id}: gold=${entry.hardGate ? 'fail' : 'pass'}, gate=${gate.pass ? 'pass' : `fail (${gate.failures.join('; ')})`}`
   );
+}
+lines.push('', '## Gated cases', '');
+for (const entry of gold.cases.filter((c) => c.hardGate)) {
+  lines.push(`- ${entry.id}: ${gates.get(entry.id).failures.join('; ') || 'hard rule'}`);
 }
 lines.push('', '## Label provenance', '', gold.note, gold.labelledBy, '');
 

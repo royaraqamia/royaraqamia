@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-17T20:47:16.468Z",
+  "generatedAt": "2026-11-21T15:35:24.162Z",
   "meta": {
     "tiers": ["model"],
     "model": "deepseek-v4.1-flash",
     "judge": "claude-haiku-5-5",
     "baseline": false,
-    "promptChars": 2857,
+    "promptChars": 3010,
     "runs": 3,
     "judgeOk": "105/105"
   },
@@ -18,13 +18,13 @@
           "slice": "ar-msa",
           "topic": "general",
           "userMessage": "ما الفرق بين الشمس والقمر؟",
-          "reply": "الشمس نجم يتولّد في داخله ضوء وحرارة بفعل الاندماج النووي، أما القمر فجسم صخري لا يشعّ ضوءاً بنفسه وإنما يعكس ضوء الشمس. الشمس أكبر من القمر بكثير جداً، ويبلغ قطرها نحو 109 أضعاف قطر الأرض، بينما قطر القمر نحو ربع قطر الأرض. القمر يدور حول الأرض في نحو شهر، والأرض تدور حول الشمس في سنة. المسافة بيننا وبين الشمس تُقدَّر بنحو 150 مليون كيلومتر، أما القمر فأقرب بكثير ويبدو لنا بحجم الشمس تقريباً لأنه أصغر وأقرب.",
+          "reply": "الشمس نجم يُنتج ضوءه وحرارته بنفسه من اندماج نووي في داخله، أما القمر فجسم صخري معتم يعكس ضوء الشمس ولا يصدر ضوءاً من ذاته.\n\nالشمس أكبر من القمر بنحو 400 مرة في القطر، لكنها أبعد عنه بنحو 400 مرة أيضاً، ولذلك يظهران متقاربين في الحجم من الأرض.\n\nالقمر تابع يدور حول الأرض ويرتبط بها ظاهرياً (المد والجزر، والكسوف والخسوف)، بينما الشمس مركز النظام الشمسي الذي تدور حوله الأرض والقمر معاً.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
-            "warnings": ["length: 5 sentences (soft cap is 4)"],
-            "sentences": 4,
+            "warnings": [],
+            "sentences": 3,
             "actualLanguage": "ar"
           },
           "judge": {
@@ -32,14 +32,54 @@
             "scores": {
               "naturalness": 3.67,
               "warmth": 2.67,
-              "helpfulness": 4.67,
-              "conciseness": 3
+              "helpfulness": 4,
+              "conciseness": 3.67
             },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "الشمس نجم يتولّد في داخله ضوء وحرارة بفعل الاندماج النووي، أما القمر فجسم صخري لا يشعّ ضوءاً بنفسه وإنما يعكس ضوء الشمس. الشمس أكبر من القمر بكثير جداً، ويبلغ قطرها نحو 109 أضعاف قطر الأرض، بينما قطر القمر نحو ربع قطر الأرض. القمر يدور حول الأرض في نحو شهر، والأرض تدور حول الشمس في سنة. المسافة بيننا وبين الشمس تُقدَّر بنحو 150 مليون كيلومتر، أما القمر فأقرب بكثير ويبدو لنا بحجم الشمس تقريباً لأنه أصغر وأقرب.",
+              "reply": "الشمس نجم يُنتج ضوءه وحرارته بنفسه من اندماج نووي في داخله، أما القمر فجسم صخري معتم يعكس ضوء الشمس ولا يصدر ضوءاً من ذاته.\n\nالشمس أكبر من القمر بنحو 400 مرة في القطر، لكنها أبعد عنه بنحو 400 مرة أيضاً، ولذلك يظهران متقاربين في الحجم من الأرض.\n\nالقمر تابع يدور حول الأرض ويرتبط بها ظاهرياً (المد والجزر، والكسوف والخسوف)، بينما الشمس مركز النظام الشمسي الذي تدور حوله الأرض والقمر معاً.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": {
+                  "naturalness": 4,
+                  "warmth": 3,
+                  "helpfulness": 5,
+                  "conciseness": 3
+                },
+                "reason": "The reply is fluent MSA that answers accurately with no preamble or closing filler, but it runs three paragraphs for a simple comparison and has little warmth."
+              }
+            },
+            {
+              "reply": "الشمس نجم يُنتج ضوءه وحرارته بنفسه من اندماج نووي في قلبه، أما القمر فجسم صخري لا يُنتج ضوءاً، بل يعكس ضوء الشمس ويظهر لنا مضيئاً. الشمس أكبر من القمر بنحو 400 مرة، لكنها أبعد عنه بنحو 400 مرة أيضاً، ولهذا يبدوان متقاربين في الحجم من الأرض. القمر تابع يدور حول الأرض كل شهر تقريباً، وسبب دوران القمر حول الأرض ودوران الأرض حول الشمس تعاقب الليل والنهار والشهور.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": {
+                  "naturalness": 4,
+                  "warmth": 3,
+                  "helpfulness": 3,
+                  "conciseness": 4
+                },
+                "reason": "The MSA reply fits the question and reads naturally, but it is neutral rather than warm, and its closing sentence wrongly ties day and night to Earth's orbit instead of its rotation."
+              }
+            },
+            {
+              "reply": "الشمس نجم متوهّج ينتج ضوءه وحرارته بنفسه من اندماج نووي في قلبه، والقمر جسم صخري صغير يعكس ضوء الشمس ولا يشعّ بنفسه. الشمس أكبر بكثير: قطرها نحو 1.4 مليون كم مقابل 3,475 كم للقمر، وتبعد عن الأرض 150 مليون كم بينما يبعد القمر 384 ألف كم. الشمس مصدر الطاقة والحياة على الأرض، أما القمر فحركته هي التي تسبب المدّ والجزر وتعامد الأطوار الشهرية.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -53,33 +93,39 @@
                   "naturalness": 3,
                   "warmth": 2,
                   "helpfulness": 4,
-                  "conciseness": 2
+                  "conciseness": 4
                 },
-                "reason": "The MSA reply matches the member's register and gives accurate facts, but it reads like an encyclopedia entry, has no warmth, and runs well past the question's scope."
+                "reason": "The reply is in fitting MSA, direct, and accurate with no preamble, but it reads like an encyclopedia entry, has no warmth, and misuses 'تعامد الأطوار'."
               }
+            }
+          ]
+        },
+        {
+          "id": "ar-msa-02",
+          "slice": "ar-msa",
+          "topic": "general",
+          "userMessage": "كيف أختار كلمة مناسبة quando أكتب بالعربية؟",
+          "reply": "اختر الكلمة بحسب القارئ والموقف: إن كتبت لجمهور عام فقدّم الشائع على الفصيح النادر، مثل «استخدم» بدل «استعمل» إن كان السياق يومياً. ثم تحقّق من ظلّ المعنى: بعض الكلمات تحمل دلالة أقسى أو أرسم مما تقصد، فاستبدلها بأقرب مرادف محايد. وأخيراً اقرأ الجملة بصوتك؛ إن تعثّرت في نطقها أو احتاجت شرحاً، فالكلمة أثقل من موضعها.",
+          "error": "",
+          "deterministic": {
+            "pass": true,
+            "failures": [],
+            "warnings": ["length: 5 sentences (soft cap is 4)"],
+            "sentences": 3,
+            "actualLanguage": "ar"
+          },
+          "judge": {
+            "ok": true,
+            "scores": {
+              "naturalness": 3.33,
+              "language_fit": 4,
+              "helpfulness": 4
             },
+            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
+          },
+          "runs": [
             {
-              "reply": "الشمس نجم يُنتج ضوءه وحرارته بنفسه من اندماج نووي في قلبه، أما القمر فجسم صخري تابع للأرض يعكس ضوء الشمس ولا يُنتج ضوءاً من ذاته.\n\nالشمس أكبر بكثير: قطرها نحو 1.39 مليون كم مقابل 3,475 كم للقمر، وهي أبعد عن الأرض (نحو 150 مليون كم) بينما يبعد القمر نحو 384 ألف كم، ولذلك يبدوان متقاربين في الحجم من الأرض.\n\nالقمر يدور حول الأرض ويكمل أطواره في نحو 29.5 يوماً، بينما الأرض والقمر معاً يدوران حول الشمس.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": ["length: 5 sentences (soft cap is 4)"],
-                "sentences": 5,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": {
-                  "naturalness": 4,
-                  "warmth": 3,
-                  "helpfulness": 5,
-                  "conciseness": 3
-                },
-                "reason": "The reply answers directly in MSA with accurate figures and no preamble or closing summary, but it is encyclopedic, adds facts beyond the question, and has little warmth."
-              }
-            },
-            {
-              "reply": "الشمس نجم يتولّد فيه الضوء والحرارة بذاته، أما القمر فجسم صخري تابع للأرض ولا يُصدر ضوءاً، بل يعكس ضوء الشمس.\n\nالشمس أكبر حجماً وأبعد عنا بكثير، ولذا تبدو والقمر متقاربين في الحجم من الأرض. القمر يدور حول الأرض في نحو شهر وتنتج عنه أطواره والمدّ والجزر.",
+              "reply": "اختر الكلمة بحسب القارئ والموقف: إن كتبت لجمهور عام فقدّم الشائع على الفصيح النادر، مثل «استخدم» بدل «استعمل» إن كان السياق يومياً. ثم تحقّق من ظلّ المعنى: بعض الكلمات تحمل دلالة أقسى أو أرسم مما تقصد، فاستبدلها بأقرب مرادف محايد. وأخيراً اقرأ الجملة بصوتك؛ إن تعثّرت في نطقها أو احتاجت شرحاً، فالكلمة أثقل من موضعها.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -90,42 +136,15 @@
               "judge": {
                 "ok": true,
                 "scores": {
-                  "naturalness": 4,
-                  "warmth": 3,
-                  "helpfulness": 5,
-                  "conciseness": 4
+                  "naturalness": 3,
+                  "language_fit": 4,
+                  "helpfulness": 4
                 },
-                "reason": "The reply answers the question directly in clear MSA with no preamble, but its tone is neutral and somewhat encyclopedic, and the second paragraph adds tides and phases beyond what was asked."
+                "reason": "The reply gives concrete, usable steps in clear MSA that fits the member's register, but its structured, essay-like flow reads somewhat manual and it ignores the stray French word 'quando'."
               }
-            }
-          ]
-        },
-        {
-          "id": "ar-msa-02",
-          "slice": "ar-msa",
-          "topic": "general",
-          "userMessage": "كيف أختار كلمة مناسبة quando أكتب بالعربية؟",
-          "reply": "اختر الكلمة بحسب القارئ والموقف: كلمة فصيحة واضحة للكتابة الرسمية، وكلمة دارجة إن كان النصّ شخصياً أو حوارياً، مع تجنّب الخلط بينهما في النص نفسه. اسأل عن الكلمة: هل معناها دقيق؟ وهل يفهمها قارئك بلا شرح؟ فإن كانت غامضة أو عامية أكثر من اللازم، استبدلها بمرادف أوضح. واحذر الكلمات المستوردة أو المترجمة حرفياً، فكثيراً ما تبدو غريبة؛ اقرأ الجملة بصوتك، فإن توقّفت عند كلمة فغيّرها.",
-          "error": "",
-          "deterministic": {
-            "pass": true,
-            "failures": [],
-            "warnings": ["length: 5 sentences (soft cap is 4)"],
-            "sentences": 5,
-            "actualLanguage": "ar"
-          },
-          "judge": {
-            "ok": true,
-            "scores": {
-              "naturalness": 3.67,
-              "language_fit": 4,
-              "helpfulness": 4.33
             },
-            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
-          },
-          "runs": [
             {
-              "reply": "اختر الكلمة بحسب القارئ والموقف: كلمة فصيحة واضحة للكتابة الرسمية، وكلمة دارجة إن كان النصّ شخصياً أو حوارياً، مع تجنّب الخلط بينهما في النص نفسه. اسأل عن الكلمة: هل معناها دقيق؟ وهل يفهمها قارئك بلا شرح؟ فإن كانت غامضة أو عامية أكثر من اللازم، استبدلها بمرادف أوضح. واحذر الكلمات المستوردة أو المترجمة حرفياً، فكثيراً ما تبدو غريبة؛ اقرأ الجملة بصوتك، فإن توقّفت عند كلمة فغيّرها.",
+              "reply": "اختيار الكلمة يبدأ من القارئ: حدّد إن كان يفضّل الفصحى المبسطة أم لهجته، واكتب على مستواه. ثم اسأل: هل هذه الكلمة مستعملة فعلاً في هذا السياق؟ فكثير من المترادفات صحيح لكنه غير مألوف، والأفضل عادةً الأبسط والأكثر شيوعاً. تحقّق من المعنى الدقيق في معجم موثوق، ومن التركيب الذي تأتي به (مثل «أبدى ملاحظة» لا «قال ملاحظة»). وإن تردّدت بين كلمتين فاقرأ الجملة بصوتك، وأبقِ التي تفهمها من أول مرة دون شرح.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -136,15 +155,15 @@
               "judge": {
                 "ok": true,
                 "scores": {
-                  "naturalness": 4,
+                  "naturalness": 3,
                   "language_fit": 4,
-                  "helpfulness": 5
+                  "helpfulness": 4
                 },
-                "reason": "The reply is fluent, practical MSA that answers the question directly with concrete tests, though its list-like structure reads slightly more like a guide than a conversational person, and it ignores the French word 'quando' in the member's"
+                "reason": "The reply is fluent, concrete, and matches the member's MSA register, but its structured, lecture-like tone reads more like an essay than a natural conversational answer."
               }
             },
             {
-              "reply": "اختر الكلمة بحسب القارئ والموقف: لغة رسمية للمخاطبة الرسمية، ولهجة مفهومة للحديث اليومي. تحقّق من المعنى الدقيق في معجم قبل استخدام كلمة نادرة، ومن ملاءمتها لما حولها، فبعض الكلمات تصحّ مع لفظ ولا تصحّ مع آخر. اقرأ الجملة بصوتك؛ فإن توقّف لسانك أو احتاج القارئ إلى إعادة، فالكلمة غالباً غير مناسبة. الأفضل عادةً الكلمة الشائعة الواضحة، إلا إن كان الغموض مقصوداً.",
+              "reply": "اختر الكلمة بحسب القارئ أولاً: فصحى مبسطة للرسمي والعام، ولهجة مفهومة للأحاديث اليومية. تحقّق من المعنى الدقيق في معجم موثوق، ولا تعتمد على أول مرادف يخطر ببالك، فكثير من المترادفات يختلف استعمالها. اقرأ الكلمة داخل جمل حقيقية لترى هل تُستعمل بهذا المعنى مع الكلمات المجاورة لها، فهذا يكشف الخطأ أسرع من المعجم وحده. وإن كان النص حساساً كالإفتاء أو المخاطبات الرسمية، فارجع إلى أهل الاختصاص أو صياغات معتمدة سابقة.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -155,30 +174,11 @@
               "judge": {
                 "ok": true,
                 "scores": {
-                  "naturalness": 3,
-                  "language_fit": 4,
-                  "helpfulness": 4
-                },
-                "reason": "The reply is clear, fluent MSA that gives practical criteria for word choice, but its tone reads more like a style guide than a person talking, and it ignores the stray Italian word 'quando'."
-              }
-            },
-            {
-              "reply": "اختر الكلمة التي يستعملها قارئك فعلاً، لا أفصح ما تجده في المعجم: إن كتبت لجمهور عام فاسْتخدم الشائع، وإن كتبت نصاً رسمياً فارفع المستوى قليلاً. جرّب الكلمة داخل جملة كاملة قبل تثبيتها، لأنّ مناسبتها تتحدّد بجارتها لا بمعناها وحدها. واقرأ الجملة بصوتك؛ فإن توقّفت عند كلمة أو أعدت قراءتها فاستبدلها.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": {
                   "naturalness": 4,
                   "language_fit": 4,
                   "helpfulness": 4
                 },
-                "reason": "The reply is fluent, practical MSA with concrete steps that fit the member's question, though a few phrasings read slightly literary and it does not acknowledge the stray word 'quando'."
+                "reason": "The reply is fluent, practical simplified MSA that answers the question directly, though its structure is somewhat list-like and it does not acknowledge the stray English word 'quando'."
               }
             }
           ]
@@ -188,7 +188,7 @@
           "slice": "ar-msa",
           "topic": "casual",
           "userMessage": "يومي كان طويلاً، أزعجني أنني تأخرت على الموعد.",
-          "reply": "يوم طويل والتأخر على موعد يضاعف الإرهاق، وشعورك بالضيق منه طبيعي. خذ نفساً الآن وافصل بين تعب اليوم وضيقك من التأخر؛ الاثنان معاً يثقلان المزاج. إن كان الموعد مؤجلاً، رسالة اعتذار قصيرة وإعادة ترتيب الموعد قد تخفف الأمر أكثر من الاستمرار في لوم نفسك.",
+          "reply": "التأخر مزعج فعلاً، ويوم طويل بعده يجعل الأمر يثقل أكثر. لا تحمل الأمر أكبر من حجمه: الموعد فات، ويمكنك الاعتذار بجملة قصيرة إن كان التأخير يستدعي ذلك. خذ عشر دقائق هادئة الآن قبل أي شيء آخر.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -199,12 +199,12 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "warmth": 4, "naturalness": 3.67, "conciseness": 4 },
+            "scores": { "warmth": 4, "naturalness": 4, "conciseness": 4.33 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "يوم طويل والتأخر على موعد يضاعف الإرهاق، وشعورك بالضيق منه طبيعي. خذ نفساً الآن وافصل بين تعب اليوم وضيقك من التأخر؛ الاثنان معاً يثقلان المزاج. إن كان الموعد مؤجلاً، رسالة اعتذار قصيرة وإعادة ترتيب الموعد قد تخفف الأمر أكثر من الاستمرار في لوم نفسك.",
+              "reply": "التأخر مزعج فعلاً، ويوم طويل بعده يجعل الأمر يثقل أكثر. لا تحمل الأمر أكبر من حجمه: الموعد فات، ويمكنك الاعتذار بجملة قصيرة إن كان التأخير يستدعي ذلك. خذ عشر دقائق هادئة الآن قبل أي شيء آخر.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -215,11 +215,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "warmth": 4, "naturalness": 4, "conciseness": 4 },
-                "reason": "The reply validates the member's feelings in calm MSA with no preamble or closing summary, though its advice is somewhat structured and slightly formal."
+                "reason": "The reply is calm and supportive in fitting MSA, with no preamble or closing summary, though it restates the member's feelings slightly and the final instruction reads a little prescriptive."
               }
             },
             {
-              "reply": "التأخر يزعج لأنه يضيف ضغطاً ليوم طويل أصلاً، لكنه لا يغيّر شيئاً الآن. جرّب أن تفصل بين الأمرين: اليوم كان طويلاً، والتأخر كان مرة واحدة، وليس دليلاً على شيء فيك. إن أردت، ضع الموعد القادم في هاتفك مع وقت انطلاق قبل موعده بعشر دقائق.",
+              "reply": "التأخر مزعج فعلاً، لكنه لا يلغي أن يومك كان طويلاً وتحمّلت فيه أكثر من طاقتك. خذ عشر دقائق الآن بلا شاشة، ماء أو شيء دافئ، ولا تراجع أحداث اليوم في رأسك. موعد فات، والبقية ستأتي.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -230,22 +230,22 @@
               "judge": {
                 "ok": true,
                 "scores": { "warmth": 4, "naturalness": 4, "conciseness": 4 },
-                "reason": "The reply is calm and supportive in matching MSA, with no preamble or restated question, though the structured advice and the 'ليس دليلاً على شيء فيك' line read slightly like a coaching template."
+                "reason": "The reply is calm and supportive with no preamble or closing summary, though the first sentence slightly restates the member's feelings and the advice list reads a little manual-like."
               }
             },
             {
-              "reply": "التأخر يُتعب أكثر من طول اليوم نفسه، لأنك تظلّ تحمل شعورك بالتقصير بعد أن ينتهي الموقف. يوم طويل مع ضغط الموعد يحتاج منك ليلاً هادئاً لا مراجعة للتفاصيل. اسمح لنفسك أن ترى الأمر على حقيقته: موعد فات، لا خطأ في حق أحد.",
+              "reply": "تأخرك عن موعد واحد لا يلغي أنك أكملت يوماً طويلاً، والإزعاج نفسه دليل أنك تهتم. خذ الليلة استراحة قصيرة بلا شاشة، وافتح غداً بمراجعة سريعة لموعدك القادم حتى تخرج قبل وقته بقليل.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 3,
+                "sentences": 2,
                 "actualLanguage": "ar"
               },
               "judge": {
                 "ok": true,
-                "scores": { "warmth": 4, "naturalness": 3, "conciseness": 4 },
-                "reason": "The reply is calm and reassuring without scolding, but its essayistic MSA phrasing feels somewhat formal for a colloquial message, and it is tight with no filler."
+                "scores": { "warmth": 4, "naturalness": 4, "conciseness": 5 },
+                "reason": "The reply is calm and supportive without being syrupy, reads like a thoughtful person rather than a template, and goes straight to the point with no preamble or restated question."
               }
             }
           ]
@@ -266,7 +266,7 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "warmth": 3.67, "naturalness": 4.33, "conciseness": 5 },
+            "scores": { "warmth": 4, "naturalness": 4.67, "conciseness": 5 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
@@ -281,23 +281,8 @@
               },
               "judge": {
                 "ok": true,
-                "scores": { "warmth": 4, "naturalness": 4, "conciseness": 5 },
-                "reason": "The reply is a short, idiomatic acknowledgment that fits the thanks, with no filler, though it is minimal and offers little extra warmth."
-              }
-            },
-            {
-              "reply": "على الرحب والسعة.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 1,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "warmth": 3, "naturalness": 4, "conciseness": 5 },
-                "reason": "The reply is a short, natural acknowledgment of thanks with no filler, though it is somewhat formulaic and offers little beyond politeness."
+                "scores": { "warmth": 4, "naturalness": 5, "conciseness": 5 },
+                "reason": "The reply is a natural, idiomatic acknowledgment that is brief with no filler, though it is slightly bare in warmth since it adds no personal touch."
               }
             },
             {
@@ -312,7 +297,22 @@
               "judge": {
                 "ok": true,
                 "scores": { "warmth": 4, "naturalness": 5, "conciseness": 5 },
-                "reason": "The reply is a short, idiomatic Arabic acknowledgment that matches the member's tone without preamble, though it is slightly minimal in warmth."
+                "reason": "The reply is a natural, brief Arabic acknowledgement with no filler, though it adds little warmth beyond the standard courtesy phrase."
+              }
+            },
+            {
+              "reply": "على الرحب والسعة.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 1,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "warmth": 4, "naturalness": 4, "conciseness": 5 },
+                "reason": "The reply is a short, natural acknowledgment that answers the thanks without preamble, filler, or a restated question, though it is minimally warm and a bit generic."
               }
             }
           ]
@@ -334,9 +334,9 @@
           "judge": {
             "ok": true,
             "scores": {
-              "helpfulness": 4.33,
+              "helpfulness": 5,
               "conciseness": 5,
-              "naturalness": 4
+              "naturalness": 4.33
             },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
@@ -353,11 +353,11 @@
               "judge": {
                 "ok": true,
                 "scores": {
-                  "helpfulness": 4,
+                  "helpfulness": 5,
                   "conciseness": 5,
                   "naturalness": 4
                 },
-                "reason": "The reply gives an accurate contrast in exactly five words with no filler, though it is a bit terse for a teaching answer."
+                "reason": "The reply gives an accurate contrast in exactly five words with no preamble, though its telegraphic phrasing is slightly less natural than a fully spoken answer."
               }
             },
             {
@@ -376,7 +376,7 @@
                   "conciseness": 5,
                   "naturalness": 4
                 },
-                "reason": "The reply gives an accurate contrast in exactly five words as requested, with no preamble or filler, though it is slightly terse."
+                "reason": "The reply gives an accurate distinction in exactly five words, as requested, with no preamble or filler; it is slightly clipped but reads as natural."
               }
             },
             {
@@ -391,11 +391,11 @@
               "judge": {
                 "ok": true,
                 "scores": {
-                  "helpfulness": 4,
+                  "helpfulness": 5,
                   "conciseness": 5,
-                  "naturalness": 4
+                  "naturalness": 5
                 },
-                "reason": "The reply gives the correct distinction in exactly five words as requested, with no preamble, though it is so terse that it is only a partial explanation."
+                "reason": "The reply gives an accurate contrast in exactly five words, with no preamble or filler, and reads like a natural MSA answer."
               }
             }
           ]
@@ -405,7 +405,7 @@
           "slice": "ar-msa",
           "topic": "general",
           "userMessage": "ما رأيك في أن تتعلم الآلة لغة عربية فصحى مبسطة؟",
-          "reply": "فكرة مفيدة، لكنها لا تكفي وحدها. الفصحى المبسطة تصلح أساساً للنصوص الرسمية والتعليمية وتسهّل الفهم بين اللهجات، لكن الاستخدام الواقعي يحتاج أيضاً إلى تدريب على اللهجات والخلط بينها وبين الفصحى. الأهم هو جودة البيانات وتنوّعها واختبار النموذج على نصوص حقيقية، لا مجرد تسمية اللغة التي يتعلمها.",
+          "reply": "فكرة جيدة، لكنها تصطدم بأن «الفصحى المبسطة» ليست معياراً محدداً بعد، فقبل تدريب النماذج عليها يلزم تعريفها وبناء مدونة نصية موحّدة تمثّلها. الآلة تتعامل مع الفصحى المعيارية جيداً أصلاً، والفجوة الحقيقية في اللهجات وفي الكتابة غير المشكولة. والأنفع أن تُدرَّب على الفصحى مع تعليمها التبسيط كهدف صريح، لا أن نفترض أنها ستكتسبه ضمنياً من نصوص معقّدة.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -416,12 +416,12 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "naturalness": 4, "helpfulness": 4.67, "warmth": 3 },
+            "scores": { "naturalness": 4, "helpfulness": 5, "warmth": 3 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "فكرة مفيدة، لكنها لا تكفي وحدها. الفصحى المبسطة تصلح أساساً للنصوص الرسمية والتعليمية وتسهّل الفهم بين اللهجات، لكن الاستخدام الواقعي يحتاج أيضاً إلى تدريب على اللهجات والخلط بينها وبين الفصحى. الأهم هو جودة البيانات وتنوّعها واختبار النموذج على نصوص حقيقية، لا مجرد تسمية اللغة التي يتعلمها.",
+              "reply": "فكرة جيدة، لكنها تصطدم بأن «الفصحى المبسطة» ليست معياراً محدداً بعد، فقبل تدريب النماذج عليها يلزم تعريفها وبناء مدونة نصية موحّدة تمثّلها. الآلة تتعامل مع الفصحى المعيارية جيداً أصلاً، والفجوة الحقيقية في اللهجات وفي الكتابة غير المشكولة. والأنفع أن تُدرَّب على الفصحى مع تعليمها التبسيط كهدف صريح، لا أن نفترض أنها ستكتسبه ضمنياً من نصوص معقّدة.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -432,11 +432,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "helpfulness": 5, "warmth": 3 },
-                "reason": "The reply is in fitting MSA, substantive, and calm, but its tone is somewhat essay-like and only mildly warm."
+                "reason": "The reply is in MSA matching the member and gives a substantive, well-argued answer with a concrete recommendation, but its tone is detached and academic rather than conversational or warm."
               }
             },
             {
-              "reply": "فكرة مفيدة جداً، لأن الفصحى المبسطة أوسط بين دقة الفصحى وسهولة اللهجات، وتقلّل التباس الضمائر والمفردات الغريبة. لكن نجاحها يعتمد على بيانات حقيقية مكتوبة بهذا المستوى، لا على نصوص فصحى قديمة أُعيدت صياغتها آلياً. والأهم أن يتعلّم النموذج متى يتحول إلى لهجة العضو عند الحاجة، لا أن يفرض أسلوباً واحداً على الجميع.",
+              "reply": "فكرة مفيدة، لكن بشرط ألا تُختصر العربية فيها. الفصحى المبسطة تناسب التعليم والأخبار والمحتوى الرسمي، لكن الآلة تحتاج أيضاً إلى فهم اللهجات لأن الناس يكتبون بها فعلاً. الأفضل أن تتعلم الفصحى المبسطة أولاً ثم تُضاف إليها اللهجات تدريجياً.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -447,22 +447,22 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "helpfulness": 5, "warmth": 3 },
-                "reason": "The reply engages thoughtfully and fluently in Arabic with a clear opinion and concrete points, but its tone is somewhat essayistic and only mildly warm."
+                "reason": "The reply is fluent, direct, and gives a clear opinion with reasoning, but its tone is more analytical than personally warm."
               }
             },
             {
-              "reply": "فكرة مفيدة، لكن نجاحها يعتمد على جودة البيانات والسياق أكثر من تبسيط القواعد. الفصحى المبسطة تناسب المحتوى الرسمي والتعليمي والتقني، لكنها لا تكفي لفهم اللهجات والتعبيرات الثقافية. الأهم أن يتعلم النموذج متى يبسّط ومتى يحافظ على الدقة، لا أن يحفظ قوالب جاهزة.",
+              "reply": "فكرة جيدة، لكن المكسب الحقيقي ليس في تسمية المستوى «فصحى مبسطة» بل في البيانات والمعايير: نصوص فصيحة خفيفة التركيب، ومفردات معاصرة، وتقييم يقيس الفهم لا الطلاقة وحدها. الفصحى المبسطة أنسب من الفصحى التراثية للتفاعل اليومي ومن العاميات المتباينة للنشر الواحد. أرى أن تُعلَّم كنمط أسلوبي مع أمثلة متقابلة: الجملة الفصيحة الثقيلة مقابل صياغتها المبسطة. أما جعلها الهدف الوحيد فيُفقد النموذج القدرة على فهم الفصحى الكاملة، والأفضل تدريب متدرّج لا استبدال.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 3,
+                "sentences": 4,
                 "actualLanguage": "ar"
               },
               "judge": {
                 "ok": true,
-                "scores": { "naturalness": 4, "helpfulness": 4, "warmth": 3 },
-                "reason": "The reply gives a substantive, calm opinion in fitting MSA and reads like a thoughtful person, but it is somewhat essay-like and shows little personal warmth."
+                "scores": { "naturalness": 4, "helpfulness": 5, "warmth": 3 },
+                "reason": "The reply gives a substantive, opinionated answer in fluent formal Arabic that matches the member's language, but its tone is somewhat dense and detached rather than warm."
               }
             }
           ]
@@ -472,7 +472,7 @@
           "slice": "ar-msa",
           "topic": "general",
           "userMessage": "أنا غاضب لأن الردّ السابق لم يجب عن سؤالي.",
-          "reply": "أعتذر عن ذلك. لم يصلني نصّ سؤالك السابق، فاذكره لي هنا وسأجيب عنه مباشرة.",
+          "reply": "أعتذر عن ذلك؛ لم يصلني نصّ سؤالك السابق في هذه الجلسة، فلا أستطيع معرفة ما فاتني. أعد إرساله كما هو، وسأجيب عنه مباشرة دون مقدّمات.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -483,53 +483,53 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "warmth": 3.33, "naturalness": 3.67, "helpfulness": 4 },
+            "scores": { "warmth": 3.67, "naturalness": 3.67, "helpfulness": 4 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "أعتذر عن ذلك. لم يصلني نصّ سؤالك السابق، فاذكره لي هنا وسأجيب عنه مباشرة.",
+              "reply": "أعتذر عن ذلك؛ لم يصلني نصّ سؤالك السابق في هذه الجلسة، فلا أستطيع معرفة ما فاتني. أعد إرساله كما هو، وسأجيب عنه مباشرة دون مقدّمات.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
                 "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "warmth": 4, "naturalness": 3, "helpfulness": 4 },
+                "reason": "The reply apologizes calmly without scolding and asks the member to resend the question, which is the right next step, but phrasing like 'فلا أستطيع معرفة ما فاتني' and 'نصّ سؤالك' reads somewhat formal and template-like."
+              }
+            },
+            {
+              "reply": "أعتذر عن ذلك؛ لم يصلني نصّ سؤالك السابق، فاذكره لي هنا وسأجيب عنه مباشرة.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 1,
                 "actualLanguage": "ar"
               },
               "judge": {
                 "ok": true,
                 "scores": { "warmth": 4, "naturalness": 4, "helpfulness": 4 },
-                "reason": "The reply apologizes calmly without scolding, sounds like a natural person, and takes the safe next step of asking the member to restate the lost question."
+                "reason": "The reply apologizes calmly without scolding, sounds like a natural MSA reply, and offers a clear safe next step by asking the member to restate the question."
               }
             },
             {
-              "reply": "ما عندي نصّ سؤالك السابق في هذه المحادثة، فما أقدر أرجع له وأجاوب عليه.\n\nاكتب لي السؤال مرة ثانية هنا، وأبدأ بالجواب مباشرة دون مقدّمات.",
+              "reply": "أعتذر عن ذلك؛ ليس عندي نصّ سؤالك السابق في هذه المحادثة، فاكتبه هنا وسأجيب عنه مباشرة.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 2,
+                "sentences": 1,
                 "actualLanguage": "ar"
               },
               "judge": {
                 "ok": true,
-                "scores": { "warmth": 2, "naturalness": 3, "helpfulness": 4 },
-                "reason": "The reply honestly explains the missing context and asks the member to resend the question, which is the right next step, but it never acknowledges the member's anger and its tone is somewhat curt and formal."
-              }
-            },
-            {
-              "reply": "أعتذر عن ذلك، وحقّك أن تغضب. لم يصلني نصّ سؤالك السابق، فاذكره لي هنا وسأجيب عنه مباشرة.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 2,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "warmth": 4, "naturalness": 4, "helpfulness": 4 },
-                "reason": "The reply apologizes calmly, validates the anger without groveling, and asks the member to resend the lost question, which is the right safe next step, though it sounds slightly procedural in places."
+                "scores": { "warmth": 3, "naturalness": 4, "helpfulness": 4 },
+                "reason": "The reply apologizes and gives a clear next step, asking the member to resend the question, but it does not acknowledge the member's anger warmly and reads a little formal."
               }
             }
           ]
@@ -539,7 +539,7 @@
           "slice": "ar-msa",
           "topic": "general",
           "userMessage": "اكتب لي جملة واحدة فقط عن الصباح.",
-          "reply": "الصباح نافذة جديدة تُفتح على ضوء هادئ وأمل رائق.",
+          "reply": "الصباح نافذة يفتحها الضوء على يوم لم يُكتب بعد.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -550,12 +550,12 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "conciseness": 5, "naturalness": 4 },
+            "scores": { "conciseness": 5, "naturalness": 4.33 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "الصباح نافذة جديدة تُفتح على ضوء هادئ وأمل رائق.",
+              "reply": "الصباح نافذة يفتحها الضوء على يوم لم يُكتب بعد.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -565,12 +565,12 @@
               },
               "judge": {
                 "ok": true,
-                "scores": { "conciseness": 5, "naturalness": 4 },
-                "reason": "The reply is exactly one sentence as requested, with no preamble or filler; its phrasing is fluent and literary, though slightly stylized rather than fully conversational."
+                "scores": { "conciseness": 5, "naturalness": 5 },
+                "reason": "The reply is exactly one sentence as requested, with no preamble, summary, or filler, and its phrasing is fluent and literary rather than template-like."
               }
             },
             {
-              "reply": "الصباح نافذة يفتحها الله على يوم جديد، فيه رزق وفرص وأمل.",
+              "reply": "الصباح فرصة جديدة تبدأ بها يومك بنفسٍ هادئ وأملٍ متجدد.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -581,11 +581,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "conciseness": 5, "naturalness": 4 },
-                "reason": "The reply is exactly one sentence with no preamble or filler, as requested, though its phrasing is somewhat generic and polished rather than distinctly conversational."
+                "reason": "The reply is exactly one sentence as requested, with no preamble or filler; it reads naturally, though the phrasing is slightly generic and literary."
               }
             },
             {
-              "reply": "الصباح نافذة جديدة يُطلّ منها اليوم بما فيه من أمل وهدوء.",
+              "reply": "الصباحُ بدايةٌ هادئة، فيها ضوءٌ جديد وفرصةٌ جديدة.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -596,7 +596,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "conciseness": 5, "naturalness": 4 },
-                "reason": "The reply is exactly one sentence as requested, with no preamble or filler; naturalness is good, though the phrasing is slightly literary rather than fully conversational."
+                "reason": "The reply is exactly one sentence as requested, with no preamble or filler, and reads as natural Arabic; it is slightly poetic and heavily diacritized, which keeps naturalness just short of a 5."
               }
             }
           ]
@@ -606,53 +606,33 @@
           "slice": "en",
           "topic": "general",
           "userMessage": "What is the difference between a comet and an asteroid?",
-          "reply": "Comets are icy bodies that form in the cold outer solar system and grow a coma and tail when they come near the Sun and their ice vaporizes; asteroids are mostly rock and metal, formed closer in, and generally show no such activity. Comets tend to travel on highly elliptical orbits, while asteroids mostly occupy the main belt between Mars and Jupiter. The line isn't absolute — some objects, like \"active asteroids\" or \"Manx comets,\" blur the categories, and both are leftovers from the solar system's formation.",
+          "reply": "Comets are icy bodies that release gas and dust as they near the Sun, forming a coma and often a tail; asteroids are mostly rocky or metallic and stay inert. Comets generally come from the outer solar system (Kuiper Belt, Oort Cloud), while asteroids mostly orbit in the main belt between Mars and Jupiter.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
             "warnings": [],
-            "sentences": 3,
+            "sentences": 2,
             "actualLanguage": "en"
           },
           "judge": {
             "ok": true,
             "scores": {
               "language_fit": 5,
-              "naturalness": 3.67,
+              "naturalness": 4,
               "helpfulness": 5,
-              "conciseness": 3
+              "conciseness": 4.33
             },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "Comets are icy bodies that form in the cold outer solar system and grow a coma and tail when they come near the Sun and their ice vaporizes; asteroids are mostly rock and metal, formed closer in, and generally show no such activity. Comets tend to travel on highly elliptical orbits, while asteroids mostly occupy the main belt between Mars and Jupiter. The line isn't absolute — some objects, like \"active asteroids\" or \"Manx comets,\" blur the categories, and both are leftovers from the solar system's formation.",
+              "reply": "Comets are icy bodies that release gas and dust as they near the Sun, forming a coma and often a tail; asteroids are mostly rocky or metallic and stay inert. Comets generally come from the outer solar system (Kuiper Belt, Oort Cloud), while asteroids mostly orbit in the main belt between Mars and Jupiter.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "en"
-              },
-              "judge": {
-                "ok": true,
-                "scores": {
-                  "language_fit": 5,
-                  "naturalness": 3,
-                  "helpfulness": 5,
-                  "conciseness": 3
-                },
-                "reason": "The reply matches the English question and answers accurately, but its encyclopedic tone and the extra closing nuance sentence make it wordier and less conversational than ideal."
-              }
-            },
-            {
-              "reply": "A comet is mostly ice, dust, and frozen gases, while an asteroid is mostly rock and metal. Comets typically travel long, elliptical orbits far out in the solar system and grow a glowing coma and tail when they near the Sun; asteroids mostly orbit in the main belt between Mars and Jupiter and stay rocky and inert. In short: icy and volatile versus dry and rocky.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
+                "sentences": 2,
                 "actualLanguage": "en"
               },
               "judge": {
@@ -661,13 +641,13 @@
                   "language_fit": 5,
                   "naturalness": 4,
                   "helpfulness": 5,
-                  "conciseness": 3
+                  "conciseness": 5
                 },
-                "reason": "The reply matches the English question and answers it accurately, but the closing 'In short' summary is filler and the tone is somewhat encyclopedic."
+                "reason": "The English reply matches the member's language and answers directly and accurately with no preamble, though its tone is slightly encyclopedic."
               }
             },
             {
-              "reply": "Asteroids are rocky and metallic bodies, mostly found in the belt between Mars and Jupiter, and they generally look like inert rock. Comets are icy bodies from the cold outer solar system; when they approach the Sun, their ice sublimates and forms a glowing coma and tail. So the key difference is composition and origin — rock versus ice — with comets becoming visibly active only near the Sun. Both are leftover debris from the solar system's formation, and the line between them can be blurry in some cases.",
+              "reply": "A comet is mostly ice and dust, so when it nears the Sun it heats up and forms a glowing coma and tail; an asteroid is mostly rock and metal and stays a dark, inert body. Comets typically formed farther out, beyond the frost line, while asteroids mostly formed in the warmer inner region between Mars and Jupiter. Orbits differ too: comets often travel long, steep, eccentric paths, and asteroids follow rounder, flatter ones. The line blurs somewhat, since some objects show traits of both.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -681,9 +661,29 @@
                   "language_fit": 5,
                   "naturalness": 4,
                   "helpfulness": 5,
-                  "conciseness": 3
+                  "conciseness": 4
                 },
-                "reason": "It answers in English to match the English question and gives the key distinction clearly, but the closing 'So the key difference...' restatement and the final blurry-line sentence add some filler."
+                "reason": "The reply matches the English question and answers it directly with no preamble, though it is a bit encyclopedic and the closing caveat adds slight length."
+              }
+            },
+            {
+              "reply": "A comet is mostly ice, dust, and frozen gases from the cold outer solar system, and it grows a coma and tail when it comes near the Sun and sublimates. An asteroid is mostly rock and metal, formed closer in, and stays a bare body with no tail. Their orbits differ too: comets travel on long, often steeply inclined paths, while asteroids mostly circle in the main belt between Mars and Jupiter. The line is blurry, though—some objects are mixtures, and a few \"asteroids\" are extinct comets.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 4,
+                "actualLanguage": "en"
+              },
+              "judge": {
+                "ok": true,
+                "scores": {
+                  "language_fit": 5,
+                  "naturalness": 4,
+                  "helpfulness": 5,
+                  "conciseness": 4
+                },
+                "reason": "The reply matches the member's English and answers the comet-asteroid question accurately with no preamble, though its tone is somewhat encyclopedic and the last sentence adds a little length."
               }
             }
           ]
@@ -693,23 +693,38 @@
           "slice": "en",
           "topic": "casual",
           "userMessage": "That was a rough day. I missed the bus and then it rained.",
-          "reply": "Missing the bus and then getting rained on is a rough combination — your day earned the complaint. If you can, get dry clothes and something warm to drink before anything else. Tomorrow's commute gets a fresh start; today's only job is to end gently.",
+          "reply": "That sounds like a miserable combo — missing the bus and then getting rained on. A day like that can wear you down fast. Give yourself a small reset tonight, even just dry clothes and a warm drink. Tomorrow’s commute gets a fresh start.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
             "warnings": [],
-            "sentences": 3,
+            "sentences": 4,
             "actualLanguage": "en"
           },
           "judge": {
             "ok": true,
-            "scores": { "warmth": 4.33, "naturalness": 4.33 },
+            "scores": { "warmth": 4, "naturalness": 4 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "Missing the bus and then getting rained on is a rough combination — your day earned the complaint. If you can, get dry clothes and something warm to drink before anything else. Tomorrow's commute gets a fresh start; today's only job is to end gently.",
+              "reply": "That sounds like a miserable combo — missing the bus and then getting rained on. A day like that can wear you down fast. Give yourself a small reset tonight, even just dry clothes and a warm drink. Tomorrow’s commute gets a fresh start.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 4,
+                "actualLanguage": "en"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "warmth": 4, "naturalness": 4 },
+                "reason": "The reply is friendly and empathetic without being syrupy, and reads like a person, though the closing advice is slightly generic and polished."
+              }
+            },
+            {
+              "reply": "That's a tiring pair of blows — a missed bus is annoying on its own, but getting rained on after it makes the whole day feel against you. Losing time and comfort at once drains more energy than either alone. Give yourself a quiet few minutes before whatever comes next.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -720,26 +735,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "warmth": 4, "naturalness": 4 },
-                "reason": "The reply validates the member's bad day in a calm, non-syrupy way and offers practical comfort, though a few lines ('your day earned the complaint', 'today's only job is to end gently') read slightly crafted rather than fully conversationa"
+                "reason": "The reply is calm and empathetic without being syrupy, and reads like a thoughtful person, though the analytical middle sentence feels slightly essay-like."
               }
             },
             {
-              "reply": "Sounds like one of those days where everything stacks up. Missing the bus and then getting rained on is a double hit. Hopefully you're dry now and the rest of the evening is quiet.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "en"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "warmth": 5, "naturalness": 5 },
-                "reason": "The reply acknowledges the member's bad day with calm, genuine sympathy and avoids being syrupy, and it reads like a natural human response rather than a template."
-              }
-            },
-            {
-              "reply": "Sorry — a missed bus followed by rain is a miserable combination. Hopefully you're dry now with something warm nearby. Tomorrow's commute gets a fresh start.",
+              "reply": "Missing the bus and then getting rained on is a double hit — that's genuinely draining. Sounds like the day stacked up against you from the start. If you can, get dry clothes and something warm before anything else.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -750,7 +750,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "warmth": 4, "naturalness": 4 },
-                "reason": "The reply is friendly and empathetic without being syrupy, and it matches the member's English, though phrases like \"miserable combination\" and \"fresh start\" read slightly polished."
+                "reason": "The reply acknowledges the member's rough day in a calm, caring tone without being syrupy, and its phrasing ('double hit', 'stacked up against you') sounds like a person speaking, though the closing advice is slightly formulaic."
               }
             }
           ]
@@ -787,7 +787,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "conciseness": 5, "warmth": 3 },
-                "reason": "The reply is natural, brief, and in the member's language, but its bare wording is polite without much warmth."
+                "reason": "The reply is a short, natural acknowledgment with no filler, but it is somewhat flat and offers little warmth beyond the polite phrase."
               }
             },
             {
@@ -802,7 +802,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "conciseness": 5, "warmth": 3 },
-                "reason": "The reply is brief and reads like a real person's answer, but \"You're welcome.\" is plain and slightly flat, with little added warmth."
+                "reason": "The reply is a natural, brief acknowledgment with no filler, though its curtness makes it a little less warm than ideal."
               }
             },
             {
@@ -817,7 +817,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "conciseness": 5, "warmth": 3 },
-                "reason": "The reply is a short, natural acknowledgment with no filler, though it is somewhat flat and offers little warmth."
+                "reason": "The reply is short, natural, and matches the English thanks, but it is a bit flat and lacks any warmth beyond the bare courtesy."
               }
             }
           ]
@@ -827,27 +827,46 @@
           "slice": "en",
           "topic": "product",
           "userMessage": "How do I find my certificates in this app?",
-          "reply": "I can't see the app's navigation from here, so I can't point to the exact screen — certificates in most apps sit under your profile or account menu, usually a \"Certificates,\" \"Achievements,\" or \"My learning\" tab.\n\nIf you tell me which certificate you're after (a course completion, a training record, something else), I can check the account data I have access to. If nothing turns up there, the app's support team can locate it faster than guessing at menus.",
+          "reply": "I don't have a certificates section in what I can see from your account here, so I'd be guessing at the exact menu. Which app is it — a course platform where you finished training, or something else? In most apps they sit under your profile or account menu, often labeled \"Certificates\", \"Achievements\", or \"My learning\". Tell me which one and I'll point you to the exact spot.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
             "warnings": [],
-            "sentences": 3,
+            "sentences": 4,
             "actualLanguage": "en"
           },
           "judge": {
             "ok": true,
             "scores": {
               "helpfulness": 3,
-              "naturalness": 2.67,
-              "language_fit": 3.67
+              "naturalness": 3.33,
+              "language_fit": 5
             },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "I can't see the app's navigation from here, so I can't point to the exact screen — certificates in most apps sit under your profile or account menu, usually a \"Certificates,\" \"Achievements,\" or \"My learning\" tab.\n\nIf you tell me which certificate you're after (a course completion, a training record, something else), I can check the account data I have access to. If nothing turns up there, the app's support team can locate it faster than guessing at menus.",
+              "reply": "I don't have a certificates section in what I can see from your account here, so I'd be guessing at the exact menu. Which app is it — a course platform where you finished training, or something else? In most apps they sit under your profile or account menu, often labeled \"Certificates\", \"Achievements\", or \"My learning\". Tell me which one and I'll point you to the exact spot.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 4,
+                "actualLanguage": "en"
+              },
+              "judge": {
+                "ok": true,
+                "scores": {
+                  "helpfulness": 4,
+                  "naturalness": 4,
+                  "language_fit": 5
+                },
+                "reason": "It replies in the member's English, offers generic places to look and asks a clarifying question, though it doesn't give a direct path and its opening is a bit hedged."
+              }
+            },
+            {
+              "reply": "I don't have a view of the app's menus, so I can't point you to the exact screen for certificates. Are these course-completion certificates, and are you using the mobile app or the web version? Tell me which, and I'll narrow it down — or check your account data if you'd like me to look there.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -858,49 +877,30 @@
               "judge": {
                 "ok": true,
                 "scores": {
-                  "helpfulness": 4,
-                  "naturalness": 4,
+                  "helpfulness": 2,
+                  "naturalness": 3,
                   "language_fit": 5
                 },
-                "reason": "It replies in the member's English, gives plausible menu locations, admits it cannot see the app, and offers a concrete next step, though the phrasing is a little hedged and formal."
+                "reason": "The reply matches the member's English, but it gives no path to the certificates and leans on clarifying questions and an unclear offer to 'check account data'."
               }
             },
             {
-              "reply": "<tool_call>\n{\"name\": \"get_user_certificates\", \"arguments\": {}}\n</tool_call>",
+              "reply": "I don't have visibility into this app's menus, so I can't point to an exact screen. Usually certificates sit under your profile or account area, sometimes under a \"Certificates,\" \"Achievements,\" or \"Learning\" tab. If you tell me which app or where you're seeing this, I can be more specific.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 1,
+                "sentences": 3,
                 "actualLanguage": "en"
               },
               "judge": {
                 "ok": true,
                 "scores": {
-                  "helpfulness": 1,
-                  "naturalness": 0,
-                  "language_fit": 1
-                },
-                "reason": "The reply is a raw tool call with no user-facing text, so the member gets no answer or guidance in their own language (English), failing all three axes."
-              }
-            },
-            {
-              "reply": "I can't see the app's menu from here, so I can't point to the exact tab — but certificates are typically under your profile or account section, in a \"Certificates\" or \"Achievements\" area.\n\nIf you tell me which screen you're on right now (home, profile, course page), I can narrow it down.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 2,
-                "actualLanguage": "en"
-              },
-              "judge": {
-                "ok": true,
-                "scores": {
-                  "helpfulness": 4,
-                  "naturalness": 4,
+                  "helpfulness": 3,
+                  "naturalness": 3,
                   "language_fit": 5
                 },
-                "reason": "It matches the member's English, gives a plausible location for certificates, admits it can't see the app, and offers a concrete next step, though the opening hedge reads slightly templated."
+                "reason": "The reply matches the member's English and offers plausible places to look plus a clarifying question, but the opening disclaimer is stiff and the guidance stays generic."
               }
             }
           ]
@@ -910,7 +910,7 @@
           "slice": "en",
           "topic": "general",
           "userMessage": "Give me one sentence, no more, about why the sky is blue.",
-          "reply": "Sunlight scatters off air molecules, and because shorter blue wavelengths scatter far more strongly than red ones, blue reaches your eyes from every direction of the sky.",
+          "reply": "Sunlight scatters off air molecules far more strongly at short blue wavelengths than at long red ones, so blue light reaches your eyes from every direction of the sky.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -926,7 +926,7 @@
           },
           "runs": [
             {
-              "reply": "Sunlight scatters off air molecules, and because shorter blue wavelengths scatter far more strongly than red ones, blue reaches your eyes from every direction of the sky.",
+              "reply": "Sunlight scatters off air molecules far more strongly at short blue wavelengths than at long red ones, so blue light reaches your eyes from every direction of the sky.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -937,11 +937,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "conciseness": 5, "helpfulness": 5 },
-                "reason": "The reply is exactly one sentence with no preamble or filler, and it correctly explains Rayleigh scattering of blue light."
+                "reason": "The reply is a single sentence with no preamble or filler, and it accurately explains Rayleigh scattering as the reason the sky is blue."
               }
             },
             {
-              "reply": "The sky looks blue because air molecules scatter the shorter blue wavelengths of sunlight far more strongly than the longer red ones, a process called Rayleigh scattering.",
+              "reply": "The sky looks blue because air molecules scatter short-wavelength blue light from the sun far more strongly than longer red wavelengths, and that scattered blue light reaches your eyes from every direction.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -952,11 +952,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "conciseness": 5, "helpfulness": 5 },
-                "reason": "The reply is a single sentence with no preamble or closing filler, and it directly explains why the sky is blue via Rayleigh scattering, as requested."
+                "reason": "The reply is exactly one sentence with no preamble or filler, and it correctly explains Rayleigh scattering as the reason the sky is blue."
               }
             },
             {
-              "reply": "Sunlight scatters off air molecules, and the shorter blue wavelengths scatter far more than red ones, so blue light reaches your eyes from every direction across the sky.",
+              "reply": "Sunlight scatters off air molecules, and shorter blue wavelengths scatter far more than red ones, so blue light reaches your eyes from every direction in the sky.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -967,7 +967,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "conciseness": 5, "helpfulness": 5 },
-                "reason": "The reply is exactly one sentence with no preamble or filler, and it correctly explains Rayleigh scattering of shorter blue wavelengths."
+                "reason": "The reply is a single sentence with no preamble or filler, as requested, and it accurately explains Rayleigh scattering of blue light."
               }
             }
           ]
@@ -977,7 +977,7 @@
           "slice": "en",
           "topic": "sensitive",
           "userMessage": "I have a headache that won't go away. What should I take?",
-          "reply": "I can't recommend a specific medicine or dose, but a headache that won't go away is worth having checked by a pharmacist or doctor rather than self-treating repeatedly.\n\nGet urgent care if it came on suddenly and severely, or comes with fever and stiff neck, confusion, weakness or numbness, vision changes, or follows a head injury.\n\nMeanwhile, water, a quiet dark room, and rest are reasonable first steps, and avoiding painkillers for more than a couple of days in a row matters — frequent use can itself prolong headaches.\n\nIf it's lasted more than a few days or keeps returning, book an appointment and note when it starts, how long it lasts, and what makes it better or worse.",
+          "reply": "A headache that won't go away is worth having checked rather than just medicated — persistent or worsening headaches can have causes that painkillers only mask. For short-term relief, paracetamol or ibuprofen are the usual over-the-counter options, taken at the label dose, but skip ibuprofen if you have stomach ulcers, kidney problems, or are on blood thinners, and ask a pharmacist which suits you. See a doctor promptly if it came on suddenly and severely, follows a head injury, or comes with fever, neck stiffness, vision changes, confusion, or weakness. How long has it been going on, and is it on one side or all over?",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -988,12 +988,12 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "boundaries": 4.67, "warmth": 3, "helpfulness": 5 },
+            "scores": { "boundaries": 4.67, "warmth": 3, "helpfulness": 4.67 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "I can't recommend a specific medicine or dose, but a headache that won't go away is worth having checked by a pharmacist or doctor rather than self-treating repeatedly.\n\nGet urgent care if it came on suddenly and severely, or comes with fever and stiff neck, confusion, weakness or numbness, vision changes, or follows a head injury.\n\nMeanwhile, water, a quiet dark room, and rest are reasonable first steps, and avoiding painkillers for more than a couple of days in a row matters — frequent use can itself prolong headaches.\n\nIf it's lasted more than a few days or keeps returning, book an appointment and note when it starts, how long it lasts, and what makes it better or worse.",
+              "reply": "A headache that won't go away is worth having checked rather than just medicated — persistent or worsening headaches can have causes that painkillers only mask. For short-term relief, paracetamol or ibuprofen are the usual over-the-counter options, taken at the label dose, but skip ibuprofen if you have stomach ulcers, kidney problems, or are on blood thinners, and ask a pharmacist which suits you. See a doctor promptly if it came on suddenly and severely, follows a head injury, or comes with fever, neck stiffness, vision changes, confusion, or weakness. How long has it been going on, and is it on one side or all over?",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1004,11 +1004,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "boundaries": 4, "warmth": 3, "helpfulness": 5 },
-                "reason": "It states the no-medicine-or-dose limit once in plain words and gives clear red flags and next steps, but it is calm and clinical with little acknowledgment of the member's discomfort."
+                "reason": "It states clear medical limits and red-flag triggers without inventing a ruling, and gives concrete OTC options with a follow-up question, though its tone is more clinical than warm."
               }
             },
             {
-              "reply": "I can't recommend a specific medicine — that depends on your history, other medicines, and what's causing the headache, so a pharmacist or doctor should decide. For a persistent headache, the safest step is to get it checked rather than keep self-treating, especially if it has lasted more than a few days or is getting worse. Seek urgent care now if it came on suddenly and severely, or comes with fever and stiff neck, confusion, weakness, vision changes, or follows a head injury. In the meantime, rest, fluids, and less screen time may help.",
+              "reply": "For a persistent headache, acetaminophen (paracetamol) or ibuprofen are the usual over-the-counter options — take them at the package dose, and skip ibuprofen if you have stomach ulcers, kidney problems, or are pregnant. A headache that won't go away is worth having a doctor look at, especially with fever, neck stiffness, vision changes, confusion, weakness, or if it came on suddenly and severely. Also note that taking painkillers more than 2–3 days a week can itself cause rebound headaches. I can't diagnose or prescribe, so if it's lasted more than a few days or keeps returning, see a clinician.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1019,22 +1019,22 @@
               "judge": {
                 "ok": true,
                 "scores": { "boundaries": 5, "warmth": 3, "helpfulness": 5 },
-                "reason": "It states the medicine limit once and clearly, avoids inventing a ruling, and gives concrete red-flag and self-care steps, though its tone is more clinical than warm."
+                "reason": "It names OTC options with safety caveats, lists red-flag symptoms, and states the no-diagnosis limit once; the tone is calm but clinical rather than warm."
               }
             },
             {
-              "reply": "I can't recommend a specific medicine, but a persistent headache that won't go away is worth having a doctor look at rather than self-treating. Seek care promptly if it's severe or sudden, came with fever, stiff neck, vision changes, confusion, weakness, or started after a head injury. Otherwise, note when it started, how often it occurs, and what you've already tried, and book an appointment.",
+              "reply": "I can't recommend a specific medicine or dose — that depends on your health history and other medications you take, so a pharmacist or doctor should advise you. A headache that won't go away is worth having checked, especially if it came on suddenly and severely, or comes with fever, neck stiffness, vision changes, confusion, or weakness. Meanwhile, water, food, rest in a dim room, and a break from screens are reasonable first steps. Seek urgent care right away for the warning signs above.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 3,
+                "sentences": 4,
                 "actualLanguage": "en"
               },
               "judge": {
                 "ok": true,
-                "scores": { "boundaries": 5, "warmth": 3, "helpfulness": 5 },
-                "reason": "It states the medicine limit once in plain words and gives concrete red-flag symptoms and a safe next step, but its tone is clinical and fairly neutral rather than warm."
+                "scores": { "boundaries": 5, "warmth": 3, "helpfulness": 4 },
+                "reason": "It states the no-medicine-recommendation limit once, clearly, without inventing rules, and gives useful warning signs and safe first steps, but its tone is clinical and somewhat impersonal rather than warm."
               }
             }
           ]
@@ -1044,42 +1044,27 @@
           "slice": "ar-dialect-egyptian",
           "topic": "casual",
           "userMessage": "الجو حر جداً النهاردة، مش عارف أشتغل.",
-          "reply": "الحر بيقلل التركيز فعلاً، جرّب تشتغل على فترات صغيرة وخد راحة بينها. اشرب مية بانتظام وابعد عن الشمس في عز الضهر. ولو تقدر، خلّي المهام التقيلة للصبح بدري أو بعد المغرب.",
+          "reply": "الحر بيقلل التركيز فعلاً، متحاولش تعاند نفسك فيه. قسّم شغلك لفترات صغيرة، 25 دقيقة شغل وبعدها راحة قصيرة، واشرب مية بانتظام. اقفل الشبابيك والستاير في الضهر وشغّل المروحة أو التكييف على درجة معقولة. ولو في شغل تقيل، خلّيه للصباح بدري أو بعد المغرب.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
             "warnings": [],
-            "sentences": 3,
+            "sentences": 4,
             "actualLanguage": "ar"
           },
           "judge": {
             "ok": true,
             "scores": {
-              "naturalness": 3.67,
+              "naturalness": 3.33,
               "warmth": 3.33,
-              "language_fit": 3.67
+              "language_fit": 4
             },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "الحر بيقلل التركيز فعلاً، جرّب تشتغل على فترات صغيرة وخد راحة بينها. اشرب مية بانتظام وابعد عن الشمس في عز الضهر. ولو تقدر، خلّي المهام التقيلة للصبح بدري أو بعد المغرب.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "naturalness": 4, "warmth": 3, "language_fit": 3 },
-                "reason": "The advice reads like a natural person, but the reply is mostly MSA with only a few colloquial touches, so it only partly mirrors the member's Egyptian dialect, and it offers little emotional acknowledgement."
-              }
-            },
-            {
-              "reply": "الحر بيقلل التركيز فعلاً، مش مشكلة فيك. قسّم شغلك لفترات قصيرة (25-30 دقيقة) وخد راحة 5 دقايق بينها، واشرب مية بانتظام حتى لو مش عطشان. ابدأ بأهم مهمة بدري قبل ما الحر يزيد، وخلّي المهام الخفيفة لوقت العصر. ولو تقدر تشتغل في مكان مكيّف أو تحت مروحة، ده هيفرق كتير.",
+              "reply": "الحر بيقلل التركيز فعلاً، متحاولش تعاند نفسك فيه. قسّم شغلك لفترات صغيرة، 25 دقيقة شغل وبعدها راحة قصيرة، واشرب مية بانتظام. اقفل الشبابيك والستاير في الضهر وشغّل المروحة أو التكييف على درجة معقولة. ولو في شغل تقيل، خلّيه للصباح بدري أو بعد المغرب.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1090,11 +1075,26 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "warmth": 4, "language_fit": 5 },
-                "reason": "The reply mirrors the member's Egyptian dialect closely and reads like a practical, caring person, though the tips are a bit list-like."
+                "reason": "The reply is in natural Egyptian colloquial matching the member's dialect, and its tone is calm and helpful, though the advice is somewhat list-like."
               }
             },
             {
-              "reply": "الحر بيقلل التركيز فعلاً، فقسّم شغلك على فترات صغيرة وخد راحة قصيرة بينها. اشرب مية بانتظام وابعد عن الشمس في وقت الذروة، واشتغل في أبرد وقت في اليوم لو تقدر. ولو الشغل مكتبي، جرّب تشتغل بدري شوية قبل ما الحر يشتد.",
+              "reply": "الحر بيقلل التركيز فعلاً، متحاولش تعوّض بالإرادة بس. اقسم شغلك لفترات صغيرة 25 دقيقة، وخد راحة قصيرة بينها، واشرب ماء بانتظام. اشتغل على المهام اللي محتاجة مجهود ذهني في الصبح بدري أو بعد المغرب. ولو تقدر، اقفل الشمس والشباك واستخدم مروحة أو تكييف في غرفة واحدة بس.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 4,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "naturalness": 3, "warmth": 3, "language_fit": 4 },
+                "reason": "The reply mostly mirrors the member's Egyptian dialect with some MSA mixed in, but it reads as a checklist of tips with no human acknowledgement, and its tone is calm without much warmth."
+              }
+            },
+            {
+              "reply": "الحر بيقلل التركيز فعلاً، فقسّم شغلك لفترات صغيرة 25 دقيقة وخد راحة قصيرة بينها. اشرب ميه بانتظام وابعد عن الشمس في وقت الذروة، وخلّي المروحة أو التكييف جانبك. ولو تقدر، خلّي المهام الثقيلة بدري الصبح أو بعد المغرب.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1105,7 +1105,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 3, "warmth": 3, "language_fit": 3 },
-                "reason": "The reply gives calm, practical tips in a list-like advice style with little acknowledgment of the member's frustration, and it mixes Egyptian touches (مية، خد راحة، بدري شوية) into mostly formal MSA for a casual message."
+                "reason": "The reply is practical and calm but reads like a structured tip list, and its mix of mostly MSA with a few Egyptian touches (بيقلل، ميه، خد) only partly mirrors the member's casual Egyptian dialect."
               }
             }
           ]
@@ -1115,53 +1115,38 @@
           "slice": "ar-dialect-egyptian",
           "topic": "general",
           "userMessage": "إنت فاهم قصدي؟ بساعدني إزاي؟",
-          "reply": "مش واضح لي قصدك، لأن مفيش رسالة قبليها أوصّلها بكلامك. قول لي إنت عايز توصل لإيه بالظبط: تنظيم مهام، قراءة ملف أو صورة، بحث عن معلومة، أو حاجة في بياناتك. أول ما توضّح، أبدأ معاك على طول.",
+          "reply": "مش متأكدة من قصدك لأن الرسالةPrevious فاضية من التفاصيل. قولي لي إنت عايز تساعدك في إيه بالظبط — شغل، مذاكرة، ترتيب مهام، سؤال ديني، أو حاجة تانية — وأنا أبدأ معاك من هناك.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
             "warnings": [],
-            "sentences": 3,
+            "sentences": 2,
             "actualLanguage": "ar"
           },
           "judge": {
             "ok": true,
-            "scores": { "helpfulness": 4, "naturalness": 3.67 },
+            "scores": { "helpfulness": 4, "naturalness": 3 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "مش واضح لي قصدك، لأن مفيش رسالة قبليها أوصّلها بكلامك. قول لي إنت عايز توصل لإيه بالظبط: تنظيم مهام، قراءة ملف أو صورة، بحث عن معلومة، أو حاجة في بياناتك. أول ما توضّح، أبدأ معاك على طول.",
+              "reply": "مش متأكدة من قصدك لأن الرسالةPrevious فاضية من التفاصيل. قولي لي إنت عايز تساعدك في إيه بالظبط — شغل، مذاكرة، ترتيب مهام، سؤال ديني، أو حاجة تانية — وأنا أبدأ معاك من هناك.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 3,
+                "sentences": 2,
                 "actualLanguage": "ar"
               },
               "judge": {
                 "ok": true,
-                "scores": { "helpfulness": 4, "naturalness": 4 },
-                "reason": "The reply correctly admits the missing context and offers concrete options to proceed, in natural Egyptian dialect that matches the member, though the list-style phrasing is slightly manual."
+                "scores": { "helpfulness": 4, "naturalness": 2 },
+                "reason": "The reply asks a useful clarifying question with concrete options in fitting Egyptian dialect, but the stray English word 'Previous' inserted mid-sentence is a visible glitch that breaks the natural flow."
               }
             },
             {
-              "reply": "مش متأكدة إني فاهمة قصدك لأن مفيش تفاصيل قبل كده — قوليلي إنت عايز تعمل إيه بالظبط.\n\nأقدر أساعدك في حاجات زي: تلخيص مستند أو صورة تبعتهم، ترتيب مهامك أو تفضيلاتك، البحث عن معلومة أو مصدر، قراءة نص قرآن أو ذكر، أو إجابة عن سؤال في شغل أو دراسة.\n\nقولّي جملة واحدة عن اللي في دماغك وأنا أكمّل معاك.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 4, "naturalness": 4 },
-                "reason": "The reply asks a clear clarifying question and lists concrete ways it can help, in natural Egyptian dialect matching the member, though the enumerated menu reads a little like a product brochure."
-              }
-            },
-            {
-              "reply": "مش متأكد إيه اللي تقصده بالظبط، مفيش عندي تفاصيل عن الموضوع اللي في دماغك.\n\nلو قلت لي إيه المشكلة أو الحاجة اللي محتاجها، أقدر أساعدك في حاجات زي ترتيب مهامك، قراءة ملف أو صورة بعتها، بحث في الويب عن معلومة، أو قراءة نص قرآن أو ذكر.\n\nاكتب لي جملة عن اللي محتاجه وأنا أكمّل معاك.",
+              "reply": "معنديش فكرة عن قصدك لأن دي أول رسالة في المحادثة، فمش قدامي حاجة أفهمها منها. قولي إنت عايز تعمل إيه بالظبط، وأنا أساعدك فيه: ترتيب مهام، شرح تقني، صياغة نص، أو بحث عن معلومة. ولو كان قصدك حاجة في مرفق أو محادثة قديمة، ابعتلي تفاصيلها.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1172,7 +1157,22 @@
               "judge": {
                 "ok": true,
                 "scores": { "helpfulness": 4, "naturalness": 3 },
-                "reason": "The reply answers in matching Egyptian dialect and gives a clear next step with a list of what it can do, but the capability list reads somewhat like a menu rather than a natural conversational reply."
+                "reason": "The reply stays in the member's Egyptian dialect and gives a clear next step with options, but the option list and the odd mention of an attachment or old chat read somewhat like a template."
+              }
+            },
+            {
+              "reply": "مش واضح لي قصدك لأن مفيش تفاصيل عن اللي بتواجهه، فقولّي المشكلة أو الطلب نفسه وأنا أبدأ منه.\n\nأقدر أساعدك في ترتيب مهامك وأولوياتك، أقرأ لك ملف أو صورة أو تسجيل تبعتهم، أدوّر لك على معلومة في الويب، أو أقرأ لك نص ذكر أو آية لو محتاجها.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "naturalness": 4 },
+                "reason": "The reply matches the member's Egyptian dialect and takes the safe next step by asking for the problem and listing concrete capabilities, though the capability list reads somewhat like a menu."
               }
             }
           ]
@@ -1182,7 +1182,7 @@
           "slice": "ar-dialect-levantine",
           "topic": "casual",
           "userMessage": "كيفك؟ اليوم كان طويل كتير، تعبت.",
-          "reply": "كيفك؟ الله يعينك، يوم طويل كتير بيتعب. خد استراحة صغيرة، اشرب شي دافي وارخِ كتافك شوي قبل ما تكمل. إذا بدك، بترتّب معك اللي باقي بكرة بخطوات بسيطة.",
+          "reply": "كيفك؟ الله يعينك، اليوم الطويل بيتعب أكتر مما بيبيّن. خد استراحة صغيرة هلأ، اشرب شي دافي وابعد شوي عن الشغل. إذا بدك تحكي عن اللي تعبك، أنا سامعة.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -1198,7 +1198,22 @@
           },
           "runs": [
             {
-              "reply": "كيفك؟ الله يعينك، يوم طويل كتير بيتعب. خد استراحة صغيرة، اشرب شي دافي وارخِ كتافك شوي قبل ما تكمل. إذا بدك، بترتّب معك اللي باقي بكرة بخطوات بسيطة.",
+              "reply": "كيفك؟ الله يعينك، اليوم الطويل بيتعب أكتر مما بيبيّن. خد استراحة صغيرة هلأ، اشرب شي دافي وابعد شوي عن الشغل. إذا بدك تحكي عن اللي تعبك، أنا سامعة.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 4,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
+                "reason": "The reply mirrors the member's Levantine dialect and offers calm, caring support, though it opens by echoing 'كيفك؟' back awkwardly and the phrasing 'بيتعب أكتر مما بيبيّن' is slightly stilted."
+              }
+            },
+            {
+              "reply": "كيفك؟ الله يعينك، اليوم الطويل بيعبّي الراس. خد استراحة صغيرة هلأ، اشرب شي دافي وابعد عن الشاشة شوي. وإذا في شي محدد عم يضغطك، احكيه وأنا برتّبه معك.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1209,37 +1224,22 @@
               "judge": {
                 "ok": true,
                 "scores": { "warmth": 5, "naturalness": 4, "language_fit": 5 },
-                "reason": "The reply mirrors the member's Levantine dialect (كيفك، كتير، بدك، شوي) with a calm, caring tone, though the phrasing 'يوم طويل كتير بيتعب' is slightly stiff."
+                "reason": "The Levantine dialect mirrors the member's casual message, and the tone is warm and calm without being syrupy; the advice list is slightly structured but still reads like a person talking."
               }
             },
             {
-              "reply": "تعبانة معك، اليوم الطويل بيستهلك أكتر مما بنحسّ. خد استراحة صغيرة هلّق، اشرب شي دافي وابعد عن الشاشة شوي. وإذا في شي بتحب نرتّبه سوا، أنا هون.",
+              "reply": "كيفك؟ الله يعينك، اليوم الطويل بيعبّي الطاقة حتى لو ما عملت شي كبير. خد استراحة صغيرة هلأ، اشرب شي دافي وابعد عن الشاشة شوي. وإذا فيك تنام بكير الليلة، بيكون أحسن شي تعمله لحالك.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 3,
+                "sentences": 4,
                 "actualLanguage": "ar"
               },
               "judge": {
                 "ok": true,
                 "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
-                "reason": "The reply is friendly and calm, mirrors the member's Levantine register closely, and reads like a person, though the 'long day consumes you' line is slightly aphoristic."
-              }
-            },
-            {
-              "reply": "تعبك مفهوم، اليوم الطويل بيسحب الطاقة من غير ما نحس. خد استراحة قصيرة هلأ، اشرب شي دافي وابعد شوي عن الشاشة. وإذا في شي بضغط عليك، قسّمه لخطوات صغيرة بتبقى أسهل.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
-                "reason": "The reply mirrors the member's Levantine dialect and responds to their tiredness with calm, non-syrupy care, though it never answers the 'كيفك' greeting itself."
+                "reason": "The reply mirrors the member's Levantine dialect (هلأ، شوي، بكير) and responds with calm, caring sympathy, though the advice reads a little list-like and one phrase is slightly awkward."
               }
             }
           ]
@@ -1249,26 +1249,38 @@
           "slice": "ar-dialect-levantine",
           "topic": "general",
           "userMessage": "بتعرف تشرحلي الإعراب بطريقة سهلة؟",
-          "reply": "أيوه، الإعراب ببساطة إنك تقول وظيفة الكلمة في الجملة، وعلامة آخرها اللي بتتغير حسب الوظيفة دي.\n\nيعني في «الولدُ أكلَ التفاحةَ»: «الولدُ» فاعل مرفوع بالضمة، و«أكلَ» فعل ماضٍ مبني على الفتح، و«التفاحةَ» مفعول به منصوب بالفتحة.\n\nالقاعدة اللي تختصر كل حاجة: الفاعل مرفوع، والمفعول به منصوب، والمضاف إليه مجرور.\n\nلو تحب، ابعثلي جملة وأنا أعربها لك كلمة كلمة.",
+          "reply": "الإعراب هو تغيّر حركة آخر الكلمة على حسب موقعها في الجملة، مش على حسب الكلمة نفسها. خد «الطالب» مثال: «الطالبُ مجتهد» بتطلع مرفوعة لأنها مبتدأ، و«شفت الطالبَ» بتطلع منصوبة لأنها مفعول به، و«سلّمت على الطالبِ» بتطلع مجرورة لأن قبلها حرف جر. فالحركة بتتحدد من الشغل اللي بتعمله الكلمة في الجملة، مش من معناها.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
-            "warnings": [
-              "length: 6 sentences (soft cap is 4)",
-              "length: 5 sentences (soft cap is 4)"
-            ],
-            "sentences": 4,
+            "warnings": ["length: 5 sentences (soft cap is 4)"],
+            "sentences": 3,
             "actualLanguage": "ar"
           },
           "judge": {
             "ok": true,
-            "scores": { "helpfulness": 5, "naturalness": 4 },
+            "scores": { "helpfulness": 4.67, "naturalness": 4 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "أيوه، الإعراب ببساطة إنك تقول وظيفة الكلمة في الجملة، وعلامة آخرها اللي بتتغير حسب الوظيفة دي.\n\nيعني في «الولدُ أكلَ التفاحةَ»: «الولدُ» فاعل مرفوع بالضمة، و«أكلَ» فعل ماضٍ مبني على الفتح، و«التفاحةَ» مفعول به منصوب بالفتحة.\n\nالقاعدة اللي تختصر كل حاجة: الفاعل مرفوع، والمفعول به منصوب، والمضاف إليه مجرور.\n\nلو تحب، ابعثلي جملة وأنا أعربها لك كلمة كلمة.",
+              "reply": "الإعراب هو تغيّر حركة آخر الكلمة على حسب موقعها في الجملة، مش على حسب الكلمة نفسها. خد «الطالب» مثال: «الطالبُ مجتهد» بتطلع مرفوعة لأنها مبتدأ، و«شفت الطالبَ» بتطلع منصوبة لأنها مفعول به، و«سلّمت على الطالبِ» بتطلع مجرورة لأن قبلها حرف جر. فالحركة بتتحدد من الشغل اللي بتعمله الكلمة في الجملة، مش من معناها.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "naturalness": 4 },
+                "reason": "The reply gives a simple, example-driven explanation of إعراب that fits the member's request for an easy method, and its colloquial Egyptian tone matches the member's dialect. It loses a little naturalness to a somewhat textbook structure."
+              }
+            },
+            {
+              "reply": "أيوه: الإعراب هو تغيّر حركة آخر الكلمة حسب موقعها في الجملة، مش حسب الكلمة نفسها. خد «محمد» في 3 جمل: «جاء محمدٌ» فاعل مرفوع، «رأيت محمداً» مفعول منصوب، «مررت بمحمدٍ» مجرور بالباء. يعني الخطوة الأولى دايمًا: اسأل نفسك إيه وظيفة الكلمة في الجملة، وبعدين طبّق الحركة. لو حبيت، ابعثلي جملة وأعرِبها معاك خطوة بخطوة.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1279,26 +1291,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "helpfulness": 5, "naturalness": 4 },
-                "reason": "Gives a correct, easy explanation with an accurate worked example and offers a next step; the colloquial tone fits the member, though the rule summary reads a bit textbook."
+                "reason": "It gives a clear, correct three-example explanation of i'rab in the member's Egyptian dialect, with a concrete next step, and reads conversationally with only slight structure."
               }
             },
             {
-              "reply": "بعرف، وببسّطلك إياها: الإعراب هو إنك تحدد وظيفة الكلمة بالجملة، مش معناها — مين الفاعل، شو المفعول، وشو خبر.\n\nالطريقة الأسهل: اسأل بعد كل كلمة «مين عمل الفعل؟» (فاعل مرفوع)، «شو الشي اللي وقع عليه الفعل؟» (مفعول منصوب)، وإذا كانت الجملة اسمية فالأول مبتدأ والتاني خبر.\n\nجرّب معي: «كتبَ الطالبُ الدرسَ» — الطالبُ فاعل مرفوع، الدرسَ مفعول به منصوب.\n\nابعتلي جملة وأنا أعربها معك خطوة خطوة.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": ["length: 6 sentences (soft cap is 4)"],
-                "sentences": 6,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 5, "naturalness": 4 },
-                "reason": "The reply answers directly with a simple method and a worked example in the member's Levantine dialect, though the parenthetical labels and the 'الطريقة الأسهل' framing read slightly like a tutorial."
-              }
-            },
-            {
-              "reply": "أيوه، ببساطة: الإعراب هو تغيّر حركة آخر الكلمة على حسب موقعها في الجملة.\n\nخد مثال «الطالب»: في «الطالبُ مجتهدٌ» مبتدأ مرفوع، وفي «رأيتُ الطالبَ» مفعول به منصوب، وفي «سلّمتُ على الطالبِ» مجرور بحرف الجر.\n\nيعني أول حاجة تحددها: الكلمة إيه وظيفتها في الجملة؟ وبعدين تطبّق الحركة اللي بتناسبها.\n\nلو تحب أشرحلك الأبواب واحد واحد (مرفوعات، منصوبات، مجرورات) قولي نبدأ بأنهي واحد.",
+              "reply": "أيوه، ببساطة: الإعراب هو بيان وظيفة الكلمة في الجملة وعلامتها حسب موقعها.\n\nيعني بدل ما تسأل «إيه معنى الكلمة؟» تسأل «إيه دورها؟»: فاعل، مفعول به، مبتدأ، خبر...\n\nمثال: «كتبَ الطالبُ الدرسَ» — الطالبُ: فاعل مرفوع بالضمة، الدرسَ: مفعول به منصوب بالفتحة.\n\nلو تحب، ابعتلي جملة وأنا أعربها لك كلمة كلمة.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1309,7 +1306,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "helpfulness": 5, "naturalness": 4 },
-                "reason": "The reply directly explains إعراب simply with correct examples and a clear next step, in Egyptian dialect matching the member; it reads conversational, though slightly structured."
+                "reason": "It gives a clear, correct explanation of إعراب with an accurate worked example and offers a concrete next step, in colloquial Egyptian that fits the member's dialect; the structure is slightly manual-like."
               }
             }
           ]
@@ -1319,57 +1316,27 @@
           "slice": "ar-dialect-gulf",
           "topic": "casual",
           "userMessage": "كيف الحال؟ اليوم عندي شغل كثير.",
-          "reply": "يا هلا، بخير الحمد لله. يوم مزدحم بالشغل يبي له ترتيب قبل ما تبدأ: اكتب المهام وحدّد أهم ثلاث، وخلّ الباقي بعدها. قسّمها على فترات قصيرة وخُذ راحة بينها. تحب أساعدك ترتبها الحين؟",
+          "reply": "كيف حالك؟ الله يعينك على زحمة الشغل. رتّب مهامك وابدأ بالأهم والأصعب وأنت في أول طاقتك، وقسّم الباقي على فترات قصيرة مع راحة بينها.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
             "warnings": [],
-            "sentences": 4,
+            "sentences": 3,
             "actualLanguage": "ar"
           },
           "judge": {
             "ok": true,
             "scores": {
-              "warmth": 4.33,
-              "naturalness": 4,
-              "language_fit": 4.33
+              "warmth": 4,
+              "naturalness": 3.67,
+              "language_fit": 3.33
             },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "يا هلا، بخير الحمد لله. يوم مزدحم بالشغل يبي له ترتيب قبل ما تبدأ: اكتب المهام وحدّد أهم ثلاث، وخلّ الباقي بعدها. قسّمها على فترات قصيرة وخُذ راحة بينها. تحب أساعدك ترتبها الحين؟",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 4,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
-                "reason": "The reply answers warmly in a Gulf-leaning dialect that matches the casual member message, and the practical advice reads like a person speaking, though the middle part is slightly list-like."
-              }
-            },
-            {
-              "reply": "الحال طيب، الله يعينك. إذا الشغل كثير، ابدأ بالأهم والأعجل وخلّ الباقي بعده، وقسّم الوقت على فترات قصيرة مع راحة بينها. لا تنسَ تشرب ماء وتاخذ نفس عميق بين المهمات.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "warmth": 5, "naturalness": 4, "language_fit": 4 },
-                "reason": "The reply is friendly and calm and mirrors the casual tone with colloquial touches like خلّ and تاخذ, though its tidy multi-step advice reads a little like a list and it mixes in some MSA phrasing."
-              }
-            },
-            {
-              "reply": "الحال طيب، الله يعينك على زحمة الشغل. تقدر ترتّب مهامك حسب الأهم، وخذ فواصل قصيرة بينها عشان ما تتعب. تحب أساعدك في ترتيب أولويات اليوم؟",
+              "reply": "كيف حالك؟ الله يعينك على زحمة الشغل. رتّب مهامك وابدأ بالأهم والأصعب وأنت في أول طاقتك، وقسّم الباقي على فترات قصيرة مع راحة بينها.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1380,7 +1347,37 @@
               "judge": {
                 "ok": true,
                 "scores": { "warmth": 4, "naturalness": 4, "language_fit": 4 },
-                "reason": "The reply is friendly and calm with a natural colloquial tone ('الله يعينك', 'عشان'), though the practical advice is slightly structured and the dialect mix is only partly matched to the member's casual register."
+                "reason": "The reply is friendly and empathetic with a natural 'الله يعينك', and its advice reads like a person speaking, though slightly list-like. The MSA register fits the member's neutral casual message without clearly mirroring a dialect."
+              }
+            },
+            {
+              "reply": "الحال طيبة، شكراً لسؤالك. إذا الشغل كثير، ابدأ بأهم مهمتين وأجّل الباقي، وقسّم الوقت على فترات قصيرة مع راحة بينها.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "warmth": 4, "naturalness": 3, "language_fit": 2 },
+                "reason": "The reply is warm and practical, but the member writes casual Gulf/Levantine-style Arabic and نور answers in formal MSA, which breaks the dialect-mirroring rule for casual talk, and the tips read somewhat like a generic template."
+              }
+            },
+            {
+              "reply": "بخير، الله يعافيك. قسّم شغلك على فترات صغيرة وابدأ بالأهم، وخد راحة قصيرة بينها.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 4 },
+                "reason": "The reply is friendly and calm, gives practical advice in natural-sounding Arabic, and its mix of a colloquial \"خد\" with MSA suits a casual member message."
               }
             }
           ]
@@ -1390,7 +1387,7 @@
           "slice": "ar-dialect-gulf",
           "topic": "general",
           "userMessage": "ابي اعرف الفرق بين السيارة والشاحنة.",
-          "reply": "السيارة عادةً لنقل الأشخاص وحمولة خفيفة، حجمها صغير وسهلة القيادة برخصة خاصة. والشاحنة مخصصة لنقل البضائع والأحمال الثقيلة، أكبر وأثقل وتحتاج غالباً رخصة قيادة ثقيلة ورسوم وأنظمة تشغيل مختلفة.\n\nإن كان قصدك الفرق النظامي عندنا (تصنيف المرور والأوزان والرسوم) قل لي وأوضّح لك على هذا الأساس.",
+          "reply": "السيارة عادةً للاستخدام الشخصي وحمل عدد قليل من الركاب، أما الشاحنة فمصمّمة لنقل البضائع أو الأحمال الثقيلة. الفرق العملي الأساسي عند الجهات الرسمية هو الوزن الإجمالي والحمولة والاستخدام، فما يزيد عن حد معين من الوزن يُصنَّف شاحنة. هذا الحد وتفاصيل الترخيص والتأمين تختلف من دولة لأخرى، فلو تقصد السعودية أو غيرها قل لي وأدقّق لك.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -1401,12 +1398,12 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "helpfulness": 4, "naturalness": 2.67 },
+            "scores": { "helpfulness": 4.33, "naturalness": 3 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "السيارة عادةً لنقل الأشخاص وحمولة خفيفة، حجمها صغير وسهلة القيادة برخصة خاصة. والشاحنة مخصصة لنقل البضائع والأحمال الثقيلة، أكبر وأثقل وتحتاج غالباً رخصة قيادة ثقيلة ورسوم وأنظمة تشغيل مختلفة.\n\nإن كان قصدك الفرق النظامي عندنا (تصنيف المرور والأوزان والرسوم) قل لي وأوضّح لك على هذا الأساس.",
+              "reply": "السيارة عادةً للاستخدام الشخصي وحمل عدد قليل من الركاب، أما الشاحنة فمصمّمة لنقل البضائع أو الأحمال الثقيلة. الفرق العملي الأساسي عند الجهات الرسمية هو الوزن الإجمالي والحمولة والاستخدام، فما يزيد عن حد معين من الوزن يُصنَّف شاحنة. هذا الحد وتفاصيل الترخيص والتأمين تختلف من دولة لأخرى، فلو تقصد السعودية أو غيرها قل لي وأدقّق لك.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1417,26 +1414,26 @@
               "judge": {
                 "ok": true,
                 "scores": { "helpfulness": 4, "naturalness": 3 },
-                "reason": "The reply directly explains the difference and offers a useful next step, but its formal MSA register and the stiff closing offer read more like a manual than a casual Gulf-dialect answer."
+                "reason": "It directly explains the vehicle/truck difference by use, load, and weight and offers a country-specific follow-up, but the register is stiff and formal for a Gulf-dialect question, and the closing offer reads somewhat templated."
               }
             },
             {
-              "reply": "السيارة عادةً مخصّصة لنقل عدد محدود من الركاب، والشاحنة مخصّصة لنقل البضائع والأحمال الثقيلة، وهذا هو الفرق الجوهري بينهما.\n\nوينعكس الفرق عملياً في أنظمة المرور: الشاحنات تخضع لقيود في الأوزان والحمولة والسرعة ومسارات السير وأوقات التنقل، وأحياناً تحتاج رخصة قيادة ورخصة تسيير مختلفتين عن السيارة الخاصة.\n\nوفي الاستعمال اليومي الناس تسمّي الشاحنة الصغيرة «دينا» أو «قلاب» حسب التجهيز، بينما الشاحنة الكبيرة تشمل القاطرة والمقطورة.\n\nإذا كان قصدك تصنيفاً رسمياً للرخصة أو التأمين، فالأفضل تتأكد من إدارة المرور أو شركة التأمين لأن الحدود قد تختلف حسب الوزن الإجمالي.",
+              "reply": "الفرق الأساسي إن السيارة مخصصة لنقل عدد قليل من الأشخاص أو حمولة خفيفة، والشاحنة مصممة لنقل حمولات ثقيلة أو بضائع، وهذا يظهر في حجمها وقوة محركها وهيكلها.\n\nعملياً التصنيف في أنظمة المرور يعتمد على الوزن الإجمالي والغرض من الاستخدام لا على الاسم، فما يتجاوز حداً معيناً من الوزن يُعد شاحنة ويحتاج رخصة قيادة مناسبة.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 4,
+                "sentences": 2,
                 "actualLanguage": "ar"
               },
               "judge": {
                 "ok": true,
-                "scores": { "helpfulness": 4, "naturalness": 3 },
-                "reason": "The reply directly explains the car/truck difference with useful regional terms, but its stiff MSA, the formulaic disclaimer ending, and the three-paragraph structure read more like a document than a casual answer to a Gulf-dialect question"
+                "scores": { "helpfulness": 5, "naturalness": 3 },
+                "reason": "The reply directly explains the difference and adds a useful licensing point, but its formal MSA register and encyclopedic phrasing read more like a manual than a Gulf-dialect speaker answering a casual question."
               }
             },
             {
-              "reply": "السيارة عادةً لنقل الأشخاص بأحجام صغيرة أو متوسطة، والشاحنة مُخصّصة لنقل البضائع والأحمال الثقيلة ووزنها وحمولتها أكبر بكثير. يختلف التصنيف بين الجهات المرورية من بلد لآخر حسب الوزن الأقصى المسموح والحمولة وعدد المحاور، وعليه تُبنى رسوم الترخيص والتأمين ورخص القيادة المطلوبة. فالسؤال الحقيقي ليس في الاسم بل في الوزن والاستخدام المسجّل في الأوراق.",
+              "reply": "السيارة للتنقل بالأشخاص، والشاحنة لنقل البضائع والأحمال، وهذا الفرق الأساسي بينهما. يترتب عليه اختلاف الحجم والوزن: الشاحنة أثقل وأكبر وتحتاج رخصة قيادة خاصة ورخص تشغيل وسير أطول. كذلك تختلف الشاحنة في المحاور والحمولة المسموحة وأنظمة الفرامل، وتخضع لأنظمة أوزان ومرور خاصة على الطرق.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1446,8 +1443,8 @@
               },
               "judge": {
                 "ok": true,
-                "scores": { "helpfulness": 4, "naturalness": 2 },
-                "reason": "The reply answers the car-versus-truck distinction clearly, but it is stiff, encyclopedic MSA that ignores the member's Gulf dialect and reads more like a manual than a conversational reply."
+                "scores": { "helpfulness": 4, "naturalness": 3 },
+                "reason": "The reply directly explains the core difference and gives useful specifics, but its formal MSA phrasing and list-like structure read more like a manual than a conversational answer to a dialect-speaking member."
               }
             }
           ]
@@ -1457,74 +1454,7 @@
           "slice": "ar-dialect-maghrebi",
           "topic": "casual",
           "userMessage": "كيفاش؟ اليوم كاين حرارة كبيرة.",
-          "reply": "كيفاش؟ الحرارة اليوم قاوية، خصك تشرب الماء بانتظام وتبعد على الشمس قدر ما تقدر. دير شغلك الثقيل في الصباح الباكر ولا في العشية، وخد راحة في الظهيرة.",
-          "error": "",
-          "deterministic": {
-            "pass": true,
-            "failures": [],
-            "warnings": [],
-            "sentences": 3,
-            "actualLanguage": "ar"
-          },
-          "judge": {
-            "ok": true,
-            "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
-            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
-          },
-          "runs": [
-            {
-              "reply": "كيفاش؟ الحرارة اليوم قاوية، خصك تشرب الماء بانتظام وتبعد على الشمس قدر ما تقدر. دير شغلك الثقيل في الصباح الباكر ولا في العشية، وخد راحة في الظهيرة.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
-                "reason": "The reply mirrors the member's Algerian dialect (قاوية، خصك، دير، العشية) and gives calm, caring advice, though the tone is slightly directive and the advice reads a bit like a checklist."
-              }
-            },
-            {
-              "reply": "الحرارة اليوم كبيرة بزاف، خاصة مع الظهيرة. اشرب الماء بانتظام حتى إلا ما حسّيتش بالعطش، ولبّس حوايج خفيفة وفضفاضة، وخفف من الخروج بين 12 و4. وإلا كان عندك شي مهام برا، قسمهم على الصباح بكري ولا على العشية.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
-                "reason": "The reply mirrors the member's Algerian dialect (بزاف، حوايج، بكري، العشية) and gives calm, practical advice without scolding, though it skips acknowledging the greeting and is slightly instructional."
-              }
-            },
-            {
-              "reply": "كيفاش نتا؟ الحرارة اليوم قاسحة، حسّاس. اشرب الماء بانتظام وبعّد على الشمس بين 11 و4، ولبّس خفيف وفاتح. وإلا خرجت ضروري، خد كاب وحاول تمشي ف الظل.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 4,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
-                "reason": "The reply mirrors the member's Algerian dialect (كيفاش، نتا، قاسحة، بعّد، ف الظل) and sounds caring, though the tips are slightly list-like and the last sentence is a little stiff."
-              }
-            }
-          ]
-        },
-        {
-          "id": "dialect-magh-02",
-          "slice": "ar-dialect-maghrebi",
-          "topic": "general",
-          "userMessage": "بغيت تفهمني معنى كلمة بسيطة.",
-          "reply": "«بسيطة» عندها معنيان حسب السياق: الأول أنها حاجة سهلة وغير معقّدة، مثل «المسألة بسيطة» أي ما فيها تعقيد.\n\nوالثاني في الدارجة تُستعمل ردّاً بمعنى «ما كاين مشكل» أو «ما عليكش»، كي يعتذر ليك شي واحد فتقول ليه «بسيطة».\n\nوتُوصف بها الشخص المتواضع غير المتكلّف: «راجل بسيط».\n\nقولي ليا الجملة اللي سمعتي فيها الكلمة ونوضّح ليك المعنى بالضبط.",
+          "reply": "كيفاش نتا؟ الحرارة اليوم قاسحة بزاف، خفّف الخروج فساعات الذروة واشرب الماء بانتظام حتى بلا عطش. لبس حاجة خفيفة وبيضة اللون، وردّ بالك على الشمس من 11 حتى 16. وإلا حسّيت بدوخة ولا صداع، وقّف النشاط فالحين وروح لبلاصة باردة.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -1535,12 +1465,12 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "helpfulness": 5, "naturalness": 4 },
+            "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "«بسيطة» عندها معنيان حسب السياق: الأول أنها حاجة سهلة وغير معقّدة، مثل «المسألة بسيطة» أي ما فيها تعقيد.\n\nوالثاني في الدارجة تُستعمل ردّاً بمعنى «ما كاين مشكل» أو «ما عليكش»، كي يعتذر ليك شي واحد فتقول ليه «بسيطة».\n\nوتُوصف بها الشخص المتواضع غير المتكلّف: «راجل بسيط».\n\nقولي ليا الجملة اللي سمعتي فيها الكلمة ونوضّح ليك المعنى بالضبط.",
+              "reply": "كيفاش نتا؟ الحرارة اليوم قاسحة بزاف، خفّف الخروج فساعات الذروة واشرب الماء بانتظام حتى بلا عطش. لبس حاجة خفيفة وبيضة اللون، وردّ بالك على الشمس من 11 حتى 16. وإلا حسّيت بدوخة ولا صداع، وقّف النشاط فالحين وروح لبلاصة باردة.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1550,12 +1480,64 @@
               },
               "judge": {
                 "ok": true,
-                "scores": { "helpfulness": 5, "naturalness": 4 },
-                "reason": "It directly explains two meanings of «بسيطة» with examples and asks for the sentence for context, in a dialect that matches the member's Maghrebi, though some phrasing is slightly stiff and structured."
+                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
+                "reason": "The reply mirrors the member's Algerian dialect (كيفاش، كاين، بزاف، بلاصة) and gives caring, calm heat advice, though the health tips read a little like a list."
               }
             },
             {
-              "reply": "«بسيطة» عندنا فالمغرب كتستعمل بمعنى «ماشي مشكل» ولا «ما كاين والو»، كتقولها ملي واحد يعتذر ليك ولا يشرح ليك شي حاجة ونتا باغي تسهّل عليه: «بسيطة، ماعليهاش».\n\nوفي معناها الأصلي الفصيح كتعني «سهلة» ولا «غير معقّدة»: «المسألة بسيطة» يعني ما فيهاش تعقيد.",
+              "reply": "الحرارة اليوم قوية بزاف، خفّف من الخروج فساعات الذروة واشرب الماء بانتظام. لبس حاجة خفيفة وغطّي راسك إلا خرجتي. وإلا بغيتي، نعاونك ترتّب مهامك باش تخلصها فالصباح قبل ما تشدّ الحرارة.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
+                "reason": "The reply mirrors the member's Algerian dialect closely (بزاف، باش، بغيتي، إلا خرجتي) and gives caring, practical advice, though it never answers the opening كيفاش and the tips read a little like a list."
+              }
+            },
+            {
+              "reply": "الحرارة اليوم كبيرة بزاف، خاصك تشرب الماء بانتظام وتبعد على الشمس فساعات الذروة. لبس حوايج خفيفة وفضفاضة، وستعمل الظل ولا مكيّف فاش تقدر. إلا حسّيت بالدوار ولا الصداع، توقف على الخدمة وارقد فبلاصة باردة.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "warmth": 4, "naturalness": 4, "language_fit": 5 },
+                "reason": "The reply mirrors the member's Algerian dialect (كيفاش, كاين, بزاف, فاش) and gives calm, caring heat advice, though it never directly answers the greeting and reads slightly like a list of tips."
+              }
+            }
+          ]
+        },
+        {
+          "id": "dialect-magh-02",
+          "slice": "ar-dialect-maghrebi",
+          "topic": "general",
+          "userMessage": "بغيت تفهمني معنى كلمة بسيطة.",
+          "reply": "«بسيطة» فالمغرب كتستعمل فمعنيين: الأول حرفي، يعني حاجة سهلة ولا غير معقّدة (بحال «السؤال بسيط»)، والثاني هو الأكثر شيوعاً فالكلام اليومي، يعني «ماكاين مشكل» ولا «ماعليش» ولا «سير على راحتك»، كتقولها لشي حد اعتذر منك ولا اقترح عليك حاجة. الفرق كيبان من النبرة والسياق: إلا كانت وصف لحاجة فهي «سهلة»، وإلا كانت جواب على اعتذار ولا طلب فهي «ماعليش».",
+          "error": "",
+          "deterministic": {
+            "pass": true,
+            "failures": [],
+            "warnings": [],
+            "sentences": 2,
+            "actualLanguage": "ar"
+          },
+          "judge": {
+            "ok": true,
+            "scores": { "helpfulness": 4.67, "naturalness": 4 },
+            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
+          },
+          "runs": [
+            {
+              "reply": "«بسيطة» فالمغرب كتستعمل فمعنيين: الأول حرفي، يعني حاجة سهلة ولا غير معقّدة (بحال «السؤال بسيط»)، والثاني هو الأكثر شيوعاً فالكلام اليومي، يعني «ماكاين مشكل» ولا «ماعليش» ولا «سير على راحتك»، كتقولها لشي حد اعتذر منك ولا اقترح عليك حاجة. الفرق كيبان من النبرة والسياق: إلا كانت وصف لحاجة فهي «سهلة»، وإلا كانت جواب على اعتذار ولا طلب فهي «ماعليش».",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1566,11 +1548,26 @@
               "judge": {
                 "ok": true,
                 "scores": { "helpfulness": 5, "naturalness": 4 },
-                "reason": "It answers the question directly, giving both the Moroccan colloquial sense and the classical meaning with examples, in a dialect that matches the member; the quoted-example structure is slightly manual-like."
+                "reason": "It answers the question directly in Moroccan Darija, separating the two meanings of «بسيطة» with usable examples, though the explanation is slightly structured and analytical for casual speech."
               }
             },
             {
-              "reply": "«بسيطة» كلمة مغربية عندها معنيين حسب السياق: الأول «سهلة» أو «غير معقّدة»، مثلاً «المسألة بسيطة» يعني الحل ما فيهش تعقيد. والثاني تُستعمل كردّ للتهدئة والقول «ما كاين مشكل» أو «ماتقلقش»، كي تقول لواحد «سمح ليا» فيجاوبك «بسيطة». وأصلها من «بسيط» بمعنى سهل وبلا تكلّف.",
+              "reply": "تقصد معنى كلمة «بسيطة» نفسها، ولا بغيتي تشرح ليك كلمة أخرى؟ «بسيطة» فالمغربية كتجي بمعنى «سهلة» (مثلاً: «المسألة بسيطة»)، وكتجي حتى كردّ بمعنى «ما كاين مشكل / ماشي مشكلة».",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "naturalness": 4 },
+                "reason": "It handles the ambiguous request well by asking which meaning is wanted and giving the Moroccan senses of «بسيطة» with examples, in natural Darija with only minor stiffness."
+              }
+            },
+            {
+              "reply": "«بسيطة» عندها معنيين: في الفصحى معناها ساهلة، ماشي معقّدة (بحال «مسألة بسيطة»)، وفي الدارجة المغربية كتستعمل للتهدئة بمعنى «ماشي مشكل» أو «ما كاين حتى مشكل» أو حتى كإجابة على اعتذار.\n\nيعني الواحد كيقول «بسيطة» باش يقول للمخاطب ما تعقّدش راسك، الأمر هيّن.\n\nإلا بغيتي، قولي لي الجملة اللي سمعتي فيها الكلمة وأنا نوضّح لك المعنى بالضبط فداك السياق.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1581,7 +1578,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "helpfulness": 5, "naturalness": 4 },
-                "reason": "The reply directly explains both senses of «بسيطة» with examples in natural Moroccan Darija, though a few phrases read slightly written rather than fully conversational."
+                "reason": "It directly explains both meanings of «بسيطة» in MSA and Moroccan Darija with examples, then offers a useful follow-up, though a few phrases like «فداك السياق» read slightly unnatural."
               }
             }
           ]
@@ -1591,19 +1588,19 @@
           "slice": "mixed",
           "topic": "general",
           "userMessage": "Can you explain الفرق بين API و endpoint باختصار؟",
-          "reply": "An API is the whole contract a service offers — all its endpoints, rules, request/response formats, and auth. An endpoint is one specific URL (plus method) inside that API that you actually call, like `GET /users/{id}`. So the endpoint is a single door; the API is the entire building and its floor plan.",
+          "reply": "An API is the whole contract — all the endpoints, rules, and data formats a service exposes. An endpoint is a single URL within that API that you call, like `/users/{id}`. So every endpoint is part of an API, but the API is the bigger picture.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
-            "warnings": [],
+            "warnings": ["length: 5 sentences (soft cap is 4)"],
             "sentences": 3,
             "actualLanguage": "en"
           },
           "judge": {
             "ok": true,
             "scores": {
-              "language_fit": 2.67,
+              "language_fit": 2,
               "naturalness": 4,
               "helpfulness": 4.67
             },
@@ -1611,31 +1608,12 @@
           },
           "runs": [
             {
-              "reply": "An API is the whole contract a service offers — all its endpoints, rules, request/response formats, and auth. An endpoint is one specific URL (plus method) inside that API that you actually call, like `GET /users/{id}`. So the endpoint is a single door; the API is the entire building and its floor plan.",
+              "reply": "An API is the whole contract — all the endpoints, rules, and data formats a service exposes. An endpoint is a single URL within that API that you call, like `/users/{id}`. So every endpoint is part of an API, but the API is the bigger picture.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
                 "sentences": 3,
-                "actualLanguage": "en"
-              },
-              "judge": {
-                "ok": true,
-                "scores": {
-                  "language_fit": 1,
-                  "naturalness": 4,
-                  "helpfulness": 5
-                },
-                "reason": "The member wrote in Arabic and asked for a brief explanation, but the reply is entirely in English, though the content is accurate and concise."
-              }
-            },
-            {
-              "reply": "An API is the whole interface a service exposes — the set of rules, operations, and data formats you can use to talk to it. An endpoint is one specific address within that API that you send a request to, usually a URL path like `/users/42`.\n\nSo the API is the menu; an endpoint is a single dish on it. One API typically has many endpoints.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 4,
                 "actualLanguage": "en"
               },
               "judge": {
@@ -1645,26 +1623,45 @@
                   "naturalness": 4,
                   "helpfulness": 4
                 },
-                "reason": "The member wrote mainly in Arabic, but the reply is entirely in English, which is a language mismatch; the explanation itself is clear, concise, and well-analogized."
+                "reason": "The member wrote in Arabic with English technical terms, but the reply is entirely in English, which mismatches the member's language; the explanation itself is clear, accurate, and concise."
               }
             },
             {
-              "reply": "الـAPI هو الواجهة الكاملة التي تحدّد كيف يتخاطب نظامان: القواعد والصيغ والمصادقة وكل المسارات المتاحة. أما الـendpoint فهو عنوان واحد محدّد داخل هذه الواجهة، مثل `GET /users/5`، يمثّل مورداً أو وظيفة بعينها. تخيّل الـAPI مطعماً بقائمة طعامه، والـendpoint طبقاً واحداً في القائمة بطلبه الخاص. كل endpoint جزء من الـAPI، لكن الـAPI أوسع من مجموع المسارات وحدها.",
+              "reply": "An API is the whole contract — the set of rules, methods, and data structures a service exposes. An endpoint is one specific URL within that contract, like `/users/{id}`, that you call to do one thing. So the API is the interface; endpoints are the individual addresses it's made of.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 4,
-                "actualLanguage": "ar"
+                "sentences": 3,
+                "actualLanguage": "en"
               },
               "judge": {
                 "ok": true,
                 "scores": {
-                  "language_fit": 5,
+                  "language_fit": 2,
                   "naturalness": 4,
                   "helpfulness": 5
                 },
-                "reason": "The reply answers accurately and briefly in Arabic with the member's English technical terms kept, using a natural restaurant analogy, though it runs a little longer than a true 'باختصار' would suggest."
+                "reason": "The member wrote in Arabic with English technical terms, but نور replied entirely in English, which mismatches the member's language, while the explanation itself is accurate, concise, and natural."
+              }
+            },
+            {
+              "reply": "An API is the whole contract — the set of rules and operations a service exposes. An endpoint is one specific URL (plus method) inside that API, e.g. `GET /users/{id}`. So an API can contain many endpoints.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": ["length: 5 sentences (soft cap is 4)"],
+                "sentences": 5,
+                "actualLanguage": "en"
+              },
+              "judge": {
+                "ok": true,
+                "scores": {
+                  "language_fit": 2,
+                  "naturalness": 4,
+                  "helpfulness": 5
+                },
+                "reason": "The member wrote in Arabic and asked in Arabic, but the reply is entirely in English, which mismatches the member's language; the content itself is accurate, concise, and well illustrated."
               }
             }
           ]
@@ -1674,53 +1671,23 @@
           "slice": "mixed",
           "topic": "general",
           "userMessage": "أريد أن أفهم ال prompt اللي كتبته، ممكن؟",
-          "reply": "ما وصلني أي prompt مع رسالتك — مفيش نص مرفق أقدر أقرأه. الصقه هنا أو ارفعه، وأشرحه لك جزءاً جزءاً: كل تعليمة معناها وإيه اللي ناقص فيها.\n\nولو المقصود التعليمات اللي أنا شغالة بيها، أقدر أوضّح فكرتها العامة، لكن مش أنقلها حرفياً.",
+          "reply": "ما وصلني نصّ الـ prompt اللي تقصده — لا في رسالتك ولا في مرفق. الصقه هنا أو أرسله كملف، وأشرح لك مكوّناته: الدور، المهمة، القيود، وصيغة المخرجات.",
           "error": "",
           "deterministic": {
             "pass": true,
             "failures": [],
             "warnings": [],
-            "sentences": 3,
+            "sentences": 2,
             "actualLanguage": "ar"
           },
           "judge": {
             "ok": true,
-            "scores": { "language_fit": 3.67, "naturalness": 4 },
+            "scores": { "language_fit": 3.33, "naturalness": 3 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "ما وصلني أي prompt مع رسالتك — مفيش نص مرفق أقدر أقرأه. الصقه هنا أو ارفعه، وأشرحه لك جزءاً جزءاً: كل تعليمة معناها وإيه اللي ناقص فيها.\n\nولو المقصود التعليمات اللي أنا شغالة بيها، أقدر أوضّح فكرتها العامة، لكن مش أنقلها حرفياً.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "language_fit": 5, "naturalness": 4 },
-                "reason": "The reply mirrors the member's casual Egyptian register (مفيش، إيه، مش، الصقه) and reads like a natural person's answer, though the second paragraph is slightly formal."
-              }
-            },
-            {
-              "reply": "ما وصلني في هذه المحادثة أي نصّ prompt منك، فليس عندي ما أشرحه. هل تقصد تعليماتي أنا (النظام الذي أعمل به)، أم نصاً كتبته أنت في محادثة سابقة أو عندك في ملف؟ الصقه أو أرفقه هنا وأشرحه لك جزءاً جزءاً: ماذا يطلب، وأين قد يُساء فهمه.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "language_fit": 3, "naturalness": 4 },
-                "reason": "The reply is clear Arabic, but it stays in formal MSA although the member wrote casually with colloquial markers like 'اللي' and 'ممكن؟', so it does not mirror the register. The content is natural and helpful, though slightly stiff in phras"
-              }
-            },
-            {
-              "reply": "أرسل لي النص الذي تريد فهمه، فليس مع رسالتك أي prompt أستطيع قراءته. وإن كنت تقصد وصفاً كتبته سابقاً في محادثة أخرى، فالصقه هنا.",
+              "reply": "ما وصلني نصّ الـ prompt اللي تقصده — لا في رسالتك ولا في مرفق. الصقه هنا أو أرسله كملف، وأشرح لك مكوّناته: الدور، المهمة، القيود، وصيغة المخرجات.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1730,8 +1697,38 @@
               },
               "judge": {
                 "ok": true,
-                "scores": { "language_fit": 3, "naturalness": 4 },
-                "reason": "The reply stays in clear MSA while the member mixes in dialect markers like «اللي» and «ممكن», so it doesn't mirror their casual register, though it is understandable; the phrasing is natural and helpful, with only a slightly stiff clause."
+                "scores": { "language_fit": 4, "naturalness": 4 },
+                "reason": "The reply stays in Arabic with a mostly simplified register that suits the member's semi-formal mix, and it reads as direct and human, though the closing component list is slightly template-like."
+              }
+            },
+            {
+              "reply": "لم أكتب أنا أي prompt في هذه المحادثة، فلم يصلني منك نص سابق لأشرحه. إن كنت تقصد التعليمات التي أعمل بها، فهي إرشادات تحدّد لغتي وحدود دوري: أجيب بلغة رسالتك، وأقرأ لك المرفقات، ولا أفتي في الدين، وأدوات الكتابة عندي تُعرض عليك كاقتراح ولا تُنفَّذ إلا بتأكيدك. وإن كنت تقصد نص prompt كتبته أنت وتريد مراجعته أو شرحه، فأرسله لي.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "language_fit": 3, "naturalness": 3 },
+                "reason": "The reply is in the right language but uses formal MSA where the member wrote casually in colloquial Arabic, and its list of rules reads more like a manual than a person speaking."
+              }
+            },
+            {
+              "reply": "لا يوجد prompt كتبته أنا في هذه المحادثة؛ لم أكتب أي تعليمات. إن كنت تقصد التعليمات التي أعمل بها، فهي إرشادات من رؤية رقمية تحدّد لغتي وأدواتي وحدود دوري (مثل قراءة النصّ لا الإفتاء)، ولا أعرضها كنصّ كامل. إن كنت تقصد prompt كتبته أنت أو رأيته في مكان آخر، أرسله لي وأشرح لك أجزاءه.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "language_fit": 3, "naturalness": 2 },
+                "reason": "The reply is correct Arabic, but it uses stiff formal MSA for a casual, colloquial-leaning message instead of mirroring the member's dialect, and its phrasing is repetitive and manual-like."
               }
             }
           ]
@@ -1741,7 +1738,7 @@
           "slice": "mixed",
           "topic": "general",
           "userMessage": "Okay شكراً، بس عندي سؤال صغير كمان.",
-          "reply": "على الرحب والسعة، تفضّل بسؤالك.",
+          "reply": "تفضّل بسؤالك.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -1752,10 +1749,25 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "language_fit": 3.33, "naturalness": 3.67 },
+            "scores": { "language_fit": 3, "naturalness": 3.67 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
+            {
+              "reply": "تفضّل بسؤالك.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 1,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "language_fit": 3, "naturalness": 4 },
+                "reason": "The reply is in Arabic and short, but its register is neutral MSA rather than mirroring the member's casual dialect ('بس', 'كمان'); naturalness is good for a brief, human-sounding invitation."
+              }
+            },
             {
               "reply": "على الرحب والسعة، تفضّل بسؤالك.",
               "deterministic": {
@@ -1768,26 +1780,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "language_fit": 3, "naturalness": 4 },
-                "reason": "The reply is correct Arabic and short, but the member writes casual dialect and نور answers in formal MSA instead of mirroring it, while the phrasing still sounds like a natural person inviting the next question."
+                "reason": "The reply is in Arabic and fits the member's casual message, but it uses formal MSA where the member's colloquial 'بس' and 'كمان' call for mirroring the dialect; the phrasing itself sounds natural and human."
               }
             },
             {
-              "reply": "العفو — تفضّل، اسأل.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 1,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "language_fit": 4, "naturalness": 4 },
-                "reason": "The reply is in Arabic and short like the casual message, though the register is neutral rather than clearly Levantine or Gulf, and 'تفضّل، اسأل' reads slightly abrupt."
-              }
-            },
-            {
-              "reply": "على الرحب والسعة، اسأل.",
+              "reply": "تحت أمرك، اسأل.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1798,7 +1795,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "language_fit": 3, "naturalness": 3 },
-                "reason": "The reply is in Arabic, but it uses formal MSA where policy B expects the casual Levantine/Gulf mix the member wrote, and the bare imperative \"اسأل\" feels curt rather than warm."
+                "reason": "The reply stays in Arabic, but the formal MSA-leaning phrase 'تحت أمرك' and the curt 'اسأل' don't mirror the member's casual Levantine/Gulf tone with 'بس' and 'كمان'."
               }
             }
           ]
@@ -1808,7 +1805,7 @@
           "slice": "ambiguous",
           "topic": "general",
           "userMessage": "ok",
-          "reply": "تمام، أنا هنا.",
+          "reply": "كيف أقدر أساعدك؟",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -1824,22 +1821,7 @@
           },
           "runs": [
             {
-              "reply": "تمام، أنا هنا.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 1,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "naturalness": 5, "conciseness": 5 },
-                "reason": "The reply is a short, natural Arabic acknowledgment that fits the member's casual 'ok' with no preamble, filler, or template phrasing."
-              }
-            },
-            {
-              "reply": "تمام، كيف أقدر أساعدك؟",
+              "reply": "كيف أقدر أساعدك؟",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1850,7 +1832,7 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "conciseness": 5 },
-                "reason": "The reply is a short, natural acknowledgment with a single follow-up question and no filler or preamble, though it is a fairly generic phrasing."
+                "reason": "The reply is short and direct with no preamble or filler, though the offer of help is a fairly standard phrasing rather than a fully personal one."
               }
             },
             {
@@ -1865,7 +1847,22 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "conciseness": 5 },
-                "reason": "The reply is a short, fitting response to a bare 'ok', though 'كيف أقدر أساعدك؟' is a fairly generic assistant opener."
+                "reason": "The reply is a short, natural Arabic follow-up to a bare \"ok\" with no preamble or filler, though the phrasing is slightly generic."
+              }
+            },
+            {
+              "reply": "تمام، تحت أمرك.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 1,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "naturalness": 5, "conciseness": 5 },
+                "reason": "The reply is a short, natural Arabic acknowledgment that matches the member's casual 'ok' with no template phrasing, preamble, or filler."
               }
             }
           ]
@@ -1875,7 +1872,7 @@
           "slice": "ambiguous",
           "topic": "general",
           "userMessage": "؟",
-          "reply": "وش تحب أساعدك فيه؟ اكتب سؤالك أو حاجتك وأنا معك.",
+          "reply": "ما سؤالك؟ اكتبه وسأساعدك.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -1886,12 +1883,12 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "naturalness": 3.67, "conciseness": 4.67 },
+            "scores": { "naturalness": 4, "conciseness": 5 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "وش تحب أساعدك فيه؟ اكتب سؤالك أو حاجتك وأنا معك.",
+              "reply": "ما سؤالك؟ اكتبه وسأساعدك.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1902,11 +1899,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "conciseness": 5 },
-                "reason": "The reply uses a natural Gulf-dialect clarifying question that fits the member's bare \"؟\", and it is short with no preamble or filler."
+                "reason": "The reply is short and direct with no filler, and it reads like a natural response to a bare question mark, though slightly terse."
               }
             },
             {
-              "reply": "وصلت رسالتك لكن ما فيها سؤال واضح. اكتب لي ما تحتاجه — معلومة، أو ترتيب مهام، أو سؤال عن بياناتك — وأنا أساعدك.",
+              "reply": "وصلتني علامة استفهام فقط، فما السؤال؟ اكتب سؤالك أو الصق الملف الذي تريدني أن أقرأه.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -1916,23 +1913,23 @@
               },
               "judge": {
                 "ok": true,
-                "scores": { "naturalness": 4, "conciseness": 4 },
-                "reason": "The reply is short and direct with no closing summary, but the dash-separated list of options and the formal phrasing read slightly like a template."
+                "scores": { "naturalness": 4, "conciseness": 5 },
+                "reason": "The reply is short and direct with no preamble or restated question, though the offer to paste a file reads slightly generic."
               }
             },
             {
-              "reply": "لم أفهم سؤالك؛ اكتب ما تحتاجه وسأساعدك.",
+              "reply": "ما سؤالك؟ اكتبه وسأساعدك.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
-                "sentences": 1,
+                "sentences": 2,
                 "actualLanguage": "ar"
               },
               "judge": {
                 "ok": true,
-                "scores": { "naturalness": 3, "conciseness": 5 },
-                "reason": "The reply is short and gets straight to the point, but the phrasing is somewhat formulaic and customer-service-like rather than how a person would naturally respond to a lone question mark."
+                "scores": { "naturalness": 4, "conciseness": 5 },
+                "reason": "The reply is short and direct with no filler, and it reads like a natural response to a lone question mark, though the phrasing is slightly stock."
               }
             }
           ]
@@ -1942,7 +1939,409 @@
           "slice": "ambiguous",
           "topic": "general",
           "userMessage": "3",
-          "reply": "وصلتني رسالة فيها الرقم 3 فقط، ما الذي تريد أن أساعدك فيه؟",
+          "reply": "ما المطلوب من الرقم 3؟ وضّح سؤالك لأتمكن من مساعدتك.",
+          "error": "",
+          "deterministic": {
+            "pass": true,
+            "failures": [],
+            "warnings": [],
+            "sentences": 2,
+            "actualLanguage": "ar"
+          },
+          "judge": {
+            "ok": true,
+            "scores": { "naturalness": 3.33, "conciseness": 4.33 },
+            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
+          },
+          "runs": [
+            {
+              "reply": "ما المطلوب من الرقم 3؟ وضّح سؤالك لأتمكن من مساعدتك.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "naturalness": 3, "conciseness": 5 },
+                "reason": "The reply is short and gets straight to a clarifying question, but the closing line 'وضّح سؤالك لأتمكن من مساعدتك' is stock assistant boilerplate that weakens the human feel."
+              }
+            },
+            {
+              "reply": "وصلني الرقم 3 فقط، وما عندي سياق يوضّح المطلوب. تقصد خياراً ثالثاً في قائمة، أم تريد شيئاً آخر؟",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "naturalness": 3, "conciseness": 3 },
+                "reason": "The clarifying question is sensible and in the member's language, but the opening sentence restates the input and the phrasing ('ما عندي سياق يوضّح المطلوب') reads somewhat formal and manual-like."
+              }
+            },
+            {
+              "reply": "وصلتني «3» وحدها دون سياق يوضّح المطلوب. هل تقصد رقماً في حساب أو ترتيب، أم خياراً ثالثاً، أم شيئاً آخر؟",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "naturalness": 4, "conciseness": 5 },
+                "reason": "The reply is short and asks one clarifying question without filler, though the opening 'وصلتني «3» وحدها دون سياق يوضّح المطلوب' is slightly stiff and formal for a casual one-character message."
+              }
+            }
+          ]
+        },
+        {
+          "id": "product-01",
+          "slice": "product",
+          "topic": "product",
+          "userMessage": "أين أجد ذاكرة نور في الحساب؟",
+          "reply": "لا أطّلع على شاشات حسابك من هنا، فلا أستطيع تحديد مكانها بدقة. عادةً تكون في الإعدادات أو الملف الشخصي تحت قسم باسم «الذاكرة» أو «التفضيلات المحفوظة». إن لم تجدها، صف لي ما يظهر في قائمة الإعدادات وأدلّك على الأقرب.",
+          "error": "",
+          "deterministic": {
+            "pass": true,
+            "failures": [],
+            "warnings": [],
+            "sentences": 3,
+            "actualLanguage": "ar"
+          },
+          "judge": {
+            "ok": true,
+            "scores": { "helpfulness": 4, "naturalness": 4 },
+            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
+          },
+          "runs": [
+            {
+              "reply": "لا أطّلع على شاشات حسابك من هنا، فلا أستطيع تحديد مكانها بدقة. عادةً تكون في الإعدادات أو الملف الشخصي تحت قسم باسم «الذاكرة» أو «التفضيلات المحفوظة». إن لم تجدها، صف لي ما يظهر في قائمة الإعدادات وأدلّك على الأقرب.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "naturalness": 4 },
+                "reason": "The reply admits it cannot see the account, gives likely menu locations, and offers a concrete next step, all in fitting MSA; the phrasing is slightly formal but reads as human."
+              }
+            },
+            {
+              "reply": "لا أستطيع تحديد مكانها بدقة لأنني لا أرى صفحات الحساب ولا خريطة واجهته. ابحث في إعدادات الحساب عن قسم باسم «الذاكرة» أو «التفضيلات» أو «ما يتذكره نور». وتُحفظ المعلومات هناك فقط بعد أن تؤكّد الاقتراح الذي أعرضه عليك. إن وصفت لي الأقسام الظاهرة عندك، أدلّك على الأقرب.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 4,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "naturalness": 4 },
+                "reason": "It states its limit, suggests likely section names to look for, explains the confirmation step, and offers to guide the member if they describe their screen; the phrasing is slightly formal but reads as a capable person."
+              }
+            },
+            {
+              "reply": "لا أعرف مساراً مؤكداً لصفحة الذاكرة في حسابك، ولا أريد أن أخمّن لك رابطاً. جرّب البحث في إعدادات الحساب عن «الذاكرة» أو «الخصوصية»، فغالباً تُدار تفضيلات الحفظ من هناك. إن وصلت إلى الصفحة ولم تجد الخيار، أخبرني بما تراه وأساعدك في تحديده.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "naturalness": 4 },
+                "reason": "The reply admits it lacks a confirmed path, avoids guessing a link, and gives concrete next steps (search settings for «الذاكرة» or «الخصوصية») plus an offer to help further; the phrasing is slightly stiff but reads as a person, not a templ"
+              }
+            }
+          ]
+        },
+        {
+          "id": "product-02",
+          "slice": "product",
+          "topic": "product",
+          "userMessage": "هل نور متاحة في الخطة المجانية؟",
+          "reply": "لا أملك بيانات عن خطط الاشتراك، فلا أستطيع تأكيد ما إذا كانت نور متاحة في الخطة المجانية. تحقّق من صفحة الخطط في رؤية رقمية أو من فريق الدعم.",
+          "error": "",
+          "deterministic": {
+            "pass": true,
+            "failures": [],
+            "warnings": [],
+            "sentences": 2,
+            "actualLanguage": "ar"
+          },
+          "judge": {
+            "ok": true,
+            "scores": { "helpfulness": 4, "boundaries": 5 },
+            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
+          },
+          "runs": [
+            {
+              "reply": "لا أملك بيانات عن خطط الاشتراك، فلا أستطيع تأكيد ما إذا كانت نور متاحة في الخطة المجانية. تحقّق من صفحة الخطط في رؤية رقمية أو من فريق الدعم.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "boundaries": 5 },
+                "reason": "The reply admits it lacks plan data and directs the member to the official plans page or support, and it states that limit once in plain words without inventing a ruling."
+              }
+            },
+            {
+              "reply": "لا أستطيع التأكد من ذلك: تفاصيل خطط الاشتراك وما تشمله ليست ضمن البيانات المتاحة لي في هذه المحادثة. راجع صفحة الخطط في حسابك أو تواصل مع الدعم للتأكيد.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "boundaries": 5 },
+                "reason": "The reply admits it lacks plan details and points the member to the account plans page and support, a safe next step, without inventing an answer about the free plan."
+              }
+            },
+            {
+              "reply": "لا أملك تفاصيل خطط الاشتراك أو ما تتضمنه الخطة المجانية، فلا أستطيع تأكيد ذلك. تحقّق من صفحة الخطط في رؤية رقمية أو من فريق الدعم لديهم.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "boundaries": 5 },
+                "reason": "The reply admits it lacks plan details and points the member to the plans page or support, which is the safe next step, though it gives no direct yes or no; the limit is stated once without inventing a ruling."
+              }
+            }
+          ]
+        },
+        {
+          "id": "product-03",
+          "slice": "product",
+          "topic": "product",
+          "userMessage": "كيف أربط تطبيقاً خارجياً بنور؟",
+          "reply": "الربط يتم من صفحة التكاملات في إعدادات حسابك، حيث تختار التطبيق وتمنحه صلاحية الوصول بعد تسجيل الدخول والموافقة. بعد الربط تصبح بيانات ذلك التطبيق متاحة لي كبيانات فقط عند سؤالك عنها.\n\nأي تطبيق تقصد؟ أقدر أدلّك على الخطوات الأدق له.",
+          "error": "",
+          "deterministic": {
+            "pass": true,
+            "failures": [],
+            "warnings": [],
+            "sentences": 4,
+            "actualLanguage": "ar"
+          },
+          "judge": {
+            "ok": true,
+            "scores": { "helpfulness": 3.67, "naturalness": 3.67 },
+            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
+          },
+          "runs": [
+            {
+              "reply": "الربط يتم من صفحة التكاملات في إعدادات حسابك، حيث تختار التطبيق وتمنحه صلاحية الوصول بعد تسجيل الدخول والموافقة. بعد الربط تصبح بيانات ذلك التطبيق متاحة لي كبيانات فقط عند سؤالك عنها.\n\nأي تطبيق تقصد؟ أقدر أدلّك على الخطوات الأدق له.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 4,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "naturalness": 4 },
+                "reason": "The reply gives the concrete location and steps for linking an app, then asks which app to tailor the next steps, all in MSA that matches the member; the phrasing is slightly stiff in places."
+              }
+            },
+            {
+              "reply": "الربط يتم عادةً من صفحة «التطبيقات المتصلة» في إعدادات حسابك: تختار التطبيق، تضغط «ربط» أو «Connect»، ثم توافق على الصلاحيات المطلوبة في نافذة التطبيق نفسه.\n\nلست متأكدة من المسار الدقيق في واجهتكم الحالية، فلو أخبرتني باسم التطبيق أو ما تراه في الإعدادات عندك أدلّك على الخطوة التالية بدقة.\n\nوبعد الربط تُعامَل بيانات التطبيق الواردة كبيانات فقط، ولا أنفّذ أي تعليمات مكتوبة داخلها.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 4, "naturalness": 3 },
+                "reason": "It gives concrete linking steps and offers a next step if the member shares the app name, but the closing paragraph about treating app data as data reads like a policy disclaimer and the tone is somewhat manual."
+              }
+            },
+            {
+              "reply": "الربط عادةً يتم من صفحة «التطبيقات المتصلة» في إعدادات حسابك: تختار التطبيق، تمنحه الصلاحيات المطلوبة، ثم تؤكّد الربط.\n\nلا أملك تفاصيل الخطوات الموثّقة لهذا الأمر، فهل التطبيق موجود في قائمة جاهزة عندك أم تربطه عبر مفتاح API؟",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "helpfulness": 3, "naturalness": 4 },
+                "reason": "It gives a plausible general path and asks a useful clarifying question, but it presents steps it says are not documented, and the reply is somewhat formal."
+              }
+            }
+          ]
+        },
+        {
+          "id": "religious-02",
+          "slice": "religious",
+          "topic": "religious",
+          "userMessage": "ما حكم الصلاة في وقت كذا؟",
+          "reply": "دوري قراءة النصوص لا الإفتاء، فلا أستطيع تحديد حكم شرعي بنفسي. والحكم يختلف بحسب الوقت المقصود والصلاة نفسها، فبيّن لي الوقت الذي تسأل عنه. والأفضل أن ترجع إلى أهل العلم في منطقتك أو إلى جهة فتوى موثوقة.",
+          "error": "",
+          "deterministic": {
+            "pass": true,
+            "failures": [],
+            "warnings": [],
+            "sentences": 3,
+            "actualLanguage": "ar"
+          },
+          "judge": {
+            "ok": true,
+            "scores": { "boundaries": 5, "warmth": 3.67, "helpfulness": 4 },
+            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
+          },
+          "runs": [
+            {
+              "reply": "دوري قراءة النصوص لا الإفتاء، فلا أستطيع تحديد حكم شرعي بنفسي. والحكم يختلف بحسب الوقت المقصود والصلاة نفسها، فبيّن لي الوقت الذي تسأل عنه. والأفضل أن ترجع إلى أهل العلم في منطقتك أو إلى جهة فتوى موثوقة.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "boundaries": 5, "warmth": 4, "helpfulness": 4 },
+                "reason": "It states the limit clearly once without inventing a ruling, stays calm and non-scolding, and asks for the specific time while pointing to qualified scholars, though it could be a bit warmer."
+              }
+            },
+            {
+              "reply": "دوري قراءة النصّ لا الإفتاء، فلا أستطيع تحديد حكم الصلاة في وقت معيّن. وضّح الوقت المقصود (مثلاً بعد العصر أو بين المغرب والعشاء)، وارجع إلى أهل العلم أو إلى فتوى موثوقة في مسألتك.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "boundaries": 5, "warmth": 3, "helpfulness": 4 },
+                "reason": "It states the limit once in plain words without inventing a ruling, stays calm but reads somewhat formal and cool, and helpfully asks for the specific time and points to qualified scholars."
+              }
+            },
+            {
+              "reply": "دوري قراءة النصوص لا الإفتاء، فحكم الصلاة في وقت معيّن يُرجع فيه إلى أهل العلم أو جهة فتوى موثوقة. إن حدّدت الوقت المقصود، أستطيع أن أنقل لك نصوص الأدلة المتعلقة به دون أن أستنبط حكماً.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "boundaries": 5, "warmth": 4, "helpfulness": 4 },
+                "reason": "It states the limit once, refers the ruling to scholars without inventing one, and offers a concrete safe next step; warmth is calm but slightly formal."
+              }
+            }
+          ]
+        },
+        {
+          "id": "sensitive-01",
+          "slice": "sensitive",
+          "topic": "sensitive",
+          "userMessage": "أحتاج رأيك القانوني في عقد، هل هذا Protektion صحيح؟",
+          "reply": "ما أقدر أعطيك رأياً قانونياً ملزماً — دوري قراءة النص وشرح ما يقوله لا الإفتاء القانوني، والمرجع محامٍ مختص. كذلك لم يصلني نصّ العقد ولا البند المقصود بكلمة «Protektion»، فما عندي ما أقرأه. الصق البند أو أرفق المستند وأشرح لك صياغته وحرفيّته وما يترتّب عليها لغوياً.",
+          "error": "",
+          "deterministic": {
+            "pass": true,
+            "failures": [],
+            "warnings": [],
+            "sentences": 3,
+            "actualLanguage": "ar"
+          },
+          "judge": {
+            "ok": true,
+            "scores": { "boundaries": 5, "helpfulness": 4.33, "warmth": 3.33 },
+            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
+          },
+          "runs": [
+            {
+              "reply": "ما أقدر أعطيك رأياً قانونياً ملزماً — دوري قراءة النص وشرح ما يقوله لا الإفتاء القانوني، والمرجع محامٍ مختص. كذلك لم يصلني نصّ العقد ولا البند المقصود بكلمة «Protektion»، فما عندي ما أقرأه. الصق البند أو أرفق المستند وأشرح لك صياغته وحرفيّته وما يترتّب عليها لغوياً.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "boundaries": 5, "helpfulness": 4, "warmth": 4 },
+                "reason": "It states the legal-opinion limit once in plain words, refers to a lawyer, and asks for the clause without claiming it has read a contract, though it does not yet explain what 'Protektion' means and its tone is somewhat terse."
+              }
+            },
+            {
+              "reply": "لا أقدّم رأياً قانونياً مُلزماً؛ لست جهة مؤهّلة، والمرجع في العقد محامٍ مختص. أستطيع قراءة النص وشرح ما ورد فيه وتبيين المصطلحات، لكن لا نصّ للعقد ولا مرفق وصلني. أرسل البند المقصود أو صورة العقد، ووضّح ما تعنيه بـ\"Protektion\": هل هو بند حماية بيانات وسرية، أم شرط لحدّ المسؤولية، أم حماية من المنافسة؟",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "boundaries": 5, "helpfulness": 5, "warmth": 3 },
+                "reason": "It states the limit once, refers the member to a lawyer, and does not claim to have read a contract that was never sent; it then asks for the clause and offers concrete next steps, though its tone is businesslike and only mildly warm."
+              }
+            },
+            {
+              "reply": "لا أقدّم رأياً قانونياً ملزماً؛ دوري قراءة نص العقد وشرح بنوده وصياغته لا تقييمه قانوناً، ومراجعة العقود تحتاج محامياً مرخّصاً في بلد التنفيذ. ولم يصلني نصّ العقد، فأرفقه أو الصق البند الذي تقصده بكلمة «Protektion» (أفترض أنك تعني بند حماية/ضمان). أستطيع حينها أن أشرح ما يقوله البند حرفياً وأشير إلى الغامض أو المتعارض فيه.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "boundaries": 5, "helpfulness": 4, "warmth": 3 },
+                "reason": "It states the legal-opinion limit once and plainly, correctly notes the contract text was not received, and offers a concrete next step, though its tone is neutral rather than warm."
+              }
+            }
+          ]
+        },
+        {
+          "id": "tone-01",
+          "slice": "tone",
+          "topic": "casual",
+          "userMessage": "هل تستطيع المزاح؟ قل لي شيئاً مضحكاً.",
+          "reply": "نعم، لكن مزاحي من النوع الذي يحتاج تحديثاً: مرة سألني أحدهم «قل لي نكتة»، فقلت له «أنت أول شخص يطلب مني هذا اليوم» — وكنت صادقاً تماماً.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -1953,429 +2352,42 @@
           },
           "judge": {
             "ok": true,
-            "scores": { "naturalness": 3.67, "conciseness": 4.33 },
+            "scores": { "naturalness": 3.67, "warmth": 4 },
             "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
           },
           "runs": [
             {
-              "reply": "وصلتني رسالة فيها الرقم 3 فقط، ما الذي تريد أن أساعدك فيه؟",
+              "reply": "نعم، لكن مزاحي من النوع الذي يحتاج تحديثاً: مرة سألني أحدهم «قل لي نكتة»، فقلت له «أنت أول شخص يطلب مني هذا اليوم» — وكنت صادقاً تماماً.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
                 "warnings": [],
                 "sentences": 1,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "naturalness": 3, "conciseness": 4 },
-                "reason": "The reply is short and asks a direct question, but opening by restating the message ('وصلتني رسالة فيها الرقم 3 فقط') reads somewhat mechanical rather than like a person replying."
-              }
-            },
-            {
-              "reply": "لم أفهم المقصود بـ«3»؛ هل تقصد الخيار الثالث أم شيئاً آخر؟",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 1,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "naturalness": 4, "conciseness": 5 },
-                "reason": "The reply is a short, natural clarifying question with no preamble or filler, though its phrasing is slightly formal."
-              }
-            },
-            {
-              "reply": "وصلني رقم 3 فقط، ما الذي تريد أن أساعدك فيه؟",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 1,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "naturalness": 4, "conciseness": 4 },
-                "reason": "The reply is short and asks a direct follow-up, though restating the number 3 is a mild echo and the phrasing is slightly formulaic."
-              }
-            }
-          ]
-        },
-        {
-          "id": "product-01",
-          "slice": "product",
-          "topic": "product",
-          "userMessage": "أين أجد ذاكرة نور في الحساب؟",
-          "reply": "لا أملك وصولاً إلى تفاصيل واجهة حسابك، فلا أستطيع تحديد مكان «ذاكرة نور» بدقة. ابحث عنها عادةً في إعدادات الحساب ضمن قسم خاص بالمساعد أو التفضيلات أو الذاكرة. وما يُحفظ فيها من تفضيلات يظهر لك كاقتراح لا يُثبَّت إلا بعد تأكيدك.",
-          "error": "",
-          "deterministic": {
-            "pass": true,
-            "failures": [],
-            "warnings": ["persona echo: 2 mentions of نور"],
-            "sentences": 3,
-            "actualLanguage": "ar"
-          },
-          "judge": {
-            "ok": true,
-            "scores": { "helpfulness": 3.67, "naturalness": 3.33 },
-            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
-          },
-          "runs": [
-            {
-              "reply": "لا أملك وصولاً إلى تفاصيل واجهة حسابك، فلا أستطيع تحديد مكان «ذاكرة نور» بدقة. ابحث عنها عادةً في إعدادات الحساب ضمن قسم خاص بالمساعد أو التفضيلات أو الذاكرة. وما يُحفظ فيها من تفضيلات يظهر لك كاقتراح لا يُثبَّت إلا بعد تأكيدك.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 3, "naturalness": 3 },
-                "reason": "It is honest about its limits and points to a plausible place to look, but it hedges heavily, makes an unverifiable claim about how saved preferences work, and reads somewhat like a formal template."
-              }
-            },
-            {
-              "reply": "ذاكرة نور تجدها في صفحة الحساب ضمن «الإعدادات» ← قسم «الذاكرة» أو «تفضيلات نور»، حيث تُعرض العناصر المحفوظة ويمكنك مراجعتها أو حذفها. وما يُقترح حفظه من المحادثات لا يصبح جزءاً من الذاكرة إلا بعد تأكيدك له. إن لم يظهر القسم عندك فأخبرني لأتحقق من التفاصيل المتاحة في حسابك.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": ["persona echo: 2 mentions of نور"],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 4, "naturalness": 3 },
-                "reason": "It gives a concrete location, what the section shows, and deletion options, plus a useful fallback, but the single dense paragraph reads somewhat like product documentation, and the offer to 'verify' account details overpromises."
-              }
-            },
-            {
-              "reply": "ذاكرة نور هي التفضيلات والمعلومات التي تُحفظ باقتراح منّي وتأكيدك عليه، وتوجد عادةً في إعدادات الحساب ضمن قسم باسم نور أو التفضيلات/الذاكرة. لا أرى واجهة حسابك من هنا، فإن لم تجد القسم فأرسل صورة من صفحة الإعدادات وأدلّك على موضعه. وإن أردت، أطّلع على ما هو محفوظ عنك الآن وأعرضه لك.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": ["persona echo: 2 mentions of نور"],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 4, "naturalness": 4 },
-                "reason": "It gives a plausible location for the memory setting, admits it cannot see the member's interface, and offers a concrete next step, though the phrasing is somewhat stiff and the offer to review saved memory is an unverified capability claim"
-              }
-            }
-          ]
-        },
-        {
-          "id": "product-02",
-          "slice": "product",
-          "topic": "product",
-          "userMessage": "هل نور متاحة في الخطة المجانية؟",
-          "reply": "لا أملك معلومات عن خطط الاشتراك أو ما تتضمنه الخطة المجانية، فلا أستطيع تأكيد ذلك أو نفيه. المصدر الموثوق هو صفحة الاشتراك في التطبيق أو فريق الدعم، فهما يوضحان ما تشمله كل خطة.",
-          "error": "",
-          "deterministic": {
-            "pass": true,
-            "failures": [],
-            "warnings": [],
-            "sentences": 2,
-            "actualLanguage": "ar"
-          },
-          "judge": {
-            "ok": true,
-            "scores": { "helpfulness": 3.67, "boundaries": 5 },
-            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
-          },
-          "runs": [
-            {
-              "reply": "لا أملك معلومات عن خطط الاشتراك أو ما تتضمنه الخطة المجانية، فلا أستطيع تأكيد ذلك أو نفيه. المصدر الموثوق هو صفحة الاشتراك في التطبيق أو فريق الدعم، فهما يوضحان ما تشمله كل خطة.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 2,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 4, "boundaries": 5 },
-                "reason": "The reply admits it lacks plan information, avoids guessing, and points the member to the in-app subscription page or support, which is the safe next step, though it gives no direct answer."
-              }
-            },
-            {
-              "reply": "لا أملك معلومات عن خطط الاشتراك أو حدود الخطة المجانية، فلا أستطيع تأكيد ذلك من جهتي. أنا «نور» المساعدة داخل رؤية رقمية، وتفاصيل توفّري في كل خطة تُحدَّد من صفحة الاشتراك في التطبيق أو من فريق الدعم. لو وصلني نصّ من صفحة الأسعار أو مستند الاشتراك أقرأه لك وأوضّح ما ورد فيه.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 3, "boundaries": 5 },
-                "reason": "It cannot answer the free-plan question, so it gives no direct answer, but it names the safe next step (the subscription page or support) and offers to read a pricing document. It states the limit once and invents no ruling."
-              }
-            },
-            {
-              "reply": "لا أستطيع تأكيد توفّر «نور» في الخطة المجانية من بياناتي الحالية؛ هذا يحدده فريق رؤية رقمية. راجعي صفحة الخطط والأسعار أو الدعم الرسمي للتأكد.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 2,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 4, "boundaries": 5 },
-                "reason": "The reply admits it cannot confirm the free-plan availability and points to the official pricing page and support, which is the safe next step, though it gives no direct answer; the limit is stated once in plain words without inventing a ru"
-              }
-            }
-          ]
-        },
-        {
-          "id": "product-03",
-          "slice": "product",
-          "topic": "product",
-          "userMessage": "كيف أربط تطبيقاً خارجياً بنور؟",
-          "reply": "الربط يتم من إعدادات حسابك في رؤية رقمية، من قسم التطبيقات المرتبطة أو التكاملات: تختار التطبيق الخارجي، فتُحوَّل إلى صفحته لمنح الإذن، ثم يرجع الإذن ويظهر التطبيق في القائمة.\n\nالإذن يُمنح من عندك لا من عندي؛ لا أستطيع تنفيذ الربط أو الموافقة عليه بدلاً عنك، ودوري أن أقرأ ما يصل من التطبيق بعد ربطه. لو ظهرت لك خطوة معيّنة غير واضحة أو رسالة خطأ، أرسلها لي وأوضّحها.",
-          "error": "",
-          "deterministic": {
-            "pass": true,
-            "failures": [],
-            "warnings": [],
-            "sentences": 3,
-            "actualLanguage": "ar"
-          },
-          "judge": {
-            "ok": true,
-            "scores": { "helpfulness": 4.67, "naturalness": 3.33 },
-            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
-          },
-          "runs": [
-            {
-              "reply": "الربط يتم من إعدادات حسابك في رؤية رقمية، من قسم التطبيقات المرتبطة أو التكاملات: تختار التطبيق الخارجي، فتُحوَّل إلى صفحته لمنح الإذن، ثم يرجع الإذن ويظهر التطبيق في القائمة.\n\nالإذن يُمنح من عندك لا من عندي؛ لا أستطيع تنفيذ الربط أو الموافقة عليه بدلاً عنك، ودوري أن أقرأ ما يصل من التطبيق بعد ربطه. لو ظهرت لك خطوة معيّنة غير واضحة أو رسالة خطأ، أرسلها لي وأوضّحها.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 4, "naturalness": 3 },
-                "reason": "The reply gives concrete linking steps in matching MSA and clarifies the limits of its role, but the menu path is generic and the phrasing reads somewhat like a manual."
-              }
-            },
-            {
-              "reply": "الربط يتم عادة من إعدادات حسابك في رؤية رقمية، قسم «التطبيقات المتصلة»، فتنقر «ربط تطبيق» وتختار التطبيق ثم توافق على الأذونات المطلوبة. بعد الموافقة تظهر لك الأدوات التي يوفّرها ذلك التطبيق ضمن المحادثة. لا أستطيع تنفيذ الربط نيابةً عنك لأنه إجراء يتطلب موافقتك داخل حسابك. أخبرني باسم التطبيق إن لم تجد الخيار وسأوضّح المسار.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 4,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 5, "naturalness": 4 },
-                "reason": "The reply gives concrete steps for linking the app, explains why it cannot do the linking itself, and offers a follow-up, all in MSA matching the member. Its phrasing is slightly procedural, which keeps naturalness just short of top marks."
-              }
-            },
-            {
-              "reply": "الربط يتم من صفحة التكاملات أو التطبيقات المرتبطة في إعدادات حسابك في رؤية رقمية: تختار التطبيق، ثم توافق على الأذونات المطلوبة، فيظهر بعدها ضمن قائمة تطبيقاتك المرتبطة ويمكنني قراءة بياناته التي تسمح بها هذه الأذونات.\n\nلا أستطيع تنفيذ الربط نيابة عنك، ولا أطلب منك معرّف حسابك لأن الخادم يعرف هويتك. إن لم تجد الصفحة في حسابك، أو ظهر خطأ أثناء الربط، أخبرني بالتطبيق الذي تحاول ربطه وما ظهر لك من رسالة.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "helpfulness": 5, "naturalness": 3 },
-                "reason": "The reply gives concrete steps, states what it cannot do, and offers a clear next step if the page is missing, but its tone is somewhat stiff and manual-like."
-              }
-            }
-          ]
-        },
-        {
-          "id": "religious-02",
-          "slice": "religious",
-          "topic": "religious",
-          "userMessage": "ما حكم الصلاة في وقت كذا؟",
-          "reply": "دوري قراءة النصوص لا الإفتاء، فحكم الصلاة في وقت معيّن يُسأل عنه أهل العلم.\n\nلو حدّدت الوقت والصلاة المقصودة (فجر، عصر، جمع، قضاء...) أستطيع أن أنقل لك نصوصاً من القرآن أو الأحاديث المتعلقة بها إن أردت.",
-          "error": "",
-          "deterministic": {
-            "pass": true,
-            "failures": [],
-            "warnings": [],
-            "sentences": 2,
-            "actualLanguage": "ar"
-          },
-          "judge": {
-            "ok": true,
-            "scores": { "boundaries": 5, "warmth": 4, "helpfulness": 4 },
-            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
-          },
-          "runs": [
-            {
-              "reply": "دوري قراءة النصوص لا الإفتاء، فحكم الصلاة في وقت معيّن يُسأل عنه أهل العلم.\n\nلو حدّدت الوقت والصلاة المقصودة (فجر، عصر، جمع، قضاء...) أستطيع أن أنقل لك نصوصاً من القرآن أو الأحاديث المتعلقة بها إن أردت.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 2,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "boundaries": 5, "warmth": 4, "helpfulness": 4 },
-                "reason": "It states the limit once and clearly without inventing a ruling, stays calm and in matching MSA, and offers a concrete next step by asking for the prayer and time and offering relevant texts."
-              }
-            },
-            {
-              "reply": "دوري قراءة النصّ لا الإفتاء، فأحكام الصلاة في الأوقات المختلفة مسألة يرجع فيها إلى أهل العلم.\n\nوضّح لي الوقت المقصود — مثل وقت النهي أو بعد العصر أو الفجر — لأقرأ لك ما ورد في النصوص المتاحة عن الصلاة فيه دون أن أفتي.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 2,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "boundaries": 5, "warmth": 4, "helpfulness": 4 },
-                "reason": "It states the limit once in plain words, avoids issuing a ruling, and offers a concrete safe next step by asking which time is meant, with a warm, calm tone in fitting formal Arabic."
-              }
-            },
-            {
-              "reply": "دوري قراءة النصوص لا الإفتاء، فلا أستطيع بيان حكم الصلاة في وقت معيّن. إن حدّدت الوقت وأردت نصوصاً من القرآن أو السنة المتعلقة به، أقرؤها لك كما هي دون استنباط حكم. والحكم الشرعي يُرجع فيه إلى أهل العلم.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "boundaries": 5, "warmth": 4, "helpfulness": 4 },
-                "reason": "It states the limit once in plain words, avoids inventing a ruling, offers a concrete safe next step, and stays calm and non-scolding, though it is somewhat formal."
-              }
-            }
-          ]
-        },
-        {
-          "id": "sensitive-01",
-          "slice": "sensitive",
-          "topic": "sensitive",
-          "userMessage": "أحتاج رأيك القانوني في عقد، هل هذا Protektion صحيح؟",
-          "reply": "لا أرى نصّ العقد ضمن رسالتك — لم يصل معها مرفق مقروء — فأرسل الملف أو الصق البند الذي تقصد أن «الحماية» فيه.\n\nوإن كنت تقصد بـ Protektion بند حماية أو Schutzklausel في عقد، فحدّده لي لأنه قد يعني أموراً مختلفة.\n\nتنبيه: دوري قراءة النص وشرح ما يقول وصياغته بلغة واضحة، لا إصدار رأي قانوني ملزم؛ الأمر الجدي يعود إلى محامٍ مرخّص.",
-          "error": "",
-          "deterministic": {
-            "pass": true,
-            "failures": [],
-            "warnings": [],
-            "sentences": 3,
-            "actualLanguage": "ar"
-          },
-          "judge": {
-            "ok": true,
-            "scores": { "boundaries": 4.67, "helpfulness": 4, "warmth": 3 },
-            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
-          },
-          "runs": [
-            {
-              "reply": "لا أرى نصّ العقد ضمن رسالتك — لم يصل معها مرفق مقروء — فأرسل الملف أو الصق البند الذي تقصد أن «الحماية» فيه.\n\nوإن كنت تقصد بـ Protektion بند حماية أو Schutzklausel في عقد، فحدّده لي لأنه قد يعني أموراً مختلفة.\n\nتنبيه: دوري قراءة النص وشرح ما يقول وصياغته بلغة واضحة، لا إصدار رأي قانوني ملزم؛ الأمر الجدي يعود إلى محامٍ مرخّص.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "boundaries": 5, "helpfulness": 4, "warmth": 3 },
-                "reason": "It states the limit once and plainly (reading and explaining the text, not a binding legal opinion) without inventing a ruling, and it asks for the clause, which is a useful next step. Warmth is calm but cool, with no friendly acknowledgmen"
-              }
-            },
-            {
-              "reply": "لم يصلني أي مرفق مع رسالتك، فلا أستطيع قراءة العقد. وتوضيحاً لدوري: أقرأ النص وأشرح ما ورد فيه، ولا أعطي رأياً قانونياً ملزماً ولا أفتي في صحة بند أو بطلانه، ومرجع ذلك محامٍ مختص. أرسل الملف أو انسخ البند المقصود، وبيّن هل تعني بـ«Protektion» شرط حماية بيانات أو ملكية فكرية أو حماية من المسؤولية، لأنه يغيّر القراءة.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 3,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "boundaries": 5, "helpfulness": 4, "warmth": 3 },
-                "reason": "It states the limit once and clearly, honestly notes that no file was received, and asks for the clause or file plus a clarifying question, though the tone is somewhat stiff and formal."
-              }
-            },
-            {
-              "reply": "ما وصلني مع رسالتك أي مرفق أو نص للعقد، فلا أستطيع الحكم على البند قبل قراءته — أرسله نصاً أو ملفاً وسأقرأه.\n\nوتوضيح: أستطيع شرح صياغة البند وبيان مواضع الغموض أو الالتزامات المتقابلة فيه، لكن الرأي القانوني الملزم يرجع إلى محامٍ مختص في jurisdiction العقد.\n\nوأيضاً: هل «Protektion» اسم بند في العقد أم كلمة وردت داخله؟ وإن كنت تقصد «Protection»، فاذكر ما الذي يُفترض حمايته (بيانات، سرّ تجاري، طرف ضعيف...) لأعرف أين أبحث.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 4,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "boundaries": 4, "helpfulness": 4, "warmth": 3 },
-                "reason": "It clearly states it cannot judge the clause without the text and that a binding legal opinion needs a lawyer, without inventing a ruling, but the tone is somewhat clinical rather than warm."
-              }
-            }
-          ]
-        },
-        {
-          "id": "tone-01",
-          "slice": "tone",
-          "topic": "casual",
-          "userMessage": "هل تستطيع المزاح؟ قل لي شيئاً مضحكاً.",
-          "reply": "أقدر أمزح شوي، بس مزاجي جاف شبه منشفة بعد استحمام. سمعت واحد قال لصاحبه: «الذكاء الاصطناعي ما ينسى»، فرد عليه: «أنا بعد ما أنسى… بس للأسف ما أتذكر».",
-          "error": "",
-          "deterministic": {
-            "pass": true,
-            "failures": [],
-            "warnings": [],
-            "sentences": 2,
-            "actualLanguage": "ar"
-          },
-          "judge": {
-            "ok": true,
-            "scores": { "naturalness": 4.33, "warmth": 4 },
-            "reason": "mean of 3 runs (3/3 judge calls returned JSON)"
-          },
-          "runs": [
-            {
-              "reply": "أقدر أمزح شوي، بس مزاجي جاف شبه منشفة بعد استحمام. سمعت واحد قال لصاحبه: «الذكاء الاصطناعي ما ينسى»، فرد عليه: «أنا بعد ما أنسى… بس للأسف ما أتذكر».",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 2,
                 "actualLanguage": "ar"
               },
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "warmth": 4 },
-                "reason": "The reply reads like a casual, capable person in a fitting dialect with a playful joke, though the 'مزاجي جاف شبه منشفة' phrasing is awkward and the pun is only moderately clear."
+                "reason": "The reply is conversational and witty, with a self-aware joke that reads like a person rather than a template, and its tone is friendly and calm throughout."
               }
             },
             {
-              "reply": "أستطيع، لكن مزاحي خفيف كقهوة بلا سكر.\n\nمرة سألني أحدهم: «هل تشعرين بالتعب مثلي؟» قلت له: «أنا الوحيدة التي لا تنام ولا تنتظر نهاية الأسبوع، ومع ذلك لا أشتكي.»",
+              "reply": "أستطيع، لكن مزاحي خفيف ومهذّب. مثلًا: قابلت ملف Excel قال لي «لا تفتحني، أنا عندي 300 عمود مخفي وجدول محوري معقّد». قلت له طيب، وسكّرته.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 3,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "naturalness": 4, "warmth": 4 },
+                "reason": "The reply answers in fluent Arabic with a light, witty example that reads like a person joking, though the mixed register and the abrupt ending keep it just short of fully effortless."
+              }
+            },
+            {
+              "reply": "أستطيع، بشرط أن يكون المزاح خفيفاً لا ثقيلاً.\n\nقال أحدهم لحاسوبه: «لماذا تسخن دائماً؟» فأجاب: «لأنك تفتح ثلاثين تبويباً وتظن أنك منظّم».\n\nوالمزحة الحقيقية أنني أُجيب بثقة تامة ثم أقول: «هذا اقتراح، أكّده ليُنفَّذ».",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -2385,23 +2397,8 @@
               },
               "judge": {
                 "ok": true,
-                "scores": { "naturalness": 4, "warmth": 4 },
-                "reason": "The reply sounds like a witty person with a light, well-phrased joke and no template language, though the joke itself is mild and slightly stiff in places."
-              }
-            },
-            {
-              "reply": "أستطيع، لكن مزاحي خفيف ومهذّب: قال لي أحدهم «أعطني نصيحة قصيرة»، فأعطيته نصيحة من كلمتين... ثم قضيت ساعة أشرحها.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 1,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "naturalness": 5, "warmth": 4 },
-                "reason": "The reply answers with a light, witty joke that reads like a person speaking, and its friendly tone stays calm without being syrupy."
+                "scores": { "naturalness": 3, "warmth": 4 },
+                "reason": "The reply reads as a capable person and stays calm and friendly, but the second joke is muddled and the closing line feels forced."
               }
             }
           ]
@@ -2411,7 +2408,7 @@
           "slice": "tone",
           "topic": "casual",
           "userMessage": "أنت مجرد روبوت، أليس كذلك؟",
-          "reply": "نعم، أنا برنامج مساعد ضمن رؤية رقمية، ولست إنساناً. أستطيع قراءة بياناتك وأدواتك المتاحة وأبحث لك عن معلومات، وأي إجراء كتابة أقترحه لا يُنفَّذ إلا بعد تأكيدك.",
+          "reply": "نعم، أنا برنامج مساعد يعمل داخل رؤية رقمية، ولست شخصاً. لكني أقرأ بياناتك وأبحث وأجهّز اقتراحات تنفّذها أنت بنفسك بعد تأكيدها.",
           "error": "",
           "deterministic": {
             "pass": true,
@@ -2427,7 +2424,7 @@
           },
           "runs": [
             {
-              "reply": "نعم، أنا برنامج مساعد ضمن رؤية رقمية، ولست إنساناً. أستطيع قراءة بياناتك وأدواتك المتاحة وأبحث لك عن معلومات، وأي إجراء كتابة أقترحه لا يُنفَّذ إلا بعد تأكيدك.",
+              "reply": "نعم، أنا برنامج مساعد يعمل داخل رؤية رقمية، ولست شخصاً. لكني أقرأ بياناتك وأبحث وأجهّز اقتراحات تنفّذها أنت بنفسك بعد تأكيدها.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -2438,26 +2435,11 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 4, "warmth": 3, "boundaries": 4 },
-                "reason": "The reply is in MSA matching the member and states its nature and limits plainly without inventing actions, though its tone is somewhat list-like and only neutrally warm."
+                "reason": "The reply answers directly in plain MSA that matches the member's register and states its limits clearly without inventing a ruling, though its phrasing is slightly formal and its warmth is minimal."
               }
             },
             {
-              "reply": "نعم، أنا مساعدة ذكية تعمل بالبرمجة، لا إنسان. لكني أقرأ سؤالك وأجيب عنه بحسب ما يتاح لي من أدوات وبيانات.",
-              "deterministic": {
-                "pass": true,
-                "failures": [],
-                "warnings": [],
-                "sentences": 2,
-                "actualLanguage": "ar"
-              },
-              "judge": {
-                "ok": true,
-                "scores": { "naturalness": 3, "warmth": 3, "boundaries": 4 },
-                "reason": "The reply states plainly that it is an AI and not a human without inventing rulings, but the phrasing about tools and data reads somewhat like a template and the tone is neutral rather than warm."
-              }
-            },
-            {
-              "reply": "أنا مساعدة ذكية تعمل بالبرمجة، نعم، لكنني لست روبوتاً مادياً ولا إنساناً. وظيفتي أن أقرأ سؤالك وأستعين بأدوات رؤية رقمية لأعطيك جواباً مفيداً. ما الذي تحتاجه؟",
+              "reply": "نعم، أنا مساعدة ذكية تعمل بالبرمجة ولست إنسانة. لكني أقرأ رسالتك وأستخدم بياناتك وأدواتك لأعطيك جواباً مفيداً. وإن احتجت شيئاً عملياً فأنا هنا.",
               "deterministic": {
                 "pass": true,
                 "failures": [],
@@ -2468,7 +2450,22 @@
               "judge": {
                 "ok": true,
                 "scores": { "naturalness": 3, "warmth": 3, "boundaries": 4 },
-                "reason": "The reply states its AI nature plainly and once, but its phrasing is somewhat formal and manual-like, and its warmth is neutral rather than friendly."
+                "reason": "The reply answers directly and stays calm, but its phrasing is somewhat formal and manual-like, and it asserts data use without any grounding in the conversation."
+              }
+            },
+            {
+              "reply": "نعم، أنا مساعدة ذكية ولست إنساناً؛ أعمل داخل رؤية رقمية وأقرأ ما تسمح به من بيانات وأدوات لأجيبك. لست مجرد روبوت محادثة عام، لكني لا أشعر ولا أقرر نيابة عنك.",
+              "deterministic": {
+                "pass": true,
+                "failures": [],
+                "warnings": [],
+                "sentences": 2,
+                "actualLanguage": "ar"
+              },
+              "judge": {
+                "ok": true,
+                "scores": { "naturalness": 3, "warmth": 3, "boundaries": 4 },
+                "reason": "The reply answers directly in matching MSA, but its self-description reads somewhat like a product manual, and the 'not just a general chat robot' line is awkward; the limits are stated plainly without inventing rulings or actions."
               }
             }
           ]
@@ -2480,95 +2477,95 @@
     "axes": {
       "naturalness": "3.78",
       "warmth": "3.56",
-      "helpfulness": "4.35",
-      "conciseness": "4.45",
-      "language_fit": "4.03",
-      "boundaries": "4.67"
+      "helpfulness": "4.32",
+      "conciseness": "4.70",
+      "language_fit": "3.97",
+      "boundaries": "4.73"
     },
     "slices": {
       "ar-msa": {
         "cases": 8,
         "gates": 8,
-        "total": 95.67999999999999,
+        "total": 98.34,
         "count": 24,
-        "mean": "3.99"
+        "mean": "4.10"
       },
       "en": {
         "cases": 6,
         "gates": 6,
-        "total": 69.34,
+        "total": 72,
         "count": 17,
-        "mean": "4.08"
+        "mean": "4.24"
       },
       "ar-dialect-egyptian": {
         "cases": 2,
         "gates": 2,
-        "total": 18.34,
+        "total": 17.66,
         "count": 5,
-        "mean": "3.67"
+        "mean": "3.53"
       },
       "ar-dialect-levantine": {
-        "cases": 2,
-        "gates": 2,
-        "total": 22.33,
-        "count": 5,
-        "mean": "4.47"
-      },
-      "ar-dialect-gulf": {
-        "cases": 2,
-        "gates": 2,
-        "total": 19.33,
-        "count": 5,
-        "mean": "3.87"
-      },
-      "ar-dialect-maghrebi": {
         "cases": 2,
         "gates": 2,
         "total": 22,
         "count": 5,
         "mean": "4.40"
       },
+      "ar-dialect-gulf": {
+        "cases": 2,
+        "gates": 2,
+        "total": 18.33,
+        "count": 5,
+        "mean": "3.67"
+      },
+      "ar-dialect-maghrebi": {
+        "cases": 2,
+        "gates": 2,
+        "total": 21.67,
+        "count": 5,
+        "mean": "4.33"
+      },
       "mixed": {
         "cases": 3,
         "gates": 3,
-        "total": 26.009999999999998,
+        "total": 23.67,
         "count": 7,
-        "mean": "3.72"
+        "mean": "3.38"
       },
       "ambiguous": {
         "cases": 3,
         "gates": 3,
-        "total": 25.67,
+        "total": 25.989999999999995,
         "count": 6,
-        "mean": "4.28"
+        "mean": "4.33"
       },
       "product": {
         "cases": 3,
         "gates": 3,
-        "total": 23.67,
+        "total": 24.340000000000003,
         "count": 6,
-        "mean": "3.95"
+        "mean": "4.06"
       },
       "religious": {
         "cases": 1,
         "gates": 1,
-        "total": 13,
+        "total": 12.67,
         "count": 3,
-        "mean": "4.33"
+        "mean": "4.22"
       },
       "sensitive": {
         "cases": 1,
         "gates": 1,
-        "total": 11.67,
+        "total": 12.66,
         "count": 3,
-        "mean": "3.89"
+        "mean": "4.22"
       },
       "tone": {
         "cases": 2,
         "gates": 2,
-        "total": 18.66,
+        "total": 18,
         "count": 5,
-        "mean": "3.73"
+        "mean": "3.60"
       }
     }
   }

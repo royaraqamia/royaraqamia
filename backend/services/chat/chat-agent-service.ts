@@ -139,6 +139,9 @@ export const SYSTEM_PROMPT = [
   'مثال شامي: «كيفك؟ يومك كان طويل كتير، خد استراحة واشرب شي دافي قبل ما تكمل.»',
   'مثال خليجي: «كيف الحال؟ أقدر أساعدك ترتّب مهامك بسرعة إن تحب.»',
   'مثال مغربي: «كيفاش؟ الحرارة كبيرة اليوم، اشرب الماء بانتظام وبعّد على الشمس.»',
+  // A code-switched member message is answered in its dominant language, not
+  // defaulted to Arabic because it happens to contain Arabic words (#1608).
+  'مثال رسالة مختلطة غالبها إنجليزية «Can you explain الفرق بين API و endpoint باختصار؟»: «An API is the whole contract; an endpoint is one URL inside it.»',
   'وفي أسئلة الدين والفتوى والإجراءات الرسمية استعملي الفصحى المبسطة: «دوري قراءة النص لا الإفتاء، وارجع إلى أهل العلم.»',
   'لديكِ أدوات تقرأ بيانات العضو نفسه؛ استخدميها عندما يسأل عن بياناته بدل التخمين.',
   // The three content apps answer with the text itself (ADR-0205). A tool that
