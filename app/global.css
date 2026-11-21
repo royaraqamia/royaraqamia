@@ -29,6 +29,7 @@
 @source '../frontend/ui/primitives';
 @source '../frontend/ui/shared';
 @source '../frontend/ui/navbar';
+@source '../frontend/ui/Navbar.tsx';
 @source '../frontend/ui/apps';
 @source '../frontend/ui/account/mcp-connected-apps-view.tsx';
 @source '../frontend/ui/assistant/assistant-launcher.tsx';

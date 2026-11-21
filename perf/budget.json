@@ -23,8 +23,8 @@
       "jsGzipKb": 250
     },
     "/habitflow": {
-      "comment": "Measured so the per-surface split (#497) is visible on a product route, not only on public ones. Its client bundle is the product's own and belongs to #493; these two ceilings sit a few percent above today's measurement so the route is guarded against growth without claiming a target it was never given. The JS ceiling moved from 365 to 372 when the minor-and-patch dependency group (Next 16.4.6 among 29 updates) took the route from 362.6 KB to 365.3 KB gzip on the runner; the headroom stays at the same few percent.",
-      "totalGzipKb": 590,
+      "comment": "Measured so the per-surface split (#497) is visible on a product route, not only on public ones. Its client bundle is the product's own and belongs to #493; these two ceilings sit a few percent above today's measurement so the route is guarded against growth without claiming a target it was never given. The JS ceiling moved from 365 to 372 when the minor-and-patch dependency group (Next 16.4.6 among 29 updates) took the route from 362.6 KB to 365.3 KB gzip on the runner; the headroom stays at the same few percent. Raised from 590 to 592 when the shell took ownership of the navbar's utilities (#1663): the runner measured 590.0 KB total gzip for this route, leaving no headroom on the very boundary the ceiling was meant to guard, so the recorded ceiling moves with that measured shell growth instead of failing on it.",
+      "totalGzipKb": 592,
       "jsGzipKb": 372
     }
   }

@@ -11,7 +11,6 @@
 @import './surface.css';
 
 @source './page.tsx';
-@source '../frontend/ui/Navbar.tsx';
 @source '../frontend/ui/HomePageContent.tsx';
 @source '../frontend/ui/HorizontalScrollArrows.tsx';
 @source '../frontend/ui/services';
