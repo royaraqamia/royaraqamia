@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useReducer } from 'react';
 import { getBudget, setBudgetForMonth } from '@/frontend/api/spendtrack';
 import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitiv
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { Wallet, LoaderCircle, TriangleAlert, CircleCheck } from 'lucide-react';
 import { SPENDTRACK_BUDGET_COPY } from './spendtrack-budget-copy';
+import { budgetCardInitialState, budgetCardReducer } from './budget-card.reducer';
 import { formatMoney, getCurrencySymbol } from '@/shared/currency';
 
 export function BudgetCard({
@@ -23,11 +24,8 @@ export function BudgetCard({
 }) {
   const context = useSpendtrackContext();
   const store = context?.store ?? null;
-  const [budget, setBudget] = useState<number | null>(null);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(budgetCardReducer, undefined, budgetCardInitialState);
+  const { budget, input, loading, saving, error } = state;
 
   useEffect(() => {
     let active = true;
@@ -38,12 +36,9 @@ export function BudgetCard({
             null)
           : await getBudget(month);
         if (!active) return;
-        setBudget(value);
-        setInput(value != null ? value.toString() : '');
+        dispatch({ type: 'loaded', budget: value });
       } catch {
-        if (active) setError(SPENDTRACK_BUDGET_COPY.loadError);
-      } finally {
-        if (active) setLoading(false);
+        if (active) dispatch({ type: 'loadFailed', message: SPENDTRACK_BUDGET_COPY.loadError });
       }
     }
     void load();
@@ -60,35 +55,38 @@ export function BudgetCard({
     e.preventDefault();
     const amount = parseFloat(input);
     if (isNaN(amount) || amount <= 0) {
-      setError(SPENDTRACK_BUDGET_COPY.invalidAmount);
+      dispatch({ type: 'saveFailed', message: SPENDTRACK_BUDGET_COPY.invalidAmount });
       return;
     }
-    setSaving(true);
-    setError(null);
+    dispatch({ type: 'saveStarted' });
 
     if (store) {
       try {
         await store.setBudget(month, amount, null);
-        setBudget(amount);
+        dispatch({ type: 'saveSucceeded', budget: amount });
         await context?.refresh?.();
       } catch (error) {
         // A reached cap arrives with its own copy; show it instead of the
         // generic save failure.
-        setError(
-          error instanceof Error && error.message ? error.message : SPENDTRACK_BUDGET_COPY.saveError
-        );
-      } finally {
-        setSaving(false);
+        dispatch({
+          type: 'saveFailed',
+          message:
+            error instanceof Error && error.message
+              ? error.message
+              : SPENDTRACK_BUDGET_COPY.saveError,
+        });
       }
       return;
     }
 
     const result = await setBudgetForMonth(month, amount);
-    setSaving(false);
     if (result?.success) {
-      setBudget(amount);
+      dispatch({ type: 'saveSucceeded', budget: amount });
     } else {
-      setError(result?.error ?? SPENDTRACK_BUDGET_COPY.saveError);
+      dispatch({
+        type: 'saveFailed',
+        message: result?.error ?? SPENDTRACK_BUDGET_COPY.saveError,
+      });
     }
   }
 
@@ -225,7 +223,7 @@ export function BudgetCard({
                     placeholder="0.00"
                     className="ps-7 h-10 rounded-xl bg-muted/40 border-border/60 text-sm sm:text-sm font-medium transition-safe focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:outline-none"
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => dispatch({ type: 'inputChanged', input: e.target.value })}
                   />
                 </div>
                 <HeroCtaButton
