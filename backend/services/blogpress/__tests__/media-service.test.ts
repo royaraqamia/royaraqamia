@@ -5,10 +5,20 @@ import type { MediaRepository } from '@/backend/repositories/blogpress/media-rep
 function makeRepo(overrides: Partial<MediaRepository> = {}) {
   const repository: MediaRepository = {
     uploadImage: vi.fn(),
+    deleteImage: vi.fn(),
+    usage: vi.fn().mockResolvedValue({
+      memberBytes: 0,
+      memberLimitBytes: 100 * 1024 * 1024,
+      projectBytes: 0,
+      projectLimitBytes: 500 * 1024 * 1024,
+    }),
     ...overrides,
   };
   return { repository, service: new BlogpressMediaService(repository) };
 }
+
+const imageUrl = (path: string) =>
+  `https://example.supabase.co/storage/v1/object/public/post-images/${path}`;
 
 function buildForm(file: File | null): FormData {
   const fd = new FormData();
@@ -144,5 +154,102 @@ describe('BlogpressMediaService.uploadImage', () => {
     });
     const result = await service.uploadImage(buildForm(makeFile()), 'user-123');
     expect(result).toEqual({ error: 'فشل رفع الصورة' });
+  });
+
+  it('refuses an upload that would take the member past its cap', async () => {
+    const { repository, service } = makeRepo({
+      usage: vi.fn().mockResolvedValue({
+        memberBytes: 100 * 1024 * 1024 - 512,
+        memberLimitBytes: 100 * 1024 * 1024,
+        projectBytes: 0,
+        projectLimitBytes: 500 * 1024 * 1024,
+      }),
+    });
+
+    const result = await service.uploadImage(buildForm(makeFile({ size: 1024 })), 'user-123');
+
+    expect(result).toEqual({
+      error: 'تخزين صورك ممتلئ، احذف صورة قديمة ثم أعد المحاولة',
+    });
+    expect(repository.uploadImage).not.toHaveBeenCalled();
+  });
+
+  it('refuses an upload that would take the project past its cap', async () => {
+    const { repository, service } = makeRepo({
+      usage: vi.fn().mockResolvedValue({
+        memberBytes: 0,
+        memberLimitBytes: 100 * 1024 * 1024,
+        projectBytes: 500 * 1024 * 1024 - 512,
+        projectLimitBytes: 500 * 1024 * 1024,
+      }),
+    });
+
+    const result = await service.uploadImage(buildForm(makeFile({ size: 1024 })), 'user-123');
+
+    expect(result).toEqual({ error: 'تخزين الصور في الموقع ممتلئ، حاول لاحقاً' });
+    expect(repository.uploadImage).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['post image member storage is full', 'تخزين صورك ممتلئ، احذف صورة قديمة ثم أعد المحاولة'],
+    ['post image project storage is full', 'تخزين الصور في الموقع ممتلئ، حاول لاحقاً'],
+  ])('names the trigger refusal "%s" in the product voice', async (reason, sentence) => {
+    const { service } = makeRepo({
+      uploadImage: vi.fn().mockResolvedValue({ error: 'فشل رفع الصورة', reason }),
+    });
+
+    const result = await service.uploadImage(buildForm(makeFile()), 'user-123');
+
+    expect(result).toEqual({ error: sentence });
+  });
+});
+
+describe('BlogpressMediaService.deleteOrphanedImages', () => {
+  const BEFORE = {
+    content: `![cover](${imageUrl('user-123/old.png')}) ![kept](${imageUrl('user-123/kept.png')})`,
+    coverImage: imageUrl('user-123/old-cover.png'),
+  };
+
+  it('removes every image a deleted post held', async () => {
+    const { repository, service } = makeRepo();
+
+    await service.deleteOrphanedImages(BEFORE, null, 'user-123');
+
+    expect(repository.deleteImage).toHaveBeenCalledWith('post-images', 'user-123/old.png');
+    expect(repository.deleteImage).toHaveBeenCalledWith('post-images', 'user-123/kept.png');
+    expect(repository.deleteImage).toHaveBeenCalledWith('post-images', 'user-123/old-cover.png');
+  });
+
+  it('keeps the images an edited post still references and removes the replaced cover', async () => {
+    const { repository, service } = makeRepo();
+
+    await service.deleteOrphanedImages(
+      BEFORE,
+      {
+        content: `![kept](${imageUrl('user-123/kept.png')})`,
+        coverImage: imageUrl('user-123/new-cover.png'),
+      },
+      'user-123'
+    );
+
+    expect(repository.deleteImage).toHaveBeenCalledTimes(2);
+    expect(repository.deleteImage).toHaveBeenCalledWith('post-images', 'user-123/old.png');
+    expect(repository.deleteImage).toHaveBeenCalledWith('post-images', 'user-123/old-cover.png');
+    expect(repository.deleteImage).not.toHaveBeenCalledWith('post-images', 'user-123/kept.png');
+  });
+
+  it('never removes an object outside the caller folder', async () => {
+    const { repository, service } = makeRepo();
+
+    await service.deleteOrphanedImages(
+      {
+        content: `![other](${imageUrl('user-999/theirs.png')})`,
+        coverImage: null,
+      },
+      null,
+      'user-123'
+    );
+
+    expect(repository.deleteImage).not.toHaveBeenCalled();
   });
 });

@@ -11,13 +11,14 @@ import {
   SchedulePostSchema,
   type PostInput,
 } from '@/shared/contracts/community';
-import { RestorePostSnapshotSchema } from '@/shared/contracts/blogpress';
+import { RestorePostSnapshotSchema, type Post } from '@/shared/contracts/blogpress';
 import {
   jsonResult,
   type HttpResult,
   type RevalidationHint,
 } from '@/backend/transport/http-result';
 import { messageError } from '@/backend/transport/authenticated-handler';
+import { isSameOrigin } from '@/backend/transport/http';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { COMMUNITY_MUTATION_TAGS } from '@/backend/shared/community-cache-tags';
 
@@ -27,6 +28,26 @@ function postRevalidation(slug: string): RevalidationHint[] {
 
 function publishRevalidation(slug: string): RevalidationHint[] {
   return [...postRevalidation(slug), { path: '/sitemap.xml' }];
+}
+
+/** A post write owns the objects it stops referencing (issue #1691). */
+async function removeOrphanedImages(
+  media: ReturnType<typeof createBlogpressMediaService>,
+  before: Pick<Post, 'content' | 'cover_image'> | null,
+  next: { content?: string | null; coverImage?: string | null } | null,
+  userId: string
+): Promise<void> {
+  if (!before) return;
+  await media.deleteOrphanedImages(
+    { content: before.content, coverImage: before.cover_image },
+    next
+      ? {
+          content: next.content ?? before.content,
+          coverImage: next.coverImage ?? before.cover_image,
+        }
+      : null,
+    userId
+  );
 }
 
 /**
@@ -99,7 +120,14 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
       }
 
       const { repository } = createBlogpressPostsModule(supabase);
+      const before = await repository.getPostForUser(id, userId);
       await repository.updatePost(id, userId, validated.data);
+      await removeOrphanedImages(
+        createBlogpressMediaService(supabase),
+        before,
+        { content: validated.data.content, coverImage: validated.data.cover_image },
+        userId
+      );
 
       return jsonResult(
         200,
@@ -128,7 +156,9 @@ export async function deletePost(
       // tombstone keeps write order (ADR-0029); an online delete has none and
       // the repository stamps it with now.
       const updatedAt = typeof body?.updatedAt === 'string' ? body.updatedAt : undefined;
+      const before = await repository.getPostForUser(id, userId);
       const { slug, updatedAt: stamped } = await repository.deletePost(id, userId, updatedAt);
+      await removeOrphanedImages(createBlogpressMediaService(supabase), before, null, userId);
 
       return jsonResult(
         200,
@@ -338,7 +368,14 @@ export async function saveAndPublishPost(
       const published = await repository.countPostsInStatus([id], userId, 'published');
       if (published === 0) await plan.cap(userId, OWNED_ITEMS.communityPublished);
 
+      const before = await repository.getPostForUser(id, userId);
       const { slug } = await posts.saveAndPublishPost(id, userId, validated.data);
+      await removeOrphanedImages(
+        createBlogpressMediaService(supabase),
+        before,
+        { content: validated.data.content, coverImage: validated.data.cover_image },
+        userId
+      );
 
       return jsonResult(
         200,
@@ -350,9 +387,13 @@ export async function saveAndPublishPost(
   );
 }
 
-export async function uploadMedia(formData: FormData): Promise<HttpResult> {
+export async function uploadMedia(formData: FormData, headers: Headers): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
       const result = await createBlogpressMediaService(supabase).uploadImage(formData, userId);
       return jsonResult(200, result);
     },

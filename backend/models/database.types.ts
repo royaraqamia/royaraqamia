@@ -3856,6 +3856,15 @@ export type Database = {
           post_id: string;
         }[];
       };
+      post_image_allowance: {
+        Args: Record<string, never>;
+        Returns: {
+          member_used_bytes: number;
+          member_limit_bytes: number;
+          project_used_bytes: number;
+          project_limit_bytes: number;
+        }[];
+      };
       post_like: {
         Args: { p_like: boolean; p_post_id: string; p_user_id: string };
         Returns: {
