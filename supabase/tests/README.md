@@ -220,20 +220,23 @@ cap; it seeds them with `session_replication_role = replica` and rolls the whole
 - `chat_attachment_allowance()` answers the caller's day and total plus the project's, which is
   what the composer draws.
 
-`habit_reminders_damascus_test.sql` (#604):
+`habit_reminders_damascus_test.sql` (#604, #1678):
 
 - The reminder window on the Damascus clock: 08:00 is due at 08:00:00 and 08:14:59, not at
-  07:59:59 and not again at 08:15:00, and an unset reminder keeps the 07:00 default.
+  07:59:59 and not again at 08:15:00. An unset reminder opts out at every time of day.
+- The shared audience: a habit with no reminder time or a `deleted_at` tombstone is in neither
+  selection, and a live daily habit with a time is in both.
 - The Damascus day starts at 21:00 UTC the day before, so a 01:00 reminder on the 27th is
   judged against a UTC date of the 26th.
 - A completed log dated today in Damascus suppresses the reminder; one dated the previous
   Damascus day does not.
 - The once-per-day dedupe reads the Damascus day: a second run in the same day sends nothing,
   and a reminder from the previous Damascus day does not suppress today's.
-- `anon` cannot call the selection and `authenticated` cannot trigger the run.
+- `anon` cannot call either selection and `authenticated` cannot trigger the run.
 
-It asserts through `habit_reminder_is_due` / `habit_reminders_due` with a pinned `p_now`, because
-`send_daily_habit_reminders()` itself inserts notifications and posts to the push webhook.
+It asserts through `habit_reminder_is_due` / `habit_reminders_due` and
+`habit_recovery_nudges_due` with a pinned `p_now`, because the cron functions themselves insert
+notifications and post to the push webhook.
 
 `publish_news_digest_test.sql` (#602):
 

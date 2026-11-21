@@ -502,6 +502,7 @@ export function chatAgentActionSentence(
       const money = sum ? `${sum}${currency ? ` ${currency}` : ''}` : '';
       return [label, money].filter(Boolean).join(' — ');
     }
+    // An empty time removes the reminder here, in the form and in both producers (ADR-0211).
     case 'set_habit_reminder': {
       const at = text(values.reminder_time);
       return at ? `${label} — ${at}` : `${label} — إزالة التذكير`;

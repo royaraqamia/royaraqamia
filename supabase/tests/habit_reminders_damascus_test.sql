@@ -1,4 +1,4 @@
--- Habit reminders read the Damascus clock (#604).
+-- Habit reminders read the Damascus clock (#604) and one shared audience (#1678).
 -- Run with `supabase test db` against the local stack - see README.md.
 --
 -- The window and the day boundary are asserted through the helpers that
@@ -18,7 +18,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(13);
+select plan(19);
 
 -- ---------------------------------------------------------------------------
 -- The 15-minute window
@@ -45,8 +45,8 @@ select ok(
 );
 
 select ok(
-  public.habit_reminder_is_due(null, timestamptz '2026-10-26 04:00:00+00'),
-  'an unset reminder keeps the 07:00 Damascus default'
+  not public.habit_reminder_is_due(null, timestamptz '2026-10-26 04:00:00+00'),
+  'an unset reminder opts out: it is not due even at the old 07:00 Damascus default'
 );
 
 -- ---------------------------------------------------------------------------
@@ -68,14 +68,32 @@ select set_config('test.habit', '00000000-0000-0000-0000-00000000ab01', true);
 
 set local session_replication_role = replica;
 
-insert into public.habits (id, user_id, name, frequency, reminder_time)
-values (
-  '00000000-0000-0000-0000-00000000ab01',
-  '00000000-0000-0000-0000-00000000ca05',
-  'night',
-  'daily',
-  time '01:00'
-);
+insert into public.habits (id, user_id, name, frequency, reminder_time, deleted_at)
+values
+  (
+    '00000000-0000-0000-0000-00000000ab01',
+    '00000000-0000-0000-0000-00000000ca05',
+    'night',
+    'daily',
+    time '01:00',
+    null
+  ),
+  (
+    '00000000-0000-0000-0000-00000000ab02',
+    '00000000-0000-0000-0000-00000000ca05',
+    'no time',
+    'daily',
+    null,
+    null
+  ),
+  (
+    '00000000-0000-0000-0000-00000000ab03',
+    '00000000-0000-0000-0000-00000000ca05',
+    'deleted',
+    'daily',
+    time '01:00',
+    timestamptz '2026-10-20 00:00:00+00'
+  );
 
 set local session_replication_role = origin;
 
@@ -85,6 +103,41 @@ select results_eq(
   $$select habit_id from public.habit_reminders_due(timestamptz '2026-10-26 22:00:00+00')$$,
   $$values ('00000000-0000-0000-0000-00000000ab01'::uuid)$$,
   'the 01:00 habit is due at 01:00 Damascus while UTC is still the previous day'
+);
+
+-- The shared audience (#1678): no time is no reminder, a tombstone is no habit,
+-- and a live daily habit with a time is in both selections.
+select is_empty(
+  $$select 1 from public.habit_reminders_due(timestamptz '2026-10-26 22:00:00+00')
+   where habit_id = '00000000-0000-0000-0000-00000000ab02'$$,
+  'a habit with no reminder time is never in the daily reminder selection'
+);
+
+select is_empty(
+  $$select 1 from public.habit_reminders_due(timestamptz '2026-10-26 22:00:00+00')
+   where habit_id = '00000000-0000-0000-0000-00000000ab03'$$,
+  'a tombstoned habit is never in the daily reminder selection'
+);
+
+select results_eq(
+  $$select habit_id from public.habit_recovery_nudges_due(timestamptz '2026-10-26 08:00:00+00')
+   where habit_id in ('00000000-0000-0000-0000-00000000ab01',
+                      '00000000-0000-0000-0000-00000000ab02',
+                      '00000000-0000-0000-0000-00000000ab03')$$,
+  $$values ('00000000-0000-0000-0000-00000000ab01'::uuid)$$,
+  'a live daily habit with a time is in the recovery selection'
+);
+
+select is_empty(
+  $$select 1 from public.habit_recovery_nudges_due(timestamptz '2026-10-26 08:00:00+00')
+   where habit_id = '00000000-0000-0000-0000-00000000ab02'$$,
+  'a habit with no reminder time is never in the recovery selection'
+);
+
+select is_empty(
+  $$select 1 from public.habit_recovery_nudges_due(timestamptz '2026-10-26 08:00:00+00')
+   where habit_id = '00000000-0000-0000-0000-00000000ab03'$$,
+  'a tombstoned habit is never in the recovery selection'
 );
 
 -- A log on the previous Damascus day is a different day, so it must not suppress.
@@ -173,6 +226,11 @@ reset role;
 select ok(
   not has_function_privilege('anon', 'public.habit_reminders_due(timestamptz)', 'execute'),
   'anon cannot read the reminder selection'
+);
+
+select ok(
+  not has_function_privilege('anon', 'public.habit_recovery_nudges_due(timestamptz)', 'execute'),
+  'anon cannot read the recovery selection'
 );
 
 select ok(
