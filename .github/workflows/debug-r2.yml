@@ -1,5 +1,7 @@
 name: 'Debug R2 listing'
 on:
+  push:
+    branches: [fix/1716-history-floor]
   workflow_dispatch:
 jobs:
   probe:
