@@ -33,9 +33,6 @@
          so the same characters read as a downgrade on half of the devices. -->
     <string name="shell_update_meta">تحديث من %1$s إلى %2$s</string>
     <string name="shell_update_size">%1$s م.ب</string>
-    <!-- The label above `latest.json`'s `notes`: the one sentence the release
-         train wrote for a user to read (ADR-0090). -->
-    <string name="shell_update_notes_label">ما الجديد</string>
     <string name="shell_update_failed_title">تعذَّر تنزيل التَّحديث</string>
     <string name="shell_update_retry">إعادة المحاولة</string>
 

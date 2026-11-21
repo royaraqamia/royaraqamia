@@ -56,8 +56,9 @@ generated from commit subjects says `fix(android): regenerate the plugin lists`,
 sentence anybody outside this repository should have to parse.
 
 _Amended by [ADR-0124](0124-the-release-notes-page-is-gone.md): the notes still ship in the GitHub
-release and in `public/android/latest.json`, which the app's own update card draws, and
-`/account/changelog` is gone — the route redirects to `/account`._
+release and in `public/android/latest.json`, and `/account/changelog` is gone — the route redirects
+to `/account`. A later cut stopped drawing them in the app's update card: the dialog states that an
+update exists, not what changed, so it stays small and quick to answer._
 
 ## The version scheme
 
