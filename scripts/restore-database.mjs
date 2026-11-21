@@ -47,7 +47,10 @@ function expectedCounts(dir) {
   if (existsSync(manifestPath)) {
     return JSON.parse(readFileSync(manifestPath, 'utf8')).counts;
   }
-  const parsed = parseCopyRowCounts(readFileSync(join(dir, 'data.sql'), 'utf8'));
+  const parsed = new Map([
+    ...parseCopyRowCounts(readFileSync(join(dir, 'data.sql'), 'utf8')),
+    ...parseCopyRowCounts(readFileSync(join(dir, 'history_data.sql'), 'utf8')),
+  ]);
   return Object.fromEntries(
     Object.keys(TABLE_FLOORS).map((table) => [table, parsed.get(table) ?? null])
   );

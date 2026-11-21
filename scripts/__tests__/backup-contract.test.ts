@@ -34,13 +34,20 @@ describe('database backup contract (#1700)', () => {
     expect(counts.get('public.notifications')).toBe(0);
   });
 
+  it('reads migration history from its own dump, not from a public table that does not exist', () => {
+    const history = `COPY supabase_migrations.schema_migrations (version) FROM stdin;\n20260101000000\n\\.\n`;
+    const counts = new Map([...parseCopyRowCounts(dump), ...parseCopyRowCounts(history)]);
+    expect(counts.get('supabase_migrations.schema_migrations')).toBe(1);
+    expect(counts.get('public.schema_migrations')).toBeUndefined();
+  });
+
   it('fails a dump whose recorded tables fall below their floor', () => {
     const counts = new Map([
       ['public.users', 24],
       ['public.notifications', 9999],
       ['public.chat_messages', 96],
       ['public.chat_attachments', 8],
-      ['public.schema_migrations', 255],
+      ['supabase_migrations.schema_migrations', 255],
     ]);
     expect(floorViolations(counts)).toEqual(['public.notifications: 9999 rows, floor 10000']);
   });

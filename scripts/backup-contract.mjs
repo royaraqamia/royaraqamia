@@ -12,7 +12,7 @@ export const TABLE_FLOORS = Object.freeze({
   'public.notifications': 10000,
   'public.chat_messages': 50,
   'public.chat_attachments': 5,
-  'public.schema_migrations': 255,
+  'supabase_migrations.schema_migrations': 255,
 });
 
 /** A file below these sizes is an empty or truncated dump, not a backup. */
