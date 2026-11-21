@@ -240,57 +240,82 @@ async function readDocx(bytes: Uint8Array): Promise<DocumentReading | null> {
  * no tree is held, which is what keeps a document's bytes from becoming tens
  * of times their size in RSS.
  */
+interface CellAccumulator {
+  paragraphs: string[][];
+  direct: string[];
+  openParagraphs: number;
+  /** Position in the row, reserved when the cell opens so nested cells keep document order. */
+  slot: number;
+}
+
+function isWordSkip(tag: string): boolean {
+  return tag === 'delText' || tag === 'instrText';
+}
+
 function walkWord(xml: string, words: Words): void {
-  const stack: string[] = [];
   let cells: string[] = [];
-  let paragraphs: string[][] = [];
-  let directCellText: string[] = [];
+  let cellsOpen: CellAccumulator[] = [];
+  let rowsDeep = 0;
   let skippedElementsDeep = 0;
-  const inCell = () => stack.includes('tc');
 
   streamXml(
     xml,
     (tag) => {
-      stack.push(tag);
-      if (tag === 'delText' || tag === 'instrText') skippedElementsDeep += 1;
-      if (tag === 'tc') {
-        paragraphs = [];
-        directCellText = [];
+      if (isWordSkip(tag)) skippedElementsDeep += 1;
+      if (tag === 'tr') rowsDeep += 1;
+      if (tag === 'p') {
+        for (const cell of cellsOpen) {
+          cell.paragraphs.push([]);
+          cell.openParagraphs += 1;
+        }
       }
-      if (tag === 'p' && inCell()) paragraphs.push([]);
+      if (tag === 'tc') {
+        const slot = cells.length;
+        cells.push('');
+        cellsOpen.push({ paragraphs: [], direct: [], openParagraphs: 0, slot });
+      }
       // A tab or a manual break is an empty element: no text event will carry
-      // it, so the old tree reader's two cases have to be pushed explicitly.
-      if (skippedElementsDeep === 0 && !inCell()) {
+      // it. The old tree reader pushed it in the body but elementText ignored
+      // it inside a cell, so cells keep their own text path.
+      if (skippedElementsDeep === 0 && cellsOpen.length === 0) {
         if (tag === 'tab') words.push('\t');
         else if (tag === 'br' || tag === 'cr') words.push('\n');
       }
     },
     (text) => {
       if (words.full) return;
-      if (inCell()) {
-        // The tree reader's cellTexts used the paragraphs when there were any
-        // and fell back to the whole subtree otherwise — including tracked
-        // deletions, which the body walk skips but the cell walk did not.
-        if (stack.includes('p') && paragraphs.length > 0) paragraphs.at(-1)?.push(text);
-        else directCellText.push(text);
-      } else if (skippedElementsDeep === 0) {
-        words.push(text);
+      // A cell's text is every descendant paragraph, not just its direct
+      // children — the old cellTexts walked the whole subtree. Text inside a
+      // nested cell therefore belongs to both the inner and the outer cell.
+      for (const cell of cellsOpen) {
+        if (cell.openParagraphs > 0) cell.paragraphs.at(-1)?.push(text);
+        else cell.direct.push(text);
       }
+      if (cellsOpen.length === 0 && skippedElementsDeep === 0) words.push(text);
     },
     (tag) => {
-      if (tag === 'delText' || tag === 'instrText') skippedElementsDeep -= 1;
-      stack.pop();
+      if (isWordSkip(tag)) skippedElementsDeep -= 1;
+      if (tag === 'p') {
+        for (const cell of cellsOpen) cell.openParagraphs -= 1;
+        if (rowsDeep === 0 && cellsOpen.length === 0 && !words.full) words.push('\n');
+      }
       if (tag === 'tc') {
+        const cell = cellsOpen.pop();
+        if (!cell) return;
         const text =
-          paragraphs.length > 0
-            ? paragraphs.map((parts) => parts.join('')).join(' ')
-            : directCellText.join('');
-        cells.push(text.replace(/\s+/g, ' ').trim());
-      } else if (tag === 'tr') {
-        words.push(cells.join(' | '), '\n');
-        cells = [];
-      } else if (tag === 'p' && !stack.includes('tr')) {
-        words.push('\n');
+          cell.paragraphs.length > 0
+            ? cell.paragraphs.map((parts) => parts.join('')).join(' ')
+            : cell.direct.join('');
+        cells[cell.slot] = text.replace(/\s+/g, ' ').trim();
+      }
+      if (tag === 'tr') {
+        rowsDeep -= 1;
+        // Only the outermost row is a line. The old reader did not recurse
+        // into a nested tr, so nested rows never flushed the row's cells.
+        if (rowsDeep === 0) {
+          words.push(cells.join(' | '), '\n');
+          cells = [];
+        }
       }
     }
   );

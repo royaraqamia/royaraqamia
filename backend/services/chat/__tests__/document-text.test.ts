@@ -116,6 +116,25 @@ describe('a memo', () => {
     expect(reading?.text).toContain('البند الأول | مباشر');
   });
 
+  it('keeps a nested table in document order', async () => {
+    const zip = new JSZip();
+    zip.file(
+      'word/document.xml',
+      '<w:document><w:body><w:tbl><w:tr>' +
+        '<w:tc><w:p><w:r><w:t>outer</w:t></w:r></w:p>' +
+        '<w:tbl><w:tr><w:tc><w:p><w:r><w:t>inner</w:t></w:r></w:p></w:tc></w:tr></w:tbl>' +
+        '</w:tc>' +
+        '</w:tr></w:tbl></w:body></w:document>'
+    );
+
+    const reading = await readDocumentText(
+      new Uint8Array(await zip.generateAsync({ type: 'uint8array' })),
+      DOCX
+    );
+
+    expect(reading?.text).toContain('outer inner | inner');
+  });
+
   it('stops at the character ceiling, and says it did', async () => {
     const reading = await readDocumentText(
       await docxDocument(['a'.repeat(DOCUMENT_TEXT_MAX + 20_000)]),

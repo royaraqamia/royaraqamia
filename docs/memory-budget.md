@@ -80,6 +80,14 @@ A `heapUsedMb` that climbs toward `heapLimitMb` over hours is the leak question 
 sits flat near the limit through an ordinary day is the plan question. The previous-boot fields need
 `UPSTASH_REDIS_REST_URL`/`_TOKEN` and are `null` without them — local development and CI.
 
+**Baseline recorded 2026-11-21.** Over the seven days to that date the app's `[memory]` samples put
+RSS at p50 296 / p75 341 / p95 411 / max 425 MB, with `heapUsedMb` around 200, the live heap limit
+259 and `externalMb` 35. Roughly 190 MB of RSS was therefore neither the JS heap nor reported
+external memory; the field `arrayBuffersMb` now separates native buffers from that remainder on
+future boots. Render's own memory metric over the same window was p50 313 / p75 357 / p95 400 /
+max 449 MiB of a 512 MiB limit, and the origin OOM-killed three times. That is the baseline against
+which the caps in this file are judged; it is not a second budget.
+
 **The cap in this file is a blueprint intention, not a live fact.** Every boot line observed on the
 origin in November 2026 reported `heapLimitMb: 259`, and the service's live environment does not
 contain `NODE_OPTIONS` at all — V8 is using the limit it derives from the 512 MB container. Raising
