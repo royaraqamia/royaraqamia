@@ -394,7 +394,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   value={form.url}
                   onChange={(e) => dispatch({ type: 'urlChanged', url: e.target.value })}
                   placeholder="https://example.com/very-long-target-url"
-                  className="w-full h-11 px-3.5 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-sm font-medium text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe duration-200 shadow-xs"
+                  className="w-full h-11 px-3.5 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-sm font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe duration-200 shadow-xs"
                   aria-describedby={updateError ? 'edit-url-error' : undefined}
                   aria-invalid={updateError ? true : undefined}
                 />
@@ -689,7 +689,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                         autoComplete="new-password"
                         aria-invalid={form.passwordError ? true : undefined}
                         aria-describedby={form.passwordError ? 'edit-password-error' : undefined}
-                        className="w-full h-10 pr-3.5 pl-10 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-xs font-medium text-foreground placeholder:text-placeholder focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe duration-200 shadow-xs"
+                        className="w-full h-10 pr-3.5 pl-10 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-xs font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe duration-200 shadow-xs"
                       />
                       <button
                         type="button"

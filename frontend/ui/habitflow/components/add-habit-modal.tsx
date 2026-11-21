@@ -97,7 +97,7 @@ export const AddHabitModal = memo(function AddHabitModal({
               id="input-add-habit-name"
               autoFocus
               aria-describedby={formError ? 'add-habit-error' : undefined}
-              className="w-full h-12 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-safe duration-300 text-[15px] font-medium placeholder:text-placeholder shadow-sm"
+              className="w-full h-12 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-safe duration-300 text-[15px] font-medium placeholder:text-muted-foreground/40 shadow-sm"
             />
           </section>
 
