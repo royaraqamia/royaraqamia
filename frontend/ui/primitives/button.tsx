@@ -52,6 +52,13 @@ export interface ButtonProps
   isLoading?: boolean;
 }
 
+/**
+ * The ordinary button: `disabled` means the action cannot be used at all, and
+ * the browser moves focus away. `aria-disabled` mirrors it here for assistive
+ * technology, but a control that is used up and still part of the page must
+ * use `CompletedControl` instead, so it keeps its place in the tab order
+ * (#1670).
+ */
 function Button({
   className,
   variant,

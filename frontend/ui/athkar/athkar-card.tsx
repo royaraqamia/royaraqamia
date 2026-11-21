@@ -3,6 +3,7 @@
 import { Check, Plus } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import { CompletedControl } from '@/frontend/ui/primitives/completed-control';
 import type { AthkarItem } from '@/shared/contracts/athkar';
 
 import { ATHKAR_COPY } from './athkar-copy';
@@ -55,10 +56,12 @@ export function AthkarCard({ item, index, count, ready, onIncrement, onReset }: 
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
+          {/* A native `disabled` button leaves the tab order, so the last count
+              would drop focus to <body>. The pending window and the spent state
+              both stay reachable and read as dimmed through aria-disabled. */}
+          <CompletedControl
+            complete={!ready || complete}
             onClick={onIncrement}
-            disabled={!ready || complete}
             aria-label={ATHKAR_COPY.countLabel.replace('{index}', String(index + 1))}
             data-visual={`athkar-count-${index}`}
             className={cn(
@@ -74,7 +77,7 @@ export function AthkarCard({ item, index, count, ready, onIncrement, onReset }: 
               <Plus aria-hidden="true" className="size-4" />
             )}
             <span>{ready ? counted : pending}</span>
-          </button>
+          </CompletedControl>
 
           {/* The live region is stable and the label is not, so a tap is
               announced without renaming the button on every press. */}

@@ -91,7 +91,13 @@ describe('AthkarReader', () => {
     fireEvent.click(second);
 
     expect(second).toHaveTextContent('3 من 3');
-    expect(second).toBeDisabled();
+    // Spent, but still in the tab order: a native `disabled` would drop focus
+    // to <body> on the final count (#1670).
+    expect(second).toHaveAttribute('aria-disabled', 'true');
+    expect(second).not.toBeDisabled();
+
+    fireEvent.click(second);
+    expect(second).toHaveTextContent('3 من 3');
   });
 
   it('undoes a mistap with إعادة', () => {
