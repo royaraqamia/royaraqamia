@@ -12,9 +12,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,7 +44,6 @@ import com.royaraqamia.app.theme.LocalRoyTypeScale
 import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyFonts
-import com.royaraqamia.app.ui.vectors.LucideVectors
 import com.royaraqamia.app.update.ShellUpdateCard
 import com.royaraqamia.app.update.ShellUpdateFailure
 import com.royaraqamia.app.update.ShellUpdateUiState
@@ -62,9 +59,9 @@ import com.royaraqamia.app.update.ShellUpdateUiState
  * the primary sits above the secondary, and the download is not dismissable by
  * back or by an outside tap while «إلغاء» is the one honest exit.
  *
- * What is new is the line the card adds about the release itself: `notes` from
- * `latest.json`, which the release train fills with the Arabic sentence a user
- * reads (ADR-0090). Before this, the card said only that something exists.
+ * The card says only that an update exists and what it costs to take: no release
+ * notes. They stay in the GitHub release and in `latest.json` for the tooling that
+ * reads them, but a dialog nobody can act on quickly is not where they belong.
  *
  * Everything is the site's own design: the card is [Recipes.Card], the primary
  * action is [Recipes.Cta] — the gradient pill the site gives a gesture that costs
@@ -110,7 +107,6 @@ private fun OfferCard(card: ShellUpdateCard, onInstall: () -> Unit, onLater: () 
             )
         )
         Description(status = card.status)
-        Note(note = card.status.notes)
         PrimaryAction(
             label = stringResource(R.string.shell_update_install),
             onClick = onInstall,
@@ -305,40 +301,6 @@ private fun Description(status: ShellUpdate.Status) {
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth(),
     )
-}
-
-/**
- * What the release carries: `latest.json`'s `notes`, the one sentence the release
- * train wrote for a user to read (ADR-0090).
- *
- * Absent for a manifest that names none — a hand-published manifest does — and an
- * empty label with nothing under it would be worse than no label.
- */
-@Composable
-private fun Note(note: String) {
-    if (note.isBlank()) return
-    val type = LocalRoyTypeScale.current
-    val spacing = LocalRoySpacing.current
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Icon(
-            imageVector = LucideVectors.FileText,
-            contentDescription = null,
-            tint = RoyColors.primary,
-            modifier = Modifier.size(Recipes.Glyph.sm),
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(Recipes.Row.gap)) {
-            Text(
-                text = stringResource(R.string.shell_update_notes_label),
-                style = type.xs.copy(fontWeight = FontWeight.Bold),
-                color = RoyColors.foreground,
-            )
-            Text(text = note, style = type.xs, color = RoyColors.mutedForeground)
-        }
-    }
 }
 
 /** The site's primary action: the gradient pill, full width on a card this narrow. */
