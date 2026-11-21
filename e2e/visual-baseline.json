@@ -21,6 +21,7 @@
     "--border": "rgb(53, 53, 59)",
     "--input": "rgb(53, 53, 59)",
     "--ring": "rgb(143, 112, 230)",
+    "--focus": "rgb(143, 112, 230)",
     "--success": "rgb(22, 162, 73)",
     "--success-foreground": "rgb(255, 255, 255)",
     "--warning": "rgb(255, 193, 5)",
