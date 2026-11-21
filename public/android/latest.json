@@ -5,7 +5,7 @@
   "sha256": "8e51f64deedd90d396aaa4208d0a53c38199dea10b463198494021a58a9ed218",
   "sizeBytes": 9940620,
   "minSupportedVersionCode": 20000,
-  "rollout": 100,
+  "rollout": 0,
   "notes": "ميزة: صفحة مصادر الأخبار في التطبيق: اختيار المصادر وإدارة مصادرك الخاصة وإضافة مصدر جديد.",
   "releasedAt": "2026-11-21"
 }
