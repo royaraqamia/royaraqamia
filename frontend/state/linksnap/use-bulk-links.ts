@@ -1,8 +1,12 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useReducer } from 'react';
 import { bulkLinkAction } from '@/frontend/api/linksnap';
 import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
+import {
+  bulkLinksInitialState,
+  bulkLinksReducer,
+} from '@/frontend/state/linksnap/use-bulk-links.reducer';
 
 /**
  * The bulk actions. Inside a `LinksnapProvider` they run through the Local Store
@@ -13,34 +17,20 @@ import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
  */
 export function useBulkLinks(codes: string[], token: string) {
   const linksnap = useLinksnapContext();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(bulkLinksReducer, undefined, bulkLinksInitialState);
+  const { selected, busy, error } = state;
 
   const allSelected = codes.length > 0 && selected.size === codes.length;
 
   const toggle = useCallback((code: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(code)) {
-        next.delete(code);
-      } else {
-        next.add(code);
-      }
-      return next;
-    });
+    dispatch({ type: 'toggled', code });
   }, []);
 
   const toggleAll = useCallback(() => {
-    setSelected((prev) => {
-      if (prev.size === codes.length && prev.size > 0) {
-        return new Set();
-      }
-      return new Set(codes);
-    });
+    dispatch({ type: 'allToggled', codes });
   }, [codes]);
 
-  const clear = useCallback(() => setSelected(new Set()), []);
+  const clear = useCallback(() => dispatch({ type: 'cleared' }), []);
 
   const selectedCodes = useMemo(() => Array.from(selected), [selected]);
 
@@ -51,8 +41,7 @@ export function useBulkLinks(codes: string[], token: string) {
   );
 
   const runDelete = useCallback(async (): Promise<{ deleted: number } | null> => {
-    setBusy(true);
-    setError(null);
+    dispatch({ type: 'runStarted' });
     try {
       if (linksnap) {
         // One tombstone intent per link, exactly what the single-link delete
@@ -69,17 +58,19 @@ export function useBulkLinks(codes: string[], token: string) {
       const affected = await bulkLinkAction(token, 'delete', selectedCodes);
       return { deleted: affected };
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'فشل تنفيذ الإجراء على الروابط.');
+      dispatch({
+        type: 'runFailed',
+        message: err instanceof Error ? err.message : 'فشل تنفيذ الإجراء على الروابط.',
+      });
       return null;
     } finally {
-      setBusy(false);
+      dispatch({ type: 'runFinished' });
     }
   }, [linksnap, selectedLinks, token, selectedCodes]);
 
   const runSetExpiry = useCallback(
     async (expiresAt: string): Promise<boolean> => {
-      setBusy(true);
-      setError(null);
+      dispatch({ type: 'runStarted' });
       try {
         if (linksnap) {
           // The store's edit bumps `updatedAt` and queues the same `link.update`
@@ -94,10 +85,13 @@ export function useBulkLinks(codes: string[], token: string) {
         await bulkLinkAction(token, 'setExpiry', selectedCodes, expiresAt);
         return true;
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'فشل تعيين تاريخ الانتهاء.');
+        dispatch({
+          type: 'runFailed',
+          message: err instanceof Error ? err.message : 'فشل تعيين تاريخ الانتهاء.',
+        });
         return false;
       } finally {
-        setBusy(false);
+        dispatch({ type: 'runFinished' });
       }
     },
     [linksnap, selectedLinks, token, selectedCodes]

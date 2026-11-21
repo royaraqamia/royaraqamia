@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, memo } from 'react';
+import { useEffect, useReducer, memo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import { hslToHex } from '@/frontend/shared/hsl-to-hex';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { LINK_QR_MODAL_COPY } from './link-qr-modal-copy';
+import { linkQrInitialState, linkQrReducer } from '@/frontend/ui/linksnap/link-qr-modal.reducer';
 
 interface LinkQrModalProps {
   code: string;
@@ -30,16 +31,15 @@ export const LinkQrModal = memo(function LinkQrModal({
   open,
   onOpenChange,
 }: LinkQrModalProps) {
-  const [svg, setSvg] = useState<string | null>(null);
-  const [error, setError] = useState(false);
-  const [generationKey, setGenerationKey] = useState(0);
+  const [state, dispatch] = useReducer(linkQrReducer, undefined, linkQrInitialState);
+  const { svg, error, generationKey } = state;
 
   const shortUrl = getShortLinkUrl(baseUrl, code);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    setError(false);
+    dispatch({ type: 'generationStarted' });
 
     const style = getComputedStyle(document.documentElement);
     const dark = hslToHex(style.getPropertyValue('--foreground').trim());
@@ -56,11 +56,11 @@ export const LinkQrModal = memo(function LinkQrModal({
         })
       )
       .then((value) => {
-        if (!cancelled) setSvg(value);
+        if (!cancelled) dispatch({ type: 'generated', svg: value });
       })
       .catch((err: unknown) => {
         logger.error('QR generation failed', { error: String(err) });
-        if (!cancelled) setError(true);
+        if (!cancelled) dispatch({ type: 'generationFailed' });
       });
 
     return () => {
@@ -152,11 +152,7 @@ export const LinkQrModal = memo(function LinkQrModal({
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSvg(null);
-                      setError(false);
-                      setGenerationKey((key) => key + 1);
-                    }}
+                    onClick={() => dispatch({ type: 'regenerationRequested' })}
                     className={cn(
                       'mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium',
                       'bg-background text-foreground hover:bg-accent border border-border shadow-2xs',

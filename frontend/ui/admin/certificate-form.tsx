@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useReducer } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -19,6 +19,11 @@ import {
   Hash,
   Pencil,
 } from 'lucide-react';
+import {
+  certificateFormInitialState,
+  certificateFormReducer,
+  type CertificateFormFields,
+} from '@/frontend/ui/admin/certificate-form.reducer';
 
 interface CertificateFormProps {
   mode: 'create' | 'edit';
@@ -44,33 +49,31 @@ interface CertificateFormProps {
 
 export function CertificateForm({ mode, initialData, onSubmit }: CertificateFormProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [globalError, setGlobalError] = useState('');
-  const [form, setForm] = useState({
-    student_name: initialData?.student_name ?? '',
-    course_name: initialData?.course_name ?? '',
-    issue_date: initialData?.issue_date ?? new Date().toISOString().split('T')[0] ?? '',
-    expiration_date: initialData?.expiration_date ?? '',
-    grade_or_status: initialData?.grade_or_status ?? '',
-  });
-  const [recipientUserIds, setRecipientUserIds] = useState<string[]>(
-    initialData?.recipient_user_ids ?? []
+  const [state, dispatch] = useReducer(certificateFormReducer, undefined, () =>
+    certificateFormInitialState(
+      {
+        student_name: initialData?.student_name ?? '',
+        course_name: initialData?.course_name ?? '',
+        issue_date: initialData?.issue_date ?? new Date().toISOString().split('T')[0] ?? '',
+        expiration_date: initialData?.expiration_date ?? '',
+        grade_or_status: initialData?.grade_or_status ?? '',
+      },
+      initialData?.recipient_user_ids ?? []
+    )
   );
+  const { loading, errors, globalError, form, recipientUserIds } = state;
 
-  function updateField(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
+  function updateField(field: keyof CertificateFormFields, value: string) {
+    dispatch({ type: 'fieldChanged', field, value });
   }
+
+  const setRecipientUserIds = useCallback((ids: string[]) => {
+    dispatch({ type: 'recipientsChanged', ids });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setGlobalError('');
+    dispatch({ type: 'submitStarted' });
 
     try {
       const result = await onSubmit({
@@ -87,15 +90,21 @@ export function CertificateForm({ mode, initialData, onSubmit }: CertificateForm
         router.push('/admin/certificates');
         router.refresh();
       } else {
-        setGlobalError(result.error || 'حدث خطأ');
-        if (result.fieldErrors) setErrors(result.fieldErrors);
+        dispatch({
+          type: 'submitFailed',
+          error: result.error || 'حدث خطأ',
+          fieldErrors: result.fieldErrors,
+        });
         toast.error(result.error || 'حدث خطأ');
       }
     } catch {
-      setGlobalError('حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.');
+      dispatch({
+        type: 'submitFailed',
+        error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
+      });
       toast.error('حدث خطأ غير متوقع');
     } finally {
-      setLoading(false);
+      dispatch({ type: 'submitFinished' });
     }
   }
 

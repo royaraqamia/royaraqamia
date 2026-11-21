@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -31,8 +31,13 @@ import {
   type NewsRegion,
   type NewsSourceDestination,
   type NewsSourceRequest,
-  type NewsSourceRequestStatus,
 } from '@/shared/contracts/news';
+import {
+  defaultNewsDraft,
+  newsReviewInitialState,
+  newsReviewReducer,
+  type NewsStatusFilter,
+} from './news-review.reducer';
 
 const STATUS_TONES = {
   resolving: 'secondary',
@@ -42,9 +47,7 @@ const STATUS_TONES = {
   rejected: 'destructive',
 } as const;
 
-type StatusFilter = NewsSourceRequestStatus | 'all';
-
-const FILTERS: readonly { value: StatusFilter; label: string }[] = [
+const FILTERS: readonly { value: NewsStatusFilter; label: string }[] = [
   { value: 'all', label: 'الكل' },
   ...NEWS_SOURCE_REQUEST_STATUSES.map((status) => ({
     value: status,
@@ -64,34 +67,25 @@ const FILTERS: readonly { value: StatusFilter; label: string }[] = [
  * Approving is still the gate: the row it writes is what the daily fetch reads.
  */
 export default function AdminNewsSourcesPage() {
-  const [requests, setRequests] = useState<NewsSourceRequest[]>([]);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [loading, setLoading] = useState(true);
-  const [decidingId, setDecidingId] = useState<string | null>(null);
-  const [drafts, setDrafts] = useState<
-    Record<
-      string,
-      {
-        category: NewsCategory;
-        region: NewsRegion;
-        tier: 1 | 2;
-        note: string;
-        feedUrl: string;
-        destination: NewsSourceDestination;
-      }
-    >
-  >({});
+  const [state, dispatch] = useReducer(
+    newsReviewReducer,
+    'all' as NewsStatusFilter,
+    newsReviewInitialState
+  );
+  const { requests, statusFilter, loading, decidingId, drafts } = state;
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
+    dispatch({ type: 'loadStarted' });
     try {
-      setRequests(
-        await getAdminNewsSourceRequests(statusFilter === 'all' ? undefined : statusFilter)
-      );
+      dispatch({
+        type: 'loaded',
+        requests: await getAdminNewsSourceRequests(
+          statusFilter === 'all' ? undefined : statusFilter
+        ),
+      });
     } catch {
       toast.error('تعذّر تحميل طلبات المصادر.');
-    } finally {
-      setLoading(false);
+      dispatch({ type: 'loadFailed' });
     }
   }, [statusFilter]);
 
@@ -99,22 +93,14 @@ export default function AdminNewsSourcesPage() {
     void fetchData();
   }, [fetchData]);
 
-  const draftFor = (request: NewsSourceRequest) =>
-    drafts[request.id] ?? {
-      category: request.category ?? 'world',
-      region: request.region ?? 'world',
-      tier: request.tier ?? 2,
-      note: '',
-      feedUrl: '',
-      destination: 'private',
-    };
+  const draftFor = (request: NewsSourceRequest) => drafts[request.id] ?? defaultNewsDraft(request);
 
   const patchDraft = (request: NewsSourceRequest, patch: Partial<ReturnType<typeof draftFor>>) => {
-    setDrafts((current) => ({ ...current, [request.id]: { ...draftFor(request), ...patch } }));
+    dispatch({ type: 'draftPatched', request, patch });
   };
 
   const decide = async (request: NewsSourceRequest, action: 'approve' | 'reject') => {
-    setDecidingId(request.id);
+    dispatch({ type: 'decideStarted', id: request.id });
     try {
       const draft = draftFor(request);
       const updated = await decideNewsSourceRequest(
@@ -132,7 +118,7 @@ export default function AdminNewsSourcesPage() {
           : { action, note: draft.note.trim() || undefined }
       );
 
-      setRequests((rows) => rows.map((row) => (row.id === updated.id ? updated : row)));
+      dispatch({ type: 'decided', request: updated });
       toast.success(
         action === 'approve'
           ? draft.destination === 'catalogue'
@@ -143,7 +129,7 @@ export default function AdminNewsSourcesPage() {
     } catch {
       toast.error(action === 'approve' ? 'تعذّر قبول الطلب.' : 'تعذّر رفض الطلب.');
     } finally {
-      setDecidingId(null);
+      dispatch({ type: 'decideFinished' });
     }
   };
 
@@ -157,7 +143,7 @@ export default function AdminNewsSourcesPage() {
             key={filter.value}
             type="button"
             aria-pressed={statusFilter === filter.value}
-            onClick={() => setStatusFilter(filter.value)}
+            onClick={() => dispatch({ type: 'filterChanged', filter: filter.value })}
             className={`min-h-9 cursor-pointer rounded-full border px-4 py-1.5 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
               statusFilter === filter.value
                 ? 'border-primary bg-primary text-primary-foreground'

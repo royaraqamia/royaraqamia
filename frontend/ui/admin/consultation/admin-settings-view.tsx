@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import type { ConsultationSettings } from '@/shared/contracts/consultation';
 import { adminSaveSettings } from '@/frontend/api/consultation-admin';
@@ -9,8 +9,10 @@ import { Label } from '@/frontend/ui/primitives/label';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { cn } from '@/frontend/shared/cn';
-
-type SettingsDraft = Partial<ConsultationSettings>;
+import {
+  adminSettingsInitialState,
+  adminSettingsReducer,
+} from '@/frontend/ui/admin/consultation/admin-settings-view.reducer';
 
 const FIELDS: Array<{
   key: keyof ConsultationSettings;
@@ -27,29 +29,24 @@ const FIELDS: Array<{
 ];
 
 export function AdminSettingsView() {
-  const [draft, setDraft] = useState<SettingsDraft>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [state, dispatch] = useReducer(adminSettingsReducer, undefined, adminSettingsInitialState);
+  const { draft, loading, saving, message } = state;
 
   useEffect(() => {
     fetchConsultationSettings().then((settings) => {
-      setDraft(settings);
-      setLoading(false);
+      dispatch({ type: 'loaded', settings });
     });
   }, []);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
-    setMessage(null);
+    dispatch({ type: 'saveStarted' });
     const result = await adminSaveSettings(draft);
-    setSaving(false);
     if (result.success) {
-      setMessage({ ok: true, text: 'تم حفظ الإعدادات.' });
+      dispatch({ type: 'saveSucceeded' });
     } else {
-      setMessage({
-        ok: false,
+      dispatch({
+        type: 'saveFailed',
         text: result.fieldErrors
           ? Object.values(result.fieldErrors).join('، ')
           : (result.error ?? 'فشل الحفظ.'),
@@ -86,7 +83,7 @@ export function AdminSettingsView() {
           <Input
             id={`settings-${key}`}
             value={draft[key] ?? ''}
-            onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+            onChange={(e) => dispatch({ type: 'fieldChanged', key, value: e.target.value })}
             dir={dir}
             className={cn(
               'bg-muted border-border rounded-xl focus-ring',
