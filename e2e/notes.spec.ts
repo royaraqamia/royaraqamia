@@ -99,3 +99,66 @@ test('a guest writes, searches, reloads and undoes a note', async ({ page }) => 
   await page.getByRole('button', { name: 'تراجع' }).click();
   await expect(page.locator('#note-body')).toContainText('محتوى يُحفظ تلقائيًّا.');
 });
+
+/**
+ * The phone is the surface where the defect was visible: the toolbar is painted
+ * under the text but emitted before it, so the old dialog opened on the first
+ * tool and the first keystrokes went nowhere (#1695). These cases assert the
+ * opening focus and the toolbar's single tab stop on that exact viewport.
+ */
+test.describe('notes editor focus on a phone', () => {
+  test.use({
+    viewport: { width: 393, height: 852 },
+    deviceScaleFactor: 2.75,
+    isMobile: true,
+    hasTouch: true,
+    colorScheme: 'dark',
+    locale: 'ar',
+    timezoneId: 'Asia/Riyadh',
+  });
+
+  test('the composer opens on the text, so typing needs no click', async ({ page }) => {
+    await page.goto('/?tab=/notes');
+    await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
+
+    await page.locator('#btn-new-note').dispatchEvent('click');
+    await expect(page.locator('#composer-note-body')).toBeVisible();
+    await expect(page.locator('#composer-note-body')).toBeFocused();
+
+    await page.keyboard.type('اختبار');
+    await expect(page.locator('#composer-note-body')).toContainText('اختبار');
+  });
+
+  test('an opened note takes focus too', async ({ page }) => {
+    await page.goto('/?tab=/notes');
+    await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
+
+    await page.locator('#btn-new-note').dispatchEvent('click');
+    await expect(page.locator('#composer-note-body')).toBeFocused();
+    await page.keyboard.type('اختبار');
+    await page.getByRole('button', { name: 'إنشاء الملاحظة' }).click();
+
+    await expect(page.locator('#note-body')).toContainText('اختبار');
+    await expect(page.locator('#note-body')).toBeFocused();
+    await page.keyboard.type(' مضافة');
+    await expect(page.locator('#note-body')).toContainText('اختبار مضافة');
+  });
+
+  test('the toolbar is one tab stop and Arrow keys move between tools', async ({ page }) => {
+    await page.goto('/?tab=/notes');
+    await expect(page.locator('[data-notes-ready="true"]')).toBeAttached();
+
+    await page.locator('#btn-new-note').dispatchEvent('click');
+    await expect(page.locator('#composer-note-body')).toBeFocused();
+
+    const toolbar = page.getByRole('toolbar', { name: 'تنسيق النَّصّ' });
+    expect(await toolbar.locator('button[tabindex="0"]').count()).toBe(1);
+
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.getByRole('button', { name: 'عريض' })).toBeFocused();
+    // The surface is RTL, so Left walks forward through the row.
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.getByRole('button', { name: 'مائل' })).toBeFocused();
+    expect(await toolbar.locator('button[tabindex="0"]').count()).toBe(1);
+  });
+});

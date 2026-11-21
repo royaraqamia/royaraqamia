@@ -1,6 +1,14 @@
 'use client';
 
-import { useEffect, useId, useReducer, useRef } from 'react';
+import {
+  Fragment,
+  useEffect,
+  useId,
+  useReducer,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -36,6 +44,9 @@ const turndown = new TurndownService({
   strongDelimiter: '**',
   linkStyle: 'inlined',
 });
+
+/** Where a divider follows a tool in the toolbar, by tool index. */
+const TOOL_DIVIDERS_AFTER = new Set([3, 5, 10]);
 
 function toggleLink(editor: Editor) {
   const previous = editor.getAttributes('link').href as string | undefined;
@@ -141,8 +152,17 @@ export function NoteBodyEditor({
   /** One mention conversion at a time; the chain it runs fires `onUpdate` again. */
   const converting = useRef(false);
 
+  // Which tool is the toolbar's single tab stop. Arrow keys move it so the tools
+  // stay reachable without putting a Tab stop between the dialog and the text.
+  const [activeTool, setActiveTool] = useState(0);
+
   const editor = useEditor({
     immediatelyRender: false,
+    // The writing surface owns the initial focus of the dialog that mounts it.
+    // Tiptap focuses on mount, after Radix's open-autofocus has had its turn, so
+    // the first thing a member types reaches the note (#1695). One rule
+    // here covers the notes composer, the notes editor and the post composer.
+    autofocus: 'end',
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       Placeholder.configure({ placeholder }),
@@ -201,6 +221,40 @@ export function NoteBodyEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
+  /**
+   * APG toolbar keys: one tab stop, Arrow keys move between tools. The row stays
+   * horizontal on every width — a phone only moves it under the text (ADR-0109)
+   * — so Left/Right walk it and Home/End jump to either end. In an RTL toolbar
+   * the two arrows reverse, as they do for every other horizontal control.
+   */
+  function handleToolbarKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (
+      event.key !== 'ArrowLeft' &&
+      event.key !== 'ArrowRight' &&
+      event.key !== 'Home' &&
+      event.key !== 'End'
+    ) {
+      return;
+    }
+
+    const buttons = Array.from(event.currentTarget.querySelectorAll('button'));
+    const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (current === -1) return;
+
+    let next: number;
+    if (event.key === 'Home') {
+      next = 0;
+    } else if (event.key === 'End') {
+      next = buttons.length - 1;
+    } else {
+      const rtl = getComputedStyle(event.currentTarget).direction === 'rtl';
+      const forward = (event.key === 'ArrowRight') !== rtl;
+      next = (current + (forward ? 1 : -1) + buttons.length) % buttons.length;
+    }
+    event.preventDefault();
+    buttons[next]!.focus();
+  }
+
   if (!editor) {
     return (
       <div className="space-y-4 p-4" aria-busy="true" aria-label="جاري فتح المحرِّر">
@@ -226,6 +280,7 @@ export function NoteBodyEditor({
       <div
         role="toolbar"
         aria-label="تنسيق النَّصّ"
+        onKeyDown={handleToolbarKeyDown}
         // One row everywhere: the tools scroll sideways instead of wrapping, so
         // the toolbar never becomes a block of rows over the text. The row owns
         // that scroll — `min-w-0` keeps its widest state from widening the
@@ -237,85 +292,98 @@ export function NoteBodyEditor({
         // appended later can win the property and strip `sm:border-t-0` (ADR-0132).
         className="scrollbar-toolbar flex min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto max-sm:border-t border-border/50 px-2 py-1.5 sm:border-t-0 sm:border-b"
       >
-        <ToolbarButton
-          label="عريض"
-          active={editor.isActive('bold')}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          icon={Bold}
-        />
-        <ToolbarButton
-          label="مائل"
-          active={editor.isActive('italic')}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          icon={Italic}
-        />
-        <ToolbarButton
-          label="تسطير"
-          active={editor.isActive('underline')}
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-          icon={Underline}
-        />
-        <ToolbarButton
-          label="يتوسطه خط"
-          active={editor.isActive('strike')}
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          icon={Strikethrough}
-        />
-        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border/70" />
-        <ToolbarButton
-          label="عنوان رئيسيّ"
-          active={editor.isActive('heading', { level: 1 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          icon={Heading1}
-        />
-        <ToolbarButton
-          label="عنوان فرعيّ"
-          active={editor.isActive('heading', { level: 2 })}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          icon={Heading2}
-        />
-        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border/70" />
-        <ToolbarButton
-          label="قائمة نقطيَّة"
-          active={editor.isActive('bulletList')}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          icon={List}
-        />
-        <ToolbarButton
-          label="قائمة مرقَّمة"
-          active={editor.isActive('orderedList')}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          icon={ListOrdered}
-        />
-        <ToolbarButton
-          label="اقتباس"
-          active={editor.isActive('blockquote')}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          icon={Quote}
-        />
-        <ToolbarButton
-          label="كتلة كود"
-          active={editor.isActive('codeBlock')}
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          icon={Code}
-        />
-        <ToolbarButton
-          label="رابط"
-          active={editor.isActive('link')}
-          onClick={() => toggleLink(editor)}
-          icon={Link2}
-        />
-        <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border/70" />
-        <ToolbarButton
-          label="تراجع"
-          onClick={() => editor.chain().focus().undo().run()}
-          icon={Undo2}
-        />
-        <ToolbarButton
-          label="إعادة"
-          onClick={() => editor.chain().focus().redo().run()}
-          icon={Redo2}
-        />
+        {[
+          {
+            label: 'عريض',
+            active: editor.isActive('bold'),
+            onClick: () => editor.chain().focus().toggleBold().run(),
+            icon: Bold,
+          },
+          {
+            label: 'مائل',
+            active: editor.isActive('italic'),
+            onClick: () => editor.chain().focus().toggleItalic().run(),
+            icon: Italic,
+          },
+          {
+            label: 'تسطير',
+            active: editor.isActive('underline'),
+            onClick: () => editor.chain().focus().toggleUnderline().run(),
+            icon: Underline,
+          },
+          {
+            label: 'يتوسطه خط',
+            active: editor.isActive('strike'),
+            onClick: () => editor.chain().focus().toggleStrike().run(),
+            icon: Strikethrough,
+          },
+          {
+            label: 'عنوان رئيسيّ',
+            active: editor.isActive('heading', { level: 1 }),
+            onClick: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+            icon: Heading1,
+          },
+          {
+            label: 'عنوان فرعيّ',
+            active: editor.isActive('heading', { level: 2 }),
+            onClick: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+            icon: Heading2,
+          },
+          {
+            label: 'قائمة نقطيَّة',
+            active: editor.isActive('bulletList'),
+            onClick: () => editor.chain().focus().toggleBulletList().run(),
+            icon: List,
+          },
+          {
+            label: 'قائمة مرقَّمة',
+            active: editor.isActive('orderedList'),
+            onClick: () => editor.chain().focus().toggleOrderedList().run(),
+            icon: ListOrdered,
+          },
+          {
+            label: 'اقتباس',
+            active: editor.isActive('blockquote'),
+            onClick: () => editor.chain().focus().toggleBlockquote().run(),
+            icon: Quote,
+          },
+          {
+            label: 'كتلة كود',
+            active: editor.isActive('codeBlock'),
+            onClick: () => editor.chain().focus().toggleCodeBlock().run(),
+            icon: Code,
+          },
+          {
+            label: 'رابط',
+            active: editor.isActive('link'),
+            onClick: () => toggleLink(editor),
+            icon: Link2,
+          },
+          {
+            label: 'تراجع',
+            onClick: () => editor.chain().focus().undo().run(),
+            icon: Undo2,
+          },
+          {
+            label: 'إعادة',
+            onClick: () => editor.chain().focus().redo().run(),
+            icon: Redo2,
+          },
+        ].map((tool, index) => (
+          <Fragment key={tool.label}>
+            <ToolbarButton
+              label={tool.label}
+              active={tool.active}
+              onClick={tool.onClick}
+              icon={tool.icon}
+              tabIndex={index === activeTool ? 0 : -1}
+              onFocus={() => setActiveTool(index)}
+            />
+            {TOOL_DIVIDERS_AFTER.has(index) ? (
+              <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-border/70" />
+            ) : null}
+          </Fragment>
+        ))}
       </div>
 
       {/* The text owns the scroll, not the dialog: with the tools pinned under it
@@ -334,9 +402,18 @@ interface ToolbarButtonProps {
   icon: typeof Bold;
   onClick: () => void;
   active?: boolean;
+  tabIndex: number;
+  onFocus: () => void;
 }
 
-function ToolbarButton({ label, icon: Icon, onClick, active }: ToolbarButtonProps) {
+function ToolbarButton({
+  label,
+  icon: Icon,
+  onClick,
+  active,
+  tabIndex,
+  onFocus,
+}: ToolbarButtonProps) {
   return (
     <Button
       type="button"
@@ -344,6 +421,8 @@ function ToolbarButton({ label, icon: Icon, onClick, active }: ToolbarButtonProp
       size="icon-sm"
       aria-label={label}
       aria-pressed={active === undefined ? undefined : active}
+      tabIndex={tabIndex}
+      onFocus={onFocus}
       onClick={onClick}
       className={cn('shrink-0', active && 'bg-primary/10 text-primary')}
     >

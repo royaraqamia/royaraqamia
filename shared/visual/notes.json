@@ -99,7 +99,7 @@
     }
   ],
   "motion": {
-    "notes": "The list is still: a note arrives where its row sorts, and the search filters in place. The composer and the open note rise as the site's dialogs do — a short fade and travel from the bottom of the viewport — and reduced motion shows them in their final position without the travel.",
+    "notes": "The list is still: a note arrives where its row sorts, and the search filters in place. The composer and the open note rise as the site's dialogs do — a short fade and travel from the bottom of the viewport — and reduced motion shows them in their final position without the travel. Opening either one puts the focus on the writing surface, so the first keystrokes reach the note; the tools are a single tab stop walked with the Arrow keys. A phone keeps the tools painted under the text (ADR-0109), but the interaction order follows the text, not that painting.",
     "entries": [
       {
         "element": "list",
@@ -112,6 +112,12 @@
         "gesture": "a note is opened, or the composer is opened",
         "moves": "the surface fades in and rises from the bottom edge",
         "same": "the same short fade and travel; reduced motion shows the final surface without the travel"
+      },
+      {
+        "element": "editor",
+        "gesture": "the composer or the open note receives focus",
+        "moves": "focus lands on the writing surface; the tools are one tab stop and the Arrow keys walk between them",
+        "same": "the notes composer and the open-note editor open on their text; the community post composer inherits the same editor, and a phone keeps its tools painted below the text"
       }
     ]
   }
