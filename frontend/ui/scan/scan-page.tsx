@@ -28,11 +28,9 @@ import { ScanHistory } from './scan-history';
 import { identityFromUser } from '@/frontend/shared/local-store/identity';
 import { canRecordLocalUsage, recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
 import { useScannedCertificate } from '@/frontend/state/scan/use-scanned-certificate';
-import {
-  SCAN_FORMAT_LABELS,
-  SCAN_RESULT_KIND_LABELS,
-  classifyScanPayload,
-} from '@/shared/contracts/scan';
+import { SCAN_FORMAT_LABELS, classifyScanPayload } from '@/shared/contracts/scan';
+import { SCAN_COPY } from './scan-copy';
+import { scanKindLabel } from './scan-labels';
 import { computeFrameTransform, displayToFrame, frameToDisplay } from './overlay';
 import {
   FrameGrabber,
@@ -88,21 +86,21 @@ function cameraErrorMessage(caught: unknown, shellVersionCode: number | null): s
   // cannot ask for the camera at all, or one that asked and was refused.
   if ((name === 'NotAllowedError' || name === 'SecurityError') && shellVersionCode !== null) {
     return shellVersionCode < SHELL_CAMERA_PERMISSION_CODE
-      ? 'نسخة التَّطبيق هذه لا تستطيع استخدام الكاميرا. حدِّث التَّطبيق من صفحة الحساب، أو ارفع صورة للرَّمز.'
-      : 'لم يُسمَح للتَّطبيق بالوصول إلى الكاميرا. فعِّل إذن الكاميرا للتَّطبيق من إعدادات النِّظام، أو ارفع صورة للرَّمز.';
+      ? SCAN_COPY.shellTooOld
+      : SCAN_COPY.permissionDeniedApp;
   }
 
   switch (name) {
     case 'NotAllowedError':
     case 'SecurityError':
-      return 'لم يُسمَح بالوصول إلى الكاميرا. اسمح للموقع باستخدامها من إعدادات المتصفِّح، أو ارفع صورة للرَّمز.';
+      return SCAN_COPY.permissionDeniedWeb;
     case 'NotFoundError':
     case 'OverconstrainedError':
-      return 'لا توجد كاميرا مُتاحة على هذا الجهاز. ارفع صورة للرَّمز بدلًا من ذلك.';
+      return SCAN_COPY.noCamera;
     case 'NotReadableError':
-      return 'الكاميرا مشغولة بتطبيق آخر. أغلق التَّطبيق الآخر ثمَّ أعد المحاولة.';
+      return SCAN_COPY.cameraBusy;
     default:
-      return 'تعذَّر تشغيل الكاميرا. ارفع صورة للرَّمز بدلًا من ذلك.';
+      return SCAN_COPY.cameraFailed;
   }
 }
 
@@ -339,7 +337,7 @@ export function ScanPage() {
           frameErrorsRef.current += 1;
           if (frameErrorsRef.current >= SCAN_MAX_FRAME_ERRORS) {
             stopCamera();
-            setError('تعذَّر قراءة الرَّمز بكاميرا هذا الجهاز. ارفع صورة تحتوي على الرَّمز بدلًا من ذلك.');
+            setError(SCAN_COPY.decodeFailed);
             return;
           }
         }
@@ -356,7 +354,7 @@ export function ScanPage() {
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus('idle');
-      setError('لا يدعم متصفِّحك الوصول إلى الكاميرا هنا. ارفع صورة للرَّمز بدلًا من ذلك.');
+      setError(SCAN_COPY.cameraUnsupported);
       return;
     }
 
@@ -380,7 +378,7 @@ export function ScanPage() {
         for (const track of stream.getTracks()) track.stop();
         if (!disposedRef.current) {
           setStatus('idle');
-          setError('تعذَّر تجهيز نافذة الكاميرا.');
+          setError(SCAN_COPY.previewFailed);
         }
         return;
       }
@@ -434,11 +432,11 @@ export function ScanPage() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('الملف المختار ليس صورة.');
+      setError(SCAN_COPY.notAnImage);
       return;
     }
     if (file.size > SCAN_MAX_UPLOAD_BYTES) {
-      setError('حجم الصُّورة كبير جدًّا. الحد الأقصى 12 ميغابايت.');
+      setError(SCAN_COPY.imageTooLarge);
       return;
     }
 
@@ -453,12 +451,12 @@ export function ScanPage() {
       const codes = await engine.detect(frame);
       const pick = largestCode(codes);
       if (!pick) {
-        setError('لم نعثر على رمز في هذه الصُّورة. جرِّب صورة أوضح وأقرب للرَّمز.');
+        setError(SCAN_COPY.noCodeInImage);
         return;
       }
       accept(pick);
     } catch {
-      setError('تعذَّر قراءة الصُّورة. تأكَّد أنَّها صورة صالحة.');
+      setError(SCAN_COPY.imageFailed);
     } finally {
       setBusy(false);
     }
@@ -486,13 +484,13 @@ export function ScanPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 pt-10 pb-28 sm:pt-16 sm:pb-32">
       <p className="sr-only" role="status" aria-live="polite">
         {classification
-          ? `تمَّ قراءة الرَّمز. النَّوع: ${SCAN_RESULT_KIND_LABELS[classification.kind]}`
+          ? SCAN_COPY.announced.replace('{kind}', scanKindLabel(classification.kind))
           : ''}
       </p>
 
       <header data-visual="title" className="flex flex-col items-center gap-3 text-center">
         <SectionTitle as="h1">
-          <SectionTitleHighlight>ماسح QR و Barcode</SectionTitleHighlight>
+          <SectionTitleHighlight>{SCAN_COPY.title}</SectionTitleHighlight>
         </SectionTitle>
       </header>
 
@@ -503,21 +501,21 @@ export function ScanPage() {
         >
           {user ? (
             <>
-              نفدت حصَّتك لهذه الفترة.{' '}
+              {SCAN_COPY.limitMember}{' '}
               <Link href="/pricing" className="underline underline-offset-4">
-                ارتقِ إلى الخطَّة المدفوعة
+                {SCAN_COPY.limitUpgrade}
               </Link>{' '}
-              للمتابعة.
+              {SCAN_COPY.limitContinue}
             </>
           ) : (
             <>
-              انتهت حصَّتك اليومية كزائر.{' '}
+              {SCAN_COPY.limitGuest}{' '}
               <Link href="/auth/login?redirect=/scan" className="underline underline-offset-4">
-                سجِّل الدُّخول
+                {SCAN_COPY.limitSignIn}
               </Link>{' '}
-              لمتابعة الاستخدام، أو{' '}
+              {SCAN_COPY.limitUse}{' '}
               <Link href="/pricing" className="underline underline-offset-4">
-                اطَّلع على الخطط
+                {SCAN_COPY.limitPlans}
               </Link>
               .
             </>
@@ -559,7 +557,7 @@ export function ScanPage() {
                     disabled={busy}
                   >
                     {status === 'starting' ? <Loader2 className="animate-spin" /> : <Camera />}
-                    {status === 'starting' ? 'جاري تشغيل الكاميرا…' : 'تشغيل الكاميرا'}
+                    {status === 'starting' ? SCAN_COPY.starting : SCAN_COPY.start}
                   </HeroCtaButton>
                 </div>
               )}
@@ -567,7 +565,7 @@ export function ScanPage() {
               {scanning && (
                 <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between gap-2 bg-linear-to-t from-black/75 to-transparent p-3">
                   <p className="text-xs text-white/80" aria-live="polite">
-                    وجِّه الرَّمز داخل الإطار…
+                    {SCAN_COPY.scanningHint}
                   </p>
                   <div className="flex items-center gap-2">
                     {torchAvailable && (
@@ -575,7 +573,7 @@ export function ScanPage() {
                         type="button"
                         variant="secondary"
                         size="icon-sm"
-                        aria-label={torchOn ? 'إطفاء الكشَّاف' : 'تشغيل الكشَّاف'}
+                        aria-label={torchOn ? SCAN_COPY.torchOff : SCAN_COPY.torchOn}
                         onClick={() => void toggleTorch()}
                       >
                         {torchOn ? <FlashlightOff /> : <Flashlight />}
@@ -583,7 +581,7 @@ export function ScanPage() {
                     )}
                     <Button type="button" variant="secondary" size="sm" onClick={stopCamera}>
                       <Square className="size-3.5" />
-                      إيقاف
+                      {SCAN_COPY.stop}
                     </Button>
                   </div>
                 </div>
@@ -605,14 +603,14 @@ export function ScanPage() {
               className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border/70 p-4 text-center"
             >
               <p data-visual="upload-hint" className="text-xs text-muted-foreground">
-                أو ارفع صورة تحتوي على الرَّمز
+                {SCAN_COPY.uploadHint}
               </p>
               <input
                 ref={fileRef}
                 type="file"
                 accept="image/*"
                 className="sr-only"
-                aria-label="اختيار صورة تحتوي على رمز"
+                aria-label={SCAN_COPY.uploadAria}
                 onChange={(event) => void handleFile(event)}
               />
               <Button
@@ -623,7 +621,7 @@ export function ScanPage() {
                 onClick={() => fileRef.current?.click()}
               >
                 {busy ? <Loader2 className="animate-spin" /> : <Upload />}
-                {busy ? 'جاري القراءة…' : 'اختيار صورة'}
+                {busy ? SCAN_COPY.reading : SCAN_COPY.upload}
               </Button>
             </div>
           </CardContent>

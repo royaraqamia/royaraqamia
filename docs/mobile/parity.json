@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. A row names what draws it: a `surface` from perf/surfaces.json, or the `frame` from docs/mobile/visual-gate.json when the component is the shell's chrome rather than one screen's content (ADR-0118: the frame is not a surface, so it is named separately). `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, a copy source no row claims, and any Kotlin file that reads `Recipes` or `LucideVectors` without a row (`exempt` takes a path and a reason). The rules are in docs/mobile/two-clients.md, and ADR-0098 and ADR-0103 record why this exists.",
+  "notes": "One row per component the app draws natively and the site already draws, so a port is a pair rather than a second interpretation. A row names what draws it: a `surface` from perf/surfaces.json, or the `frame` from docs/mobile/visual-gate.json when the component is the shell's chrome rather than one screen's content (ADR-0118: the frame is not a surface, so it is named separately). `npm run check:parity` fails a row whose files are missing, whose states differ from the app's sealed interface, whose strings are not rendered on both sides from the same generated copy source, a copy source no row claims, and any Kotlin file that reads `Recipes`, reads `LucideVectors` or declares user-facing Arabic copy without a row (#1707). `exempt` takes a path and a reason; it may also name a `surface`, and then it fails once that surface is enabled in docs/mobile/screens.json, so a reason cannot outlive the condition it describes. The rules are in docs/mobile/two-clients.md, and ADR-0098 and ADR-0103 record why this exists.",
   "components": [
     {
       "id": "scan-history",
@@ -25,6 +25,54 @@
         { "name": "Empty", "copy": "empty" },
         { "name": "Failed", "copy": "failed" },
         { "name": "Ready", "copy": "title" }
+      ]
+    },
+    {
+      "id": "scan",
+      "surface": "scan",
+      "issue": "#1707",
+      "web": {
+        "route": "app/scan/page.tsx",
+        "component": "frontend/ui/scan/scan-page.tsx",
+        "also": ["frontend/ui/scan/scan-result-card.tsx", "frontend/ui/scan/scan-labels.ts"],
+        "copyModule": "frontend/ui/scan/scan-copy.ts",
+        "copyExport": "SCAN_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanScreen.kt",
+        "also": ["android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanClassifier.kt"],
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanVisualState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanCopy.kt",
+        "copyObject": "ScanCopy"
+      },
+      "copySource": "shared/copy/scan.json",
+      "states": [
+        { "name": "AtRest", "copy": "start" },
+        { "name": "Denied", "copy": "permissionDeniedApp" },
+        { "name": "Result", "copy": "copy" }
+      ]
+    },
+    {
+      "id": "notes-editor",
+      "surface": "notes",
+      "issue": "#1707",
+      "web": {
+        "route": "app/notes/(app)/page.tsx",
+        "component": "frontend/ui/notes/note-composer-dialog.tsx",
+        "also": ["frontend/ui/notes/note-editor-dialog.tsx"],
+        "copyModule": "frontend/ui/notes/notes-editor-copy.ts",
+        "copyExport": "NOTES_EDITOR_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/notes/NotesScreen.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/notes/NotesUiState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/notes/NotesCopy.kt",
+        "copyObject": "NotesCopy"
+      },
+      "copySource": "shared/copy/notes-editor.json",
+      "states": [
+        { "name": "Empty", "copy": "newNote" },
+        { "name": "Painted", "copy": "editorLabel" }
       ]
     },
     {
@@ -2753,8 +2801,12 @@
       "reason": "The update card is the app's alone (#652, ADR-0114): the site never offers an APK install, so a web deploy alone never prompts and no second client holds these words. It draws the site's card, glyphs and digit face — which is why the discovery sees it — and its copy is res/values/strings.xml, the app's own single source."
     },
     {
-      "path": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanScreen.kt",
-      "reason": "The Scanner screen (#932) draws the site's tokens and glyphs and is switched off until the visual gate pairs it with `/scan` (ADR-0117). Its words are still the page's inline ones, so there is no second copy source to pair yet; the exemption names the slice that removes it, and `docs/mobile/screens.json` records that the route is still the document's."
+      "path": "android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanDates.kt",
+      "reason": "The Hijri era marker is a formatter's suffix, not a label a second client draws: the page formats the same date with `Intl.DateTimeFormat('ar-SA')` and the two outputs are pinned by a fixture (ADR-0098). There is no web component to hold this value against; the copy signal sees it only because it is a named Arabic string."
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/royaraqamia/app/store/linksnap/LinksnapRepository.kt",
+      "reason": "An app-only failure sentence for a device that cannot seal a password. The site never stores a link on the device, so no page renders these words and no pair exists. It is a repository message, not a surface's copy; a copy row would ask for a route and a second client that do not exist."
     },
     {
       "path": "android/app/src/main/kotlin/com/royaraqamia/app/account/AccountAvatar.kt",

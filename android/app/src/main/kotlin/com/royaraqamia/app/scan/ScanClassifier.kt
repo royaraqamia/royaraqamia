@@ -69,8 +69,8 @@ object ScanClassifier {
     /** Longest payload we accept from a detector at all. */
     const val MAX_PAYLOAD_LENGTH = 8192
 
-    /** The label paired with a link the page will open. */
-    const val OPEN_LINK = "فتح الرَّابط"
+    /** The label paired with a link the page will open, from the one copy source. */
+    const val OPEN_LINK = ScanCopy.LINK_ACTION
 
     private val CERT_CODE_REGEX = Regex("^COMP-\\d{4}-[A-Z0-9]{8}$")
     private val SCHEME_PATTERN = Regex("^([a-zA-Z][a-zA-Z0-9+.-]*):")
@@ -79,15 +79,15 @@ object ScanClassifier {
 
     private val KIND_LABELS =
         mapOf(
-            ScanResultKind.Link to "رابط",
-            ScanResultKind.Email to "بريد إلكترونيّ",
-            ScanResultKind.Phone to "رقم هاتف",
-            ScanResultKind.Sms to "رسالة نصِّيَّة",
-            ScanResultKind.Wifi to "شبكة WiFi",
-            ScanResultKind.Contact to "جهة اتِّصال",
-            ScanResultKind.Location to "موقع جغرافيّ",
-            ScanResultKind.Otp to "رمز تحقُّق بخطوتين",
-            ScanResultKind.Text to "نصّ",
+            ScanResultKind.Link to ScanCopy.KIND_LINK,
+            ScanResultKind.Email to ScanCopy.KIND_EMAIL,
+            ScanResultKind.Phone to ScanCopy.KIND_PHONE,
+            ScanResultKind.Sms to ScanCopy.KIND_SMS,
+            ScanResultKind.Wifi to ScanCopy.KIND_WIFI,
+            ScanResultKind.Contact to ScanCopy.KIND_CONTACT,
+            ScanResultKind.Location to ScanCopy.KIND_LOCATION,
+            ScanResultKind.Otp to ScanCopy.KIND_OTP,
+            ScanResultKind.Text to ScanCopy.KIND_TEXT,
         )
 
     private val FORMAT_LABELS =
@@ -112,10 +112,10 @@ object ScanClassifier {
     /** The open actions the page hands to the platform, keyed by scheme. */
     private val OPENABLE_ACTIONS =
         mapOf(
-            "mailto:" to (ScanResultKind.Email to "إرسال بريد"),
-            "tel:" to (ScanResultKind.Phone to "اتِّصال"),
-            "sms:" to (ScanResultKind.Sms to "إرسال رسالة"),
-            "geo:" to (ScanResultKind.Location to "فتح الموقع"),
+            "mailto:" to (ScanResultKind.Email to ScanCopy.ACTION_MAIL),
+            "tel:" to (ScanResultKind.Phone to ScanCopy.ACTION_TEL),
+            "sms:" to (ScanResultKind.Sms to ScanCopy.ACTION_SMS),
+            "geo:" to (ScanResultKind.Location to ScanCopy.ACTION_GEO),
         )
 
     fun kindLabel(kind: ScanResultKind): String = KIND_LABELS[kind] ?: kind.name
