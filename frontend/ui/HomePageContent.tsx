@@ -14,6 +14,7 @@ import { homeTabHref, type HomeServiceKey } from '@/shared/contracts/home-servic
 import { HomeAppSurface } from './home/HomeAppSurface';
 import { HomeEmptyState } from './home/HomeEmptyState';
 import { HomeTabStrip } from './home/HomeTabStrip';
+import { ShellUpdateBridgeBanner } from './home/shell-update-bridge-banner';
 
 /**
  * The homepage door (ADR-0146): the member's apps as a strip, or the empty
@@ -76,6 +77,7 @@ export function HomePageContent() {
 
   return (
     <main id="main-content">
+      <ShellUpdateBridgeBanner />
       {status === 'loading' ? (
         <HomeSkeleton />
       ) : selected ? (

@@ -102,6 +102,16 @@
     return url.pathname.startsWith('/api/');
   }
 
+  /**
+   * A same-origin binary the browser downloads, not a document this worker may
+   * substitute. A link to the shell's APK is a navigation request; answering it
+   * from the document cache would paint the homepage at the APK's address when
+   * a ~10 MB download loses the navigation deadline.
+   */
+  function isDownload(url) {
+    return url.pathname.startsWith('/android/') && /\.apk$/i.test(url.pathname);
+  }
+
   // The ancestors a navigation falls back through when nothing exact is cached
   // (#490), longest first: `/community/foo/bar` -> [`/community/foo`,
   // `/community`, `/`]. The requested path is deliberately not a candidate — an
@@ -289,6 +299,7 @@
 
   self.SWRouting = {
     isNavigationRequest,
+    isDownload,
     isNextStaticAsset,
     isRSCPayload,
     cacheKeyFor,
