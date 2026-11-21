@@ -261,8 +261,13 @@ the `supabase_migrations` schema and data. `scripts/verify-database-dump.mjs`
 fails the run when any file is missing, below its size floor, or when any of
 the five recorded tables is below its row floor; the floors live in
 `scripts/backup-contract.mjs`. The verified directory is compressed, uploaded
-to a dedicated R2 bucket under `database/` with 30-day retention, and checked
-by re-downloading it. A failed upload is a red job with a Telegram notice.
+to a dedicated R2 bucket under `database/`, and checked by re-downloading it.
+A failed upload is a red job with a Telegram notice, and the job publishes the
+archive name as the repository variable `LATEST_DB_BACKUP`, which is how the
+drill finds it — the scoped token cannot list objects. Thirty-day retention comes
+from an R2 **lifecycle rule** on the bucket — prefix `database/`, expire objects
+after 30 days — set up once in the dashboard; the workflow prunes older objects
+too when the token can list them, and warns when it cannot.
 
 **One-time setup.** Create a dedicated R2 bucket (not the audio bucket), mint a
 token scoped to object read/write/list/delete under `database/`, and add the
@@ -321,10 +326,16 @@ for the drill.
    If `roles.sql` grants `postgres` to `cli_login_postgres` and psql refuses,
    remove that one grant line and let the CLI recreate the role.
 
-**Measured RTO.** Pending the first live drill: no restore has been executed
-yet, so there is no number to put here. The scheduled drill's green run and its
-summary are the evidence; replace this paragraph with that measurement once the
-scratch project exists, rather than substituting an estimate.
+**Measured RTO.** The first live drill passed on 2026-11-21, replaying artifact
+`royaraqamia-db-20261121T170859Z.tar.gz` into the scratch project ([run
+44929568366](https://github.com/royaraqamia/royaraqamia/actions/runs/44929568366)).
+The psql replay plus row-count verification took **276s**; the whole job,
+including download and database reset, took **4m58s**. Restored counts matched
+the artifact exactly: `public.users` 24, `public.notifications` 11225,
+`public.chat_messages` 97, `public.chat_attachments` 8 and
+`supabase_migrations.schema_migrations` 257. The monthly drill repeats this and
+records each pass in its job summary; a later duration replaces this one only
+when another green run produces it.
 
 ## Data & access control
 

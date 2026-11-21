@@ -46,12 +46,17 @@ export function verifyDump(dir, { archive, source } = {}) {
   const badSizes = sizeViolations(sizes);
   if (badSizes.length) throw new DumpError(badSizes.join('\n'));
 
-  const parsed = parseCopyRowCounts(readFileSync(join(dir, 'data.sql'), 'utf8'));
+  const parsed = new Map([
+    ...parseCopyRowCounts(readFileSync(join(dir, 'data.sql'), 'utf8')),
+    ...parseCopyRowCounts(readFileSync(join(dir, 'history_data.sql'), 'utf8')),
+  ]);
   const counts = Object.fromEntries(
     Object.keys(TABLE_FLOORS).map((table) => [table, parsed.get(table) ?? null])
   );
   const badCounts = floorViolations(counts);
-  if (badCounts.length) throw new DumpError(badCounts.join('\n'));
+  if (badCounts.length) {
+    throw new DumpError(`${badCounts.join('\n')}\nFound: ${[...parsed.keys()].join(', ')}`);
+  }
 
   return {
     createdAt: new Date().toISOString(),
