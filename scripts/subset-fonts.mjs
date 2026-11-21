@@ -7,6 +7,10 @@
  * site can realistically render; glyphs outside those ranges gracefully fall
  * back to the system fonts declared in next/font's fallback stack.
  *
+ * The Amiri Quran file is the exception: it exists only for the three
+ * silent-letter marks, so it keeps exactly the code points the shared Quran
+ * marks contract names rather than the broad Arabic range below.
+ *
  * Safe to re-run: subsetting to the same range set is idempotent. Originals
  * remain recoverable from git history (pre-subset commits).
  *
@@ -15,8 +19,19 @@
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import subsetFont from 'subset-font';
+import { QURAN_MARK_CODEPOINTS } from '../shared/contracts/quran-marks.mjs';
 
 const FONTS_DIR = join(process.cwd(), 'public', 'fonts');
+
+/**
+ * Amiri Quran is not a body face here: it draws exactly the three silent-letter
+ * marks the Uthmani face gets wrong (ADR 0067), and its `unicode-range` never
+ * lets it set a letter. Subsetting it to the same code points the declaration
+ * names takes it from 45,680 B to 836 B, so a sura that uses the marks fetches
+ * under a kilobyte at paint instead of a whole Quran face at preload priority.
+ */
+const MARKS_FONT = join('Amiri Quran', 'AmiriQuran-Regular.woff2');
+const marksKeepText = String.fromCodePoint(...QURAN_MARK_CODEPOINTS);
 
 // Arabic core + Latin basics + punctuation/digits.
 // Presentation Forms A/B (FB50–FDFF, FE70–FEFF) are intentionally excluded:
@@ -53,7 +68,7 @@ const keepText = String.fromCodePoint(...codepoints);
 
 for (const file of await collectWoff2Files(FONTS_DIR)) {
   const input = await readFile(file);
-  const output = await subsetFont(input, keepText, {
+  const output = await subsetFont(input, file.endsWith(MARKS_FONT) ? marksKeepText : keepText, {
     targetFormat: 'woff2',
   });
   if (output.length >= input.length) {

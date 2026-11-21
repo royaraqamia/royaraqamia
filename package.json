@@ -63,6 +63,8 @@
     "capabilities:generate": "node scripts/generate-capabilities.mjs",
     "check:tokens": "node scripts/generate-tokens.mjs --check",
     "tokens:generate": "node scripts/generate-tokens.mjs",
+    "check:quran-fonts": "node scripts/generate-quran-fonts.mjs --check",
+    "quran-fonts:generate": "node scripts/generate-quran-fonts.mjs",
     "copy:generate": "node scripts/generate-copy.mjs",
     "check:copy": "node scripts/generate-copy.mjs --check",
     "currency:generate": "node scripts/generate-currency.mjs",

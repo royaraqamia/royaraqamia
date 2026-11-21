@@ -110,6 +110,12 @@ jobs:
       - name: Generated Tokens Are Current
         run: npm run check:tokens
 
+      # `next/font/local` needs literal `unicode-range` values, so the two
+      # reader faces are generated from the one mark-codepoint contract; a hand
+      # edit would let the ranges and the subset drift apart (issue #1688).
+      - name: Generated Quran Faces Are Current
+        run: npm run check:quran-fonts
+
       # The Quran search index is a build artifact of the vendored text: it must
       # match a fresh build of it, and stay inside the budget the page load pays.
       - name: Quran Search Index Is Current

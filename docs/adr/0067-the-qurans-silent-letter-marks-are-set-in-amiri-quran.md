@@ -35,9 +35,10 @@ We cut the three code points out of the Uthmani face and cover them with Amiri Q
 
 ## Consequences
 
-- The route ships 45.7 KB more font (Amiri Quran, OFL, `public/fonts/Amiri Quran/` with its
+- The route ships the marks face (Amiri Quran, OFL, `public/fonts/Amiri Quran/` with its
   `OFL.txt` and `SOURCE.txt`). It joins the route's CSS through the Quran layout, so no other route
-  pays for it.
+  pays for it. Since #1688 the file is subset to the three code points (836 B) and is not preloaded,
+  so a sura with none of them fetches none of it.
 - The mark is not anchored to its letter: it is drawn at the pen position, which is where this face's
   own `U+06E0` sits, so it reads correctly in `كَفَرُوا۟` and slightly high in `أُو۟لَٰٓئِكَ`. The
   letter forms around it are unaffected — these marks follow `و` and `ا`, which do not join forward.
