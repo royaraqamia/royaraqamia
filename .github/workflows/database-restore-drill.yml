@@ -83,7 +83,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/restore-database.mjs --dir restore --db-url "$SCRATCH_DB_URL" | tee drill.log
-          duration="$(grep -o 'in [0-9]*s' drill.log | head -1)"
+          duration="$(grep -o '[0-9]*s' drill.log | head -1)"
           echo "duration=${duration:-unknown}" >> "$GITHUB_OUTPUT"
 
       - name: Workflow summary

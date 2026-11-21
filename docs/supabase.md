@@ -326,10 +326,16 @@ for the drill.
    If `roles.sql` grants `postgres` to `cli_login_postgres` and psql refuses,
    remove that one grant line and let the CLI recreate the role.
 
-**Measured RTO.** Pending the first live drill: no restore has been executed
-yet, so there is no number to put here. The scheduled drill's green run and its
-summary are the evidence; replace this paragraph with that measurement once the
-scratch project exists, rather than substituting an estimate.
+**Measured RTO.** The first live drill passed on 2026-11-21, replaying artifact
+`royaraqamia-db-20261121T170859Z.tar.gz` into the scratch project ([run
+44929568366](https://github.com/royaraqamia/royaraqamia/actions/runs/44929568366)).
+The psql replay plus row-count verification took **276s**; the whole job,
+including download and database reset, took **4m58s**. Restored counts matched
+the artifact exactly: `public.users` 24, `public.notifications` 11225,
+`public.chat_messages` 97, `public.chat_attachments` 8 and
+`supabase_migrations.schema_migrations` 257. The monthly drill repeats this and
+records each pass in its job summary; a later duration replaces this one only
+when another green run produces it.
 
 ## Data & access control
 
