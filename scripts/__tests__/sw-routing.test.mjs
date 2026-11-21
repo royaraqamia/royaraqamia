@@ -65,6 +65,15 @@ describe('sw-routing predicates', () => {
     expect(routing.isApiCall(u('/api/rates'))).toBe(true);
   });
 
+  it('classifies the APK as a download rather than a document', () => {
+    expect(routing.isDownload(u('/android/royaraqamia-1.3.0.apk'))).toBe(true);
+    expect(routing.isDownload(u('/android/royaraqamia-1.3.0.APK?x=1'))).toBe(true);
+    // The manifest beside it stays a normal, freshness-sensitive read.
+    expect(routing.isDownload(u('/android/latest.json'))).toBe(false);
+    expect(routing.isDownload(u('/community/a.apk'))).toBe(false);
+    expect(routing.isDownload(u('/android/'))).toBe(false);
+  });
+
   it('detects navigations by mode or html accept header', () => {
     expect(routing.isNavigationRequest(request({ mode: 'navigate' }))).toBe(true);
     expect(routing.isNavigationRequest(request({ headers: { get: () => 'text/html' } }))).toBe(

@@ -1214,6 +1214,19 @@ describe('service worker navigation deadline (#447)', () => {
     );
   });
 
+  it('leaves the APK download to the browser instead of serving a cached page', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    // `/` is precached, so this navigation has exactly the fallback that used to
+    // replace a slow 10 MB download with the homepage at the download's address.
+    const event = fetchEvent(request('/android/royaraqamia-1.3.0.apk'));
+    ctx.dispatch('fetch', event);
+
+    // No respondWith: the browser fetches the binary itself, outside the worker.
+    expect(event.response).toBeUndefined();
+    expect(event.waitUntilCalls).toHaveLength(0);
+    expect(ctx.state.fetchCalls).toHaveLength(0);
+  });
+
   it('answers a cached navigation instantly while the network hangs', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
     const cache = await ctx.caches.open(DATA_CACHE);

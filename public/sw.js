@@ -663,6 +663,7 @@ self.addEventListener('activate', (event) => {
 // tested outside the worker realm.
 const {
   isNavigationRequest,
+  isDownload,
   isNextStaticAsset,
   isRSCPayload,
   cacheKeyFor,
@@ -1678,6 +1679,12 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
 
   if (url.origin !== self.location.origin) return;
+
+  // A download is a navigation request too, but it is not a document this worker
+  // may substitute. Answering the APK from the page cache would paint the cached
+  // homepage at the download's address whenever the bytes lost the navigation
+  // deadline. Let the browser fetch them untouched instead.
+  if (isDownload(url)) return;
 
   if (request.method !== 'GET') return;
 

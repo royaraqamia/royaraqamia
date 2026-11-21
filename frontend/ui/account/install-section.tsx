@@ -265,7 +265,7 @@ function InstallRow(
 
   if (props.as === 'link') {
     return (
-      <a href={props.href} className={rowClasses}>
+      <a href={props.href} download className={rowClasses}>
         {body}
         {arrow}
       </a>

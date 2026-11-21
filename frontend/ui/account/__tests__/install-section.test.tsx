@@ -73,6 +73,7 @@ describe('InstallSection on Android', () => {
 
     const apk = await screen.findByRole('link', { name: /تنزيل تطبيق الأندرويد/ });
     expect(apk).toHaveAttribute('href', APK_URL);
+    expect(apk).toHaveAttribute('download');
     expect(apk).toHaveTextContent('1.93.0+shell.20001');
 
     // The PWA is not a second channel here: no prompt and no browser row.
