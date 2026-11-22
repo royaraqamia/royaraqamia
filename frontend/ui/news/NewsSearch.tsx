@@ -1,14 +1,10 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { ArrowUpLeft, Loader2, Newspaper, Search, X } from 'lucide-react';
 
-import {
-  ReadFailureNotice,
-  toReadFailure,
-  type ReadFailure,
-} from '@/frontend/ui/shared/read-failure';
+import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
 import { SearchField } from '@/frontend/ui/shared/search-field';
 import { newsHref, type NewsView } from '@/frontend/ui/news/news-url';
 import { request } from '@/frontend/transport/http';
@@ -18,9 +14,9 @@ import {
   formatDigestDayShort,
   sanitizeNewsQuery,
   type NewsCategory,
-  type NewsSearchSuggestion,
   type NewsSearchSuggestions,
 } from '@/shared/contracts/news';
+import { newsSearchInitialState, newsSearchReducer } from '@/frontend/ui/news/news-search.reducer';
 
 const SEARCH_ERROR = 'تعذَّر تحميل نتائج البحث. أعد المحاولة.';
 
@@ -56,12 +52,8 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(query);
-  const [hits, setHits] = useState<NewsSearchSuggestion[]>([]);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<ReadFailure | null>(null);
-  const [retryKey, setRetryKey] = useState(0);
-  const [active, setActive] = useState(-1);
+  const [state, dispatch] = useReducer(newsSearchReducer, undefined, newsSearchInitialState);
+  const { hits, open, loading, error, active, attempt } = state;
 
   const commitQuery = useCallback(
     (next: string) => {
@@ -80,57 +72,44 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
   useEffect(() => {
     const trimmed = value.trim();
     if (disabled) {
-      setHits([]);
-      setOpen(false);
-      setError(null);
-      setLoading(false);
+      dispatch({ type: 'reset' });
       return;
     }
     if (!trimmed) {
-      setHits([]);
-      setOpen(false);
-      setError(null);
-      setLoading(false);
-      setActive(-1);
+      dispatch({ type: 'reset' });
       return;
     }
 
     const controller = new AbortController();
-    setError(null);
+    dispatch({ type: 'errorCleared' });
     const timer = setTimeout(() => {
-      setLoading(true);
+      dispatch({ type: 'requested' });
       request<NewsSearchSuggestions>(`/api/news/search?q=${encodeURIComponent(trimmed)}`, {
         signal: controller.signal,
       })
         .then((data) => {
-          setHits(data.hits);
-          setError(null);
-          setOpen(true);
-          setActive(-1);
+          dispatch({ type: 'succeeded', hits: data.hits });
         })
         .catch((failure: unknown) => {
           if (controller.signal.aborted) return;
           // A failed read is not "no results" (ADR-0031), so the panel names the
           // failure and offers the same request again.
-          setHits([]);
-          setError(toReadFailure(failure, SEARCH_ERROR));
-          setOpen(true);
-          setActive(-1);
+          dispatch({ type: 'failed', error: toReadFailure(failure, SEARCH_ERROR) });
         })
-        .finally(() => setLoading(false));
+        .finally(() => dispatch({ type: 'finished' }));
     }, 220);
 
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [value, retryKey, disabled]);
+  }, [value, attempt, disabled]);
 
   // Dismiss on outside pointer down.
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!wrapperRef.current?.contains(event.target as Node)) dispatch({ type: 'closed' });
     };
     document.addEventListener('pointerdown', onPointerDown);
     return () => document.removeEventListener('pointerdown', onPointerDown);
@@ -141,20 +120,17 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
 
   const handleClear = useCallback(() => {
     setValue('');
-    setHits([]);
-    setError(null);
-    setOpen(false);
+    dispatch({ type: 'reset' });
     commitQuery('');
   }, [commitQuery]);
 
   const handleRetry = useCallback(() => {
-    setLoading(true);
-    setRetryKey((key) => key + 1);
+    dispatch({ type: 'retryRequested' });
   }, []);
 
   const activate = useCallback(
     (row: number) => {
-      setOpen(false);
+      dispatch({ type: 'closed' });
       const hit = hits[row];
       // A suggestion carries no source link, so it is committed rather than
       // opened off-site: the board answers with that story's card (and the
@@ -168,22 +144,21 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setOpen(true);
-        setActive((current) => Math.min(current + 1, rowCount - 1));
+        dispatch({ type: 'opened' });
+        dispatch({ type: 'activeMoved', delta: 1, rowCount });
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setActive((current) => Math.max(current - 1, -1));
+        dispatch({ type: 'activeMoved', delta: -1, rowCount });
       } else if (event.key === 'Enter') {
         event.preventDefault();
         if (open && active >= 0) {
           activate(active);
         } else {
-          setOpen(false);
+          dispatch({ type: 'closed' });
           commitQuery(value.trim());
         }
       } else if (event.key === 'Escape') {
-        setOpen(false);
-        setActive(-1);
+        dispatch({ type: 'dismissed' });
       }
     },
     [open, active, rowCount, activate, commitQuery, value]
@@ -206,7 +181,7 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
         value={value}
         disabled={disabled}
         onChange={(event) => setValue(event.target.value)}
-        onFocus={() => value.trim() && setOpen(true)}
+        onFocus={() => value.trim() && dispatch({ type: 'opened' })}
         onKeyDown={handleKeyDown}
         placeholder={`ابحث في أخبار آخر ${NEWS_RETENTION_DAYS} أيام`}
         aria-label="ابحث في الأخبار"
@@ -280,7 +255,7 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
                         id={`news-search-option-${index}`}
                         role="option"
                         aria-selected={active === index}
-                        onMouseEnter={() => setActive(index)}
+                        onMouseEnter={() => dispatch({ type: 'activeSet', index })}
                         onClick={() => activate(index)}
                         className={optionClass(active === index)}
                       >
@@ -312,7 +287,7 @@ export function NewsSearch({ query, category, view, disabled = false }: NewsSear
                   id={`news-search-option-${allIndex}`}
                   role="option"
                   aria-selected={active === allIndex}
-                  onMouseEnter={() => setActive(allIndex)}
+                  onMouseEnter={() => dispatch({ type: 'activeSet', index: allIndex })}
                   onClick={() => activate(allIndex)}
                   className={`flex w-full items-center gap-3 rounded-xl border-t border-border/50 px-3 py-3 text-start text-sm font-bold text-primary transition-safe duration-150 ${
                     active === allIndex ? 'bg-primary/10' : 'hover:bg-primary/5'
