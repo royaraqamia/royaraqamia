@@ -344,9 +344,14 @@ Measured 2026-11-10: `GET /v0/servers?version=latest&limit=100` answers **more t
 thousand rows**, and a sweep that pages through all of them does not finish inside the 60s a
 serverless function gets. The mirror is therefore a **resumable pass**, not one request:
 
-- `mcp_catalog_sync_state` holds one row: where the pass stopped (`cursor`), when it began
+- `mcp_catalog_sync_state` holds one row: where the run stopped (`cursor`), when a full pass began
   (`pass_started_at`), how many rows it has seen (`pass_rows`), and when the last run finished.
-- A run pages until its own 35s deadline, saves the cursor, and the next run continues.
+  `last_run_completed` and `last_run_pages` say whether that run closed its window and how far it
+  read.
+- A run pages until its own 35s deadline, saves the cursor, and the next run continues. A window is
+  closed only by a run that reaches the last page: a run the clock cuts short leaves `last_run_at`
+  at its old value and resumes the same `updated_since`, so the rows it never read are not skipped.
+  Two truncations in a row are an error the scheduled caller sees.
 - `version=latest` is the registry's own dedupe. Without it the API returns every published
   version of every server, and the mirror would keep whichever one was written last.
 - After the first completed pass, a run is **incremental**: `updated_since` = the last run minus
@@ -358,7 +363,8 @@ serverless function gets. The mirror is therefore a **resumable pass**, not one 
   handful of rows is an outage, and a pass that saw a fraction of the catalogue is a truncated
   registry; neither may empty the screen. A genuine reset below that bar is deliberate: clear
   `mcp_catalog_sync_state.pass_completed_at` and the next run is a full pass again.
-- A failed run does not move the incremental baseline, so the next run re-reads what it missed.
+- A failed or truncated run does not move the incremental baseline, so the next run re-reads what it
+  missed.
 
 The schedule is **daily**, not hourly: this deployment is on a plan whose crons are daily, and the
 two that already exist are. The pass is time-budgeted and resumable, so moving to hourly is a line

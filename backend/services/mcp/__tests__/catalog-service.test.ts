@@ -52,6 +52,8 @@ function emptyState(): McpCatalogSyncStateRecord {
     pass_rows: 0,
     last_run_at: null,
     last_run_rows: 0,
+    last_run_completed: false,
+    last_run_pages: null,
     last_error: null,
   };
 }
@@ -146,6 +148,21 @@ function fakeRegistry(pages: McpRegistryPage[]): McpRegistryClient {
   let index = 0;
   return {
     listPage: vi.fn(async () => pages[index++] ?? { entries: [], nextCursor: null, skipped: 0 }),
+  };
+}
+
+/** A registry whose page reads also move the injected clock, so a budget is
+ * exhausted after a known number of pages rather than on wall time. */
+function pacedRegistry(
+  pages: McpRegistryPage[],
+  clock: { value: number },
+  stepMs = 1000
+): McpRegistryClient {
+  return {
+    listPage: vi.fn(async () => {
+      clock.value += stepMs;
+      return pages.shift() ?? { entries: [], nextCursor: null, skipped: 0 };
+    }),
   };
 }
 
@@ -329,6 +346,96 @@ describe('the registry pass', () => {
     expect(result.error).toBe('registry is down');
     expect(repository.state.last_run_at).toBe('2026-11-12T00:00:00.000Z');
     expect(repository.state.last_error).toBe('registry is down');
+  });
+
+  it('keeps an incremental window open when the clock runs out, then resumes it', async () => {
+    const repository = fakeRepository();
+    repository.state.pass_started_at = '2026-11-10T00:00:00.000Z';
+    repository.state.pass_completed_at = '2026-11-10T01:00:00.000Z';
+    repository.state.last_run_at = '2026-11-12T00:00:00.000Z';
+    repository.state.last_run_completed = true;
+
+    const clock = { value: Date.parse('2026-11-14T12:00:00.000Z') };
+    const now = () => new Date(clock.value);
+    const first = pacedRegistry([rows(2, 'p2'), rows(3, null)], clock);
+    const service = createMcpCatalogService({
+      repository: repository.repository,
+      registry: first,
+      remote: fakeRemote(),
+      now,
+    });
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    let result: Awaited<ReturnType<McpCatalogService['sync']>>;
+    try {
+      result = await service.sync({ budgetMs: 1000 });
+    } finally {
+      const truncated = warn.mock.calls
+        .map((call) => String(call[0]))
+        .filter((line) => line.includes('truncated by its deadline'));
+      expect(truncated).toHaveLength(1);
+      expect(truncated[0]).toContain('"rows":2');
+      expect(truncated[0]).toContain('"cursor":"p2"');
+      warn.mockRestore();
+    }
+
+    expect(result.completed).toBe(false);
+    expect(result.error).toBeNull();
+    expect(repository.state.last_run_at).toBe('2026-11-12T00:00:00.000Z');
+    expect(repository.state.cursor).toBe('p2');
+    expect(repository.state.last_run_completed).toBe(false);
+    expect(repository.state.last_run_pages).toBe(1);
+    expect(first.listPage).toHaveBeenCalledWith({
+      cursor: null,
+      updatedSince: '2026-11-11T23:00:00.000Z',
+    });
+
+    const second = pacedRegistry([rows(3, null)], clock);
+    const resumed = createMcpCatalogService({
+      repository: repository.repository,
+      registry: second,
+      remote: fakeRemote(),
+      now,
+    });
+
+    const resumedResult = await resumed.sync({ budgetMs: 1000 });
+
+    expect(second.listPage).toHaveBeenCalledWith({
+      cursor: 'p2',
+      updatedSince: '2026-11-11T23:00:00.000Z',
+    });
+    expect(resumedResult.completed).toBe(true);
+    expect(repository.state.last_run_completed).toBe(true);
+    expect(repository.state.cursor).toBeNull();
+    expect(repository.state.last_run_at).toBe(now().toISOString());
+    expect(repository.state.last_run_pages).toBe(2);
+  });
+
+  it('turns a second consecutive truncation into an error the caller can see', async () => {
+    const repository = fakeRepository();
+    repository.state.pass_started_at = '2026-11-10T00:00:00.000Z';
+    repository.state.pass_completed_at = '2026-11-10T01:00:00.000Z';
+    repository.state.last_run_at = '2026-11-12T00:00:00.000Z';
+    repository.state.last_run_completed = false;
+    repository.state.cursor = 'p1';
+
+    const clock = { value: Date.parse('2026-11-14T12:00:00.000Z') };
+    const now = () => new Date(clock.value);
+    const registry = pacedRegistry([rows(3, 'p2')], clock);
+    const service = createMcpCatalogService({
+      repository: repository.repository,
+      registry,
+      remote: fakeRemote(),
+      now,
+    });
+
+    const result = await service.sync({ budgetMs: 1000 });
+
+    expect(result.error).toContain('truncated twice in a row');
+    expect(repository.state.last_error).toBe(result.error);
+    expect(repository.state.last_run_completed).toBe(false);
+    expect(repository.state.last_run_at).toBe('2026-11-12T00:00:00.000Z');
+    expect(repository.state.cursor).toBe('p2');
   });
 });
 

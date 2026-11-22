@@ -1488,6 +1488,8 @@ export type Database = {
           id: string;
           last_error: string | null;
           last_run_at: string | null;
+          last_run_completed: boolean;
+          last_run_pages: number | null;
           last_run_rows: number;
           pass_completed_at: string | null;
           pass_rows: number;
@@ -1498,6 +1500,8 @@ export type Database = {
           id: string;
           last_error?: string | null;
           last_run_at?: string | null;
+          last_run_completed?: boolean;
+          last_run_pages?: number | null;
           last_run_rows?: number;
           pass_completed_at?: string | null;
           pass_rows?: number;
@@ -1508,6 +1512,8 @@ export type Database = {
           id?: string;
           last_error?: string | null;
           last_run_at?: string | null;
+          last_run_completed?: boolean;
+          last_run_pages?: number | null;
           last_run_rows?: number;
           pass_completed_at?: string | null;
           pass_rows?: number;

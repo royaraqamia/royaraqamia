@@ -754,7 +754,7 @@ export function createMcpCatalogService({
   async function sync({
     budgetMs = SYNC_BUDGET_MS,
   }: { budgetMs?: number } = {}): Promise<McpCatalogSyncResult> {
-    const startedAt = Date.now();
+    const startedAt = now().getTime();
     const deadline = startedAt + budgetMs;
     const state = await repository.getCatalogSyncState();
 
@@ -762,9 +762,18 @@ export function createMcpCatalogService({
     const mode: McpCatalogSyncMode =
       resumingPass || state.pass_completed_at === null ? 'pass' : 'incremental';
 
+    /*
+      A window closes only when a run reaches its last page. An unfinished pass
+      and an incremental run whose predecessor did not finish are the same
+      shape: take up the saved cursor and work the window that is already open,
+      rather than opening a new one from a baseline the short run moved.
+    */
+    const resumingWindow = resumingPass || (mode === 'incremental' && !state.last_run_completed);
+
     const passStartedAt = (resumingPass ? state.pass_started_at : null) ?? now().toISOString();
     let passRows = resumingPass ? state.pass_rows : 0;
-    let cursor = resumingPass ? state.cursor : null;
+    let cursor = resumingWindow ? state.cursor : null;
+    let runPages = resumingWindow ? (state.last_run_pages ?? 0) : 0;
 
     const baseline = state.last_run_at ?? state.pass_completed_at;
     const updatedSince =
@@ -788,9 +797,10 @@ export function createMcpCatalogService({
     let error: string | null = null;
 
     try {
-      while (Date.now() < deadline) {
+      while (now().getTime() < deadline) {
         const page = await registry.listPage({ cursor, updatedSince });
         pages += 1;
+        runPages += 1;
         skipped += page.skipped;
 
         const retire: string[] = [];
@@ -829,7 +839,14 @@ export function createMcpCatalogService({
                 pass_started_at: passStartedAt,
                 pass_completed_at: null,
               }
-            : { cursor }
+            : {
+                cursor,
+                // A page read is not a window closed: the baseline stays where
+                // it was until a run reaches the registry's last page.
+                last_run_at: state.last_run_at,
+                last_run_completed: false,
+                last_run_pages: runPages,
+              }
         );
       }
     } catch (caught) {
@@ -837,6 +854,20 @@ export function createMcpCatalogService({
       // never read, so the next run starts where this one stopped.
       error = caught instanceof Error ? caught.message : String(caught);
       logger.warn('MCP catalogue: sync run failed', { mode, pages, error });
+    }
+
+    if (!completed && error === null) {
+      logger.warn('MCP catalogue: sync window truncated by its deadline', {
+        mode,
+        rows,
+        cursor,
+      });
+      // The previous run left the window open, and this one did too. That is no
+      // longer a normal resume: make the caller see it instead of another quiet
+      // baseline-preserving run.
+      if (resumingWindow) {
+        error = `the ${mode} sync window was truncated twice in a row after ${rows} rows at cursor ${cursor ?? 'start'}`;
+      }
     }
 
     /*
@@ -906,12 +937,9 @@ export function createMcpCatalogService({
     }
 
     const lastRunAt = now().toISOString();
-    // A failed run must not move the baseline past rows it never read, or the
-    // next incremental run would skip them for good.
-    const nextRunAt = error ? state.last_run_at : lastRunAt;
     let deleted = 0;
 
-    if (mode === 'pass' && completed) {
+    if (mode === 'pass' && completed && error === null) {
       // Two floors, both about the same failure: a pass that ends early must not
       // mark the catalogue deleted. A handful of rows is an empty registry; a
       // pass that saw less than half of what the store already holds is a
@@ -922,24 +950,31 @@ export function createMcpCatalogService({
 
       if (passRows < floor) {
         error = `the registry returned ${passRows} rows against ${existing} in the store, which is not a complete pass`;
-        await repository.saveCatalogSyncState({
-          cursor: null,
-          pass_rows: passRows,
-          last_run_at: nextRunAt,
-          last_run_rows: rows,
-          last_error: error,
-        });
       } else {
         deleted = await repository.markCatalogServersDeleted(passStartedAt);
-        await repository.saveCatalogSyncState({
-          cursor: null,
-          pass_completed_at: lastRunAt,
-          pass_rows: 0,
-          last_run_at: lastRunAt,
-          last_run_rows: rows,
-          last_error: null,
-        });
       }
+    }
+
+    // Only a run that reached the end of the window closes it. A short run
+    // leaves the baseline where it was, so the next run resumes the same window
+    // from the saved cursor with the same `updated_since`.
+    const lastRunCompleted = completed && error === null;
+    const nextRunAt = lastRunCompleted ? lastRunAt : state.last_run_at;
+    const runFields = {
+      last_run_at: nextRunAt,
+      last_run_rows: rows,
+      last_run_completed: lastRunCompleted,
+      last_run_pages: runPages,
+      last_error: error,
+    };
+
+    if (mode === 'pass' && completed) {
+      await repository.saveCatalogSyncState({
+        cursor: null,
+        pass_rows: error ? passRows : 0,
+        ...(error ? {} : { pass_completed_at: lastRunAt }),
+        ...runFields,
+      });
     } else {
       await repository.saveCatalogSyncState(
         mode === 'pass'
@@ -948,11 +983,9 @@ export function createMcpCatalogService({
               pass_rows: passRows,
               pass_started_at: passStartedAt,
               pass_completed_at: null,
-              last_run_at: nextRunAt,
-              last_run_rows: rows,
-              last_error: error,
+              ...runFields,
             }
-          : { last_run_at: nextRunAt, last_run_rows: rows, last_error: error }
+          : { cursor: lastRunCompleted ? null : cursor, ...runFields }
       );
     }
 
