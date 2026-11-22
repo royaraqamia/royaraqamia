@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, lazy } from 'react';
+import { Suspense, useReducer, useState, lazy } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CircleAlert, User, Mail, LockKeyhole, Loader2 } from 'lucide-react';
@@ -15,6 +15,7 @@ import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { authSubmitReducer, INITIAL_AUTH_SUBMIT } from '../auth-submit.reducer';
 
 const PasswordStrength = lazy(
   tolerateChunkFailure('password strength meter', () =>
@@ -30,9 +31,10 @@ const Turnstile = lazy(
 function SignupForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
-  const [message, setMessage] = useState<string | null>(null);
-  const [offline, setOffline] = useState(false);
-  const [isPending, setIsPending] = useState(false);
+  const [{ message, offline, pending: isPending }, dispatch] = useReducer(
+    authSubmitReducer,
+    INITIAL_AUTH_SUBMIT
+  );
   const [password, setPassword] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   /** The email form is the second door: it opens when the visitor asks for it. */
@@ -40,9 +42,7 @@ function SignupForm() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
-    setOffline(false);
-    setIsPending(true);
+    dispatch({ type: 'submitStarted' });
     try {
       const formData = new FormData(event.currentTarget);
       const result = await signup({
@@ -56,10 +56,9 @@ function SignupForm() {
         window.location.assign(result.redirectUrl);
         return;
       }
-      setMessage(result.message);
-      setOffline(result.offline);
+      dispatch({ type: 'submitAnswered', message: result.message, offline: result.offline });
     } finally {
-      setIsPending(false);
+      dispatch({ type: 'submitSettled' });
     }
   }
 

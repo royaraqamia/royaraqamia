@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 import Link from 'next/link';
 import { Plug, Plus, RefreshCw, Unplug } from 'lucide-react';
 
@@ -20,6 +20,7 @@ import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { ApiError } from '@/frontend/transport/http';
 import { useSession } from '@/frontend/state/session-provider';
 import { appsCacheKey, readAppsCache, writeAppsCache } from '@/frontend/ui/apps/apps-cache';
+import { connectedAppsInitialState, connectedAppsReducer } from './mcp-connected-apps-view.reducer';
 
 /**
  * "Last used" in this surface's own words (ADR-0104): the formatter answers a
@@ -89,24 +90,22 @@ function ConnectedAppsBody({ query }: { query: string }) {
   const { user, isLoading } = useSession();
   const cacheKey = user ? appsCacheKey(user.id, 'inbound') : null;
   const cached = cacheKey ? readAppsCache<McpConnectedApp[]>(cacheKey) : null;
-  const [connectedApps, setConnectedApps] = useState<McpConnectedApp[] | null>(cached ?? null);
-  const [loadFailed, setLoadFailed] = useState(false);
-  const [loadOffline, setLoadOffline] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [target, setTarget] = useState<McpConnectedApp | 'all' | null>(null);
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [
+    { connectedApps, loadFailed, loadOffline, actionError, target, isDisconnecting },
+    dispatch,
+  ] = useReducer(connectedAppsReducer, cached, connectedAppsInitialState);
 
   const load = useCallback(async () => {
-    setLoadFailed(false);
-    setLoadOffline(false);
+    dispatch({ type: 'loadStarted' });
     try {
       const list = await getMcpConnectedApps();
-      setConnectedApps(list);
+      dispatch({ type: 'loadSucceeded', apps: list });
       if (cacheKey) writeAppsCache(cacheKey, list);
     } catch (error) {
-      setConnectedApps(null);
-      setLoadOffline(error instanceof ApiError && error.isNetworkError);
-      setLoadFailed(true);
+      dispatch({
+        type: 'loadFailed',
+        offline: error instanceof ApiError && error.isNetworkError,
+      });
     }
   }, [cacheKey]);
 
@@ -118,19 +117,20 @@ function ConnectedAppsBody({ query }: { query: string }) {
   const confirmDisconnect = async () => {
     if (!target) return;
 
-    setIsDisconnecting(true);
-    setActionError(null);
+    dispatch({ type: 'disconnectStarted' });
 
     const result =
       target === 'all'
         ? await disconnectAllMcpConnectedApps()
         : await disconnectMcpConnectedApp(target.clientId);
 
-    setIsDisconnecting(false);
-    setTarget(null);
+    dispatch({ type: 'disconnectSettled' });
 
     if (!result.success) {
-      setActionError(result.error ?? MCP_CONNECTED_APPS_COPY.disconnectFailed);
+      dispatch({
+        type: 'disconnectFailed',
+        error: result.error ?? MCP_CONNECTED_APPS_COPY.disconnectFailed,
+      });
       return;
     }
 
@@ -251,7 +251,7 @@ function ConnectedAppsBody({ query }: { query: string }) {
 
                   <button
                     type="button"
-                    onClick={() => setTarget(connectedApp)}
+                    onClick={() => dispatch({ type: 'confirmOpened', target: connectedApp })}
                     aria-label={MCP_CONNECTED_APPS_COPY.disconnectAria.replace(
                       '{name}',
                       connectedAppName(connectedApp)
@@ -267,7 +267,7 @@ function ConnectedAppsBody({ query }: { query: string }) {
 
             <button
               type="button"
-              onClick={() => setTarget('all')}
+              onClick={() => dispatch({ type: 'confirmOpened', target: 'all' })}
               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
             >
               <Unplug aria-hidden="true" className="h-4 w-4 shrink-0" />
@@ -326,7 +326,7 @@ function ConnectedAppsBody({ query }: { query: string }) {
         cancelLabel={MCP_CONNECTED_APPS_COPY.cancel}
         onConfirm={() => void confirmDisconnect()}
         onCancel={() => {
-          if (!isDisconnecting) setTarget(null);
+          if (!isDisconnecting) dispatch({ type: 'confirmClosed' });
         }}
         isConfirming={isDisconnecting}
         icon={Unplug}

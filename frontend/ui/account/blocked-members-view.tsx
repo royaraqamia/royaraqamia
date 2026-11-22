@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 
 import { getBlockedChatMembers, unblockChatUser } from '@/frontend/api/chats';
 import { useSession } from '@/frontend/state/session-provider';
@@ -11,6 +11,7 @@ import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import type { ChatPeer } from '@/shared/contracts/chat';
 
 import { BLOCKED_MEMBERS_COPY } from './blocked-members-copy';
+import { blockedMembersInitialState, blockedMembersReducer } from './blocked-members-view.reducer';
 
 /** `/account/blocked`: the members the account has blocked, and the action that lifts it. */
 const BLOCKED_ROUTE = '/account/blocked';
@@ -36,45 +37,45 @@ function memberName(member: ChatPeer): string {
  */
 export function BlockedMembersView() {
   const { user, isLoading: isSessionLoading } = useSession();
-  const [members, setMembers] = useState<ChatPeer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [lifting, setLifting] = useState<string | null>(null);
+  const [{ members, isLoading, loadError, actionError, lifting }, dispatch] = useReducer(
+    blockedMembersReducer,
+    undefined,
+    blockedMembersInitialState
+  );
 
   const load = useCallback(async () => {
     try {
-      setMembers(await getBlockedChatMembers());
-      setLoadError(null);
+      dispatch({ type: 'loadSucceeded', members: await getBlockedChatMembers() });
     } catch (cause) {
-      setLoadError(
-        cause instanceof Error && cause.message ? cause.message : BLOCKED_MEMBERS_COPY.loadFailed
-      );
-    } finally {
-      setIsLoading(false);
+      dispatch({
+        type: 'loadFailed',
+        error:
+          cause instanceof Error && cause.message ? cause.message : BLOCKED_MEMBERS_COPY.loadFailed,
+      });
     }
   }, []);
 
   useEffect(() => {
     if (!user) {
-      setIsLoading(false);
+      dispatch({ type: 'loadSkipped' });
       return;
     }
     void load();
   }, [load, user]);
 
   async function unblock(peer: ChatPeer) {
-    setLifting(peer.id);
+    dispatch({ type: 'unblockStarted', id: peer.id });
     try {
       await unblockChatUser(peer.id);
-      setMembers((current) => current.filter((member) => member.id !== peer.id));
-      setActionError(null);
+      dispatch({ type: 'unblockSucceeded', id: peer.id });
     } catch (cause) {
-      setActionError(
-        cause instanceof Error && cause.message ? cause.message : BLOCKED_MEMBERS_COPY.unblockFailed
-      );
-    } finally {
-      setLifting(null);
+      dispatch({
+        type: 'unblockFailed',
+        error:
+          cause instanceof Error && cause.message
+            ? cause.message
+            : BLOCKED_MEMBERS_COPY.unblockFailed,
+      });
     }
   }
 
