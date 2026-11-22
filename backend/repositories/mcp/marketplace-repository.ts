@@ -19,6 +19,8 @@ import { catalogSearchPattern, decodeCatalogCursor, encodeCatalogCursor } from '
  */
 
 const CATALOG_TABLE = 'mcp_catalog_servers';
+/** The registry's own document, off the heap every list scans. */
+const CATALOG_RAW_TABLE = 'mcp_catalog_server_raw';
 const CATALOG_SYNC_TABLE = 'mcp_catalog_sync_state';
 const CATALOG_EVENTS_TABLE = 'mcp_catalog_verification_events';
 const CATALOG_LATEST_VERIFICATIONS_VIEW = 'mcp_catalog_latest_verifications';
@@ -113,8 +115,6 @@ export interface McpCatalogListRow {
   connectable: boolean | null;
   connectable_reason: string | null;
   probed_at: string | null;
-  /** The registry document, only selected for the Admin Console. */
-  raw?: Json | null;
 }
 
 /** What a probe needs: the address, the mode it measures in, and whether the verdict is due. */
@@ -171,16 +171,13 @@ export interface McpCatalogEventRecord {
   created_at: string;
 }
 
-/** The columns a list selects; one list, two audiences. */
+/**
+ * The columns every list selects. The registry's own document is deliberately
+ * absent: it lives in `mcp_catalog_server_raw` and is fetched only when the
+ * Admin Console's remote picker opens.
+ */
 const CATALOG_LIST_COLUMNS =
   'registry_name, title, title_override, description, name_ar, description_ar, remote_url, remote_override, status, version, published_at, fetched_at, registry_icon_url, registry_icon_mime, probe_icon_url, probe_icon_mime, icon_override, featured_rank, verified_at, blocked_at, blocked_reason, auth_mode, probe_auth_mode, api_key_header, api_key_prefix, connectable, connectable_reason, probed_at';
-
-/**
- * The Admin Console also picks a remote out of the registry document, so it is
- * the only list that selects `raw`; a member's page already pays for the rows
- * it draws and does not need a second copy of the registry's own JSON.
- */
-const CATALOG_ADMIN_LIST_COLUMNS = `${CATALOG_LIST_COLUMNS}, raw`;
 
 /**
  * PostgREST takes the rows in the body and the names in the URL, so both are
@@ -209,6 +206,7 @@ const CATALOG_SKIP_LOOKBACK = 1000;
 
 /** The mirror's insert shape, so a payload typo is a type error rather than a 400. */
 type CatalogInsert = Database['public']['Tables']['mcp_catalog_servers']['Insert'];
+type CatalogRawInsert = Database['public']['Tables']['mcp_catalog_server_raw']['Insert'];
 
 function chunk<T>(items: T[], size: number): T[][] {
   const batches: T[][] = [];
@@ -334,6 +332,9 @@ export interface McpMarketplaceRepository {
 
   /** Rows the store still lists; a pass that saw far fewer is an outage. */
   countCatalogServers(): Promise<number>;
+
+  /** The registry document for one row, read only by the Admin Console's picker. */
+  getCatalogRaw(registryName: string): Promise<Json | null>;
 
   /** One keyset page; `includeHidden` is the Admin Console's takedown list. */
   listCatalogServers(input: {
@@ -697,7 +698,6 @@ export function createMcpMarketplaceRepository(
         published_at: row.publishedAt,
         registry_updated_at: row.registryUpdatedAt,
         fetched_at: fetchedAt,
-        raw: row.raw,
       });
 
       // A row nobody has mirrored yet is new, and a new address is unmeasured.
@@ -731,6 +731,19 @@ export function createMcpMarketplaceRepository(
           .from(CATALOG_TABLE)
           .upsert(batch, { onConflict: 'registry_name' });
         if (error) throw error;
+
+        // The parent row exists first, so the side table's foreign key holds.
+        // Only the picker reads these, and one batch is one rounded trip.
+        const inBatch = new Set(batch.map((row) => row.registry_name));
+        const documents: CatalogRawInsert[] = rows
+          .filter((row) => inBatch.has(row.registryName))
+          .map((row) => ({ registry_name: row.registryName, raw: row.raw }));
+        if (documents.length > 0) {
+          const { error: rawError } = await supabase
+            .from(CATALOG_RAW_TABLE)
+            .upsert(documents, { onConflict: 'registry_name' });
+          if (rawError) throw rawError;
+        }
       }
     },
 
@@ -765,6 +778,16 @@ export function createMcpMarketplaceRepository(
       return count ?? 0;
     },
 
+    async getCatalogRaw(registryName) {
+      const { data, error } = await supabase
+        .from(CATALOG_RAW_TABLE)
+        .select('raw')
+        .eq('registry_name', registryName)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.raw as Json | null | undefined) ?? null;
+    },
+
     async listCatalogServers({ q, cursor, limit, includeHidden, storeOnly }) {
       /*
         The store is a curated directory, not a paginated catalogue: at most a
@@ -772,13 +795,9 @@ export function createMcpMarketplaceRepository(
         key. That is one `order=` pair and no keyset cursor, which is why the
         table no longer needs a generated sort key.
       */
-      // The column list is a string rather than a literal on purpose: the admin
-      // list is the store's list plus `raw`, and a union of two literals is not
-      // something PostgREST's select typer can read.
-      const columns: string = storeOnly ? CATALOG_LIST_COLUMNS : CATALOG_ADMIN_LIST_COLUMNS;
       let builder = supabase
         .from(CATALOG_TABLE)
-        .select(columns)
+        .select(CATALOG_LIST_COLUMNS)
         .limit(storeOnly ? STORE_MAX_ROWS : limit + 1);
 
       if (storeOnly) {

@@ -25,6 +25,7 @@ import {
   type McpCatalogAdminUpdate,
   type McpCatalogConnectReason,
   type McpCatalogPage,
+  type McpCatalogRemoteOption,
   type McpCatalogRow,
   type McpCatalogWaitingRow,
 } from '@/shared/contracts/mcp-catalog';
@@ -185,6 +186,8 @@ export interface McpCatalogSyncResult {
 export interface McpCatalogService {
   search(input: { q: string; cursor: string | null }): Promise<McpCatalogPage>;
   adminList(input: { q: string; cursor: string | null }): Promise<McpCatalogAdminPage>;
+  /** The registry's addresses for one row, read when the remote picker opens. */
+  adminRemoteOptions(registryName: string): Promise<McpCatalogRemoteOption[]>;
   adminUpdate(input: McpCatalogAdminUpdate, actor: McpCatalogActor): Promise<void>;
   sync(input?: { budgetMs?: number }): Promise<McpCatalogSyncResult>;
   /**
@@ -305,7 +308,6 @@ function toAdminRow(
     apiKeyPrefix: row.api_key_prefix,
     remoteUrl: row.remote_url,
     remoteOverride: row.remote_override,
-    remoteOptions: registryRemotes(row.raw),
     status: row.status,
     version: row.version,
     iconMime: row.probe_icon_mime ?? row.registry_icon_mime,
@@ -330,14 +332,14 @@ function toAdminRow(
  * entry is mined, and it only feeds an admin's choice — a malformed entry is
  * skipped rather than allowed to break the list.
  */
-function registryRemotes(raw: unknown): McpCatalogAdminRow['remoteOptions'] {
+function registryRemotes(raw: unknown): McpCatalogRemoteOption[] {
   if (!raw || typeof raw !== 'object') return [];
   const server = (raw as { server?: unknown }).server;
   if (!server || typeof server !== 'object') return [];
   const remotes = (server as { remotes?: unknown }).remotes;
   if (!Array.isArray(remotes)) return [];
 
-  const options: McpCatalogAdminRow['remoteOptions'] = [];
+  const options: McpCatalogRemoteOption[] = [];
   for (const remote of remotes) {
     if (!remote || typeof remote !== 'object') continue;
     const { url, type } = remote as { url?: unknown; type?: unknown };
@@ -468,6 +470,10 @@ export function createMcpCatalogService({
       coverage,
       waiting,
     };
+  }
+
+  async function adminRemoteOptions(registryName: string): Promise<McpCatalogRemoteOption[]> {
+    return registryRemotes(await repository.getCatalogRaw(registryName));
   }
 
   async function adminUpdate(input: McpCatalogAdminUpdate, actor: McpCatalogActor): Promise<void> {
@@ -1004,7 +1010,7 @@ export function createMcpCatalogService({
     );
   }
 
-  return { search, adminList, adminUpdate, sync, probe };
+  return { search, adminList, adminRemoteOptions, adminUpdate, sync, probe };
 }
 
 /** A row nobody has measured, or one whose measurement has aged out. */

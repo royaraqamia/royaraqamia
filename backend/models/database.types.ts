@@ -1356,6 +1356,29 @@ export type Database = {
         };
         Relationships: [];
       };
+      mcp_catalog_server_raw: {
+        Row: {
+          raw: Json | null;
+          registry_name: string;
+        };
+        Insert: {
+          raw?: Json | null;
+          registry_name: string;
+        };
+        Update: {
+          raw?: Json | null;
+          registry_name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mcp_catalog_server_raw_registry_name_fkey';
+            columns: ['registry_name'];
+            isOneToOne: true;
+            referencedRelation: 'mcp_catalog_servers';
+            referencedColumns: ['registry_name'];
+          },
+        ];
+      };
       mcp_catalog_servers: {
         Row: {
           api_key_header: string | null;
@@ -1376,7 +1399,6 @@ export type Database = {
           probe_icon_url: string | null;
           probed_at: string | null;
           published_at: string | null;
-          raw: Json | null;
           registry_icon_mime: string | null;
           registry_icon_url: string | null;
           registry_name: string;
@@ -1411,7 +1433,6 @@ export type Database = {
           probe_icon_url?: string | null;
           probed_at?: string | null;
           published_at?: string | null;
-          raw?: Json | null;
           registry_icon_mime?: string | null;
           registry_icon_url?: string | null;
           registry_name: string;
@@ -1445,7 +1466,6 @@ export type Database = {
           probe_icon_url?: string | null;
           probed_at?: string | null;
           published_at?: string | null;
-          raw?: Json | null;
           registry_icon_mime?: string | null;
           registry_icon_url?: string | null;
           registry_name?: string;

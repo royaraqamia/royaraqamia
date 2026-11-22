@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 
 import {
   getAdminMcpCatalog,
+  getAdminMcpCatalogRemoteOptions,
   probeAdminMcpCatalogRow,
   updateAdminMcpCatalogRow,
 } from '@/frontend/api/mcp-catalog';
@@ -41,6 +42,7 @@ import {
   MCP_CATALOG_ADMIN_COPY as COPY,
   type McpCatalogAdminRow,
   type McpCatalogCoverage,
+  type McpCatalogRemoteOption,
   type McpCatalogWaitingRow,
 } from '@/shared/contracts/mcp-catalog';
 
@@ -709,10 +711,29 @@ function ArabicForm({ row, onCancel, onDone }: FormProps) {
  * account server beside it does — which is why this choice exists. Saving a
  * different address clears the verdict, because the address is what was
  * measured; the row then says «لم نتحقق بعد» until «فحص الآن» runs.
+ *
+ * The options come from a second request made here, not from the list: the
+ * registry's own document is a side table and a page of rows must not carry it.
  */
 function RemoteForm({ row, onCancel, onDone }: FormProps) {
   const [url, setUrl] = useState(row.remoteOverride ?? row.remoteUrl);
+  const [remoteOptions, setRemoteOptions] = useState<McpCatalogRemoteOption[]>([]);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAdminMcpCatalogRemoteOptions(row.registryName)
+      .then((options) => {
+        if (!cancelled) setRemoteOptions(options);
+      })
+      .catch(() => {
+        // The typed field still works; the registry's list is a convenience.
+        if (!cancelled) setRemoteOptions([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [row.registryName]);
 
   /*
     The registry's own address is stored as no override at all, so a later change
@@ -759,11 +780,11 @@ function RemoteForm({ row, onCancel, onDone }: FormProps) {
         <p className="text-xs text-muted-foreground">{COPY.remoteUrlHint}</p>
       </div>
 
-      {row.remoteOptions.length > 0 && (
+      {remoteOptions.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">{COPY.remoteOptionsLabel}</p>
           <ul className="space-y-1">
-            {row.remoteOptions.map((option) => {
+            {remoteOptions.map((option) => {
               const chosen = (selected ?? row.remoteUrl) === option.url;
               return (
                 <li key={`${option.type}:${option.url}`}>

@@ -72,6 +72,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
 
   const repository: McpMarketplaceRepository = {
     getCatalogServer: async () => null,
+    getCatalogRaw: async () => null,
     findLiveConnection: async () => null,
     getConnection: async () => null,
     listConnections: async () => [],
@@ -843,41 +844,29 @@ describe('the remote choice', () => {
     expect(repository.updates).toEqual([]);
   });
 
-  it('offers the registry’s own addresses beside the one it keeps', async () => {
-    const repository = fakeRepository({
-      listCatalogServers: async () => ({
-        rows: [
-          {
-            ...serverRow(),
-            title_override: null,
-            version: '1.0.0',
-            published_at: null,
-            fetched_at: NOW.toISOString(),
-            featured_rank: null,
-            raw: {
-              server: {
-                name: 'com.cloudflare.mcp/mcp',
-                remotes: [
-                  { type: 'streamable-http', url: 'https://docs.mcp.cloudflare.com/mcp' },
-                  { type: 'streamable-http', url: ACCOUNT },
-                  { type: 'sse', url: 'https://sse.mcp.cloudflare.com/sse' },
-                ],
-              },
-            },
-          } as unknown as McpCatalogListRow,
+  it('reads the registry’s own addresses only when the remote picker asks', async () => {
+    const getCatalogRaw = vi.fn(async () => ({
+      server: {
+        name: 'com.cloudflare.mcp/mcp',
+        remotes: [
+          { type: 'streamable-http', url: 'https://docs.mcp.cloudflare.com/mcp' },
+          { type: 'streamable-http', url: ACCOUNT },
+          { type: 'sse', url: 'https://sse.mcp.cloudflare.com/sse' },
         ],
-        nextCursor: null,
-      }),
-    });
+      },
+    }));
+    const repository = fakeRepository({ getCatalogRaw });
     const service = build({ repository, pages: [] });
 
-    const page = await service.adminList({ q: '', cursor: null });
+    await service.adminList({ q: '', cursor: null });
+    expect(getCatalogRaw).not.toHaveBeenCalled();
 
-    expect(page.servers[0]?.remoteOptions).toEqual([
+    expect(await service.adminRemoteOptions('com.cloudflare.mcp/mcp')).toEqual([
       { type: 'streamable-http', url: 'https://docs.mcp.cloudflare.com/mcp' },
       { type: 'streamable-http', url: ACCOUNT },
       { type: 'sse', url: 'https://sse.mcp.cloudflare.com/sse' },
     ]);
+    expect(getCatalogRaw).toHaveBeenCalledWith('com.cloudflare.mcp/mcp');
   });
 });
 
