@@ -223,6 +223,14 @@ jobs:
       - name: Shipped-weight budget
         run: npm run perf:check
 
+      # The check above reads prerendered .html only. This prices every route
+      # in perf/surfaces.json from the live origin, including the per-request
+      # signed-in documents it cannot see (#1662).
+      - name: Surface weight budget
+        run: npm run perf:weight
+        env:
+          PERF_ORIGIN: 'https://royaraqamia.com'
+
       # Also reads .next: the committed public/sw-precache.js has to match what
       # the build derives, and every public page has to either be prerendered or
       # be declared dynamic by design (#557).

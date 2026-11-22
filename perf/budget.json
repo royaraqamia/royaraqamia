@@ -14,8 +14,8 @@
       "fontsGzipKb": 250
     },
     "/community/explore": {
-      "comment": "The public hub, measured where `/community` used to be: same shell, same assistant door (ADR-0143), same pinned own row (ADR-0172). It draws no per-viewer control, and the client read that fed one is gone (ADR-0173): measured 265.2 KB after the fix, against 299.1 KB while the roster fetched its states in the browser. The ceiling sits just above today's measurement, as before. Raised from 266 to 268 KB when card excerpts started linking URLs and member handles (ADR-0192): measured 266.6 KB, and the first version of that read cost 32 KB until the client call stopped validating its own reply with zod. Raised from 268 to 270 KB when the post card split its footer into a meta line and an action bar (views, relative time, and the like/comment cells the product intends): measured 268.1 KB, so the ceiling sits just above today's measurement, as before. Raised from 270 to 271 KB after later community work took the measured route to 270.1 KB on `main` before this change; a build with this branch's dropdown fix reverted measured the same 270.1 KB, so the fix adds no bytes to this route. Raised from 271 to 273 KB for the field vitals reporter and the single-render roster. The local build measured 271.4 KB and the CI runner measured 272.2 KB for the same commit, so 273 is the ceiling that keeps the usual small headroom across both machines instead of failing a performance change on runner noise.",
-      "jsGzipKb": 273
+      "comment": "The public hub, measured where `/community` used to be: same shell, same assistant door (ADR-0143), same pinned own row (ADR-0172). It draws no per-viewer control, and the client read that fed one is gone (ADR-0173): measured 265.2 KB after the fix, against 299.1 KB while the roster fetched its states in the browser. The ceiling sits just above today's measurement, as before. Raised from 266 to 268 KB when card excerpts started linking URLs and member handles (ADR-0192): measured 266.6 KB, and the first version of that read cost 32 KB until the client call stopped validating its own reply with zod. Raised from 268 to 270 KB when the post card split its footer into a meta line and an action bar (views, relative time, and the like/comment cells the product intends): measured 268.1 KB, so the ceiling sits just above today's measurement, as before. Raised from 270 to 271 KB after later community work took the measured route to 270.1 KB on `main` before this change; a build with this branch's dropdown fix reverted measured the same 270.1 KB, so the fix adds no bytes to this route. Raised from 271 to 273 KB for the field vitals reporter and the single-render roster. The local build measured 271.4 KB and the CI runner measured 272.2 KB for the same commit, so 273 is the ceiling that keeps the usual small headroom across both machines instead of failing a performance change on runner noise. Raised from 273 to 278 KB for the live weight gate (#1662): the deployed document measured 277.7 KB on 2026-11-22, above the build-artifact ceiling because the origin ships a few KB more shell than a fresh CI build.",
+      "jsGzipKb": 279
     },
     "/scan": {
       "comment": "The Scanner owns no server surface, so its budget is the initial bundle alone: the decoder and the result card are lazy, and the ~1 MB WASM engine is a static asset fetched only once a visitor actually scans.",
@@ -26,6 +26,76 @@
       "comment": "Measured so the per-surface split (#497) is visible on a product route, not only on public ones. Its client bundle is the product's own and belongs to #493; these two ceilings sit a few percent above today's measurement so the route is guarded against growth without claiming a target it was never given. The JS ceiling moved from 365 to 372 when the minor-and-patch dependency group (Next 16.4.6 among 29 updates) took the route from 362.6 KB to 365.3 KB gzip on the runner; the headroom stays at the same few percent. Raised from 590 to 592 when the shell took ownership of the navbar's utilities (#1663): the runner measured 590.0 KB total gzip for this route, leaving no headroom on the very boundary the ceiling was meant to guard, so the recorded ceiling moves with that measured shell growth instead of failing on it. Raised from 592 to 595 when issue #1687 added the digits face's own 2.4 KB subset to every route's font list; the measured total became 592.4 KB, so the ceiling keeps its small headroom.",
       "totalGzipKb": 595,
       "jsGzipKb": 372
+    },
+    "/account": {
+      "comment": "Live weight gate (#1662): the deployed document measured 272.3 KB gzip JS on 2026-11-22 against the 260 KB default. The ceiling follows the measurement so the new gate can guard further growth instead of failing on a pre-existing breach.",
+      "jsGzipKb": 274
+    },
+    "/account/links": {
+      "comment": "Live weight gate (#1662): 366.8 KB JS and 590.2 KB total gzip on 2026-11-22. Both ceilings sit just above the measured document.",
+      "jsGzipKb": 368,
+      "totalGzipKb": 592
+    },
+    "/account/news": {
+      "comment": "Live weight gate (#1662): 262.3 KB gzip JS on 2026-11-22.",
+      "jsGzipKb": 264
+    },
+    "/account/submissions": {
+      "comment": "Live weight gate (#1662): 353.3 KB JS and 575.5 KB total gzip on 2026-11-22.",
+      "jsGzipKb": 355,
+      "totalGzipKb": 577
+    },
+    "/chats/new": {
+      "comment": "Live weight gate (#1662): 264.4 KB gzip JS on 2026-11-22. This is the concrete sample for the chats surface, including /chats/[id].",
+      "jsGzipKb": 266
+    },
+    "/community": {
+      "comment": "Live weight gate (#1662): 277.7 KB gzip JS on 2026-11-22, the member feed that renders per request and has no build artifact for perf:check to read.",
+      "jsGzipKb": 279
+    },
+    "/consultation/book": {
+      "comment": "Live weight gate (#1662): 292.7 KB gzip JS on 2026-11-22.",
+      "jsGzipKb": 294
+    },
+    "/downloader": {
+      "comment": "Live weight gate (#1662): 275.5 KB gzip JS on 2026-11-22.",
+      "jsGzipKb": 277
+    },
+    "/hire": {
+      "comment": "Live weight gate (#1662): 334.8 KB gzip JS on 2026-11-22.",
+      "jsGzipKb": 336
+    },
+    "/mcp/apps": {
+      "comment": "Live weight gate (#1662): 267.2 KB gzip JS on 2026-11-22. Also prices /account/connected-apps, whose anonymous document redirects here.",
+      "jsGzipKb": 269
+    },
+    "/mcp/apps/invalid": {
+      "comment": "Live weight gate (#1662): 262.6 KB gzip JS on 2026-11-22. Concrete sample for /mcp/apps/[id].",
+      "jsGzipKb": 264
+    },
+    "/notifications": {
+      "comment": "Live weight gate (#1662): 283.7 KB gzip JS on 2026-11-22, the heaviest per-request surface and the one perf:check could never see.",
+      "jsGzipKb": 285
+    },
+    "/pricing/subscribe": {
+      "comment": "Live weight gate (#1662): 308.7 KB gzip JS on 2026-11-22.",
+      "jsGzipKb": 310
+    },
+    "/request-project": {
+      "comment": "Live weight gate (#1662): 321.8 KB gzip JS on 2026-11-22.",
+      "jsGzipKb": 323
+    },
+    "/training/apply": {
+      "comment": "Live weight gate (#1662): 310.2 KB gzip JS on 2026-11-22.",
+      "jsGzipKb": 312
+    },
+    "/u/royaraqamia": {
+      "comment": "Live weight gate (#1662): 272.2 KB gzip JS on 2026-11-22. Concrete sample for the profile surface and its follower/following routes.",
+      "jsGzipKb": 274
+    },
+    "/verify": {
+      "comment": "Live weight gate (#1662): 295.6 KB gzip JS on 2026-11-22.",
+      "jsGzipKb": 297
     }
   }
 }

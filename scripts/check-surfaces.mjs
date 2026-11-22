@@ -223,6 +223,14 @@ export function validate({ matrix, repoRoot = ROOT, routes = pageRoutes() }) {
     }
 
     for (const route of surface.routes ?? []) {
+      if (/\[[^\]]+\]/.test(route) && !(matrix.weightSamples ?? {})[route]) {
+        errors.push(
+          `surface "${surface.id}": ${route} has no weightSamples entry — the live weight gate cannot price it (#1662)`
+        );
+      }
+    }
+
+    for (const route of surface.routes ?? []) {
       if (surface.shell !== 'precached') continue;
       const source = dynamicMarker(routeSources(route, join(repoRoot, 'app')));
       if (source) {

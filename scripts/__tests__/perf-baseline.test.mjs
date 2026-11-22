@@ -2,8 +2,11 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
+import { promisify } from 'node:util';
 import { createHash } from 'node:crypto';
+import { createServer } from 'node:http';
+import { gzipSync } from 'node:zlib';
 import {
   extractAssets,
   extractCssFontUrls,
@@ -16,12 +19,21 @@ import {
   polyfillUrls,
   checkLegacyGating,
   measureRoute,
+  fetchRaw,
+  measureLiveRoute,
+  resolveWeightRoutes,
+  checkWeightCoverage,
+  formatWeightVerdict,
 } from '../perf-baseline.mjs';
 
 const madeDirs = [];
+const madeServers = [];
 
-afterEach(() => {
+afterEach(async () => {
   while (madeDirs.length) rmSync(madeDirs.pop(), { recursive: true, force: true });
+  while (madeServers.length) {
+    await new Promise((resolve) => madeServers.pop().close(resolve));
+  }
 });
 
 // Deterministic low-compressibility filler, so gzip totals land in a realistic
@@ -355,6 +367,21 @@ function runCli(args, cwd) {
   }
 }
 
+// The live CLI needs the test's local HTTP server to keep serving while it
+// runs, so these calls must not block the event loop like execFileSync does.
+const execFileAsync = promisify(execFile);
+async function runCliAsync(args, cwd) {
+  try {
+    const { stdout } = await execFileAsync(process.execPath, [SCRIPT, ...args], {
+      cwd,
+      encoding: 'utf8',
+    });
+    return { status: 0, stdout };
+  } catch (error) {
+    return { status: error.status ?? 1, stdout: `${error.stdout ?? ''}${error.stderr ?? ''}` };
+  }
+}
+
 describe('perf-baseline CLI', () => {
   it('reports shipped bytes for the configured route and exits 0 without a budget alert', () => {
     const { root, nextDir, publicDir } = makeFixture();
@@ -462,5 +489,189 @@ describe('perf-baseline CLI', () => {
     );
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('no longer nomodule-gated');
+  });
+});
+
+/* Live-document mode ------------------------------------------------------- */
+
+async function makeLiveServer() {
+  const bodies = {
+    '/': [
+      '<!DOCTYPE html><html><head>',
+      '<link rel="stylesheet" href="/_next/static/chunks/styles.css"/>',
+      '<link rel="preload" as="font" href="/_next/static/media/font.woff2"/>',
+      '</head><body>',
+      '<script src="/_next/static/chunks/app.js"></script>',
+      '<script src="/_next/static/chunks/legacy.js" nomodule=""></script>',
+      '</body></html>',
+    ].join('\n'),
+    '/account':
+      '<!DOCTYPE html><html><head><script src="/_next/static/chunks/app.js"></script></head></html>',
+    '/_next/static/chunks/app.js': pseudoText(11, 40000),
+    '/_next/static/chunks/styles.css':
+      '@font-face{src:url(../media/font.woff2)}' + pseudoText(12, 8000),
+    '/_next/static/media/font.woff2': pseudoText(13, 6000),
+    '/_next/static/chunks/legacy.js': pseudoText(14, 45000),
+  };
+  const server = createServer((req, res) => {
+    if (req.url === '/redirect') {
+      res.writeHead(307, { location: '/account' });
+      res.end();
+      return;
+    }
+    const body = bodies[req.url];
+    if (body === undefined) {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+    if (req.url === '/_next/static/chunks/app.js') {
+      // Deliberately ignore Accept-Encoding: identity: fetchRaw must decode so
+      // transferredSize stays the single place compression is applied.
+      res.writeHead(200, { 'content-encoding': 'gzip' });
+      res.end(gzipSync(Buffer.from(body)));
+      return;
+    }
+    res.writeHead(200);
+    res.end(body);
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  madeServers.push(server);
+  return { origin: `http://127.0.0.1:${server.address().port}`, bodies };
+}
+
+describe('fetchRaw', () => {
+  it('decodes a compressed response before it is priced', async () => {
+    const { origin } = await makeLiveServer();
+    const { raw } = await fetchRaw(`${origin}/_next/static/chunks/app.js`);
+    expect(raw.toString()).toBe(pseudoText(11, 40000));
+  });
+});
+
+describe('measureLiveRoute', () => {
+  it('prices a fetched document with the same buckets as a built one', async () => {
+    const { origin, bodies } = await makeLiveServer();
+    const { summary, finalUrl } = await measureLiveRoute('/', { origin });
+
+    expect(summary.html.count).toBe(1);
+    expect(summary.html.raw).toBe(Buffer.byteLength(bodies['/']));
+    expect(summary.js.count).toBe(1);
+    expect(summary.js.raw).toBe(Buffer.byteLength(bodies['/_next/static/chunks/app.js']));
+    expect(summary.css.count).toBe(1);
+    expect(summary.fonts.count).toBe(1);
+    expect(summary.legacy.count).toBe(1);
+    expect(summary.total.count).toBe(4); // legacy is reported but not in TOTAL
+    expect(new URL(finalUrl).pathname).toBe('/');
+  });
+
+  it('reports the final document when a route redirects', async () => {
+    const { origin } = await makeLiveServer();
+    const result = await measureLiveRoute('/redirect', { origin });
+    expect(new URL(result.finalUrl).pathname).toBe('/account');
+    expect(result.summary.js.count).toBe(1);
+  });
+
+  it('throws a readable error when the document is missing', async () => {
+    const { origin } = await makeLiveServer();
+    await expect(measureLiveRoute('/not-here', { origin })).rejects.toThrow(/404/);
+  });
+});
+
+describe('weight route coverage', () => {
+  const matrix = {
+    surfaces: [
+      { id: 'home', routes: ['/'] },
+      { id: 'profile', routes: ['/u/[username]', '/u/[username]/followers'] },
+      { id: 'admin', prefix: '/admin' },
+    ],
+    weightSamples: {
+      '/u/[username]': '/u/royaraqamia',
+      '/u/[username]/followers': '/u/royaraqamia',
+    },
+  };
+
+  it('resolves dynamic patterns to concrete paths and de-duplicates them', () => {
+    const { routes, errors } = resolveWeightRoutes(matrix);
+    expect(errors).toEqual([]);
+    expect(routes.map((route) => route.route)).toEqual(['/', '/u/royaraqamia', '/admin']);
+  });
+
+  it('fails a dynamic pattern that has no sample', () => {
+    const { errors } = resolveWeightRoutes({
+      surfaces: [{ id: 'post', routes: ['/community/[slug]'] }],
+    });
+    expect(errors.join(' ')).toMatch(/weightSamples/);
+  });
+
+  it('lists the matrix routes that were not priced', () => {
+    expect(checkWeightCoverage([{ route: '/' }], ['/', '/account'])).toEqual(['/account']);
+  });
+
+  it('checks a redirected route against the final document ceiling', () => {
+    const results = [
+      {
+        route: '/old',
+        budgetRoute: '/account',
+        summary: summarizeAssets([{ kind: 'js', raw: 1000, gzip: 1000 }]),
+      },
+    ];
+    const budget = { default: { jsGzipKb: 2 }, routes: { '/account': { jsGzipKb: 0.5 } } };
+    const report = formatWeightVerdict(results, budget);
+    expect(report).toContain('(-> /account)');
+    expect(report).toContain('jsGzipKb');
+  });
+});
+
+describe('perf-baseline CLI --live', () => {
+  it('prices an origin document and exits 0 when it is within budget', async () => {
+    const { origin } = await makeLiveServer();
+    const { root } = makeFixture();
+    writeFileSync(join(root, 'budget.json'), '{"default":{"jsGzipKb":500}}');
+    const result = await runCliAsync(
+      ['--live', '--origin', origin, '--routes', '/account', '--budget', 'budget.json', '--check'],
+      root
+    );
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('0 over budget');
+  });
+
+  it('exits 1 on a budget breach measured from the origin', async () => {
+    const { origin } = await makeLiveServer();
+    const { root } = makeFixture();
+    writeFileSync(join(root, 'budget.json'), '{"default":{"jsGzipKb":0.01}}');
+    const result = await runCliAsync(
+      ['--live', '--origin', origin, '--routes', '/account', '--budget', 'budget.json', '--check'],
+      root
+    );
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('jsGzipKb');
+  });
+
+  it('fails before fetching when a matrix route has no weight sample', async () => {
+    const { root } = makeFixture();
+    mkdirSync(join(root, 'perf'), { recursive: true });
+    writeFileSync(
+      join(root, 'perf', 'surfaces.json'),
+      JSON.stringify({ surfaces: [{ id: 'post', routes: ['/community/[slug]'] }] })
+    );
+    const result = await runCliAsync(['--live', '--budget', 'absent.json', '--check'], root);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('weightSamples');
+  });
+
+  it('fails coverage when a matrix route cannot be priced', async () => {
+    const { origin } = await makeLiveServer();
+    const { root } = makeFixture();
+    mkdirSync(join(root, 'perf'), { recursive: true });
+    writeFileSync(
+      join(root, 'perf', 'surfaces.json'),
+      JSON.stringify({ surfaces: [{ id: 'missing', routes: ['/not-here'] }] })
+    );
+    const result = await runCliAsync(
+      ['--live', '--origin', origin, '--budget', 'absent.json', '--check'],
+      root
+    );
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('were not priced');
   });
 });

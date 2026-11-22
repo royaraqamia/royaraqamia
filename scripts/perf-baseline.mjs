@@ -17,6 +17,12 @@ import { pathToFileURL } from 'node:url';
  * `legacy` scripts (`<script nomodule>`) are reported separately and excluded
  * from the total: a modern browser never requests them, so folding the polyfill
  * chunk into the budget would misrepresent what low-end devices download.
+ *
+ * `--live` prices the same definitions against documents fetched from an origin
+ * instead of disk. A route rendered per request has no `.html` artifact, so it
+ * is invisible to the static mode; the live mode is how the surface matrix gets
+ * a weight verdict. Both modes share `extractAssets`, `transferredSize` and
+ * `summarizeAssets`, so a number means the same thing on either side.
  */
 
 export const CATEGORIES = ['html', 'js', 'css', 'fonts'];
@@ -326,6 +332,153 @@ export function measureRoutes(routes, opts) {
   return routes.map((route) => measureRoute(route, opts));
 }
 
+/* Live-document mode ------------------------------------------------------- */
+
+/** Run a bounded number of async workers; assets are fetched in parallel but a
+    fifty-route matrix must not open fifty connections per document. */
+async function mapWithLimit(items, limit, worker) {
+  const results = new Array(items.length);
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await worker(items[index], index);
+    }
+  });
+  await Promise.all(runners);
+  return results;
+}
+
+/**
+ * Fetch a URL as the bytes the file actually holds. `Accept-Encoding: identity`
+ * asks the server not to compress; `fetch` decodes anything it sends anyway, so
+ * the body here is raw and `transferredSize` remains the single place
+ * compression is applied — just as it is for a build artifact read from disk.
+ */
+export async function fetchRaw(url, { timeoutMs = 20000 } = {}) {
+  const response = await fetch(url, {
+    headers: { 'accept-encoding': 'identity', 'user-agent': 'royaraqamia-perf/1' },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText || ''} for ${url}`.trim());
+  }
+  return { raw: Buffer.from(await response.arrayBuffer()), url: response.url };
+}
+
+/** Price a fetched document with exactly the same buckets as a built one. */
+export async function measureLiveRoute(
+  route,
+  { origin = 'https://royaraqamia.com', cache = new Map(), concurrency = 8 } = {}
+) {
+  const normalized = normalizeRoute(route);
+  const originUrl = new URL(origin);
+  const get = async (url) => {
+    const key = new URL(url, originUrl).href;
+    if (!cache.has(key)) {
+      cache.set(
+        key,
+        fetchRaw(key).catch((error) => {
+          cache.delete(key);
+          throw error;
+        })
+      );
+    }
+    return cache.get(key);
+  };
+
+  const document = await get(new URL(normalized, originUrl).href);
+  const assets = extractAssets(document.raw.toString('utf8'));
+
+  const entries = [
+    {
+      url: normalized,
+      kind: 'html',
+      raw: document.raw.length,
+      gzip: transferredSize(document.raw),
+    },
+  ];
+
+  const specs = [
+    ...assets.scripts.map((url) => ({ url, kind: 'js' })),
+    ...assets.styles.map((url) => ({ url, kind: 'css' })),
+    ...assets.fontPreloads.map((url) => ({ url, kind: 'fonts' })),
+    ...assets.legacyScripts.map((url) => ({ url, kind: 'legacy' })),
+  ];
+
+  // Fonts named inside a stylesheet are part of the document's first load, the
+  // same way the static mode discovers them inside the on-disk CSS file.
+  for (const cssUrl of assets.styles) {
+    const css = await get(cssUrl);
+    for (const fontUrl of extractCssFontUrls(css.raw.toString('utf8'), cssUrl)) {
+      if (!specs.some((spec) => spec.kind === 'fonts' && spec.url === fontUrl)) {
+        specs.push({ url: fontUrl, kind: 'fonts' });
+      }
+    }
+  }
+
+  const measured = await mapWithLimit(specs, concurrency, async (spec) => {
+    const asset = await get(spec.url);
+    return {
+      url: spec.url,
+      kind: spec.kind,
+      raw: asset.raw.length,
+      gzip: transferredSize(asset.raw),
+    };
+  });
+  entries.push(...measured);
+
+  return {
+    route: normalized,
+    htmlPath: null,
+    finalUrl: document.url,
+    assets,
+    summary: summarizeAssets(entries),
+    entries,
+  };
+}
+
+/**
+ * The concrete paths the weight gate prices, derived from the surface matrix.
+ * A dynamic segment needs a published `weightSamples` entry; a new pattern
+ * without one fails the check instead of silently dropping out of the gate.
+ */
+export function resolveWeightRoutes(matrix) {
+  const samples = matrix?.weightSamples ?? {};
+  const routes = [];
+  const errors = [];
+  const seen = new Set();
+
+  for (const surface of matrix?.surfaces ?? []) {
+    const declared = [
+      ...(surface.routes ?? []),
+      ...(typeof surface.prefix === 'string' ? [`${surface.prefix}/**`] : []),
+    ];
+    for (const pattern of declared) {
+      const route = pattern.replace(/\/\*\*$/, '');
+      if (/\[[^\]]+\]/.test(route) && !samples[route]) {
+        errors.push(
+          `surface "${surface.id}": ${route} has no weightSamples entry in perf/surfaces.json`
+        );
+        continue;
+      }
+      const path = normalizeRoute(samples[route] ?? route);
+      if (seen.has(path)) continue;
+      seen.add(path);
+      routes.push({ route: path, surface: surface.id, pattern });
+    }
+  }
+
+  return { routes, errors };
+}
+
+export function checkWeightCoverage(results, expectedRoutes) {
+  const measured = new Set(results.map((result) => result.route));
+  return expectedRoutes.filter((route) => !measured.has(route));
+}
+
 function kb(bytes) {
   return `${(bytes / KB).toFixed(1)} KB`;
 }
@@ -360,6 +513,29 @@ export function formatReport(results, baselineByRoute) {
   return lines.join('\n');
 }
 
+export function formatWeightVerdict(results, budget) {
+  const lines = ['\nWeight verdict'];
+  let okCount = 0;
+  for (const { route, summary, finalUrl, budgetRoute } of results) {
+    // A route that redirects is priced against the document it actually serves;
+    // its own ceiling would describe bytes this response never ships.
+    const priced = budgetRoute ?? route;
+    const { ok, violations, checked } = checkBudget(summary, budget, priced);
+    const js = checked.find((metric) => metric.metric === 'jsGzipKb');
+    const size = js ? `${js.actualKb.toFixed(1)}/${js.budgetKb} KB` : '—';
+    const verdict = ok
+      ? 'OK'
+      : violations.map((v) => `${v.metric} ${v.actualKb.toFixed(1)}/${v.budgetKb}`).join(', ');
+    if (ok) okCount += 1;
+    const redirect = priced !== route ? ` (-> ${priced})` : '';
+    lines.push(`  ${route.padEnd(28)} js ${size.padEnd(14)} ${verdict}${redirect}`);
+  }
+  lines.push(
+    `\n${okCount} OK, ${results.length - okCount} over budget across ${results.length} route(s)`
+  );
+  return lines.join('\n');
+}
+
 function readJson(path, fallback) {
   if (!existsSync(path)) return fallback;
   try {
@@ -379,7 +555,15 @@ function resolveRoutes(args, budget) {
 }
 
 function parseArgs(argv) {
-  const args = { routes: [], nextDir: '.next', publicDir: 'public' };
+  const args = {
+    routes: [],
+    nextDir: '.next',
+    publicDir: 'public',
+    live: false,
+    origin: process.env.PERF_ORIGIN ?? 'https://royaraqamia.com',
+    surfacesPath: 'perf/surfaces.json',
+    concurrency: 10,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
     const value = argv[i + 1];
@@ -413,6 +597,21 @@ function parseArgs(argv) {
       case '--check':
         args.check = true;
         break;
+      case '--live':
+        args.live = true;
+        break;
+      case '--origin':
+        args.origin = value;
+        i += 1;
+        break;
+      case '--surfaces':
+        args.surfacesPath = value;
+        i += 1;
+        break;
+      case '--concurrency':
+        args.concurrency = Number(value);
+        i += 1;
+        break;
       case '--json':
         args.json = true;
         break;
@@ -423,12 +622,114 @@ function parseArgs(argv) {
   return args;
 }
 
-function run(argv = process.argv.slice(2)) {
+async function runLive(args, budget) {
+  const matrix = args.routes.length ? null : readJson(args.surfacesPath, null);
+  if (!args.routes.length && !matrix) throw new Error(`Could not read ${args.surfacesPath}`);
+
+  const { routes, errors } = matrix
+    ? resolveWeightRoutes(matrix)
+    : {
+        routes: args.routes.map((route) => ({
+          route: normalizeRoute(route),
+          surface: '-',
+          pattern: route,
+        })),
+        errors: [],
+      };
+  if (errors.length > 0) {
+    for (const error of errors) console.log(`  ${error}`);
+    throw new Error(
+      `${errors.length} surface route(s) cannot be priced — add weightSamples to ${args.surfacesPath}`
+    );
+  }
+
+  console.log(`Live document weight from ${args.origin} (${routes.length} route(s))`);
+  const cache = new Map();
+  const results = [];
+  const failures = [];
+  await mapWithLimit(routes, args.concurrency || 10, async ({ route, surface, pattern }) => {
+    try {
+      const measured = await measureLiveRoute(route, {
+        origin: args.origin,
+        cache,
+        concurrency: 8,
+      });
+      const finalRoute = normalizeRoute(new URL(measured.finalUrl).pathname);
+      results.push({
+        ...measured,
+        surface,
+        pattern,
+        budgetRoute: finalRoute === route ? null : finalRoute,
+      });
+    } catch (error) {
+      failures.push({ route, surface, message: error.message });
+    }
+  });
+  results.sort((a, b) => a.route.localeCompare(b.route));
+  failures.sort((a, b) => a.route.localeCompare(b.route));
+
+  if (args.json) {
+    console.log(
+      JSON.stringify(
+        {
+          origin: args.origin,
+          routes: results.map(({ route, surface, finalUrl, budgetRoute, summary }) => ({
+            route,
+            surface,
+            finalUrl,
+            budgetRoute,
+            summary,
+          })),
+          failures,
+        },
+        null,
+        2
+      )
+    );
+  } else {
+    console.log(formatWeightVerdict(results, budget));
+    for (const failure of failures) {
+      console.log(`  ${failure.route.padEnd(28)} ERROR ${failure.message}`);
+    }
+  }
+
+  const missing = checkWeightCoverage(
+    results,
+    routes.map(({ route }) => route)
+  );
+  let failed = failures.length > 0;
+  if (missing.length > 0) {
+    console.log(
+      `\nCoverage check failed: ${missing.length} route(s) in ${args.surfacesPath} were not priced: ${missing.join(', ')}`
+    );
+    failed = true;
+  }
+  for (const { route, summary, budgetRoute } of results) {
+    if (!checkBudget(summary, budget, budgetRoute ?? route).ok) failed = true;
+  }
+
+  if (failed) {
+    if (args.check) {
+      console.log('\nWeight check failed.');
+      process.exitCode = 1;
+    } else {
+      console.log(
+        '\nWeight budget exceeded. Run with --check to fail the gate, or update perf/budget.json.'
+      );
+    }
+  }
+}
+
+async function run(argv = process.argv.slice(2)) {
   const args = parseArgs(argv);
   const budgetPath = args.budgetPath ?? 'perf/budget.json';
   const baselinePath = args.baselinePath ?? 'perf/baseline.json';
 
   const budget = readJson(budgetPath, null);
+  if (args.live) {
+    await runLive(args, budget);
+    return;
+  }
   const baselineFile = readJson(baselinePath, null);
   const baselineByRoute = baselineFile?.routes ?? {};
 
@@ -522,9 +823,9 @@ function run(argv = process.argv.slice(2)) {
   }
 }
 
-function main(argv = process.argv.slice(2)) {
+async function main(argv = process.argv.slice(2)) {
   try {
-    run(argv);
+    await run(argv);
   } catch (error) {
     console.log(`\nperf-baseline: ${error.message}`);
     process.exitCode = 1;
