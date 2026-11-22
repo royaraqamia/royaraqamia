@@ -61,6 +61,12 @@
       "reason": "The only change in the gated web file is a null-rendering component that marks the server-rendered sura's content for the paint gate. The tafsir control itself keeps the same class, box and word: a link before hydration and the same-sized button after it. The Mushaf face is still loaded in the visual capture, which waits for document.fonts.ready on an unthrottled link; the optional display only keeps the fallback on a first visit slow enough to miss the block period, a state the capture does not record. No box, pixel, font or word the contract measures can move.",
       "issue": "#1738",
       "until": "2026-12-22"
+    },
+    {
+      "surface": "rates",
+      "reason": "The web change is confined to the failed-read face and to handing a failed loader read (null) to the surface's own client read. The gate records only the `at-rest` state with a live board: the title, freshness line and converters keep the same boxes, copy and classes, and the new retry control sits on the failure branch the capture never draws. No recorded box or pixel can move; #1743 covers the failure face in its own Playwright spec.",
+      "issue": "#1743",
+      "until": "2026-12-22"
     }
   ]
 }
