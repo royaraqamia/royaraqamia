@@ -39,8 +39,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +59,19 @@ import com.royaraqamia.app.theme.Recipes
 import com.royaraqamia.app.theme.RoyColors
 import com.royaraqamia.app.theme.RoyShape
 import com.royaraqamia.app.ui.vectors.LucideVectors
+import kotlinx.coroutines.delay
+
+/** WCAG 2.2 4.1.3: one settled answer, not one announcement per typed character. */
+private const val ANNOUNCE_DELAY_MS = 300L
+
+/** Every input that can rewrite the answer, settled together with the answer. */
+private data class SettledRatesResult(
+    val conversion: Conversion?,
+    val targetCode: String,
+    val oldLiraAmount: Double?,
+    val basisCaption: String?,
+    val staleMarketAsOf: String?,
+)
 
 /**
  * The site's `/rates` as a screen (#658, #897).
@@ -280,16 +295,33 @@ internal fun RatesResultBox(
 ) {
     val shape = RoundedCornerShape(RatesMetrics.resultRadius)
 
+    // The box is a polite live region (WCAG 2.2 4.1.3), so its whole subtree is
+    // announced when it changes. Settle every input together: four typed characters
+    // reset this once and produce one announcement. The first composition is
+    // immediate, which is what the visual gate records at rest.
+    var settled by remember {
+        mutableStateOf(
+            SettledRatesResult(conversion, targetCode, oldLiraAmount, basisCaption, staleMarketAsOf)
+        )
+    }
+    LaunchedEffect(conversion, targetCode, oldLiraAmount, basisCaption, staleMarketAsOf) {
+        delay(ANNOUNCE_DELAY_MS)
+        settled =
+            SettledRatesResult(conversion, targetCode, oldLiraAmount, basisCaption, staleMarketAsOf)
+    }
+    val answer = settled
+
     Column(
         modifier =
             modifier.fillMaxWidth()
                 .clip(shape)
                 .background(RoyColors.primary.copy(alpha = 0.05f))
                 .border(1.dp, RoyColors.primary.copy(alpha = 0.2f), shape)
-                .padding(RatesMetrics.resultPadding + 1.dp),
+                .padding(RatesMetrics.resultPadding + 1.dp)
+                .semantics { liveRegion = LiveRegionMode.Polite },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (conversion == null) {
+        if (answer.conversion == null) {
             Text(
                 text = copy.emptyResult,
                 modifier = Modifier.height(RatesMetrics.resultFigureHeight),
@@ -316,12 +348,14 @@ internal fun RatesResultBox(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (targetCode == "SYP") copy.newLira else RatesFormat.symbol(targetCode),
+                text =
+                    if (answer.targetCode == "SYP") copy.newLira
+                    else RatesFormat.symbol(answer.targetCode),
                 style = TextStyle(fontSize = RatesMetrics.resultSymbolSize),
                 color = Recipes.Row.labelColor,
             )
             Text(
-                text = RatesFormat.value(conversion.result),
+                text = RatesFormat.value(answer.conversion.result),
                 style =
                     TextStyle(
                         fontSize = RatesMetrics.resultFigureSize,
@@ -331,28 +365,28 @@ internal fun RatesResultBox(
             )
         }
 
-        if (oldLiraAmount != null) {
+        if (answer.oldLiraAmount != null) {
             Spacer(Modifier.height(RatesMetrics.resultNoteGap))
             Text(
-                text = "${RatesFormat.value(oldLiraAmount)} ${copy.oldLira}",
+                text = "${RatesFormat.value(answer.oldLiraAmount)} ${copy.oldLira}",
                 style = TextStyle(fontSize = RatesMetrics.resultNoteSize),
                 color = Recipes.Row.labelColor,
             )
-        } else if (basisCaption != null) {
+        } else if (answer.basisCaption != null) {
             Spacer(Modifier.height(RatesMetrics.resultNoteGap))
             Text(
-                text = basisCaption,
+                text = answer.basisCaption,
                 style = TextStyle(fontSize = RatesMetrics.resultNoteSize),
                 color = Recipes.Row.labelColor,
             )
         }
 
-        if (staleMarketAsOf != null) {
+        if (answer.staleMarketAsOf != null) {
             Spacer(Modifier.height(RatesMetrics.resultNoteGap / 2f))
             Text(
                 text =
-                    "${copy.stalePrefix} ${RatesFormat.hijri(staleMarketAsOf)} — " +
-                        RatesFormat.gregorian(staleMarketAsOf),
+                    "${copy.stalePrefix} ${RatesFormat.hijri(answer.staleMarketAsOf)} — " +
+                        RatesFormat.gregorian(answer.staleMarketAsOf),
                 style = TextStyle(fontSize = RatesMetrics.resultNoteSize),
                 color = RoyColors.warning,
             )
