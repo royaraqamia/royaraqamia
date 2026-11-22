@@ -261,7 +261,7 @@ describe('main', () => {
       expect(await main({ env: relaxed, log, fetchImpl, localDir: drifted })).toBe(0);
       const output = lines.join('\n');
       expect(output).toContain('20260102000000_second.sql');
-      expect(output).toContain('main does after the merge');
+      expect(output).toContain('the integration does after the merge');
     });
 
     it('still fails on a recorded version the repo has no file for', async () => {

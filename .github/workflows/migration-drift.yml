@@ -1,26 +1,28 @@
 # Keeps `supabase/migrations/` and the linked project's recorded migration
-# history pointing at the same versions, and applies the ones a merge left
-# behind.
+# history pointing at the same versions, and reports the ones nobody applied.
 #
 # Two writers keep those lists and nothing compared them: a pull request adds a
-# migration file and `supabase db push` applies it by hand, while the autonomous
-# issue pipeline applies the same SQL to the project through the Supabase MCP
-# `apply_migration` tool. Either direction of disagreement is a production
-# incident waiting to be noticed:
+# migration file and the Supabase GitHub integration applies it on the push to
+# main, while the autonomous issue pipeline applies the same SQL to the project
+# through the Supabase MCP `apply_migration` tool. Either direction of
+# disagreement is a production incident waiting to be noticed:
 #
 #   - a file the project has no version for -> deployed code expects schema that
 #     production does not have;
 #   - a recorded version the repo has no file for -> schema or a policy nobody
 #     reviewed, with no migration file to roll it back.
 #
-# On main the order is: plan, vet, apply, verify. `scripts/check-migration-safety.mjs`
-# refuses to apply anything destructive unattended, and anything that creates a
-# `public` object without an explicit grant (see its header), so those migrations
-# stay pending and the verify step reports them until a person applies them by
-# hand. The apply itself uses the same credentials the plan already used — the
-# access token, plus SUPABASE_DB_PASSWORD when the repository has one: the CLI can
-# mint its own login role for a linked project, which is what "Finished supabase
-# link" plus a dry run that connects proves.
+# On main the order is: plan, vet, wait, verify. The integration is the only applier
+# on a push: this workflow used to run `supabase db push --linked --yes` there
+# too, and the two appliers raced on `schema_migrations_pkey` (23505) — the
+# Supabase Preview check on 97f39d4 died that way against 20261225000000.
+# `scripts/check-migration-safety.mjs` still vets the pending files, and the
+# verify step reports anything the integration left pending. Applying from here
+# is now a manual recovery (`workflow_dispatch` with `apply: true`), using the
+# same credentials the plan already used — the access token, plus
+# SUPABASE_DB_PASSWORD when the repository has one: the CLI can mint its own
+# login role for a linked project, which is what "Finished supabase link" plus a
+# dry run that connects proves.
 #
 # `scripts/check-migration-grants.mjs` runs on the pull request too. Supabase
 # stopped granting the Data API roles on new objects in `public` on 2026-10-30, so
@@ -28,7 +30,7 @@
 # pull request is where that is cheap to catch, without the management API.
 #
 # A pull-request run only checks, and is relaxed about being ahead: the migration
-# it adds is applied by main after the merge.
+# it adds is applied by the integration after the merge.
 #
 # Deliberately not a required check yet: it depends on the Management API and on
 # repository secrets. See docs/supabase.md ("Drift check") and ADR 0040/0041.
@@ -63,12 +65,13 @@ on:
         description: 'Compare against this project ref instead of SUPABASE_PROJECT_REF (a drill, or a non-production project)'
         required: false
       apply:
-        description: 'Apply the pending migrations too (needs SUPABASE_DB_PASSWORD)'
+        description: 'Apply pending migrations by hand as recovery (the integration applies them on main)'
         type: boolean
         default: false
 
 permissions:
   contents: read
+  checks: read
   issues: write
 
 concurrency:
@@ -76,7 +79,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 env:
-  APPLY_REQUESTED: ${{ github.event_name == 'push' || inputs.apply == true }}
+  # The Supabase integration applies merged migrations on push. Only an explicit
+  # dispatch may apply from here, so the two never write the history at once.
+  APPLY_REQUESTED: ${{ inputs.apply == true }}
 
 jobs:
   drift:
@@ -132,6 +137,33 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ inputs.project-ref || secrets.SUPABASE_PROJECT_REF }}
         run: node scripts/check-migration-safety.mjs
 
+      # The integration is the applier on push. Reading the history before it has
+      # written its version would report a migration that is merely on its way,
+      # so wait for its check first. A missing or failed check is left to the
+      # strict verify below, which opens the alert rather than applying by hand.
+      - name: Wait for the Supabase integration on main
+        id: supabase_integration
+        if: github.event_name == 'push'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const deadline = Date.now() + 3 * 60 * 1000;
+            let conclusion = null;
+            while (conclusion === null && Date.now() < deadline) {
+              const { data } = await github.rest.checks.listForRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: context.sha,
+                check_name: 'Supabase Preview',
+                per_page: 100,
+              });
+              const check = data.check_runs[0];
+              if (check?.status === 'completed') conclusion = check.conclusion;
+              else await new Promise((resolve) => setTimeout(resolve, 10000));
+            }
+            core.info(`Supabase Preview: ${conclusion ?? 'did not finish in time'}`);
+            core.setOutput('conclusion', conclusion ?? 'unknown');
+
       - name: Apply them
         if: github.event_name != 'pull_request' && env.APPLY_REQUESTED == 'true' && steps.guard.outcome == 'success'
         env:
@@ -147,7 +179,7 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ inputs.project-ref || secrets.SUPABASE_PROJECT_REF }}
-          # A pull request is allowed to be ahead: main applies what it adds.
+          # A pull request is allowed to be ahead: the integration applies what it adds.
           MIGRATION_DRIFT_STRICT: ${{ github.event_name == 'pull_request' && '0' || '1' }}
         run: node scripts/check-migration-drift.mjs
 

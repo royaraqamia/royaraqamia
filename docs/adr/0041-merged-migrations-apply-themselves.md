@@ -83,3 +83,21 @@ slow (a large backfill) should be reviewed as one that competes with the deploy.
 
 A refused migration keeps the drift alert open, and the alert says what to do. Nothing in the applier
 is allowed to close it except a verify step that read the project back.
+
+## Amendment (2026-11-22): one applier, not two
+
+The "only thing" above missed a third writer: the Supabase GitHub integration is connected to this
+repository and applies the same migration files on the push to main. On 97f39d4 both appliers read an
+empty pending list, both inserted `20261225000000_post_published_follower_notifications`, and the
+integration's Supabase Preview check went red with `23505 duplicate key value violates unique
+constraint "schema_migrations_pkey"`. The loser's SQL rolls back with its history insert, so the
+error says nothing about the migration itself.
+
+The decision now is that the integration applies on a push and the workflow does not. Its `Apply`
+step only runs on an explicit `workflow_dispatch` with `apply: true`, as recovery. The workflow still
+plans and vets, then waits for the integration's check before its strict verify reads the history —
+without the wait, verify would report a migration that is only on its way. This keeps the review gate
+in front of the DDL (the integration applies files that were merged) and keeps one writer of
+`schema_migrations` per push. A `supabase/config.toml` with `db.migrations.enabled = false` was
+rejected as the other half of the fix: the CLI honours the same key and would skip `db push` from CI
+too, including the manual recovery path.

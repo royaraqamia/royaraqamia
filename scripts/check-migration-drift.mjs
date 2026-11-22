@@ -5,8 +5,9 @@
  *
  * Two writers keep those two lists, and nothing compared them:
  *
- *   - a pull request adds a file under `supabase/migrations/`, and `supabase db
- *     push` applies it by hand (README, "Run database migrations");
+ *   - a pull request adds a file under `supabase/migrations/`, and the Supabase
+ *     GitHub integration applies it on the push to main (the drift workflow used
+ *     to as well, until the two raced on schema_migrations_pkey);
  *   - the autonomous issue pipeline writes the same SQL to the linked project
  *     through the Supabase MCP `apply_migration` tool, before a human sees the
  *     pull request (`.github/workflows/issue-implementer.yml`).
@@ -221,9 +222,10 @@ export async function main({
   log(`repo files: ${local.length}   project history: ${remote.length}`);
 
   // A pull request is allowed to be ahead: the migration it adds is applied by
-  // main after the merge (docs/supabase.md, "Drift check"). Everything else —
-  // main, the schedule, a dispatch — has to be level, and a recorded version the
-  // repo has no file for is always a failure, wherever it is seen.
+  // the Supabase GitHub integration after the merge (docs/supabase.md,
+  // "Drift check"). Everything else — main, the schedule, a dispatch — has to
+  // be level, and a recorded version the repo has no file for is always a
+  // failure, wherever it is seen.
   const strict = (env.MIGRATION_DRIFT_STRICT ?? '1') !== '0';
 
   // Except one kind of "ahead": a file whose version already sorts behind the
@@ -241,7 +243,7 @@ export async function main({
     log(
       strict
         ? `${missingRemotely.length} migration(s) the project has not applied — production is behind:`
-        : `${missingRemotely.length} migration(s) not applied yet, which main does after the merge:`
+        : `${missingRemotely.length} migration(s) not applied yet, which the integration does after the merge:`
     );
     for (const version of missingRemotely) {
       const file = local.find((m) => m.version === version)?.file ?? `${version}_*.sql`;
@@ -260,7 +262,7 @@ export async function main({
       }
       log(`  Fix: rename each one to a version after ${outOfOrder.newest}.`);
     } else if (strict) {
-      log('  Fix: let main apply it (it does, after the merge), or run supabase db push yourself.');
+      log('  Fix: let the integration apply it after the merge, or run supabase db push yourself.');
     }
   }
 
