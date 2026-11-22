@@ -23,6 +23,15 @@ test here.
 
 ## What is covered
 
+`scheduled_job_health_test.sql` (#1744):
+
+- The health view returns one row per active `cron.job` row, and every active job has a
+  `scheduled_job_expectation` row. A sentinel job inserted without an expectation proves the
+  gap check reports it rather than passing on an empty table.
+- The run-log retention job is scheduled and its 60-day window outlives every declared
+  interval, including the monthly one.
+- The view and the expectation table are readable by `service_role` and not by a member.
+
 `rls_authorization_test.sql`:
 
 - `is_admin()` is false with no email claim, false for a non-allowlisted email, and true

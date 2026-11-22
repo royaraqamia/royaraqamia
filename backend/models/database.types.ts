@@ -3084,6 +3084,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      scheduled_job_expectation: {
+        Row: {
+          expected_interval: string;
+          jobid: number;
+          owner: string | null;
+        };
+        Insert: {
+          expected_interval: string;
+          jobid: number;
+          owner?: string | null;
+        };
+        Update: {
+          expected_interval?: string;
+          jobid?: number;
+          owner?: string | null;
+        };
+        Relationships: [];
+      };
       short_links: {
         Row: {
           client_id: string | null;
@@ -3528,6 +3546,17 @@ export type Database = {
         };
         Relationships: [];
       };
+      scheduled_job_health: {
+        Row: {
+          failures_7d: number;
+          jobid: number;
+          jobname: string | null;
+          last_failure: string | null;
+          last_success: string | null;
+          schedule: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       agent_memory_forget: {
@@ -3948,6 +3977,19 @@ export type Database = {
       schedule_post: {
         Args: { p_post_id: string; p_publish_at: string };
         Returns: string;
+      };
+      scheduled_job_health_rows: {
+        Args: never;
+        Returns: {
+          expected_interval_seconds: number | null;
+          failures_7d: number;
+          jobid: number;
+          jobname: string | null;
+          last_failure: string | null;
+          last_success: string | null;
+          owner: string | null;
+          schedule: string | null;
+        }[];
       };
       send_daily_habit_reminders: { Args: never; Returns: undefined };
       send_recovery_nudges: { Args: never; Returns: undefined };
