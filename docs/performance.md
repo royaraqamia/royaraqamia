@@ -46,6 +46,8 @@ npm run build                  # perf tooling reads .next, so build first
 npm run perf:baseline          # report the current numbers + budget status
 npm run perf:check             # same, but exit 1 on a budget breach (used in CI)
 npm run perf:baseline:update   # re-record perf/baseline.json after an intended change
+npm run perf:weight            # price every surface from the live origin, exit 1 on a breach
+npm run perf:weight:report     # same, but report only
 ```
 
 Point it at other built routes, or a different build directory:
@@ -54,6 +56,14 @@ Point it at other built routes, or a different build directory:
 node scripts/perf-baseline.mjs --routes /,/community,/terms
 node scripts/perf-baseline.mjs --public-dir public
 node scripts/perf-baseline.mjs --json          # machine-readable output
+```
+
+The live mode reads the origin rather than `.next`, so it needs no build:
+
+```bash
+PERF_ORIGIN=https://royaraqamia.com node scripts/perf-baseline.mjs --live --check
+node scripts/perf-baseline.mjs --live --routes /,/notifications   # a subset
+node scripts/perf-baseline.mjs --live --json                      # machine-readable output
 ```
 
 ## Baseline
@@ -87,8 +97,13 @@ tickets measure their wins against.
 
 `perf/budget.json` is the single source of truth for the ceilings, in gzip KB:
 
-- `measure` lists the routes the report covers by default (`--routes` overrides).
+- `measure` lists the routes the **static** report covers by default (`--routes`
+  overrides). The live gate does not read it: its route list comes from
+  `perf/surfaces.json`, so a surface added to the matrix is priced by the next
+  run without anyone remembering to add it to a second list (#1662).
 - `default` applies to every route; `routes.<path>` overrides it per route.
+  A live route that redirects is checked against the ceiling of the document it
+  actually serves, not the one it was requested at.
   Route keys are normalized, so `community`, `/community` and `/community/` all match the same route.
 - Available metrics: `totalGzipKb`, `jsGzipKb`, `cssGzipKb`, `cssRawKb`, `htmlGzipKb`,
   `fontsGzipKb`. All but `cssRawKb` are gzip; `cssRawKb` reads the stylesheets'
@@ -406,12 +421,44 @@ credentials as the paint gate are needed. This is a measurement, not a gate:
 the numbers move with the runner, so compare them against a recorded run rather
 than treating one sample as a regression.
 
+## Live document weight
+
+The static gate reads `.next/server/app/<route>.html`, which only exists for
+prerendered routes. A document rendered per request — `/notifications`,
+`/community`, `/u/<handle>`, `/mcp/apps`, `/chats/new` — has no such file and
+was invisible to the gate while still shipping bytes to users (#1662).
+
+`npm run perf:weight` closes that hole. It derives the concrete path list from
+`perf/surfaces.json`: every declared route is measured, and a dynamic segment
+(`[username]`, `[surah]`, `[code]`) resolves through `weightSamples` in that same
+file. A dynamic pattern with no sample fails `check:surfaces` before the gate
+runs. The command fetches each document and its same-origin assets from
+`PERF_ORIGIN` (default `https://royaraqamia.com`), then prices them with the
+same `extractAssets`, `transferredSize` and bucket rules the build-artifact mode
+uses. One verdict line per route shows the JS weight against its ceiling;
+`--json` emits the full summaries.
+
+Coverage is part of the check, not an afterthought: a route in the matrix that
+does not appear in the output fails the command just as an uncovered `page.tsx`
+fails `check:surfaces`. A route whose anonymous response redirects is priced
+against the final document and the redirect is printed beside its verdict — the
+bytes are real, but the ceiling has to describe what was served. The gate reads
+the deployed origin, so a reduction in a pull request is reflected only after
+that branch is deployed; use the static gate to prove a build-local win.
+
+The ceilings for routes the live gate found over the 260 KB default were raised
+in the pull request that added the gate, each with its 2026-11-22 measurement in
+`perf/budget.json`, per the ratchet policy above. Lower them as those surfaces
+are trimmed rather than treating the new number as a target.
+
 ## CI
 
-The `Code Quality` workflow runs `npm run build` and then `npm run perf:check`,
-so a budget breach fails the pipeline (and therefore blocks a release, which
-gates on Code Quality). To raise a ceiling, change `perf/budget.json` in the
-same PR and justify it there.
+The `Code Quality` workflow runs `npm run build` and then `npm run perf:check`
+for the prerendered routes. It also runs `npm run perf:weight` against the
+public origin, so a budget breach on a per-request surface fails the same
+pipeline (and therefore blocks a release, which gates on Code Quality). To raise
+a ceiling, change `perf/budget.json` in the same PR and paste the measurement
+that justifies it there.
 
 ## Rendering policy
 
@@ -441,10 +488,16 @@ The win here is runtime — paint, compositing and battery — which this tool d
 
 ## Limitations
 
-- **Prerendered routes only.** `--routes` works for routes Next prerenders to
-  `.next/server/app/<path>.html`. A dynamically server-rendered route (for
-  example `/community/[slug]`) has no such artifact and needs a live-server mode,
-  which this tool does not implement.
+- **Static mode: prerendered routes only.** `--routes` works for routes Next
+  prerenders to `.next/server/app/<path>.html`. A dynamically server-rendered
+  route has no such artifact; run `--live` for those. The static route list and
+  the live route list are deliberately separate — `perf:check` keeps measuring
+  the same build artifacts it always has.
+- **Live mode: deployed bytes, anonymous visitor.** `--live` prices the origin's
+  current production documents, not the pull request's unbuilt source, and does
+  not sign in. A route that only renders for a signed-in member is measured as
+  the login redirect that an anonymous visitor receives; its own signed-in
+  bundle still needs `perf:pages` evidence.
 - **Initial request only.** It counts the document plus the subresources its HTML
   references. Chunks pulled in later by client-side navigation or hydration are
   invisible, so it is a faithful proxy for first-load weight, not for everything

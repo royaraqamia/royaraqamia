@@ -83,6 +83,8 @@
     "perf:baseline": "node scripts/perf-baseline.mjs",
     "perf:baseline:update": "node scripts/perf-baseline.mjs --update-baseline",
     "perf:check": "node scripts/perf-baseline.mjs --check",
+    "perf:weight": "node scripts/perf-baseline.mjs --live --check",
+    "perf:weight:report": "node scripts/perf-baseline.mjs --live",
     "check:edge": "node scripts/check-edge-cache.mjs",
     "prune:runs": "node scripts/prune-workflow-runs.mjs",
     "perf:field": "node scripts/perf-field.mjs",

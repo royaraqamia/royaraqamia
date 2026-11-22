@@ -147,6 +147,26 @@ describe('matrix validation', () => {
     expect(errors.some((error) => error.includes('paint budget'))).toBe(true);
   });
 
+  it('demands a weight sample for a dynamic route the live gate must price', () => {
+    const root = makeRepo({ 'app/post/[slug]/page.tsx': '' });
+    const errors = validate({
+      matrix: { surfaces: [surface({ routes: ['/post/[slug]'] })] },
+      repoRoot: root,
+      routes: ['/post/[slug]'],
+    });
+    expect(errors.some((error) => error.includes('weightSamples'))).toBe(true);
+
+    const withSample = validate({
+      matrix: {
+        weightSamples: { '/post/[slug]': '/post/first' },
+        surfaces: [surface({ routes: ['/post/[slug]'] })],
+      },
+      repoRoot: root,
+      routes: ['/post/[slug]'],
+    });
+    expect(withSample).toEqual([]);
+  });
+
   it('ties a paint key to a budget the gate actually runs', () => {
     const root = makeRepo({
       'app/one/page.tsx': '',
