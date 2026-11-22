@@ -10,6 +10,13 @@ import type { PostsRepository } from '@/backend/repositories/blogpress/posts-rep
 export { createPostsRepository };
 import { createMediaRepository } from '@/backend/repositories/blogpress/supabase-media';
 import { getAdminSupabase } from '@/backend/config/supabase';
+import { createFollowsRepository } from '@/backend/repositories/users/follows-repository';
+import { createAdminUsersRepository } from '@/backend/repositories/users/admin-users-repository';
+import {
+  createAdminNotificationProducer,
+  createPostPublishedNotifier,
+  type PostPublishedNotifier,
+} from '@/backend/config/notifications';
 import { BlogpressPostsService } from '@/backend/services/blogpress/posts-service';
 import { BlogpressMediaService } from '@/backend/services/blogpress/media-service';
 
@@ -29,8 +36,28 @@ export function createBlogpressPostsModule(
   const repository = createPostsRepository(supabase);
   return {
     repository,
-    posts: new BlogpressPostsService(repository),
+    posts: new BlogpressPostsService(repository, getPostPublishedNotifier()),
   };
+}
+
+/**
+ * The follow graph and the users table are service-role reads: a publish must
+ * see every follower edge, and the harness emails are the only way to tell a
+ * seeded post from a member's. The producer is built once per process, the same
+ * way `backend/config/follows.ts` builds its `new_follower` producer.
+ */
+let postPublishedNotifier: PostPublishedNotifier | null = null;
+
+function getPostPublishedNotifier(): PostPublishedNotifier {
+  if (postPublishedNotifier) return postPublishedNotifier;
+
+  const admin = getAdminSupabase();
+  postPublishedNotifier = createPostPublishedNotifier({
+    notify: createAdminNotificationProducer(),
+    followersOf: (authorId) => createFollowsRepository(admin).allFollowerIds(authorId),
+    recipientEmailsOf: (ids) => createAdminUsersRepository(admin).findRecipientEmails(ids),
+  });
+  return postPublishedNotifier;
 }
 
 export function createBlogpressAdminPostsModule(): BlogpressPostsModule {

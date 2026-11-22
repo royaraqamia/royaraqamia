@@ -1,9 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { BlogpressPostsService } from '@/backend/services/blogpress/posts-service';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
+import type { PostPublishedNotifier } from '@/backend/config/notifications';
 import type { RestorePostSnapshot } from '@/shared/contracts/blogpress';
 
-function makeRepo(overrides: Partial<PostsRepository> = {}) {
+function makeRepo(
+  overrides: Partial<PostsRepository> = {},
+  onPostPublished?: PostPublishedNotifier
+) {
   const repository: PostsRepository = {
     getPublishedPosts: vi.fn(),
     getPublishedFeed: vi.fn(),
@@ -52,7 +56,7 @@ function makeRepo(overrides: Partial<PostsRepository> = {}) {
   };
   return {
     repository,
-    service: new BlogpressPostsService(repository),
+    service: new BlogpressPostsService(repository, onPostPublished),
   };
 }
 
@@ -97,6 +101,36 @@ describe('BlogpressPostsService publish visibility', () => {
 
     await expect(service.publishPost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
     expect(repository.publishPost).toHaveBeenCalledWith('p-1', 'u-1');
+  });
+
+  it('reports the published post to the follower notifier', async () => {
+    const onPostPublished = vi.fn();
+    const { repository, service } = makeRepo({}, onPostPublished);
+    (repository.createAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'p-9',
+      slug: 'post-abc12345',
+    });
+
+    await service.createAndPublishPost('u-1', postData);
+
+    expect(onPostPublished).toHaveBeenCalledWith({
+      postId: 'p-9',
+      authorId: 'u-1',
+      slug: 'post-abc12345',
+    });
+  });
+
+  it('does not notify on a bulk publish', async () => {
+    const onPostPublished = vi.fn();
+    const { repository, service } = makeRepo({}, onPostPublished);
+    (repository.bulkActionPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      affected: 1,
+      slugs: ['post-1'],
+    });
+
+    await service.bulkActionPosts(['p-1'], 'u-1', 'publish');
+
+    expect(onPostPublished).not.toHaveBeenCalled();
   });
 
   it('delegates bulk publish to the repository', async () => {

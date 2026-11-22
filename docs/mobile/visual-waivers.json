@@ -67,6 +67,12 @@
       "reason": "The web change is confined to the failed-read face and to handing a failed loader read (null) to the surface's own client read. The gate records only the `at-rest` state with a live board: the title, freshness line and converters keep the same boxes, copy and classes, and the new retry control sits on the failure branch the capture never draws. No recorded box or pixel can move; #1743 covers the failure face in its own Playwright spec.",
       "issue": "#1743",
       "until": "2026-12-22"
+    },
+    {
+      "surface": "notifications",
+      "reason": "The web change only touches rows of the new `post_published` type: a screen-reader-only press label and that type's icon. The recorded Alerts states seed existing types, so no recorded row draws the new label or glyph, and every box, colour and visible word stays the same. The type's press and destination are asserted in the notification-target and notifications-view tests in #1752.",
+      "issue": "#1752",
+      "until": "2026-12-22"
     }
   ]
 }

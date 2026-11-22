@@ -15,6 +15,7 @@ export const NotificationTypeSchema = z.enum([
   'subscription_request',
   'chat_request',
   'new_follower',
+  'post_published',
 ]);
 
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
@@ -66,6 +67,11 @@ export const NOTIFICATION_DESTINATIONS: Record<NotificationType, NotificationDes
     metadataKey: 'username',
     fallbackPath: '/notifications?tab=alerts',
   },
+  post_published: {
+    path: '/community/{slug}',
+    metadataKey: 'slug',
+    fallbackPath: '/community',
+  },
 };
 
 /** The path one row leads to, or `null` when the row only marks itself read. */
@@ -95,6 +101,7 @@ export const NotificationMetadataSchema = z.object({
   certificateCode: z.string().optional(),
   conversationId: z.string().optional(),
   username: z.string().optional(),
+  slug: z.string().optional(),
 });
 
 export const NotificationSchema = z.object({

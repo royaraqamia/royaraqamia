@@ -18,6 +18,7 @@ object NotificationsCopy {
     const val MARK_ALL_READ = "تحديد الكل كمقروء"
     const val DELETE_LABEL = "حذف الإشعار"
     const val UNREAD_LABEL = "غير مقروء"
+    const val POST_PUBLISHED_OPEN = "قراءة المنشور"
     const val SIGN_IN_TITLE = "سجِّل الدُّخول لمتابعة إشعاراتك"
     const val LIST_ERROR = "تعذّر تحميل الإشعارات. أعد المحاولة."
     const val RETRY = "إعادة المحاولة"

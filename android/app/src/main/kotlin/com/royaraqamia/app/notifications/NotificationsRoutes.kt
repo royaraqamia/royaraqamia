@@ -43,6 +43,8 @@ object NotificationsRoutes {
                 item.metadata.conversationId?.takeIf { it.isNotBlank() }?.let { "/chats/${encode(it.trim())}" } ?: "/notifications?tab=chats"
             NotificationsResponseNotificationsItemType.NEW_FOLLOWER ->
                 item.metadata.username?.takeIf { it.isNotBlank() }?.let { "/u/${encode(it.trim())}" } ?: "/notifications?tab=alerts"
+            NotificationsResponseNotificationsItemType.POST_PUBLISHED ->
+                item.metadata.slug?.takeIf { it.isNotBlank() }?.let { "/community/${encode(it.trim())}" } ?: "/community"
         }
 
     private fun encode(value: String): String =

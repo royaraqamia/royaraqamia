@@ -45,6 +45,7 @@ enum class NotificationsResponseNotificationsItemType {
     @SerialName("subscription_request") SUBSCRIPTION_REQUEST,
     @SerialName("chat_request") CHAT_REQUEST,
     @SerialName("new_follower") NEW_FOLLOWER,
+    @SerialName("post_published") POST_PUBLISHED,
 }
 
 @Serializable
@@ -52,4 +53,5 @@ data class NotificationsResponseNotificationsItemMetadata(
     val certificateCode: String? = null,
     val conversationId: String? = null,
     val username: String? = null,
+    val slug: String? = null,
 )
