@@ -246,6 +246,13 @@ the two paths still have separate triggers.
       stay `SECURITY DEFINER` because it reads `consultation_booking_slots`, which has RLS
       enabled with no policies (deny-all), so an `INVOKER` version would treat every slot as
       free. It is the booking flow's client read and is revoked from `anon`/`public`.
+  - `anon_security_definer_function_executable` on `post_engagement_counts` and
+    `follow_counts` is deliberate (20261220000000, #1690). Both edge tables are ungranted
+    to `anon`, so a signed-out feed card or profile header can only draw the number
+    through a definer function; revoking the grant would delete the feature. Each body
+    now filters to the public projection - a published, community-visible, live post
+    and a verified, unhidden member - and
+    `supabase/tests/counter_rpc_visibility_test.sql` asserts both directions.
   - `auth_leaked_password_protection` — **cannot be enabled on the current plan.** Supabase's
     HaveIBeenPwned check is Pro-plan-and-up only (the Management API rejects
     `password_hibp_enabled` with "available on Pro Plans and up"). The app enforces the check
