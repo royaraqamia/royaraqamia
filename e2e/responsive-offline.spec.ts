@@ -63,6 +63,33 @@ function collectImageFailures(page: Page): string[] {
   return failures;
 }
 
+/**
+ * Waits for the worker's background route refresh to reach every path (#489).
+ *
+ * The install fetches only the fixed shell; the build's route documents arrive
+ * in idle windows after activation, so a spec that goes offline straight after
+ * the first load is racing a refresh that has not finished. Polling the worker's
+ * own cache is the honest signal: the page cannot know when the list is done,
+ * and the assertion below is exactly "the shell is on this device".
+ */
+async function waitForCachedRoutes(page: Page, paths: string[]): Promise<void> {
+  await expect
+    .poll(
+      () =>
+        page.evaluate(async (routes) => {
+          const name = (await caches.keys()).find((key) => key.startsWith('royaraqamia-data-'));
+          if (!name) return false;
+          const cache = await caches.open(name);
+          for (const route of routes) {
+            if (!(await cache.match(route))) return false;
+          }
+          return true;
+        }, paths),
+      { timeout: 90_000, intervals: [250, 500, 1000] }
+    )
+    .toBe(true);
+}
+
 test('a visited public page paints offline with its heading and content', async ({
   page,
   context,
@@ -133,6 +160,11 @@ test('an offline in-session account navigation paints; a cold reload is now the 
     page.locator(`nav[aria-label="التَّنقُّل السُّفليّ"] a[href="${path}"]`);
 
   await gotoUnderWorkerControl(page, '/');
+
+  // The cold reload at the end of this test needs the `/account` document the
+  // worker refreshes in its idle windows (#489), not only the RSC payload the
+  // in-session navigation below leaves in the router cache.
+  await waitForCachedRoutes(page, ['/account']);
 
   // Warm `/account` online. Its document rides the SWR cache since #448
   // (ADR-0031's amendment): the shell is static and carries nothing
