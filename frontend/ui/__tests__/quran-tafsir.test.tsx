@@ -75,9 +75,10 @@ describe('the tafsir in the reader', () => {
     expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
-  it('draws no control before hydration, so nothing is promised without JavaScript', () => {
-    // A client component is rendered on the server too. The markup that arrives
-    // before this component is live must not carry a button that cannot answer.
+  it('draws a link to the panel before hydration, not a button that cannot answer', () => {
+    // The first paint owns the control's box (#1738). The server's link has the
+    // same class and text as the button that replaces it, so the upgrade moves
+    // nothing — and a reader without JavaScript gets a real address.
     const markup = renderToStaticMarkup(
       <QuranTafsirProvider tafsir={REF}>
         <AyahTafsir ayah={1} />
@@ -85,6 +86,9 @@ describe('the tafsir in the reader', () => {
     );
 
     expect(markup).not.toContain('<button');
+    expect(markup).toContain('href="?tafsir=1#ayah-1"');
+    expect(markup).toContain('class="ayah-tafsir-toggle"');
+    expect(markup).toContain('التفسير');
   });
 
   it('fetches the sura once, on the first open, under an immutable URL', async () => {

@@ -387,17 +387,19 @@ ones arrive with #555.
 
 ## Page-level lab evidence
 
-The paint gate measures the app's own `content` mark, which only the local-store
-dashboards write. The four main pages are server-rendered or read on the client,
-so they have no such mark; `e2e/perf-pages.spec.ts` covers them instead:
+The paint gate measures the app's own `content` mark, which the local-store
+dashboards and the server-rendered Quran reader write. The four main pages are
+server-rendered or read on the client without that mark, so
+`e2e/perf-pages.spec.ts` covers them instead:
 
 ```bash
 npm run perf:pages
 ```
 
 It builds and serves a production document, then measures `/`, the habitflow
-tab, `/community`, `/community/explore`, `/account` and `/notifications` under
-4x CPU throttling and a ~1.6 Mbps / 150 ms link at 390x844. LCP, CLS, long
+tab, `/community`, `/community/explore`, `/account`, `/notifications` and the
+reader's `/quran/1` and `/quran/2` under 4x CPU throttling and a ~1.6 Mbps /
+150 ms link at 390x844. LCP, CLS, long
 tasks, TTFB and wire bytes are written to `node_modules/.playwright/perf-pages.json`
 and printed per route. Signed-in routes use the E2E account, so the same
 credentials as the paint gate are needed. This is a measurement, not a gate:

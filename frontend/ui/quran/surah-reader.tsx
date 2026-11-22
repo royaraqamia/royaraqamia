@@ -7,6 +7,7 @@ import { AyahAnchorHighlight } from './ayah-highlight';
 import { AyahBoundary } from './ayah-boundary';
 import { AyahMarkButton } from './ayah-mark-button';
 import { AyahTafsir, QuranTafsirProvider } from './ayah-tafsir';
+import { ReaderContentMark } from './reader-content-mark';
 import { QURAN_SURAH_COPY } from './quran-surah-copy';
 import type { Surah, SurahSummary } from '@/shared/contracts/quran';
 import type { QuranAyahMarks } from '@/shared/contracts/quran-pages';
@@ -62,6 +63,7 @@ export function SurahReader({ surah, summary, audio, tafsir, marks }: SurahReade
         audio && 'pb-32 sm:pb-36'
       )}
     >
+      <ReaderContentMark />
       {/* One hero gradient, defined once: a saved Ayah's mark is filled with it,
           and every mark on the page points at this definition by id. */}
       <svg aria-hidden="true" focusable="false" className="absolute size-0">

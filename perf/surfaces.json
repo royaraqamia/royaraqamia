@@ -96,8 +96,9 @@
       "read": "store",
       "write": "outbox",
       "shell": "swr",
-      "specs": ["e2e/quran-reader.spec.ts"],
-      "issue": "#559"
+      "specs": ["e2e/quran-reader.spec.ts", "e2e/quran-reader-paint.spec.ts"],
+      "paint": "quran-surah",
+      "issue": "#559, #1738"
     },
     {
       "id": "athkar",

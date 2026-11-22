@@ -55,6 +55,12 @@
       "reason": "The only web change is the fill of the latest-digest link shown when the archive has no digest for the requested date (#1669). Both recorded states render a seeded digest or the unavailable block, so no recorded box or pixel contains the changed control.",
       "issue": "#1669",
       "until": "2026-12-22"
+    },
+    {
+      "surface": "quran",
+      "reason": "The only change in the gated web file is a null-rendering component that marks the server-rendered sura's content for the paint gate. The tafsir control itself keeps the same class, box and word: a link before hydration and the same-sized button after it. The Mushaf face is still loaded in the visual capture, which waits for document.fonts.ready on an unthrottled link; the optional display only keeps the fallback on a first visit slow enough to miss the block period, a state the capture does not record. No box, pixel, font or word the contract measures can move.",
+      "issue": "#1738",
+      "until": "2026-12-22"
     }
   ]
 }

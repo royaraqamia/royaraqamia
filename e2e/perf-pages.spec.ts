@@ -4,7 +4,9 @@ import { dirname } from 'node:path';
 import { signIn } from './sign-in';
 
 /**
- * User-felt performance evidence for the four main pages and the first tab.
+ * User-felt performance evidence for the four main pages, the first tab and the
+ * Quran reader's own route. The reader is a reading surface: a late control or a
+ * swapping face moves the text under the reader (#1738), so it is measured here.
  *
  * A production build, a mid-tier phone's worth of CPU and network throttling,
  * and one JSON record per route. This is the lab half of the runtime budget in
@@ -25,6 +27,8 @@ const ROUTES = [
   { id: 'community-explore', path: '/community/explore', auth: false },
   { id: 'account', path: '/account', auth: true },
   { id: 'notifications', path: '/notifications', auth: true },
+  { id: 'quran-1', path: '/quran/1', auth: false },
+  { id: 'quran-2', path: '/quran/2', auth: false },
 ] as const;
 
 test.skip(!ENABLED, 'requires PERF_PAGES=1');
