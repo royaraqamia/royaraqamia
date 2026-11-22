@@ -54,6 +54,11 @@ keystore secrets below.
 - Validate all external inputs via Zod (`shared/contracts`)
 - Turnstile on auth forms
 - Upstash rate limiting
+- Least-privilege grants alongside RLS: policies choose rows, grants decide whether a role reaches
+  the object at all. New `public` objects get no implicit grant for `anon`/`authenticated`, and the
+  two public roles hold no TRUNCATE, REFERENCES, TRIGGER or MAINTAIN on existing tables. Writes a
+  client must not perform stay behind a SECURITY DEFINER RPC. `pg_net` stays in `public` because it
+  is not relocatable, but its `net.*` functions have no PUBLIC EXECUTE (#1741).
 - Strict TS config (`noUncheckedIndexedAccess`, `noImplicitReturns`, `noUnusedLocals/Parameters`)
 - Keep DB/SDK/3rd-party off the UI boundary
 

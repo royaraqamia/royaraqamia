@@ -44,6 +44,10 @@ test here.
 - `short_links` writes are service-role only: neither `anon` nor `authenticated` holds
   `INSERT`/`UPDATE`/`DELETE`, no write policy is left, and `upsert_short_link` refuses both
   roles while `service_role` keeps execute. The owner-scoped `short_links_read` stays.
+- The capability layer beside RLS (#1741): neither public role holds TRUNCATE/REFERENCES/
+  TRIGGER/MAINTAIN on a public table, no stale default ACL grants them on future objects,
+  and no `net.*` function is executable by them while the owner keeps EXECUTE. The public
+  REST projections keep their grants (`posts` readable to anon, `users` not).
 
 `community_follows_test.sql` (#1379):
 
