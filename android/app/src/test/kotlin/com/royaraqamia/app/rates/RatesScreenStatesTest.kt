@@ -1,6 +1,11 @@
 package com.royaraqamia.app.rates
 
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import com.royaraqamia.app.contracts.generated.RatesBoard
 import com.royaraqamia.app.contracts.generated.RatesBoardCurrenciesItem
@@ -53,6 +58,32 @@ class RatesScreenStatesTest {
                 ),
             metals = emptyList(),
         )
+
+    @Test
+    fun `the conversion answer is a polite live region`() {
+        compose.setContent {
+            RoyaraqamiaTheme {
+                RatesScreen(state = RatesUiState.Live(board), onRetry = {})
+            }
+        }
+
+        compose.onNodeWithTag(RatesMetrics.RESULT).assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite)
+        )
+    }
+
+    @Test
+    fun `the metals answer is a polite live region too`() {
+        compose.setContent {
+            RoyaraqamiaTheme {
+                RatesScreen(state = RatesUiState.Live(board), onRetry = {})
+            }
+        }
+
+        compose.onNodeWithTag("rates-metal-result").assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite)
+        )
+    }
 
     @Test
     fun `a stale snapshot says it is stale`() {
