@@ -49,6 +49,13 @@
       "tapNote": "Reading is not a local write: a position is saved off the paint path, so there is no optimistic frame to time."
     },
     {
+      "id": "quran-surah",
+      "path": "/quran/1",
+      "auth": false,
+      "ceiling": { "cold": 2200, "warm": 450 },
+      "tapNote": "The sura's text is server-rendered and marks its own content (#1738). Reading is not a local write — the tafsir address and the saved position stay off the paint path — so there is no optimistic frame to time."
+    },
+    {
       "id": "notes",
       "path": "/?tab=/notes",
       "auth": false,

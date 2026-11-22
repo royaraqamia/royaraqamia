@@ -18,6 +18,12 @@ import localFont from 'next/font/local';
  * modification. The licence ships beside it at
  * `public/fonts/KFGQPC HAFS Uthmanic Script/EULA.txt`; provenance is in
  * `SOURCE.txt`. Amiri Quran is under the OFL, copied beside it.
+ *
+ * `display: optional` rather than `swap` (#1738): the face is preloaded, but on
+ * a mid-tier link it lands after first paint, and the Arial fallback has no
+ * Arabic metrics to match it. A swap then rebreaks every Ayah line. Optional
+ * gives the face one short block period; if it misses, the fallback stays for
+ * the load and the cached face is used from the next one. Nothing reflows.
  */
 
 /**
@@ -41,7 +47,7 @@ export const kfgqpcHafs = localFont({
     },
   ],
   variable: '--font-quran',
-  display: 'swap',
+  display: 'optional',
   adjustFontFallback: 'Arial',
   declarations: [
     {

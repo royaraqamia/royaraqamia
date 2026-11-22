@@ -34,8 +34,11 @@ import { quranTafsirScope } from './quran-screen-scope';
  * state stay where the file lives. The hash (`#ayah-N`) is kept when the query
  * changes, so linking an Ayah and opening its tafsir are one address.
  *
- * Without JavaScript the button is not rendered at all: the reader gets the text
- * it has always had, rather than a control that cannot answer.
+ * That address is also what the server draws. Before hydration the control is an
+ * `<a href="?tafsir=N#ayah-N">`; once the provider is live it becomes the button
+ * that toggles in place. Both wear the same class and box, so the upgrade moves
+ * nothing (#1738) — and a reader without JavaScript gets a link to a real view
+ * rather than a button that cannot answer.
  */
 
 interface TafsirContextValue {
@@ -141,20 +144,31 @@ export function QuranTafsirProvider({
 }
 
 /**
- * One Ayah's tafsir control. Renders the button, and the body it opens.
+ * One Ayah's tafsir control. The server draws a link to the panel's address; the
+ * live component replaces it with the button that opens it, and with the body it
+ * opens.
  *
  * Outside a provider — a detached render, a preview — it draws nothing: there is
  * no sura file to offer, so there is nothing truthful to press.
  */
 export function AyahTafsir({ ayah }: { ayah: number }) {
   const context = useContext(TafsirContext);
-  // The control is drawn only once this component is live. A client component is
-  // still rendered on the server, and a button that cannot answer is worse than no
-  // button: without JavaScript the reader keeps the text it has always had.
+  // A client component is also rendered on the server. Both renders start with
+  // the link, so hydration matches; the effect then upgrades it in place.
   const [live, setLive] = useState(false);
   useEffect(() => setLive(true), []);
 
-  if (!context || !live) return null;
+  if (!context) return null;
+
+  if (!live) {
+    return (
+      <div className="ayah-tafsir" data-tafsir-ayah={ayah}>
+        <a href={`?tafsir=${ayah}#ayah-${ayah}`} className="ayah-tafsir-toggle">
+          التفسير
+        </a>
+      </div>
+    );
+  }
 
   const { tafsir, openAyah, loading, failed, bodies, toggle, retry } = context;
   const open = openAyah === ayah;
