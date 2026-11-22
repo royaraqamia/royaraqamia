@@ -14,7 +14,7 @@
 
 Flow: `controller → service → repository/client`
 
-- **Controllers** are thin: parse → call ONE service → shape response. No business logic.
+- **Controllers** are thin: parse → call ONE service → shape response. No business logic. The controller boundary is enforced by `layers/no-cross-layer-import` (`eslint-rules/layering.mjs`).
 - **Services** depend on interfaces, never HTTP/SQL directly.
 - **Repositories** are the only code that knows the DB.
 - All DI wiring centralized in `backend/config/` factory functions.

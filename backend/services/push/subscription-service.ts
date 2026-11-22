@@ -37,6 +37,11 @@ export class PushSubscriptionService {
     await this.trim(userId, input.endpoint);
   }
 
+  /** Drops one endpoint, scoped to the user the session supplied. */
+  async unsubscribe(userId: string, endpoint: string): Promise<void> {
+    await this.repository.removeByEndpoint(userId, endpoint);
+  }
+
   /**
    * Drops the oldest rows past the cap. Best-effort on purpose: the endpoint
    * the caller just stored is already saved, so a failed trim must not turn a

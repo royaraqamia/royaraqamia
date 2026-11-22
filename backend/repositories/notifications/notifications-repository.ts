@@ -8,6 +8,7 @@ export interface NotificationBroadcastInput {
 }
 
 export interface NotificationRepository {
+  findByIds(ids: string[]): Promise<Notification[]>;
   findByUserId(userId: string, limit?: number, offset?: number): Promise<Notification[]>;
   findUnreadCount(userId: string): Promise<number>;
   create(input: NotificationCreateInput): Promise<Notification | null>;

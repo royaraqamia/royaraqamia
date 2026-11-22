@@ -9,7 +9,7 @@ import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { isSameOrigin } from '@/backend/transport/http';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { McpConnectError } from '@/backend/services/mcp/marketplace/connect-service';
-import { McpRemoteError } from '@/backend/clients/mcp-remote';
+import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
 import { logger } from '@/backend/shared/logger';
 import {
   McpApiKeySchema,

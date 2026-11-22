@@ -1,16 +1,13 @@
 import { timingSafeEqual } from 'crypto';
 import { getAuthUser } from '@/backend/middleware/auth-guard';
-import { createPushSubscriptionsRepository } from '@/backend/repositories/push/supabase-repository';
-import { createDevicePushTokensRepository } from '@/backend/repositories/push/supabase-device-tokens-repository';
 import { checkRateLimit, getRateLimitDecision } from '@/backend/config/rate-limiter';
 import {
-  createPushNotifier,
   createFcmPushService,
+  createPushDeviceService,
   createPushSubscriptionService,
+  createPushWebhookService,
   runAfter,
 } from '@/backend/config/push';
-import { getAdminSupabase } from '@/backend/config/supabase';
-import { mapWithConcurrency } from '@/backend/services/push/dispatch';
 import { env } from '@/backend/config/env';
 import {
   PushDeviceTokenSchema,
@@ -22,7 +19,6 @@ import {
 } from '@/shared/contracts/push';
 import { isSameOrigin } from '@/backend/transport/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import { damascusDateKey } from '@/shared/time';
 
 const SUBSCRIBE_RATE_LIMIT = 20;
 const SUBSCRIBE_RATE_WINDOW_MS = 3600_000;
@@ -30,7 +26,6 @@ const DEVICE_RATE_LIMIT = 20;
 const DEVICE_RATE_WINDOW_MS = 3600_000;
 const WAKE_RATE_LIMIT = 60;
 const WAKE_RATE_WINDOW_MS = 3600_000;
-const WEBHOOK_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /** `Retry-After` is whole seconds, and never 0: a client must wait at least a moment. */
 function retryAfterSeconds(retryAfterMs: number): string {
@@ -109,10 +104,7 @@ export async function unsubscribePush(body: unknown, headers: Headers): Promise<
       return jsonResult(400, { success: false, error: 'بيانات إلغاء الاشتراك غير صحيحة' });
     }
 
-    await createPushSubscriptionsRepository(supabase).removeByEndpoint(
-      user.id,
-      parsed.data.endpoint
-    );
+    await createPushSubscriptionService(supabase).unsubscribe(user.id, parsed.data.endpoint);
 
     return jsonResult(200, { success: true });
   } catch {
@@ -152,7 +144,7 @@ export async function registerDeviceToken(body: unknown, headers: Headers): Prom
       return jsonResult(429, { success: false, error: 'تم تجاوز حد تسجيل الأجهزة' });
     }
 
-    await createDevicePushTokensRepository(getAdminSupabase()).upsert(user.id, {
+    await createPushDeviceService().register(user.id, {
       token: parsed.data.token,
       platform: parsed.data.platform,
       userAgent: headers.get('user-agent'),
@@ -184,7 +176,7 @@ export async function unregisterDeviceToken(body: unknown, headers: Headers): Pr
       return jsonResult(400, { success: false, error: 'بيانات الجهاز غير صحيحة' });
     }
 
-    await createDevicePushTokensRepository(supabase).removeByToken(user.id, parsed.data.token);
+    await createPushDeviceService(supabase).unregister(user.id, parsed.data.token);
 
     return jsonResult(200, { success: true });
   } catch {
@@ -237,12 +229,12 @@ export async function wakeDevices(body: unknown, headers: Headers): Promise<Http
 
 /**
  * Webhook for DB-side producers (pg_net → habit reminders). The DB POSTs the
- * affected user ids; this verifies the shared bearer token, guards against
- * pg_net retries with a per-user per-day dedupe, then fans out the push.
+ * ids of the bell rows it just wrote; this verifies the shared bearer token and
+ * hands them to one service that dedupes per user per day and fans out the push.
  *
- * "Once a day" is a Damascus day, the day the reminder selection fires on: on
- * the UTC day the key would flip at 03:00 local, handing a user a second
- * reminder in one day — or collapsing two days into one.
+ * The day is Damascus, the one the reminder selection fires on: on the UTC day
+ * the key would flip at 03:00 local, handing a user a second reminder in one day
+ * — or collapsing two days into one.
  */
 export async function webhookPush(body: unknown, headers: Headers): Promise<HttpResult> {
   try {
@@ -263,31 +255,9 @@ export async function webhookPush(body: unknown, headers: Headers): Promise<Http
       return jsonResult(400, { success: false, error: 'بيانات غير صحيحة' });
     }
 
-    const uniqueIds = Array.from(new Set(parsed.data.user_ids));
-    const allowedIds: string[] = [];
-    // Bounded concurrency: a reminder run can fan out to hundreds of users and
-    // each dedupe check is an Upstash round-trip; sequential awaits would
-    // stretch past the function duration limit at scale.
-    await mapWithConcurrency(uniqueIds, 10, async (userId) => {
-      const allowed = await checkRateLimit(
-        `push:habit:${userId}:${damascusDateKey()}`,
-        1,
-        WEBHOOK_RATE_WINDOW_MS
-      );
-      if (allowed) allowedIds.push(userId);
-    });
+    const { notified } = await createPushWebhookService().handle(parsed.data.notification_ids);
 
-    if (allowedIds.length > 0) {
-      runAfter(() => {
-        void createPushNotifier().sendToUsers(allowedIds, {
-          title: 'تذكير بعادتك اليومية',
-          type: 'habit_reminder',
-          url: '/habitflow',
-        });
-      });
-    }
-
-    return jsonResult(202, { success: true, notified: allowedIds.length });
+    return jsonResult(202, { success: true, notified });
   } catch {
     return jsonResult(500, { success: false, error: 'فشل معالجة طلب الإشعارات' });
   }

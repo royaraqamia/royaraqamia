@@ -1,14 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGetAuthUser = vi.fn();
 const mockCheckRateLimit = vi.fn();
 const mockGetRateLimitDecision = vi.fn();
 const mockSubscribe = vi.fn();
-const mockRemoveByEndpoint = vi.fn();
-const mockCreatePushSubscriptionsRepository = vi.fn();
-const mockDeviceUpsert = vi.fn();
-const mockDeviceRemoveByToken = vi.fn();
-const mockSendToUsers = vi.fn();
+const mockUnsubscribe = vi.fn();
+const mockCreatePushSubscriptionService = vi.fn();
+const mockDeviceRegister = vi.fn();
+const mockDeviceUnregister = vi.fn();
+const mockCreatePushDeviceService = vi.fn();
+const mockWebhookHandle = vi.fn();
 const mockSendWake = vi.fn();
 const mockEnv: { origin: string; pushWebhookToken?: string } = {
   origin: 'https://royaraqamia.com',
@@ -30,30 +31,21 @@ vi.mock('@/backend/config/rate-limiter', () => ({
   getRateLimitDecision: (...args: unknown[]) => mockGetRateLimitDecision(...args),
 }));
 
-vi.mock('@/backend/repositories/push/supabase-repository', () => ({
-  createPushSubscriptionsRepository: (...args: unknown[]) =>
-    mockCreatePushSubscriptionsRepository(...args),
-}));
-
-vi.mock('@/backend/repositories/push/supabase-device-tokens-repository', () => ({
-  createDevicePushTokensRepository: () => ({
-    upsert: mockDeviceUpsert,
-    removeByToken: mockDeviceRemoveByToken,
-  }),
-}));
-
-vi.mock('@/backend/config/supabase', () => ({
-  getAdminSupabase: () => ({ kind: 'admin-client' }),
-}));
-
 vi.mock('@/backend/config/env', () => ({
   env: mockEnv,
 }));
 
 vi.mock('@/backend/config/push', () => ({
-  createPushNotifier: () => ({ sendToUsers: mockSendToUsers }),
   createFcmPushService: () => ({ sendWakeToUser: mockSendWake }),
-  createPushSubscriptionService: () => ({ subscribe: mockSubscribe }),
+  createPushSubscriptionService: (client?: unknown) => {
+    mockCreatePushSubscriptionService(client);
+    return { subscribe: mockSubscribe, unsubscribe: mockUnsubscribe };
+  },
+  createPushDeviceService: (client?: unknown) => {
+    mockCreatePushDeviceService(client);
+    return { register: mockDeviceRegister, unregister: mockDeviceUnregister };
+  },
+  createPushWebhookService: () => ({ handle: mockWebhookHandle }),
   runAfter: (fn: () => void) => void fn(),
 }));
 
@@ -85,13 +77,10 @@ describe('push controller', () => {
     mockCheckRateLimit.mockResolvedValue(true);
     mockGetRateLimitDecision.mockResolvedValue({ allowed: true, retryAfterMs: 0 });
     mockSubscribe.mockResolvedValue(undefined);
-    mockRemoveByEndpoint.mockResolvedValue(undefined);
-    mockCreatePushSubscriptionsRepository.mockReturnValue({
-      upsert: mockSubscribe,
-      removeByEndpoint: mockRemoveByEndpoint,
-    });
-    mockDeviceUpsert.mockResolvedValue(undefined);
-    mockDeviceRemoveByToken.mockResolvedValue(undefined);
+    mockUnsubscribe.mockResolvedValue(undefined);
+    mockDeviceRegister.mockResolvedValue(undefined);
+    mockDeviceUnregister.mockResolvedValue(undefined);
+    mockWebhookHandle.mockResolvedValue({ notified: 1 });
     mockSendWake.mockResolvedValue(undefined);
   });
 
@@ -221,7 +210,7 @@ describe('push controller', () => {
       const result = await unsubscribePush({ endpoint: validBody.endpoint }, sameOriginHeaders());
 
       expect(result.status).toBe(401);
-      expect(mockRemoveByEndpoint).not.toHaveBeenCalled();
+      expect(mockUnsubscribe).not.toHaveBeenCalled();
     });
 
     it('rejects cross-site requests with 403', async () => {
@@ -230,7 +219,7 @@ describe('push controller', () => {
       const result = await unsubscribePush({ endpoint: validBody.endpoint }, crossOriginHeaders());
 
       expect(result.status).toBe(403);
-      expect(mockRemoveByEndpoint).not.toHaveBeenCalled();
+      expect(mockUnsubscribe).not.toHaveBeenCalled();
     });
 
     it('returns 400 for an invalid endpoint', async () => {
@@ -239,7 +228,7 @@ describe('push controller', () => {
       const result = await unsubscribePush({ endpoint: 'garbage' }, sameOriginHeaders());
 
       expect(result.status).toBe(400);
-      expect(mockRemoveByEndpoint).not.toHaveBeenCalled();
+      expect(mockUnsubscribe).not.toHaveBeenCalled();
     });
 
     it('deletes scoped to the session user', async () => {
@@ -248,7 +237,7 @@ describe('push controller', () => {
       const result = await unsubscribePush({ endpoint: validBody.endpoint }, sameOriginHeaders());
 
       expect(result.status).toBe(200);
-      expect(mockRemoveByEndpoint).toHaveBeenCalledWith('u-1', validBody.endpoint);
+      expect(mockUnsubscribe).toHaveBeenCalledWith('u-1', validBody.endpoint);
     });
 
     it('keeps the caller-scoped client: RLS is the owner guarantee', async () => {
@@ -256,7 +245,7 @@ describe('push controller', () => {
 
       await unsubscribePush({ endpoint: validBody.endpoint }, sameOriginHeaders());
 
-      expect(mockCreatePushSubscriptionsRepository).toHaveBeenCalledWith({});
+      expect(mockCreatePushSubscriptionService).toHaveBeenCalledWith({});
     });
   });
 
@@ -335,7 +324,7 @@ describe('push controller', () => {
       const result = await registerDeviceToken(deviceBody, sameOriginHeaders());
 
       expect(result.status).toBe(401);
-      expect(mockDeviceUpsert).not.toHaveBeenCalled();
+      expect(mockDeviceRegister).not.toHaveBeenCalled();
     });
 
     it('rejects cross-site requests with 403', async () => {
@@ -344,7 +333,7 @@ describe('push controller', () => {
       const result = await registerDeviceToken(deviceBody, crossOriginHeaders());
 
       expect(result.status).toBe(403);
-      expect(mockDeviceUpsert).not.toHaveBeenCalled();
+      expect(mockDeviceRegister).not.toHaveBeenCalled();
     });
 
     it('returns 400 for an invalid token', async () => {
@@ -355,7 +344,7 @@ describe('push controller', () => {
       expect(
         (await registerDeviceToken({ token: 'x', platform: 'windows' }, sameOriginHeaders())).status
       ).toBe(400);
-      expect(mockDeviceUpsert).not.toHaveBeenCalled();
+      expect(mockDeviceRegister).not.toHaveBeenCalled();
     });
 
     it('returns 429 when the rate limit is exceeded', async () => {
@@ -366,7 +355,7 @@ describe('push controller', () => {
 
       expect(result.status).toBe(429);
       expect(mockCheckRateLimit).toHaveBeenCalledWith('push:device:u-1', 20, 3600_000);
-      expect(mockDeviceUpsert).not.toHaveBeenCalled();
+      expect(mockDeviceRegister).not.toHaveBeenCalled();
     });
 
     it('registers the token against the session user with the default platform', async () => {
@@ -375,7 +364,7 @@ describe('push controller', () => {
       const result = await registerDeviceToken(deviceBody, sameOriginHeaders());
 
       expect(result.status).toBe(200);
-      expect(mockDeviceUpsert).toHaveBeenCalledWith('u-1', {
+      expect(mockDeviceRegister).toHaveBeenCalledWith('u-1', {
         token: deviceBody.token,
         platform: 'android',
         userAgent: 'Chrome/128',
@@ -387,7 +376,7 @@ describe('push controller', () => {
 
       await registerDeviceToken({ ...deviceBody, user_id: 'attacker-id' }, sameOriginHeaders());
 
-      expect(mockDeviceUpsert.mock.calls[0]?.[0]).toBe('u-1');
+      expect(mockDeviceRegister.mock.calls[0]?.[0]).toBe('u-1');
     });
 
     it('accepts an explicit platform', async () => {
@@ -395,14 +384,14 @@ describe('push controller', () => {
 
       await registerDeviceToken({ ...deviceBody, platform: 'ios' }, sameOriginHeaders());
 
-      expect(mockDeviceUpsert).toHaveBeenCalledWith(
+      expect(mockDeviceRegister).toHaveBeenCalledWith(
         'u-1',
         expect.objectContaining({ platform: 'ios' })
       );
     });
 
     it('returns 500 when the repository write fails', async () => {
-      mockDeviceUpsert.mockRejectedValue(new Error('db down'));
+      mockDeviceRegister.mockRejectedValue(new Error('db down'));
       const { registerDeviceToken } = await importControllers();
 
       expect((await registerDeviceToken(deviceBody, sameOriginHeaders())).status).toBe(500);
@@ -419,7 +408,7 @@ describe('push controller', () => {
       const result = await unregisterDeviceToken(deviceBody, sameOriginHeaders());
 
       expect(result.status).toBe(401);
-      expect(mockDeviceRemoveByToken).not.toHaveBeenCalled();
+      expect(mockDeviceUnregister).not.toHaveBeenCalled();
     });
 
     it('rejects cross-site requests with 403', async () => {
@@ -428,14 +417,14 @@ describe('push controller', () => {
       const result = await unregisterDeviceToken(deviceBody, crossOriginHeaders());
 
       expect(result.status).toBe(403);
-      expect(mockDeviceRemoveByToken).not.toHaveBeenCalled();
+      expect(mockDeviceUnregister).not.toHaveBeenCalled();
     });
 
     it('returns 400 for an invalid body', async () => {
       const { unregisterDeviceToken } = await importControllers();
 
       expect((await unregisterDeviceToken({}, sameOriginHeaders())).status).toBe(400);
-      expect(mockDeviceRemoveByToken).not.toHaveBeenCalled();
+      expect(mockDeviceUnregister).not.toHaveBeenCalled();
     });
 
     it('deletes scoped to the session user', async () => {
@@ -444,11 +433,11 @@ describe('push controller', () => {
       const result = await unregisterDeviceToken(deviceBody, sameOriginHeaders());
 
       expect(result.status).toBe(200);
-      expect(mockDeviceRemoveByToken).toHaveBeenCalledWith('u-1', deviceBody.token);
+      expect(mockDeviceUnregister).toHaveBeenCalledWith('u-1', deviceBody.token);
     });
 
     it('returns 500 when the delete fails', async () => {
-      mockDeviceRemoveByToken.mockRejectedValue(new Error('db down'));
+      mockDeviceUnregister.mockRejectedValue(new Error('db down'));
       const { unregisterDeviceToken } = await importControllers();
 
       expect((await unregisterDeviceToken(deviceBody, sameOriginHeaders())).status).toBe(500);
@@ -456,41 +445,36 @@ describe('push controller', () => {
   });
 
   describe('webhookPush', () => {
-    const uuid = '9f0d8b3e-6b2a-4d4c-9f1e-2c3d4e5f6a7b';
-    const uuid2 = 'b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e';
+    const n1 = '9f0d8b3e-6b2a-4d4c-9f1e-2c3d4e5f6a7b';
+    const n2 = 'b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e';
 
     function bearerHeaders(token = mockEnv.pushWebhookToken): Headers {
       return new Headers({ authorization: `Bearer ${token}` });
     }
 
-    beforeEach(() => {
-      mockSendToUsers.mockResolvedValue(undefined);
-      mockCheckRateLimit.mockResolvedValue(true);
-    });
-
     it('returns 401 when the bearer token is missing', async () => {
       const { webhookPush } = await importControllers();
 
-      const result = await webhookPush({ user_ids: [uuid] }, new Headers());
+      const result = await webhookPush({ notification_ids: [n1] }, new Headers());
 
       expect(result.status).toBe(401);
-      expect(mockSendToUsers).not.toHaveBeenCalled();
+      expect(mockWebhookHandle).not.toHaveBeenCalled();
     });
 
     it('returns 401 for a wrong token', async () => {
       const { webhookPush } = await importControllers();
 
-      const result = await webhookPush({ user_ids: [uuid] }, bearerHeaders('wrong-secret'));
+      const result = await webhookPush({ notification_ids: [n1] }, bearerHeaders('wrong-secret'));
 
       expect(result.status).toBe(401);
-      expect(mockSendToUsers).not.toHaveBeenCalled();
+      expect(mockWebhookHandle).not.toHaveBeenCalled();
     });
 
     it('returns 401 when the token is not Bearer-formatted', async () => {
       const { webhookPush } = await importControllers();
 
       const result = await webhookPush(
-        { user_ids: [uuid] },
+        { notification_ids: [n1] },
         new Headers({ authorization: mockEnv.pushWebhookToken ?? '' })
       );
 
@@ -501,7 +485,7 @@ describe('push controller', () => {
       mockEnv.pushWebhookToken = undefined;
       const { webhookPush } = await importControllers();
 
-      const result = await webhookPush({ user_ids: [uuid] }, bearerHeaders('anything'));
+      const result = await webhookPush({ notification_ids: [n1] }, bearerHeaders('anything'));
 
       expect(result.status).toBe(401);
       mockEnv.pushWebhookToken = 'webhook-secret';
@@ -510,147 +494,41 @@ describe('push controller', () => {
     it('returns 400 for an invalid body', async () => {
       const { webhookPush } = await importControllers();
 
-      const result = await webhookPush({ user_ids: ['not-a-uuid'] }, bearerHeaders());
+      const result = await webhookPush({ notification_ids: ['not-a-uuid'] }, bearerHeaders());
 
       expect(result.status).toBe(400);
-      expect(mockSendToUsers).not.toHaveBeenCalled();
+      expect(mockWebhookHandle).not.toHaveBeenCalled();
     });
 
-    it('returns 202 and dedupes repeated user ids before dispatching', async () => {
+    it('passes the notification ids to one service call and reports its count', async () => {
+      mockWebhookHandle.mockResolvedValue({ notified: 2 });
       const { webhookPush } = await importControllers();
 
-      const result = await webhookPush({ user_ids: [uuid, uuid, uuid2] }, bearerHeaders());
+      const result = await webhookPush({ notification_ids: [n1, n1, n2] }, bearerHeaders());
 
-      expect(result.status).toBe(202);
-      expect(mockCheckRateLimit).toHaveBeenCalledTimes(2);
-      expect(mockSendToUsers).toHaveBeenCalledWith(
-        [uuid, uuid2],
-        expect.objectContaining({
-          title: 'تذكير بعادتك اليومية',
-          type: 'habit_reminder',
-          url: '/habitflow',
-        })
-      );
+      expect(result).toEqual({ status: 202, body: { success: true, notified: 2 } });
+      expect(mockWebhookHandle).toHaveBeenCalledTimes(1);
+      expect(mockWebhookHandle).toHaveBeenCalledWith([n1, n1, n2]);
     });
 
-    it('skips users already notified today', async () => {
-      mockCheckRateLimit.mockImplementation((key: string) => !key.includes(uuid));
+    it('returns 202 with zero notifications when nobody was notified', async () => {
+      mockWebhookHandle.mockResolvedValue({ notified: 0 });
       const { webhookPush } = await importControllers();
 
-      const result = await webhookPush({ user_ids: [uuid, uuid2] }, bearerHeaders());
-
-      expect(result.status).toBe(202);
-      expect(mockSendToUsers).toHaveBeenCalledWith([uuid2], expect.anything());
-    });
-
-    it('returns 202 with zero notifications when all users were already notified', async () => {
-      mockCheckRateLimit.mockResolvedValue(false);
-      const { webhookPush } = await importControllers();
-
-      const result = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
+      const result = await webhookPush({ notification_ids: [n1] }, bearerHeaders());
 
       expect(result).toEqual(
         expect.objectContaining({ status: 202, body: { success: true, notified: 0 } })
       );
-      expect(mockSendToUsers).not.toHaveBeenCalled();
     });
 
-    it('returns 500 when the rate limiter fails', async () => {
-      mockCheckRateLimit.mockRejectedValue(new Error('redis down'));
+    it('returns 500 when the service fails', async () => {
+      mockWebhookHandle.mockRejectedValue(new Error('redis down'));
       const { webhookPush } = await importControllers();
 
-      const result = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
+      const result = await webhookPush({ notification_ids: [n1] }, bearerHeaders());
 
       expect(result.status).toBe(500);
-    });
-
-    describe('the dedupe window follows the Damascus day', () => {
-      // A stand-in for Upstash: the first claim of a key wins, later ones are
-      // refused, so the assertions can talk about "notified once" instead of
-      // about the shape of the key.
-      function claimingStore(): void {
-        const claimed = new Set<string>();
-        mockCheckRateLimit.mockImplementation(async (key: string) => {
-          if (claimed.has(key)) return false;
-          claimed.add(key);
-          return true;
-        });
-      }
-
-      beforeEach(() => {
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date('2026-10-30T12:00:00Z'));
-      });
-
-      afterEach(() => {
-        vi.useRealTimers();
-      });
-
-      it('notifies once for two runs on the same Damascus day', async () => {
-        claimingStore();
-        const { webhookPush } = await importControllers();
-
-        // 00:30 and 02:30 in Damascus, both on 31 October.
-        vi.setSystemTime(new Date('2026-10-30T21:30:00Z'));
-        const first = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
-        vi.setSystemTime(new Date('2026-10-30T23:30:00Z'));
-        const second = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
-
-        expect(first).toEqual(
-          expect.objectContaining({ status: 202, body: { success: true, notified: 1 } })
-        );
-        expect(second).toEqual(
-          expect.objectContaining({ status: 202, body: { success: true, notified: 0 } })
-        );
-        expect(mockSendToUsers).toHaveBeenCalledTimes(1);
-      });
-
-      it('notifies twice when the runs straddle Damascus midnight', async () => {
-        claimingStore();
-        const { webhookPush } = await importControllers();
-
-        // 23:59 on 30 October, then 00:01 on 31 October in Damascus — one UTC
-        // day, two Damascus days, so the second reminder must go out.
-        vi.setSystemTime(new Date('2026-10-30T20:59:00Z'));
-        const first = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
-        vi.setSystemTime(new Date('2026-10-30T21:01:00Z'));
-        const second = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
-
-        expect(first).toEqual(
-          expect.objectContaining({ status: 202, body: { success: true, notified: 1 } })
-        );
-        expect(second).toEqual(
-          expect.objectContaining({ status: 202, body: { success: true, notified: 1 } })
-        );
-        expect(mockSendToUsers).toHaveBeenCalledTimes(2);
-      });
-
-      it('keys the dedupe on the Damascus day, not the UTC day', async () => {
-        claimingStore();
-        const { webhookPush } = await importControllers();
-
-        // 00:30 in Damascus on 31 October, still 30 October in UTC.
-        vi.setSystemTime(new Date('2026-10-30T21:30:00Z'));
-        await webhookPush({ user_ids: [uuid] }, bearerHeaders());
-
-        expect(mockCheckRateLimit).toHaveBeenCalledWith(
-          `push:habit:${uuid}:2026-10-31`,
-          1,
-          24 * 60 * 60 * 1000
-        );
-      });
-
-      it('still collapses a repeated user id inside one payload', async () => {
-        claimingStore();
-        const { webhookPush } = await importControllers();
-
-        const result = await webhookPush({ user_ids: [uuid, uuid, uuid2] }, bearerHeaders());
-
-        expect(result).toEqual(
-          expect.objectContaining({ status: 202, body: { success: true, notified: 2 } })
-        );
-        expect(mockSendToUsers).toHaveBeenCalledTimes(1);
-      });
     });
   });
 });
