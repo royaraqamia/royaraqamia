@@ -13,7 +13,7 @@ that reads `Turn + MCP` is the same operation reached two ways.
 a read is always tier 0 and runs inside the turn; a write is above it, and
 tier 2 or 3 is always a card. Every write's tier is in the table below.
 
-**80 capabilities** (42 read, 38 write): 72 declared by the turn, 42 by the MCP server.
+**84 capabilities** (45 read, 39 write): 76 declared by the turn, 42 by the MCP server.
 
 | Product | Reads | Writes | Turn | MCP |
 | --- | --- | --- | --- | --- |
@@ -29,9 +29,9 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | `community` | 3 | 12 | 12 | 12 |
 | `account` | 2 | 3 | 5 | 2 |
 | `certificates` | 4 | 3 | 3 | 7 |
-| `consultations` | 2 | 1 | 3 | 0 |
-| `training` | 0 | 1 | 1 | 0 |
-| `client-work` | 0 | 1 | 1 | 0 |
+| `consultations` | 2 | 2 | 4 | 0 |
+| `training` | 2 | 1 | 3 | 0 |
+| `client-work` | 1 | 1 | 2 | 0 |
 | `admin` | 2 | 1 | 3 | 0 |
 | `assistant` | 6 | 0 | 5 | 1 |
 
@@ -187,28 +187,32 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 
 ## `consultations`
 
-2 read, 1 write.
+2 read, 2 write.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
 | `consultations.list_consultation_bookings` | read | 0 | Turn |
 | `consultations.list_consultation_options` | read | 0 | Turn |
 | `consultations.book_consultation` | write | 2 | Turn |
+| `consultations.cancel_consultation` | write | 3 | Turn |
 
 ## `training`
 
-0 read, 1 write.
+2 read, 1 write.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
+| `training.list_training_applications` | read | 0 | Turn |
+| `training.list_training_cohorts` | read | 0 | Turn |
 | `training.apply_training` | write | 2 | Turn |
 
 ## `client-work`
 
-0 read, 1 write.
+1 read, 1 write.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
+| `client-work.list_project_requests` | read | 0 | Turn |
 | `client-work.submit_project_request` | write | 2 | Turn |
 
 ## `admin`

@@ -117,6 +117,13 @@ export interface ConsultationBookingsWriter {
     packageId: string,
     slotIds: string[]
   ): Promise<void>;
+  /**
+   * Cancels a booking the booker owns, freeing its slot holds through the
+   * status trigger. Ownership and the still-reserving status are both part of
+   * the update predicate, so a guessed id or an already-rejected row matches
+   * nothing. Returns `false` when no cancellable owned row matched.
+   */
+  cancelOwned(bookingId: string, userId: string): Promise<boolean>;
 }
 
 // ------------------------------------------------------------

@@ -218,5 +218,19 @@ export function createSupabaseConsultationBookingsRepository(
         throw new Error(code);
       }
     },
+
+    async cancelOwned(bookingId: string, userId: string): Promise<boolean> {
+      const { data, error } = await supabase
+        .from('consultation_bookings')
+        .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+        .eq('id', bookingId)
+        .eq('user_id', userId)
+        .in('status', ['pending', 'confirmed'])
+        .select('id')
+        .maybeSingle();
+
+      if (error) throw error;
+      return data !== null;
+    },
   };
 }

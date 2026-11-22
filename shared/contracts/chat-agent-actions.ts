@@ -94,6 +94,12 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'update_profile',
   'list_consultation_bookings',
   'list_consultation_options',
+  // The member's own state in the other two intake products (issue #1434): the
+  // application and its status, the cohorts a student may ask for, and the
+  // project request and its status.
+  'list_training_applications',
+  'list_training_cohorts',
+  'list_project_requests',
   'list_my_posts',
   'get_post_by_slug',
   'get_habits_summary',
@@ -162,6 +168,7 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'create_habit',
   'set_habit_reminder',
   'book_consultation',
+  'cancel_consultation',
   'apply_training',
   'submit_project_request',
   'change_display_name',
@@ -250,6 +257,21 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     label: 'قراءة باقات الاستشارة ومواعيدها',
     activity: 'تقرأ باقات الاستشارة ومواعيدها',
   },
+  list_training_applications: {
+    kind: 'read',
+    label: 'قراءة طلبات التدريب',
+    activity: 'تقرأ طلبات التدريب',
+  },
+  list_training_cohorts: {
+    kind: 'read',
+    label: 'قراءة الدُّفعات المفتوحة',
+    activity: 'تقرأ الدُّفعات المفتوحة',
+  },
+  list_project_requests: {
+    kind: 'read',
+    label: 'قراءة طلبات المشروع',
+    activity: 'تقرأ طلبات المشروع',
+  },
   list_my_posts: {
     kind: 'read',
     label: 'قراءة منشوراتك ومسوداتك',
@@ -333,6 +355,7 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
   set_budget: { kind: 'write', label: 'تحديد ميزانية', activity: 'تحدّد ميزانية' },
   delete_expense: { kind: 'write', label: 'حذف مصروف', activity: 'تحذف مصروفاً' },
   book_consultation: { kind: 'write', label: 'حجز استشارة', activity: 'تحجز استشارة' },
+  cancel_consultation: { kind: 'write', label: 'إلغاء حجز استشارة', activity: 'تلغي حجز استشارة' },
   apply_training: { kind: 'write', label: 'تقديم طلب تدريب', activity: 'تقدّم طلب تدريب' },
   submit_project_request: {
     kind: 'write',
