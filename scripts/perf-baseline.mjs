@@ -516,7 +516,7 @@ export function formatReport(results, baselineByRoute) {
 export function formatWeightVerdict(results, budget) {
   const lines = ['\nWeight verdict'];
   let okCount = 0;
-  for (const { route, summary, finalUrl, budgetRoute } of results) {
+  for (const { route, summary, budgetRoute } of results) {
     // A route that redirects is priced against the document it actually serves;
     // its own ceiling would describe bytes this response never ships.
     const priced = budgetRoute ?? route;
