@@ -51,4 +51,5 @@ enum class NotificationsResponseNotificationsItemType {
 data class NotificationsResponseNotificationsItemMetadata(
     val certificateCode: String? = null,
     val conversationId: String? = null,
+    val username: String? = null,
 )

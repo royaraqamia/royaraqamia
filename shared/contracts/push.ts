@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import type { NotificationType } from '@/shared/contracts/notifications';
+import {
+  NOTIFICATION_DESTINATIONS,
+  notificationDestinationPath,
+  type NotificationType,
+} from '@/shared/contracts/notifications';
 
 export const PushSubscriptionSchema = z.object({
   endpoint: z.url(),
@@ -61,44 +65,16 @@ export interface PushPayload {
   notificationId?: string;
 }
 
-export const PUSH_URL_BY_TYPE: Record<NotificationType, string> = {
-  certificate_issued: '/verify',
-  habit_reminder: '/habitflow',
-  recovery_nudge: '/habitflow',
-  expense_alert: '/spendtrack',
-  link_clicked: '/linksnap',
-  system_announcement: '/',
-  training_application: '/admin/training/applications',
-  consultation_booking: '/admin/consultations/bookings',
-  project_request: '/admin/clients/project-requests',
-  retainer_request: '/admin/clients/retainers',
-  subscription_request: '/admin/plans/requests',
-  chat_request: '/notifications?tab=chats',
-  new_follower: '/notifications?tab=alerts',
-};
-
+/**
+ * The push banner's landing. The destination itself, including the metadata
+ * refinement and the fallback when an identifier is missing, is declared once
+ * in `shared/contracts/notifications`. The only push-specific rule is that a
+ * type whose row only marks itself read still needs somewhere to land.
+ */
 export function toPushUrl(type: NotificationType, metadata?: Record<string, unknown>): string {
-  const base = PUSH_URL_BY_TYPE[type];
-  if (type === 'new_follower') {
-    // Tapping "someone followed you" opens the follower's own profile, which is
-    // the only place with a button to follow them back.
-    const username = metadata?.username;
-    if (typeof username === 'string' && username.length > 0) {
-      return `/u/${encodeURIComponent(username)}`;
-    }
-  }
-  if (type === 'chat_request') {
-    // The request is answered in the thread, so the push opens it directly.
-    const conversationId = metadata?.conversationId;
-    if (typeof conversationId === 'string' && conversationId.length > 0) {
-      return `/chats/${encodeURIComponent(conversationId)}`;
-    }
-  }
-  if (type === 'certificate_issued') {
-    const code = metadata?.certificateCode;
-    if (typeof code === 'string' && code.length > 0) {
-      return `${base}/${encodeURIComponent(code)}`;
-    }
-  }
-  return base;
+  return (
+    notificationDestinationPath(type, metadata) ??
+    NOTIFICATION_DESTINATIONS[type].fallbackPath ??
+    '/'
+  );
 }

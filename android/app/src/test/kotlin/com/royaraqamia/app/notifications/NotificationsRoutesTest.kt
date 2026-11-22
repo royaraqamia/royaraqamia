@@ -8,17 +8,18 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
- * A row's destination is the site's table, in Kotlin (#1391).
+ * A row's destination is the shared declaration, in Kotlin (#1391, #1676).
  *
- * The page derives it in `notification-target.ts`; this pins the same answers so
- * a row that opens the certificate in the browser cannot open somewhere else in
- * the app, and a type with no identifier still has the surface it is about.
+ * The generator writes `targetOf` from the same entry the page's
+ * `notificationTarget` and the push builder read; this pins the answers so a
+ * row that opens a profile in the browser cannot open somewhere else in the app.
  */
 class NotificationsRoutesTest {
     private fun item(
         type: NotificationsResponseNotificationsItemType,
         certificateCode: String? = null,
         conversationId: String? = null,
+        username: String? = null,
     ) = NotificationsResponseNotificationsItem(
         id = "n-1",
         user_id = "u-1",
@@ -29,6 +30,7 @@ class NotificationsRoutesTest {
             NotificationsResponseNotificationsItemMetadata(
                 certificateCode = certificateCode,
                 conversationId = conversationId,
+                username = username,
             ),
         is_read = false,
         created_at = "2026-11-13T00:00:00Z",
@@ -94,6 +96,32 @@ class NotificationsRoutesTest {
                     certificateCode = "A/B",
                 )
             ),
+        )
+    }
+
+    @Test
+    fun `a new follower opens the follower profile`() {
+        assertEquals(
+            "/u/rim",
+            NotificationsRoutes.targetOf(
+                item(NotificationsResponseNotificationsItemType.NEW_FOLLOWER, username = "rim")
+            ),
+        )
+        assertEquals(
+            "/notifications?tab=alerts",
+            NotificationsRoutes.targetOf(item(NotificationsResponseNotificationsItemType.NEW_FOLLOWER)),
+        )
+    }
+
+    @Test
+    fun `a missing identifier falls back to the declared surface`() {
+        assertEquals(
+            "/verify",
+            NotificationsRoutes.targetOf(item(NotificationsResponseNotificationsItemType.CERTIFICATE_ISSUED)),
+        )
+        assertEquals(
+            "/notifications?tab=chats",
+            NotificationsRoutes.targetOf(item(NotificationsResponseNotificationsItemType.CHAT_REQUEST)),
         )
     }
 }

@@ -5,7 +5,6 @@ import {
   PushSubscriptionSchema,
   PushWebhookSchema,
   toPushUrl,
-  PUSH_URL_BY_TYPE,
   type PushSubscriptionInput,
 } from '@/shared/contracts/push';
 
@@ -170,20 +169,7 @@ describe('PushDeviceUnregisterSchema', () => {
 });
 
 describe('toPushUrl', () => {
-  it('maps every type to its base route', () => {
-    expect(PUSH_URL_BY_TYPE.certificate_issued).toBe('/verify');
-    expect(PUSH_URL_BY_TYPE.habit_reminder).toBe('/habitflow');
-    expect(PUSH_URL_BY_TYPE.recovery_nudge).toBe('/habitflow');
-    expect(PUSH_URL_BY_TYPE.expense_alert).toBe('/spendtrack');
-    expect(PUSH_URL_BY_TYPE.link_clicked).toBe('/linksnap');
-    expect(PUSH_URL_BY_TYPE.system_announcement).toBe('/');
-    expect(PUSH_URL_BY_TYPE.training_application).toBe('/admin/training/applications');
-    expect(PUSH_URL_BY_TYPE.consultation_booking).toBe('/admin/consultations/bookings');
-    expect(PUSH_URL_BY_TYPE.project_request).toBe('/admin/clients/project-requests');
-    expect(PUSH_URL_BY_TYPE.retainer_request).toBe('/admin/clients/retainers');
-  });
-
-  it('returns the base route when no metadata is provided', () => {
+  it('returns the declared route when no metadata is provided', () => {
     expect(toPushUrl('habit_reminder')).toBe('/habitflow');
     expect(toPushUrl('system_announcement')).toBe('/');
     expect(toPushUrl('expense_alert', { month: '2026-08' })).toBe('/spendtrack');
@@ -203,5 +189,10 @@ describe('toPushUrl', () => {
     expect(toPushUrl('certificate_issued', { certificateCode: 'أ ب' })).toBe(
       '/verify/%D8%A3%20%D8%A8'
     );
+  });
+
+  it('opens the follower profile and falls back to the alerts tab', () => {
+    expect(toPushUrl('new_follower', { username: 'rim' })).toBe('/u/rim');
+    expect(toPushUrl('new_follower', {})).toBe('/notifications?tab=alerts');
   });
 });

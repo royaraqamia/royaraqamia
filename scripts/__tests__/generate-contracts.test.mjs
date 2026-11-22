@@ -7,6 +7,7 @@ import {
   pascalCase,
   propertyNameFor,
   renderKotlinFile,
+  renderNotificationRoutes,
   typeNameFor,
 } from '../generate-contracts.mjs';
 
@@ -146,5 +147,29 @@ describe('renderKotlinFile', () => {
     expect(rendered).toContain('import kotlinx.serialization.Serializable');
     expect(rendered).not.toContain('import kotlinx.serialization.SerialName');
     expect(rendered).toContain('data class Sample(');
+  });
+});
+
+describe('renderNotificationRoutes', () => {
+  it("generates the app's targetOf from the one destination declaration", () => {
+    const rendered = renderNotificationRoutes({
+      new_follower: {
+        path: '/u/{username}',
+        metadataKey: 'username',
+        fallbackPath: '/notifications?tab=alerts',
+      },
+      system_announcement: { path: null, fallbackPath: '/' },
+      habit_reminder: { path: '/habitflow' },
+    });
+
+    expect(rendered).toContain('object NotificationsRoutes {');
+    expect(rendered).toContain(
+      'NotificationsResponseNotificationsItemType.NEW_FOLLOWER ->\n' +
+        '                item.metadata.username?.takeIf { it.isNotBlank() }?.let { "/u/${encode(it.trim())}" } ?: "/notifications?tab=alerts"'
+    );
+    expect(rendered).toContain(
+      'NotificationsResponseNotificationsItemType.SYSTEM_ANNOUNCEMENT ->\n                null'
+    );
+    expect(rendered).toContain('NotificationsResponseNotificationsItemType.HABIT_REMINDER ->');
   });
 });
