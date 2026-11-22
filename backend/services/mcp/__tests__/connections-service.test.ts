@@ -140,6 +140,8 @@ function fakeRepository(
       pass_rows: 0,
       last_run_at: null,
       last_run_rows: 0,
+      last_run_completed: false,
+      last_run_pages: null,
       last_error: null,
     }),
     saveCatalogSyncState: async () => undefined,

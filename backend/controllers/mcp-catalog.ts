@@ -34,6 +34,12 @@ export async function syncMcpCatalog(headers: Headers): Promise<HttpResult> {
 
   try {
     const result = await createDefaultMcpCatalogService().sync();
+    // A run that reached the end twice without closing its window is a failed
+    // mirror, not a successful run with a note: the scheduled caller checks the
+    // HTTP status, so it has to fail here too.
+    if (result.error) {
+      return jsonResult(500, { success: false, ...result }, { headers: NO_STORE });
+    }
     return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
   } catch (error) {
     Sentry.captureException(error);

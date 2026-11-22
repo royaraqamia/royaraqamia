@@ -138,6 +138,10 @@ export interface McpCatalogSyncStateRecord {
   pass_rows: number;
   last_run_at: string | null;
   last_run_rows: number;
+  /** False means the last run did not reach the end of its window. */
+  last_run_completed: boolean;
+  /** Pages read in the current window, carried across runs that resume it. */
+  last_run_pages: number | null;
   last_error: string | null;
 }
 
@@ -1051,6 +1055,8 @@ export function createMcpMarketplaceRepository(
         pass_rows: row?.pass_rows ?? 0,
         last_run_at: row?.last_run_at ?? null,
         last_run_rows: row?.last_run_rows ?? 0,
+        last_run_completed: row?.last_run_completed ?? false,
+        last_run_pages: row?.last_run_pages ?? null,
         last_error: row?.last_error ?? null,
       };
     },
