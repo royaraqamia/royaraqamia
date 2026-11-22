@@ -73,6 +73,24 @@
       "reason": "The web change only touches rows of the new `post_published` type: a screen-reader-only press label and that type's icon. The recorded Alerts states seed existing types, so no recorded row draws the new label or glyph, and every box, colour and visible word stays the same. The type's press and destination are asserted in the notification-target and notifications-view tests in #1752.",
       "issue": "#1752",
       "until": "2026-12-22"
+    },
+    {
+      "surface": "account-blocked",
+      "reason": "The web change is a state refactor: the member list, its load failure, the action error and the row being lifted move from five `useState` calls into one reducer beside the component (#1102). Every JSX expression, class name, copy string and rendered state value is identical, so neither the recorded contract numbers nor the captures can move.",
+      "issue": "#1102",
+      "until": "2026-12-22"
+    },
+    {
+      "surface": "account-connected-apps",
+      "reason": "The web change is a state refactor: the connected-app list, the failed/offline flags, the action error, the disconnect target and the busy flag move from six `useState` calls into one reducer beside the component (#1102). Every JSX expression, class name, copy string and rendered state value is identical, so neither the recorded contract numbers nor the captures can move.",
+      "issue": "#1102",
+      "until": "2026-12-22"
+    },
+    {
+      "surface": "account-news",
+      "reason": "The web change is a state refactor in both panels: the preferences' sources/selection/loading/load-error/saving and the private sources' summary/loading/load-error/removing/busy fields move from `useState` calls into one reducer per panel (#1102). Every JSX expression, class name, copy string and rendered state value is identical, so neither the recorded contract numbers nor the captures can move.",
+      "issue": "#1102",
+      "until": "2026-12-22"
     }
   ]
 }
