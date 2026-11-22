@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 
 /**
@@ -18,21 +18,21 @@ const TEST_FILE = /\.(test|spec)\.tsx?$/;
 /** The old failure vocabulary, which the seam now expresses as a typed union. */
 const AUTH_FAILURE_LITERAL = /['"`](UNAUTHORIZED|FORBIDDEN)['"`]/;
 
+const API_ROOT = resolve(ROOT, 'app/api');
+const ROUTE_FILE = /^route\.tsx?$/;
+const IMPORT_SPECIFIER = /from\s+['"]([^'"]+)['"]/g;
+
 /**
- * Controllers that guard an Admin surface and must reach the Admin adapter.
+ * Controller modules that genuinely do not need the Admin adapter.
  *
- * The allowlist-mirror controller (`admin-allowlist.ts`) is deliberately absent:
- * it authenticates with the service-role bearer token, and the mirror mechanism
- * is frozen by ADR-0003.
+ * `admin-allowlist.ts` authenticates with the service-role bearer token; the
+ * mirror mechanism is frozen by ADR-0003. `admin-list.ts` is a helper shared
+ * by controllers, not an Admin surface.
  */
-const ADMIN_CONTROLLERS = [
-  'backend/controllers/consultation.ts',
-  'backend/controllers/training.ts',
-  'backend/controllers/certificates.ts',
-  'backend/controllers/broadcast.ts',
-  'backend/controllers/admin-users.ts',
-  'backend/controllers/notifications.ts',
-];
+const ADMIN_CONTROLLER_EXEMPTIONS = new Set([
+  'backend/controllers/admin-allowlist.ts',
+  'backend/controllers/admin-list.ts',
+]);
 
 /** Remove prose so the string-matching check judges code, not comments. */
 function stripComments(source: string): string {
@@ -62,6 +62,46 @@ function listSources(roots: string[]): string[] {
 }
 
 const readSource = (path: string) => readFileSync(resolve(ROOT, path), 'utf8');
+const toPosix = (path: string) => path.replaceAll('\\', '/');
+
+/** Every route that exposes an Admin surface, including nested `admin` segments. */
+function listAdminRoutes(): string[] {
+  const routes: string[] = [];
+
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!ROUTE_FILE.test(entry.name)) continue;
+      const segments = relative(API_ROOT, full).split(/[\\/]/);
+      if (segments.slice(0, -1).includes('admin')) routes.push(full);
+    }
+  };
+
+  walk(API_ROOT);
+  return routes.sort();
+}
+
+/** The controller modules a route imports, resolved to their source files. */
+function importedControllers(route: string): string[] {
+  const modules = new Set<string>();
+
+  for (const match of readFileSync(route, 'utf8').matchAll(IMPORT_SPECIFIER)) {
+    const specifier = match[1];
+    if (!specifier || !specifier.includes('backend/controllers/')) continue;
+
+    const target = specifier.startsWith('@/')
+      ? resolve(ROOT, specifier.slice(2))
+      : resolve(dirname(route), specifier);
+    const candidates = [target, `${target}.ts`, `${target}.tsx`, join(target, 'index.ts')];
+    modules.add(candidates.find(existsSync) ?? `${target}.ts`);
+  }
+
+  return [...modules].sort();
+}
 
 describe('Admin seam contract', () => {
   const sources = listSources(PRODUCTION_ROOTS);
@@ -93,12 +133,28 @@ describe('Admin seam contract', () => {
     }
   });
 
-  it('routes the known Admin controllers through the adapter', () => {
-    for (const controller of ADMIN_CONTROLLERS) {
-      expect(readSource(controller), controller).toContain(
-        "from '@/backend/transport/admin-handler'"
-      );
-      expect(readSource(controller), controller).toContain('withAdminUser');
+  it('resolves every Admin route to a controller', () => {
+    const routes = listAdminRoutes();
+    expect(routes.length, 'no Admin routes discovered under app/api').toBeGreaterThan(0);
+    for (const route of routes) {
+      expect(importedControllers(route).length, toPosix(relative(ROOT, route))).toBeGreaterThan(0);
+    }
+  });
+
+  it('routes Admin surfaces discovered from the route tree through the adapter', () => {
+    for (const route of listAdminRoutes()) {
+      const routePath = toPosix(relative(ROOT, route));
+      for (const controller of importedControllers(route)) {
+        const controllerPath = toPosix(relative(ROOT, controller));
+        if (ADMIN_CONTROLLER_EXEMPTIONS.has(controllerPath)) continue;
+
+        expect(existsSync(controller), `${routePath} -> ${controllerPath}`).toBe(true);
+        const source = readFileSync(controller, 'utf8');
+        expect(source, `${routePath} -> ${controllerPath}`).toContain(
+          "from '@/backend/transport/admin-handler'"
+        );
+        expect(source, `${routePath} -> ${controllerPath}`).toContain('withAdminUser');
+      }
     }
   });
 
