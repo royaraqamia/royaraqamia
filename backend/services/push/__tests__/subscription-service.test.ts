@@ -68,6 +68,15 @@ describe('PushSubscriptionService', () => {
     expect(repository.upsert).toHaveBeenCalledWith('u-1', input);
   });
 
+  it('unsubscribes one endpoint scoped to the session user', async () => {
+    const repository = makeRepository([]);
+    const service = new PushSubscriptionService({ repository });
+
+    await service.unsubscribe('u-1', input.endpoint);
+
+    expect(repository.removeByEndpoint).toHaveBeenCalledWith('u-1', input.endpoint);
+  });
+
   it('leaves a list under the cap untouched', async () => {
     const rows = Array.from({ length: MAX_SUBSCRIPTIONS_PER_USER }, (_, i) =>
       makeRecord({ id: `sub-${i}`, endpoint: endpoint(i) })

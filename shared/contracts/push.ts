@@ -39,8 +39,12 @@ export const PushWakeSchema = z.object({
   token: z.string().trim().min(1).max(4096).optional(),
 });
 
+/**
+ * The DB producer posts the ids of the notification rows it just inserted, so
+ * the push reads its title and body from the same row the bell shows.
+ */
 export const PushWebhookSchema = z.object({
-  user_ids: z.array(z.string().uuid()).min(1).max(10000),
+  notification_ids: z.array(z.string().uuid()).min(1).max(10000),
 });
 
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;

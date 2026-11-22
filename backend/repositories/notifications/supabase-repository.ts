@@ -27,6 +27,23 @@ export function createSupabaseNotificationRepository(
   supabase: SupabaseClient<Database>
 ): NotificationRepository {
   return {
+    async findByIds(ids: string[]) {
+      if (ids.length === 0) return [];
+      const rows: NotificationRow[] = [];
+      // The webhook can carry thousands of ids; PostgREST's `.in` needs smaller
+      // chunks than the webhook's own ceiling.
+      for (let offset = 0; offset < ids.length; offset += 500) {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .in('id', ids.slice(offset, offset + 500));
+
+        if (error) throw repositoryFailure('notifications.findByIds', error);
+        rows.push(...(data ?? []));
+      }
+      return rows.map(toNotification);
+    },
+
     async findByUserId(userId: string, limit = 20, offset = 0) {
       const { data, error } = await supabase
         .from('notifications')

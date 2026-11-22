@@ -20,6 +20,7 @@ const notificationFixture: Notification = {
 
 function makeDeps(overrides: { checkRateLimit?: ReturnType<typeof vi.fn> } = {}) {
   const repository: NotificationRepository = {
+    findByIds: vi.fn(),
     findByUserId: vi.fn(),
     findUnreadCount: vi.fn(),
     create: vi.fn(),

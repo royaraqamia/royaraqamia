@@ -1,15 +1,23 @@
 import * as webpush from 'web-push';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { env } from '@/backend/config/env';
 import { getAdminSupabase } from '@/backend/config/supabase';
+import { checkRateLimit } from '@/backend/config/rate-limiter';
+import type { Database } from '@/backend/models/database.types';
 import { createPushSubscriptionsRepository } from '@/backend/repositories/push/supabase-repository';
 import { createDevicePushTokensRepository } from '@/backend/repositories/push/supabase-device-tokens-repository';
+import { createSupabaseNotificationRepository } from '@/backend/repositories/notifications/supabase-repository';
 import type { PushSubscriptionRepository } from '@/backend/repositories/push/push-subscriptions-repository';
 import type { DevicePushTokenRepository } from '@/backend/repositories/push/device-push-tokens-repository';
 import { PushService, type WebPushAdapter } from '@/backend/services/push/push-service';
 import { PushSubscriptionService } from '@/backend/services/push/subscription-service';
+import { PushDeviceService } from '@/backend/services/push/device-service';
+import { PushWebhookService } from '@/backend/services/push/webhook-service';
 import { FcmPushService } from '@/backend/services/push/fcm-push-service';
 import { createFcmAdapter } from '@/backend/services/push/fcm-client';
 import { PushFanout } from '@/backend/services/push/push-fanout';
+import { damascusDateKey } from '@/shared/time';
+import { runAfter } from '@/backend/config/after';
 
 export { runAfter } from '@/backend/config/after';
 
@@ -101,8 +109,34 @@ export function createPushNotifier(): PushFanout {
  * list. Admin client, because an endpoint belongs to a browser rather than a
  * user and moves with whoever signs in on it next.
  */
-export function createPushSubscriptionService(): PushSubscriptionService {
+export function createPushSubscriptionService(
+  supabase: SupabaseClient<Database> = getAdminSupabase()
+): PushSubscriptionService {
   return new PushSubscriptionService({
-    repository: createPushSubscriptionsRepository(getAdminSupabase()),
+    repository: createPushSubscriptionsRepository(supabase),
+  });
+}
+
+/**
+ * The two device-token writes. Register uses the admin client because a token
+ * moves with whoever signs in on the phone next; unregister is given the
+ * caller's client so RLS is the owner guarantee.
+ */
+export function createPushDeviceService(
+  supabase: SupabaseClient<Database> = getAdminSupabase()
+): PushDeviceService {
+  return new PushDeviceService({
+    repository: createDevicePushTokensRepository(supabase),
+  });
+}
+
+/** The DB-side reminder webhook: dedupe and payload both live behind this seam. */
+export function createPushWebhookService(): PushWebhookService {
+  return new PushWebhookService({
+    notifications: createSupabaseNotificationRepository(getAdminSupabase()),
+    notifier: createPushNotifier(),
+    checkRateLimit,
+    schedule: runAfter,
+    dateKey: damascusDateKey,
   });
 }
