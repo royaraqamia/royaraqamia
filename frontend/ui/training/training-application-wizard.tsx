@@ -1,11 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
 
 import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizard';
+import {
+  formWizardInitialState,
+  formWizardReducer,
+} from '@/frontend/ui/shared/form-wizard.reducer';
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
 import { LeadQueuedPanel } from '@/frontend/ui/shared/lead-queued-panel';
 import { getOpenTrainingCohorts } from '@/frontend/api/training';
@@ -55,14 +59,15 @@ export function TrainingApplicationWizard({
   onSubmitted,
   isAuthenticated = false,
 }: TrainingApplicationWizardProps = {}) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(formWizardReducer, undefined, () =>
+    formWizardInitialState(STEPS.length)
+  );
+  const { stepIndex, submitError, queued } = state;
   // Remembered across a refresh, so a reload still shows the reference code.
   const receipt = useSubmissionReceipt('training');
   const referenceCode = receipt.referenceCode;
   // Offline-first: a submission made with the network off is queued and replayed.
   const lead = useLeadSubmission();
-  const [queued, setQueued] = useState(false);
   const [cohorts, setCohorts] = useState<TrainingCohort[]>([]);
 
   const {
@@ -104,17 +109,15 @@ export function TrainingApplicationWizard({
     if (!canProceed) return;
     const valid = await trigger([...STEP_FIELDS[step.key]]);
     if (!valid) return;
-    setSubmitError(null);
-    setStepIndex((i) => Math.min(i + 1, STEPS.length - 1));
+    dispatch({ type: 'stepAdvanced' });
   }
 
   function goBack() {
-    setSubmitError(null);
-    setStepIndex((i) => Math.max(i - 1, 0));
+    dispatch({ type: 'stepBacked' });
   }
 
   const onSubmit = handleSubmit(async (formValues) => {
-    setSubmitError(null);
+    dispatch({ type: 'submissionStarted' });
 
     const outcome = await lead.submit({
       kind: 'training',
@@ -133,11 +136,11 @@ export function TrainingApplicationWizard({
       return;
     }
     if (outcome.status === 'queued') {
-      setQueued(true);
+      dispatch({ type: 'queued' });
       onSubmitted?.();
       return;
     }
-    setSubmitError(outcome.error);
+    dispatch({ type: 'submissionFailed', message: outcome.error });
   });
 
   if (referenceCode) {
@@ -147,7 +150,7 @@ export function TrainingApplicationWizard({
         isAuthenticated={isAuthenticated}
         onStartOver={() => {
           receipt.dismiss();
-          setQueued(false);
+          dispatch({ type: 'queueCleared' });
         }}
         message="احتفظ برقم الطَّلب أدناه — سنُراجع طلبك ونتواصل معك خلال 48 ساعة عبر واتساب لتأكيد التحاقك بالدَّورة."
       />

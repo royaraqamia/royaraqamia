@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer } from 'react';
 
 import { subscribeToNewsDigestChanges } from '@/frontend/api/news';
 import { normaliseSnapshotRoute } from '@/frontend/shared/local-store/snapshot-route';
@@ -18,6 +18,10 @@ import { NewsFilters } from '@/frontend/ui/news/NewsFilters';
 import { NewsSearch } from '@/frontend/ui/news/NewsSearch';
 import { StoryCard } from '@/frontend/ui/news/StoryCard';
 import {
+  newsBoardReadInitialState,
+  newsBoardReadReducer,
+} from '@/frontend/ui/news/news-board.reducer';
+import {
   toNewsDigestSnapshot,
   trimNewsSnapshot,
   type NewsDigestSnapshot,
@@ -28,38 +32,15 @@ import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { HeroCtaButton, HeroCtaSheen } from '@/frontend/ui/shared/hero-cta-button';
 import { useSignInPrompt } from '@/frontend/ui/shared/use-sign-in-prompt';
-import {
-  ReadFailureNotice,
-  toReadFailure,
-  type ReadFailure,
-} from '@/frontend/ui/shared/read-failure';
+import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
 import { formatCapturedAt } from '@/frontend/ui/news/news-format';
 import {
   NEWS_RETENTION_DAYS,
   type NewsBoard as NewsBoardData,
   type NewsCategory,
-  type NewsCardsLimit,
-  type NewsPersonalView,
 } from '@/shared/contracts/news';
 
 const BOARD_ERROR = NEWS_DIGEST_COPY.pageError;
-
-/**
- * One read's answer, and the URL it answered.
- *
- * The URL is part of the value rather than a sibling state variable so the two
- * cannot drift: nothing can replace one without the other, which is what makes
- * "the board on screen belongs to the filters on screen" true by construction
- * (#640).
- */
-interface ReadAnswer {
-  url: string;
-  board: NewsDigestSnapshot;
-  personal: NewsPersonalView | null;
-  cards: NewsCardsLimit | null;
-  /** What the store may keep of this answer; `null` for a `no-store` one. */
-  recordable: NewsDigestSnapshot | null;
-}
 
 /** A digest published while the reader is looking folds its burst into one read. */
 const REFRESH_DEBOUNCE_MS = 1200;
@@ -97,15 +78,12 @@ export function NewsBoard() {
 
   const snapshot = usePublicSnapshot<NewsDigestSnapshot>(route);
 
-  const [answer, setAnswer] = useState<ReadAnswer | null>(null);
-  const [failure, setFailure] = useState<ReadFailure | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [attempt, setAttempt] = useState(0);
+  const [state, dispatch] = useReducer(newsBoardReadReducer, undefined, newsBoardReadInitialState);
+  const { answer, failure, loading, attempt } = state;
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setFailure(null);
+    dispatch({ type: 'readStarted' });
 
     requestWithMeta<{ board: NewsBoardData }>(apiUrl, { signal: controller.signal })
       .then(({ data, keepable }) => {
@@ -115,25 +93,26 @@ export function NewsBoard() {
         // with no digest and no search is not recordable either: it would erase
         // the last good offline copy on the next visit (#620).
         const hasRows = data.board.day !== null || data.board.search !== null;
-        setAnswer({
-          url: apiUrl,
-          board: next,
-          personal: data.board.personal,
-          cards: data.board.cards ?? null,
-          recordable: keepable && hasRows ? next : null,
+        dispatch({
+          type: 'readSucceeded',
+          answer: {
+            url: apiUrl,
+            board: next,
+            personal: data.board.personal,
+            cards: data.board.cards ?? null,
+            recordable: keepable && hasRows ? next : null,
+          },
         });
-        setLoading(false);
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
-        setFailure(toReadFailure(error, BOARD_ERROR));
-        setLoading(false);
+        dispatch({ type: 'readFailed', failure: toReadFailure(error, BOARD_ERROR) });
       });
 
     return () => controller.abort();
   }, [apiUrl, attempt]);
 
-  const retry = useCallback(() => setAttempt((value) => value + 1), []);
+  const retry = useCallback(() => dispatch({ type: 'retryRequested' }), []);
 
   // A published digest reaches a reader without a reload (ADR-0060's hint,
   // pointed at a public table). A channel that cannot open costs freshness,
@@ -142,7 +121,7 @@ export function NewsBoard() {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const refresh = () => {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => setAttempt((value) => value + 1), REFRESH_DEBOUNCE_MS);
+      timer = setTimeout(() => dispatch({ type: 'retryRequested' }), REFRESH_DEBOUNCE_MS);
     };
 
     const stop = subscribeToNewsDigestChanges({
