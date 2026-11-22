@@ -4,6 +4,8 @@ import '@/app/rates/app.css';
 import { useEffect, useState } from 'react';
 
 import { RatesExplorer } from '@/frontend/ui/rates/RatesExplorer';
+import { Button } from '@/frontend/ui/primitives/button';
+import { READ_FAILURE_COPY } from '@/frontend/ui/shared/read-failure-copy';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import type { RatesBoard } from '@/shared/contracts/rates';
 
@@ -59,7 +61,10 @@ interface RatesSurfaceProps {
  * `main`, and the homepage under the strip.
  */
 export function RatesSurface({ board }: RatesSurfaceProps) {
-  const owned = board === undefined;
+  // A board the route could not read is no board at all: the surface takes the
+  // read over so the failed face can retry the same request (#1743).
+  const owned = board === undefined || board === null;
+  const [attempts, setAttempts] = useState(0);
   const [read, setRead] = useState<BoardRead>({ kind: 'loading' });
 
   useEffect(() => {
@@ -82,7 +87,10 @@ export function RatesSurface({ board }: RatesSurfaceProps) {
     return () => {
       active = false;
     };
-  }, [owned]);
+  }, [owned, attempts]);
+
+  /** Re-run the owned read; the face returns to loading while it answers. */
+  const retry = () => setAttempts((value) => value + 1);
 
   const live = owned ? (read.kind === 'ready' ? read.board : null) : board;
   const hijriDate = live ? formatHijriDate(live.providerQuoteDate) : null;
@@ -133,8 +141,14 @@ export function RatesSurface({ board }: RatesSurfaceProps) {
           className="h-72 animate-pulse rounded-3xl border border-border/60 bg-muted/20"
         />
       ) : (
-        <div className="rounded-3xl border border-border/60 bg-card/85 p-8 text-center text-muted-foreground">
-          {RATES_PAGE_COPY.failureBody}
+        <div
+          role="status"
+          className="rounded-3xl border border-border/60 bg-card/85 p-8 text-center text-muted-foreground"
+        >
+          <p>{RATES_PAGE_COPY.failureBody}</p>
+          <Button type="button" variant="outline" size="sm" className="mt-5" onClick={retry}>
+            {READ_FAILURE_COPY.retry}
+          </Button>
         </div>
       )}
     </div>

@@ -35,7 +35,9 @@ export default async function RatesPage() {
   return (
     <div className="relative min-h-[var(--roy-page-height)] bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 selection:text-primary antialiased">
       <main id="main-content" dir="rtl" className="flex-1 pt-6 pb-28 md:pb-32">
-        <RatesSurface board={board} />
+        {/* A read the loader could not answer is no board: the surface owns the
+            read, so its failed face offers the same retry as the app (#1743). */}
+        <RatesSurface board={board ?? undefined} />
       </main>
     </div>
   );
