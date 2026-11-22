@@ -75,7 +75,7 @@ export function ActionCard({
             type="button"
             disabled={busy}
             onClick={() => void resolve('confirm')}
-            className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-60"
+            className="rounded-lg bg-selected px-3 py-1 text-xs font-bold text-selected-foreground transition-safe hover:bg-selected/90 disabled:opacity-60"
           >
             {labels.confirm}
           </button>

@@ -70,10 +70,10 @@ export function CohortStep({ control, cohorts, error }: CohortStepProps) {
                     <span
                       className={cn(
                         'flex items-center justify-center size-6 rounded-full border-2 shrink-0 mt-1',
-                        selected ? 'border-primary bg-primary' : 'border-border'
+                        selected ? 'border-selected bg-selected' : 'border-border'
                       )}
                     >
-                      {selected && <CheckCircle className="size-4 text-primary-foreground" />}
+                      {selected && <CheckCircle className="size-4 text-selected-foreground" />}
                     </span>
                   </div>
 

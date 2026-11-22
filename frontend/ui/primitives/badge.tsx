@@ -8,7 +8,7 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          'border-transparent bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 hover:shadow-sm active:bg-primary/95',
+          'border-transparent bg-selected text-selected-foreground shadow-xs hover:bg-selected/90 hover:shadow-sm active:bg-selected/95',
         secondary: 'roy-badge--neutral hover:bg-secondary hover:text-foreground',
         destructive:
           'border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive-foreground hover:bg-destructive/20 hover:border-destructive/40 dark:hover:bg-destructive/30',

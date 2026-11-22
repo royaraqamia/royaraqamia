@@ -13,7 +13,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground border border-primary-foreground/15 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.08)] hover:bg-primary/95 hover:shadow-[0_6px_20px_rgba(0,0,0,0.12)] active:shadow-xs dark:border-white/10',
+          'bg-selected text-selected-foreground border border-selected-foreground/15 shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.08)] hover:bg-selected/95 hover:shadow-[0_6px_20px_rgba(0,0,0,0.12)] active:shadow-xs dark:border-white/10',
         destructive:
           'bg-destructive text-destructive-foreground border border-destructive-foreground/15 shadow-[0_1px_2px_rgba(0,0,0,0.08)] hover:bg-destructive/90 hover:shadow-destructive/20 hover:shadow-lg active:shadow-xs',
         outline:
@@ -27,7 +27,7 @@ const buttonVariants = cva(
           'text-foreground/90 border border-transparent hover:bg-accent/80 hover:text-foreground active:bg-accent/90 hover:translate-y-0',
         link: 'text-primary underline-offset-4 hover:underline hover:text-primary/80 p-0 h-auto font-medium shadow-none hover:translate-y-0 active:scale-100',
         loading:
-          'bg-primary/60 text-primary-foreground/80 border border-primary/10 cursor-wait pointer-events-none shadow-none hover:translate-y-0 active:scale-100',
+          'bg-selected/60 text-selected-foreground/80 border border-selected/10 cursor-wait pointer-events-none shadow-none hover:translate-y-0 active:scale-100',
       },
       size: {
         default: 'h-12 px-6 py-3 text-base font-bold gap-2.5',

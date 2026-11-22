@@ -122,7 +122,7 @@ export default function Error({
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
           <button
             onClick={reset}
-            className="group relative inline-flex min-h-11 w-full sm:flex-1 items-center justify-center gap-2.5 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-safe duration-300 ease-out hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+            className="group relative inline-flex min-h-11 w-full sm:flex-1 items-center justify-center gap-2.5 rounded-xl bg-selected px-6 py-3 text-sm font-bold text-selected-foreground shadow-lg shadow-primary/20 transition-safe duration-300 ease-out hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
           >
             <svg
               className="h-4 w-4 transition-transform duration-500 ease-out group-hover:rotate-180"

@@ -110,7 +110,7 @@ function PaginationControls({
               onClick={() => onPageChange(pageNum)}
               className={`focus-ring btn-press touch-target h-10 w-10 cursor-pointer rounded-full text-xs font-bold transition-colors ${
                 pageNum === page
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-selected text-selected-foreground'
                   : 'text-muted-foreground hover:bg-muted'
               }`}
             >

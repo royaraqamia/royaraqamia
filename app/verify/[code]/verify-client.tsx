@@ -375,7 +375,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                           }
                           className="group relative flex items-start gap-3.5 p-3.5 rounded-2xl bg-neutral-100/60 dark:bg-neutral-800/40 border border-neutral-200/50 dark:border-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-safe duration-300"
                         >
-                          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 shadow-xs border border-neutral-200/60 dark:border-neutral-700/60 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary dark:group-hover:text-primary-foreground transition-safe duration-300">
+                          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 shadow-xs border border-neutral-200/60 dark:border-neutral-700/60 group-hover:bg-selected group-hover:text-selected-foreground dark:group-hover:bg-selected dark:group-hover:text-selected-foreground transition-safe duration-300">
                             {detail.icon}
                           </div>
                           <div className="min-w-0 flex-1">

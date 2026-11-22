@@ -142,7 +142,7 @@ export function HijriDatePicker({
                 className={cn(
                   'inline-flex size-9 items-center justify-center rounded-lg text-sm font-medium transition-safe',
                   isSelected
-                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    ? 'bg-selected text-selected-foreground shadow-sm'
                     : 'text-foreground hover:bg-accent',
                   isDisabled && 'pointer-events-none text-muted-foreground/35 line-through'
                 )}

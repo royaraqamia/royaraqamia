@@ -327,7 +327,7 @@ function ThreadRow({
             </span>
           ) : null}
           {thread.unreadCount > 0 ? (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-selected px-1.5 text-[10px] font-bold leading-none text-selected-foreground">
               {thread.unreadCount > 99 ? CHATS_LIST_COPY.unreadOverflow : thread.unreadCount}
             </span>
           ) : null}

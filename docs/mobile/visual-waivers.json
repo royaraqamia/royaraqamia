@@ -37,6 +37,24 @@
       "reason": "The budget card's state moved into a pure reducer beside it (#1100): the month load and the save now settle in one transition, but the same props, markup, class names, copy and data-* attributes render. No box, colour, font or word the capture records can move, so the existing evidence stays correct and a re-record would only reproduce it.",
       "issue": "#1100",
       "until": "2026-12-22"
+    },
+    {
+      "surface": "verify-code",
+      "reason": "The only web change is a detail-row icon's hover/focus fill, from the light primary to the darker filled-control pair (#1669). The recorded at-rest state is unfocused, and its contract measures boxes rather than colour, so neither the recorded numbers nor the card raster can change.",
+      "issue": "#1669",
+      "until": "2026-12-22"
+    },
+    {
+      "surface": "mcp-app-detail",
+      "reason": "The only web change is the fill of the signed-in reconnect button (#1669). The contract records one at-rest guest screen and explicitly excludes the signed-in states, so no recorded box or pixel contains the changed control.",
+      "issue": "#1669",
+      "until": "2026-12-22"
+    },
+    {
+      "surface": "news",
+      "reason": "The only web change is the fill of the latest-digest link shown when the archive has no digest for the requested date (#1669). Both recorded states render a seeded digest or the unavailable block, so no recorded box or pixel contains the changed control.",
+      "issue": "#1669",
+      "until": "2026-12-22"
     }
   ]
 }

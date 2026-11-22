@@ -331,7 +331,7 @@ export function NewsBoard() {
             {view.hasAnyDigest ? (
               <Link
                 href={homeTabHref('/news')}
-                className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="mt-5 inline-flex rounded-xl bg-selected px-4 py-2 text-sm font-bold text-selected-foreground transition-colors hover:bg-selected/90"
               >
                 {NEWS_DIGEST_COPY.latestDigest}
               </Link>

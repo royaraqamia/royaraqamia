@@ -187,7 +187,7 @@ export function ChatReportsView() {
               className={cn(
                 'inline-flex min-h-9 cursor-pointer items-center rounded-full border px-4 py-1.5 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                 statusFilter === filter.value
-                  ? 'border-primary bg-primary text-primary-foreground'
+                  ? 'border-selected bg-selected text-selected-foreground'
                   : 'border-border/60 bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground'
               )}
             >

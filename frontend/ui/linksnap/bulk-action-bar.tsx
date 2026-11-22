@@ -79,7 +79,7 @@ export function BulkActionBar({
             data-visual="link-bulk-checkbox"
             className={`w-4.5 h-4.5 rounded border flex items-center justify-center transition-colors ${
               allSelected
-                ? 'bg-primary border-primary text-primary-foreground'
+                ? 'bg-selected border-selected text-selected-foreground'
                 : 'border-muted-foreground/40'
             }`}
           >
@@ -143,7 +143,7 @@ export function BulkActionBar({
               type="button"
               onClick={onApplyExpiry}
               disabled={busy}
-              className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
+              className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-selected text-selected-foreground hover:bg-selected/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
             >
               {BULK_ACTION_BAR_COPY.apply}
             </button>
