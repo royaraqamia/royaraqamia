@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import type { ShortenedLink } from '@/frontend/api/linksnap';
 import {
   LinksnapLocalStore,
@@ -13,7 +13,7 @@ import { pullLinksnapData } from '@/frontend/api/linksnap/pull';
 import { LinksnapSyncEngine } from '@/frontend/api/linksnap/sync-engine';
 import { createLinksnapHttpSyncTransport } from '@/frontend/api/linksnap/sync-transport';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
-import type { SyncEngine, SyncStatus } from '@/frontend/shared/local-store/sync-engine';
+import type { SyncEngine } from '@/frontend/shared/local-store/sync-engine';
 import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
 import {
   GUEST_IDENTITY,
@@ -30,6 +30,10 @@ import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { requestPersistentStorageOnce } from '@/frontend/shared/persistent-storage';
 import { beginTap, markContent } from '@/frontend/shared/perf-marks';
+import {
+  linksnapStoreInitialState,
+  linksnapStoreReducer,
+} from '@/frontend/state/linksnap/use-linksnap.reducer';
 
 /**
  * Tables whose changes mean this surface's data moved on another device
@@ -61,14 +65,6 @@ export interface LinksnapStoreState {
   deleteLink: (clientId: string) => Promise<void>;
   restoreLink: (clientId: string) => Promise<ShortenedLink>;
 }
-
-const EMPTY_STATUS: SyncStatus = {
-  syncing: false,
-  pending: 0,
-  failed: 0,
-  lastError: null,
-  lastFailedType: null,
-};
 
 /** The surface's snapshot (#495): the links the dashboard last painted. */
 export const LINKSNAP_SNAPSHOT_ROUTE = 'linksnap';
@@ -108,16 +104,13 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
    * The identity whose rows the store read answered, or `null` before the first
    * read. Tagged rather than a boolean so an identity change cannot paint the
    * previous account's links while the new store opens.
+   *
+   * Hydration-safe: the server (Node exposes a partial `navigator`) and the
+   * first client render must agree, so the reducer starts "online" and an
+   * effect reads the real value.
    */
-  const [readyFor, setReadyFor] = useState<LocalIdentity | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [store, setStore] = useState<LinksnapLocalStore | null>(null);
-  // Hydration-safe: the server (Node exposes a partial `navigator`) and the
-  // first client render must agree, so start "online" and read the real value
-  // in an effect.
-  const [online, setOnline] = useState(true);
-  const [links, setLinks] = useState<ShortenedLink[]>([]);
-  const [status, setStatus] = useState<SyncStatus>(EMPTY_STATUS);
+  const [state, dispatch] = useReducer(linksnapStoreReducer, undefined, linksnapStoreInitialState);
+  const { readyFor, loading, store, online, links, status } = state;
 
   const storeRef = useRef<LinksnapLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
@@ -139,7 +132,7 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
 
   const readIntoState = useCallback(async (store: LinksnapLocalStore) => {
     const rows = await store.getLinks();
-    setLinks(rows.map(recordToLink));
+    dispatch({ type: 'linksRead', links: rows.map(recordToLink) });
   }, []);
 
   useEffect(() => {
@@ -173,8 +166,7 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
         storeRef.current = store;
         await readIntoState(store);
         if (cancelled) return;
-        setStore(store);
-        setReadyFor(identity);
+        dispatch({ type: 'opened', store, identity });
         // The launch's content mark: owned rows painted from the Local Store (#487).
         markContent();
 
@@ -190,7 +182,7 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
           store,
           transport: createLinksnapHttpSyncTransport(),
           isSignedIn: () => isSignedIn,
-          onStatus: (next) => setStatus(next),
+          onStatus: (next) => dispatch({ type: 'syncStatus', status: next }),
         });
         engineRef.current = engine;
         engine.onSync(() => {
@@ -201,7 +193,7 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
       })
       .catch((error) => {
         logger.error('Failed to open LinkSnap Local Store', { error: String(error) });
-        if (!cancelled) setLoading(false);
+        if (!cancelled) dispatch({ type: 'loadFinished' });
       });
 
     return () => {
@@ -210,7 +202,7 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
       opened?.close();
       engineRef.current = null;
       storeRef.current = null;
-      setStore(null);
+      dispatch({ type: 'closed' });
     };
     // The identity change is the only trigger: reopening on every token refresh
     // would clobber local writes.
@@ -221,7 +213,7 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
   const pull = useCallback(async () => {
     const store = storeRef.current;
     if (!store || !isSignedIn) {
-      setLoading(false);
+      dispatch({ type: 'loadFinished' });
       return;
     }
     try {
@@ -232,7 +224,7 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
         'Failed to refresh LinkSnap links from the server'
       );
     } finally {
-      if (storeRef.current === store) setLoading(false);
+      if (storeRef.current === store) dispatch({ type: 'loadFinished' });
     }
   }, [isSignedIn, runRefresh]);
 
@@ -252,14 +244,17 @@ export function useLinksnap({ identity }: { identity: LocalIdentity }): Linksnap
   }, [ready, isSignedIn, identity, pull]);
 
   useEffect(() => {
-    setOnline(typeof navigator === 'undefined' ? true : navigator.onLine);
+    dispatch({
+      type: 'connectionChanged',
+      online: typeof navigator === 'undefined' ? true : navigator.onLine,
+    });
 
     const onOnline = () => {
-      setOnline(true);
+      dispatch({ type: 'connectionChanged', online: true });
       void engineRef.current?.flush();
       void pull();
     };
-    const onOffline = () => setOnline(false);
+    const onOffline = () => dispatch({ type: 'connectionChanged', online: false });
     // Coming back to the page reconciles with the server as well as flushing: a
     // change made on another device while this tab was hidden is exactly what
     // the hint subscription could not deliver.

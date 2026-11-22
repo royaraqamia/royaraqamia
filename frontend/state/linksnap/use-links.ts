@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer, useState } from 'react';
 import {
   listLinks,
   updateLink,
@@ -9,6 +9,10 @@ import {
   type ShortenedLink,
 } from '@/frontend/api/linksnap';
 import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
+import {
+  linksListInitialState,
+  linksListReducer,
+} from '@/frontend/state/linksnap/use-links.reducer';
 
 /**
  * The link list. Inside a `LinksnapProvider` the list renders from the Local
@@ -17,23 +21,22 @@ import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
  */
 export function useLinks(token: string, refreshTrigger: number) {
   const context = useLinksnapContext();
-  const [links, setLinks] = useState<ShortenedLink[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(linksListReducer, undefined, linksListInitialState);
+  const { links, loading, error } = state;
 
   const fetchLinks = useCallback(async () => {
     if (context) {
       await context.refresh();
       return;
     }
-    setLoading(true);
-    setError(null);
+    dispatch({ type: 'loadStarted' });
     try {
-      setLinks(await listLinks(token));
+      dispatch({ type: 'loaded', links: await listLinks(token) });
     } catch (err: unknown) {
-      setError((err instanceof Error && err.message) || 'فشل في تحميل روابطك المختصَرة.');
-    } finally {
-      setLoading(false);
+      dispatch({
+        type: 'loadFailed',
+        message: (err instanceof Error && err.message) || 'فشل في تحميل روابطك المختصَرة.',
+      });
     }
   }, [context, token]);
 
@@ -47,11 +50,11 @@ export function useLinks(token: string, refreshTrigger: number) {
   }, [token, refreshTrigger, fetchLinks, context]);
 
   const handleDelete = useCallback((key: string) => {
-    setLinks((prev) => prev.filter((l) => (l.clientId ?? l.code) !== key && l.code !== key));
+    dispatch({ type: 'linkRemoved', key });
   }, []);
 
   const applyLinkUpdate = useCallback((key: string, link: ShortenedLink) => {
-    setLinks((prev) => prev.map((l) => ((l.clientId ?? l.code) === key ? { ...l, ...link } : l)));
+    dispatch({ type: 'linkUpdated', key, link });
   }, []);
 
   return {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 import { Flag, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -19,10 +19,13 @@ import {
   type ChatReportSnapshotMessage,
   type ChatReportStatus,
 } from '@/shared/contracts/chat-reports';
+import {
+  chatReportsInitialState,
+  chatReportsReducer,
+  type ChatReportsStatusFilter,
+} from '@/frontend/ui/admin/chat-reports/chat-reports-view.reducer';
 
-type StatusFilter = ChatReportStatus | 'all';
-
-const FILTERS: readonly { value: StatusFilter; label: string }[] = [
+const FILTERS: readonly { value: ChatReportsStatusFilter; label: string }[] = [
   { value: 'open', label: CHAT_REPORT_STATUS_LABELS.open },
   { value: 'reviewed', label: CHAT_REPORT_STATUS_LABELS.reviewed },
   { value: 'dismissed', label: CHAT_REPORT_STATUS_LABELS.dismissed },
@@ -137,21 +140,20 @@ function ReportSnapshot({ report }: { report: ChatReportRow }) {
 }
 
 export function ChatReportsView() {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('open');
-  const [reports, setReports] = useState<ChatReportRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(
+    chatReportsReducer,
+    'open' as ChatReportsStatusFilter,
+    chatReportsInitialState
+  );
+  const { statusFilter, reports, loading, error, decidingId } = state;
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError(false);
+    dispatch({ type: 'loadStarted' });
     try {
-      setReports(await getAdminChatReports(statusFilter === 'all' ? undefined : statusFilter));
+      const loaded = await getAdminChatReports(statusFilter === 'all' ? undefined : statusFilter);
+      dispatch({ type: 'loaded', reports: loaded });
     } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
+      dispatch({ type: 'loadFailed' });
     }
   }, [statusFilter]);
 
@@ -160,21 +162,15 @@ export function ChatReportsView() {
   }, [load]);
 
   const decide = async (report: ChatReportRow, status: 'reviewed' | 'dismissed') => {
-    setDecidingId(report.id);
+    dispatch({ type: 'decideStarted', id: report.id });
     try {
       const updated = await decideAdminChatReport(report.id, status);
-      setReports((rows) =>
-        rows.flatMap((row) => {
-          if (row.id !== updated.id) return [row];
-          if (statusFilter === 'all' || statusFilter === updated.status) return [updated];
-          return [];
-        })
-      );
+      dispatch({ type: 'decided', report: updated });
       toast.success(status === 'reviewed' ? 'سُجّل الإبلاغ كمُراجَع.' : 'استُبعد الإبلاغ.');
     } catch {
       toast.error('تعذّر تسجيل القرار. أعد المحاولة.');
     } finally {
-      setDecidingId(null);
+      dispatch({ type: 'decideFinished' });
     }
   };
 
@@ -187,7 +183,7 @@ export function ChatReportsView() {
               key={filter.value}
               type="button"
               aria-pressed={statusFilter === filter.value}
-              onClick={() => setStatusFilter(filter.value)}
+              onClick={() => dispatch({ type: 'filterChanged', filter: filter.value })}
               className={cn(
                 'inline-flex min-h-9 cursor-pointer items-center rounded-full border px-4 py-1.5 text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                 statusFilter === filter.value

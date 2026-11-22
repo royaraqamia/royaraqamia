@@ -1,47 +1,42 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useReducer, useEffect, use } from 'react';
 import Link from 'next/link';
 import { CircleAlert, FileX } from 'lucide-react';
-import {
-  getCertificateById,
-  updateCertificate,
-  type AdminCertificate,
-} from '@/frontend/api/certificates';
+import { getCertificateById, updateCertificate } from '@/frontend/api/certificates';
 import { CertificateForm } from '@/frontend/ui/admin/certificate-form';
 import { PageLoader } from '@/frontend/ui/shared/page-loader';
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { ApiError } from '@/frontend/transport/http';
+import { certificateEditInitialState, certificateEditReducer } from './certificate-edit.reducer';
 
 export default function EditCertificatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [loading, setLoading] = useState(true);
-  const [cert, setCert] = useState<AdminCertificate | null>(null);
-  const [loadFailure, setLoadFailure] = useState<{ offline: boolean; message: string } | null>(
-    null
+  const [state, dispatch] = useReducer(
+    certificateEditReducer,
+    undefined,
+    certificateEditInitialState
   );
-  const [reloadKey, setReloadKey] = useState(0);
+  const { loading, cert, loadFailure, reloadKey } = state;
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
-    setLoadFailure(null);
+    dispatch({ type: 'loadStarted' });
     getCertificateById(id)
       .then((data) => {
-        if (mounted) setCert(data);
+        if (mounted) dispatch({ type: 'loaded', cert: data });
       })
       .catch((error: unknown) => {
         if (!mounted) return;
-        setCert(null);
-        setLoadFailure({
-          offline: error instanceof ApiError && error.isNetworkError,
-          message: error instanceof Error ? error.message : 'تعذّر تحميل الشهادة.',
+        dispatch({
+          type: 'loadFailed',
+          failure: {
+            offline: error instanceof ApiError && error.isNetworkError,
+            message: error instanceof Error ? error.message : 'تعذّر تحميل الشهادة.',
+          },
         });
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
       });
     return () => {
       mounted = false;
@@ -53,7 +48,7 @@ export default function EditCertificatePage({ params }: { params: Promise<{ id: 
   }
 
   if (loadFailure) {
-    const retry = () => setReloadKey((key) => key + 1);
+    const retry = () => dispatch({ type: 'reloadRequested' });
 
     return loadFailure.offline ? (
       <NeedsConnection

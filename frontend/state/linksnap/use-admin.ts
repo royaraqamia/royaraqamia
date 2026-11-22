@@ -1,27 +1,28 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 import { toast } from 'sonner';
-import { fetchAdminStats, moderateLink, type AdminStats } from '@/frontend/api/linksnap';
+import { fetchAdminStats, moderateLink } from '@/frontend/api/linksnap';
 import { logger } from '@/frontend/shared/logger';
+import {
+  adminLinksInitialState,
+  adminLinksReducer,
+} from '@/frontend/state/linksnap/use-admin.reducer';
 
 export function useAdminLinks(token: string) {
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoadingCode, setActionLoadingCode] = useState<string | null>(null);
-  const [moderateError, setModerateError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(adminLinksReducer, undefined, adminLinksInitialState);
+  const { stats, loading, error, actionLoadingCode, moderateError } = state;
 
   const loadStats = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    dispatch({ type: 'loadStarted' });
     try {
-      setStats(await fetchAdminStats(token));
+      dispatch({ type: 'loaded', stats: await fetchAdminStats(token) });
     } catch (err: unknown) {
       logger.error('Failed to fetch admin stats', { error: String(err) });
-      setError(err instanceof Error ? err.message : 'فشل في جلب البيانات الإدارية.');
-    } finally {
-      setLoading(false);
+      dispatch({
+        type: 'loadFailed',
+        message: err instanceof Error ? err.message : 'فشل في جلب البيانات الإدارية.',
+      });
     }
   }, [token]);
 
@@ -32,30 +33,23 @@ export function useAdminLinks(token: string) {
     return () => clearTimeout(timer);
   }, [loadStats]);
 
+  const setModerateError = useCallback((message: string | null) => {
+    dispatch({ type: 'moderateErrorSet', message });
+  }, []);
+
   const toggleModerationBlock = useCallback(
     async (code: string, currentBlockedState: boolean) => {
-      setActionLoadingCode(code);
-      setModerateError(null);
+      dispatch({ type: 'moderationStarted', code });
       try {
         const targetState = !currentBlockedState;
         await moderateLink(code, targetState, token);
-        setStats((prev) => {
-          if (!prev) return prev;
-          const updatedLinks = (prev.links || []).map((link) =>
-            link.code === code ? { ...link, isBlocked: targetState } : link
-          );
-          const blockedDiff = targetState ? 1 : -1;
-          return {
-            ...prev,
-            blockedLinksCount: prev.blockedLinksCount + blockedDiff,
-            links: updatedLinks,
-          };
-        });
+        dispatch({ type: 'moderationSucceeded', code, blocked: targetState });
         toast.success(targetState ? 'تم حظر الرَّابط بنجاح' : 'تم إلغاء حظر الرَّابط بنجاح');
       } catch (err: unknown) {
-        setModerateError(err instanceof Error ? err.message : 'حدث خطأ أثناء إجراء المراقبة.');
-      } finally {
-        setActionLoadingCode(null);
+        dispatch({
+          type: 'moderationFailed',
+          message: err instanceof Error ? err.message : 'حدث خطأ أثناء إجراء المراقبة.',
+        });
       }
     },
     [token]
