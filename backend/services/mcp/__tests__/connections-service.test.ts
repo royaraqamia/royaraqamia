@@ -70,6 +70,7 @@ function fakeRepository(
 
   const repository: McpMarketplaceRepository = {
     getCatalogServer: async () => null,
+    getCatalogRaw: async () => null,
     findLiveConnection: async () => null,
     getConnection: async (userId, id) => {
       const row = connections.get(id);

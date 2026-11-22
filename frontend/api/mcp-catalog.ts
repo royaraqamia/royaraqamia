@@ -2,6 +2,8 @@ import type {
   McpCatalogAdminPage,
   McpCatalogAdminUpdate,
   McpCatalogPage,
+  McpCatalogRemoteOption,
+  McpCatalogRemoteOptions,
 } from '@/shared/contracts/mcp-catalog';
 import { request } from '@/frontend/transport/http';
 
@@ -43,6 +45,21 @@ export async function getAdminMcpCatalog(params: {
     { cache: 'no-store' }
   );
   return result.data;
+}
+
+/**
+ * The registry's addresses, read only when the remote picker opens. The list
+ * deliberately leaves them out so a page of 50 rows is not a 45 KB JSON body.
+ */
+export async function getAdminMcpCatalogRemoteOptions(
+  registryName: string
+): Promise<McpCatalogRemoteOption[]> {
+  const search = new URLSearchParams({ registryName });
+  const result = await request<{ success: boolean; data: McpCatalogRemoteOptions }>(
+    `/api/admin/mcp/catalog/raw?${search.toString()}`,
+    { cache: 'no-store' }
+  );
+  return result.data.remoteOptions;
 }
 
 export async function updateAdminMcpCatalogRow(input: McpCatalogAdminUpdate): Promise<void> {

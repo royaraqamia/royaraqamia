@@ -114,6 +114,32 @@ export async function listMcpCatalogForAdmin(query: {
   );
 }
 
+/**
+ * The registry's addresses for one row, fetched when the remote picker opens.
+ * The list never selects the registry's own document: a page of 50 rows would
+ * otherwise carry 45 KB of JSON nobody but the picker reads.
+ */
+export async function getMcpCatalogRemoteOptions(query: {
+  registryName?: string | null;
+}): Promise<HttpResult> {
+  return withAdminUser(
+    async () => {
+      const parsed = McpCatalogProbeSchema.safeParse({
+        registryName: query.registryName ?? '',
+      });
+      if (!parsed.success) {
+        return jsonResult(400, { success: false, error: 'طلب غير صالح' }, { headers: NO_STORE });
+      }
+
+      const remoteOptions = await createDefaultMcpCatalogService().adminRemoteOptions(
+        parsed.data.registryName
+      );
+      return jsonResult(200, { success: true, data: { remoteOptions } }, { headers: NO_STORE });
+    },
+    { whenFailed: { success: false, error: 'تعذّر تحميل عناوين السجل.' } }
+  );
+}
+
 /** Measure one row now, so an admin does not have to reload the list and hope. */
 export async function probeMcpCatalogRow(body: unknown): Promise<HttpResult> {
   return withAdminUser(

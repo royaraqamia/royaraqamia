@@ -249,12 +249,6 @@ export const McpCatalogAdminRowSchema = McpCatalogRowSchema.extend({
    * accepted one. `null` means "follow the registry", which is the sync's job.
    */
   remoteOverride: z.string().nullable(),
-  /**
-   * Every address the registry publishes for this server, from the `raw` entry
-   * it sent. The console offers these beside a free-text `https` field, because
-   * a publisher's list is a starting point and not a guarantee.
-   */
-  remoteOptions: z.array(McpCatalogRemoteOptionSchema),
   /** The Latin name an admin wrote; `title` already falls back to it. */
   titleOverride: z.string().nullable(),
   /**
@@ -304,6 +298,16 @@ export const McpCatalogAdminPageSchema = z.object({
 });
 
 export type McpCatalogAdminPage = z.infer<typeof McpCatalogAdminPageSchema>;
+
+/**
+ * The registry's addresses for one row, read only when the remote picker opens.
+ * Keeping them out of the list stops a 50-row page carrying 45 KB of JSON.
+ */
+export const McpCatalogRemoteOptionsSchema = z.object({
+  remoteOptions: z.array(McpCatalogRemoteOptionSchema),
+});
+
+export type McpCatalogRemoteOptions = z.infer<typeof McpCatalogRemoteOptionsSchema>;
 
 /**
  * The two acts the console performs on one row: block it with a reason, or

@@ -93,6 +93,7 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
 
   const repository: McpMarketplaceRepository = {
     getCatalogServer: async () => CATALOG,
+    getCatalogRaw: async () => null,
     findLiveConnection: async (userId, registryName) =>
       [...connections.values()].find(
         (row) =>
