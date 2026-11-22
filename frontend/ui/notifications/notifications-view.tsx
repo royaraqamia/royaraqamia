@@ -11,6 +11,7 @@ import {
   Check,
   CircleCheck,
   CircleDollarSign,
+  FileText,
   GraduationCap,
   Link2,
   Megaphone,
@@ -69,6 +70,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   consultation_booking: <CalendarCheck2 size={18} />,
   chat_request: <MessagesSquare size={18} />,
   new_follower: <UserPlus size={18} />,
+  post_published: <FileText size={18} />,
 };
 
 const TABS = [
@@ -351,6 +353,10 @@ function NotificationRow({ notification, onMarkRead, onDelete }: NotificationRow
         >
           {notificationsTimeAgo(notification.created_at)}
         </p>
+        {/* The row's press leads to the post; name that press in both clients. */}
+        {notification.type === 'post_published' && (
+          <span className="sr-only">{NOTIFICATIONS_COPY.postPublishedOpen}</span>
+        )}
       </div>
     </div>
   );

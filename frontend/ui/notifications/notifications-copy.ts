@@ -16,6 +16,7 @@ export const NOTIFICATIONS_COPY = {
   markAllRead: 'تحديد الكل كمقروء',
   deleteLabel: 'حذف الإشعار',
   unreadLabel: 'غير مقروء',
+  postPublishedOpen: 'قراءة المنشور',
   signInTitle: 'سجِّل الدُّخول لمتابعة إشعاراتك',
   listError: 'تعذّر تحميل الإشعارات. أعد المحاولة.',
   retry: 'إعادة المحاولة',

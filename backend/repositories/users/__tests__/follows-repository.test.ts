@@ -167,6 +167,24 @@ describe('createFollowsRepository.listFollowerIds', () => {
   });
 });
 
+describe('createFollowsRepository.allFollowerIds', () => {
+  it('reads the whole audience, with no page and no duplicate edges', async () => {
+    const followers = Array.from({ length: 40 }, (_, index) => ({
+      follower_id: `follower-${index}`,
+    }));
+    const { supabase, builder } = createPageClient({
+      page: { data: [...followers, followers[0]], error: null, count: null },
+      total: { count: 40 },
+    });
+    const repository = createFollowsRepository(supabase);
+
+    await expect(repository.allFollowerIds('owner')).resolves.toEqual(
+      followers.map((row) => row.follower_id)
+    );
+    expect(builder.range).not.toHaveBeenCalled();
+  });
+});
+
 describe('createFollowsRepository.listFollowingIds', () => {
   it('answers an empty page past the last row with the real total', async () => {
     const { supabase } = createPageClient({

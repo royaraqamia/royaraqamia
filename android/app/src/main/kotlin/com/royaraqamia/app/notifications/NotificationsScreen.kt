@@ -312,7 +312,13 @@ private fun NotificationRow(
             Modifier.fillMaxWidth()
                 .testTag(NotificationsMetrics.ROW)
                 .background(if (read) Color.Transparent else NotificationsMetrics.rowUnreadSurface)
-                .clickable(onClick = onOpen)
+                .clickable(
+                    onClick = onOpen,
+                    onClickLabel =
+                        if (item.type == NotificationsResponseNotificationsItemType.POST_PUBLISHED)
+                            NotificationsCopy.POST_PUBLISHED_OPEN
+                        else null,
+                )
                 .clip(shape),
     ) {
         Row(
@@ -552,6 +558,7 @@ private fun iconFor(type: NotificationsResponseNotificationsItemType): ImageVect
             LucideVectors.CalendarCheck2
         NotificationsResponseNotificationsItemType.CHAT_REQUEST -> LucideVectors.MessagesSquare
         NotificationsResponseNotificationsItemType.NEW_FOLLOWER -> LucideVectors.UserPlus
+        NotificationsResponseNotificationsItemType.POST_PUBLISHED -> LucideVectors.FileText
         NotificationsResponseNotificationsItemType.PROJECT_REQUEST,
         NotificationsResponseNotificationsItemType.RETAINER_REQUEST,
         NotificationsResponseNotificationsItemType.SUBSCRIPTION_REQUEST -> LucideVectors.Bell

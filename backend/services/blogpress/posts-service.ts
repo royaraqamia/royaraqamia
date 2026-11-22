@@ -1,4 +1,5 @@
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
+import type { PostPublishedNotifier } from '@/backend/config/notifications';
 import type { RestorePostSnapshot } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
 
@@ -8,18 +9,25 @@ import type { PostInput } from '@/shared/contracts/community';
  * transition that reuses the publish gate. Pure reads and single-writes cross
  * the repository seam directly.
  *
- * Publishing is deliberately silent: it writes no notification, because a
- * notice for every post is noise the Admin audience cannot afford.
+ * A publish tells the author's followers, not a role (#1752). The notifier is
+ * injected: the rule about who receives it lives in `backend/config/notifications`,
+ * and this service only reports the event. Bulk publish stays silent, as it did
+ * before the retirement — it is a moderation action, not a member's new post.
  */
 export class BlogpressPostsService {
-  constructor(private readonly repository: PostsRepository) {}
+  constructor(
+    private readonly repository: PostsRepository,
+    private readonly onPostPublished?: PostPublishedNotifier
+  ) {}
 
   async saveAndPublishPost(
     postId: string,
     authorId: string,
     data: PostInput
   ): Promise<{ slug: string }> {
-    return this.repository.saveAndPublishPost(postId, authorId, data);
+    const result = await this.repository.saveAndPublishPost(postId, authorId, data);
+    this.onPostPublished?.({ postId, authorId, slug: result.slug });
+    return result;
   }
 
   /**
@@ -31,11 +39,15 @@ export class BlogpressPostsService {
     authorId: string,
     data: PostInput
   ): Promise<{ id: string; slug: string }> {
-    return this.repository.createAndPublishPost(authorId, data);
+    const result = await this.repository.createAndPublishPost(authorId, data);
+    this.onPostPublished?.({ postId: result.id, authorId, slug: result.slug });
+    return result;
   }
 
   async publishPost(postId: string, authorId: string): Promise<{ slug: string }> {
-    return this.repository.publishPost(postId, authorId);
+    const result = await this.repository.publishPost(postId, authorId);
+    this.onPostPublished?.({ postId, authorId, slug: result.slug });
+    return result;
   }
 
   async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ slug: string }> {

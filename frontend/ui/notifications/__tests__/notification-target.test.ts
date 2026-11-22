@@ -59,6 +59,16 @@ describe('notificationTarget', () => {
     expect(notificationTarget(notification('new_follower'))).toBe('/notifications?tab=alerts');
   });
 
+  it('opens a published post from the bell as it does from the push', () => {
+    expect(notificationTarget(notification('post_published', { slug: 'new-post' }))).toBe(
+      '/community/new-post'
+    );
+    expect(notificationTarget(notification('post_published', { slug: 'a/b' }))).toBe(
+      '/community/a%2Fb'
+    );
+    expect(notificationTarget(notification('post_published'))).toBe('/community');
+  });
+
   it('survives a null metadata column', () => {
     const row = {
       type: 'certificate_issued' as const,

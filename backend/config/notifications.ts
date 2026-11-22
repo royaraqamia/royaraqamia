@@ -20,6 +20,8 @@ import {
 import { logger } from '@/backend/shared/logger';
 import { toPushUrl, type PushPayload } from '@/shared/contracts/push';
 import type { NotificationCreateInput } from '@/shared/contracts/notifications';
+import type { RecipientEmail } from '@/backend/repositories/users/admin-users-repository';
+import { classifyAccount, harnessEmails } from '@/scripts/chat-quality-signals-lib.mjs';
 
 export function createNotificationService(
   repo: NotificationRepository,
@@ -78,6 +80,76 @@ export function createAdminNotificationProducer(): NotificationProducer {
       });
     }
   };
+}
+
+/**
+ * A published post's audience is the author's followers, never a role (#1752).
+ * The graph is read by a repository; the harness list comes from the same module
+ * `scripts/chat-quality-signals.mjs` uses, so a visual-gate seed writes nothing.
+ */
+export interface PostPublishedNotice {
+  authorId: string;
+  postId: string;
+  slug: string;
+}
+
+export interface PostPublishedNotifierDeps {
+  /** The fail-safe producer: one insert and one push per recipient. */
+  notify: NotificationProducer;
+  /** Every follower of the author, not one profile page of them. */
+  followersOf: (authorId: string) => Promise<string[]>;
+  /** Emails for the author and the followers, so harness rows can be excluded. */
+  recipientEmailsOf: (ids: string[]) => Promise<RecipientEmail[]>;
+  /** Injected in tests; production reads the process env. */
+  env?: Record<string, string | undefined>;
+}
+
+/** Fire-and-forget: a publish never waits for, or fails on, notification I/O. */
+export type PostPublishedNotifier = (notice: PostPublishedNotice) => void;
+
+export function createPostPublishedNotifier(
+  deps: PostPublishedNotifierDeps
+): PostPublishedNotifier {
+  return (notice) => {
+    void deliverToFollowers(deps, notice);
+  };
+}
+
+async function deliverToFollowers(
+  deps: PostPublishedNotifierDeps,
+  notice: PostPublishedNotice
+): Promise<void> {
+  try {
+    const harness = harnessEmails((deps.env ?? process.env) as NodeJS.ProcessEnv);
+    const followers = await deps.followersOf(notice.authorId);
+    const people = await deps.recipientEmailsOf([...new Set([notice.authorId, ...followers])]);
+    const author = people.find((person) => person.id === notice.authorId);
+
+    // A seeded post is not news. Skip the whole fan-out when the author is a
+    // harness account, so a real follower of the visual account still gets no
+    // notice for a post the visual gate deletes seconds later.
+    if (author && classifyAccount(author.email, harness) === 'harness') return;
+
+    const recipients = people.filter(
+      (person) =>
+        person.id !== notice.authorId && classifyAccount(person.email, harness) === 'member'
+    );
+    await Promise.all(
+      recipients.map((person) =>
+        deps.notify({
+          user_id: person.id,
+          type: 'post_published',
+          title: 'منشور جديد',
+          body: 'نشر عضو تتابعه منشورًا جديدًا.',
+          metadata: { postId: notice.postId, slug: notice.slug },
+        })
+      )
+    );
+  } catch (error) {
+    logger.error(`Failed to notify followers of post [${notice.postId}]`, {
+      error: String(error),
+    });
+  }
 }
 
 export type NotificationAudience = 'admin' | 'all';

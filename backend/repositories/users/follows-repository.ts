@@ -65,6 +65,11 @@ export interface FollowsRepository {
     page: number,
     pageSize: number
   ): Promise<{ ids: string[]; total: number }>;
+  /**
+   * Every id that follows `userId`, with no page: a notification's audience is
+   * the whole graph, not the thirty rows a profile list happens to draw.
+   */
+  allFollowerIds(userId: string): Promise<string[]>;
   /** The ids `userId` follows, newest first, and the total. */
   listFollowingIds(
     userId: string,
@@ -229,6 +234,16 @@ export function createFollowsRepository(supabase: SupabaseClient<Database>): Fol
 
     async listFollowerIds(userId, page, pageSize) {
       return pageOfIds('followee_id', 'follower_id', userId, page, pageSize);
+    },
+
+    async allFollowerIds(userId) {
+      const { data, error } = await supabase
+        .from('follows')
+        .select('follower_id')
+        .eq('followee_id', userId);
+
+      if (error) throw error;
+      return [...new Set((data ?? []).map((row) => row.follower_id))];
     },
 
     async listFollowingIds(userId, page, pageSize) {

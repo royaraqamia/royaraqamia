@@ -200,6 +200,22 @@ describe('NotificationsView rows', () => {
     expect(screen.getByRole('link', { name: /شهادة/ })).toHaveAttribute('href', '/verify/hello');
   });
 
+  it('opens a published post and names that press in the shared copy', () => {
+    state.notifications = [
+      notification('n1', 'post_published', {
+        title: 'منشور جديد',
+        metadata: { slug: 'new-post' },
+      }),
+    ];
+    state.unreadCount = 1;
+
+    render(<NotificationsView />);
+
+    const row = screen.getByRole('link', { name: /منشور جديد/ });
+    expect(row).toHaveAttribute('href', '/community/new-post');
+    expect(row).toHaveTextContent('قراءة المنشور');
+  });
+
   it('marks an unread row read when it is opened', () => {
     state.notifications = [
       notification('n1', 'certificate_issued', { metadata: { certificateCode: 'C-1' } }),

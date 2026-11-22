@@ -20,6 +20,7 @@ class NotificationsRoutesTest {
         certificateCode: String? = null,
         conversationId: String? = null,
         username: String? = null,
+        slug: String? = null,
     ) = NotificationsResponseNotificationsItem(
         id = "n-1",
         user_id = "u-1",
@@ -31,6 +32,7 @@ class NotificationsRoutesTest {
                 certificateCode = certificateCode,
                 conversationId = conversationId,
                 username = username,
+                slug = slug,
             ),
         is_read = false,
         created_at = "2026-11-13T00:00:00Z",
@@ -110,6 +112,25 @@ class NotificationsRoutesTest {
         assertEquals(
             "/notifications?tab=alerts",
             NotificationsRoutes.targetOf(item(NotificationsResponseNotificationsItemType.NEW_FOLLOWER)),
+        )
+    }
+
+    @Test
+    fun `a published post opens its post`() {
+        assertEquals(
+            "/community/new-post",
+            NotificationsRoutes.targetOf(
+                item(
+                    NotificationsResponseNotificationsItemType.POST_PUBLISHED,
+                    slug = "new-post",
+                )
+            ),
+        )
+        assertEquals(
+            "/community",
+            NotificationsRoutes.targetOf(
+                item(NotificationsResponseNotificationsItemType.POST_PUBLISHED)
+            ),
         )
     }
 
