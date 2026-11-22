@@ -49,6 +49,17 @@ test here.
 - A hidden or unconfirmed member answers `not_found`, a block answers `blocked`, and a
   self-follow answers `self`, none of them writing a row.
 
+`counter_rpc_visibility_test.sql` (#1690):
+
+- `anon` keeps `EXECUTE` on both aggregate RPCs; the predicates are the boundary, not a
+  revocation.
+- `post_engagement_counts` answers live like and comment numbers for a published,
+  community-visible, non-tombstoned post whose `published_at` has passed, and answers no
+  row for a draft, a community-hidden post, a future post or a tombstone - including when
+  every kind is asked for in one call.
+- `follow_counts` answers the profile's numbers for a listed member (verified, not hidden)
+  and no row for a hidden or unconfirmed one, in one call too.
+
 `plan_cap_enforcement_test.sql` (#526):
 
 - The count a cap reads excludes tombstones.
