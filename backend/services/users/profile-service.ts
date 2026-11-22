@@ -63,6 +63,15 @@ export class ProfileService {
     return { name };
   }
 
+  /**
+   * Stamp the caller's last seen. A foreground heartbeat, not a profile edit:
+   * it writes one column on the caller's own row (ADR 0212), so there is no
+   * normalization, cache invalidation or uniqueness rule around it.
+   */
+  async touchLastSeen(userId: string): Promise<void> {
+    await this.deps.profiles.updateProfile(userId, { last_seen_at: new Date().toISOString() });
+  }
+
   /** Set the caller's public bio; an empty string clears it. */
   async updateBio(userId: string, bio: string): Promise<{ bio: string | null }> {
     const value = bio.trim() || null;

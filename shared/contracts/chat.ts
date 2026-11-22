@@ -266,6 +266,8 @@ export interface ChatPeer {
   name: string | null;
   avatarUrl: string | null;
   verified: boolean;
+  /** Last time this member was foregrounded (ADR 0212); null until first seen. */
+  lastSeenAt?: string | null;
 }
 
 export interface ChatParticipant {
@@ -687,6 +689,7 @@ export const ChatPeerSchema = z.object({
   name: z.string().nullable(),
   avatarUrl: z.string().nullable(),
   verified: z.boolean(),
+  lastSeenAt: z.string().nullable().optional(),
 });
 
 export const ChatParticipantSchema = z.object({

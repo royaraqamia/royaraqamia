@@ -126,6 +126,7 @@ data class ChatThreadsResponseThreadsItemCounterpart(
     val name: String?,
     val avatarUrl: String?,
     val verified: Boolean,
+    val lastSeenAt: String? = null,
 )
 
 @Serializable
@@ -201,6 +202,7 @@ data class ChatThreadResponseThreadCounterpart(
     val name: String?,
     val avatarUrl: String?,
     val verified: Boolean,
+    val lastSeenAt: String? = null,
 )
 
 @Serializable
@@ -259,6 +261,7 @@ data class ChatThreadResponseThreadParticipantsItemPeer(
     val name: String?,
     val avatarUrl: String?,
     val verified: Boolean,
+    val lastSeenAt: String? = null,
 )
 
 @Serializable
@@ -293,6 +296,7 @@ data class ChatThreadResponseThreadMePeer(
     val name: String?,
     val avatarUrl: String?,
     val verified: Boolean,
+    val lastSeenAt: String? = null,
 )
 
 @Serializable
@@ -476,6 +480,7 @@ data class ChatMembersResponseMembersItem(
     val name: String?,
     val avatarUrl: String?,
     val verified: Boolean,
+    val lastSeenAt: String? = null,
 )
 
 @Serializable
@@ -492,6 +497,7 @@ data class ChatBlockedMembersResponseBlockedItem(
     val name: String?,
     val avatarUrl: String?,
     val verified: Boolean,
+    val lastSeenAt: String? = null,
 )
 
 @Serializable

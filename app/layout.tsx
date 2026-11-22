@@ -27,6 +27,7 @@ import { AppPerfObserver } from '@/frontend/ui/AppPerfObserver';
 import { WebVitalsReporter } from '@/frontend/ui/WebVitalsReporter';
 import { ScrollbarReveal } from '@/frontend/ui/ScrollbarReveal';
 import { AssistantLauncher } from '@/frontend/ui/assistant/assistant-launcher';
+import { LastSeenHeartbeat } from '@/frontend/ui/presence/last-seen-heartbeat';
 
 const designTokensCss = (() => {
   try {
@@ -181,6 +182,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                           their endpoints 404 and the CSP never allowed the ingest
                           host, so each visit paid two failed requests (#1498). */}
                         <PWAProvider>
+                          <LastSeenHeartbeat />
                           <RouteChangeFocus />
                           <AppPerfObserver />
                           <WebVitalsReporter />

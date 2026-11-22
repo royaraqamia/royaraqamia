@@ -11,7 +11,7 @@
   },
   "notes": {
     "source": "One open conversation, in both clients (#819): the header and its menu, a group's roster, the two answers to a request, the composer and every state that replaces it, the tombstone and the edited marker, and the confirmations each write asks for. The site renders them in `frontend/ui/chats/chat-thread-view.tsx`, which is the app's reference; the accept and decline dialogs and the relative-time words are the list's sentences (`chats-list.json`), so the two screens cannot word one confirmation two ways.",
-    "placeholders": "`blockTitle` carries `{title}`, `waitingComposer` carries `{title}`, `blockUser` carries `{username}`, `rosterCount` carries `{count}` and `{max}`, and `downloadFile` and `removeInvitee` carry `{name}`.",
+    "placeholders": "`blockTitle` carries `{title}`, `waitingComposer` carries `{title}`, `blockUser` carries `{username}`, `rosterCount` carries `{count}` and `{max}`, and `downloadFile` and `removeInvitee` carry `{name}`. `lastSeenToday`, `lastSeenYesterday` and `lastSeenOn` carry `{time}`, and `lastSeenOn` also carries `{date}` - both formatted on the device with Latin digits (ADR 0212).",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `chat-thread-view.tsx` does not render, or a state the app's `ChatThreadUiState` declares that the row does not list."
   },
   "strings": {
@@ -61,6 +61,11 @@
     "readReceipt": "قُرئت",
     "typingNow": "يكتب الآن...",
     "recordingNow": "يُسجِّل رسالة صوتيَّة...",
+    "onlineNow": "متصل الآن",
+    "assistantOnline": "متاحة الآن",
+    "lastSeenToday": "آخر ظهور اليوم الساعة {time}",
+    "lastSeenYesterday": "آخر ظهور أمس الساعة {time}",
+    "lastSeenOn": "آخر ظهور {date} الساعة {time}",
     "recordLabel": "تسجيل رسالة صوتية",
     "stopRecording": "إيقاف وإرسال",
     "cancelRecording": "إلغاء التسجيل",

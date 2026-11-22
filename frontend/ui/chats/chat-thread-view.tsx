@@ -10,6 +10,7 @@ import {
   type ChatAssistantState,
 } from '@/frontend/state/chats/use-chat-assistant';
 import { useChatPresence } from '@/frontend/state/chats/use-chat-presence';
+import { usePeerLastSeen } from '@/frontend/state/chats/use-peer-last-seen';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { blockChatUser, reportChat } from '@/frontend/api/chats';
@@ -32,6 +33,7 @@ import { AssistantMark } from './assistant-mark';
 import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
 import { assistantPhaseText } from './assistant-phase';
 import { PresenceIndicator } from './presence-indicator';
+import { LastSeenLine } from './last-seen';
 import { AssistantComposer } from './chat-assistant-composer';
 import { ChatComposer } from './chat-composer';
 import { ChatMessageList } from './chat-message-list';
@@ -159,6 +161,14 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const { peer, noteTyping, noteRecording, stopTyping } = useChatPresence(
     conversationId,
     presenceEnabled ? (user?.id ?? null) : null
+  );
+
+  // A direct thread's header needs a fresh stamp; the assistant is always here
+  // and a group has no single counterpart to report on (ADR 0212).
+  const peerLastSeenAt = usePeerLastSeen(
+    thread?.kind === 'direct' ? thread.id : '',
+    thread?.kind === 'direct' ? (counterpartOf(thread)?.lastSeenAt ?? null) : null,
+    thread?.kind === 'direct'
   );
 
   if (isLoading) {
@@ -318,6 +328,7 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         thread={thread}
         counterpart={counterpart}
         presence={presence}
+        lastSeenAt={peerLastSeenAt}
         onReport={() => setReporting(true)}
         onBlock={() => setConfirm({ kind: 'block' })}
       />
@@ -486,6 +497,7 @@ function ThreadHeader({
   thread,
   counterpart,
   presence,
+  lastSeenAt,
   onReport,
   onBlock,
 }: {
@@ -493,10 +505,22 @@ function ThreadHeader({
   counterpart: ReturnType<typeof counterpartOf>;
   /** The live line under the name, or null when the peer is idle. */
   presence: string | null;
+  /** The peer's last seen, polled while the thread is open (ADR 0212). */
+  lastSeenAt: string | null;
   onReport: () => void;
   onBlock: () => void;
 }) {
   const goBack = useBackAction('/notifications?tab=chats');
+
+  // The header is the site's reference for these words (ADR 0212): one object,
+  // read from the thread's own copy source and handed to the line it draws.
+  const lastSeenLabels = {
+    onlineNow: CHAT_THREAD_COPY.onlineNow,
+    assistantOnline: CHAT_THREAD_COPY.assistantOnline,
+    lastSeenToday: CHAT_THREAD_COPY.lastSeenToday,
+    lastSeenYesterday: CHAT_THREAD_COPY.lastSeenYesterday,
+    lastSeenOn: CHAT_THREAD_COPY.lastSeenOn,
+  };
 
   /**
    * What "forget this conversation" said. One line, in the header's own chrome,
@@ -553,14 +577,18 @@ function ThreadHeader({
       <div className="min-w-0 flex-1 text-start">
         <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
         {/*
-          One slot, two sentences: while a peer is writing or recording, the
-          live line takes the handle's place and returns it when it ends. The
-          header's height is the avatar's (36px) either way, so nothing jumps
-          (#816, ADR-0165).
+          One slot, three sentences: writing/recording wins while it lasts,
+          then the last-seen line (or نور's always-available line) takes the
+          handle's place. The header's height is the avatar's (36px) either
+          way, so nothing jumps (#816, ADR-0165, ADR-0212).
         */}
         {presence ? (
           <PresenceIndicator label={presence} className="text-xs" />
-        ) : thread.kind !== 'agent' && counterpart ? (
+        ) : thread.kind === 'agent' ? (
+          <LastSeenLine labels={lastSeenLabels} alwaysOnline />
+        ) : lastSeenAt ? (
+          <LastSeenLine labels={lastSeenLabels} lastSeenAt={lastSeenAt} />
+        ) : counterpart ? (
           <p className="truncate text-xs text-muted-foreground/70 text-end" dir="ltr">
             @{counterpart.username}
           </p>

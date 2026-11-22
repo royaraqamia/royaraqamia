@@ -594,7 +594,14 @@ describe('ChatService.listBlocked', () => {
     const { service } = makeRepository({ findBlockedIds: vi.fn(async () => [peerId]) });
 
     await expect(service.listBlocked(me)).resolves.toEqual([
-      { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+      {
+        id: peerId,
+        username: 'sara',
+        name: 'سارة',
+        avatarUrl: null,
+        verified: true,
+        lastSeenAt: null,
+      },
     ]);
   });
 });
@@ -606,7 +613,14 @@ describe('ChatService.preview', () => {
     });
 
     await expect(service.preview(me, '@sara')).resolves.toEqual({
-      peer: { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+      peer: {
+        id: peerId,
+        username: 'sara',
+        name: 'سارة',
+        avatarUrl: null,
+        verified: true,
+        lastSeenAt: null,
+      },
       conversationId: 'c-1',
     });
     expect(repository.createConversation).not.toHaveBeenCalled();
@@ -616,7 +630,14 @@ describe('ChatService.preview', () => {
     const { service } = makeRepository();
 
     await expect(service.preview(me, 'sara')).resolves.toEqual({
-      peer: { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+      peer: {
+        id: peerId,
+        username: 'sara',
+        name: 'سارة',
+        avatarUrl: null,
+        verified: true,
+        lastSeenAt: null,
+      },
       conversationId: null,
     });
   });
@@ -645,7 +666,14 @@ describe('ChatService.preview', () => {
     });
 
     await expect(service.preview(me, '@sara')).resolves.toEqual({
-      peer: { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+      peer: {
+        id: peerId,
+        username: 'sara',
+        name: 'سارة',
+        avatarUrl: null,
+        verified: true,
+        lastSeenAt: null,
+      },
       conversationId: 'c-declined',
     });
   });
@@ -674,7 +702,14 @@ describe('ChatService.preview', () => {
     });
 
     await expect(service.preview(me, '@sara')).resolves.toEqual({
-      peer: { id: peerId, username: 'sara', name: 'سارة', avatarUrl: null, verified: true },
+      peer: {
+        id: peerId,
+        username: 'sara',
+        name: 'سارة',
+        avatarUrl: null,
+        verified: true,
+        lastSeenAt: null,
+      },
       conversationId: null,
     });
   });

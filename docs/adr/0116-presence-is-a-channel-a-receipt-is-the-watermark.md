@@ -1,5 +1,9 @@
 # 0116. Presence is a channel, a receipt is the watermark
 
+> **Amended by [ADR 0212](0212-a-last-seen-is-one-durable-timestamp.md).** A member's _last seen_ is
+> now a durable `users.last_seen_at` column with a derived "online now" line. Only the refusal of
+> "presence beyond the open thread" is superseded; typing and the read receipt below are unchanged.
+>
 > **Amended by [ADR 0165](0165-presence-is-a-per-member-stream.md).** Typing now travels on a
 > per-member `presence:<user id>` private topic rather than `chat:<conversation id>`, so the chats
 > list can draw it once for every row; the refusal of "presence beyond the open thread" is narrowed

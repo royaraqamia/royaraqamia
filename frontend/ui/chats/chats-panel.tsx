@@ -7,6 +7,7 @@ import { Check, MessagesSquare, Plus, X } from 'lucide-react';
 
 import { useChatThreads, type ChatThreadsState } from '@/frontend/state/chats/use-chat-threads';
 import { useChatPresenceList } from '@/frontend/state/chats/use-chat-presence-list';
+import { usePresenceRefresh } from '@/frontend/state/chats/use-presence-refresh';
 import { useAssistantPhase } from '@/frontend/state/chats/assistant-turn';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { startAssistantChat } from '@/frontend/api/chats';
@@ -14,7 +15,7 @@ import { identityUserId } from '@/frontend/shared/local-store/identity';
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
-import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { PresenceAvatar } from '@/frontend/ui/shared/presence-avatar';
 import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
 import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
@@ -87,6 +88,8 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
   // (#493), so the tab paints the rows this device already holds (#1033).
   const { identity } = useLocalIdentity();
   const { threads, isLoading, painted, error, refresh, respond } = chats;
+  // One list read every 30s keeps every row's dot honest (ADR 0212).
+  usePresenceRefresh(refresh);
   const presence = useChatPresenceList(threads, identityUserId(identity));
   const [panel, setPanel] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -359,11 +362,12 @@ function ThreadIdentity({
       {thread.kind === 'agent' ? (
         <AssistantMark className="size-9" />
       ) : (
-        <MemberAvatar
+        <PresenceAvatar
           name={label}
           avatarUrl={thread.counterpart?.avatarUrl ?? null}
           size="sm"
           ring={false}
+          lastSeenAt={thread.counterpart?.lastSeenAt ?? null}
         />
       )}
       <div className="min-w-0 flex-1">

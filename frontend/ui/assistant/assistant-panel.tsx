@@ -23,6 +23,8 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { AssistantComposer } from '@/frontend/ui/chats/chat-assistant-composer';
 import { ChatMessageList } from '@/frontend/ui/chats/chat-message-list';
 import { CHAT_THREAD_COPY } from '@/frontend/ui/chats/chat-thread-copy';
+import { LastSeenLine } from '@/frontend/ui/chats/last-seen';
+import { LAST_SEEN_LABELS } from '@/frontend/ui/chats/last-seen-labels';
 import { ThreadIntro, stateOf } from '@/frontend/ui/chats/chat-thread-view';
 import type { ChatAttachment } from '@/shared/contracts/chat';
 import { AssistantOrb } from './assistant-orb';
@@ -292,7 +294,9 @@ export function AssistantPanel({
               aria-live="polite"
               className="mt-0.5 min-h-4 truncate text-xs font-medium text-primary"
             >
-              {phaseLine}
+              {/* The slot is never empty: while no turn is running, نور is
+                  simply available (ADR 0212). A turn still owns the line. */}
+              {phaseLine ?? <LastSeenLine labels={LAST_SEEN_LABELS} alwaysOnline />}
             </p>
           </div>
         </header>

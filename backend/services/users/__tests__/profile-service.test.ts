@@ -105,6 +105,19 @@ describe('ProfileService.updateName', () => {
   });
 });
 
+describe('ProfileService.touchLastSeen', () => {
+  it('writes only the caller’s own last-seen column', async () => {
+    const { service, updateProfile } = createService();
+
+    await expect(service.touchLastSeen('u-1')).resolves.toBeUndefined();
+    expect(updateProfile).toHaveBeenCalledTimes(1);
+    const [userId, input] = updateProfile.mock.calls[0] as [string, { last_seen_at: string }];
+    expect(userId).toBe('u-1');
+    expect(Object.keys(input)).toEqual(['last_seen_at']);
+    expect(Number.isNaN(Date.parse(input.last_seen_at))).toBe(false);
+  });
+});
+
 describe('ProfileService.updateBio', () => {
   it('persists the bio', async () => {
     const { service, updateProfile } = createService();
