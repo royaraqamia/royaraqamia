@@ -304,9 +304,10 @@ describe('the assistant turn', () => {
       type: 'question',
       message: { senderKind: 'user', body: 'سؤالي' },
     });
-    expect(events[1]).toEqual({ type: 'delta', text: 'مرحبا ' });
-    expect(events[2]).toEqual({ type: 'delta', text: 'بك' });
-    expect(events[3]).toMatchObject({
+    // The answer is buffered until the review clears it, then revealed once:
+    // a member must never see a version that is about to be replaced (ADR-0213).
+    expect(events[1]).toEqual({ type: 'delta', text: 'مرحبا بك' });
+    expect(events[2]).toMatchObject({
       type: 'done',
       message: { senderKind: 'agent', senderId: null },
     });
@@ -314,6 +315,32 @@ describe('the assistant turn', () => {
     expect(reserve).toHaveBeenCalledTimes(1);
     expect(chats.sendMessage).toHaveBeenCalledWith('user-1', 'conversation-1', { body: 'سؤالي' });
     expect(agent.insertAgentMessage).toHaveBeenCalledWith('conversation-1', 'مرحبا بك');
+  });
+
+  it('reveals the reviewed text once, never the draft the judge replaced', async () => {
+    const client = scriptedClient([textStream(' المسوّدة ', ' الأولى')]);
+    const review = {
+      text: 'الردّ بعد المراجعة.',
+      draft: 'المسوّدة الأولى',
+      gates: { pass: true, failures: [], warnings: [] },
+      verdict: null,
+      judged: true,
+      rewritten: true,
+      rewrite: 'الردّ بعد المراجعة.',
+      rewrittenGates: { pass: true, failures: [], warnings: [] },
+      rewrittenVerdict: null,
+      fallback: false,
+    };
+    const judge = { review: vi.fn(async () => review) };
+    const { service, agent } = makeService({ client, judge });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤالي', TURN_CONTEXT));
+
+    expect(events.filter((event) => event.type === 'delta')).toEqual([
+      { type: 'delta', text: 'الردّ بعد المراجعة.' },
+    ]);
+    expect(agent.insertAgentMessage).toHaveBeenCalledWith('conversation-1', 'الردّ بعد المراجعة.');
+    expect(judge.review).toHaveBeenCalledTimes(1);
   });
 
   it('opens the turn with the member’s identity, ahead of the standing prompt', async () => {

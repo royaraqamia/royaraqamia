@@ -26,6 +26,13 @@ export const AI_CHAT_DEFAULT_BASE_URL = 'https://opencode.ai/inference/go/openai
 export const AI_CHAT_DEFAULT_MODEL = 'deepseek-v4.1-flash';
 
 /**
+ * The second model, used only to judge a finished draft (ADR-0213). It never
+ * writes member-facing text and never calls a tool: the calibrated judge in
+ * `scripts/nour-evals` measured best here, and it sits in the cheapest tier.
+ */
+export const AI_CHAT_JUDGE_DEFAULT_MODEL = 'claude-haiku-5-5';
+
+/**
  * The models that take audio. `deepseek-v4.1-flash` answers text and images but
  * not speech, so a voice note is transcribed first.
  *
@@ -109,7 +116,11 @@ export interface AiChatClient {
    * background step that reads a finished exchange does, because it has nobody
    * watching the words arrive and would only parse the frames back together.
    */
-  reply(messages: AiChatMessage[], signal: AbortSignal): Promise<string>;
+  reply(
+    messages: AiChatMessage[],
+    signal: AbortSignal,
+    options?: { responseFormat?: { type: 'json_object' } }
+  ): Promise<string>;
   /**
    * The same stream, with the tools the model may call. Text arrives as it is
    * written; a call arrives once its arguments are whole, which is why it is
@@ -260,16 +271,13 @@ async function* readEvents(
 }
 
 /**
- * The configured client, or `null` when no key is set. `null` is a supported
- * state: the thread reads, and the composer says the assistant is unavailable
- * rather than sending a request that is certain to fail.
+ * One client on the configured endpoint and key. The only difference between
+ * the writer and the judge is the model name, so a deployment can swap either
+ * with an environment variable and no code.
  */
-export function createAiChatClient(): AiChatClient | null {
-  const apiKey = env.aiChatApiKey;
-  if (!apiKey) return null;
-
+function buildClient(model: string): AiChatClient {
+  const apiKey = env.aiChatApiKey as string;
   const baseUrl = (env.aiChatBaseUrl?.trim() || AI_CHAT_DEFAULT_BASE_URL).replace(/\/+$/, '');
-  const model = env.aiChatModel?.trim() || AI_CHAT_DEFAULT_MODEL;
 
   async function open(body: unknown, signal: AbortSignal): Promise<Response> {
     const response = await fetch(`${baseUrl}/chat/completions`, {
@@ -319,8 +327,10 @@ export function createAiChatClient(): AiChatClient | null {
       yield* readEvents(response.body as ReadableStream<Uint8Array>);
     },
 
-    async reply(messages, signal) {
-      const response = await open({ model, messages, stream: false }, signal);
+    async reply(messages, signal, options) {
+      const body: Record<string, unknown> = { model, messages, stream: false };
+      if (options?.responseFormat) body.response_format = options.responseFormat;
+      const response = await open(body, signal);
       const payload = (await response.json().catch(() => null)) as {
         choices?: Array<{ message?: { content?: unknown } }>;
       } | null;
@@ -383,4 +393,26 @@ export function createAiChatClient(): AiChatClient | null {
       return null;
     },
   };
+}
+
+/**
+ * The configured writer, or `null` when no key is set. `null` is a supported
+ * state: the thread reads, and the composer says the assistant is unavailable
+ * rather than sending a request that is certain to fail.
+ */
+export function createAiChatClient(): AiChatClient | null {
+  if (!env.aiChatApiKey) return null;
+  return buildClient(env.aiChatModel?.trim() || AI_CHAT_DEFAULT_MODEL);
+}
+
+/**
+ * The judge, on the same endpoint and key as the writer (ADR-0213). `null` when
+ * no key is set, or when `AI_CHAT_JUDGE_MODEL` is explicitly set to `off` — a
+ * deployment can then run the turn exactly as it did before the gate existed.
+ */
+export function createJudgeAiChatClient(): AiChatClient | null {
+  if (!env.aiChatApiKey) return null;
+  const configured = env.aiChatJudgeModel?.trim();
+  if (configured?.toLowerCase() === 'off') return null;
+  return buildClient(configured || AI_CHAT_JUDGE_DEFAULT_MODEL);
 }
