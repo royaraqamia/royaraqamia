@@ -7,6 +7,7 @@ import {
   camelCase,
   commentFor,
   fluid,
+  fontBudget,
   generate,
   hslToArgb,
   hslToArgbValue,
@@ -17,6 +18,8 @@ import {
   renderKotlin,
   renderThemeColors,
   shellColors,
+  unicodeRange,
+  validate,
   vw,
   weightRange,
 } from '../generate-tokens.mjs';
@@ -195,7 +198,7 @@ describe('renderCss', () => {
     }
   });
 
-  it('declares the two faces, with the digit range only on the digit face', () => {
+  it('declares the two faces, with the digit range only on its own subset', () => {
     const faces = [...css.matchAll(/@font-face \{([\s\S]*?)\}/g)].map((match) => match[1]);
     expect(faces).toHaveLength(2);
     expect(faces[0]).toContain("font-family: 'Aref Ruqaa'");
@@ -203,7 +206,8 @@ describe('renderCss', () => {
     expect(faces[1]).toContain("font-family: 'Aref Ruqaa Digits'");
     expect(faces[1]).toContain('unicode-range: U+0030-0039');
     expect(faces[0]).toContain('ArefRuqaa-Bold.woff2');
-    expect(faces[1]).toContain('ArefRuqaa-Bold.woff2');
+    expect(faces[1]).toContain('ArefRuqaa-Digits.woff2');
+    expect(faces[1]).not.toContain('ArefRuqaa-Bold.woff2');
   });
 
   it('carries the type scale the utilities and the elements both read', () => {
@@ -370,6 +374,38 @@ describe('renderAndroidColors', () => {
     const noSource = structuredClone(tokens);
     noSource.shell.color.scrim = { alpha: 0.5 };
     expect(() => shellColors(noSource)).toThrow(/neither a "token" nor a "hex"/);
+  });
+});
+
+describe('font budgets', () => {
+  it('gives both Aref faces a byte ceiling in the one source', () => {
+    expect(() => validate(tokens)).not.toThrow();
+    expect(fontBudget(tokens.font.heading, 'heading')).toBeGreaterThan(0);
+    expect(fontBudget(tokens.font.digits, 'digits')).toBeGreaterThan(0);
+
+    for (const broken of [undefined, 0, -1, '4096', 4096.5]) {
+      const edited = structuredClone(tokens);
+      edited.font.heading.maxBytes = broken;
+      expect(() => validate(edited), String(broken)).toThrow(/maxBytes/);
+    }
+  });
+
+  it('ships each face inside its declared ceiling, with digits on their own file', async () => {
+    expect(tokens.font.digits.file).not.toBe(tokens.font.heading.file);
+    expect(tokens.font.digits.unicodeRange).toBe('U+0030-0039');
+    expect(tokens.font.digits.source).toBe(tokens.font.heading.file);
+    expect(unicodeRange(tokens.font.digits.unicodeRange)).toEqual([0x30, 0x39]);
+
+    for (const face of ['heading', 'digits']) {
+      const token = tokens.font[face];
+      const file = path.join(ROOT, 'public', decodeURIComponent(token.file).replace(/^\//, ''));
+      const bytes = (await readFile(file)).length;
+      expect(bytes, face).toBeLessThanOrEqual(fontBudget(token, face));
+    }
+  });
+
+  it('refuses a range it cannot turn into codepoints', () => {
+    expect(() => unicodeRange('0030-0039')).toThrow(/unicode range/);
   });
 });
 

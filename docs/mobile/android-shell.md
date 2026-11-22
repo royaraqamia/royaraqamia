@@ -1113,7 +1113,8 @@ reach here; that is the cost of the 344KB, and it is the reason the `.woff2` fil
 
 The numerals in both cards are the exception: they take Aref Ruqaa, the face the site uses for
 read-only numbers (`--font-digits`). `res/font/aref_ruqaa_digits.ttf` is a digit-only subset of the
-same `ArefRuqaa-Bold.woff2` (about 4.5KB), applied by `digitRunsOf` (`shell/DigitRuns.kt`) to the
+same bold cut (about 4.5KB as a TTF; the web's `ArefRuqaa-Digits.woff2` subset is 2.4KB), applied by
+`digitRunsOf` (`shell/DigitRuns.kt`) to the
 ASCII runs it finds, so the Arabic around a version or a size stays in IBM Plex. The percentage is
 written in ASCII before it reaches the string, because `getString(id, args)` otherwise renders a
 number in Arabic-Indic digits on an Arabic phone.

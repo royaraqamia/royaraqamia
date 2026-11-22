@@ -4,9 +4,11 @@
    stylesheet that re-declares one of these properties by hand. */
 
 /* Aref Ruqaa is declared by hand rather than through `next/font/local`: the
-   site needs two faces backed by the same file, one for headings and one
-   restricted to digits. `unicode-range` is what lets numerals pick Aref Ruqaa
-   without changing the family of the surrounding Arabic text. */
+   site needs two faces cut from the same bold Arabic file, one for headings
+   and one restricted to digits. The digits face has its own subset, so a
+   route that only paints numerals never pays for the Arabic glyphs.
+   `unicode-range` is what lets numerals pick Aref Ruqaa without changing the
+   family of the surrounding Arabic text. */
 @font-face {
   font-family: 'Aref Ruqaa';
   src: url('/fonts/Aref%20Ruqaa/ArefRuqaa-Bold.woff2') format('woff2');
@@ -17,7 +19,7 @@
 
 @font-face {
   font-family: 'Aref Ruqaa Digits';
-  src: url('/fonts/Aref%20Ruqaa/ArefRuqaa-Bold.woff2') format('woff2');
+  src: url('/fonts/Aref%20Ruqaa/ArefRuqaa-Digits.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;

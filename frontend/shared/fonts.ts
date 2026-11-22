@@ -20,6 +20,7 @@ export const ibmPlexSansArabic = localFont({
   adjustFontFallback: 'Arial',
 });
 
-// Aref Ruqaa itself is declared in `app/global.css`: it needs a second,
-// `unicode-range`-limited face for numerals, which `next/font/local` cannot
-// express. The root layout preloads the file instead.
+// Aref Ruqaa itself is declared in the generated `app/tokens.css`: the digits
+// face is a separate, `unicode-range`-limited subset, which `next/font/local`
+// cannot express. The root layout preloads that 2.4 KB subset; the heading
+// face arrives only where a heading or the Quran ayah marker draws it.
