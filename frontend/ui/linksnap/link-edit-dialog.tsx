@@ -499,7 +499,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       className={cn(
                         'p-2 rounded-xl border shrink-0 transition-colors',
                         form.enableExpiry
-                          ? 'bg-primary text-primary-foreground border-primary'
+                          ? 'bg-selected text-selected-foreground border-selected'
                           : 'bg-muted dark:bg-neutral-800 text-muted-foreground border-border/50'
                       )}
                     >
@@ -619,7 +619,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       className={cn(
                         'p-2 rounded-xl border shrink-0 transition-colors',
                         form.passwordEnabled
-                          ? 'bg-primary text-primary-foreground border-primary'
+                          ? 'bg-selected text-selected-foreground border-selected'
                           : 'bg-muted dark:bg-neutral-800 text-muted-foreground border-border/50'
                       )}
                     >

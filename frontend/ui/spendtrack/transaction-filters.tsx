@@ -180,7 +180,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                         <span
                           className={`flex size-4.5 shrink-0 items-center justify-center rounded-md border transition-safe duration-200 ${
                             isSelected
-                              ? 'bg-primary border-primary text-primary-foreground shadow-2xs scale-100'
+                              ? 'bg-selected border-selected text-selected-foreground shadow-2xs scale-100'
                               : 'border-muted-foreground/30 bg-background hover:border-primary/50'
                           }`}
                         >
@@ -244,7 +244,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                 <RotateCcw className="size-3.5 transition-transform duration-300 hover:-rotate-90" />
                 <span>{SPENDTRACK_FILTERS_COPY.clear}</span>
                 {selectedCount > 0 && (
-                  <span className="flex size-4.5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground shadow-2xs ms-0.5">
+                  <span className="flex size-4.5 items-center justify-center rounded-full bg-selected text-[10px] font-bold text-selected-foreground shadow-2xs ms-0.5">
                     {selectedCount}
                   </span>
                 )}

@@ -111,7 +111,7 @@ export function AdminSettingsView() {
       <button
         type="submit"
         disabled={saving}
-        className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-60"
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-selected px-8 py-2.5 text-sm font-bold text-selected-foreground hover:bg-selected/90 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-60"
       >
         {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
         حفظ الإعدادات

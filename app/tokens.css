@@ -71,10 +71,12 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
     /*
-       Filled selection states (segmented controls, filter chips). Deliberately
-       darker than --primary so white-on-fill labels clear WCAG AA while the fill
-       keeps >=3:1 against the muted track. Distinct from --primary so the brand
-       accent can stay lighter for text on dark surfaces. See issue #148.
+       The one fill behind a label, on the site and in the app: 256 70% 61% is
+       rgb(123,86,225), 4.93:1 with white --selected-foreground at normal text
+       size. Deliberately darker than --primary, which keeps its role as the light
+       accent for text, borders and rings at 5.01:1 on the page; the fill still
+       keeps >=3:1 against the muted track. Every filled control uses this pair,
+       never --primary/--primary-foreground. See issue #148 and #1669.
      */
     --selected: 256 70% 61%;
     --selected-foreground: 0 0% 100%;

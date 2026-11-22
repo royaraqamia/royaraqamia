@@ -144,7 +144,7 @@ export function SlotStep({
                       'rounded-xl border p-3 text-right transition-safe duration-200',
                       'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11',
                       selected
-                        ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                        ? 'border-selected bg-selected text-selected-foreground shadow-md shadow-primary/20'
                         : disabled
                           ? 'border-border bg-muted/50 opacity-45 cursor-not-allowed'
                           : 'border-border bg-card hover:border-primary/60 cursor-pointer'
@@ -155,7 +155,7 @@ export function SlotStep({
                       <span
                         className={cn(
                           'block text-xs mt-0.5',
-                          selected ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                          selected ? 'text-selected-foreground/80' : 'text-muted-foreground'
                         )}
                       >
                         بتوقيت دمشق: {damascusHint}

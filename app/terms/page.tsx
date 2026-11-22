@@ -496,7 +496,7 @@ export default function TermsPage() {
             className="group rounded-3xl border border-primary/30 bg-linear-to-br from-primary/10 via-card to-primary/5 p-6 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8"
           >
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary font-bold text-primary-foreground shadow-sm">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-selected font-bold text-selected-foreground shadow-sm">
                 12
               </div>
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">. التَّواصل معنا</h2>

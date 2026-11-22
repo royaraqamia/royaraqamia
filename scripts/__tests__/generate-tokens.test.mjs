@@ -4,8 +4,10 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
+  assertFillContrast,
   camelCase,
   commentFor,
+  contrastRatio,
   fluid,
   fontBudget,
   generate,
@@ -107,6 +109,39 @@ describe('the source', () => {
     for (const [file, expected] of files) {
       expect(await readFile(path.join(ROOT, file), 'utf8'), file).toBe(expected);
     }
+  });
+});
+
+describe('the filled-control pair', () => {
+  it('is the darker fill with white labels, at AA for normal text', () => {
+    expect(tokens.fillPairs).toEqual([
+      { fill: 'selected', foreground: 'selected-foreground', minContrast: 4.5 },
+    ]);
+    expect(
+      contrastRatio(tokens.color.selected, tokens.color['selected-foreground'])
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('fails the generator with the pair and its ratio when a pair is too light', () => {
+    const lighter = { ...tokens, color: { ...tokens.color, selected: '256 70% 67%' } };
+    expect(() => assertFillContrast(lighter)).toThrow(
+      /fill pair selected\/selected-foreground is 3\.73:1, below 4\.5:1/
+    );
+  });
+
+  it('is generated for both clients, not just the stylesheet', () => {
+    expect(declarations(renderCss(tokens)).get('--selected')).toBe(tokens.color.selected);
+    expect(renderKotlin(tokens)).toContain(
+      `const val selected: Long = ${hslToArgb(tokens.color.selected)}`
+    );
+    expect(renderThemeColors(tokens)).toContain(
+      'val selected = Color(DesignTokens.Colors.selected.toInt())'
+    );
+  });
+
+  it('keeps primary as the light accent, not a filled-control pair', () => {
+    expect(tokens.color.primary).toBe('256 70% 67%');
+    expect(tokens.fillPairs.some((pair) => pair.fill === 'primary')).toBe(false);
   });
 });
 

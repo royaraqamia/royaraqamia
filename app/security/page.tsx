@@ -406,7 +406,7 @@ export default function SecurityPage() {
 
                 <a
                   href="mailto:contact@royaraqamia.com?subject=%5BSECURITY%5D"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shrink-0 dir-ltr"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-selected text-selected-foreground font-bold text-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shrink-0 dir-ltr"
                 >
                   <svg
                     className="w-4 h-4"

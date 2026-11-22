@@ -285,7 +285,7 @@ export function McpConnectionView({
               type="button"
               onClick={() => void reconnect()}
               disabled={reconnecting}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-safe hover:bg-primary/90 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-selected px-3 py-1.5 text-xs font-bold text-selected-foreground transition-safe hover:bg-selected/90 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
               {reconnecting ? (
                 <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />

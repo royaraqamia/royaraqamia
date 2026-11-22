@@ -68,7 +68,7 @@ export default function NotFound() {
           <div className="flex justify-center">
             <Link
               href="/"
-              className="group/btn relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-safe duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-auto"
+              className="group/btn relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl bg-selected px-8 py-3.5 text-sm font-bold text-selected-foreground shadow-lg shadow-primary/25 transition-safe duration-300 ease-out hover:scale-[1.02] hover:bg-selected/90 hover:shadow-xl hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-auto"
             >
               <span>العودة إلى الرَّئيسيَّة</span>
               <svg

@@ -26,6 +26,11 @@
  * re-declares a generated property by hand fails it too — that is the drift the
  * ADR is about.
  *
+ * Validation also computes WCAG contrast for every fill/foreground pair the
+ * source declares. A pair that cannot carry normal-size text fails generation,
+ * so neither client can inherit a failing pair from a copied class string
+ * (#1669).
+ *
  * Usage:
  *
  *   node scripts/generate-tokens.mjs            # write every output
@@ -53,6 +58,9 @@ export const COVER_KOTLIN_OUTPUT =
 
 /** The reverse of a `rem` length in CSS pixels, which is the unit Compose's `dp` reads. */
 const REM = 16;
+
+/** WCAG 1.4.3 for normal text; a pair below this cannot carry a 14px/700 label. */
+export const NORMAL_TEXT_MIN_CONTRAST = 4.5;
 
 /** The radius token is `--radius`; the JSON name says what it is, not what it is called. */
 const RADIUS_PROPERTIES = {
@@ -109,6 +117,55 @@ export function hslToArgbValue(components) {
 /** A Kotlin `Long` literal: `0xFF14161A`. */
 export function hslToArgb(components) {
   return `0x${hslToArgbValue(components).toString(16).toUpperCase().padStart(8, '0')}`;
+}
+
+/** The 8-bit channels a browser paints for an HSL token. */
+export function hslToRgb(components) {
+  const argb = hslToArgbValue(components);
+  return [(argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff];
+}
+
+/** WCAG relative luminance from those channels. */
+export function relativeLuminance([red, green, blue]) {
+  const linear = (channel) => {
+    const srgb = channel / 255;
+    return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+}
+
+/** WCAG contrast ratio between a fill and the foreground painted on it. */
+export function contrastRatio(fill, foreground) {
+  const [light, dark] = [
+    relativeLuminance(hslToRgb(fill)),
+    relativeLuminance(hslToRgb(foreground)),
+  ].sort((a, b) => b - a);
+  return (light + 0.05) / (dark + 0.05);
+}
+
+/**
+ * A declared foreground/fill pair is a promise that a normal-size label can be
+ * read on that fill. Check the promise before emitting either client: a value
+ * under 4.5:1 fails the generator with the pair and its measured ratio named,
+ * instead of shipping green and being found on a live page later (#1669).
+ */
+export function assertFillContrast(tokens) {
+  for (const pair of tokens.fillPairs ?? []) {
+    const fill = tokens.color?.[pair.fill];
+    const foreground = tokens.color?.[pair.foreground];
+    if (typeof fill !== 'string' || typeof foreground !== 'string') {
+      throw new Error(
+        `generate-tokens: fill pair ${pair.fill}/${pair.foreground} names a missing colour token`
+      );
+    }
+    const minimum = pair.minContrast ?? NORMAL_TEXT_MIN_CONTRAST;
+    const ratio = contrastRatio(fill, foreground);
+    if (ratio < minimum) {
+      throw new Error(
+        `generate-tokens: fill pair ${pair.fill}/${pair.foreground} is ${ratio.toFixed(2)}:1, below ${minimum}:1 for normal text`
+      );
+    }
+  }
 }
 
 /** An Android resource value: `#FF14161A`, with the alpha channel written out. */
@@ -184,6 +241,7 @@ export function coverPaletteNames(tokens) {
 export function validate(tokens) {
   for (const section of [
     'color',
+    'fillPairs',
     'cover',
     'radius',
     'space',
@@ -214,6 +272,10 @@ export function validate(tokens) {
     }
     hslToArgb(value);
   }
+  if (!Array.isArray(tokens.fillPairs) || tokens.fillPairs.length === 0) {
+    throw new Error('generate-tokens: the source declares no foreground/fill pairs');
+  }
+  assertFillContrast(tokens);
   for (const required of ['ui', 'heading', 'digits']) {
     if (!tokens.font[required]?.family) {
       throw new Error(`generate-tokens: the source has no "${required}" font family`);

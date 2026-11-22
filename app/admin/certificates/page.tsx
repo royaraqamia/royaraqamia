@@ -113,7 +113,7 @@ export default function CertificatesListPage() {
         action={
           <Link
             href="/admin/certificates/new"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground focus-visible:outline-ring btn-hover-lift inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto"
+            className="bg-selected hover:bg-selected/90 text-selected-foreground focus-visible:outline-ring btn-hover-lift inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto"
           >
             <Plus className="size-4" aria-hidden="true" />
             شهادة جديدة

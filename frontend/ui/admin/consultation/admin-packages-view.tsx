@@ -95,7 +95,7 @@ export function AdminPackagesView() {
           <button
             type="button"
             onClick={startCreate}
-            className="focus-visible:outline-ring bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto"
+            className="focus-visible:outline-ring bg-selected text-selected-foreground hover:bg-selected/90 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto"
           >
             <Plus className="size-4" />
             باقة جديدة
@@ -230,7 +230,7 @@ export function AdminPackagesView() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-60"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full bg-selected px-8 py-2.5 text-sm font-bold text-selected-foreground hover:bg-selected/90 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-60"
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : null}
             {editingId ? 'حفظ التعديلات' : 'إضافة الباقة'}

@@ -34,7 +34,7 @@ export default function Error({
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={reset}
-            className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold rounded-full transition-safe shadow-md flex items-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press"
+            className="px-5 py-2.5 bg-selected hover:bg-selected/90 text-selected-foreground text-sm font-bold rounded-full transition-safe shadow-md flex items-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press"
           >
             <RefreshCw className="w-4 h-4" />
             <span>إعادة المحاولة</span>

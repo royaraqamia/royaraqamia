@@ -238,7 +238,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl, bio }: ProfileEd
             </span>
           )}
         </span>
-        <span className="absolute -bottom-0.5 -inset-e-0.5 flex size-5 items-center justify-center rounded-full border border-primary/20 bg-primary text-primary-foreground shadow-sm transition-transform duration-200 group-hover:scale-110">
+        <span className="absolute -bottom-0.5 -inset-e-0.5 flex size-5 items-center justify-center rounded-full border border-selected/20 bg-selected text-selected-foreground shadow-sm transition-transform duration-200 group-hover:scale-110">
           <Camera className="size-3" aria-hidden="true" />
         </span>
       </button>

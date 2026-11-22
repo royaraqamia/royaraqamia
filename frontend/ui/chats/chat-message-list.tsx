@@ -373,7 +373,7 @@ export const ChatMessageRow = memo(function ChatMessageRow({
           className={cn(
             'max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-xs',
             mine
-              ? 'rounded-br-md bg-primary text-primary-foreground'
+              ? 'rounded-br-md bg-selected text-selected-foreground'
               : 'rounded-bl-md bg-muted text-foreground dark:bg-muted/70'
           )}
         >
