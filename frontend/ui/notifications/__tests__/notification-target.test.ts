@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import type { NotificationType } from '@/shared/contracts/notifications';
+import {
+  NOTIFICATION_DESTINATIONS,
+  NotificationTypeSchema,
+  type NotificationType,
+} from '@/shared/contracts/notifications';
+import { toPushUrl } from '@/shared/contracts/push';
 import { notificationTarget } from '../notification-target';
 
 function notification(type: NotificationType, metadata: Record<string, unknown> = {}) {
@@ -21,10 +26,14 @@ describe('notificationTarget', () => {
     ).toBe('/verify/A%2FB%20C');
   });
 
-  it('answers null when the identifier the route needs is missing or blank', () => {
-    expect(notificationTarget(notification('certificate_issued'))).toBeNull();
-    expect(notificationTarget(notification('chat_request', { conversationId: '   ' }))).toBeNull();
-    expect(notificationTarget(notification('chat_request', { conversationId: 42 }))).toBeNull();
+  it('falls back to the declared surface when the identifier is missing or blank', () => {
+    expect(notificationTarget(notification('certificate_issued'))).toBe('/verify');
+    expect(notificationTarget(notification('chat_request', { conversationId: '   ' }))).toBe(
+      '/notifications?tab=chats'
+    );
+    expect(notificationTarget(notification('chat_request', { conversationId: 42 }))).toBe(
+      '/notifications?tab=chats'
+    );
   });
 
   it.each([
@@ -45,12 +54,28 @@ describe('notificationTarget', () => {
     expect(notificationTarget(notification('system_announcement'))).toBeNull();
   });
 
+  it('opens the follower profile from the bell as it does from the banner', () => {
+    expect(notificationTarget(notification('new_follower', { username: 'rim' }))).toBe('/u/rim');
+    expect(notificationTarget(notification('new_follower'))).toBe('/notifications?tab=alerts');
+  });
+
   it('survives a null metadata column', () => {
     const row = {
       type: 'certificate_issued' as const,
       metadata: null as unknown as Record<string, unknown>,
     };
 
-    expect(notificationTarget(row)).toBeNull();
+    expect(notificationTarget(row)).toBe('/verify');
+  });
+
+  it('answers the same path as the push for every type but the documented push-only fallback', () => {
+    for (const type of NotificationTypeSchema.options) {
+      if (type === 'system_announcement') continue;
+      const { metadataKey } = NOTIFICATION_DESTINATIONS[type];
+      const metadata = metadataKey ? { [metadataKey]: 'sample' } : {};
+      expect(notificationTarget(notification(type, metadata)), type).toBe(
+        toPushUrl(type, metadata)
+      );
+    }
   });
 });
