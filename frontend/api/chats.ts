@@ -84,6 +84,17 @@ export async function getChatThread(id: string): Promise<ChatThread | null> {
   return result.thread ?? null;
 }
 
+/**
+ * The peer's last seen, for the header's poll (ADR 0212). Deliberately narrower
+ * than `getChatThread`: a full refresh would stamp our own read watermark.
+ */
+export async function getChatPresence(id: string): Promise<string | null> {
+  const result = await request<{ lastSeenAt?: string | null }>(`/api/chats/${id}/presence`, {
+    cache: 'no-store',
+  });
+  return result.lastSeenAt ?? null;
+}
+
 export async function getChatMessages(
   id: string,
   before?: string | null

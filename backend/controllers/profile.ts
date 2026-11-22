@@ -5,6 +5,7 @@ import {
 } from '@/backend/config/rate-limiter';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { isSameOrigin } from '@/backend/transport/http';
+import { NO_STORE } from '@/backend/transport/cache-policy';
 import {
   AvatarValidationError,
   UsernameTakenError,
@@ -155,6 +156,23 @@ export async function updateBio(
       );
     },
     { mapError: messageError(500, 'تعذَّر تحديث النبذة') }
+  );
+}
+
+/**
+ * Stamp the caller's last seen (ADR 0212). A foreground heartbeat, not a
+ * profile edit: no tags to invalidate and nothing for the caller to read back.
+ */
+export async function touchLastSeen(headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+      await createProfileService(supabase).touchLastSeen(userId);
+      return jsonResult(200, { success: true }, { headers: NO_STORE });
+    },
+    { mapError: messageError(500, 'تعذَّر تحديث حالة الظهور') }
   );
 }
 

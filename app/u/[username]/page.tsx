@@ -4,7 +4,9 @@ import { FileText } from 'lucide-react';
 import { loadCommunityMember } from '@/backend/loaders/community';
 import { identity } from '@/backend/config/identity';
 import { createFollowsService } from '@/backend/config/follows';
-import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
+import { PresenceAvatar } from '@/frontend/ui/shared/presence-avatar';
+import { LastSeenLine } from '@/frontend/ui/chats/last-seen';
+import { LAST_SEEN_LABELS } from '@/frontend/ui/chats/last-seen-labels';
 import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { FollowButton } from '@/frontend/ui/shared/follow-button';
 import { FollowBadge } from '@/frontend/ui/shared/follow-badge';
@@ -87,12 +89,13 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
       >
         <ProfileCover memberId={member.id} />
         <div className="relative -mt-10 flex flex-col items-center gap-5 px-6 pb-8 text-center sm:px-8">
-          <MemberAvatar
+          <PresenceAvatar
             name={member.name}
             avatarUrl={member.avatar_url}
             size="xl"
             sizes="80px"
             className="group"
+            lastSeenAt={member.last_seen_at ?? null}
           />
           <div className="min-w-0">
             <h1
@@ -104,6 +107,11 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
             <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
               @{member.username}
             </p>
+            <LastSeenLine
+              labels={LAST_SEEN_LABELS}
+              lastSeenAt={member.last_seen_at ?? null}
+              className="mt-0.5 text-center text-sm"
+            />
             <FollowBadge state={follow.state} followsYou={follow.followsYou} />
             <FollowCountsBar
               username={member.username}

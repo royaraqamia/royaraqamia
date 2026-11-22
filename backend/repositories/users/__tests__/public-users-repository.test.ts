@@ -59,7 +59,7 @@ function createClient(options: {
       }),
   };
   const supabase = { from: vi.fn(() => builder) };
-  return { supabase, orFilters, eqFilters, inFilters };
+  return { supabase, builder, orFilters, eqFilters, inFilters };
 }
 
 const member: PublicUser = {
@@ -157,6 +157,22 @@ describe('createPublicUsersRepository', () => {
 
     expect(eqFilters).not.toContainEqual(['is_hidden', false]);
     expect(inFilters).toContainEqual(['id', ['u-1']]);
+  });
+
+  it('takes the last-seen stamp only in the roster read (ADR 0212)', async () => {
+    const directory = createClient({ list: [member] });
+    await createPublicUsersRepository(
+      directory.supabase as unknown as SupabaseClient<Database>
+    ).list(8);
+    expect(directory.builder.select).toHaveBeenCalledWith(
+      expect.not.stringContaining('last_seen_at')
+    );
+
+    const roster = createClient({ list: [member] });
+    await createPublicUsersRepository(
+      roster.supabase as unknown as SupabaseClient<Database>
+    ).getMany(['u-1']);
+    expect(roster.builder.select).toHaveBeenCalledWith(expect.stringContaining('last_seen_at'));
   });
 
   describe('read failures (#404)', () => {

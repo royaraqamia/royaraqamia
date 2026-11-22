@@ -35,6 +35,12 @@ export interface PublicUser {
   bio: string | null;
   /** Mirrors auth `email_confirmed_at`; only verified members are listed. */
   verified: boolean;
+  /**
+   * Last time the member was foregrounded (ADR 0212). Optional because the
+   * directory projection does not select it — only the chat roster does, and a
+   * dormant row has no stamp at all.
+   */
+  last_seen_at?: string | null;
 }
 
 /**

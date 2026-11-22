@@ -18,7 +18,7 @@ const SIZES: Record<MemberAvatarSize, SizeTokens> = {
   xl: { box: 'size-20', initial: 'text-2xl', icon: 'size-8' },
 };
 
-interface MemberAvatarProps {
+export interface MemberAvatarProps {
   name: string | null;
   avatarUrl: string | null;
   size?: MemberAvatarSize;
@@ -26,6 +26,10 @@ interface MemberAvatarProps {
   ring?: boolean;
   className?: string;
   sizes?: string;
+  /** The member is inside the 60-second presence window (ADR 0212). */
+  online?: boolean;
+  /** The same state in words, for assistive technology — a dot is colour alone. */
+  onlineLabel?: string;
 }
 
 /**
@@ -41,6 +45,8 @@ export function MemberAvatar({
   ring = true,
   className,
   sizes = '80px',
+  online = false,
+  onlineLabel,
 }: MemberAvatarProps) {
   const tokens = SIZES[size];
   const initial = name?.trim()?.charAt(0) ?? null;
@@ -70,8 +76,23 @@ export function MemberAvatar({
     </span>
   );
 
+  const dot = online ? (
+    <>
+      <span
+        aria-hidden="true"
+        className="absolute bottom-0 end-0 size-2.5 rounded-full bg-emerald-500 ring-2 ring-background"
+      />
+      {onlineLabel ? <span className="sr-only">{onlineLabel}</span> : null}
+    </>
+  ) : null;
+
   if (!ring) {
-    return <span className={cn('inline-flex shrink-0', tokens.box, className)}>{content}</span>;
+    return (
+      <span className={cn('relative inline-flex shrink-0', tokens.box, className)}>
+        {content}
+        {dot}
+      </span>
+    );
   }
 
   return (
@@ -83,6 +104,7 @@ export function MemberAvatar({
       )}
     >
       <span className="flex size-full rounded-full bg-background p-[2px]">{content}</span>
+      {dot}
     </span>
   );
 }

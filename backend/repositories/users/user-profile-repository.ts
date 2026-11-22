@@ -30,6 +30,7 @@ export interface UserProfileRepository {
       username?: string;
       avatar_url?: string | null;
       bio?: string | null;
+      last_seen_at?: string | null;
     }
   ): Promise<void>;
 }
@@ -92,11 +93,13 @@ export function createUserProfileRepository(
         username?: string;
         avatar_url?: string | null;
         bio?: string | null;
+        last_seen_at?: string | null;
       } = {};
       if (input.name !== undefined) updates.name = input.name;
       if (input.username !== undefined) updates.username = input.username;
       if (input.avatar_url !== undefined) updates.avatar_url = input.avatar_url;
       if (input.bio !== undefined) updates.bio = input.bio;
+      if (input.last_seen_at !== undefined) updates.last_seen_at = input.last_seen_at;
 
       const { error } = await supabase.from('users').update(updates).eq('id', id);
       if (error) throw error;

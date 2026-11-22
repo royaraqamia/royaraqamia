@@ -120,6 +120,35 @@ export async function getChatThread(id: string): Promise<HttpResult> {
   );
 }
 
+/**
+ * Just the peer's last seen, for the header's 30-second poll (ADR 0212).
+ *
+ * A full thread refresh would stamp *our own* read watermark, so it cannot be
+ * used as a display poll without turning a read into a write every 30 seconds.
+ * The same membership check as `getChatThread` runs here: the service owns it.
+ */
+export async function getChatPresence(id: string): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const thread = await createSupabaseChatService(supabase).getThread(userId, id);
+      if (!thread)
+        return jsonResult(
+          404,
+          { success: false, error: 'المحادثة غير موجودة' },
+          { headers: NO_STORE }
+        );
+
+      const peer = (thread.participants ?? []).find((member) => member.userId !== userId)?.peer;
+      return jsonResult(
+        200,
+        { success: true, lastSeenAt: peer?.lastSeenAt ?? null },
+        { headers: NO_STORE }
+      );
+    },
+    { mapError: chatFailure('تعذّر تحميل حالة الظهور') }
+  );
+}
+
 export async function startChat(
   body: Record<string, unknown>,
   headers: Headers

@@ -20,6 +20,7 @@ import {
   unblockChatUser,
   withdrawChatRequest,
 } from '@/frontend/api/chats';
+import { touchLastSeen } from '@/frontend/api/presence';
 import { clearAssistantTurn } from '@/frontend/state/chats/assistant-turn';
 import {
   removeChatAttachmentObjects,
@@ -413,6 +414,8 @@ export function useChatThread(
         // The thread carries the quota, so the composer's reading of it is one
         // refresh behind without this.
         void refresh();
+        // Sending is activity too; the shell's heartbeat is at most 30s behind.
+        void touchLastSeen().catch(() => undefined);
         return true;
       } catch (error) {
         await removeChatAttachmentObjects(uploaded.map((attachment) => attachment.storagePath));

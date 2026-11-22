@@ -6,8 +6,17 @@ import { guardRepositoryMethods, isNotFoundError } from '@/backend/shared/reposi
 
 const PUBLIC_USER_COLUMNS = 'id, username, name, avatar_url, bio, verified';
 
-/** The single-row profile read also carries the flag the route has to judge. */
-const MEMBER_PROFILE_COLUMNS = `${PUBLIC_USER_COLUMNS}, is_hidden`;
+/**
+ * Chat headers draw the last-seen line under the name (ADR 0212). Only the roster
+ * read takes the column, so a directory listing never pays for or exposes it.
+ */
+const CHAT_PEER_COLUMNS = `${PUBLIC_USER_COLUMNS}, last_seen_at`;
+
+/**
+ * The single-row profile read also carries the flag the route has to judge and
+ * the last-seen stamp its dot and line draw (ADR 0212).
+ */
+const MEMBER_PROFILE_COLUMNS = `${PUBLIC_USER_COLUMNS}, is_hidden, last_seen_at`;
 
 /**
  * Read access to the public member directory.
@@ -139,7 +148,7 @@ export function createPublicUsersRepository(
 
       const { data, error } = await supabase
         .from('users')
-        .select(PUBLIC_USER_COLUMNS)
+        .select(CHAT_PEER_COLUMNS)
         .in('id', unique);
 
       if (error) throw error;

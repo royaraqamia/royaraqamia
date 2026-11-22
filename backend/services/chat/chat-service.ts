@@ -129,6 +129,7 @@ function toPeer(user: PublicUser | undefined): ChatPeer | null {
     name: user.name,
     avatarUrl: user.avatar_url,
     verified: user.verified,
+    lastSeenAt: user.last_seen_at ?? null,
   };
 }
 
