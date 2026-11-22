@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useReducer } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CircleAlert, CircleCheck, ArrowLeft, Loader2 } from 'lucide-react';
@@ -10,28 +10,31 @@ import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { authSubmitReducer, INITIAL_AUTH_SUBMIT } from '../auth-submit.reducer';
 
 const isSuccessMessage = (msg: string) => msg.includes('تمَّ إرسال');
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
-  const [message, setMessage] = useState<string | null>(null);
-  const [offline, setOffline] = useState(false);
-  const [isPending, setIsPending] = useState(false);
+  const [{ message, offline, pending: isPending }, dispatch] = useReducer(
+    authSubmitReducer,
+    INITIAL_AUTH_SUBMIT
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
-    setOffline(false);
-    setIsPending(true);
+    dispatch({ type: 'submitStarted' });
     try {
       const formData = new FormData(event.currentTarget);
       const result = await resetPassword(formData.get('email') as string, redirectTo);
-      setMessage(result.message);
-      setOffline(!result.ok && result.offline);
+      dispatch({
+        type: 'submitAnswered',
+        message: result.message,
+        offline: !result.ok && result.offline,
+      });
     } finally {
-      setIsPending(false);
+      dispatch({ type: 'submitSettled' });
     }
   }
 

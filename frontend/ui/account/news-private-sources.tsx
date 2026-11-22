@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 import { Link2, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -26,12 +26,15 @@ import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import {
   type NewsOwnedSource,
   type NewsOwnedSourceState,
-  type NewsOwnedSourcesSummary,
   type NewsSourceRequestFailure,
 } from '@/shared/contracts/news';
 
 import { ACCOUNT_NEWS_PRIVATE_COPY } from './account-news-private-copy';
 import { NewsSourceRequestForm } from './news-source-request';
+import {
+  newsPrivateSourcesInitialState,
+  newsPrivateSourcesReducer,
+} from './news-private-sources.reducer';
 
 const STATE_LABELS: Record<NewsOwnedSourceState, string> = {
   resolving: ACCOUNT_NEWS_PRIVATE_COPY.statusResolving,
@@ -101,27 +104,27 @@ const REMOVE_COPY: Record<RemoveTone, { title: string; body: string; confirm: st
  */
 export function NewsPrivateSources() {
   const { user } = useSession();
-  const [summary, setSummary] = useState<NewsOwnedSourcesSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [removing, setRemoving] = useState<NewsOwnedSource | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [{ summary, loading, loadError, removing, busyId }, dispatch] = useReducer(
+    newsPrivateSourcesReducer,
+    undefined,
+    newsPrivateSourcesInitialState
+  );
 
   const read = useCallback(async () => {
     try {
-      setSummary(await getMyNewsPrivateSources());
-      setLoadError(null);
+      dispatch({ type: 'readSucceeded', summary: await getMyNewsPrivateSources() });
     } catch (error) {
-      setLoadError(
-        error instanceof ApiError ? error.message : ACCOUNT_NEWS_PRIVATE_COPY.loadFailed
-      );
+      dispatch({
+        type: 'readFailed',
+        error: error instanceof ApiError ? error.message : ACCOUNT_NEWS_PRIVATE_COPY.loadFailed,
+      });
     }
   }, []);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    dispatch({ type: 'loadStarted' });
     await read();
-    setLoading(false);
+    dispatch({ type: 'loadSettled' });
   }, [read]);
 
   useEffect(() => {
@@ -164,7 +167,7 @@ export function NewsPrivateSources() {
   const used = summary?.used ?? 0;
 
   const confirmRemove = async (row: NewsOwnedSource) => {
-    setBusyId(row.id);
+    dispatch({ type: 'removeStarted', id: row.id });
     try {
       if (row.kind === 'source') {
         await deleteNewsPrivateSource(row.id);
@@ -173,7 +176,7 @@ export function NewsPrivateSources() {
         await deleteNewsSourceRequest(row.id);
         toast.success(ACCOUNT_NEWS_PRIVATE_COPY.removedRequest);
       }
-      setRemoving(null);
+      dispatch({ type: 'removeClosed' });
       // The ceiling counts a pending row, so the list is read back rather than
       // patched: the server already knows what the slot and the rows are now.
       await read();
@@ -182,7 +185,7 @@ export function NewsPrivateSources() {
         error instanceof ApiError ? error.message : ACCOUNT_NEWS_PRIVATE_COPY.removeFailed
       );
     } finally {
-      setBusyId(null);
+      dispatch({ type: 'removeSettled' });
     }
   };
 
@@ -258,7 +261,7 @@ export function NewsPrivateSources() {
                   variant="ghost"
                   size="sm"
                   aria-label={ACCOUNT_NEWS_PRIVATE_COPY.removeAria.replace('{name}', row.name)}
-                  onClick={() => setRemoving(row)}
+                  onClick={() => dispatch({ type: 'removeRequested', row })}
                   disabled={busyId === row.id}
                 >
                   <Trash aria-hidden="true" />
@@ -279,13 +282,13 @@ export function NewsPrivateSources() {
       <Dialog
         open={removing !== null}
         onOpenChange={(next) => {
-          if (!next) setRemoving(null);
+          if (!next) dispatch({ type: 'removeClosed' });
         }}
       >
         <DialogContent
           hideClose
           className="sm:max-w-md w-[calc(100%-2rem)] mx-auto p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-border/80 bg-background shadow-2xl"
-          onEscapeKeyDown={() => setRemoving(null)}
+          onEscapeKeyDown={() => dispatch({ type: 'removeClosed' })}
         >
           {removing ? (
             <>
@@ -299,7 +302,7 @@ export function NewsPrivateSources() {
               </DialogHeader>
 
               <DialogActions
-                onCancel={() => setRemoving(null)}
+                onCancel={() => dispatch({ type: 'removeClosed' })}
                 cancelLabel={ACCOUNT_NEWS_PRIVATE_COPY.removeCancel}
                 className="mt-6 sm:mt-8 pt-0"
               >

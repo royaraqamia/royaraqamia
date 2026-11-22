@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, lazy } from 'react';
+import { Suspense, useReducer, useState, lazy } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CircleAlert, LoaderCircle } from 'lucide-react';
@@ -15,6 +15,7 @@ import { authLink } from '@/frontend/ui/auth/auth-links';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
+import { authSubmitReducer, INITIAL_AUTH_SUBMIT } from '../auth-submit.reducer';
 
 const Turnstile = lazy(
   tolerateChunkFailure('Turnstile', () =>
@@ -34,18 +35,17 @@ function LoginForm() {
         ? 'فشل تسجيل الدُّخول عبر Google. يُرجَى المحاولة مرَّة أخرى.'
         : null
   );
-  const [message, setMessage] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
-  const [offline, setOffline] = useState(false);
+  const [{ message, offline, pending: isPending }, dispatch] = useReducer(
+    authSubmitReducer,
+    INITIAL_AUTH_SUBMIT
+  );
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   /** The email form is the second door: it opens when the visitor asks for it. */
   const [emailOpen, setEmailOpen] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
-    setOffline(false);
-    setIsPending(true);
+    dispatch({ type: 'submitStarted' });
     try {
       const formData = new FormData(event.currentTarget);
       const result = await login({
@@ -60,10 +60,13 @@ function LoginForm() {
       }
       // A refusal the server did not explain still reads as one: the fallback is
       // applied where the message is set, so the render never tests it again.
-      setMessage(result.message || SIGN_IN_COPY.refused);
-      setOffline(result.offline);
+      dispatch({
+        type: 'submitAnswered',
+        message: result.message || SIGN_IN_COPY.refused,
+        offline: result.offline,
+      });
     } finally {
-      setIsPending(false);
+      dispatch({ type: 'submitSettled' });
     }
   }
 

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useReducer, useRef } from 'react';
 import Image from 'next/image';
+
+import { lazyImageInitialState, lazyImageReducer } from './LazyImage.reducer';
 
 interface LazyImageProps {
   src: string;
@@ -25,9 +27,10 @@ export function LazyImage({
   priority = false,
   webpSrc,
 }: LazyImageProps) {
-  const [currentSrc, setCurrentSrc] = useState(webpSrc ?? src);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  const [{ currentSrc, isLoaded, hasError }, dispatch] = useReducer(
+    lazyImageReducer,
+    lazyImageInitialState(src, webpSrc)
+  );
   const imgRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -52,14 +55,8 @@ export function LazyImage({
           sizes={sizes}
           priority={priority}
           loading={priority ? undefined : 'lazy'}
-          onLoad={() => setIsLoaded(true)}
-          onError={() => {
-            if (webpSrc && currentSrc === webpSrc && src !== webpSrc) {
-              setCurrentSrc(src);
-            } else {
-              setHasError(true);
-            }
-          }}
+          onLoad={() => dispatch({ type: 'loaded' })}
+          onError={() => dispatch({ type: 'failed', src, webpSrc })}
           className={`w-full h-full object-cover transition-opacity duration-500 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}

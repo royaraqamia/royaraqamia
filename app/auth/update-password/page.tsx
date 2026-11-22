@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, lazy } from 'react';
+import { Suspense, useReducer, useState, lazy } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CircleAlert, CircleCheck, Loader2 } from 'lucide-react';
 import { updatePassword } from '@/frontend/api/auth';
@@ -9,6 +9,7 @@ import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
+import { authSubmitReducer, INITIAL_AUTH_SUBMIT } from '../auth-submit.reducer';
 
 const PasswordStrength = lazy(
   tolerateChunkFailure('password strength meter', () =>
@@ -21,9 +22,10 @@ function UpdatePasswordForm() {
   const token = searchParams.get('token') ?? '';
   const email = searchParams.get('email') ?? '';
   const redirectTo = searchParams.get('redirect') ?? '/';
-  const [message, setMessage] = useState<string | null>(null);
-  const [offline, setOffline] = useState(false);
-  const [isPending, setIsPending] = useState(false);
+  const [{ message, offline, pending: isPending }, dispatch] = useReducer(
+    authSubmitReducer,
+    INITIAL_AUTH_SUBMIT
+  );
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -32,9 +34,7 @@ function UpdatePasswordForm() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
-    setOffline(false);
-    setIsPending(true);
+    dispatch({ type: 'submitStarted' });
     try {
       const formData = new FormData(event.currentTarget);
       const result = await updatePassword({
@@ -48,10 +48,9 @@ function UpdatePasswordForm() {
         window.location.assign(result.redirectUrl);
         return;
       }
-      setMessage(result.message);
-      setOffline(result.offline);
+      dispatch({ type: 'submitAnswered', message: result.message, offline: result.offline });
     } finally {
-      setIsPending(false);
+      dispatch({ type: 'submitSettled' });
     }
   }
 

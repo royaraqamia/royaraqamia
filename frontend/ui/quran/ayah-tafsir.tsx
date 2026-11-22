@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
   type ReactNode,
@@ -15,6 +16,7 @@ import type { QuranSurahTafsir, SurahTafsirRef } from '@/shared/contracts/quran-
 import { replaceSearch } from '@/frontend/shared/replace-search';
 import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { quranTafsirScope } from './quran-screen-scope';
+import { INITIAL_TAFSIR_STATE, tafsirReducer } from './ayah-tafsir.reducer';
 
 /**
  * The Tafsir, read beside an Ayah (ADR-0057, P3).
@@ -61,10 +63,10 @@ export function QuranTafsirProvider({
   tafsir: SurahTafsirRef | null;
   children: ReactNode;
 }) {
-  const [openAyah, setOpenAyah] = useState<number | null>(null);
-  const [bodies, setBodies] = useState<Record<number, string | null> | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [{ openAyah, bodies, loading, failed }, dispatch] = useReducer(
+    tafsirReducer,
+    INITIAL_TAFSIR_STATE
+  );
   // One request per sura, however many times the reader toggles.
   const inFlight = useRef<Promise<void> | null>(null);
 
@@ -75,8 +77,7 @@ export function QuranTafsirProvider({
   const load = useCallback(() => {
     if (inFlight.current || !tafsir) return inFlight.current ?? Promise.resolve();
 
-    setLoading(true);
-    setFailed(false);
+    dispatch({ type: 'loadStarted' });
 
     const request = fetch(`${tafsir.path}?v=${tafsir.version}`, { credentials: 'same-origin' })
       .then(async (response) => {
@@ -84,15 +85,12 @@ export function QuranTafsirProvider({
         const file = (await response.json()) as QuranSurahTafsir;
         const next: Record<number, string | null> = {};
         for (const entry of file.ayat) next[entry.ayah] = entry.text;
-        setBodies(next);
+        dispatch({ type: 'loadSucceeded', bodies: next });
       })
       .catch(() => {
         // A failed fetch must not be remembered, or a retry can never succeed.
         inFlight.current = null;
-        setFailed(true);
-      })
-      .finally(() => {
-        setLoading(false);
+        dispatch({ type: 'loadFailed' });
       });
 
     inFlight.current = request;
@@ -102,7 +100,7 @@ export function QuranTafsirProvider({
   const toggle = useCallback(
     (ayah: number) => {
       const next = openAyah === ayah ? null : ayah;
-      setOpenAyah(next);
+      dispatch({ type: 'opened', ayah: next });
       if (next !== null && bodies === null) void load();
 
       const params = new URLSearchParams(window.location.search);
@@ -125,7 +123,7 @@ export function QuranTafsirProvider({
     const ayah = Number(value);
     if (!Number.isInteger(ayah) || ayah < 1) return;
 
-    setOpenAyah(ayah);
+    dispatch({ type: 'opened', ayah });
     void load();
   }, [tafsir, load]);
 

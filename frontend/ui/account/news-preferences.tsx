@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 import { Check, Lock, Newspaper } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -12,14 +12,10 @@ import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ApiError } from '@/frontend/transport/http';
-import {
-  NEWS_CATEGORIES,
-  type NewsCategory,
-  type NewsRegion,
-  type NewsSource,
-} from '@/shared/contracts/news';
+import { NEWS_CATEGORIES, type NewsCategory, type NewsRegion } from '@/shared/contracts/news';
 
 import { ACCOUNT_NEWS_PREFERENCES_COPY } from './account-news-preferences-copy';
+import { newsPreferencesInitialState, newsPreferencesReducer } from './news-preferences.reducer';
 
 const CATEGORY_LABELS: Record<NewsCategory, string> = {
   tech: ACCOUNT_NEWS_PREFERENCES_COPY.categoryTech,
@@ -61,29 +57,26 @@ function PageHeading() {
  */
 export function NewsPreferences() {
   const { user, isLoading: sessionLoading } = useSession();
-  const [sources, setSources] = useState<NewsSource[] | null>(null);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [{ sources, selected, loading, loadError, saving }, dispatch] = useReducer(
+    newsPreferencesReducer,
+    undefined,
+    newsPreferencesInitialState
+  );
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
+    dispatch({ type: 'loadStarted' });
 
     try {
       const result = await getNewsSourceSelection();
-      setSources(result.sources);
       // "Everything" is stored as an empty list; the picker shows it as all
       // ticked, because that is what the reader sees on /news.
       const kept = result.selected.length > 0 ? result.selected : result.sources.map((s) => s.id);
-      setSelected(new Set(kept));
+      dispatch({ type: 'loadSucceeded', sources: result.sources, selected: kept });
     } catch (error) {
-      setLoadError(
-        error instanceof ApiError ? error.message : ACCOUNT_NEWS_PREFERENCES_COPY.loadFailed
-      );
-    } finally {
-      setLoading(false);
+      dispatch({
+        type: 'loadFailed',
+        error: error instanceof ApiError ? error.message : ACCOUNT_NEWS_PREFERENCES_COPY.loadFailed,
+      });
     }
   }, []);
 
@@ -131,21 +124,16 @@ export function NewsPreferences() {
   const allSelected = sources !== null && selected.size === sources.length;
 
   const toggle = (id: string) => {
-    setSelected((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    dispatch({ type: 'toggled', id });
   };
 
   const reset = () => {
-    if (sources) setSelected(new Set(sources.map((source) => source.id)));
+    if (sources) dispatch({ type: 'allSelected', ids: sources.map((source) => source.id) });
   };
 
   const save = async () => {
     if (!sources) return;
-    setSaving(true);
+    dispatch({ type: 'saveStarted' });
 
     try {
       // All ticked is "everything", stored as an empty list so sources approved
@@ -161,7 +149,7 @@ export function NewsPreferences() {
         error instanceof ApiError ? error.message : ACCOUNT_NEWS_PREFERENCES_COPY.saveFailed
       );
     } finally {
-      setSaving(false);
+      dispatch({ type: 'saveSettled' });
     }
   };
 
