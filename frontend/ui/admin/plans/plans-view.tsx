@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useReducer } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Inbox, Search, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,9 +17,13 @@ import {
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
 import { PlanActivationForm } from '@/frontend/ui/admin/plans/plan-activation-form';
+import {
+  plansViewInitialState,
+  plansViewReducer,
+} from '@/frontend/ui/admin/plans/plans-view.reducer';
 import { useAdminPlans } from '@/frontend/state/plans/use-admin-plans';
 import { formatCount, formatHijriDate } from '@/frontend/shared/format';
-import type { AdminUserUsage, PlanLimit, UsageLimit } from '@/shared/contracts/plans';
+import type { PlanLimit, UsageLimit } from '@/shared/contracts/plans';
 
 const PLAN_LABELS = { free: 'مجاني', pro: 'مدفوع' } as const;
 
@@ -36,10 +40,8 @@ function counterOf(counters: UsageLimit[], key: string, plan: 'free' | 'pro'): n
 }
 
 export function PlansView() {
-  const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<AdminUserUsage | null>(null);
+  const [state, dispatch] = useReducer(plansViewReducer, undefined, plansViewInitialState);
+  const { page, searchInput, search, selected } = state;
 
   const { result, loading, error, reload } = useAdminPlans({
     page,
@@ -51,8 +53,7 @@ export function PlansView() {
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSearch(searchInput.trim());
-    setPage(1);
+    dispatch({ type: 'searchSubmitted' });
   }
 
   return (
@@ -102,7 +103,7 @@ export function PlansView() {
           placeholder="ابحث بالاسم أو البريد..."
           aria-label="بحث في المستخدمين"
           value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
+          onChange={(event) => dispatch({ type: 'searchInputChanged', value: event.target.value })}
         />
         <Button type="submit" variant="outline" size="sm">
           <Search className="size-4" aria-hidden="true" />
@@ -149,7 +150,11 @@ export function PlansView() {
                   <Badge variant={user.plan === 'pro' ? 'success' : 'secondary'}>
                     {PLAN_LABELS[user.plan]}
                   </Badge>
-                  <Button variant="outline" size="sm" onClick={() => setSelected(user)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => dispatch({ type: 'userSelected', user })}
+                  >
                     تفعيل 30 يوماً
                   </Button>
                 </div>
@@ -185,7 +190,7 @@ export function PlansView() {
             variant="outline"
             size="sm"
             disabled={page <= 1}
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            onClick={() => dispatch({ type: 'previousPage' })}
           >
             <ChevronRight className="size-4" aria-hidden="true" />
             السابق
@@ -197,7 +202,7 @@ export function PlansView() {
             variant="outline"
             size="sm"
             disabled={page >= totalPages}
-            onClick={() => setPage((current) => current + 1)}
+            onClick={() => dispatch({ type: 'nextPage' })}
           >
             التالي
             <ChevronLeft className="size-4" aria-hidden="true" />
@@ -208,7 +213,7 @@ export function PlansView() {
       <Dialog
         open={selected !== null}
         onOpenChange={(next) => {
-          if (!next) setSelected(null);
+          if (!next) dispatch({ type: 'dialogClosed' });
         }}
       >
         <DialogContent className="sm:max-w-md">
@@ -221,9 +226,9 @@ export function PlansView() {
               user={selected}
               priceCents={result.settings.priceCents}
               currency={result.settings.currency}
-              onCancel={() => setSelected(null)}
+              onCancel={() => dispatch({ type: 'dialogClosed' })}
               onActivated={() => {
-                setSelected(null);
+                dispatch({ type: 'dialogClosed' });
                 toast.success('تم تفعيل الاشتراك.');
                 void reload();
               }}

@@ -275,17 +275,18 @@ test('a community load-more that never leaves keeps the loaded page and names th
   };
 
   await page.route(
-    (url) =>
-      url.pathname === '/api/community/following' && url.searchParams.get('cursor') === 'seed',
+    (url) => url.pathname === '/api/community/index' && url.searchParams.get('cursor') === 'seed',
     (route) => route.fulfill({ json: firstPage })
   );
   await page.route(
-    (url) =>
-      url.pathname === '/api/community/following' && url.searchParams.get('cursor') === 'next',
+    (url) => url.pathname === '/api/community/index' && url.searchParams.get('cursor') === 'next',
     (route) => route.abort('failed')
   );
 
-  await page.goto(`${baseURL}/community?cursor=seed`);
+  // The public hub leaves the first page server-rendered and only fetches a
+  // cursor it does not already own, so `?cursor=seed` makes the island read the
+  // mocked page instead of treating it as the document's own default view.
+  await page.goto(`${baseURL}/community/explore?cursor=seed`);
   await expect(page.getByText('منشور تجريبيّ')).toBeVisible();
 
   await page.getByRole('link', { name: 'تحميل المزيد من المنشورات' }).click();

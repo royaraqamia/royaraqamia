@@ -1,8 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useReducer } from 'react';
 import { getMyPlan, getMyUsage } from '@/frontend/api/plans';
 import { logger } from '@/frontend/shared/logger';
+import {
+  planResourceInitialState,
+  planResourceReducer,
+} from '@/frontend/state/plans/plan-resource.reducer';
 import type { MyPlan, UsageState } from '@/shared/contracts/plans';
 
 /**
@@ -11,62 +15,58 @@ import type { MyPlan, UsageState } from '@/shared/contracts/plans';
  * answered 401 and never flashes an empty state at a guest.
  */
 export function useMyUsage(enabled: boolean) {
-  const [state, setState] = useState<UsageState | null>(null);
-  const [loading, setLoading] = useState(enabled);
-  const [failed, setFailed] = useState(false);
+  const [state, dispatch] = useReducer(
+    planResourceReducer<UsageState>,
+    enabled,
+    planResourceInitialState<UsageState>
+  );
 
   const reload = useCallback(async () => {
-    setLoading(true);
-    setFailed(false);
+    dispatch({ type: 'loadStarted' });
     try {
-      setState(await getMyUsage());
+      dispatch({ type: 'loadSucceeded', value: await getMyUsage() });
     } catch (error) {
       logger.error('Failed to load usage state', { error: String(error) });
-      setFailed(true);
-    } finally {
-      setLoading(false);
+      dispatch({ type: 'loadFailed' });
     }
   }, []);
 
   useEffect(() => {
     if (!enabled) {
-      setState(null);
-      setLoading(false);
+      dispatch({ type: 'disabled' });
       return;
     }
     void reload();
   }, [enabled, reload]);
 
-  return { state, loading, failed, reload };
+  return { state: state.value, loading: state.loading, failed: state.failed, reload };
 }
 
 /** The plan page's data: allowance plus the grant history. */
 export function useMyPlan(enabled: boolean) {
-  const [plan, setPlan] = useState<MyPlan | null>(null);
-  const [loading, setLoading] = useState(enabled);
-  const [failed, setFailed] = useState(false);
+  const [state, dispatch] = useReducer(
+    planResourceReducer<MyPlan>,
+    enabled,
+    planResourceInitialState<MyPlan>
+  );
 
   const reload = useCallback(async () => {
-    setLoading(true);
-    setFailed(false);
+    dispatch({ type: 'loadStarted' });
     try {
-      setPlan(await getMyPlan());
+      dispatch({ type: 'loadSucceeded', value: await getMyPlan() });
     } catch (error) {
       logger.error('Failed to load plan details', { error: String(error) });
-      setFailed(true);
-    } finally {
-      setLoading(false);
+      dispatch({ type: 'loadFailed' });
     }
   }, []);
 
   useEffect(() => {
     if (!enabled) {
-      setPlan(null);
-      setLoading(false);
+      dispatch({ type: 'disabled' });
       return;
     }
     void reload();
   }, [enabled, reload]);
 
-  return { plan, loading, failed, reload };
+  return { plan: state.value, loading: state.loading, failed: state.failed, reload };
 }

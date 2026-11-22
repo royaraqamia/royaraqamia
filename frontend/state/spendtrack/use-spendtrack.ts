@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import type { Budget, Category, Expense, RecurringExpense } from '@/shared/contracts/spendtrack';
 import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
 import { pullSpendtrackData } from '@/frontend/api/spendtrack/pull';
 import { createSpendtrackHttpSyncTransport } from '@/frontend/api/spendtrack/sync-transport';
 import { SpendtrackSyncEngine } from '@/frontend/api/spendtrack/sync-engine';
-import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
+import { SyncEngine } from '@/frontend/shared/local-store/sync-engine';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
 import {
   GUEST_IDENTITY,
   identityFromUser,
   identityUserId,
-  type LocalIdentity,
 } from '@/frontend/shared/local-store/identity';
 import {
   halveList,
@@ -18,6 +17,11 @@ import {
   useSnapshot,
   useSnapshotRecorder,
 } from '@/frontend/shared/local-store/snapshot';
+import {
+  spendtrackStoreInitialState,
+  spendtrackStoreReducer,
+  type SpendtrackRows,
+} from '@/frontend/state/spendtrack/use-spendtrack.reducer';
 import { logger } from '@/frontend/shared/logger';
 import { flushOutbox } from '@/frontend/shared/local-store/background-sync';
 import { useRefreshState } from '@/frontend/shared/local-store/refresh-status';
@@ -69,14 +73,6 @@ export interface SpendtrackStoreState {
   retryRefresh: () => void;
 }
 
-const EMPTY_STATUS: SyncStatus = {
-  syncing: false,
-  pending: 0,
-  failed: 0,
-  lastError: null,
-  lastFailedType: null,
-};
-
 /** The surface's snapshot (#495): the rows the dashboard last painted. */
 export const SPENDTRACK_SNAPSHOT_ROUTE = 'spendtrack';
 
@@ -106,22 +102,13 @@ function trimSpendtrack(data: SpendtrackSnapshot): SpendtrackSnapshot | null {
  * to the store + Outbox; the Sync Engine (#166) replays them on reconnection.
  */
 export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
-  /**
-   * The identity the store read answered, or `null` before the first read.
-   * Tagged rather than a boolean so an identity change cannot paint the previous
-   * account's rows while the new store opens.
-   */
-  const [readyFor, setReadyFor] = useState<LocalIdentity | null>(null);
-  const [store, setStore] = useState<SpendtrackLocalStore | null>(null);
-  // Hydration-safe: the server (Node exposes a partial `navigator`) and the
-  // first client render must agree, so start "online" and read the real value
-  // in an effect.
-  const [online, setOnline] = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [recurring, setRecurring] = useState<RecurringExpense[]>([]);
-  const [status, setStatus] = useState<SyncStatus>(EMPTY_STATUS);
+  const [state, dispatch] = useReducer(
+    spendtrackStoreReducer,
+    undefined,
+    spendtrackStoreInitialState
+  );
+  const { readyFor, store, online, rows, status } = state;
+  const { categories, expenses, budgets, recurring } = rows;
 
   const storeRef = useRef<SpendtrackLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
@@ -141,15 +128,24 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
   // first frame empty.
   const snapshot = useSnapshot<SpendtrackSnapshot>(identity, SPENDTRACK_SNAPSHOT_ROUTE);
 
-  const readIntoState = useCallback(async (store: SpendtrackLocalStore) => {
+  const readRows = useCallback(async (store: SpendtrackLocalStore): Promise<SpendtrackRows> => {
     const data = await store.getLocalData();
-    setCategories(
-      data.categories.filter((row) => !row.deletedAt).sort((a, b) => a.name.localeCompare(b.name))
-    );
-    setExpenses(data.expenses.filter((row) => !row.deletedAt));
-    setBudgets(data.budgets.filter((row) => !row.deletedAt));
-    setRecurring(data.recurring.filter((row) => !row.deletedAt));
+    return {
+      categories: data.categories
+        .filter((row) => !row.deletedAt)
+        .sort((a, b) => a.name.localeCompare(b.name)),
+      expenses: data.expenses.filter((row) => !row.deletedAt),
+      budgets: data.budgets.filter((row) => !row.deletedAt),
+      recurring: data.recurring.filter((row) => !row.deletedAt),
+    };
   }, []);
+
+  const readIntoState = useCallback(
+    async (store: SpendtrackLocalStore) => {
+      dispatch({ type: 'rowsRead', rows: await readRows(store) });
+    },
+    [readRows]
+  );
 
   /**
    * Reconciles the store with the server's incremental snapshot (LWW,
@@ -221,10 +217,11 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         if (cancelled) return store.close();
 
         storeRef.current = store;
-        await readIntoState(store);
+        const firstRows = await readRows(store);
         if (cancelled) return;
-        setStore(store);
-        setReadyFor(identity);
+        // The bootstrap and its first rows land in one transition, so the shell
+        // never paints a ready surface over an empty store.
+        dispatch({ type: 'hydrated', identity, store, rows: firstRows });
         // The launch's content mark: owned rows painted from the Local Store (#487).
         markContent();
 
@@ -240,7 +237,7 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
           store,
           transport: createSpendtrackHttpSyncTransport(),
           isSignedIn: () => isSignedIn,
-          onStatus: (next) => setStatus(next),
+          onStatus: (next) => dispatch({ type: 'statusChanged', status: next }),
         });
         engineRef.current = engine;
         engine.onSync(() => {
@@ -259,7 +256,7 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
       opened?.close();
       engineRef.current = null;
       storeRef.current = null;
-      setStore(null);
+      dispatch({ type: 'storeReleased' });
     };
     // The seed only fills an empty store on open; reopening on every seed change
     // would clobber local writes, so identity change is the only trigger.
@@ -299,14 +296,17 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
   }, [ready, isSignedIn, identity, pull]);
 
   useEffect(() => {
-    setOnline(typeof navigator === 'undefined' ? true : navigator.onLine);
+    dispatch({
+      type: 'onlineChanged',
+      online: typeof navigator === 'undefined' ? true : navigator.onLine,
+    });
 
     const onOnline = () => {
-      setOnline(true);
+      dispatch({ type: 'onlineChanged', online: true });
       void engineRef.current?.flush();
       void pull();
     };
-    const onOffline = () => setOnline(false);
+    const onOffline = () => dispatch({ type: 'onlineChanged', online: false });
     // Coming back to the page reconciles with the server as well as flushing: a
     // change made on another device while this tab was hidden is exactly what
     // the hint subscription could not deliver.

@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import {
-  activatePlan as activatePlanRequest,
-  fetchPlanUsers,
-  type AdminPlansResult,
-} from '@/frontend/api/admin/plans';
+import { useCallback, useEffect, useReducer, useState } from 'react';
+import { activatePlan as activatePlanRequest, fetchPlanUsers } from '@/frontend/api/admin/plans';
 import { logger } from '@/frontend/shared/logger';
+import {
+  adminPlansInitialState,
+  adminPlansReducer,
+} from '@/frontend/state/plans/use-admin-plans.reducer';
 import type { ActivatePlanInput, AdminPlansQuery } from '@/shared/contracts/plans';
 
 function messageOf(error: unknown, fallback: string): string {
@@ -15,20 +15,16 @@ function messageOf(error: unknown, fallback: string): string {
 
 export function useAdminPlans(query: AdminPlansQuery) {
   const { page, pageSize, search } = query;
-  const [result, setResult] = useState<AdminPlansResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(adminPlansReducer, undefined, adminPlansInitialState);
+  const { result, loading, error } = state;
 
   const reload = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+    dispatch({ type: 'loadStarted' });
     try {
-      setResult(await fetchPlanUsers({ page, pageSize, search }));
+      dispatch({ type: 'loadSucceeded', result: await fetchPlanUsers({ page, pageSize, search }) });
     } catch (err) {
       logger.error('Failed to load plan usage', { error: String(err) });
-      setError(messageOf(err, 'تعذّر تحميل قائمة الاشتراكات.'));
-    } finally {
-      setLoading(false);
+      dispatch({ type: 'loadFailed', message: messageOf(err, 'تعذّر تحميل قائمة الاشتراكات.') });
     }
   }, [page, pageSize, search]);
 

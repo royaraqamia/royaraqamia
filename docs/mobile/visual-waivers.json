@@ -25,6 +25,12 @@
       "reason": "The counter stays the same <button> with the same classes, text and copy: native `disabled` was replaced by `aria-disabled` plus a guarded handler so focus survives completion. No layout, colour or user-facing word changed, and the recorded at-rest states are unfocused, so neither the contract numbers nor the captures can move. The keyboard behaviour is asserted in #1670.",
       "issue": "#1670",
       "until": "2026-12-21"
+    },
+    {
+      "surface": "spendtrack",
+      "reason": "The budget card's state moved into a pure reducer beside it (#1100): the month load and the save now settle in one transition, but the same props, markup, class names, copy and data-* attributes render. No box, colour, font or word the capture records can move, so the existing evidence stays correct and a re-record would only reproduce it.",
+      "issue": "#1100",
+      "until": "2026-12-22"
     }
   ]
 }
