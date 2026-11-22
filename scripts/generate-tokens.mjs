@@ -219,6 +219,9 @@ export function validate(tokens) {
       throw new Error(`generate-tokens: the source has no "${required}" font family`);
     }
   }
+  for (const face of ['heading', 'digits']) {
+    fontBudget(tokens.font[face], face);
+  }
   for (const [name, entry] of Object.entries(tokens.type)) {
     fluid(entry.size);
     vw(entry.size.preferred);
@@ -307,9 +310,11 @@ export function renderCss(tokens) {
     '   stylesheet that re-declares one of these properties by hand. */',
     '',
     '/* Aref Ruqaa is declared by hand rather than through `next/font/local`: the',
-    '   site needs two faces backed by the same file, one for headings and one',
-    '   restricted to digits. `unicode-range` is what lets numerals pick Aref Ruqaa',
-    '   without changing the family of the surrounding Arabic text. */',
+    '   site needs two faces cut from the same bold Arabic file, one for headings',
+    '   and one restricted to digits. The digits face has its own subset, so a',
+    '   route that only paints numerals never pays for the Arabic glyphs.',
+    '   `unicode-range` is what lets numerals pick Aref Ruqaa without changing the',
+    '   family of the surrounding Arabic text. */',
     ...fontFace(tokens.font.heading),
     '',
     ...fontFace(tokens.font.digits, { unicodeRange: true }),
@@ -475,8 +480,21 @@ export function weightRange(weight) {
   return [parts[0], parts[parts.length - 1]];
 }
 
+/**
+ * The byte ceiling a face promises not to exceed. The manifest owns it so the
+ * subset tool and the tests price the same file against the same number, rather
+ * than one reading a constant from a script and the other from a comment.
+ */
+export function fontBudget(face, name) {
+  const bytes = face?.maxBytes;
+  if (!Number.isInteger(bytes) || bytes <= 0) {
+    throw new Error(`generate-tokens: font "${name}" has no positive "maxBytes"`);
+  }
+  return bytes;
+}
+
 /** `U+0030-0039` -> `[0x0030, 0x0039]`, the range the digits face supplies. */
-function unicodeRange(range) {
+export function unicodeRange(range) {
   const match = /^U\+([0-9A-Fa-f]+)-U?\+?([0-9A-Fa-f]+)$/.exec(range.trim());
   if (!match) {
     throw new Error(`generate-tokens: "${range}" is not a two-ended unicode range`);

@@ -150,11 +150,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir={DIRECTION} className={`dark ${ibmPlexSansArabic.variable}`}>
       <head>
-        {/* Aref Ruqaa is declared by hand in `app/global.css` (headings plus a
-            digits-only face), so preload it here where `next/font` used to. */}
+        {/* The digits face is in the body stack on every route, so it is the
+            only Aref file worth preloading. Its own 2.4 KB subset means the
+            58.6 KB Arabic heading face arrives only where a heading draws it. */}
         <link
           rel="preload"
-          href="/fonts/Aref%20Ruqaa/ArefRuqaa-Bold.woff2"
+          href="/fonts/Aref%20Ruqaa/ArefRuqaa-Digits.woff2"
           as="font"
           type="font/woff2"
           crossOrigin="anonymous"
