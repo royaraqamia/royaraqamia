@@ -15,6 +15,10 @@
 #   - GitHub disables a schedule after 60 days without repository activity. This
 #     repository is active daily, so that only matters for a forgotten fork.
 #
+# A fourth check, `job-health`, is new here rather than a former Vercel entry:
+# it reads the database scheduler's own run log so a dark pg_cron job is red too
+# (#1744). All four routes authorise themselves the same way.
+#
 # Secrets:
 #   CRON_SECRET - the same value the Render service holds; without it every call
 #                 is refused by the route itself.
@@ -34,12 +38,15 @@ on:
     - cron: '0 4 * * *'
     # 06:00 — refresh the market rates before the day's readers arrive.
     - cron: '0 6 * * *'
+    # 07:00 — check the database's own 23+ pg_cron jobs against their declared
+    #         intervals. A dark job turns this job red (#1744).
+    - cron: '0 7 * * *'
   workflow_dispatch:
     inputs:
       job:
         description: 'Which job to run now.'
         type: choice
-        options: ['all', 'rates', 'chat-attachments', 'mcp-catalog']
+        options: ['all', 'rates', 'chat-attachments', 'mcp-catalog', 'job-health']
         default: 'all'
 
 permissions:
@@ -106,3 +113,22 @@ jobs:
           curl -sS --fail-with-body --max-time 300 \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             "${BASE_URL}/api/cron/mcp-catalog"
+
+  job-health:
+    name: Database scheduler health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: >-
+      (github.event_name == 'workflow_dispatch' && contains(fromJSON('["all","job-health"]'), inputs.job))
+      || (github.event_name == 'schedule' && github.event.schedule == '0 7 * * *')
+    steps:
+      - name: GET /api/cron/job-health
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          # The route answers 503 with the offending job and its age when a
+          # pg_cron job is dark, vanished or has no declared expectation.
+          # --fail-with-body makes that a red job and keeps the body in the log.
+          curl -sS --fail-with-body --max-time 60 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${BASE_URL}/api/cron/job-health"
