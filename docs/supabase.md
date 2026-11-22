@@ -29,7 +29,7 @@ npx supabase db advisors --linked           # security + performance, the `get_a
 
 `db query` is how an acceptance criterion gets checked against reality — a function's `prosecdef`/`proconfig`/`proacl`, a `cron.job` row, row counts — and `db advisors --type security` is the advisor run. Use `npx supabase` rather than a global install: it runs the version pinned in `package.json`, which is the version CI pins too.
 
-A merged migration needs no hand-applying: the merge **is** the apply. The `main` run of the drift workflow is ordered plan → vet → apply → verify (see "Applying" below), so the migration is live once that run goes green — what is left to the agent after a merge is the verification, not the apply.
+A merged migration needs no hand-applying: the merge **is** the apply. The Supabase GitHub integration applies it on the push to `main`; the drift workflow is ordered plan → vet → wait → verify (see "Applying" below), so what is left to the agent after a merge is the verification, not the apply.
 
 ## Migrations convention
 
@@ -105,16 +105,16 @@ SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... npm run check:migrations
 
 It fails in both directions, and says which one it found:
 
-| Finding                                                | What it means                                                                                                                                                           | What to do                                                                                                                                                         |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A file the project has no version for                  | Production is behind the repo, so deployed code may expect schema that is not there. On a pull request this is a notice — main applies what the pull request adds       | On `main` the job applies it (the CLI mints its own login role from the access token); by hand, `supabase db push`, then re-run the check                          |
-| A pending file that sorts before the project's newest  | `supabase db push` will not insert history in the middle of the list it has written past, so the file never applies — on a pull request this is a failure, not a notice | Rename the file to a version after the project's newest and push; nothing else applies it                                                                          |
-| A recorded version with no file                        | Production is ahead: schema or a policy was applied out of band, unreviewed, with no migration file to roll it back                                                     | Add the file the project is missing, or, once you have decided production is wrong, revert the record with `supabase migration repair --status reverted <version>` |
-| It cannot read the history (non-2xx, or an empty list) | Wrong `SUPABASE_PROJECT_REF`, an expired token, or a changed API shape                                                                                                  | Fix the credential. The check deliberately refuses to report "in sync" when it cannot look                                                                         |
+| Finding                                                | What it means                                                                                                                                                                                | What to do                                                                                                                                                              |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A file the project has no version for                  | Production is behind the repo, so deployed code may expect schema that is not there. On a pull request this is a notice — the integration applies what the pull request adds after the merge | On `main` the integration applies it and the job waits for that check; to recover, dispatch with `apply: true` or run `supabase db push` by hand, then re-run the check |
+| A pending file that sorts before the project's newest  | `supabase db push` will not insert history in the middle of the list it has written past, so the file never applies — on a pull request this is a failure, not a notice                      | Rename the file to a version after the project's newest and push; nothing else applies it                                                                               |
+| A recorded version with no file                        | Production is ahead: schema or a policy was applied out of band, unreviewed, with no migration file to roll it back                                                                          | Add the file the project is missing, or, once you have decided production is wrong, revert the record with `supabase migration repair --status reverted <version>`      |
+| It cannot read the history (non-2xx, or an empty list) | Wrong `SUPABASE_PROJECT_REF`, an expired token, or a changed API shape                                                                                                                       | Fix the credential. The check deliberately refuses to report "in sync" when it cannot look                                                                              |
 
 ### Applying
 
-On `main` the job is ordered plan → vet → apply → verify, so a migration that was merged (and
+On `main` the job is ordered plan → vet → wait → verify, so a migration that was merged (and
 therefore reviewed) still lands in production without anyone driving it:
 
 - **Plan:** `supabase db push --linked --dry-run` prints exactly what a merge would apply. It needs
@@ -126,7 +126,17 @@ therefore reviewed) still lands in production without anyone driving it:
   merge that folds two permissive policies into one. Those are the
   entries in "Forbidden without explicit human approval" below, and they stay pending: a person reads
   the file and applies it with `supabase db push` after approving it.
-- **Apply:** `supabase db push --linked --yes`. It runs on `SUPABASE_ACCESS_TOKEN`, which is enough for the CLI to mint a login role for the linked project — the plan step above proves that connection with the same credentials on every push. `SUPABASE_DB_PASSWORD` is passed through when the repository has one, which is the path the CLI's own documentation recommends for CI. If the apply cannot connect or write, the verify step below reports the migration as still pending and the alert issue links to the run.
+- **Apply:** the Supabase GitHub integration applies the pending files on the push to `main` and is
+  the only applier there. This workflow used to run `supabase db push --linked --yes` on that push
+  too; two appliers raced on `supabase_migrations.schema_migrations` and the loser died with
+  `23505 duplicate key value violates unique constraint "schema_migrations_pkey"`. The Supabase
+  Preview check on commit `97f39d4` (2026-11-22) lost that race to `20261225000000` after CI's
+  apply had recorded the version. Applying from this workflow is now a manual recovery
+  (`workflow_dispatch` with `apply: true`), still with `SUPABASE_ACCESS_TOKEN` — enough for the CLI
+  to mint a login role — and `SUPABASE_DB_PASSWORD` when the repository has one.
+- **Wait:** on a push the workflow waits for the integration's `Supabase Preview` check to finish,
+  so the verify step never reads a history the applier has yet to write. A failed or missing check
+  is not papered over: it leaves the migration pending and the strict verify fails.
 - **Verify:** the drift check runs strictly afterwards, so "it applied" is not a claim: the project's
   recorded versions are read back and compared.
 

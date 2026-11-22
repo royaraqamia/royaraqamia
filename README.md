@@ -205,7 +205,7 @@ supabase db push
 
 Migrations are applied in filename order. New schema changes should always be added as a new numbered migration file, never by editing existing ones.
 
-> **Merged migrations apply themselves.** `Migration Drift` compares `supabase/migrations/` with the project's recorded history (ADR 0040), and on `main` it is ordered plan → vet → apply → verify: once a migration file is merged, `supabase db push` runs on its own, so nobody drives a migration by hand (ADR 0041). It runs on the same `SUPABASE_ACCESS_TOKEN` the agent workflows use, which is enough for the CLI to mint a login role for the linked project; set `SUPABASE_DB_PASSWORD` as well if you prefer the CLI's documented CI path. Anything destructive (`DROP TABLE`/`COLUMN`, `TRUNCATE`, RLS off, Auth or Storage writes, unbounded deletes) is refused and waits for a person. Check it yourself with `npm run check:migrations`; see [supabase.md](docs/supabase.md#drift-check-and-apply).
+> **Merged migrations apply themselves.** `Migration Drift` compares `supabase/migrations/` with the project's recorded history (ADR 0040); the Supabase GitHub integration applies merged files on `main`, and the workflow is ordered plan → vet → wait → verify so nobody drives a migration by hand (ADR 0041). The workflow's own apply is a manual recovery (`workflow_dispatch` with `apply: true`) on `SUPABASE_ACCESS_TOKEN`, plus `SUPABASE_DB_PASSWORD` if the CLI needs the documented CI path. Anything destructive (`DROP TABLE`/`COLUMN`, `TRUNCATE`, RLS off, Auth or Storage writes, unbounded deletes) is refused and waits for a person. Check it yourself with `npm run check:migrations`; see [supabase.md](docs/supabase.md#drift-check-and-apply).
 
 ### 5. Start the development server
 
