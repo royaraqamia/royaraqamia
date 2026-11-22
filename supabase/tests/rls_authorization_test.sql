@@ -8,7 +8,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(36);
+select plan(47);
 
 -- is_admin(): identity from the verified JWT, allowlist from app_settings, and no
 -- dependence on the non-authoritative users.is_admin column.
@@ -323,6 +323,126 @@ select throws_ok(
 );
 
 reset role;
+
+-- The capability layer that sits beside RLS (#1741). The public roles keep the
+-- SELECT/INSERT/UPDATE/DELETE grants their flows use - RLS and the per-table
+-- grants decide those - but they hold none of the privileges PostgREST never
+-- reaches and RLS cannot guard, notably TRUNCATE. MAINTAIN is a PG17
+-- privilege, so it is asserted through the ACL catalogue rather than by name.
+
+select ok(
+  not has_table_privilege('anon', 'public.notes', 'truncate'),
+  'anon has no TRUNCATE on notes'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.notes', 'truncate'),
+  'authenticated has no TRUNCATE on notes'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    cross join lateral aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+    join pg_roles r on r.oid = a.grantee
+    where n.nspname = 'public'
+      and c.relkind in ('r', 'p', 'f')
+      and r.rolname in ('anon', 'authenticated')
+      and a.privilege_type in ('TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN')
+  ),
+  'no public table grants a dangerous privilege to the public roles'
+);
+
+-- A stale pg_default_acl row would grant the capability to the next table
+-- created. The platform-owner row is documented as one a migration may not be
+-- able to change, so the assertion covers the grantors a migration owns.
+
+select ok(
+  not exists (
+    select 1
+    from pg_default_acl da
+    join pg_namespace n on n.oid = da.defaclnamespace
+    join pg_roles owner on owner.oid = da.defaclrole
+    cross join lateral aclexplode(da.defaclacl) a
+    join pg_roles r on r.oid = a.grantee
+    where n.nspname = 'public'
+      and da.defaclobjtype = 'r'
+      and owner.rolname <> 'supabase_admin'
+      and r.rolname in ('anon', 'authenticated')
+  ),
+  'no default ACL grants anon or authenticated on new public tables'
+);
+
+-- pg_net is not relocatable, so the exposure is closed by revoking PUBLIC
+-- EXECUTE on its functions. The signature below is the one the issue names
+-- (20260917082727 revoked three); the catalogue assertions cover every
+-- overload, including ones a future extension upgrade adds.
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'net.http_post(text,jsonb,jsonb,jsonb,integer)',
+    'execute'
+  ),
+  'anon cannot execute net.http_post'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'net.http_post(text,jsonb,jsonb,jsonb,integer)',
+    'execute'
+  ),
+  'authenticated cannot execute net.http_post'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'net'
+      and has_function_privilege('anon', p.oid, 'execute')
+  ),
+  'anon cannot execute any function in the net schema'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'net'
+      and has_function_privilege('authenticated', p.oid, 'execute')
+  ),
+  'authenticated cannot execute any function in the net schema'
+);
+
+select ok(
+  coalesce(
+    bool_and(has_function_privilege('postgres', p.oid, 'execute')),
+    true
+  ),
+  'the owner keeps EXECUTE on every net function'
+)
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'net';
+
+-- The public REST projections still answer as before: the feed is readable,
+-- users is not, and the certificate projection keeps its column grants.
+
+select ok(
+  has_table_privilege('anon', 'public.posts', 'select'),
+  'anon keeps SELECT on posts for the public feed'
+);
+
+select ok(
+  not has_table_privilege('anon', 'public.users', 'select'),
+  'anon has no SELECT on users'
+);
 
 select * from finish();
 

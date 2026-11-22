@@ -56,7 +56,12 @@ backfilled. A from-scratch replay is not how this repo works anyway: the base sc
 project and the first migration is a stub.
 
 - **RLS is not access control.** Policies choose rows; grants decide whether the role reaches the
-  object at all. A table with perfect policies and no grant is invisible.
+  object at all. A table with perfect policies and no grant is invisible. The stale default ACL
+  rows from before 2026-10-30 are cleared by 20261224000000, and the same migration strips
+  TRUNCATE, REFERENCES, TRIGGER and MAINTAIN from `anon`/`authenticated` on the existing tables:
+  RLS does not apply to TRUNCATE, so the privilege itself has to go (#1741). The platform owner's
+  (`supabase_admin`) default-ACL row is the one a migration may not be able to change; where the
+  grantor is not manageable the migration reports it instead of failing.
 - **A function a policy calls needs `execute` for the calling role.** A policy expression runs with
   the privileges of whoever queries the table, so `security definer` on the helper decides whose
   rights its body runs with, not who may call it. Revoking execute from `authenticated` leaves the
@@ -231,9 +236,13 @@ the two paths still have separate triggers.
     schema (20261011110000); relocatable, and the ILIKE GIN indexes reference `gin_trgm_ops`
     by OID so they are unaffected.
   - `extension_in_public` for `pg_net` — **not** relocatable (`extrelocatable = false`; its
-    functions already live in the non-exposed `net` schema), and moving it would risk the
-    habit-reminder and workflow-dispatch webhooks that call `net.http_post`. The exposure is
-    closed by revoking `EXECUTE` from `public`/`anon`/`authenticated` (20260917082727).
+    functions already live in the non-exposed `net` schema), so an `ALTER EXTENSION ... SET SCHEMA`
+    move fails and the issue's proposed relocation is not an option. Moving it would also risk the
+    habit-reminder and workflow-dispatch webhooks that call `net.http_post`. The
+    exposure is closed by revoking `EXECUTE` from `public`/`anon`/`authenticated`
+    (20260917082727), reaffirmed across **every** `net.*` function by 20261224000000 so a new
+    overload from an extension upgrade cannot reopen it. The SECURITY DEFINER callers run as the
+    function owner and keep their path.
   - `authenticated_security_definer_function_executable` — resolved where it mattered:
     - `public.is_admin()` moved to the non-exposed `private` schema (20261011130000), so the
       `/rpc/is_admin` route is gone; the three certificate policies call `private.is_admin()`.
