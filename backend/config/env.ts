@@ -159,6 +159,14 @@ export const env = {
   get aiChatModel(): string | undefined {
     return read('AI_CHAT_MODEL');
   },
+  /**
+   * The model that judges a finished draft before it is revealed (ADR-0213).
+   * Empty uses the calibrated default; `off` disables the gate entirely, so a
+   * deployment can turn the turn back into its pre-gate form without a deploy.
+   */
+  get aiChatJudgeModel(): string | undefined {
+    return read('AI_CHAT_JUDGE_MODEL');
+  },
   get aiChatApiKey(): string | undefined {
     // `??` would stop at an empty value, which is exactly what a cleared
     // variable and the test suite both produce.

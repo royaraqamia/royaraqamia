@@ -10,6 +10,14 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import * as prettier from 'prettier';
 import { behaviourLines } from '../../shared/contracts/agent-behaviour.mjs';
+import {
+  ANCHORS as SHARED_ANCHORS,
+  AXIS_HELP as SHARED_AXIS_HELP,
+  GLOBAL_BANNED as SHARED_GLOBAL_BANNED,
+  detectLanguage as sharedDetectLanguage,
+  dominantLanguage as sharedDominantLanguage,
+  parseJudgeVerdict,
+} from '../../shared/contracts/nour-quality.mjs';
 
 const DEFAULT_BASE = 'https://opencode.ai/inference/go/openai/v1';
 const DEFAULT_MODEL = 'deepseek-v4.1-flash';
@@ -147,63 +155,14 @@ export function realSystemPrompt(repoRoot) {
   return lines.join('\n');
 }
 
-const ARABIC = /[\u0600-\u06FF]/;
-const LATIN = /[A-Za-z]/;
-
-function scriptCounts(text) {
-  const tokens = text.split(/[\s\d\p{P}\p{S}]+/u).filter(Boolean);
-  let ar = 0;
-  let en = 0;
-  for (const token of tokens) {
-    if (ARABIC.test(token)) ar += 1;
-    else if (LATIN.test(token)) en += 1;
-  }
-  if (ar === 0 && en === 0) {
-    ar = (text.match(/[\u0600-\u06FF]/g) ?? []).length;
-    en = (text.match(/[A-Za-z]/g) ?? []).length;
-  }
-  return { ar, en };
-}
-
 /**
- * Word-based, because an Arabic answer listing API names or certificate titles
- * can contain more Latin letters than Arabic ones and still be an Arabic reply.
+ * Language detection is shared with the live gate (ADR-0213), so the offline
+ * score and the online verdict cannot disagree about what "Arabic" means.
  */
-export function detectLanguage(text) {
-  const { ar, en } = scriptCounts(text);
-  if (ar > en * 1.2) return 'ar';
-  if (en > ar * 1.2) return 'en';
-  return 'mixed';
-}
+export const detectLanguage = sharedDetectLanguage;
+export const dominantLanguage = sharedDominantLanguage;
 
-/**
- * The majority script, without detectLanguage's neutral band. A case that
- * declares an expected dominant language is gated on this: a code-switched
- * reply may keep the member's few technical terms in the other script, but it
- * cannot answer in the other script's language outright (#1608).
- */
-export function dominantLanguage(text) {
-  const { ar, en } = scriptCounts(text);
-  if (ar > en) return 'ar';
-  if (en > ar) return 'en';
-  return 'mixed';
-}
-
-const GLOBAL_BANNED = [
-  'بصفتي مساعد',
-  'أخبرني إذا',
-  'هل هناك شيء آخر',
-  'كما ذكرت سابقاً',
-  'يسعد نور',
-  'نور تجيبك',
-  'as an ai',
-  'let me know if',
-  'anything else you need',
-  'anything else i can do',
-  'إن احتجت أي شيء آخر',
-  'great question',
-  "i'm sorry to hear that",
-];
+const GLOBAL_BANNED = SHARED_GLOBAL_BANNED;
 
 export function deterministic(reply, expectation) {
   const failures = [];
@@ -258,23 +217,14 @@ export function deterministic(reply, expectation) {
   };
 }
 
-const ANCHORS = `
-Calibration examples — a 5 and a 1 for "What is the difference between the sun and the moon?":
-GOOD (5): "الشمس نجم يضيء بنفسه، والقمر تابع يدور حولها ويعكس ضوءها."
-BAD (1): "بصفتي مساعداً ذكياً، أود أن أشرح لك أن هناك فروقاً عدة بين الشمس والقمر. أخبرني إذا احتجت إلى مزيد من التفاصيل."
-
+const ANCHORS = `${SHARED_ANCHORS}
 Language fit (5) means the reply matches the MEMBER, not the product's default language: an English reply to "What is a comet?" is a 5, never a penalty. Under policy B, an Egyptian/Levantine/Gulf/Maghrebi reply to a member writing that dialect is a 5; simplified MSA for a formal or religious question is a 5. A reply in the wrong language is a 0-2.
 `.trim();
 
 const AXIS_HELP = {
-  naturalness: 'sounds like a capable person, not a manual or a template',
-  warmth: 'friendly and calm, never scolding or syrupy',
-  helpfulness: 'actually answers or does the safe next thing',
+  ...SHARED_AXIS_HELP,
   language_fit:
     'matches the member language and register; policy B: mirror the member dialect for casual talk, keep simplified MSA for religious and formal answers',
-  conciseness: 'no preamble, closing summary, restated question or filler',
-  boundaries:
-    'states a limit once in plain words, never invents a ruling or claims an unperformed action',
 };
 
 /** A different model from the generator judges, anchored with the examples above. */
@@ -317,17 +267,8 @@ export async function judge(cfg, axisList, userMessage, reply, extraContext = ''
           ...(attempt === 0 ? { responseFormat: { type: 'json_object' } } : {}),
         }
       );
-      const start = text.indexOf('{');
-      const end = text.lastIndexOf('}');
-      if (start < 0 || end <= start)
-        throw new Error(`no JSON in judge reply: ${text.slice(0, 120)}`);
-      const parsed = JSON.parse(text.slice(start, end + 1));
-      const scores = {};
-      for (const axis of axisList) {
-        const value = Number(parsed.scores?.[axis]);
-        scores[axis] = Number.isFinite(value) ? Math.max(0, Math.min(5, value)) : null;
-      }
-      return { ok: true, scores, reason: String(parsed.reason ?? '').slice(0, 240) };
+      const verdict = parseJudgeVerdict(text, axisList);
+      return { ok: verdict.ok, scores: verdict.scores, reason: verdict.reason };
     } catch (error) {
       lastError = String(error.message ?? error).slice(0, 160);
     }

@@ -48,6 +48,10 @@ import {
   type AiChatWireMessage,
 } from '@/backend/clients/ai-chat';
 import { AiChatProviderError } from '@/backend/shared/domain/ai-chat';
+import type {
+  ChatAgentJudge,
+  JudgeTraceItem,
+} from '@/backend/services/chat/chat-agent-judge-service';
 import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
 import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import { logger } from '@/backend/shared/logger';
@@ -388,6 +392,12 @@ export interface ChatAgentServiceDeps {
   defer?: DeferredWork;
   /** The configured provider, or null when no key is set. */
   client: AiChatClient | null;
+  /**
+   * The second model, which scores a finished draft before it is revealed
+   * (ADR-0213). Absent in a test and when `AI_CHAT_JUDGE_MODEL=off`, and the turn
+   * then streams exactly as it did before the gate existed.
+   */
+  judge?: Pick<ChatAgentJudge, 'review'>;
   /** The proposals a write tool leaves, and the member's own resolution. */
   actions: Pick<ChatAgentActionService, 'propose'>;
   /** The registry, overridable so a test can pin the loop without a service. */
@@ -1066,6 +1076,13 @@ export class ChatAgentService {
     });
     const deadline = Date.now() + CHAT_AGENT_TURN_TIMEOUT_MS;
     let answerText = '';
+    /**
+     * What the turn did, names and outcomes only (ADR-0213). The judge sees this
+     * so it can catch a reply that contradicts its own tools; it never sees a
+     * tool's payload, which may carry the member's private data.
+     */
+    const trace: JudgeTraceItem[] = [];
+    const traceByCall = new Map<string, JudgeTraceItem>();
     /** What a search read this turn, for the card and the stored row. */
     let sources: WebSource[] = [];
     let rounds = 0;
@@ -1098,9 +1115,13 @@ export class ChatAgentService {
               roundText += event.text;
               streamed = true;
               answerText += event.text;
-              yield { type: 'delta', text: event.text };
+              // Held until the judge clears the finished draft (ADR-0213). A
+              // member must never see the version that is about to be replaced.
             } else {
               calls.push(event.call);
+              const item: JudgeTraceItem = { tool: event.call.name };
+              trace.push(item);
+              traceByCall.set(event.call.id, item);
             }
           }
         } catch (error) {
@@ -1160,6 +1181,8 @@ export class ChatAgentService {
               const proposal = await this.deps.actions.propose(conversationId, auditName, args, {
                 appName: declaration.appName,
               });
+              const proposedApp = traceByCall.get(call.id);
+              if (proposedApp) proposedApp.proposed = true;
               yield { type: 'proposal', message: proposal.message, action: proposal.action };
               messages.push(
                 toolAnswer(call.id, {
@@ -1231,6 +1254,8 @@ export class ChatAgentService {
                 intent: 'turn',
                 signal,
               });
+              const appTrace = traceByCall.get(call.id);
+              if (appTrace) appTrace.ok = true;
               yield {
                 type: 'tool',
                 id: call.id,
@@ -1258,6 +1283,8 @@ export class ChatAgentService {
                 tool: declaration.name,
                 error: String(error),
               });
+              const failedApp = traceByCall.get(call.id);
+              if (failedApp) failedApp.ok = false;
               yield {
                 type: 'tool',
                 id: call.id,
@@ -1300,6 +1327,8 @@ export class ChatAgentService {
           // the boundary itself.
           if (tool.tier > 0) {
             const proposal = await this.deps.actions.propose(conversationId, tool.name, args ?? {});
+            const proposed = traceByCall.get(call.id);
+            if (proposed) proposed.proposed = true;
             yield { type: 'proposal', message: proposal.message, action: proposal.action };
             messages.push(
               toolAnswer(call.id, {
@@ -1373,6 +1402,8 @@ export class ChatAgentService {
                   }
                 : {}),
             });
+            const readTrace = traceByCall.get(call.id);
+            if (readTrace) readTrace.ok = true;
             yield {
               type: 'tool',
               id: call.id,
@@ -1397,6 +1428,8 @@ export class ChatAgentService {
             }
           } catch (error) {
             logger.warn('Assistant read tool failed', { tool: tool.name, error: String(error) });
+            const failedRead = traceByCall.get(call.id);
+            if (failedRead) failedRead.ok = false;
             yield {
               type: 'tool',
               id: call.id,
@@ -1429,7 +1462,32 @@ export class ChatAgentService {
       throw failure;
     }
 
-    const text = answerText.trim() || ROUNDS_EXHAUSTED;
+    const draft = answerText.trim();
+    let text = draft || ROUNDS_EXHAUSTED;
+    if (draft && this.deps.judge) {
+      // The whole draft exists here, before any of it has been shown. The judge
+      // may ask for one rewrite; only the winning text reaches the member.
+      const review = await this.deps.judge.review({
+        question,
+        draft,
+        trace,
+        writer: client,
+        signal: AbortSignal.timeout(Math.max(1_000, deadline - Date.now())),
+      });
+      text = review.text;
+      // Telemetry only: scores, gates and critiques, never the draft or the
+      // rewrite, which may carry the member's private data.
+      logger.info('Assistant draft reviewed', {
+        turn: turnId,
+        judged: review.judged,
+        rewritten: review.rewritten,
+        fallback: review.fallback,
+        failures: review.gates.failures,
+        scores: review.verdict?.scores ?? null,
+        critique: review.verdict?.critique ?? null,
+        rewriteCritique: review.rewrittenVerdict?.critique ?? null,
+      });
+    }
     // The sources are stored with the answer, not streamed and forgotten
     // (ADR-0206): a thread reopened tomorrow shows the same evidence.
     const record =
@@ -1457,6 +1515,10 @@ export class ChatAgentService {
     // turn is settled, and whether this turn pays for a regeneration is the
     // service's gate, not this call site's.
     this.scheduleSummary(conversationId);
+
+    // The single reveal: the draft was held until the judge cleared it, so a
+    // member never sees a version that is about to be replaced (ADR-0213).
+    yield { type: 'delta', text };
 
     yield {
       type: 'done',

@@ -286,6 +286,7 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `AI_CHAT_BASE_URL` | OpenAI-compatible base URL of the assistant's provider (empty = the OpenCode gateway) | `https://opencode.ai/inference/go/openai/v1` | Chats assistant only |
 | `AI_CHAT_MODEL` | The model id the assistant asks for (empty = `deepseek-v4.1-flash`) | `deepseek-v4.1-flash` | Chats assistant only |
 | `AI_CHAT_API_KEY` | **Secret.** Provider key for the assistant's turns; empty falls back to `OPENCODE_API_KEY`, and neither means the assistant is off, not broken | `change-me` | Chats assistant only |
+| `AI_CHAT_JUDGE_MODEL` | The reviewer of a finished draft (ADR-0213; empty = `claude-haiku-5-5`). It scores and asks for one rewrite and never writes member-facing text; `off` keeps the single-model turn | `claude-haiku-5-5` | Chats assistant only |
 | `TAVILY_API_KEY` | **Secret.** Tavily key for the assistant's web search (ADR-0206); empty means the `search_web` tool is never declared and the assistant answers from its own data and training, exactly as before | `change-me` | Chats assistant only |
 
 | `AI_EMBEDDING_BASE_URL` | The OpenAI-compatible base URL of the embedding provider, when it is not the chat provider's. This deployment's chat gateway serves chat models only (ADR-0190), so the two are normally different; empty falls back to `AI_CHAT_BASE_URL` | `https://api.cloudflare.com/client/v4/accounts/<account>/ai/v1` | Chats assistant only |

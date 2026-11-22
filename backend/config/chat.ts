@@ -43,7 +43,8 @@ import { createTurnEmbedding } from '@/backend/services/agent/turn-embedding';
 import { skillIndexDimensions } from '@/backend/services/chat/skill-index';
 import { projectIdentity } from '@/backend/services/chat/turn-identity';
 import { getAdminSupabase } from '@/backend/config/supabase';
-import { createAiChatClient } from '@/backend/clients/ai-chat';
+import { createAiChatClient, createJudgeAiChatClient } from '@/backend/clients/ai-chat';
+import { createChatAgentJudge } from '@/backend/services/chat/chat-agent-judge-service';
 import { createWebSearchClient, searchLanguageFor } from '@/backend/clients/web-search';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { USAGE_COUNTERS } from '@/shared/contracts/plans';
@@ -138,6 +139,10 @@ export function createSupabaseChatAgentService(
   // extraction behind the turn answers with it, so the deployment has one key,
   // one model and one place to change either.
   const client = createAiChatClient();
+  // The reviewer is a second model on the same key (ADR-0213). It only scores a
+  // finished draft and asks the writer for one rewrite; it never writes member
+  // text or calls a tool. `AI_CHAT_JUDGE_MODEL=off` keeps the pre-gate turn.
+  const judge = createChatAgentJudge(createJudgeAiChatClient());
   // The web, when the deployment has a search key (ADR-0206). No key is no
   // client, and the turn then declares no search tool at all.
   const search = createWebSearchClient();
@@ -178,6 +183,7 @@ export function createSupabaseChatAgentService(
     // (ADR-0093), so the number on screen and the number enforced are one.
     usageState: (userId) => usage.state(userId),
     client,
+    judge,
     // Facts nobody typed, written after the answer (ADR-0182 decision 2,
     // #1511). Off unless `MEMORY_EXTRACTION` says otherwise: it is one provider
     // call per turn and a row on the member's behalf, so switching it on is a
