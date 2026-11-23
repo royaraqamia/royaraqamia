@@ -13,7 +13,11 @@ import { colorFromName } from '@/backend/services/spendtrack/spendtrack-csv';
 import { createPublicConsultationService } from '@/backend/config/consultation';
 import { createDefaultTrainingApplicationService } from '@/backend/config/training';
 import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
-import { createProfileService } from '@/backend/config/users';
+import { createAdminUsersService, createProfileService } from '@/backend/config/users';
+import { createDefaultChatReportsAdminService } from '@/backend/config/chat-reports';
+import { isAdmin as isAdminEmail } from '@/backend/shared/admin-validator';
+import { env } from '@/backend/config/env';
+import { MissingScopeError } from '@/backend/services/mcp/tools/guards';
 import { createUsageService, createPlanGate } from '@/backend/config/plans';
 import { createNotesService } from '@/backend/config/notes';
 import { resolveOrigin } from '@/backend/config/origin';
@@ -101,7 +105,12 @@ import {
 } from '@/shared/contracts/project-requests';
 import { ProfileBioSchema, ProfileNameSchema } from '@/shared/contracts/users';
 import { whatsappPhoneRegex } from '@/shared/contracts/phone';
-import type { ChatAgentToolKind, ChatAgentToolName } from '@/shared/contracts/chat-agent-actions';
+import {
+  chatAgentToolIsAdmin,
+  type ChatAgentToolKind,
+  type ChatAgentToolName,
+} from '@/shared/contracts/chat-agent-actions';
+import { CHAT_REPORT_STATUSES, type ChatReportStatus } from '@/shared/contracts/chat-reports';
 import {
   WEB_SEARCH_QUERY_MAX,
   WEB_SEARCH_QUERY_MIN,
@@ -520,6 +529,62 @@ const DeleteNoteArgs = z.strictObject({
   // The name the card shows must be the name of the row the hand will delete.
   name: z.string().trim().min(1, 'اسم الملاحظة مطلوب').max(120),
 });
+
+/**
+ * The Admin Console's three hands (ADR-0180, decision 10, #1435).
+ *
+ * `search` is the same term `GET /api/admin/users` accepts, and the decision is
+ * the same one `PATCH /api/admin/chat-reports/[id]` records: the assistant reads
+ * and writes exactly what the console already does, never a second way to do it.
+ */
+const AdminListMembersArgs = z.strictObject({
+  search: z.string().trim().max(200).optional(),
+  limit: z.number().int().min(1).max(50).optional(),
+});
+
+const AdminListReportsArgs = z.strictObject({
+  status: z.enum(CHAT_REPORT_STATUSES).optional(),
+});
+
+const AdminDecideReportArgs = z.strictObject({
+  id: z.string().uuid('معرّف البلاغ غير صالح'),
+  status: z.enum(['reviewed', 'dismissed']),
+});
+
+/**
+ * The admin boundary, re-read from the session at execution (ADR-0180, decision
+ * 10). The declaration filter is convenience; this is the check. A turn that
+ * named an admin tool without the flag — or a member who lost the flag between
+ * the proposal and its confirmation — is refused here, by `MissingScopeError`,
+ * exactly as the MCP door refuses it.
+ *
+ * The id comparison matters because the caller's own client is what this reads:
+ * a context that named a different member than the session cannot borrow the
+ * session's admin flag.
+ */
+export async function assertAdminAtExecution(
+  context: Pick<ChatAgentToolContext, 'userId' | 'supabase'>
+): Promise<void> {
+  const { data, error } = await context.supabase.auth.getUser();
+  if (error || !data.user || data.user.id !== context.userId) {
+    throw new MissingScopeError(['admin']);
+  }
+  if (!isAdminEmail(data.user.email ?? '', env.adminEmails)) {
+    throw new MissingScopeError(['admin']);
+  }
+}
+
+/** Whether this turn is an admin's own, read from the session once for the declarations. */
+export async function turnIsAdmin(
+  context: Pick<ChatAgentToolContext, 'userId' | 'supabase'>
+): Promise<boolean> {
+  try {
+    await assertAdminAtExecution(context);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * The assistant's call into an existing MCP handler. The turn is already the
@@ -2260,6 +2325,57 @@ const tools: ChatAgentTool[] = [
       return screenContextAnswer(context.screen);
     },
   },
+  // --- admin ---------------------------------------------------------------
+  // Last and narrow (ADR-0183, decision 7; ADR-0180, decision 10). A read is
+  // tier 0 because the admin already performs it in the console; a decision is
+  // tier 2 because it is an internal moderation act and can never be granted.
+  {
+    name: 'admin_list_members',
+    kind: 'read',
+    product: 'admin',
+    capabilityName: 'list_members',
+    tier: 0,
+    description:
+      'البحث عن الأعضاء باسمهم أو بريدهم، مع حالة كل عضو المخفيّة (المحجوب عن القوائم). أداة إشراف لا تُعلن إلا لمشرف.',
+    schema: AdminListMembersArgs,
+    async run(args, context) {
+      await assertAdminAtExecution(context);
+      const input = AdminListMembersArgs.parse(args);
+      return createAdminUsersService().list(input.search ?? '', input.limit);
+    },
+  },
+  {
+    name: 'admin_list_reports',
+    kind: 'read',
+    product: 'admin',
+    capabilityName: 'list_reports',
+    tier: 0,
+    description:
+      'بلاغات المحادثات في طابور المراجعة، مع اللقطة المجمّدة لكل بلاغ. أداة إشراف لا تُعلن إلا لمشرف.',
+    schema: AdminListReportsArgs,
+    async run(args, context) {
+      await assertAdminAtExecution(context);
+      const input = AdminListReportsArgs.parse(args);
+      return createDefaultChatReportsAdminService().list(
+        (input.status ?? null) as ChatReportStatus | null
+      );
+    },
+  },
+  {
+    name: 'admin_decide_report',
+    kind: 'write',
+    product: 'admin',
+    capabilityName: 'decide_report',
+    tier: 2,
+    description:
+      'تسجيل قرار على بلاغ محادثة: تمت مراجعته أو استُبعد. أداة إشراف لا تُعلن إلا لمشرف، ولا يمكن منحها.',
+    schema: AdminDecideReportArgs,
+    async run(args, context) {
+      await assertAdminAtExecution(context);
+      const input = AdminDecideReportArgs.parse(args);
+      return createDefaultChatReportsAdminService().decide(input.id, input.status);
+    },
+  },
 ];
 
 const byName = new Map<string, ChatAgentTool>(tools.map((tool) => [tool.name, tool]));
@@ -2298,18 +2414,22 @@ export function chatAgentToolDefinitions(): Array<{
  * (ADR-0181, decision 7): a client with no eyes — an older tab, an opted-out
  * surface, the admin area — is a turn where the tool would answer "nothing"
  * after costing a round. `search_web` needs a search key (ADR-0206): a
- * deployment without one declares no web at all. Every other tool is always
- * declared.
+ * deployment without one declares no web at all. The admin entries need the
+ * turn to be an admin's own (ADR-0180, decision 10), and every other tool is
+ * always declared.
  */
 export function chatAgentToolDefinitionsForTurn(input: {
   hasApps: boolean;
   hasScreen: boolean;
   hasWebSearch: boolean;
+  isAdmin: boolean;
 }): ReturnType<typeof chatAgentToolDefinitions> {
   return chatAgentToolDefinitions().filter((definition) => {
-    if (definition.function.name === 'find_app_tools') return input.hasApps;
-    if (definition.function.name === 'get_screen_context') return input.hasScreen;
-    if (definition.function.name === 'search_web') return input.hasWebSearch;
+    const name = definition.function.name;
+    if (name === 'find_app_tools') return input.hasApps;
+    if (name === 'get_screen_context') return input.hasScreen;
+    if (name === 'search_web') return input.hasWebSearch;
+    if (chatAgentToolIsAdmin(name)) return input.isAdmin;
     return true;
   });
 }

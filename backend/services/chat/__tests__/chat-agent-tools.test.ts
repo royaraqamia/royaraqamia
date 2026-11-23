@@ -10,6 +10,7 @@ import {
 import type { ScreenContext } from '@/shared/contracts/screen-context';
 import { WEB_SEARCH_UNAVAILABLE } from '@/shared/contracts/web-search';
 import {
+  ADMIN_AGENT_TOOL_NAMES,
   CHAT_AGENT_TOOLS,
   CHAT_AGENT_TOOL_NAMES,
   chatAgentActionSentence,
@@ -82,7 +83,7 @@ describe('the assistant’s tool registry (#818)', () => {
 
   it('declares the screen refresh only when the request brought eyes', () => {
     const names = (input: { hasApps: boolean; hasScreen: boolean }) =>
-      chatAgentToolDefinitionsForTurn({ ...input, hasWebSearch: false }).map(
+      chatAgentToolDefinitionsForTurn({ ...input, hasWebSearch: false, isAdmin: false }).map(
         (definition) => definition.function.name
       );
 
@@ -90,6 +91,30 @@ describe('the assistant’s tool registry (#818)', () => {
     expect(names({ hasApps: false, hasScreen: true })).toContain('get_screen_context');
     // A connected app does not make a screen exist.
     expect(names({ hasApps: true, hasScreen: false })).not.toContain('get_screen_context');
+  });
+
+  it('declares no admin capability to a member’s turn', () => {
+    const names = chatAgentToolDefinitionsForTurn({
+      hasApps: false,
+      hasScreen: false,
+      hasWebSearch: false,
+      isAdmin: false,
+    }).map((definition) => definition.function.name);
+
+    for (const adminName of ADMIN_AGENT_TOOL_NAMES) {
+      expect(names).not.toContain(adminName);
+    }
+
+    const adminNames = chatAgentToolDefinitionsForTurn({
+      hasApps: false,
+      hasScreen: false,
+      hasWebSearch: false,
+      isAdmin: true,
+    }).map((definition) => definition.function.name);
+
+    for (const adminName of ADMIN_AGENT_TOOL_NAMES) {
+      expect(adminNames).toContain(adminName);
+    }
   });
 
   it('re-reads the snapshot of the turn that called it, never an older one', async () => {

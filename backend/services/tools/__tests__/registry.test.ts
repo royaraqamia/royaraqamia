@@ -4,6 +4,7 @@ import {
   agentCapabilities,
   capabilityId,
   PRODUCTS,
+  toolIsGrantable,
   TOOL_TIERS,
   type CapabilityOwner,
 } from '@/backend/services/tools/registry';
@@ -41,7 +42,8 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   consultations: 3,
   training: 1,
   'client-work': 1,
-  admin: 0,
+  // #1435: member lookup and the report queue's read, plus its tier-2 decision.
+  admin: 3,
   assistant: 5,
 };
 
@@ -121,6 +123,7 @@ describe('the assistant door', () => {
         .map((entry) => entry.agentName)
         .sort()
     ).toEqual([
+      'admin_decide_report',
       'apply_training',
       'book_consultation',
       'create_post_comment',
@@ -134,6 +137,21 @@ describe('the assistant door', () => {
         .map((entry) => entry.agentName)
         .sort()
     ).toEqual(['delete_expense', 'delete_habit', 'delete_link', 'delete_note', 'delete_post']);
+  });
+
+  it('makes an admin write a card that no grant can ever make automatic', () => {
+    const adminWrites = capabilities.filter(
+      (entry) => entry.owner === 'admin' && entry.kind === 'write'
+    );
+
+    expect(adminWrites.map((entry) => entry.agentName)).toEqual(['admin_decide_report']);
+    for (const entry of adminWrites) {
+      // Admin writes are tier 2 or 3 (ADR-0180, decision 10), so a row in
+      // `agent_tool_grants` cannot honour one even when it names the tool: a
+      // grant is consulted only for a tier-1 capability.
+      expect(entry.tier).toBeGreaterThan(1);
+      expect(toolIsGrantable(entry.tier)).toBe(false);
+    }
   });
 
   it('gives the turn every HabitFlow and SpendTrack capability the MCP door declares', () => {

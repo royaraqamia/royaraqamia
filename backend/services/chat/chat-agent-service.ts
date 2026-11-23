@@ -13,6 +13,7 @@ import {
 import {
   chatAgentTool,
   chatAgentToolDefinitionsForTurn,
+  turnIsAdmin,
   type ChatAgentTool,
 } from '@/backend/services/chat/chat-agent-tools';
 import {
@@ -76,7 +77,7 @@ import {
 } from '@/shared/contracts/chat';
 import { USAGE_COUNTERS, type PlanId, type UsageState } from '@/shared/contracts/plans';
 import { isScreenContextBlind, type ScreenContextInput } from '@/shared/contracts/screen-context';
-import { CHAT_AGENT_TOOLS } from '@/shared/contracts/chat-agent-actions';
+import { CHAT_AGENT_TOOLS, chatAgentToolIsAdmin } from '@/shared/contracts/chat-agent-actions';
 import {
   WEB_SEARCH_TOKEN_RESERVE,
   WEB_SEARCH_UNAVAILABLE,
@@ -1069,10 +1070,16 @@ export class ChatAgentService {
     // the block is the normal path (ADR-0181, decision 7), and a tool that
     // promises eyes to a blind turn spends a round on "nothing".
     const visibleScreen = screen !== undefined && !isScreenContextBlind(screen);
+    // The admin entries are declared only inside an admin's own turn (ADR-0180,
+    // decision 10). This read is convenience: the executor re-reads the same
+    // session before an admin tool runs, and a turn with no session — a
+    // scheduled run — never gets here as an admin at all.
+    const adminTurn = await turnIsAdmin({ userId, supabase: context.supabase });
     const firstParty = chatAgentToolDefinitionsForTurn({
       hasApps: catalog.length > 0,
       hasScreen: visibleScreen,
       hasWebSearch: Boolean(search),
+      isAdmin: adminTurn,
     });
     const deadline = Date.now() + CHAT_AGENT_TURN_TIMEOUT_MS;
     let answerText = '';
@@ -1317,6 +1324,15 @@ export class ChatAgentService {
           // and a second read would put 20k characters in the same window.
           if (tool.name === 'load_specialist' && loadedSkill) {
             messages.push(toolAnswer(call.id, { error: SKILL_ALREADY_LOADED, id: loadedSkill }));
+            continue;
+          }
+
+          // An admin tool is refused here, not only by the declaration filter:
+          // a turn that somehow named one without the flag never reaches a
+          // proposal (ADR-0180, decision 10). The tool re-reads the same flag
+          // when it runs, so the boundary does not depend on this line.
+          if (chatAgentToolIsAdmin(tool.name) && !adminTurn) {
+            messages.push(toolAnswer(call.id, { error: 'هذه الأداة متاحة للمشرفين فقط.' }));
             continue;
           }
 

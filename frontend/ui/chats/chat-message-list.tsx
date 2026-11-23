@@ -40,6 +40,7 @@ const ACTION_LABELS: ActionCardLabels = {
   rejected: ASSISTANT_PANEL_COPY.actionStatusRejected,
   applied: ASSISTANT_PANEL_COPY.actionStatusApplied,
   failed: ASSISTANT_PANEL_COPY.actionStatusFailed,
+  adminMark: ASSISTANT_PANEL_COPY.actionAdminMark,
 };
 
 /**

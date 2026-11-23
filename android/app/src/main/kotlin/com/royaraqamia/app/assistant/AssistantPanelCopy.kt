@@ -39,4 +39,5 @@ object AssistantPanelCopy {
     const val ACTION_STATUS_REJECTED = "أُلغي"
     const val ACTION_STATUS_APPLIED = "نُفِّذ"
     const val ACTION_STATUS_FAILED = "لم يُنفَّذ"
+    const val ACTION_ADMIN_MARK = "إدارة"
 }

@@ -41,6 +41,7 @@
     "actionStatusConfirmed": "قيد التنفيذ",
     "actionStatusRejected": "أُلغي",
     "actionStatusApplied": "نُفِّذ",
-    "actionStatusFailed": "لم يُنفَّذ"
+    "actionStatusFailed": "لم يُنفَّذ",
+    "actionAdminMark": "إدارة"
   }
 }
