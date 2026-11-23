@@ -20,7 +20,6 @@ export async function POST(req: NextRequest) {
   // only thing standing in front of the client lookup and the token lookup.
   const rateLimited = await checkRateLimitApi({
     ...mcpRevokeRateLimitPolicy(getClientIp(req)),
-    failClosed: true,
   });
   if (rateLimited) return toNextResponse(rateLimited);
 

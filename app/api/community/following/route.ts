@@ -39,7 +39,6 @@ export async function GET(request: NextRequest) {
 
   const rateLimited = await checkRateLimitApi({
     ...communitySearchRateLimitPolicy(getClientIp(request)),
-    failClosed: false,
   });
   if (rateLimited) return toNextResponse(rateLimited);
 

@@ -31,7 +31,6 @@ export async function recordAppFailure(body: unknown, ip: string): Promise<HttpR
 
   const rateLimited = await checkRateLimitApi({
     ...appFailureRateLimitPolicy(ip),
-    failClosed: true,
   });
   if (rateLimited) return rateLimited;
 

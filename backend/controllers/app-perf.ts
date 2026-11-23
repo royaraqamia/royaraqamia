@@ -23,7 +23,6 @@ export async function recordAppPerf(body: unknown, ip: string): Promise<HttpResu
 
   const rateLimited = await checkRateLimitApi({
     ...appPerfRateLimitPolicy(ip),
-    failClosed: true,
   });
   if (rateLimited) return rateLimited;
 

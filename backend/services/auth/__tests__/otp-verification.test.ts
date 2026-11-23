@@ -146,7 +146,8 @@ describe('AuthService.verifyOtp', () => {
     expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith(
       'verify:user@example.com',
       10,
-      60 * 1000
+      60 * 1000,
+      { failClosed: true }
     );
   });
 
@@ -329,7 +330,14 @@ describe('AuthService.login', () => {
       redirectTo: null,
       turnstileToken: 'token',
     });
-    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith('login:user@example.com', 5, 60 * 1000);
+    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith(
+      'login:user@example.com',
+      5,
+      60 * 1000,
+      {
+        failClosed: true,
+      }
+    );
     expect(gateway.signInWithPassword).toHaveBeenCalledWith({
       email: 'user@example.com',
       password: 'hunter2',
@@ -572,7 +580,14 @@ describe('AuthService.resetPassword', () => {
       ok: false,
       message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً',
     });
-    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith('reset:user@example.com', 3, 3_600_000);
+    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith(
+      'reset:user@example.com',
+      3,
+      3_600_000,
+      {
+        failClosed: true,
+      }
+    );
   });
 
   it('returns success even when the user does not exist', async () => {
@@ -861,7 +876,9 @@ describe('AuthService per-IP rate limits', () => {
       ipAddress: '203.0.113.7',
     });
     expect(result).toMatchObject({ ok: false });
-    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith('login_ip:203.0.113.7', 30, 60_000);
+    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith('login_ip:203.0.113.7', 30, 60_000, {
+      failClosed: true,
+    });
     expect(gateway.signInWithPassword).not.toHaveBeenCalled();
   });
 

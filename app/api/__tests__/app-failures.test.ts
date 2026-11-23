@@ -31,7 +31,7 @@ const IP = '203.0.113.7';
 function request(body: unknown): NextRequest {
   return {
     json: async () => body,
-    headers: new Headers({ 'x-real-ip': IP }),
+    headers: new Headers({ 'cf-ray': '8f3c-test', 'cf-connecting-ip': IP }),
   } as unknown as NextRequest;
 }
 
@@ -79,7 +79,7 @@ describe('POST /api/app-failures', () => {
   it('answers 400 when the body is not JSON at all', async () => {
     const broken = {
       json: async () => Promise.reject(new Error('bad json')),
-      headers: new Headers({ 'x-real-ip': IP }),
+      headers: new Headers({ 'cf-ray': '8f3c-test', 'cf-connecting-ip': IP }),
     } as unknown as NextRequest;
 
     const res = await POST(broken);

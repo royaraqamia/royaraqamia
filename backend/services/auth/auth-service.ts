@@ -146,7 +146,8 @@ export class AuthService {
     const signupRateOk = await this.rateLimiter.checkRateLimit(
       `signup:${email}`,
       3,
-      60 * 60 * 1000
+      60 * 60 * 1000,
+      { failClosed: true }
     );
     if (!signupRateOk) {
       return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
@@ -236,7 +237,9 @@ export class AuthService {
       return { ok: false, message: 'فشل التحقق الأمني. يرجى تحديث الصفحة والمحاولة مرة أخرى' };
     }
 
-    const loginRateOk = await this.rateLimiter.checkRateLimit(`login:${email}`, 5, 60 * 1000);
+    const loginRateOk = await this.rateLimiter.checkRateLimit(`login:${email}`, 5, 60 * 1000, {
+      failClosed: true,
+    });
     if (!loginRateOk) {
       return {
         ok: false,
@@ -301,7 +304,8 @@ export class AuthService {
     const verifyRateOk = await this.rateLimiter.checkRateLimit(
       `verify:${email}`,
       this.otpVerifyMaxPerMinute,
-      60 * 1000
+      60 * 1000,
+      { failClosed: true }
     );
     if (!verifyRateOk) {
       return {
@@ -387,7 +391,8 @@ export class AuthService {
     const resendRateOk = await this.rateLimiter.checkRateLimit(
       `resend:${email}`,
       1,
-      this.otpResendCooldownSeconds * 1000
+      this.otpResendCooldownSeconds * 1000,
+      { failClosed: true }
     );
     if (!resendRateOk) {
       return { ok: false, message: 'يرجى الانتظار قبل إعادة الإرسال' };
@@ -428,7 +433,9 @@ export class AuthService {
     ipAddress?: string | null;
   }): Promise<SimpleResult> {
     const email = normalizeEmail(input.email);
-    const resetRateOk = await this.rateLimiter.checkRateLimit(`reset:${email}`, 3, 60 * 60 * 1000);
+    const resetRateOk = await this.rateLimiter.checkRateLimit(`reset:${email}`, 3, 60 * 60 * 1000, {
+      failClosed: true,
+    });
     if (!resetRateOk) {
       return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
     }
@@ -498,7 +505,8 @@ export class AuthService {
     const verifyRateOk = await this.rateLimiter.checkRateLimit(
       `reset_verify:${email}`,
       10,
-      60 * 1000
+      60 * 1000,
+      { failClosed: true }
     );
     if (!verifyRateOk) {
       return {
@@ -568,7 +576,8 @@ export class AuthService {
     const allowed = await this.rateLimiter.checkRateLimit(
       `${scope}_ip:${ipAddress}`,
       limit,
-      windowMs
+      windowMs,
+      { failClosed: true }
     );
     return !allowed;
   }

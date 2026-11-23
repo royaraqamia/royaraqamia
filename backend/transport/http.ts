@@ -2,32 +2,40 @@ import { NextRequest } from 'next/server';
 import { env } from '@/backend/config/env';
 
 /**
- * Resolves the client IP used for rate limiting. `x-real-ip` is set by the
- * platform and cannot be forged by the client, so it wins. `x-forwarded-for`
- * may carry a client-supplied prefix, so when `x-real-ip` is absent the *last*
- * hop (the one appended by the nearest trusted proxy) is used instead of the
- * spoofable first entry.
+ * The origin sits behind Cloudflare (ADR-0174). Every request the edge forwards
+ * carries `cf-ray`, and `cf-connecting-ip` is the address Cloudflare resolved
+ * for the visitor. The marker is the proof: an address header without its
+ * proxy's own marker is client input and must never become a rate-limit key.
+ *
+ * The marker and the address belong together. Add a pair here when the front
+ * hop changes — this table is the only place that names either, so a host move
+ * cannot leave an old header trusted in one caller and not another.
  */
-export function getClientIp(req: NextRequest): string {
-  return getClientIpFromHeaders(req.headers);
+const TRUSTED_EDGES = [{ marker: 'cf-ray', address: 'cf-connecting-ip' }] as const;
+
+/** Without a proxy marker there is no trustworthy address; callers share the peer bucket. */
+const LOCAL_ADDRESS = '127.0.0.1';
+
+/**
+ * Resolve the visitor's address from the headers the current edge sets.
+ *
+ * `x-real-ip` and `x-forwarded-for` are deliberately not consulted. Behind the
+ * CDN they name the proxy hop (one address for every visitor behind it); with
+ * no CDN they are supplied by the client. Both made the ceiling unenforceable
+ * against one caller and spendable by another (issue #1666).
+ */
+export function clientAddress(headers: Headers): string {
+  for (const edge of TRUSTED_EDGES) {
+    if (!headers.get(edge.marker)) continue;
+    const address = headers.get(edge.address)?.trim();
+    if (address) return address;
+  }
+  return LOCAL_ADDRESS;
 }
 
-/** The same resolution, for a handler that holds the headers and not the request. */
-export function getClientIpFromHeaders(headers: Headers): string {
-  const realIp = headers.get('x-real-ip')?.trim();
-  if (realIp) return realIp;
-
-  const forwarded = headers.get('x-forwarded-for');
-  if (forwarded) {
-    const hops = forwarded
-      .split(',')
-      .map((hop) => hop.trim())
-      .filter((hop) => hop.length > 0);
-    const nearestHop = hops[hops.length - 1];
-    if (nearestHop) return nearestHop;
-  }
-
-  return '127.0.0.1';
+/** For handlers that hold a request rather than its headers. */
+export function getClientIp(req: NextRequest): string {
+  return clientAddress(req.headers);
 }
 
 /**

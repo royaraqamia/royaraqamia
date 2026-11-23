@@ -17,7 +17,12 @@ const WINDOW_MS = 60_000;
 
 export interface CertificateVerifierDeps {
   repository: CertificatesReader;
-  checkRateLimit: (key: string, limit: number, windowMs: number) => Promise<boolean>;
+  checkRateLimit: (
+    key: string,
+    limit: number,
+    windowMs: number,
+    options?: { failClosed?: boolean }
+  ) => Promise<boolean>;
   captureMessage: (
     message: string,
     options?: { level?: 'info' | 'warning'; extra?: Record<string, unknown> }
@@ -62,7 +67,9 @@ export class CertificateVerifier {
       }
 
       // Rate limiting - IP level
-      if (!(await this.deps.checkRateLimit(`verify:${ip}`, IP_LIMIT, WINDOW_MS))) {
+      if (
+        !(await this.deps.checkRateLimit(`verify:${ip}`, IP_LIMIT, WINDOW_MS, { failClosed: true }))
+      ) {
         this.deps.captureMessage('Certificate verification IP rate limit exceeded', {
           level: 'warning',
           extra: { code: sanitized, ip },
@@ -75,7 +82,11 @@ export class CertificateVerifier {
       }
 
       // Rate limiting - Code level (anti-enumeration)
-      if (!(await this.deps.checkRateLimit(`verify:${sanitized}`, CODE_LIMIT, WINDOW_MS))) {
+      if (
+        !(await this.deps.checkRateLimit(`verify:${sanitized}`, CODE_LIMIT, WINDOW_MS, {
+          failClosed: true,
+        }))
+      ) {
         this.deps.captureMessage('Certificate verification code rate limit exceeded', {
           level: 'warning',
           extra: { code: sanitized, ip },

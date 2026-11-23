@@ -69,7 +69,6 @@ export async function createDownloadJob(
 
   const rateLimited = await checkRateLimitApi({
     ...downloaderRateLimitPolicy(ip),
-    failClosed: true,
   });
   if (rateLimited) return rateLimited;
 
@@ -151,7 +150,6 @@ export async function inspectDownloadLink(body: unknown, ip: string): Promise<Ht
 
   const rateLimited = await checkRateLimitApi({
     ...downloaderInspectRateLimitPolicy(ip),
-    failClosed: false,
   });
   if (rateLimited) return rateLimited;
 

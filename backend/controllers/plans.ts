@@ -56,6 +56,7 @@ export async function reportLocalUsage(body: unknown): Promise<HttpResult> {
         key: `usage-report:${identity.userId}`,
         limit: 20,
         windowMs: 10 * 60 * 1000,
+        failClosed: true,
         message: 'كثرت تقارير الاستخدام. أعد المحاولة بعد قليل.',
       });
       if (rateLimited) return rateLimited;

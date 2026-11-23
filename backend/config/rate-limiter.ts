@@ -71,6 +71,13 @@ export interface RateLimitPolicy {
   limit: number;
   windowMs: number;
   message: string;
+  /**
+   * Deny the request when the counter cannot be read. Required on every policy
+   * so a new throttle cannot silently fail open by omission (issue #1666).
+   * For a brute-force or auth path this is always true: a limiter outage must
+   * refuse, not remove the ceiling.
+   */
+  failClosed: boolean;
 }
 
 const SHORTEN_WINDOW_MS = 10 * 60 * 1000;
@@ -79,6 +86,7 @@ export function shortenRateLimitPolicy(userId: string | null, ip: string): RateL
   const isAuthed = userId !== null;
   return {
     key: `shorten:${userId ?? ip}`,
+    failClosed: true,
     limit: isAuthed ? 50 : 5,
     windowMs: SHORTEN_WINDOW_MS,
     message: isAuthed
@@ -90,6 +98,7 @@ export function shortenRateLimitPolicy(userId: string | null, ip: string): RateL
 export function slugAvailabilityRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `slug-availability:${ip}`,
+    failClosed: true,
     limit: 60,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حد الطلب: التحقق من توفر الرموز محدود بـ 60 استعلامًا في الدقيقة.',
@@ -105,6 +114,7 @@ export function slugAvailabilityRateLimitPolicy(ip: string): RateLimitPolicy {
 export function communitySearchRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `community-search:${ip}`,
+    failClosed: true,
     limit: 60,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: البحث في المجتمع محدود بـ 60 طلبًا في الدقيقة.',
@@ -119,6 +129,7 @@ export function communitySearchRateLimitPolicy(ip: string): RateLimitPolicy {
 export function communityEngagementRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `community-engagement:${ip}`,
+    failClosed: true,
     limit: 120,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: متابعة التفاعل محدودة بـ 120 طلبًا في الدقيقة.',
@@ -132,6 +143,7 @@ export function communityEngagementRateLimitPolicy(ip: string): RateLimitPolicy 
 export function newsSearchRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `news-search:${ip}`,
+    failClosed: true,
     limit: 60,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: البحث في الأخبار محدود بـ 60 طلبًا في الدقيقة.',
@@ -146,6 +158,7 @@ export function newsSearchRateLimitPolicy(ip: string): RateLimitPolicy {
 export function newsBoardRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `news-board:${ip}`,
+    failClosed: true,
     limit: 60,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: فتح الملخّص محدود بـ 60 طلبًا في الدقيقة.',
@@ -155,6 +168,7 @@ export function newsBoardRateLimitPolicy(ip: string): RateLimitPolicy {
 export function usernameAvailabilityRateLimitPolicy(userId: string): RateLimitPolicy {
   return {
     key: `username-availability:${userId}`,
+    failClosed: true,
     limit: 30,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: التحقق من توفّر المعرِّف محدود بـ 30 استعلامًا في الدقيقة.',
@@ -165,6 +179,7 @@ export function usernameAvailabilityRateLimitPolicy(userId: string): RateLimitPo
 export function avatarUploadRateLimitPolicy(userId: string): RateLimitPolicy {
   return {
     key: `avatar-upload:${userId}`,
+    failClosed: true,
     limit: 10,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: تحديث الصُّورة الشَّخصيَّة محدود بـ 10 مرّات في الدقيقة.',
@@ -179,6 +194,7 @@ export function avatarUploadRateLimitPolicy(userId: string): RateLimitPolicy {
 export function homeServicesRateLimitPolicy(userId: string): RateLimitPolicy {
   return {
     key: `home-services:${userId}`,
+    failClosed: true,
     limit: 30,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: تعديل تطبيقاتك محدود بـ 30 مرّة في الدقيقة.',
@@ -193,6 +209,7 @@ export function homeServicesRateLimitPolicy(userId: string): RateLimitPolicy {
 export function scanHistoryRateLimitPolicy(userId: string): RateLimitPolicy {
   return {
     key: `scan-history:${userId}`,
+    failClosed: true,
     limit: 60,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: حفظ سجل المسح محدود بـ 60 مسحاً في الدقيقة.',
@@ -202,6 +219,7 @@ export function scanHistoryRateLimitPolicy(userId: string): RateLimitPolicy {
 export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `link-unlock:${ip}`,
+    failClosed: true,
     limit: 15,
     windowMs: 10 * 60 * 1000,
     message: 'تم تجاوز حد الطلب: محاولات فتح الروابط محدودة بـ 15 محاولة كل 10 دقائق.',
@@ -216,6 +234,7 @@ export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
 export function newsSourceRequestRateLimitPolicy(userId: string): RateLimitPolicy {
   return {
     key: `news-source-request:${userId}`,
+    failClosed: true,
     limit: 3,
     windowMs: 24 * 60 * 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: إضافة مصدر محدودة بـ 3 محاولات في اليوم.',
@@ -227,6 +246,7 @@ const DOWNLOAD_WINDOW_MS = 10 * 60 * 1000;
 export function downloaderRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `downloader:${ip}`,
+    failClosed: true,
     limit: 10,
     windowMs: DOWNLOAD_WINDOW_MS,
     message: 'تم تجاوز حدّ الطلب: تنزيل الوسائط محدود بـ 10 طلبات كل 10 دقائق.',
@@ -237,6 +257,7 @@ export function downloaderRateLimitPolicy(ip: string): RateLimitPolicy {
 export function downloaderInspectRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `downloader-inspect:${ip}`,
+    failClosed: true,
     limit: 30,
     windowMs: DOWNLOAD_WINDOW_MS,
     message: 'تم تجاوز حدّ الطلب: فحص الروابط محدود بـ 30 طلبًا كل 10 دقائق.',
@@ -246,6 +267,7 @@ export function downloaderInspectRateLimitPolicy(ip: string): RateLimitPolicy {
 export function adminEmailBroadcastRateLimitPolicy(adminEmail: string): RateLimitPolicy {
   return {
     key: `admin-email-broadcast:${adminEmail}`,
+    failClosed: true,
     limit: 5,
     windowMs: 60 * 60 * 1000,
     message: 'تم تجاوز حد الإرسال: يُسمح بإرسال البريد الجماعي 5 مرات في الساعة.',
@@ -255,6 +277,7 @@ export function adminEmailBroadcastRateLimitPolicy(adminEmail: string): RateLimi
 export function mcpDataPlaneRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-data:${ip}`,
+    failClosed: true,
     limit: 100,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: استدعاءات MCP محدودة بـ 100 طلب في الدقيقة لكل عنوان IP.',
@@ -264,6 +287,7 @@ export function mcpDataPlaneRateLimitPolicy(ip: string): RateLimitPolicy {
 export function mcpRegisterRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-register:${ip}`,
+    failClosed: true,
     limit: 10,
     windowMs: 10 * 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: تسجيل عملاء MCP محدود بـ 10 طلبات كل 10 دقائق.',
@@ -273,6 +297,7 @@ export function mcpRegisterRateLimitPolicy(ip: string): RateLimitPolicy {
 export function mcpTokenRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-token:${ip}`,
+    failClosed: true,
     limit: 30,
     windowMs: 10 * 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: تبادل رموز MCP محدود بـ 30 طلبًا كل 10 دقائق.',
@@ -288,6 +313,7 @@ export function mcpTokenRateLimitPolicy(ip: string): RateLimitPolicy {
 export function mcpAuthorizeRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-authorize:${ip}`,
+    failClosed: true,
     limit: 30,
     windowMs: 10 * 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: طلبات تفويض MCP محدودة بـ 30 طلبًا كل 10 دقائق.',
@@ -302,6 +328,7 @@ export function mcpAuthorizeRateLimitPolicy(ip: string): RateLimitPolicy {
 export function mcpRevokeRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-revoke:${ip}`,
+    failClosed: true,
     limit: 30,
     windowMs: 10 * 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: إلغاء رموز MCP محدود بـ 30 طلبًا كل 10 دقائق.',
@@ -311,6 +338,7 @@ export function mcpRevokeRateLimitPolicy(ip: string): RateLimitPolicy {
 export function mcpConsentRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-consent:${ip}`,
+    failClosed: true,
     limit: 20,
     windowMs: 10 * 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: الموافقة على ربط MCP محدودة بـ 20 طلبًا كل 10 دقائق.',
@@ -326,6 +354,7 @@ export function mcpConsentRateLimitPolicy(ip: string): RateLimitPolicy {
 export function mcpMarketplaceStartRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-marketplace-start:${ip}`,
+    failClosed: true,
     limit: 15,
     windowMs: 10 * 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: يمكنك بدء ربط تطبيق 15 مرة كل 10 دقائق.',
@@ -341,6 +370,7 @@ export function mcpMarketplaceStartRateLimitPolicy(ip: string): RateLimitPolicy 
 export function mcpMarketplaceSearchRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-marketplace-search:${ip}`,
+    failClosed: true,
     limit: 60,
     windowMs: 10 * 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: البحث في المتجر محدود بـ 60 طلبًا كل 10 دقائق.',
@@ -357,6 +387,7 @@ export function mcpMarketplaceSearchRateLimitPolicy(ip: string): RateLimitPolicy
 export function mcpMarketplaceIconRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `mcp-marketplace-icon:${ip}`,
+    failClosed: true,
     limit: 300,
     windowMs: 10 * 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: شعارات المتجر محدودة بـ 300 طلب كل 10 دقائق.',
@@ -372,6 +403,7 @@ export function mcpMarketplaceIconRateLimitPolicy(ip: string): RateLimitPolicy {
 export function offlineServeRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `offline-serve:${ip}`,
+    failClosed: true,
     limit: 30,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: تسجيل الصفحة دون اتصال محدود بـ 30 طلبًا في الدقيقة.',
@@ -388,6 +420,7 @@ export function offlineServeRateLimitPolicy(ip: string): RateLimitPolicy {
 export function appPerfRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `app-perf:${ip}`,
+    failClosed: true,
     limit: 60,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: قياس الأداء محدود بـ 60 طلبًا في الدقيقة.',
@@ -405,6 +438,7 @@ export function appPerfRateLimitPolicy(ip: string): RateLimitPolicy {
 export function appFailureRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `app-failure:${ip}`,
+    failClosed: true,
     limit: 30,
     windowMs: 60 * 1000,
     message: 'تم تجاوز حدّ الطلب: تقارير الأعطال محدودة بـ 30 طلبًا في الدقيقة.',
