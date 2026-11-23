@@ -1,11 +1,11 @@
 {
-  "versionCode": 20300,
-  "versionName": "1.3.0",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.3.0.apk",
-  "sha256": "8e51f64deedd90d396aaa4208d0a53c38199dea10b463198494021a58a9ed218",
-  "sizeBytes": 9940620,
+  "versionCode": 20400,
+  "versionName": "1.4.0",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.4.0.apk",
+  "sha256": "65e418e5ac86e61f3c34acf36f332acf630ae573e645585ff076a7ea6d143b0a",
+  "sizeBytes": 8285412,
   "minSupportedVersionCode": 20000,
-  "rollout": 0,
-  "notes": "ميزة: صفحة مصادر الأخبار في التطبيق: اختيار المصادر وإدارة مصادرك الخاصة وإضافة مصدر جديد.",
-  "releasedAt": "2026-11-21"
+  "rollout": 100,
+  "notes": "تحسين: يبقى عدّاد الأذكار متاحًا بعد اكتمال العدّ.",
+  "releasedAt": "2026-11-23"
 }
