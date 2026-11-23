@@ -1,0 +1,43 @@
+{
+  "notes": "What 'time ago' is before a surface puts it into words (ADR-0104). `frontend/shared/format.ts` and `android/app/src/main/kotlin/com/royaraqamia/app/shared/TimeAgo.kt` answer the same unit and count for the same instant; the web suite (`frontend/shared/__tests__/format-time-ago.test.ts`) and the app suite (`android/app/src/test/kotlin/com/royaraqamia/app/shared/TimeAgoTest.kt`) both assert these cases, so a threshold moved on one client alone fails exactly one of them. The words are not here: each surface renders its own generated copy.",
+  "now": "2026-10-30T12:00:00.000Z",
+  "cases": [
+    {
+      "iso": "2026-10-30T11:59:01.000Z",
+      "unit": "now"
+    },
+    {
+      "iso": "2026-10-30T11:55:00.000Z",
+      "unit": "minutes",
+      "count": 5
+    },
+    {
+      "iso": "2026-10-30T09:00:00.000Z",
+      "unit": "hours",
+      "count": 3
+    },
+    {
+      "iso": "2026-10-28T12:00:00.000Z",
+      "unit": "days",
+      "count": 2
+    },
+    {
+      "iso": "2026-10-17T12:00:00.000Z",
+      "unit": "weeks",
+      "count": 1
+    },
+    {
+      "iso": "2026-10-07T12:00:00.000Z",
+      "unit": "weeks",
+      "count": 3
+    },
+    {
+      "iso": "2026-10-01T12:00:00.000Z",
+      "unit": "date"
+    },
+    {
+      "iso": "not a date",
+      "unit": "date"
+    }
+  ]
+}

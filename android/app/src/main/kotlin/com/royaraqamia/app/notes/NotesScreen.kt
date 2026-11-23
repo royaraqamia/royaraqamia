@@ -351,7 +351,7 @@ private fun NoteRowView(row: NoteRow, onOpen: (NoteRow) -> Unit) {
                 maxLines = 1,
             )
             Text(
-                text = NotesText.timeAgo(row.updatedAt),
+                text = NotesText.listTimeAgo(row.updatedAt),
                 style = TextStyle(fontFamily = RoyFonts.ui, fontSize = 10.sp),
                 color = RoyColors.mutedForeground,
             )
@@ -519,9 +519,9 @@ internal fun NoteEditor(
         Text(
             text =
                 if (words > 0) {
-                    "$words ${NotesCopy.WORD} · ${NotesCopy.LAST_EDIT} ${NotesText.timeAgo(note.updatedAt)} · ${NotesCopy.AUTOSAVES}"
+                    "$words ${NotesCopy.WORD} · ${NotesCopy.LAST_EDIT} ${NotesText.editorTimeAgo(note.updatedAt)} · ${NotesCopy.AUTOSAVES}"
                 } else {
-                    "${NotesCopy.LAST_EDIT} ${NotesText.timeAgo(note.updatedAt)} · ${NotesCopy.AUTOSAVES}"
+                    "${NotesCopy.LAST_EDIT} ${NotesText.editorTimeAgo(note.updatedAt)} · ${NotesCopy.AUTOSAVES}"
                 },
             modifier = Modifier.height(NotesMetrics.editorMetaHeight),
             style =

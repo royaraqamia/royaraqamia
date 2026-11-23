@@ -18,6 +18,11 @@ export const NOTES_EDITOR_COPY = {
   word: 'كلمة',
   lastEdit: 'آخر تعديل',
   autosaves: 'يُحفظ تلقائيًّا',
+  agoNow: 'منذ لحظات',
+  agoMinutes: 'منذ {count} دقيقة',
+  agoHours: 'منذ {count} ساعة',
+  agoDays: 'منذ {count} يوم',
+  agoWeeks: 'منذ {count} أسبوع',
 } as const;
 
 export type NotesEditorCopyStrings = typeof NOTES_EDITOR_COPY;

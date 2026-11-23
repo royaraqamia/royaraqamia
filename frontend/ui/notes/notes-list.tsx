@@ -3,7 +3,7 @@
 import { Search, X } from 'lucide-react';
 
 import type { Note } from '@/shared/contracts/notes';
-import { calculateTimeAgo } from '@/frontend/shared/format';
+import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { noteName, notePreview } from '@/frontend/shared/notes/text';
 import { cn } from '@/frontend/shared/cn';
 import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
@@ -16,6 +16,32 @@ interface NotesListProps {
   query: string;
   onSelect: (id: string) => void;
   onQueryChange: (query: string) => void;
+}
+
+/**
+ * What a past instant is, in the notes list's own words (ADR-0104).
+ *
+ * The thresholds are the shared formatter's, and the sentences are this
+ * surface's generated copy rather than a formatter-owned word list — the app
+ * draws the same five keys with the same arithmetic, so a row cannot word
+ * "three days ago" differently on the two clients. A month out is the Hijri day.
+ */
+function listTimeAgo(iso: string): string {
+  const parts = timeAgoParts(iso);
+  switch (parts.unit) {
+    case 'now':
+      return NOTES_LIST_COPY.agoNow;
+    case 'minutes':
+      return NOTES_LIST_COPY.agoMinutes.replace('{count}', String(parts.count));
+    case 'hours':
+      return NOTES_LIST_COPY.agoHours.replace('{count}', String(parts.count));
+    case 'days':
+      return NOTES_LIST_COPY.agoDays.replace('{count}', String(parts.count));
+    case 'weeks':
+      return NOTES_LIST_COPY.agoWeeks.replace('{count}', String(parts.count));
+    case 'date':
+      return formatHijriDate(iso);
+  }
 }
 
 /**
@@ -109,7 +135,7 @@ export function NotesList({ notes, selectedId, query, onSelect, onQueryChange }:
                   <span className="flex items-baseline justify-between gap-2">
                     <span className="min-w-0 flex-1 truncate text-sm font-bold">{name}</span>
                     <span className="shrink-0 text-[10px] text-muted-foreground">
-                      {calculateTimeAgo(note.updatedAt)}
+                      {listTimeAgo(note.updatedAt)}
                     </span>
                   </span>
                   {preview !== '' && (

@@ -17,6 +17,11 @@
     "emptyBody": "اكتب أول ملاحظة، وستُحفظ على هذا الجهاز حتى بلا اتِّصال.",
     "noResultsTitle": "لا نتائج للبحث",
     "noResultsBody": "جرِّب كلمة أخرى، أو امسح البحث لعرض كل الملاحظات.",
-    "untitled": "ملاحظة بلا نصّ"
+    "untitled": "ملاحظة بلا نصّ",
+    "agoNow": "منذ لحظات",
+    "agoMinutes": "منذ {count} دقيقة",
+    "agoHours": "منذ {count} ساعة",
+    "agoDays": "منذ {count} يوم",
+    "agoWeeks": "منذ {count} أسبوع"
   }
 }

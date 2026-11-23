@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
 import { describe, it, expect } from 'vitest';
 
 import { timeAgoParts } from '@/frontend/shared/format';
@@ -33,5 +36,24 @@ describe('timeAgoParts', () => {
   it('gives up on a month, and on a string that is not an instant', () => {
     expect(at(28 * 86400)).toEqual({ unit: 'date' });
     expect(timeAgoParts('not a date', now)).toEqual({ unit: 'date' });
+  });
+
+  // The shared fixture is the same file the app suite reads (ADR-0104): the
+  // boundary cases cannot move in one client while the other still passes.
+  const fixture = JSON.parse(
+    readFileSync(path.join(process.cwd(), 'shared/fixtures/parity/time-ago.json'), 'utf8')
+  ) as {
+    now: string;
+    cases: { iso: string; unit: string; count?: number }[];
+  };
+
+  it('lists the cases both clients are held to', () => {
+    expect(fixture.cases.length).toBeGreaterThan(0);
+  });
+
+  it.each(fixture.cases)('reads $iso as $unit in the shared fixture', ({ iso, unit, count }) => {
+    expect(timeAgoParts(iso, Date.parse(fixture.now))).toEqual(
+      count === undefined ? { unit } : { unit, count }
+    );
   });
 });
