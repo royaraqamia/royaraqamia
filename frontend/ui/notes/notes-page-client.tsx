@@ -84,6 +84,9 @@ function NotesContent({ embedded }: { embedded: boolean }) {
   const [query, setQuery] = useState('');
   const [composerOpen, setComposerOpen] = useState(false);
   const initialised = useRef(false);
+  // The composer is opened by state, not by a Radix trigger. Its dialog returns
+  // focus to this button on close (WCAG 2.4.3, #1647).
+  const composerOpenerRef = useRef<HTMLButtonElement>(null);
 
   // The open note is view state in the URL, read once on arrival: a shared link
   // or a reload opens the same note without making the shell dynamic.
@@ -197,7 +200,12 @@ function NotesContent({ embedded }: { embedded: boolean }) {
       )}
 
       {ready && store && (
-        <FabButton id="btn-new-note" label="ملاحظة جديدة" onClick={() => setComposerOpen(true)}>
+        <FabButton
+          ref={composerOpenerRef}
+          id="btn-new-note"
+          label="ملاحظة جديدة"
+          onClick={() => setComposerOpen(true)}
+        >
           <FilePlus2 className="size-6 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-rotate-6" />
         </FabButton>
       )}
@@ -206,6 +214,7 @@ function NotesContent({ embedded }: { embedded: boolean }) {
         open={composerOpen}
         onOpenChange={setComposerOpen}
         onCreate={handleCreate}
+        returnFocusTo={composerOpenerRef}
       />
 
       <NoteEditorDialog

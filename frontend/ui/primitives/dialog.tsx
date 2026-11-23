@@ -80,8 +80,16 @@ const DialogContent = React.forwardRef<
      * Tailwind's own sort whatever the surface does with its own.
      */
     phone?: 'card' | 'sheet';
+    /**
+     * The element that opened a dialog driven by state rather than by a
+     * `DialogTrigger`. Radix restores focus to a trigger, so a plain button's
+     * dialog closes onto `<body>` (WCAG 2.4.3, #1647). The content returns it
+     * here on every dismissal path — close button, Escape, backdrop and the
+     * Android back press.
+     */
+    returnFocusTo?: React.RefObject<HTMLElement | null>;
   }
->(({ className, children, hideClose = false, phone = 'card', ...props }, ref) => {
+>(({ className, children, hideClose = false, phone = 'card', returnFocusTo, ...props }, ref) => {
   // The on-screen keyboard shortens a phone dialog; `app/global.css` reads what
   // this publishes. Measured from the surface rather than from the app root on
   // purpose: the baseline is the height the dialog opened at, before a field
@@ -119,6 +127,16 @@ const DialogContent = React.forwardRef<
           className
         )}
         {...props}
+        onCloseAutoFocus={(event) => {
+          props.onCloseAutoFocus?.(event);
+          if (event.defaultPrevented) return;
+          const opener = returnFocusTo?.current;
+          if (!opener) return;
+          // Radix's own handler preventDefaults and focuses a trigger that does
+          // not exist here. Preventing first keeps it from overriding ours.
+          event.preventDefault();
+          opener.focus();
+        }}
       >
         {children}
         {!hideClose && (

@@ -57,6 +57,10 @@ on:
       - 'frontend/api/quran/**'
       - 'frontend/api/chats/**'
       - 'frontend/ui/chats/**'
+      - 'frontend/ui/primitives/dialog.tsx'
+      - 'frontend/ui/assistant/**'
+      - 'frontend/ui/notes/**'
+      - 'e2e/dialog-focus-return.spec.ts'
       - 'app/chats/**'
       - 'app/notifications/**'
       - 'frontend/api/sync-products.ts'
@@ -168,6 +172,7 @@ jobs:
       - name: Offline suite
         run: >
           npx playwright test
+          e2e/dialog-focus-return.spec.ts
           e2e/public-offline.spec.ts
           e2e/responsive-offline.spec.ts
           e2e/perf-paint.spec.ts
