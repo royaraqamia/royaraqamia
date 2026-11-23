@@ -4,6 +4,7 @@ import type { PlanId } from '@/shared/contracts/plans.constants';
 import { ChatAgentActionSchema, type ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import { ChatMessageSourceSchema, type WebSource } from '@/shared/contracts/web-search';
 import { VisualSpecSchema, type VisualSpec } from '@/shared/contracts/visual';
+import { ChatMediaSchema, type ChatMedia } from '@/shared/contracts/chat-media';
 import { ScreenContextInputSchema } from '@/shared/contracts/screen-context-schema';
 import { toLatinDigits } from '@/shared/contracts/text';
 
@@ -345,6 +346,11 @@ export interface ChatMessage {
    */
   visual?: VisualSpec | null;
   /**
+   * Media the member paid for through a connected app (ADR-0216). The bytes are
+   * ours, the URL is a same-origin route, and a reload draws the same file.
+   */
+  media?: ChatMedia | null;
+  /**
    * The quoted line, one level deep: a reply to a reply quotes the message it
    * names, never a chain, so the thread cannot render an unbounded nest.
    */
@@ -507,6 +513,11 @@ export type ChatAgentEvent =
   | { type: 'sources'; sources: WebSource[] }
   /** A sanitized SVG the page turns into a PNG (ADR-0215). */
   | { type: 'visual'; visual: VisualSpec }
+  /**
+   * Member-paid media a connected app produced (ADR-0216). The frame carries
+   * only the stored descriptor; the bytes stay in our bucket.
+   */
+  | { type: 'media'; media: ChatMedia }
   | { type: 'tool_start'; id: string; name: string; activity: string }
   | { type: 'tool'; id: string; name: string; label: string; ok: boolean }
   /**
@@ -737,6 +748,7 @@ export const ChatMessageSchema = z.object({
   attachments: z.array(ChatAttachmentSchema),
   sources: z.array(ChatMessageSourceSchema).nullable().optional(),
   visual: VisualSpecSchema.nullable().optional(),
+  media: ChatMediaSchema.nullable().optional(),
 });
 
 export const ChatConversationSummarySchema = z.object({

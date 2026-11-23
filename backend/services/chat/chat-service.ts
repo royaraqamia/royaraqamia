@@ -152,6 +152,8 @@ function toMessage(
     attachments,
     replyTo,
     sources: record.sources ?? null,
+    visual: record.visual ?? null,
+    media: record.media ?? null,
   };
 }
 
@@ -700,6 +702,24 @@ export class ChatService {
       mimeType: attachment.mimeType,
       inline,
     };
+  }
+
+  /**
+   * A fresh signed URL for media a connected app generated (ADR-0216). The
+   * descriptor in the message names this route, never the vendor and never a
+   * storage path the browser could replay elsewhere; membership is checked on
+   * every read through the caller's own session, and the path is pinned to the
+   * conversation it came from. The signed URL lives a minute, so a copy taken
+   * from the response is worthless by the time it is replayed.
+   */
+  async mediaUrl(userId: string, conversationId: string, storagePath: string): Promise<string> {
+    await this.assertMember(userId, conversationId);
+    if (!storagePath.startsWith(`${conversationId}/`)) {
+      throw new ChatError(404, 'الملف غير موجود');
+    }
+    const url = await this.deps.attachments.signedUrl(storagePath, null);
+    if (!url) throw new ChatError(502, 'تعذّر تجهيز الملف');
+    return url;
   }
 
   async markRead(userId: string, conversationId: string, at?: string): Promise<void> {

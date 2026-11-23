@@ -19,6 +19,7 @@ import { chatTimeAgo } from './chats-panel';
 import { VoiceNotePlayer } from './voice-note-player';
 import { WebSources } from './web-sources';
 import { AssistantVisual } from './assistant-visual';
+import { AssistantMedia } from './assistant-media';
 import { readReceiptOf, type ChatReadReceipt } from './read-receipt';
 import { formatDaySeparator, isNewDay } from './thread-days';
 import {
@@ -414,28 +415,37 @@ export const ChatMessageRow = memo(function ChatMessageRow({
                 </button>
               </div>
             </div>
-          ) : message.body ? (
+          ) : message.body ||
+            (message.senderKind === 'agent' && (message.visual || message.media)) ? (
             <>
-              <p dir="auto" className="whitespace-pre-wrap wrap-anywhere bidi-lines">
-                <ChatBody
-                  text={message.body}
-                  sources={message.sources}
-                  sourceAnchor={`source-${message.id}`}
-                />
-              </p>
+              {message.body ? (
+                <p dir="auto" className="whitespace-pre-wrap wrap-anywhere bidi-lines">
+                  <ChatBody
+                    text={message.body}
+                    sources={message.sources}
+                    sourceAnchor={`source-${message.id}`}
+                  />
+                </p>
+              ) : null}
               {message.senderKind === 'agent' ? (
                 <>
                   <AssistantVisual visual={message.visual} />
                   <WebSources
                     sources={message.sources}
                     anchorPrefix={`source-${message.id}`}
-                    readNote={!/\[\d{1,2}\]/.test(message.body)}
+                    readNote={!/\[\d{1,2}\]/.test(message.body ?? '')}
                   />
                 </>
               ) : null}
             </>
           ) : attachmentOnlyLabel ? (
             <p className="text-xs italic opacity-70">{attachmentOnlyLabel}</p>
+          ) : null}
+          {/* A confirmed card keeps its own body, so the file it produced rides
+              outside the bubble: the card says what ran, the picture says what it
+              made, and both survive a reload (ADR-0216). */}
+          {!deleted && message.senderKind === 'agent' ? (
+            <AssistantMedia media={message.media} />
           ) : null}
           {message.attachments.length > 0 && !deleted ? (
             <ul className="mt-2 space-y-1">

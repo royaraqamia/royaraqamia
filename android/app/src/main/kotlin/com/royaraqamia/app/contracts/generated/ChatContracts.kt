@@ -349,6 +349,7 @@ data class ChatMessagePageResponseMessagesItem(
     val attachments: List<ChatMessagePageResponseMessagesItemAttachmentsItem>,
     val sources: List<ChatMessagePageResponseMessagesItemSourcesItem>? = null,
     val visual: ChatMessagePageResponseMessagesItemVisual? = null,
+    val media: ChatMessagePageResponseMessagesItemMedia? = null,
 )
 
 @Serializable
@@ -379,6 +380,19 @@ data class ChatMessagePageResponseMessagesItemVisual(
     val svg: String,
     val caption: String? = null,
 )
+
+@Serializable
+data class ChatMessagePageResponseMessagesItemMedia(
+    val kind: ChatMessagePageResponseMessagesItemMediaKind,
+    val url: String,
+    val mimeType: String,
+)
+
+@Serializable
+enum class ChatMessagePageResponseMessagesItemMediaKind {
+    @SerialName("image") IMAGE,
+    @SerialName("video") VIDEO,
+}
 
 @Serializable
 data class ChatMessagePageResponseActionsItem(
@@ -436,6 +450,7 @@ data class ChatMessageResponseMessage(
     val attachments: List<ChatMessageResponseMessageAttachmentsItem>,
     val sources: List<ChatMessageResponseMessageSourcesItem>? = null,
     val visual: ChatMessageResponseMessageVisual? = null,
+    val media: ChatMessageResponseMessageMedia? = null,
 )
 
 @Serializable
@@ -466,6 +481,19 @@ data class ChatMessageResponseMessageVisual(
     val svg: String,
     val caption: String? = null,
 )
+
+@Serializable
+data class ChatMessageResponseMessageMedia(
+    val kind: ChatMessageResponseMessageMediaKind,
+    val url: String,
+    val mimeType: String,
+)
+
+@Serializable
+enum class ChatMessageResponseMessageMediaKind {
+    @SerialName("image") IMAGE,
+    @SerialName("video") VIDEO,
+}
 
 @Serializable
 data class ChatOkResponse(

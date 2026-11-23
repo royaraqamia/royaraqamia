@@ -87,6 +87,12 @@ import {
 } from '@/shared/contracts/web-search';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
 import { VisualSpecSchema, type VisualSpec } from '@/shared/contracts/visual';
+import {
+  CHAT_MEDIA_UNAVAILABLE,
+  MEDIA_APP_REGISTRY_NAMES,
+  type ChatMedia,
+} from '@/shared/contracts/chat-media';
+import { storeGeneratedMedia } from './chat-app-media';
 import { FAILURE_SENTENCES } from '@/shared/contracts/chat-agent-failures.mjs';
 
 /**
@@ -336,7 +342,7 @@ export interface ChatAgentServiceDeps {
   telemetry: SkillTelemetryRepository;
   chats: ChatService;
   /** The bucket, to read a voice note's bytes back for transcription. */
-  attachments: Pick<ChatAttachmentStorage, 'download'>;
+  attachments: Pick<ChatAttachmentStorage, 'download' | 'upload'>;
   /** One counted action, held open until the answer is stored. */
   reserve(userId: string): Promise<Reservation>;
   /**
@@ -422,7 +428,7 @@ export interface ChatAgentServiceDeps {
    * deployment without the marketplace, and the turn then carries the 21 tools
    * we own and nothing else.
    */
-  apps?: Pick<McpAppToolsService, 'catalog' | 'call' | 'connectedCount'>;
+  apps?: Pick<McpAppToolsService, 'catalog' | 'call' | 'connectedCount' | 'fetchMedia'>;
 }
 
 /** What a turn's tools need from the request: the caller's session and address. */
@@ -1110,6 +1116,10 @@ export class ChatAgentService {
     let sources: WebSource[] = [];
     /** The sanitized drawing this turn made, for the frame and the stored row. */
     let visual: VisualSpec | null = null;
+    /** Member-paid media from a connected app, stored in our bucket (ADR-0216). */
+    let media: ChatMedia | null = null;
+    /** A refusal from the media app: the text answer stays, the file does not. */
+    let mediaFailed = false;
     let rounds = 0;
     let retried = false;
     let appCalls = 0;
@@ -1292,6 +1302,36 @@ export class ChatAgentService {
                   : `تنفيذ في ${declaration.appName}`,
                 ok: true,
               };
+              /*
+                A member-paid app may answer with a link to the file it made. The
+                bytes are fetched with the member's own encrypted token, stored
+                in our bucket, and handed to the page as a same-origin route;
+                neither the token nor the vendor's link reaches a browser
+                (ADR-0216). A refusal is one Arabic sentence in the text answer,
+                never a broken turn.
+              */
+              if (
+                apps &&
+                declaration.registryName &&
+                MEDIA_APP_REGISTRY_NAMES.includes(declaration.registryName)
+              ) {
+                const outcome = await storeGeneratedMedia({
+                  apps,
+                  attachments: this.deps.attachments,
+                  userId,
+                  connectionId: declaration.connectionId,
+                  conversationId,
+                  result,
+                  signal,
+                });
+                if (outcome.status === 'ok') {
+                  media = outcome.media;
+                  yield { type: 'media', media: outcome.media };
+                } else if (outcome.status === 'failed') {
+                  mediaFailed = true;
+                }
+              }
+
               // A remote answer is data, bounded like any other tool's: it may
               // not carry a second round's worth of instructions into the model.
               messages.push(toolAnswer(call.id, result));
@@ -1525,6 +1565,11 @@ export class ChatAgentService {
 
     const draft = answerText.trim();
     let text = draft || ROUNDS_EXHAUSTED;
+    // A spent credit or a vendor refusal is one sentence, not a broken turn: the
+    // words the model wrote stay, and only the file is missing (ADR-0216).
+    if (mediaFailed) {
+      text = text ? `${text}\n\n${CHAT_MEDIA_UNAVAILABLE}` : CHAT_MEDIA_UNAVAILABLE;
+    }
     if (draft && this.deps.judge) {
       // The whole draft exists here, before any of it has been shown. The judge
       // may ask for one rewrite; only the winning text reaches the member.
@@ -1551,16 +1596,18 @@ export class ChatAgentService {
     }
     // The sources are stored with the answer, not streamed and forgotten
     // (ADR-0206): a thread reopened tomorrow shows the same evidence.
-    const record = visual
-      ? await this.deps.agent.insertAgentMessage(
-          conversationId,
-          text,
-          sources.length > 0 ? sources : undefined,
-          visual
-        )
-      : sources.length > 0
-        ? await this.deps.agent.insertAgentMessage(conversationId, text, sources)
-        : await this.deps.agent.insertAgentMessage(conversationId, text);
+    const record =
+      visual || media
+        ? await this.deps.agent.insertAgentMessage(
+            conversationId,
+            text,
+            sources.length > 0 ? sources : undefined,
+            visual ?? undefined,
+            media ?? undefined
+          )
+        : sources.length > 0
+          ? await this.deps.agent.insertAgentMessage(conversationId, text, sources)
+          : await this.deps.agent.insertAgentMessage(conversationId, text);
     if (turnId) await this.deps.agent.settleTurn(turnId);
     await this.recordSkills(turnId, skills, loadedSkill);
 
@@ -1603,6 +1650,7 @@ export class ChatAgentService {
         replyTo: null,
         sources: sources.length > 0 ? sources : (record.sources ?? null),
         visual: visual ?? record.visual ?? null,
+        media: media ?? record.media ?? null,
       },
     };
   }

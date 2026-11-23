@@ -7,6 +7,7 @@ import {
   type AiChatWireMessage,
 } from '@/backend/clients/ai-chat';
 import { AiChatProviderError } from '@/backend/shared/domain/ai-chat';
+import { CHAT_MEDIA_UNAVAILABLE, HIGGSFIELD_REGISTRY_NAME } from '@/shared/contracts/chat-media';
 import type { ChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
 import type {
   SkillTelemetryRepository,
@@ -189,6 +190,7 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
       clientId: null,
     })),
     startTurn: vi.fn(async () => 'turn-1'),
+    setMessageMedia: vi.fn(async () => undefined),
     setTurnQuestion: vi.fn(async () => undefined),
     recordAttempt: vi.fn(async () => undefined),
     settleTurn: vi.fn(async () => undefined),
@@ -210,7 +212,10 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
   const release = vi.fn(async () => undefined);
   const reserve = vi.fn(async () => ({ eventId: 'event-1', release }));
   const reserveAppCall = vi.fn(async () => ({ eventId: 'event-app-1', release }));
-  const attachments = { download: vi.fn(async () => new Uint8Array([1, 2, 3])) };
+  const attachments = {
+    download: vi.fn(async () => new Uint8Array([1, 2, 3])),
+    upload: vi.fn(async () => true),
+  };
 
   const telemetry = {
     record: vi.fn(async (_turnId: string, _skills: readonly TurnSkillUse[]) => undefined),
@@ -748,7 +753,10 @@ describe('the assistant turn', () => {
   it('hands a text file to the model as its words', async () => {
     const client = scriptedClient([textStream('قرأت الملف.')]);
     const download = vi.fn(async () => new TextEncoder().encode('مرحبا'));
-    const { service } = makeService({ client, attachments: { download } });
+    const { service } = makeService({
+      client,
+      attachments: { download, upload: vi.fn(async () => true) },
+    });
 
     await collect(
       service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [
@@ -771,7 +779,10 @@ describe('the assistant turn', () => {
   it('reads a document and hands its words to the model, keeping the file attached', async () => {
     const client = scriptedClient([textStream('الإجمالي 120.')]);
     const download = vi.fn(async () => pdfDocument(['Invoice total 120.00']));
-    const { service, chats, agent } = makeService({ client, attachments: { download } });
+    const { service, chats, agent } = makeService({
+      client,
+      attachments: { download, upload: vi.fn(async () => true) },
+    });
 
     const invoice = {
       storagePath: 'conversation-1/docs/invoice.pdf',
@@ -807,7 +818,10 @@ describe('the assistant turn', () => {
   it('answers a scanned document with a sentence, calls no model, and gives the count back', async () => {
     const client = scriptedClient([textStream('unreachable')]);
     const download = vi.fn(async () => scannedPdf());
-    const { service, chats, release } = makeService({ client, attachments: { download } });
+    const { service, chats, release } = makeService({
+      client,
+      attachments: { download, upload: vi.fn(async () => true) },
+    });
 
     const failure = await collect(
       service.turn('user-1', 'conversation-1', 'ما مجموع الفاتورة؟', TURN_CONTEXT, [
@@ -839,7 +853,10 @@ describe('the assistant turn', () => {
     const client = scriptedClient([textStream('قرأت الصفحات الأولى.')]);
     const pages = Array.from({ length: DOCUMENT_PAGES_MAX + 4 }, (_, index) => `page ${index + 1}`);
     const download = vi.fn(async () => pdfDocument(pages));
-    const { service } = makeService({ client, attachments: { download } });
+    const { service } = makeService({
+      client,
+      attachments: { download, upload: vi.fn(async () => true) },
+    });
 
     await collect(
       service.turn('user-1', 'conversation-1', '', TURN_CONTEXT, [
@@ -1463,6 +1480,7 @@ describe('the assistant turn, with a connected app', () => {
         structured: null,
       })),
       connectedCount: vi.fn(async () => new Set(catalog.map((tool) => tool.connectionId)).size),
+      fetchMedia: vi.fn(async () => ({ bytes: new Uint8Array(), mimeType: 'image/png' })),
     };
   }
 
@@ -1685,6 +1703,95 @@ describe('the assistant turn, with a connected app', () => {
     // Each app reaches its own two-call limit, and the fourth call is the
     // turn's ceiling rather than either wall.
     expect(apps.call).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('member-paid media through a connected app (ADR-0216)', () => {
+  const QUESTION = 'Higgsfield video';
+
+  function mediaTool(): McpAppTool {
+    return {
+      connectionId: 'conn-higgsfield',
+      registryName: HIGGSFIELD_REGISTRY_NAME,
+      appName: 'Higgsfield',
+      toolName: 'generate_video',
+      description: 'Generate images and video clips',
+      inputSchema: { type: 'object', properties: { prompt: { type: 'string' } } },
+      readOnly: false,
+      permissionLevel: 'all',
+    };
+  }
+
+  function fakeMediaApps(result: unknown) {
+    return {
+      catalog: vi.fn(async () => [mediaTool()]),
+      call: vi.fn(async () => result),
+      connectedCount: vi.fn(async () => 1),
+      fetchMedia: vi.fn(async () => ({
+        bytes: new Uint8Array([1, 2, 3, 4]),
+        mimeType: 'video/mp4',
+      })),
+    };
+  }
+
+  it('fetches the file with the member token, stores it, and frames a same-origin URL', async () => {
+    const client = scriptedClient([
+      [toolCall('app_higgsfield_generate_video', { prompt: 'clip' })],
+      textStream('أنشأت الفيديو.'),
+    ]);
+    const apps = fakeMediaApps({
+      isError: false,
+      content: [{ type: 'text', text: 'https://cdn.higgsfield.ai/out/clip.mp4' }],
+      structured: null,
+    });
+    const download = vi.fn(async () => new Uint8Array());
+    const upload = vi.fn(async () => true);
+    const { service } = makeService({
+      client,
+      apps,
+      attachments: { download, upload },
+    });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', QUESTION, TURN_CONTEXT));
+
+    expect(apps.fetchMedia).toHaveBeenCalledWith(
+      expect.objectContaining({ connectionId: 'conn-higgsfield' })
+    );
+    expect(upload).toHaveBeenCalledWith(
+      expect.stringMatching(/^conversation-1\/generated\/.*\.mp4$/),
+      expect.any(Uint8Array),
+      'video/mp4'
+    );
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'media', media: expect.objectContaining({ kind: 'video' }) })
+    );
+    const done = events.find((event) => event.type === 'done');
+    expect(done?.type === 'done' && done.message.media).toMatchObject({
+      kind: 'video',
+      mimeType: 'video/mp4',
+    });
+    expect(done?.type === 'done' && done.message.media?.url).toContain('/api/chats/media?');
+  });
+
+  it('keeps the text answer and says one Arabic sentence when credits run out', async () => {
+    const client = scriptedClient([
+      [toolCall('app_higgsfield_generate_video', { prompt: 'clip' })],
+      textStream('لم أتمكن من إنشاء الفيديو.'),
+    ]);
+    const apps = fakeMediaApps({
+      isError: true,
+      content: [{ type: 'text', text: 'insufficient credits' }],
+      structured: null,
+    });
+    const { service } = makeService({ client, apps });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', QUESTION, TURN_CONTEXT));
+
+    expect(apps.fetchMedia).not.toHaveBeenCalled();
+    expect(events.some((event) => event.type === 'media')).toBe(false);
+    const done = events.find((event) => event.type === 'done');
+    expect(done?.type === 'done' && done.message.body).toContain(CHAT_MEDIA_UNAVAILABLE);
+    expect(done?.type === 'done' && done.message.media).toBeNull();
   });
 });
 
@@ -2021,7 +2128,8 @@ describe('web search in the turn (ADR-0206)', () => {
       'conversation-1',
       'هذا الرسم البياني.',
       undefined,
-      visual
+      visual,
+      undefined
     );
   });
 

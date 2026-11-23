@@ -8,6 +8,7 @@ import { McpRemoteError, type McpRequestAuth } from '@/backend/shared/domain/mcp
 import { decryptSecret } from '@/backend/shared/mcp-token-crypto';
 import { logger } from '@/backend/shared/logger';
 import type { McpPermissionLevel } from '@/shared/contracts/mcp-marketplace';
+import { CHAT_MEDIA_MAX_BYTES } from '@/shared/contracts/chat-media';
 
 /**
  * The tools of the apps we do not own, as the assistant may use them (#1225).
@@ -35,6 +36,8 @@ import type { McpPermissionLevel } from '@/shared/contracts/mcp-marketplace';
 /** One remote tool, as the turn's planner needs it. */
 export interface McpAppTool {
   connectionId: string;
+  /** The catalogue row this came from, for lanes that belong to one app. */
+  registryName?: string;
   /** The name the member reads: the server's own, or their rename. */
   appName: string;
   toolName: string;
@@ -65,6 +68,17 @@ export interface McpAppToolsService {
     intent?: 'turn' | 'confirmed';
     signal?: AbortSignal;
   }): Promise<unknown>;
+  /**
+   * The bytes a tool pointed at, fetched as the member (ADR-0216). Only the
+   * connection's own credential is used, and it never leaves this process: the
+   * caller stores the bytes in our bucket and hands the page a same-origin route.
+   */
+  fetchMedia(input: {
+    userId: string;
+    connectionId: string;
+    url: string;
+    signal?: AbortSignal;
+  }): Promise<{ bytes: Uint8Array; mimeType: string }>;
   /** Display names for connections a card was written against, by id. */
   names(userId: string, connectionIds: string[]): Promise<Map<string, string>>;
   /**
@@ -175,6 +189,7 @@ export function createMcpAppToolsService({
       const rows = await repository.listUsableTools(userId);
       return rows.map(({ connection, tool }) => ({
         connectionId: connection.id,
+        registryName: connection.registry_name,
         appName: appNameOf(connection),
         toolName: tool.tool_name,
         description: tool.description,
@@ -288,6 +303,23 @@ export function createMcpAppToolsService({
         });
 
       return result;
+    },
+
+    async fetchMedia({ userId, connectionId, url, signal }) {
+      const connection = await usableConnection(userId, connectionId);
+      const auth = await requestAuth(connection);
+      try {
+        return await remote.fetchBinary({ url, auth, maxBytes: CHAT_MEDIA_MAX_BYTES, signal });
+      } catch (error) {
+        // A credential the provider refused on the media host is the same repair
+        // as one refused on a tool call: the connection says reconnect, and the
+        // turn gets an Arabic sentence rather than a vendor's error.
+        if (error instanceof McpRemoteError && error.failure === 'unauthorized') {
+          await needsReauth(connection.id, NOT_CONNECTED);
+          throw new McpRemoteError('reauth', NOT_CONNECTED, error);
+        }
+        throw error;
+      }
     },
 
     async names(userId, connectionIds) {

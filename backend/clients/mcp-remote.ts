@@ -15,6 +15,7 @@ import {
   type OAuthTokens,
 } from '@modelcontextprotocol/sdk/shared/auth.js';
 
+import { CHAT_MEDIA_MAX_BYTES } from '@/shared/contracts/chat-media';
 import { MCP_SERVER_VERSION } from '@/backend/services/mcp/constants';
 import { EgressBlockedError, createGuardedFetch, readCappedText } from '@/backend/shared/egress';
 import {
@@ -247,6 +248,18 @@ export interface McpRemoteClient {
     args: Record<string, unknown>;
     signal?: AbortSignal;
   }): Promise<McpRemoteCallResult>;
+  /**
+   * The bytes behind a tool's answer, fetched with the same member credential
+   * and the same egress policy as the tool call (ADR-0216). A connector may hand
+   * back a link to the file it generated instead of the file itself; that link
+   * is fetched here, with the token, and never handed to a browser.
+   */
+  fetchBinary(input: {
+    url: string | URL;
+    auth: McpRequestAuth;
+    maxBytes?: number;
+    signal?: AbortSignal;
+  }): Promise<{ bytes: Uint8Array; mimeType: string }>;
 }
 
 /** What a `tools/call` answered, reduced to what a turn can carry. */
@@ -975,6 +988,28 @@ export function createMcpRemoteClient(dependencies: ClientDependencies = {}): Mc
       } finally {
         await client.close().catch(() => undefined);
       }
+    },
+
+    async fetchBinary({ url, auth, maxBytes, signal }) {
+      // A fresh guarded fetch per call: the JSON socket's 1 MB ceiling is for
+      // protocol answers, while a picture or clip may be as large as the bucket
+      // allows. Every other rule — https on 443, public addresses, one redirect,
+      // no cookies — is the same one this module has always used.
+      const fetcher = createGuardedFetch({ maxBytes: maxBytes ?? CHAT_MEDIA_MAX_BYTES });
+      const target = new URL(url);
+      const response = await fetcher(target, {
+        headers: { ...authHeaders(auth), accept: 'image/*,video/*' },
+        ...(signal ? { signal } : {}),
+      });
+      if (!response.ok) {
+        throw new McpRemoteError('protocol', `رفض التطبيق تسليم الملف (${response.status})`);
+      }
+      const mimeType = response.headers.get('content-type')?.trim() ?? '';
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (bytes.byteLength === 0) {
+        throw new McpRemoteError('protocol', 'الملف الذي أعاده التطبيق فارغ');
+      }
+      return { bytes, mimeType };
     },
   };
 }

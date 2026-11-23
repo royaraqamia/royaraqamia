@@ -74,6 +74,11 @@ export interface McpCatalogUpsertRow {
   description: string | null;
   version: string | null;
   remoteUrl: string;
+  /**
+   * A curated row may name its own authentication mode (ADR-0155 amendment).
+   * Registry rows leave this empty and keep the column's `oauth` default.
+   */
+  authMode?: McpAuthMode;
   iconUrl: string | null;
   iconMime: string | null;
   status: 'active' | 'deprecated' | 'deleted';
@@ -694,6 +699,7 @@ export function createMcpMarketplaceRepository(
         version: row.version,
         remote_url: row.remoteUrl,
         transport: 'streamable-http',
+        ...(row.authMode ? { auth_mode: row.authMode } : {}),
         // The registry's mark lives in its own columns: the probe's `logo_uri`
         // must survive the next sync, and the service prefers the probe's.
         registry_icon_url: row.iconUrl,

@@ -254,7 +254,10 @@ function buildService(messages: Array<{ role: 'user' | 'assistant'; content: str
       outcomes: vi.fn(async () => []),
     } satisfies SkillTelemetryRepository,
     chats,
-    attachments: { download: vi.fn(async () => new Uint8Array()) },
+    attachments: {
+      download: vi.fn(async () => new Uint8Array()),
+      upload: vi.fn(async () => true),
+    },
     reserve: vi.fn(async () => ({ eventId: 'eval-event', release })),
     reserveAppCall: vi.fn(async () => ({ eventId: 'eval-app-event', release })),
     usageState: vi.fn(async () => ({

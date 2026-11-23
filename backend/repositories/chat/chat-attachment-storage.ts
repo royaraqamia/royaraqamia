@@ -18,6 +18,13 @@ export interface ChatAttachmentStorage {
    * drawing-safe image ever asks for.
    */
   signedUrl(path: string, download: string | null): Promise<string | null>;
+  /**
+   * Store bytes the assistant produced through a member's connected app
+   * (ADR-0216). The caller owns the path and the MIME check; this method only
+   * puts the object in the same private bucket every other attachment uses, so
+   * the bucket's own RLS and the daily sweep own it from here on.
+   */
+  upload(path: string, bytes: Uint8Array, contentType: string): Promise<boolean>;
   /** The object's bytes, for a turn that has to read them (a voice note). */
   download(path: string): Promise<Uint8Array | null>;
   /** Best-effort: a failed remove is logged, never rethrown over the row delete. */
@@ -42,6 +49,20 @@ export function createChatAttachmentStorage(
         return null;
       }
       return data?.signedUrl ?? null;
+    },
+
+    async upload(path, bytes, contentType) {
+      const { error } = await supabase.storage.from(CHAT_ATTACHMENTS_BUCKET).upload(path, bytes, {
+        contentType,
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+      if (error) {
+        logger.warn('chat attachment upload failed', { path, cause: error.message });
+        return false;
+      }
+      return true;
     },
 
     async download(path) {

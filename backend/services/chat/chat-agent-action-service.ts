@@ -10,6 +10,9 @@ import {
   type ChatAgentToolContext,
 } from '@/backend/services/chat/chat-agent-tools';
 import type { McpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
+import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
+import { storeGeneratedMedia } from './chat-app-media';
+import { CHAT_MEDIA_UNAVAILABLE, MEDIA_APP_REGISTRY_NAMES } from '@/shared/contracts/chat-media';
 import { logger } from '@/backend/shared/logger';
 import { AppError } from '@/backend/shared/errors';
 import { RepositoryError } from '@/backend/shared/repository-error';
@@ -49,7 +52,10 @@ export interface ChatAgentActionServiceDeps {
    * The apps the member connected: a proposal that names one runs on the remote
    * server when the member confirms it, not on a service of ours (#1225).
    */
-  apps?: Pick<McpAppToolsService, 'call'>;
+  apps?: Pick<McpAppToolsService, 'call'> &
+    Partial<Pick<McpAppToolsService, 'fetchMedia' | 'catalog'>>;
+  /** The bucket the bytes of a confirmed generation are stored in (ADR-0216). */
+  attachments?: Pick<ChatAttachmentStorage, 'upload'>;
   /**
    * One remote call to an app we do not own (#1226). A card is the member's own
    * request, so it spends the same counter a turn's call does — and a declined
@@ -159,6 +165,16 @@ export class ChatAgentActionService {
         throw error;
       }
 
+      // Only a curated member-paid app gets its answer interpreted as a file.
+      // A stranger's tool that happens to fail must never borrow this lane.
+      const catalog = await this.deps.apps.catalog?.(userId).catch(() => []);
+      const isMediaApp = (catalog ?? []).some(
+        (tool) =>
+          tool.connectionId === remote.connectionId &&
+          Boolean(tool.registryName) &&
+          MEDIA_APP_REGISTRY_NAMES.includes(tool.registryName as string)
+      );
+
       try {
         const result = await this.deps.apps.call({
           userId,
@@ -171,8 +187,49 @@ export class ChatAgentActionService {
 
         const refusal = remoteRefusal(result);
         if (refusal) {
-          return this.settle(conversationId, claimed, 'failed', { error: refusal });
+          return this.settle(conversationId, claimed, 'failed', {
+            error: isMediaApp ? CHAT_MEDIA_UNAVAILABLE : refusal,
+          });
         }
+
+        /*
+          A generation is only a write here because the member carded it. The
+          file itself still has to be fetched with their token and stored in our
+          bucket before it can appear in the thread (ADR-0216).
+        */
+        if (isMediaApp) {
+          const fetchMedia = this.deps.apps.fetchMedia;
+          const attachments = this.deps.attachments;
+          if (!fetchMedia || !attachments) {
+            return this.settle(conversationId, claimed, 'failed', {
+              error: CHAT_MEDIA_UNAVAILABLE,
+            });
+          }
+          const outcome = await storeGeneratedMedia({
+            apps: { fetchMedia },
+            attachments,
+            userId,
+            connectionId: remote.connectionId,
+            conversationId,
+            result,
+          });
+          if (outcome.status === 'failed') {
+            return this.settle(conversationId, claimed, 'failed', {
+              error: CHAT_MEDIA_UNAVAILABLE,
+            });
+          }
+          if (outcome.status === 'ok') {
+            await this.deps.agent
+              .setMessageMedia(claimed.messageId, outcome.media)
+              .catch((error: unknown) => {
+                logger.warn('Assistant app media could not be attached', {
+                  conversationId,
+                  error: String(error),
+                });
+              });
+          }
+        }
+
         return this.settle(conversationId, claimed, 'applied', { result: result ?? null });
       } catch (error) {
         // A refusal answered before the request left spends nothing; anything

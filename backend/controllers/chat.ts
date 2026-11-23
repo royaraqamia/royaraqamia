@@ -376,6 +376,29 @@ export async function getChatAttachment(
   );
 }
 
+/**
+ * The bytes behind a member-paid media descriptor (ADR-0216). The message
+ * stores this route, not a bucket path and never a vendor link; the route checks
+ * membership and mints a one-minute URL on every read, so a reload draws the
+ * same file without a token or a link that can die somewhere else.
+ */
+export async function getChatMedia(
+  conversationId: string,
+  storagePath: string
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const url = await createSupabaseChatService(supabase).mediaUrl(
+        userId,
+        conversationId,
+        storagePath
+      );
+      return { status: 302, redirect: url };
+    },
+    { mapError: chatFailure('تعذّر تجهيز الملف') }
+  );
+}
+
 export async function respondToChat(
   id: string,
   body: Record<string, unknown>,

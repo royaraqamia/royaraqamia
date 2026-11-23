@@ -284,6 +284,9 @@ export function createSupabaseChatAgentActionService(
     // server, made with the member's own grant (#1225) — and counted like any
     // other remote call (#1226). A card the member declines never gets here.
     apps: createDefaultMcpAppToolsService(),
+    // A confirmed generation stores its bytes through the same private bucket
+    // a turn uses, so the thread's signed URL reads them from our own storage.
+    attachments: createChatAttachmentStorage(admin),
     reserveAppCall: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.mcpCalls),
     ...deps,
   });
