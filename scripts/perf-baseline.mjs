@@ -222,18 +222,43 @@ const BUDGET_METRICS = {
   fontsGzipKb: { category: 'fonts', field: 'gzip' },
 };
 
-function routeOverrides(routes, route) {
-  if (!routes) return {};
-  for (const [key, value] of Object.entries(routes)) {
-    if (normalizeRoute(key) === route) return value;
-  }
-  return {};
+function sampleRoutes(value) {
+  if (value == null) return [];
+  const values = Array.isArray(value) ? value : [value];
+  return values
+    .filter((sample) => typeof sample === 'string' && sample.trim())
+    .map((sample) => normalizeRoute(sample));
 }
 
-export function checkBudget(summary, budget, route) {
+/**
+ * A budget key is either an exact path or a dynamic pattern. A pattern is
+ * expanded through the matrix's `weightSamples` so every concrete sample of
+ * that pattern is held to the same ceiling; exact keys are applied last and
+ * therefore always win. The samples live in `perf/surfaces.json` rather than
+ * being duplicated here, so the gate prices the same paths it resolves for
+ * coverage.
+ */
+export function resolveBudgetRoutes(routes, weightSamples = {}) {
+  const resolved = {};
+  const entries = Object.entries(routes ?? {});
+  for (const [key, value] of entries) {
+    const normalized = normalizeRoute(key);
+    if (!/\[[^\]]+\]/.test(normalized)) continue;
+    const samples = weightSamples[key] ?? weightSamples[normalized];
+    for (const sample of sampleRoutes(samples)) resolved[sample] = value;
+  }
+  for (const [key, value] of entries) {
+    const normalized = normalizeRoute(key);
+    if (/\[[^\]]+\]/.test(normalized)) continue;
+    resolved[normalized] = value;
+  }
+  return resolved;
+}
+
+export function checkBudget(summary, budget, route, weightSamples) {
   const limits = {
     ...((budget && budget.default) ?? {}),
-    ...routeOverrides(budget && budget.routes, route),
+    ...resolveBudgetRoutes(budget && budget.routes, weightSamples)[normalizeRoute(route)],
   };
   const violations = [];
   const checked = [];
@@ -444,6 +469,10 @@ export async function measureLiveRoute(
  * The concrete paths the weight gate prices, derived from the surface matrix.
  * A dynamic segment needs a published `weightSamples` entry; a new pattern
  * without one fails the check instead of silently dropping out of the gate.
+ * A sample can be a single path or a list: a pattern whose cost moves with a
+ * segment (the surah reader) prices every published sample, so the lightest
+ * and heaviest members share one ceiling rather than one lucky member hiding
+ * the rest.
  */
 export function resolveWeightRoutes(matrix) {
   const samples = matrix?.weightSamples ?? {};
@@ -458,16 +487,19 @@ export function resolveWeightRoutes(matrix) {
     ];
     for (const pattern of declared) {
       const route = pattern.replace(/\/\*\*$/, '');
-      if (/\[[^\]]+\]/.test(route) && !samples[route]) {
+      const declaredSamples = sampleRoutes(samples[route]);
+      const paths = declaredSamples.length > 0 ? declaredSamples : sampleRoutes(route);
+      if (/\[[^\]]+\]/.test(route) && declaredSamples.length === 0) {
         errors.push(
           `surface "${surface.id}": ${route} has no weightSamples entry in perf/surfaces.json`
         );
         continue;
       }
-      const path = normalizeRoute(samples[route] ?? route);
-      if (seen.has(path)) continue;
-      seen.add(path);
-      routes.push({ route: path, surface: surface.id, pattern });
+      for (const path of paths) {
+        if (seen.has(path)) continue;
+        seen.add(path);
+        routes.push({ route: path, surface: surface.id, pattern });
+      }
     }
   }
 
@@ -513,14 +545,14 @@ export function formatReport(results, baselineByRoute) {
   return lines.join('\n');
 }
 
-export function formatWeightVerdict(results, budget) {
+export function formatWeightVerdict(results, budget, weightSamples) {
   const lines = ['\nWeight verdict'];
   let okCount = 0;
   for (const { route, summary, budgetRoute } of results) {
     // A route that redirects is priced against the document it actually serves;
     // its own ceiling would describe bytes this response never ships.
     const priced = budgetRoute ?? route;
-    const { ok, violations, checked } = checkBudget(summary, budget, priced);
+    const { ok, violations, checked } = checkBudget(summary, budget, priced, weightSamples);
     const js = checked.find((metric) => metric.metric === 'jsGzipKb');
     const size = js ? `${js.actualKb.toFixed(1)}/${js.budgetKb} KB` : '—';
     const verdict = ok
@@ -625,6 +657,10 @@ function parseArgs(argv) {
 async function runLive(args, budget) {
   const matrix = args.routes.length ? null : readJson(args.surfacesPath, null);
   if (!args.routes.length && !matrix) throw new Error(`Could not read ${args.surfacesPath}`);
+  // With --routes the matrix is not used to pick paths, but a pattern key in
+  // the budget still has to resolve through the same samples.
+  const weightSamples =
+    matrix?.weightSamples ?? readJson(args.surfacesPath, null)?.weightSamples ?? {};
 
   const { routes, errors } = matrix
     ? resolveWeightRoutes(matrix)
@@ -687,7 +723,7 @@ async function runLive(args, budget) {
       )
     );
   } else {
-    console.log(formatWeightVerdict(results, budget));
+    console.log(formatWeightVerdict(results, budget, weightSamples));
     for (const failure of failures) {
       console.log(`  ${failure.route.padEnd(28)} ERROR ${failure.message}`);
     }
@@ -705,7 +741,7 @@ async function runLive(args, budget) {
     failed = true;
   }
   for (const { route, summary, budgetRoute } of results) {
-    if (!checkBudget(summary, budget, budgetRoute ?? route).ok) failed = true;
+    if (!checkBudget(summary, budget, budgetRoute ?? route, weightSamples).ok) failed = true;
   }
 
   if (failed) {
@@ -726,6 +762,9 @@ async function run(argv = process.argv.slice(2)) {
   const baselinePath = args.baselinePath ?? 'perf/baseline.json';
 
   const budget = readJson(budgetPath, null);
+  // Pattern keys in the budget are expanded through the same samples the live
+  // gate uses, so a static route in a pattern is priced by its pattern ceiling.
+  const weightSamples = readJson(args.surfacesPath, null)?.weightSamples ?? {};
   if (args.live) {
     await runLive(args, budget);
     return;
@@ -766,7 +805,7 @@ async function run(argv = process.argv.slice(2)) {
   if (budget) {
     console.log('\nBudget check');
     for (const { route, summary } of results) {
-      const { ok, violations, checked } = checkBudget(summary, budget, route);
+      const { ok, violations, checked } = checkBudget(summary, budget, route, weightSamples);
       if (checked.length === 0) {
         console.log(`  ${route}: no budget configured`);
         continue;

@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "notes": "The surface matrix. Every app/**/page.tsx route must be covered by exactly one surface (an exact `routes` entry wins over a `prefix`). This file is authoritative: docs/specs/surfaces.md is generated from it, and scripts/check-surfaces.mjs fails the build when a route is uncovered, a claimed spec does not exist, or a surface marked `shell: precached` reads `searchParams`/cookies (which would mean it can never be precached). `shell` describes the REMOTE document. The app has no bundle: a surface it does not draw natively is the document, so there is no second column. See #561, #557, #558 and #486. `weightSamples` maps each dynamic route pattern to a concrete public path the live weight gate prices; a new dynamic pattern without a sample fails `check:surfaces` (#1662).",
+  "notes": "The surface matrix. Every app/**/page.tsx route must be covered by exactly one surface (an exact `routes` entry wins over a `prefix`). This file is authoritative: docs/specs/surfaces.md is generated from it, and scripts/check-surfaces.mjs fails the build when a route is uncovered, a claimed spec does not exist, or a surface marked `shell: precached` reads `searchParams`/cookies (which would mean it can never be precached). `shell` describes the REMOTE document. The app has no bundle: a surface it does not draw natively is the document, so there is no second column. See #561, #557, #558 and #486. `weightSamples` maps each dynamic route pattern to a concrete public path the live weight gate prices; a new dynamic pattern without a sample fails `check:surfaces` (#1662). A sample may be a single path or a list of paths; every path in a list is priced, so a pattern whose weight tracks its segment (the surah reader) is held to one ceiling at both its lightest and heaviest member (#1774).",
   "defaultUngated": "No paint budget or behaviour spec asserts this row yet — #558 tracks the paint budgets and the owners' issues add the specs.",
   "weightSamples": {
     "/chats/[id]": "/chats/new",
     "/u/[username]": "/u/royaraqamia",
     "/u/[username]/followers": "/u/royaraqamia",
     "/u/[username]/following": "/u/royaraqamia",
-    "/quran/[surah]": "/quran/1",
+    "/quran/[surah]": ["/quran/1", "/quran/2"],
     "/community/[slug]": "/community/explore",
     "/verify/[code]": "/verify/invalid",
     "/mcp/apps/[id]": "/mcp/apps/invalid",

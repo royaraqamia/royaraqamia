@@ -16,6 +16,7 @@ import {
   summarizeAssets,
   compareToBaseline,
   checkBudget,
+  resolveBudgetRoutes,
   polyfillUrls,
   checkLegacyGating,
   measureRoute,
@@ -275,6 +276,51 @@ describe('checkBudget', () => {
       'jsGzipKb',
     ]);
     expect(checkBudget(summary, budget, '/').ok).toBe(true);
+  });
+
+  it('expands a pattern key through weightSamples so every sample inherits its ceiling', () => {
+    const heavy = summarizeAssets([{ kind: 'html', raw: 95 * 1024, gzip: 95 * 1024 }]);
+    const weights = { '/quran/[surah]': ['/quran/1', '/quran/2'] };
+    const budget = {
+      default: { htmlGzipKb: 63 },
+      routes: { '/quran/[surah]': { htmlGzipKb: 96 } },
+    };
+
+    // The pattern is resolved through the matrix, not by matching the raw key.
+    expect(checkBudget(heavy, budget, '/quran/2').violations.map((v) => v.metric)).toEqual([
+      'htmlGzipKb',
+    ]);
+    expect(checkBudget(heavy, budget, '/quran/1', weights).ok).toBe(true);
+    expect(checkBudget(heavy, budget, '/quran/2', weights).ok).toBe(true);
+    expect(checkBudget(heavy, budget, '/quran/2', weights).checked[0]).toEqual({
+      metric: 'htmlGzipKb',
+      budgetKb: 96,
+      actualKb: 95,
+    });
+  });
+
+  it('lets an exact key override a pattern key for the same concrete route', () => {
+    const budget = {
+      default: { htmlGzipKb: 63 },
+      routes: { '/quran/[surah]': { htmlGzipKb: 96 }, '/quran/2': { htmlGzipKb: 90 } },
+    };
+    const weights = { '/quran/[surah]': ['/quran/1', '/quran/2'] };
+    const heavy = summarizeAssets([{ kind: 'html', raw: 95 * 1024, gzip: 95 * 1024 }]);
+
+    expect(checkBudget(heavy, budget, '/quran/1', weights).ok).toBe(true);
+    expect(checkBudget(heavy, budget, '/quran/2', weights).violations.map((v) => v.metric)).toEqual(
+      ['htmlGzipKb']
+    );
+  });
+
+  it('resolves patterns to concrete routes without mutating the budget', () => {
+    const routes = { '/quran/[surah]': { htmlGzipKb: 96 }, '/quran/2': { htmlGzipKb: 90 } };
+    const weights = { '/quran/[surah]': ['/quran/1', '/quran/2'] };
+    expect(resolveBudgetRoutes(routes, weights)).toEqual({
+      '/quran/1': { htmlGzipKb: 96 },
+      '/quran/2': { htmlGzipKb: 90 },
+    });
+    expect(Object.keys(routes)).toEqual(['/quran/[surah]', '/quran/2']);
   });
 
   it('prices cssRawKb against the raw bytes, not the gzip ones', () => {
@@ -596,6 +642,27 @@ describe('weight route coverage', () => {
     expect(routes.map((route) => route.route)).toEqual(['/', '/u/royaraqamia', '/admin']);
   });
 
+  it('prices every sample in a list and de-duplicates repeated concrete paths', () => {
+    const { routes, errors } = resolveWeightRoutes({
+      surfaces: [
+        { id: 'quran-surah', routes: ['/quran/[surah]'] },
+        { id: 'home', routes: ['/quran/1'] },
+      ],
+      weightSamples: { '/quran/[surah]': ['/quran/1', '/quran/2'] },
+    });
+    expect(errors).toEqual([]);
+    expect(routes.map((route) => route.route)).toEqual(['/quran/1', '/quran/2']);
+    expect(routes.map((route) => route.surface)).toEqual(['quran-surah', 'quran-surah']);
+  });
+
+  it('fails a dynamic pattern whose sample list is empty', () => {
+    const { errors } = resolveWeightRoutes({
+      surfaces: [{ id: 'quran-surah', routes: ['/quran/[surah]'] }],
+      weightSamples: { '/quran/[surah]': [] },
+    });
+    expect(errors.join(' ')).toMatch(/weightSamples/);
+  });
+
   it('fails a dynamic pattern that has no sample', () => {
     const { errors } = resolveWeightRoutes({
       surfaces: [{ id: 'post', routes: ['/community/[slug]'] }],
@@ -605,6 +672,21 @@ describe('weight route coverage', () => {
 
   it('lists the matrix routes that were not priced', () => {
     expect(checkWeightCoverage([{ route: '/' }], ['/', '/account'])).toEqual(['/account']);
+  });
+
+  it('holds both samples of a pattern to the same ceiling', () => {
+    const results = ['/quran/1', '/quran/2'].map((route) => ({
+      route,
+      summary: summarizeAssets([{ kind: 'html', raw: 95 * 1024, gzip: 95 * 1024 }]),
+    }));
+    const budget = {
+      default: { htmlGzipKb: 63 },
+      routes: { '/quran/[surah]': { htmlGzipKb: 96 } },
+    };
+    const weights = { '/quran/[surah]': ['/quran/1', '/quran/2'] };
+    const report = formatWeightVerdict(results, budget, weights);
+    expect(report).toContain('/quran/2');
+    expect(report).toContain('2 OK, 0 over budget across 2 route(s)');
   });
 
   it('checks a redirected route against the final document ceiling', () => {

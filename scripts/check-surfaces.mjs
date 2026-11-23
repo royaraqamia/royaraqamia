@@ -190,6 +190,16 @@ function checkEnums(surface, errors) {
   }
 }
 
+/** A weight sample is a concrete path or a non-empty list of concrete paths. */
+function hasWeightSample(value) {
+  if (typeof value === 'string') return value.trim().length > 0;
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every((sample) => typeof sample === 'string' && sample.trim().length > 0)
+  );
+}
+
 export function validate({ matrix, repoRoot = ROOT, routes = pageRoutes() }) {
   const errors = [];
   const surfaces = matrix.surfaces ?? [];
@@ -223,7 +233,7 @@ export function validate({ matrix, repoRoot = ROOT, routes = pageRoutes() }) {
     }
 
     for (const route of surface.routes ?? []) {
-      if (/\[[^\]]+\]/.test(route) && !(matrix.weightSamples ?? {})[route]) {
+      if (/\[[^\]]+\]/.test(route) && !hasWeightSample((matrix.weightSamples ?? {})[route])) {
         errors.push(
           `surface "${surface.id}": ${route} has no weightSamples entry — the live weight gate cannot price it (#1662)`
         );
