@@ -11,9 +11,10 @@ Load these skills only: `codebase-design`, `code-review`, `code-refactorer`,
 
 These checks are seconds each and their output is the evidence. Run all of them and record
 pass/fail in the daily report: `check:tokens`, `check:copy`, `check:components`,
-`check:vectors`, `check:parity`, `check:plan`, `check:screens`, `check:migrations`,
+`check:vectors`, `check:migrations`,
 `check:digits`, `check:arabic`, `check:runner-permissions`, `check:skills`, `check:env-docs`,
-`check:branch-base`. A failing one is a finding with the command and its output; a passing
+`check:branch-base`. The parity, plan and screens gates are deliberately absent: the APK
+shows the WebView only, so no native surface is ported or measured. A failing one is a finding with the command and its output; a passing
 one belongs in the report as a recorded result. Do not run `npm test` or the whole build to
 make a point — CI already does.
 
@@ -26,8 +27,8 @@ where the DB is known, thin controllers, deep modules with small interfaces, and
 let one product decision land in one place. List the callers from Graphify for any claim
 that a change must be made in N files.
 
-Web + Android: a port on one side only, copy retyped in Kotlin instead of read from
-`shared/copy/`, a narrower endpoint on the app than on the web route. Name both files.
+Scope: use the `launch-scope` block. A finding about a marketing page, an Android-native
+port or a device test is out of scope; judge the six areas on their web routes only.
 
 Docs: CONTEXT.md, glossary and ADRs that contradict the code, and `docs/commands.md`
 naming a workflow that does not exist. Quote the two lines that disagree.

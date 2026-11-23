@@ -8,6 +8,8 @@
 # ADR 0133 keeps the hour out of DeepSeek's double-price windows; ADR 0174 puts the
 # origin on Render, so no Vercel credential or CLI is present.
 
+# Launch scope: only the six areas in .github/work-priorities.json are in scope.
+# Marketing pages, Android-native UI and real-device/adb/emulator work are excluded.
 name: 'Performance Audit'
 
 on:

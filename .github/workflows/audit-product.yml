@@ -7,6 +7,8 @@
 # `schedule` is the no-config backstop and `issue-automation-health.yml` re-dispatches a
 # missed or partial day. ADR 0174 puts the origin on Render.
 
+# Launch scope: only the six areas in .github/work-priorities.json are in scope.
+# Marketing pages, Android-native UI and real-device/adb/emulator work are excluded.
 name: 'Product Audit'
 
 on:

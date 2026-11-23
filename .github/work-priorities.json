@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "notes": "Launch-scope work order. The Issue Implementer drops an issue when an exclusion matches, then ranks the survivors by the first area whose title or label patterns match; unmatched issues come after all six areas. The six specialised audits read the same file and stay inside these areas. The APK shows the WebView only, so native Kotlin surfaces are dormant; no marketing page, Android-native UI or real-device/adb/emulator work is planned.",
+  "keep": [
+    {
+      "number": 1643,
+      "reason": "The WebView session is the only session in the WebView-only APK, so its backup exposure is a live security defect."
+    },
+    {
+      "number": 1639,
+      "reason": "Cold open of the installed WebView shell is the path every member takes."
+    },
+    {
+      "number": 1653,
+      "reason": "The Outbox defect is a pair: the web engine's outbox runs inside the WebView too."
+    }
+  ],
+  "exclusions": [
+    {
+      "id": "marketing",
+      "reason": "Marketing pages and sections are hidden from the public UI and are out of scope.",
+      "titlePatterns": [
+        "pricing",
+        "paid plan",
+        "downloader",
+        "booking",
+        "hire",
+        "request-project",
+        "training/apply",
+        "four paid services",
+        "lead form",
+        "landing page"
+      ]
+    },
+    {
+      "id": "android-native-ui",
+      "reason": "The APK shows the WebView only; native Kotlin screens, ports and cutover work are dormant.",
+      "titlePatterns": [
+        "feat(android)",
+        "chore(android)",
+        "fix(android)",
+        "native screen",
+        "native assistant sheet",
+        "custom tab",
+        "capacitor",
+        "webview",
+        "parity:",
+        "check:visual",
+        "visual evidence",
+        "gated surfaces",
+        "kotlin",
+        "local store",
+        "outbox",
+        "chrome frame",
+        "whole-window"
+      ]
+    },
+    {
+      "id": "device-testing",
+      "reason": "No real-device, adb or emulator testing.",
+      "titlePatterns": [
+        "real device",
+        "adb",
+        "emulator",
+        "reference phone",
+        "rmx3195",
+        "500-row scroll",
+        "fcm wake",
+        "on a device",
+        "device measurement"
+      ]
+    }
+  ],
+  "areas": [
+    {
+      "rank": 1,
+      "id": "assistant",
+      "title": "نور assistant agent - the main selling point",
+      "titlePatterns": [
+        "assistant",
+        "نور",
+        "nour",
+        "voice",
+        "ffmpeg",
+        "higgsfield",
+        "eval suite",
+        "proof:",
+        "chat model",
+        "red-team",
+        "agent console",
+        "per-turn cost",
+        "harness turns",
+        "failure code",
+        "thumbs feedback",
+        "vps"
+      ]
+    },
+    {
+      "rank": 2,
+      "id": "mcp",
+      "title": "Inbound and outbound MCPs",
+      "titlePatterns": [
+        "mcp",
+        "tools:",
+        "apps:",
+        "inbound",
+        "outbound",
+        "grant",
+        "trust",
+        "connected app",
+        "marketplace"
+      ]
+    },
+    {
+      "rank": 3,
+      "id": "chats-alerts",
+      "title": "Chats and alerts",
+      "titlePatterns": [
+        "chats",
+        "notification",
+        "alert",
+        "reminder",
+        "digest",
+        "agent_tasks",
+        "time:"
+      ]
+    },
+    {
+      "rank": 4,
+      "id": "community",
+      "title": "Community page and sub-pages",
+      "titlePatterns": ["community", "post", "comment", "follow", "profile", "blogpress"]
+    },
+    {
+      "rank": 5,
+      "id": "account",
+      "title": "Account page and sub-pages",
+      "titlePatterns": ["account:", "audit trail", "memory page", "account-plan"]
+    },
+    {
+      "rank": 6,
+      "id": "internal-apps",
+      "title": "The nine internal apps and sub-pages",
+      "titlePatterns": [
+        "habitflow",
+        "spendtrack",
+        "quran",
+        "athkar",
+        "linksnap",
+        "notes",
+        "scan",
+        "news",
+        "/rates",
+        "reader",
+        "tafsir",
+        "bookmark",
+        "follows"
+      ]
+    }
+  ]
+}

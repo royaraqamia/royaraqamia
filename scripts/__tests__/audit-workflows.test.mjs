@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
  * could break, and nothing else would notice:
  *
  * - all six exist, run in distinct off-peak hours and share one runner;
- * - the runner has the web + Android evidence toolchain and no Vercel access;
+ * - the runner has the web evidence toolchain, no Android/device setup and no Vercel access;
  * - the prompt demands reproduction, redaction and exactly three dated entries;
  * - the day guard counts issues actually filed, so a partial day is filled;
  * - publication is append-only on existing issues and never hands work to the
@@ -43,10 +43,12 @@ describe('the specialised audits file only what they reproduced', () => {
     expect(Math.max(...hours)).toBeLessThan(16);
   });
 
-  it('installs the full web + Android toolchain in the shared runner', () => {
+  it('installs the web toolchain only, because the APK shows the WebView', () => {
     expect(runner).toContain('npx playwright install --with-deps chromium');
-    expect(runner).toContain('platforms;android-36');
-    expect(base).toContain('npm run check:visual');
+    expect(runner).not.toContain('platforms;android-36');
+    expect(runner).not.toContain('setup-java');
+    expect(base).not.toContain('npm run check:visual');
+    expect(runner).toContain('.github/work-priorities.json');
     expect(runner).toContain("install-vercel: 'false'");
     expect(runner).toContain('--version 2.3.2');
     expect(runner).toContain('opencode run --model');
@@ -78,7 +80,8 @@ describe('the specialised audits file only what they reproduced', () => {
     expect(base).toContain('## Why not a quick fix');
     expect(base).toContain('repository is public');
     expect(base).toContain('393 x 852');
-    expect(base).toContain('npm run check:visual');
+    expect(base).toContain('Launch scope');
+    expect(base).toContain('real-device');
     expect(base).toContain('graphify query');
   });
 

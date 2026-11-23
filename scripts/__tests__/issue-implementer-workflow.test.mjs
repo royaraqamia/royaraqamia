@@ -13,9 +13,10 @@ import { describe, expect, it } from 'vitest';
  * - the repair can authenticate, cut its branch from the live base, and is asked for the
  *   conflict first - a conflicted pull request is never measured at all;
  * - an unmeasured pull request is not called green;
- * - the picker reads the blocker edges and the plan instead of taking the lowest number;
+ * - the picker reads the blocker edges and the launch priorities instead of taking the
+ *   lowest number;
  * - three rounds run one after another;
- * - the job installs the e2e and visual toolchain, because that is the evidence;
+ * - the job installs the browser toolchain for web work and no Android toolchain;
  * - nothing is ever handed to a person: the queue is the implementer's.
  *
  * `process.cwd()`, not `import.meta.url`: the unit suite runs in jsdom, where
@@ -77,15 +78,19 @@ describe('the issue implementer merges what it watched go green', () => {
     expect(checks.match(/name: Repair the failing checks/g)).toHaveLength(1);
   });
 
-  it('installs the e2e and visual toolchain, because that is the evidence it merges on', () => {
+  it('installs the browser toolchain for web work and no Android toolchain', () => {
     expect(workflow).toContain('npx playwright install --with-deps chromium');
-    expect(workflow).toContain('npm run check:visual');
-    expect(workflow).toContain('platforms;android-36');
+    expect(workflow).not.toContain('npm run check:visual');
+    expect(workflow).not.toContain('platforms;android-36');
+    expect(workflow).not.toContain('setup-java');
+    expect(workflow).toContain('.github/work-priorities.json');
   });
 
-  it('takes the unblocked issue the plan puts first, not the lowest number', () => {
+  it('takes the unblocked highest-priority issue, not the lowest number', () => {
     expect(workflow).toContain('dependencies/blocked_by');
-    expect(workflow).toContain('docs/mobile/parity-plan.json');
+    expect(workflow).toContain('.github/work-priorities.json');
+    expect(workflow).toContain('scopeOf');
+    expect(workflow).toContain('Launch scope dropped');
     expect(workflow).toContain('a blocker is still open');
   });
 
@@ -154,14 +159,15 @@ describe('the issue implementer merges what it watched go green', () => {
 
   it('loads the design skills only when the issue draws a screen, and never the port database', () => {
     expect(workflow).toContain('`codebase-design`');
-    expect(workflow).toContain('Do NOT load `ui-ux-pro-max` for a port');
+    expect(workflow).not.toContain('ui-ux-pro-max');
+    expect(workflow).toContain('the page is the only screen');
     expect(workflow).toContain('`web-design-guidelines`');
   });
 
   it('runs only the gates the diff reaches, and the check that owns each generated source', () => {
     expect(workflow).toContain('The suite is never run in full');
     expect(workflow).toContain('`npm run check:copy`');
-    expect(workflow).toContain('`npm run check:parity`');
+    expect(workflow).not.toContain('`npm run check:parity`');
     expect(workflow).toContain('`npm run check:tokens`');
   });
 

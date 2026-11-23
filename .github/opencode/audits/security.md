@@ -35,16 +35,14 @@ make a read-only `GET` to the public REST endpoint with the publishable/anon key
 the response. To show a policy is missing, quote its absence from `list_policies` /
 `list_tables` output and pair it with that request. Never write through either surface.
 
-## Scan both clients, in the day's rotating focus
+## Scope: the six launch areas, in the day's rotating focus
 
-Web: auth callbacks and redirect allowlists, proxy gates, Turnstile enforcement, upload
+Check auth callbacks and redirect allowlists, proxy gates, Turnstile enforcement, upload
 paths, server actions, API route validation, response headers and TLS on the live origin,
-and what is actually exposed in the client bundle. Read Render logs through the API; do
-not paste raw log lines containing member data into an issue.
-
-Android: manifest permissions, network security configuration, WebView and custom-scheme
-handling, stored tokens, certificate handling, and anything that widens the attack surface
-relative to the web route. Compare with `docs/mobile/parity.json`.
+and what is actually exposed in the client bundle. The APK loads those same routes in a
+WebView, so a web finding is the app finding too. Read Render logs through the API; do not
+paste raw log lines containing member data into an issue. Use the `launch-scope` block to
+pick a route inside the six areas; Android manifest and port findings are out of scope.
 
 ## Reporting rule unique to this audit
 

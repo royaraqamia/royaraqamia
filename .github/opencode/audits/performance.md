@@ -34,13 +34,13 @@ Use the tools the repository already has, and quote their output:
   or `pg_stat_user_tables` when `query` is exposed. An index claim needs the table's row
   count and the query that would use it, not just the absence of an index.
 
-## Scan both clients, in the day's rotating focus
+## Scope: the six launch areas, in the day's rotating focus
 
-Web: rendering and caching boundaries, bundle weight per route, image and font strategy,
+Check rendering and caching boundaries, bundle weight per route, image and font strategy,
 client components in hot paths, hydration waterfalls, RTL layout cost and the edge cache
-on a real request. Android: startup path, main-thread work, list and image work, offline
-queue behaviour and `npm run check:visual` output where a port is involved. A screen
-finding must name the web route and its Android pair from `docs/mobile/parity.json`.
+on a real request. The APK loads those routes in a WebView, so the web measurement is the
+one members feel. Use the `launch-scope` block to pick a route inside the six areas; an
+Android startup or `check:visual` claim is out of scope.
 
 ## What counts as a finding here
 

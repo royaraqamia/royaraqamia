@@ -6,6 +6,8 @@
 # missed or partial day. The guard counts issues actually filed with this label today.
 # Render is the host (ADR 0174), so the audit reads its API and never uses Vercel.
 
+# Launch scope: only the six areas in .github/work-priorities.json are in scope.
+# Marketing pages, Android-native UI and real-device/adb/emulator work are excluded.
 name: 'Scalability Audit'
 
 on:

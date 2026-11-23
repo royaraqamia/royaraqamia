@@ -4,8 +4,9 @@
 # this workflow alone - a session and `/oc` still stop at the open pull request).
 #
 # Pipeline per round: an actions/github-script step selects the target - ready-for-agent,
-# unassigned, not named by an open pull request, and with no open blocker - in the order
-# `docs/mobile/parity-plan.json` puts its surface, and prefetches context; one DeepSeek
+# unassigned, not named by an open pull request, unblocked, and inside the launch scope -
+# in the order `.github/work-priorities.json` puts its six areas, and prefetches context;
+# one DeepSeek
 # 4.1 Flash phase implements it and writes /tmp/result.json; the pull request title is
 # normalized, its checks are watched, and a green result is squash-merged with
 # `--match-head-commit`, so the merge lands on the commit the checks ran on. A red round is
@@ -19,7 +20,9 @@
 # that waits for the security review, the last gated state of a surface waiting for the
 # other three - each of those is a native `blocked_by` edge, and a body that says
 # `Blocked by: #12` is read as the fallback for the issues filed before the edges
-# existed. Within what is unblocked the plan's phase decides, then the number.
+# existed. Within what is unblocked the launch priorities decide, then the number. The
+# same config drops marketing pages, Android-native UI and real-device/adb/emulator work:
+# the APK shows the WebView only and those areas are not being built.
 #
 # Three rounds run as one matrix with `max-parallel: 1`, so no two rounds can claim one
 # issue and each one starts from the merge the round before it landed. Ordering alone does
@@ -224,40 +227,9 @@ jobs:
         with:
           supabase-project-ref: ${{ secrets.SUPABASE_PROJECT_REF }}
 
-      # The gate the issue has to pass is not visible without the toolchain that runs it:
-      # a ported surface is switched on by `check:visual` (ADR-0118), and a web change is
-      # proved by the Playwright specs beside it. Both are installed here, before the agent
-      # runs, so the agent can read the same evidence CI will. The Android half is the
-      # expensive part (JDK 21, the SDK and a warm Gradle cache) and it is why this job has
-      # a 150-minute budget rather than 90.
-      - name: Setup JDK 21
-        if: steps.guard.outputs.run == 'true'
-        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Setup Android SDK
-        if: steps.guard.outputs.run == 'true'
-        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
-        with:
-          packages: 'platforms;android-36 build-tools;36.0.0'
-
-      - name: Accept the SDK licences
-        if: steps.guard.outputs.run == 'true'
-        run: yes | sdkmanager --licenses > /dev/null || true
-
-      - name: Cache Gradle
-        if: steps.guard.outputs.run == 'true'
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.gradle/caches/modules-2
-            ~/.gradle/wrapper/dists
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
-
+      # A web change is proved by the Playwright specs beside it, so Chromium is installed
+      # before the agent runs. The Android toolchain is deliberately absent: the APK shows
+      # the WebView only, so no native surface is ported or measured in this workflow.
       - name: Install the Playwright browser
         if: steps.guard.outputs.run == 'true'
         run: npx playwright install --with-deps chromium
@@ -304,37 +276,55 @@ jobs:
             };
             core.setOutput('existing_pr_numbers', JSON.stringify(pulls.map((p) => p.number)));
 
-            // The plan is the work order: a surface's phase is where its work sits, and a
-            // row's `issue` names the slice that lands that surface (ADR 0118, ADR 0120).
-            const phases = [];
-            const phaseOf = new Map();
+            // The launch priorities are the work order. One config owns both halves: an
+            // issue matching an exclusion is dropped from this queue, and the first matching
+            // area decides its rank. Explicitly kept issues bypass the exclusions; anything
+            // unmatched comes after all six areas. A malformed config fails the round rather
+            // than silently putting the wrong work in front of the owner.
+            let scope;
             try {
-              const plan = JSON.parse(
-                require('fs').readFileSync('docs/mobile/parity-plan.json', 'utf8')
+              scope = JSON.parse(
+                require('fs').readFileSync('.github/work-priorities.json', 'utf8')
               );
-              for (const phase of plan.phases || []) phases.push(phase.id);
-              for (const row of plan.surfaces || []) {
-                if (!row.issue) continue;
-                const index = phases.indexOf(row.phase);
-                if (index < 0) continue;
-                const number = Number(String(row.issue).replace('#', ''));
-                const seen = phaseOf.get(number);
-                if (seen === undefined || index < seen) phaseOf.set(number, index);
-              }
             } catch (error) {
-              core.warning('Could not read the plan for ordering: ' + error.message);
+              core.setFailed('Could not read .github/work-priorities.json: ' + error.message);
+              return;
             }
+            const matches = (patterns, text) =>
+              (Array.isArray(patterns) ? patterns : []).some((pattern) =>
+                text.includes(String(pattern).toLowerCase())
+              );
+            const scopeOf = (issue) => {
+              const title = String(issue.title || '').toLowerCase();
+              const labels = (issue.labels || []).map((label) =>
+                typeof label === 'string' ? label.toLowerCase() : String(label.name || '').toLowerCase()
+              );
+              if ((scope.keep || []).some((kept) => Number(kept.number) === issue.number)) {
+                return { excluded: false, rank: Number.MAX_SAFE_INTEGER };
+              }
+              const excluded = (scope.exclusions || []).some(
+                (rule) => matches(rule.titlePatterns, title) || matches(rule.labelPatterns, labels)
+              );
+              if (excluded) return { excluded: true, rank: Number.MAX_SAFE_INTEGER };
+              for (const area of scope.areas || []) {
+                if (matches(area.titlePatterns, title) || matches(area.labelPatterns, labels)) {
+                  return { excluded: false, rank: Number(area.rank) };
+                }
+              }
+              return { excluded: false, rank: Number.MAX_SAFE_INTEGER };
+            };
 
-            const candidates = open
+            const inScope = open.filter((issue) => !scopeOf(issue).excluded);
+            core.info(
+              'Launch scope dropped ' + (open.length - inScope.length) +
+              ' issue(s) from the implementer queue.'
+            );
+            const candidates = inScope
               .filter((i) => !i.pull_request)
               .filter((i) => i.labels.some((l) => l.name === 'ready-for-agent'))
               .filter((i) => (i.assignees || []).length === 0)
               .filter((i) => !referenced.has(i.number))
-              .sort((a, b) => {
-                const pa = phaseOf.has(a.number) ? phaseOf.get(a.number) : Number.MAX_SAFE_INTEGER;
-                const pb = phaseOf.has(b.number) ? phaseOf.get(b.number) : Number.MAX_SAFE_INTEGER;
-                return pa === pb ? a.number - b.number : pa - pb;
-              });
+              .sort((a, b) => scopeOf(a).rank - scopeOf(b).rank || a.number - b.number);
 
             // A blocker is the gate: the native edge is the truth, and a `Blocked by:`
             // line is the fallback for issues filed before the edges existed.
@@ -558,9 +548,10 @@ jobs:
             - `web-design-guidelines` - then run it over the UI files you changed: focus and
               keyboard, labels and semantics, contrast, reduced motion, RTL. That review, not
               a feeling, is what "no obvious UI issue" means here.
-            - Do NOT load `ui-ux-pro-max` for a port. It is a style/palette database, and a
-              port's look is decided by the page it must match (`check:visual`), not chosen.
-              Load it only when the issue asks for a screen the site does not have.
+
+            The APK renders the site in a WebView, so the page is the only screen. Do not
+            port a surface to Kotlin, set up an emulator or run a device test; a Kotlin screen
+            in this tree is dormant and is not part of the launch.
 
             ON THE ISSUE'S KIND
             - `supabase` + `supabase-postgres-best-practices` - schema, RLS or a migration.
@@ -580,29 +571,26 @@ jobs:
             - The Vercel CLI is installed and reads VERCEL_TOKEN from the environment itself — never pass it as a `--token` flag. VERCEL_ORG_ID and VERCEL_PROJECT_ID are set, so never run `vercel link`. Use it read-only to inspect deployments, logs and env: `vercel ls --format json`, `vercel inspect <url> --logs`, `vercel logs <url>`, `vercel env ls`. Do not deploy — pull-request branches create no preview deployment — and never deploy to production.
             - The Supabase MCP server is the only database surface: read with `list_tables`, `list_migrations` and `get_advisors`, and apply schema changes only through `apply_migration` exactly as described in step 3.
             - Playwright is installed with a Chromium build, and `playwright.config.ts` starts the app itself. Run the specs your change reaches: `npx playwright test <spec>`. `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` are set when the repository has them; a spec that needs a session and finds them empty is skipped, and the pull request body says so.
-            - The Android toolchain is installed (JDK 21, the SDK and a Gradle cache), so `npm run check:visual` runs here. It is the measurement that switches a ported surface on (ADR-0118); a visual review is not a substitute for it.
+            - There is no Android toolchain in this run and no `check:visual`: the APK shows the WebView only, so no native surface is ported or measured here.
             - Graphify has already mapped this checkout: `graphify-out/` holds a code graph of the commit you started from, and 98% of its edges are read from source rather than inferred. Ask it before a file-by-file search — `graphify query "<question>"` for how something works, `graphify path "A" "B"` for how two things connect, `graphify explain "X"` for one symbol and its neighbours. Use grep for exact strings, such as an error message or a config key. Trust the code over the graph when they disagree, and `graphify update .` refreshes it in seconds after you add or move files.
 
             Steps:
             1. Read the selected issue in the current state above. If it is ambiguous, unsafe, already satisfied by the current code, or no longer matches the repository, do NOT guess: write /tmp/result.json as `{"status":"cannot","reason":"<one sentence>"}` and stop without touching the working tree.
-            2. Implement the issue exactly and only, following AGENTS.md conventions: layered architecture controller -> service -> repository/client, Zod validation in shared/contracts, structured loggers instead of console logging, RTL-first UI without inline styles. Never upgrade or add dependencies, never edit existing files under supabase/migrations, scripts/compute-version.mjs, scripts/android-release.mjs, backend/config/generated files, or any env files. Never edit anything under `.github/workflows/`: the OpenCode Agent app that pushes this branch does not hold the `workflows` permission, so a push carrying a workflow file is rejected and the whole round is lost. If the issue requires a workflow change, stop and write /tmp/result.json as `{"status":"cannot","reason":"<the file and the change a person must make>"}`. If the change touches android/**, capacitor.config.ts or a Capacitor plugin dependency, add the Arabic release note with `npm run android:note -- "..."` and repeat it in the pull request body under `## Release note`.
+            2. Implement the issue exactly and only, following AGENTS.md conventions: layered architecture controller -> service -> repository/client, Zod validation in shared/contracts, structured loggers instead of console logging, RTL-first UI without inline styles. Never upgrade or add dependencies, never edit existing files under supabase/migrations, scripts/compute-version.mjs, scripts/android-release.mjs, backend/config/generated files, or any env files. Never edit anything under `.github/workflows/`: the OpenCode Agent app that pushes this branch does not hold the `workflows` permission, so a push carrying a workflow file is rejected and the whole round is lost. If the issue requires a workflow change, stop and write /tmp/result.json as `{"status":"cannot","reason":"<the file and the change a person must make>"}`. The launch scope is in `.github/work-priorities.json`: marketing pages, Android-native UI and real-device/adb/emulator work are out of scope. Do not edit `android/**`, `capacitor.config.ts`, `docs/mobile/parity*.json`, `docs/mobile/screens.json` or `shared/visual/**`; if the issue needs one of those, stop and report `cannot` with the reason.
             3. Database change rules: if the issue needs a schema change, first write the migration as a NEW file in supabase/migrations named <UTC-timestamp>_<snake_name>.sql matching the repo convention, then apply that same SQL via the supabase MCP apply_migration tool, which assigns the version timestamp itself, and rename the local file to <recorded-version>_<name>.sql afterwards so the two stay aligned. Read the recorded version back with list_migrations — do not assume the filename timestamp was used. Never run destructive DDL (DROP TABLE, DROP COLUMN, TRUNCATE, disabling RLS, weakening policies) through execute_sql; if that is the only fix, report cannot with the reason instead.
             4. Review your diff critically for correctness, layering violations, regressions and RLS implications - loading the `code-review` skill and reading your own diff with it - then run only the gates your change reaches, in this order: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; the tests beside what you touched (npx vitest run <path>, or npx vitest run --changed).
 
             The suite is never run in full: not `npm test`, not `npx playwright test` without a path. CI runs the whole set on the pull request; what you owe it is the part your diff can break.
 
-            Also run the check that owns each generated source you touched or whose input you changed - this is the web-equals-APK guarantee, and a stale generated file is the failure mode it exists for:
+            Also run the check that owns each generated source you touched or whose input you changed - a stale generated file is the failure mode it exists for:
             - `shared/tokens/**` or `app/tokens.css` -> `npm run check:tokens`
             - `shared/copy/**` -> `npm run check:copy`
             - `shared/components/**` -> `npm run check:components`
             - `shared/icons/**` -> `npm run check:vectors`
-            - `docs/mobile/parity.json` -> `npm run check:parity`
-            - `docs/mobile/parity-plan.json` -> `npm run check:plan`
-            - `docs/mobile/screens.json` -> `npm run check:screens`
             - `perf/surfaces.json` -> `npm run check:surfaces`
             - `supabase/migrations/**` -> `npm run check:migrations` and `npm run check:migrations:safety`
 
-            When the change touches `frontend/ui`, `app/` or `shared/`, run the Playwright specs beside it (`npx playwright test <spec>`). When the issue names a gated surface, or the diff touches `shared/visual/`, `docs/mobile/screens.json` or the app's visual tests, run `npm run check:visual`. Do not run `npm run build` unless nothing cheaper would catch a broken build - next.config.js, routing, proxy.ts, a dependency, a server/client boundary or a generated module. If a change is capable of breaking the build by itself, run the build and say so in the pull request body. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and report cannot with that reason.
+            When the change touches `frontend/ui`, `app/` or `shared/`, run the Playwright specs beside it (`npx playwright test <spec>`). Do not run `npm run build` unless nothing cheaper would catch a broken build - next.config.js, routing, proxy.ts, a dependency, a server/client boundary or a generated module. If a change is capable of breaking the build by itself, run the build and say so in the pull request body. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and report cannot with that reason.
             5. Write /tmp/result.json with the Write tool: `{"status":"implemented"}` on success, or `{"status":"cannot","reason":"<one sentence>"}` on any failure. This file is how the workflow learns the outcome, so it is required.
 
             The clock is part of the spec. This step is killed at 90 minutes, and a run the clock kills writes no result file at all: the round reports nothing, the issue keeps nothing, and the next round starts from the same place. #924 spent a whole round that way on 2026-11-07. So when you are past roughly an hour and the issue's remaining acceptance criteria are not close, stop instead of starting another slice, and write `cannot` naming what is left. A `cannot` that names the rest is how a large issue gets sliced; a timeout spends the round for nothing.

@@ -21,7 +21,7 @@ when grounded in something you actually read and can quantify:
   redacted and with the time window named),
 - a Render metric or deploy history showing real use,
 - a live capture of the surface at `https://royaraqamia.com` showing measurable friction,
-- the current backlog and `docs/mobile/parity-plan.json` showing what is already planned,
+- the current backlog and `.github/work-priorities.json` showing what is already planned,
 - a cited external fact for a claim about the market or the product category.
 
 Never invent a revenue number. State explicitly in the report whether revenue or payment
@@ -29,13 +29,14 @@ data was reachable. If it was not, talk about value and cost in terms you can me
 uptake, completion, retention, support load, build cost. Profitability claims without a
 source go in the report as open questions, not findings.
 
-## Scan both clients, in the day's rotating focus
+## Scope: the six launch areas, in the day's rotating focus
 
-For each suggestion, name the web route and the Android surface from
-`docs/mobile/parity.json`, or state explicitly that the change is web-only or app-only and
-why. A feature that exists on one side only is itself a product finding. Read the open
-issues and pull requests in `<current-state>` so you do not recommend work already underway.
-Pick a different product area each day from the last three reports.
+For each suggestion, name the web route it changes. The APK renders those routes in a
+WebView, so there is no second client to port to. Read the `launch-scope` block for the six
+areas and the excluded classes; a suggestion about a marketing page, an Android-native
+surface or a device test is not a finding. Read the open issues and pull requests in
+`<current-state>` so you do not recommend work already underway. Pick a different one of
+the six areas each day from the last three reports.
 
 ## What counts as a finding here
 

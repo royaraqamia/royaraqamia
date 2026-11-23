@@ -7,6 +7,8 @@
 # missed or partial day. ADR 0117/0118 make the visual measurement, not a design opinion,
 # the proof that a port matches the page. ADR 0174 puts the origin on Render.
 
+# Launch scope: only the six areas in .github/work-priorities.json are in scope.
+# Marketing pages, Android-native UI and real-device/adb/emulator work are excluded.
 name: 'UI/UX Audit'
 
 on:

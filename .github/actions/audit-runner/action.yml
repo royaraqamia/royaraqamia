@@ -1,7 +1,7 @@
 name: 'Specialised Audit Runner'
 description: >-
   Runs one unattended domain audit: an idempotent daily guard measured on the issues
-  actually filed, the full web + Android evidence toolchain, a pinned OpenCode CLI,
+  actually filed, the web evidence toolchain, a pinned OpenCode CLI,
   and publication of three evidence-backed issues from /tmp/issues.json. Nothing in
   this action commits, pushes, opens a pull request or touches Vercel.
 
@@ -125,35 +125,8 @@ runs:
         export PATH="$HOME/.opencode/bin:$PATH"
         opencode --version
 
-    - name: Setup JDK 21
-      if: steps.guard.outputs.run == 'true'
-      uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
-      with:
-        distribution: 'temurin'
-        java-version: '21'
-
-    - name: Setup Android SDK
-      if: steps.guard.outputs.run == 'true'
-      uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
-      with:
-        packages: 'platforms;android-36 build-tools;36.0.0'
-
-    - name: Accept the SDK licences
-      if: steps.guard.outputs.run == 'true'
-      shell: bash
-      run: yes | sdkmanager --licenses > /dev/null || true
-
-    - name: Cache Gradle
-      if: steps.guard.outputs.run == 'true'
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: |
-          ~/.gradle/caches/modules-2
-          ~/.gradle/wrapper/dists
-        key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
-        restore-keys: |
-          gradle-${{ runner.os }}-
-
+    # No Android SDK or JDK here: the APK renders the site in a WebView, so an audit
+    # examines web routes only. Playwright stays - it is how a web claim is measured.
     - name: Install the Playwright browser
       if: steps.guard.outputs.run == 'true'
       shell: bash
@@ -252,7 +225,10 @@ runs:
         mkdir -p /tmp/audit-evidence
         {
           cat "$PROMPT_FILE"
-          printf '\n\n<current-state>\n'
+          printf '\n\n<launch-scope>\n'
+          cat .github/work-priorities.json
+          printf '\n</launch-scope>\n\n'
+          printf '<current-state>\n'
           cat /tmp/context.json
           printf '\n</current-state>\n\n'
           printf 'The current UTC date is %s. Put it in every title you write.\n' "$(date -u +%F)"
@@ -369,7 +345,18 @@ runs:
           // issue per domain as dated comments, so the tracker holds findings only.
           // Created lazily: a run that proves nothing still creates no report issue.
           const rollingTitle = helpers.reportTitle(domain);
-          let rolling = existing.find((issue) => !issue.pull_request && issue.title === rollingTitle);
+          // The coverage issue may be closed. Reuse it in any state: reopening a closed
+          // log would put a coverage record back in the tracker as open work.
+          const coverage = await github.paginate(github.rest.issues.listForRepo, {
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'all',
+            labels: sourceLabel,
+            per_page: 100,
+          });
+          let rolling = coverage.find(
+            (issue) => !issue.pull_request && issue.title === rollingTitle
+          );
           const reportComments = rolling
             ? await helpers.listComments(github, context, rolling.number)
             : [];
