@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { CircleAlert } from 'lucide-react';
 
 import { startAssistantChat } from '@/frontend/api/chats';
@@ -61,10 +61,13 @@ type PanelState = 'loading' | 'guest' | 'unavailable' | 'failed' | 'ready';
 export function AssistantPanel({
   open,
   onDismiss,
+  launcherRef,
 }: {
   /** Kept mounted across closes so a reopen paints what the last look held. */
   open: boolean;
   onDismiss: () => void;
+  /** The launcher that opened this sheet; focus returns here when it closes. */
+  launcherRef?: RefObject<HTMLButtonElement | null>;
 }) {
   const { user, isLoading: sessionLoading } = useSession();
   const { identity } = useLocalIdentity();
@@ -272,6 +275,7 @@ export function AssistantPanel({
         <ScreenContextPublisher />
       </Suspense>
       <DialogContent
+        returnFocusTo={launcherRef}
         data-assistant-panel
         className={cn(
           'flex flex-col gap-0 overflow-hidden p-0 font-sans',

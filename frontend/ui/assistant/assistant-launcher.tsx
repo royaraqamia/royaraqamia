@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ComponentType } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type RefObject,
+} from 'react';
 import { usePathname } from 'next/navigation';
 
 import { assistantWasOpened } from './assistant-hint';
@@ -16,7 +23,11 @@ import { AssistantOrb } from './assistant-orb';
  * panel can never take the page down with it (`docs/specs/offline-first.md`,
  * #332).
  */
-type PanelComponent = ComponentType<{ open: boolean; onDismiss: () => void }>;
+type PanelComponent = ComponentType<{
+  open: boolean;
+  onDismiss: () => void;
+  launcherRef?: RefObject<HTMLButtonElement | null>;
+}>;
 
 /**
  * Where the door is not drawn.
@@ -55,6 +66,9 @@ export function AssistantLauncher() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [Panel, setPanel] = useState<PanelComponent | null>(null);
+  // The panel's Radix dialog has no trigger to restore focus to, so the launcher
+  // hands it its own element. Every dismissal path then lands back here (#1647).
+  const launcherRef = useRef<HTMLButtonElement>(null);
 
   /**
    * Fetch the conversation once. Hover, focus and a pointer down all start it,
@@ -108,6 +122,7 @@ export function AssistantLauncher() {
   return (
     <>
       <button
+        ref={launcherRef}
         type="button"
         data-assistant-launcher
         data-visual="assistant-launcher"
@@ -127,7 +142,9 @@ export function AssistantLauncher() {
         </span>
       </button>
 
-      {Panel ? <Panel open={open} onDismiss={() => setOpen(false)} /> : null}
+      {Panel ? (
+        <Panel open={open} onDismiss={() => setOpen(false)} launcherRef={launcherRef} />
+      ) : null}
     </>
   );
 }

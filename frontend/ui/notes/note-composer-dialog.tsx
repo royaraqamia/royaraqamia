@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 import { toast } from 'sonner';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
@@ -15,6 +15,8 @@ interface NoteComposerDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Creates the note from what the composer collected. */
   onCreate: (input: { body: string }) => Promise<unknown>;
+  /** The button that opened the composer; focus returns here on close. */
+  returnFocusTo?: RefObject<HTMLButtonElement | null>;
 }
 
 /**
@@ -23,7 +25,12 @@ interface NoteComposerDialogProps {
  * body is the whole record and its first line is what the list calls it
  * (ADR-0110), so there is nothing on this surface that is not the text.
  */
-export function NoteComposerDialog({ open, onOpenChange, onCreate }: NoteComposerDialogProps) {
+export function NoteComposerDialog({
+  open,
+  onOpenChange,
+  onCreate,
+  returnFocusTo,
+}: NoteComposerDialogProps) {
   const [body, setBody] = useState('');
   const [pending, setPending] = useState(false);
 
@@ -52,7 +59,7 @@ export function NoteComposerDialog({ open, onOpenChange, onCreate }: NoteCompose
 
   return (
     <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
-      <DialogContent phone="sheet">
+      <DialogContent phone="sheet" returnFocusTo={returnFocusTo}>
         <DialogHeader>
           <DialogTitle className="text-center">{NOTES_EDITOR_COPY.newNote}</DialogTitle>
         </DialogHeader>
