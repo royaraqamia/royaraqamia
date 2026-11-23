@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { TrainingApplicationInput } from '@/shared/contracts/training';
 import type { ProjectRequestInput } from '@/shared/contracts/project-requests';
 import type { RetainerInput } from '@/shared/contracts/retainers';
@@ -17,8 +17,11 @@ import {
   type LeadFormKind,
 } from '@/frontend/api/leads/sync-transport';
 import { LeadsSyncEngine } from '@/frontend/api/leads/sync-engine';
-import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
-import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
+import type { SyncEngine } from '@/frontend/shared/local-store/sync-engine';
+import {
+  leadSubmissionInitialState,
+  leadSubmissionReducer,
+} from '@/frontend/state/leads/use-lead-submission.reducer';
 import {
   GUEST_IDENTITY,
   userIdentity,
@@ -63,20 +66,12 @@ interface SubmitResult {
   status?: number;
 }
 
-const EMPTY_STATUS: SyncStatus = {
-  syncing: false,
-  pending: 0,
-  failed: 0,
-  lastError: null,
-  lastFailedType: null,
-};
-
 function isOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
 
 /** Sends a lead straight to its endpoint, carrying the client-minted key. */
-function dispatch(
+function sendLead(
   input: LeadSubmitInput,
   clientId: string,
   accountId?: string | null
@@ -127,10 +122,9 @@ function queuedPayload(
  * true) — the server attributes a signed-in submitter via the cookie.
  */
 export function useLeadSubmission(accountId?: string | null): LeadSubmissionState {
+  const [view, dispatch] = useReducer(leadSubmissionReducer, undefined, leadSubmissionInitialState);
   const [ready, setReady] = useState(false);
   const [online, setOnline] = useState(true);
-  const [status, setStatus] = useState<SyncStatus>(EMPTY_STATUS);
-  const [entries, setEntries] = useState<OutboxEntry[]>([]);
 
   const storeRef = useRef<LeadsLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
@@ -145,16 +139,11 @@ export function useLeadSubmission(accountId?: string | null): LeadSubmissionStat
     // A different account means a different queue: drop the previous one's
     // counts before the new store opens, so nothing on screen claims to be this
     // member's pending work.
-    setEntries((current) => (current.length === 0 ? current : []));
-    setStatus((current) =>
-      current.pending === 0 && current.failed === 0 && current.lastError === null
-        ? current
-        : EMPTY_STATUS
-    );
+    dispatch({ type: 'reset' });
 
     const refreshEntries = async (store: LeadsLocalStore) => {
       const next = await store.getOutbox();
-      if (!cancelled) setEntries(next);
+      if (!cancelled) dispatch({ type: 'entriesLoaded', entries: next });
     };
 
     LeadsLocalStore.open(identity)
@@ -184,7 +173,7 @@ export function useLeadSubmission(accountId?: string | null): LeadSubmissionStat
           transport: createLeadHttpSyncTransport(identity),
           isSignedIn: () => true,
           onStatus: (next) => {
-            setStatus(next);
+            dispatch({ type: 'statusChanged', status: next });
             void refreshEntries(store);
           },
         });
@@ -246,7 +235,7 @@ export function useLeadSubmission(accountId?: string | null): LeadSubmissionStat
         return { status: 'queued' };
       }
 
-      const result = await dispatch(input, clientId, accountId);
+      const result = await sendLead(input, clientId, accountId);
 
       if (result.success && result.referenceCode) {
         return { status: 'sent', referenceCode: result.referenceCode };
@@ -277,26 +266,26 @@ export function useLeadSubmission(accountId?: string | null): LeadSubmissionStat
 
   const pendingKinds = useMemo(() => {
     const kinds = new Set<LeadFormKind>();
-    for (const entry of entries) {
+    for (const entry of view.entries) {
       const kind = leadKindForIntent(entry.type);
       if (kind) kinds.add(kind);
     }
     return kinds;
-  }, [entries]);
+  }, [view.entries]);
 
   return useMemo(
     () => ({
       ready,
       online,
-      syncing: status.syncing,
-      pending: status.pending,
-      failed: status.failed,
-      lastError: status.lastError,
-      lastFailedType: status.lastFailedType,
+      syncing: view.status.syncing,
+      pending: view.status.pending,
+      failed: view.status.failed,
+      lastError: view.status.lastError,
+      lastFailedType: view.status.lastFailedType,
       pendingKinds,
       submit,
       retry,
     }),
-    [ready, online, status, pendingKinds, submit, retry]
+    [ready, online, view.status, pendingKinds, submit, retry]
   );
 }

@@ -1,5 +1,5 @@
 import {
-  useState,
+  useReducer,
   useEffect,
   useCallback,
   useMemo,
@@ -8,11 +8,7 @@ import {
 } from 'react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
-import {
-  GUEST_IDENTITY,
-  identityFromUser,
-  type LocalIdentity,
-} from '@/frontend/shared/local-store/identity';
+import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
 import {
   halveList,
   screenful,
@@ -21,6 +17,11 @@ import {
 } from '@/frontend/shared/local-store/snapshot';
 import { logger } from '@/frontend/shared/logger';
 import { markContent } from '@/frontend/shared/perf-marks';
+import {
+  dashboardDataInitialState,
+  dashboardDataReducer,
+  type DashboardMode,
+} from '@/frontend/state/habitflow/use-dashboard-data.reducer';
 
 /**
  * The surface's snapshot (#495): the habits and logs the list last rendered.
@@ -61,14 +62,14 @@ async function claimGuestData(userStore: HabitLocalStore): Promise<void> {
 export interface DashboardSeed {
   habits: Habit[];
   logs: HabitLog[];
-  mode: 'supabase' | 'local';
+  mode: DashboardMode;
   user: unknown;
 }
 
 export interface DashboardData {
   habits: Habit[];
   logs: HabitLog[];
-  mode: 'supabase' | 'local';
+  mode: DashboardMode;
   user: unknown;
   /** True once a real session exists; the Outbox only flushes for an account. */
   isSignedIn: boolean;
@@ -76,7 +77,7 @@ export interface DashboardData {
   store: HabitLocalStore | null;
   setHabits: Dispatch<SetStateAction<Habit[]>>;
   setLogs: Dispatch<SetStateAction<HabitLog[]>>;
-  setMode: Dispatch<SetStateAction<'supabase' | 'local'>>;
+  setMode: Dispatch<SetStateAction<DashboardMode>>;
   setUser: Dispatch<SetStateAction<unknown>>;
   refreshData: () => Promise<void>;
   syncUser: (sessionUser: unknown) => Promise<void>;
@@ -91,21 +92,27 @@ function visibleLogs(logs: HabitLog[]): HabitLog[] {
 }
 
 export function useDashboardData(seed: DashboardSeed): DashboardData {
-  const [habits, setHabits] = useState<Habit[]>(seed.habits);
-  const [logs, setLogs] = useState<HabitLog[]>(seed.logs);
-  const [mode, setMode] = useState<'supabase' | 'local'>(seed.mode);
-  const [user, setUser] = useState(seed.user);
-  const [store, setStore] = useState<HabitLocalStore | null>(null);
-  /**
-   * The identity whose rows the store read answered, or `null` before the first
-   * read. Tagged with the identity rather than a boolean so an identity change
-   * cannot paint the previous account's rows while the new store opens.
-   */
-  const [loadedFor, setLoadedFor] = useState<LocalIdentity | null>(null);
+  const [state, dispatch] = useReducer(dashboardDataReducer, seed, dashboardDataInitialState);
 
-  const identity = identityFromUser(user);
+  // The public setters keep the `Dispatch<SetStateAction<T>>` shape callers
+  // already pass — a functional update is resolved by the reducer against the
+  // previous value, and each setter stays stable across renders.
+  const setHabits = useCallback<Dispatch<SetStateAction<Habit[]>>>((update) => {
+    dispatch({ type: 'habitsSet', update });
+  }, []);
+  const setLogs = useCallback<Dispatch<SetStateAction<HabitLog[]>>>((update) => {
+    dispatch({ type: 'logsSet', update });
+  }, []);
+  const setMode = useCallback<Dispatch<SetStateAction<DashboardMode>>>((update) => {
+    dispatch({ type: 'modeSet', update });
+  }, []);
+  const setUser = useCallback<Dispatch<SetStateAction<unknown>>>((update) => {
+    dispatch({ type: 'userSet', update });
+  }, []);
+
+  const identity = identityFromUser(state.user);
   const isSignedIn = identity !== GUEST_IDENTITY;
-  const loaded = loadedFor === identity;
+  const loaded = state.loadedFor === identity;
 
   // The last screen this identity painted (#495), read during render so the
   // first frame after a cold navigation carries it instead of empty markup.
@@ -145,10 +152,13 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
           localStore.close();
           return;
         }
-        setStore(localStore);
-        setHabits(visibleHabits(data.habits));
-        setLogs(visibleLogs(data.logs));
-        setLoadedFor(identity);
+        dispatch({
+          type: 'storeOpened',
+          store: localStore,
+          habits: visibleHabits(data.habits),
+          logs: visibleLogs(data.logs),
+          identity,
+        });
         // The launch's content mark: owned rows painted from the Local Store (#487).
         markContent();
       })
@@ -166,24 +176,24 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
   }, [identity]);
 
   async function refreshData() {
-    if (!store) return;
-    const data = await store.getLocalData();
-    setHabits(visibleHabits(data.habits));
-    setLogs(visibleLogs(data.logs));
+    if (!state.store) return;
+    const data = await state.store.getLocalData();
+    dispatch({
+      type: 'dataRefreshed',
+      habits: visibleHabits(data.habits),
+      logs: visibleLogs(data.logs),
+    });
   }
 
   const syncUser = useCallback(
     async (sessionUser: unknown) => {
       const sessionId = (sessionUser as { id?: string } | null)?.id;
-      const currentId = (user as { id?: string } | null)?.id;
+      const currentId = (state.user as { id?: string } | null)?.id;
       if (sessionId !== currentId) {
-        setUser(sessionUser);
-        if (sessionUser) {
-          setMode('supabase');
-        }
+        dispatch({ type: 'userSynced', user: sessionUser });
       }
     },
-    [user]
+    [state.user]
   );
 
   /**
@@ -192,23 +202,23 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
    * never overwrite the last good snapshot with an empty list.
    */
   const recorded = useMemo(
-    () => (loaded ? { habits: screenful(habits), logs: screenful(logs) } : null),
-    [loaded, habits, logs]
+    () => (loaded ? { habits: screenful(state.habits), logs: screenful(state.logs) } : null),
+    [loaded, state.habits, state.logs]
   );
   useSnapshotRecorder(identity, HABITFLOW_SNAPSHOT_ROUTE, recorded, { trim: trimDashboard });
 
   // Before the store answers, the last screen stands in; a device that has never
   // painted this account has no snapshot and keeps the seed it always had.
-  const renderedHabits = loaded ? habits : (snapshot?.habits ?? seed.habits);
-  const renderedLogs = loaded ? logs : (snapshot?.logs ?? seed.logs);
+  const renderedHabits = loaded ? state.habits : (snapshot?.habits ?? seed.habits);
+  const renderedLogs = loaded ? state.logs : (snapshot?.logs ?? seed.logs);
 
   return {
     habits: renderedHabits,
     logs: renderedLogs,
-    mode,
-    user,
+    mode: state.mode,
+    user: state.user,
     isSignedIn,
-    store,
+    store: state.store,
     setHabits,
     setLogs,
     setMode,
