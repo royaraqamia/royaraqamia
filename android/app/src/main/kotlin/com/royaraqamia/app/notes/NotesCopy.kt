@@ -20,4 +20,9 @@ object NotesCopy {
     const val WORD = "كلمة"
     const val LAST_EDIT = "آخر تعديل"
     const val AUTOSAVES = "يُحفظ تلقائيًّا"
+    const val AGO_NOW = "منذ لحظات"
+    const val AGO_MINUTES = "منذ {count} دقيقة"
+    const val AGO_HOURS = "منذ {count} ساعة"
+    const val AGO_DAYS = "منذ {count} يوم"
+    const val AGO_WEEKS = "منذ {count} أسبوع"
 }

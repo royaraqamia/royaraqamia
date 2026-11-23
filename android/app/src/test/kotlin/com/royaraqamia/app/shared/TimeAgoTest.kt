@@ -1,7 +1,13 @@
 package com.royaraqamia.app.shared
 
+import com.royaraqamia.app.contracts.ContractCodec
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.time.Instant
 
 /**
@@ -39,5 +45,40 @@ class TimeAgoTest {
     fun `a month or more is a date`() {
         assertEquals(TimeAgoParts(TimeAgoParts.Unit.DATE), at(28 * 86_400))
         assertEquals(TimeAgoParts(TimeAgoParts.Unit.DATE), timeAgoParts("not a date", now))
+    }
+
+    /** The same cases the web suite reads, pinned once (ADR-0104). */
+    private val fixture =
+        ContractCodec.json
+            .parseToJsonElement(File(fixturesDirectory(), "time-ago.json").readText())
+            .jsonObject
+
+    @Test
+    fun `the fixture set is not empty`() {
+        assertTrue(fixture.getValue("cases").jsonArray.isNotEmpty())
+    }
+
+    @Test
+    fun `every pinned instant reads the same unit and count on both clients`() {
+        val pinnedNow = Instant.parse(fixture.getValue("now").jsonPrimitive.content)
+        for (entry in fixture.getValue("cases").jsonArray) {
+            val item = entry.jsonObject
+            val iso = item.getValue("iso").jsonPrimitive.content
+            val unit = TimeAgoParts.Unit.valueOf(item.getValue("unit").jsonPrimitive.content.uppercase())
+            val count = item["count"]?.jsonPrimitive?.content?.toLong() ?: 0
+            assertEquals(iso, TimeAgoParts(unit, count), timeAgoParts(iso, pinnedNow))
+        }
+    }
+
+    /** The fixture sits in the repository beside the contract, as the suite does. */
+    private fun fixturesDirectory(): File {
+        val start = File(System.getProperty("user.dir") ?: ".").absoluteFile
+        var candidate: File? = start
+        while (candidate != null) {
+            val fixtures = File(candidate, "shared/fixtures/parity")
+            if (fixtures.isDirectory) return fixtures
+            candidate = candidate.parentFile
+        }
+        throw IllegalStateException("shared/fixtures/parity not found above $start")
     }
 }

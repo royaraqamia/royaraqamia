@@ -21,6 +21,11 @@
     "editorLabel": "النَّصّ",
     "word": "كلمة",
     "lastEdit": "آخر تعديل",
-    "autosaves": "يُحفظ تلقائيًّا"
+    "autosaves": "يُحفظ تلقائيًّا",
+    "agoNow": "منذ لحظات",
+    "agoMinutes": "منذ {count} دقيقة",
+    "agoHours": "منذ {count} ساعة",
+    "agoDays": "منذ {count} يوم",
+    "agoWeeks": "منذ {count} أسبوع"
   }
 }

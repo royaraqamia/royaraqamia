@@ -4,7 +4,7 @@
   "waivers": [
     {
       "surface": "notes",
-      "reason": "The only web change is the colour of the keyboard focus ring on the notes row overlay. The recorded at-rest and open-note states are unfocused, and their contract measures boxes, font and radius rather than a ring, so neither the recorded values nor the captures can change. The ring's contrast is asserted against both surfaces by the generated-token test in issue #1696.",
+      "reason": "Neither web change alters a recorded box, colour or word: the keyboard focus ring on the notes row overlay is unfocused in the recorded at-rest and open-note states (issue #1696), and the relative stamps move from the formatter's sentence to the surface's generated copy with byte-identical Arabic, the same thresholds and the same Hijri fallback (issue #1747). The contract measures boxes, font and radius, so neither the recorded values nor the captures can change.",
       "issue": "#1696",
       "until": "2026-12-21"
     },

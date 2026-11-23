@@ -1,9 +1,9 @@
 package com.royaraqamia.app.notes
 
+import com.royaraqamia.app.plans.PlanDates
+import com.royaraqamia.app.shared.TimeAgoParts
+import com.royaraqamia.app.shared.timeAgoParts
 import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 /**
  * The plain-text projection of a note's Markdown, and the search form (#1390).
@@ -68,21 +68,62 @@ object NotesText {
 
     fun searchText(body: String): String = normalizeForSearch(plainText(body))
 
-    /** The relative stamp a row shows, in the page's words. */
-    fun timeAgo(iso: String, now: Instant = Instant.now()): String {
-        val then =
-            runCatching { Instant.parse(iso) }.getOrNull()
-                ?: return ""
-        val minutes = java.time.Duration.between(then, now).toMinutes()
-        return when {
-            minutes < 1 -> "منذ لحظات"
-            minutes < 60 -> "منذ $minutes دقيقة"
-            minutes < 60 * 24 -> "منذ ${minutes / 60} ساعة"
-            minutes < 60 * 24 * 7 -> "منذ ${minutes / (60 * 24)} يوم"
-            else -> {
-                val date = ZonedDateTime.ofInstant(then, ZoneId.systemDefault())
-                date.format(DateTimeFormatter.ofPattern("d MMM yyyy"))
-            }
+    /** The five phrases a relative stamp is made of, from either copy source (ADR-0104). */
+    data class TimeAgoWords(
+        val now: String,
+        val minutes: String,
+        val hours: String,
+        val days: String,
+        val weeks: String,
+    )
+
+    /** The list row's stamp, in [NotesListCopy]'s words. */
+    fun listTimeAgo(iso: String, now: Instant = Instant.now()): String =
+        timeAgo(
+            iso,
+            TimeAgoWords(
+                NotesListCopy.AGO_NOW,
+                NotesListCopy.AGO_MINUTES,
+                NotesListCopy.AGO_HOURS,
+                NotesListCopy.AGO_DAYS,
+                NotesListCopy.AGO_WEEKS,
+            ),
+            now,
+        )
+
+    /** The editor's stamp, in [NotesCopy]'s words. The list and the editor are one surface. */
+    fun editorTimeAgo(iso: String, now: Instant = Instant.now()): String =
+        timeAgo(
+            iso,
+            TimeAgoWords(
+                NotesCopy.AGO_NOW,
+                NotesCopy.AGO_MINUTES,
+                NotesCopy.AGO_HOURS,
+                NotesCopy.AGO_DAYS,
+                NotesCopy.AGO_WEEKS,
+            ),
+            now,
+        )
+
+    /**
+     * What a past instant is, in one of this surface's copy sources. The
+     * thresholds are the shared [timeAgoParts] (ADR-0104), so "three days ago"
+     * crosses from hours to days on the same second the browser does; a month
+     * out is the Hijri day the site prints, not a Gregorian abbreviation.
+     */
+    private fun timeAgo(iso: String, words: TimeAgoWords, now: Instant): String {
+        val parts = timeAgoParts(iso, now)
+        return when (parts.unit) {
+            TimeAgoParts.Unit.NOW -> words.now
+            TimeAgoParts.Unit.MINUTES -> withCount(words.minutes, parts.count)
+            TimeAgoParts.Unit.HOURS -> withCount(words.hours, parts.count)
+            TimeAgoParts.Unit.DAYS -> withCount(words.days, parts.count)
+            TimeAgoParts.Unit.WEEKS -> withCount(words.weeks, parts.count)
+            TimeAgoParts.Unit.DATE -> PlanDates.label(iso)
         }
     }
+
+    /** An ASCII count, whatever the device's locale is (ADR-0104). */
+    private fun withCount(sentence: String, count: Long): String =
+        sentence.replace("{count}", count.toString())
 }

@@ -20,4 +20,9 @@ object NotesListCopy {
     const val NO_RESULTS_TITLE = "لا نتائج للبحث"
     const val NO_RESULTS_BODY = "جرِّب كلمة أخرى، أو امسح البحث لعرض كل الملاحظات."
     const val UNTITLED = "ملاحظة بلا نصّ"
+    const val AGO_NOW = "منذ لحظات"
+    const val AGO_MINUTES = "منذ {count} دقيقة"
+    const val AGO_HOURS = "منذ {count} ساعة"
+    const val AGO_DAYS = "منذ {count} يوم"
+    const val AGO_WEEKS = "منذ {count} أسبوع"
 }

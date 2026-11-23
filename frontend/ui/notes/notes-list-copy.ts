@@ -18,6 +18,11 @@ export const NOTES_LIST_COPY = {
   noResultsTitle: 'لا نتائج للبحث',
   noResultsBody: 'جرِّب كلمة أخرى، أو امسح البحث لعرض كل الملاحظات.',
   untitled: 'ملاحظة بلا نصّ',
+  agoNow: 'منذ لحظات',
+  agoMinutes: 'منذ {count} دقيقة',
+  agoHours: 'منذ {count} ساعة',
+  agoDays: 'منذ {count} يوم',
+  agoWeeks: 'منذ {count} أسبوع',
 } as const;
 
 export type NotesListCopyStrings = typeof NOTES_LIST_COPY;

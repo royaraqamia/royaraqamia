@@ -5,7 +5,7 @@ import { MoreHorizontal, Trash2 } from 'lucide-react';
 
 import type { Note } from '@/shared/contracts/notes';
 import type { NotesLocalStore } from '@/frontend/api/notes/local-store';
-import { calculateTimeAgo } from '@/frontend/shared/format';
+import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { noteName } from '@/frontend/shared/notes/text';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
@@ -23,6 +23,31 @@ import { NoteBodyEditor } from './note-body-editor';
 import { NOTES_EDITOR_COPY } from './notes-editor-copy';
 
 const AUTOSAVE_DELAY_MS = 500;
+
+/**
+ * The editor's stamp, in this surface's own words (ADR-0104).
+ *
+ * The list and the editor are one surface, so both read the same thresholds and
+ * Hijri date — but each renders the sentence from its own generated copy. A
+ * formatter-owned sentence here would put a second, retired word list in the pair.
+ */
+function editorTimeAgo(iso: string): string {
+  const parts = timeAgoParts(iso);
+  switch (parts.unit) {
+    case 'now':
+      return NOTES_EDITOR_COPY.agoNow;
+    case 'minutes':
+      return NOTES_EDITOR_COPY.agoMinutes.replace('{count}', String(parts.count));
+    case 'hours':
+      return NOTES_EDITOR_COPY.agoHours.replace('{count}', String(parts.count));
+    case 'days':
+      return NOTES_EDITOR_COPY.agoDays.replace('{count}', String(parts.count));
+    case 'weeks':
+      return NOTES_EDITOR_COPY.agoWeeks.replace('{count}', String(parts.count));
+    case 'date':
+      return formatHijriDate(iso);
+  }
+}
 
 interface NoteEditorDialogProps {
   note: Note | null;
@@ -187,7 +212,7 @@ function NoteEditorDialogBody({
 
           <p data-slot="composer-meta" className="text-[11px] text-muted-foreground">
             {wordCount > 0 ? `${wordCount} ${NOTES_EDITOR_COPY.word} · ` : ''}
-            {NOTES_EDITOR_COPY.lastEdit} {calculateTimeAgo(note.updatedAt)} ·{' '}
+            {NOTES_EDITOR_COPY.lastEdit} {editorTimeAgo(note.updatedAt)} ·{' '}
             {NOTES_EDITOR_COPY.autosaves}
           </p>
         </div>
