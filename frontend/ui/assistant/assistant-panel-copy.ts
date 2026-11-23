@@ -37,6 +37,7 @@ export const ASSISTANT_PANEL_COPY = {
   actionStatusRejected: 'أُلغي',
   actionStatusApplied: 'نُفِّذ',
   actionStatusFailed: 'لم يُنفَّذ',
+  actionAdminMark: 'إدارة',
 } as const;
 
 export type AssistantPanelCopyStrings = typeof ASSISTANT_PANEL_COPY;

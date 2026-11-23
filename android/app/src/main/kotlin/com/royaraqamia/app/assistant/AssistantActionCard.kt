@@ -57,6 +57,16 @@ fun AssistantActionCard(
                 .testTag(AssistantActionTags.CARD),
         verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm / 2),
     ) {
+        // The one thing an operator's confirm must never be is indistinguishable
+        // from a routine one (ADR-0180, decision 10). The server declares admin
+        // tools under the `admin_` prefix (shared/contracts/chat-agent-actions.ts).
+        if (action.tool.startsWith("admin_")) {
+            Text(
+                text = AssistantPanelCopy.ACTION_ADMIN_MARK,
+                style = type.xs.copy(fontWeight = FontWeight.Bold),
+                color = RoyColors.warning,
+            )
+        }
         Text(text = sentence, style = type.small.copy(fontWeight = FontWeight.Bold))
         Text(text = action.status.label(), style = type.xs, color = RoyColors.mutedForeground)
         if (reason != null) {

@@ -74,6 +74,18 @@ export function capabilityId(owner: CapabilityOwner, name: string): string {
 }
 
 /**
+ * Whether a tool grant may ever make a capability run without its card.
+ *
+ * The answer is tier 1 and nothing else (ADR-0180, decisions 1 and 4): an admin
+ * write is tier 2 or 3, so no row in `agent_tool_grants` can honour it, whatever
+ * the row says (decision 10). The grants executor (#1438) reads this predicate
+ * rather than repeating the comparison.
+ */
+export function toolIsGrantable(tier: ToolTier): boolean {
+  return tier === 1;
+}
+
+/**
  * Every capability the assistant's door declares, in registry order.
  *
  * It is derived from the tool entries rather than kept beside them, so a tool

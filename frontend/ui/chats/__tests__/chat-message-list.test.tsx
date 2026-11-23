@@ -5,6 +5,7 @@ import { ChatMessageList } from '@/frontend/ui/chats/chat-message-list';
 import { formatDaySeparator } from '@/frontend/ui/chats/thread-days';
 import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assistant';
 import type { ChatMessage, ChatThread } from '@/shared/contracts/chat';
+import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 
 const QUOTA = {
   fileBytes: 1_000,
@@ -95,6 +96,26 @@ function list(messages: ChatMessage[], extra: Partial<Parameters<typeof ChatMess
  * line are here so neither door can draw them its own way.
  */
 describe('ChatMessageList', () => {
+  it('marks an admin proposal so it cannot read as a routine one', () => {
+    const line = message({ id: 'm-1', senderKind: 'agent', body: 'قرار على بلاغ' });
+    const action: ChatAgentAction = {
+      id: 'a-1',
+      conversationId: 'c-1',
+      messageId: 'm-1',
+      tool: 'admin_decide_report',
+      args: { id: '11111111-1111-4111-8111-111111111111', status: 'reviewed' },
+      status: 'proposed',
+      result: null,
+      createdAt: '2026-11-01T10:00:00.000Z',
+      resolvedAt: null,
+      resolvedBy: null,
+    };
+
+    render(list([line], { actions: [action] }));
+
+    expect(screen.getByText('إدارة')).toBeInTheDocument();
+  });
+
   it('draws the inline marks instead of their operators', () => {
     render(list([message({ id: 'm-1', senderKind: 'agent', body: '**Hey!** how are you…' })]));
 

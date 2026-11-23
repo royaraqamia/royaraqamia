@@ -182,9 +182,34 @@ export const CHAT_AGENT_TOOL_NAMES = [
   // Declared only when the request brought a snapshot, so a client without eyes
   // carries no invitation to read a screen it does not have.
   'get_screen_context',
+  // The Admin Console's hands (ADR-0180, decision 10, #1435). They are declared
+  // only inside a verified admin's own turn, and the executor re-reads `isAdmin`
+  // from the session before one runs. Member lookup carries the hidden
+  // (blocked-from-listing) state; the two report tools are the review queue the
+  // page already draws, and the decision is a tier-2 card.
+  'admin_list_members',
+  'admin_list_reports',
+  'admin_decide_report',
 ] as const;
 
 export type ChatAgentToolName = (typeof CHAT_AGENT_TOOL_NAMES)[number];
+
+/**
+ * The tools that require the `admin` scope (ADR-0180, decision 10). They are the
+ * one family the registry marks, so the turn's declaration filter, the executor
+ * and the card's visible admin mark read the same list rather than three prefix
+ * checks.
+ */
+export const ADMIN_AGENT_TOOL_NAMES = [
+  'admin_list_members',
+  'admin_list_reports',
+  'admin_decide_report',
+] as const satisfies readonly ChatAgentToolName[];
+
+/** Whether a tool is an admin capability, by the list above. */
+export function chatAgentToolIsAdmin(tool: string): boolean {
+  return (ADMIN_AGENT_TOOL_NAMES as readonly string[]).includes(tool);
+}
 
 /**
  * `read` runs inside the turn and its answer reaches the model. `write` never
@@ -340,6 +365,21 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     kind: 'read',
     label: 'قراءة الشاشة الحالية',
     activity: 'تقرأ الشاشة الحالية',
+  },
+  admin_list_members: {
+    kind: 'read',
+    label: 'البحث عن الأعضاء',
+    activity: 'تبحث عن الأعضاء',
+  },
+  admin_list_reports: {
+    kind: 'read',
+    label: 'قراءة بلاغات المحادثات',
+    activity: 'تقرأ بلاغات المحادثات',
+  },
+  admin_decide_report: {
+    kind: 'write',
+    label: 'البتّ في بلاغ',
+    activity: 'تبتّ في بلاغ',
   },
   list_surahs: {
     kind: 'read',
@@ -570,6 +610,22 @@ export function chatAgentActionSentence(
       // (ADR-0180). The handler checks the name against the row before deleting.
       const name = text(values.name) || text(values.body).split('\n')[0]?.trim() || '';
       return name ? `${label} — «${name.slice(0, 60)}»` : label;
+    }
+    // The admin cards (ADR-0180, decision 10). A report decision names the
+    // outcome; the member lookup names the term it searched, so an empty search
+    // still reads as "the whole directory".
+    case 'admin_decide_report': {
+      const decision = text(values.status);
+      return decision === 'reviewed'
+        ? `${label} — مراجعة`
+        : decision === 'dismissed'
+          ? `${label} — استبعاد`
+          : label;
+    }
+    case 'admin_list_members':
+    case 'admin_list_reports': {
+      const term = text(values.search) || text(values.status);
+      return term ? `${label} — «${term.slice(0, 60)}»` : label;
     }
     default:
       return parts.length > 0 ? `${label} — ${parts[0]}` : label;

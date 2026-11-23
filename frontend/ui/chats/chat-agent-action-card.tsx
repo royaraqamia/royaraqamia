@@ -6,6 +6,7 @@ import { cn } from '@/frontend/shared/cn';
 import {
   chatAgentActionIsOpen,
   chatAgentActionSentence,
+  chatAgentToolIsAdmin,
   type ChatAgentAction,
   type ChatAgentActionStatus,
 } from '@/shared/contracts/chat-agent-actions';
@@ -26,6 +27,8 @@ import {
 export type ActionCardLabels = Record<ChatAgentActionStatus, string> & {
   confirm: string;
   reject: string;
+  /** The visible admin mark an operator's confirm carries (ADR-0180, decision 10). */
+  adminMark: string;
 };
 
 export function ActionCard({
@@ -52,6 +55,13 @@ export function ActionCard({
 
   return (
     <div className="w-full max-w-[85%] rounded-2xl border border-border/70 bg-card/80 px-3 py-2 text-sm shadow-xs">
+      {chatAgentToolIsAdmin(action.tool) && (
+        // The one thing an admin's confirm must never be is indistinguishable
+        // from a routine one (ADR-0180, decision 10).
+        <span className="mb-1 inline-block rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+          {labels.adminMark}
+        </span>
+      )}
       <p className="font-bold leading-relaxed text-foreground">
         {chatAgentActionSentence(action.tool, action.args, action.appName)}
       </p>

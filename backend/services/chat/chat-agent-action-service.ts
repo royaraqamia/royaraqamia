@@ -15,6 +15,7 @@ import { AppError } from '@/backend/shared/errors';
 import { RepositoryError } from '@/backend/shared/repository-error';
 import { ChatAgentError } from '@/backend/services/chat/chat-agent-service';
 import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
+import { MissingScopeError } from '@/backend/services/mcp/tools/guards';
 import {
   appToolParts,
   chatAgentActionSentence,
@@ -308,6 +309,10 @@ function isRefusal(value: unknown): value is { error: string } {
 function refusalSentence(error: unknown): string {
   const fromDatabase = databaseReason(error);
   if (fromDatabase) return fromDatabase;
+
+  // An admin capability whose flag is gone is a refusal about the member's
+  // standing, not a tool failure; the English scope sentence is not theirs.
+  if (error instanceof MissingScopeError) return 'هذه الأداة متاحة للمشرفين فقط.';
 
   if (error instanceof ChatAgentError) return error.message;
   if (error instanceof AppError) return error.message;
