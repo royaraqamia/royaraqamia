@@ -105,6 +105,12 @@ tickets measure their wins against.
   A live route that redirects is checked against the ceiling of the document it
   actually serves, not the one it was requested at.
   Route keys are normalized, so `community`, `/community` and `/community/` all match the same route.
+- A route key may also be a dynamic pattern such as `/quran/[surah]`. It expands
+  through `perf/surfaces.json`'s `weightSamples` to the concrete paths the gate
+  prices, so every published sample of that pattern is held to one ceiling.
+  That matters when a segment changes the document's weight: the surah reader
+  prices both Al-Fatiha and Al-Baqarah, and the pattern's ceiling has to cover
+  the heavier one. An exact key always wins over a pattern.
 - Available metrics: `totalGzipKb`, `jsGzipKb`, `cssGzipKb`, `cssRawKb`, `htmlGzipKb`,
   `fontsGzipKb`. All but `cssRawKb` are gzip; `cssRawKb` reads the stylesheets'
   **raw** bytes, the size the parser walks through, which is the number the
@@ -431,8 +437,10 @@ was invisible to the gate while still shipping bytes to users (#1662).
 `npm run perf:weight` closes that hole. It derives the concrete path list from
 `perf/surfaces.json`: every declared route is measured, and a dynamic segment
 (`[username]`, `[surah]`, `[code]`) resolves through `weightSamples` in that same
-file. A dynamic pattern with no sample fails `check:surfaces` before the gate
-runs. The command fetches each document and its same-origin assets from
+file. A sample is normally one concrete path, but it can be a list: the surah
+reader publishes both `/quran/1` and `/quran/2`, so the lightest and heaviest
+members are priced instead of one lucky sample standing in for the pattern.
+A dynamic pattern with no sample fails `check:surfaces` before the gate runs. The command fetches each document and its same-origin assets from
 `PERF_ORIGIN` (default `https://royaraqamia.com`), then prices them with the
 same `extractAssets`, `transferredSize` and bucket rules the build-artifact mode
 uses. One verdict line per route shows the JS weight against its ceiling;

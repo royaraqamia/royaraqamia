@@ -1,5 +1,5 @@
 {
-  "measure": ["/", "/community/explore", "/scan", "/terms", "/habitflow", "/quran/1"],
+  "measure": ["/", "/community/explore", "/scan", "/terms", "/habitflow", "/quran/1", "/quran/2"],
   "default": {
     "totalGzipKb": 560,
     "jsGzipKb": 260,
@@ -9,9 +9,11 @@
     "fontsGzipKb": 170
   },
   "routes": {
-    "/quran/1": {
-      "comment": "The reader is the one surface that legitimately carries a Quran face. With the Amiri marks face subset to its three code points (issue #1688), its fonts measured 246.8 KB: KFGQPC 87.5 KB, the two UI weights 105.7 KB, Aref Ruqaa 58.6 KB and the marks 836 B. The default 170 KB ceiling cannot price a route that needs a Mushaf face, so this row pins the measured value and adds a little headroom for runner noise. A surah with no marks is not preloaded the marks face. Issue #1687 gave the digits face its own 2.4 KB subset; the reader now declares both Aref faces (the ayah marker still needs the heading cut), so the measured total is 249.1 KB and the ceiling follows it to 250.",
-      "fontsGzipKb": 250
+    "/quran/[surah]": {
+      "comment": "A pattern key, expanded through perf/surfaces.json weightSamples so both published samples are priced: /quran/1 (Al-Fatiha, 7 ayat) and /quran/2 (Al-Baqarah, 286 ayat). Live measurement on 2026-11-23: /quran/1 html 12.6 KB, js 247.2 KB, fonts 249.1 KB, total 550.0 KB; /quran/2 html 95.4 KB, js 247.2 KB, fonts 249.1 KB, total 632.8 KB. Both fetch the same six faces (255,324 B raw): KFGQPC 87.5 KB, the two UI weights 105.7 KB, Aref Ruqaa 58.6 KB, the digits subset 2.4 KB and the marks 836 B (#1687, #1688). The 250 KB font ceiling therefore stays; JS stays inside the 260 KB default. The reader still server-renders the whole surah: the text is vendored static data, and the marks, tafsir slots, deep-link scroll restoration and the Android pair all read the same ayat, so replacing it with a client fetch would change tested reading behaviour. The document's HTML consequently grows with its longest member. Now that the gate prices both ends of the pattern, the honest ceiling is the heaviest sample: htmlGzipKb moves 63 -> 96 and totalGzipKb 560 -> 635 for this pattern only (a little above Al-Baqarah's 95.4 and 632.8), so no other route gains headroom. Ratchet both down in the change that ships a bounded first page and draws the rest of the ayat from public/quran/surah/NNN.json - the shape the Android screen already uses.",
+      "fontsGzipKb": 250,
+      "htmlGzipKb": 96,
+      "totalGzipKb": 635
     },
     "/community/explore": {
       "comment": "The public hub, measured where `/community` used to be: same shell, same assistant door (ADR-0143), same pinned own row (ADR-0172). It draws no per-viewer control, and the client read that fed one is gone (ADR-0173): measured 265.2 KB after the fix, against 299.1 KB while the roster fetched its states in the browser. The ceiling sits just above today's measurement, as before. Raised from 266 to 268 KB when card excerpts started linking URLs and member handles (ADR-0192): measured 266.6 KB, and the first version of that read cost 32 KB until the client call stopped validating its own reply with zod. Raised from 268 to 270 KB when the post card split its footer into a meta line and an action bar (views, relative time, and the like/comment cells the product intends): measured 268.1 KB, so the ceiling sits just above today's measurement, as before. Raised from 270 to 271 KB after later community work took the measured route to 270.1 KB on `main` before this change; a build with this branch's dropdown fix reverted measured the same 270.1 KB, so the fix adds no bytes to this route. Raised from 271 to 273 KB for the field vitals reporter and the single-render roster. The local build measured 271.4 KB and the CI runner measured 272.2 KB for the same commit, so 273 is the ceiling that keeps the usual small headroom across both machines instead of failing a performance change on runner noise. Raised from 273 to 278 KB for the live weight gate (#1662): the deployed document measured 277.7 KB on 2026-11-22, above the build-artifact ceiling because the origin ships a few KB more shell than a fresh CI build.",

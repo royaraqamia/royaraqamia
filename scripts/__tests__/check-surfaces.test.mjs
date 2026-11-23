@@ -167,6 +167,23 @@ describe('matrix validation', () => {
     expect(withSample).toEqual([]);
   });
 
+  it('accepts a list of weight samples and rejects an empty list', () => {
+    const root = makeRepo({ 'app/post/[slug]/page.tsx': '' });
+    const matrix = {
+      weightSamples: { '/post/[slug]': ['/post/first', '/post/last'] },
+      surfaces: [surface({ routes: ['/post/[slug]'] })],
+    };
+    const routes = ['/post/[slug]'];
+    expect(validate({ matrix, repoRoot: root, routes })).toEqual([]);
+
+    const empty = validate({
+      matrix: { ...matrix, weightSamples: { '/post/[slug]': [] } },
+      repoRoot: root,
+      routes,
+    });
+    expect(empty.some((error) => error.includes('weightSamples'))).toBe(true);
+  });
+
   it('ties a paint key to a budget the gate actually runs', () => {
     const root = makeRepo({
       'app/one/page.tsx': '',
