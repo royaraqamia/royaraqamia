@@ -54,7 +54,6 @@ export function AssistantVisual({ visual }: { visual: VisualSpec | null | undefi
   return (
     <figure className="mt-2">
       {/* The SVG itself is the fallback while the canvas is still rasterizing. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={pngUrl ?? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(visual.svg)}`}
         alt={visual.caption ?? 'رسم توضيحي'}
