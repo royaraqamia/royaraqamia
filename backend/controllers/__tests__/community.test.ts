@@ -5,8 +5,13 @@ const mockRecordCommunityPostView = vi.fn();
 const mockLoadCommunityPost = vi.fn();
 const mockLoadCommunityMember = vi.fn();
 const mockCreatePostEngagementService = vi.fn();
+const mockGetOptionalUser = vi.fn();
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
+
+vi.mock('@/backend/middleware/auth-guard', () => ({
+  getOptionalUser: () => mockGetOptionalUser(),
+}));
 
 vi.mock('@/backend/config/community', () => ({
   recordCommunityPostView: (...args: unknown[]) => mockRecordCommunityPostView(...args),
@@ -22,6 +27,7 @@ import {
   editPostComment,
   getCommunityMember,
   getCommunityPost,
+  getPostComments,
   recordPostView,
   removePostComment,
 } from '@/backend/controllers/community';
@@ -251,6 +257,31 @@ describe('community member controller', () => {
 describe('community comment controller', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetOptionalUser.mockResolvedValue({ user: null, client: null });
+  });
+
+  it('passes the signed-in viewer into the block-aware thread read', async () => {
+    const thread = vi.fn(async () => ({ comments: [], nextCursor: null, total: 0 }));
+    mockCreatePostEngagementService.mockReturnValue({ thread });
+    mockGetOptionalUser.mockResolvedValue({
+      user: { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' },
+      client: null,
+    });
+
+    const result = await getPostComments('a-post', null);
+
+    expect(result).toEqual(expect.objectContaining({ status: 200 }));
+    expect(thread).toHaveBeenCalledWith('a-post', null, 20, 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+  });
+
+  it('reads a guest thread without a session', async () => {
+    const thread = vi.fn(async () => ({ comments: [], nextCursor: null, total: 0 }));
+    mockCreatePostEngagementService.mockReturnValue({ thread });
+
+    const result = await getPostComments('a-post', null);
+
+    expect(result).toEqual(expect.objectContaining({ status: 200 }));
+    expect(thread).toHaveBeenCalledWith('a-post', null, 20, null);
   });
 
   it('answers 404 for a malformed comment id on edit without calling the service', async () => {

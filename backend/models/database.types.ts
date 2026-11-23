@@ -3912,6 +3912,22 @@ export type Database = {
           id: string;
         }[];
       };
+      post_comments_page: {
+        Args: {
+          p_cursor_at: string | null;
+          p_cursor_id: string | null;
+          p_limit: number;
+          p_post_id: string;
+          p_viewer_id: string | null;
+        };
+        Returns: {
+          author_id: string;
+          body: string;
+          created_at: string;
+          edited_at: string | null;
+          id: string;
+        }[];
+      };
       post_engagement_counts: {
         Args: { p_post_ids: string[] };
         Returns: {
