@@ -348,6 +348,7 @@ data class ChatMessagePageResponseMessagesItem(
     val clientId: String? = null,
     val attachments: List<ChatMessagePageResponseMessagesItemAttachmentsItem>,
     val sources: List<ChatMessagePageResponseMessagesItemSourcesItem>? = null,
+    val visual: ChatMessagePageResponseMessagesItemVisual? = null,
 )
 
 @Serializable
@@ -371,6 +372,12 @@ data class ChatMessagePageResponseMessagesItemSourcesItem(
     val title: String,
     val domain: String,
     val publishedDate: String?,
+)
+
+@Serializable
+data class ChatMessagePageResponseMessagesItemVisual(
+    val svg: String,
+    val caption: String? = null,
 )
 
 @Serializable
@@ -428,6 +435,7 @@ data class ChatMessageResponseMessage(
     val clientId: String? = null,
     val attachments: List<ChatMessageResponseMessageAttachmentsItem>,
     val sources: List<ChatMessageResponseMessageSourcesItem>? = null,
+    val visual: ChatMessageResponseMessageVisual? = null,
 )
 
 @Serializable
@@ -451,6 +459,12 @@ data class ChatMessageResponseMessageSourcesItem(
     val title: String,
     val domain: String,
     val publishedDate: String?,
+)
+
+@Serializable
+data class ChatMessageResponseMessageVisual(
+    val svg: String,
+    val caption: String? = null,
 )
 
 @Serializable

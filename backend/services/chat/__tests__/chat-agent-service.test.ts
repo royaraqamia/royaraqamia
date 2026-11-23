@@ -2003,7 +2003,7 @@ describe('web search in the turn (ADR-0206)', () => {
 
   it('streams a drawing and stores its spec with the answer', async () => {
     const visual = {
-      svg: '<svg viewBox="0 0 10 10"><rect width="10" height="10"/></svg>',
+      svg: '<svg viewBox="0 0 10 10"><rect width="10" height="10"></rect></svg>',
       caption: 'مصاريف الشهر',
     };
     const client = scriptedClient([
