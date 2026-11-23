@@ -4,7 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
-  useState,
+  useReducer,
   useCallback,
   useRef,
   useMemo,
@@ -22,7 +22,7 @@ import {
   userIdentity,
 } from '@/frontend/shared/local-store/identity';
 import { clearSnapshots } from '@/frontend/shared/local-store/snapshot';
-import type { Me } from '@/frontend/api/me';
+import { sessionInitialState, sessionReducer } from '@/frontend/state/session-provider.reducer';
 import type { Session, User } from '@supabase/supabase-js';
 
 // Auth machinery is loaded lazily so the auth wrapper module stays out of the
@@ -93,14 +93,7 @@ function rememberResolvedIdentity(user: User | null): void {
 }
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [profileName, setProfileName] = useState<string | null>(null);
-  const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
-  const [profileUsername, setProfileUsername] = useState<string | null>(null);
-  const [profileBio, setProfileBio] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(sessionReducer, undefined, sessionInitialState);
   const pathname = usePathname();
   const router = useRouter();
   const prevSessionRef = useRef<Session | null>(null);
@@ -115,7 +108,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       // No cookie: the browser is not holding a session at all. Nothing to
       // check, so the boot identity is already the answer.
       rememberResolvedIdentity(null);
-      setIsLoading(false);
+      dispatch({ type: 'sessionAbsent' });
       return;
     }
 
@@ -125,9 +118,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       getSession()
         .then((session) => {
           if (!active) return;
-          setSession(session);
-          setUser(session?.user ?? null);
-          setIsLoading(false);
+          dispatch({ type: 'resolved', session });
           prevSessionRef.current = session;
           rememberResolvedIdentity(session?.user ?? null);
         })
@@ -135,16 +126,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           // A check that could not answer is not a sign-out: leave the
           // remembered identity alone so its rows stay on screen (ADR-0031),
           // and stop reporting "still loading" so nothing waits on it.
-          if (active) setIsLoading(false);
+          if (active) dispatch({ type: 'loadFailed' });
         });
 
       unsubscribe = subscribeToSessionChanges((session) => {
         if (!active) return;
         const prevSession = prevSessionRef.current;
         prevSessionRef.current = session;
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
+        dispatch({ type: 'resolved', session });
 
         // Session expired (had a session, now null) — not on an auth page
         if (prevSession && !session) {
@@ -193,27 +182,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   // client. Keyed on the user id so a token refresh doesn't re-probe, and defaulted
   // to `false` so a failure can only hide the entry — never expose it. The same
   // response carries the profile display name, so this costs no extra round-trip.
-  const userId = session?.user?.id ?? null;
-
-  const applyMe = useCallback((me: Me) => {
-    setIsAdmin(me.isAdmin);
-    setProfileName(me.name ?? null);
-    setProfileAvatarUrl(me.avatarUrl ?? null);
-    setProfileUsername(me.username ?? null);
-    setProfileBio(me.bio ?? null);
-  }, []);
-
-  const clearProfile = useCallback(() => {
-    setIsAdmin(false);
-    setProfileName(null);
-    setProfileAvatarUrl(null);
-    setProfileUsername(null);
-    setProfileBio(null);
-  }, []);
+  const userId = state.session?.user?.id ?? null;
 
   useEffect(() => {
     if (!userId) {
-      clearProfile();
+      dispatch({ type: 'profileCleared' });
       return;
     }
 
@@ -222,17 +195,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     void import('@/frontend/api/me').then(({ getMe }) =>
       getMe()
         .then((me) => {
-          if (active) applyMe(me);
+          if (active) dispatch({ type: 'profileLoaded', profile: me });
         })
         .catch(() => {
-          if (active) clearProfile();
+          if (active) dispatch({ type: 'profileCleared' });
         })
     );
 
     return () => {
       active = false;
     };
-  }, [userId, applyMe, clearProfile]);
+  }, [userId]);
 
   // The Realtime socket is the session's, not a screen's (ADR-0169). Opening it
   // as soon as the member is known is what makes the first thread they open
@@ -260,37 +233,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     if (!userId) return;
     try {
       const { getMe } = await import('@/frontend/api/me');
-      applyMe(await getMe());
+      dispatch({ type: 'profileLoaded', profile: await getMe() });
     } catch {
       // Keep the last known values when a refresh fails.
     }
-  }, [userId, applyMe]);
+  }, [userId]);
 
   const value = useMemo(
     () => ({
-      user,
-      session,
-      isLoading,
-      isAdmin,
-      profileName,
-      profileAvatarUrl,
-      profileUsername,
-      profileBio,
+      user: state.user,
+      session: state.session,
+      isLoading: state.isLoading,
+      isAdmin: state.isAdmin,
+      profileName: state.profileName,
+      profileAvatarUrl: state.profileAvatarUrl,
+      profileUsername: state.profileUsername,
+      profileBio: state.profileBio,
       signOut,
       refreshProfile,
     }),
-    [
-      user,
-      session,
-      isLoading,
-      isAdmin,
-      profileName,
-      profileAvatarUrl,
-      profileUsername,
-      profileBio,
-      signOut,
-      refreshProfile,
-    ]
+    [state, signOut, refreshProfile]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

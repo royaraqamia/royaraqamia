@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
 import { HabitSyncEngine, type SyncStatus } from '@/frontend/api/habitflow/sync-engine';
+import {
+  habitSyncInitialState,
+  habitSyncReducer,
+} from '@/frontend/state/habitflow/use-habit-sync.reducer';
 import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport';
 import { pullHabitData } from '@/frontend/api/habitflow/pull';
 import { subscribeToSyncHints, userSyncHints } from '@/frontend/api/sync-hints';
@@ -33,14 +37,6 @@ export interface HabitSyncState extends SyncStatus {
   retryRefresh: () => void;
 }
 
-const IDLE: SyncStatus = {
-  syncing: false,
-  pending: 0,
-  failed: 0,
-  lastError: null,
-  lastFailedType: null,
-};
-
 function isOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;
 }
@@ -57,8 +53,7 @@ export function useHabitSync(
   isSignedIn: boolean,
   onRemoteChange: () => void
 ): HabitSyncState {
-  const [status, setStatus] = useState<SyncStatus>(IDLE);
-  const [entries, setEntries] = useState<OutboxEntry[]>([]);
+  const [view, dispatch] = useReducer(habitSyncReducer, undefined, habitSyncInitialState);
   const [online, setOnline] = useState(isOnline);
   const engineRef = useRef<HabitSyncEngine | null>(null);
   const refreshRef = useRef(onRemoteChange);
@@ -88,13 +83,13 @@ export function useHabitSync(
   // writes made while offline (when no flush runs to emit a status).
   useEffect(() => {
     if (!store) {
-      setEntries([]);
+      dispatch({ type: 'entriesCleared' });
       return;
     }
     let active = true;
     const refresh = async () => {
       const next = await store.getOutbox();
-      if (active) setEntries(next);
+      if (active) dispatch({ type: 'entriesLoaded', entries: next });
     };
     // A completed local write is itself a flush trigger while online, so a
     // change reaches the server promptly instead of waiting for a focus event.
@@ -113,7 +108,7 @@ export function useHabitSync(
   useEffect(() => {
     if (!store || !isSignedIn) {
       engineRef.current = null;
-      setStatus(IDLE);
+      dispatch({ type: 'syncIdle' });
       clearRefresh();
       return;
     }
@@ -161,8 +156,8 @@ export function useHabitSync(
     // Every status emit is a chance for the Outbox mirror to change (a flush
     // removed or re-armed entries), so refresh it alongside the counts.
     const unsubscribe = engine.subscribe((next) => {
-      setStatus(next);
-      void store.getOutbox().then(setEntries);
+      dispatch({ type: 'statusChanged', status: next });
+      void store.getOutbox().then((entries) => dispatch({ type: 'entriesLoaded', entries }));
     });
     void runSync();
 
@@ -180,7 +175,7 @@ export function useHabitSync(
   const { pendingHabitIds, pendingLogKeys } = useMemo(() => {
     const habitIds = new Set<string>();
     const logKeys = new Set<string>();
-    for (const entry of entries) {
+    for (const entry of view.entries) {
       if (entry.entity === 'habit') {
         // Creates carry `clientId` (the row id); updates/deletes carry `id`.
         const p = entry.payload as { id?: string; clientId?: string };
@@ -192,16 +187,16 @@ export function useHabitSync(
       }
     }
     return { pendingHabitIds: habitIds, pendingLogKeys: logKeys };
-  }, [entries]);
+  }, [view.entries]);
 
   const retry = useCallback(() => {
     void engineRef.current?.retry();
   }, []);
 
   return {
-    ...status,
+    ...view.status,
     online,
-    entries,
+    entries: view.entries,
     pendingHabitIds,
     pendingLogKeys,
     retry,
