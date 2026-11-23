@@ -29,6 +29,8 @@ export interface ChatAppToolDeclaration {
   /** What the model names: `app_<app>_<tool>`, unique for this member. */
   name: string;
   connectionId: string;
+  /** The catalogue row, when the caller knows it (member-paid media lane). */
+  registryName?: string;
   toolName: string;
   appName: string;
   description: string;
@@ -123,6 +125,7 @@ export function appToolDeclarations(tools: McpAppTool[]): ChatAppToolDeclaration
     .map((tool) => ({
       name: uniqueName(appToolName(tool.appName, tool.toolName), taken),
       connectionId: tool.connectionId,
+      registryName: tool.registryName,
       toolName: tool.toolName,
       appName: tool.appName,
       description: tool.description?.trim() || tool.toolName,

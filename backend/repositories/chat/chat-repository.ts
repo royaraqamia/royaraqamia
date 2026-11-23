@@ -1,6 +1,7 @@
 import type { ChatSenderKind } from '@/shared/contracts/chat';
 import type { WebSource } from '@/shared/contracts/web-search';
 import type { VisualSpec } from '@/shared/contracts/visual';
+import type { ChatMedia } from '@/shared/contracts/chat-media';
 
 /**
  * What the Chats tab reads. One row per conversation, already carrying the
@@ -62,6 +63,8 @@ export interface ChatMessageRecord {
   sources?: WebSource[] | null;
   /** A model-written drawing the page turns into a PNG (ADR-0215). */
   visual?: VisualSpec | null;
+  /** Member-paid media stored in our bucket (ADR-0216). */
+  media?: ChatMedia | null;
 }
 
 export interface ChatAttachmentRecord {
@@ -105,6 +108,8 @@ export interface InsertMessageInput {
   sources?: WebSource[] | null;
   /** A model-written drawing, written only on the assistant's rows (ADR-0215). */
   visual?: VisualSpec | null;
+  /** A connected app's file, written only on the assistant's rows (ADR-0216). */
+  media?: ChatMedia | null;
   attachments?: {
     storagePath: string;
     fileName: string;

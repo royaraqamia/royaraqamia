@@ -95,6 +95,7 @@ function makeRepository(
     attachments: {
       signedUrl: vi.fn(async () => 'https://storage.test/signed'),
       download: vi.fn(async () => new Uint8Array()),
+      upload: vi.fn(async () => true),
       remove: vi.fn(async () => undefined),
     },
     ...depOverrides,
@@ -974,6 +975,7 @@ describe('ChatService.deleteMessage attachments', () => {
         attachments: {
           signedUrl: vi.fn(async () => null),
           download: vi.fn(async () => null),
+          upload: vi.fn(async () => true),
           remove,
         },
       }
@@ -1150,6 +1152,7 @@ describe('ChatService.attachmentUrl', () => {
         attachments: {
           signedUrl,
           download: vi.fn(async () => null),
+          upload: vi.fn(async () => true),
           remove: vi.fn(async () => undefined),
         },
       }
@@ -1173,6 +1176,7 @@ describe('ChatService.attachmentUrl', () => {
         attachments: {
           signedUrl,
           download: vi.fn(async () => null),
+          upload: vi.fn(async () => true),
           remove: vi.fn(async () => undefined),
         },
       }

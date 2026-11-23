@@ -16,6 +16,7 @@ import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
 import type { ChatAgentTool } from '@/backend/services/chat/chat-agent-tools';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import { CHAT_APP_CALLS_SPENT } from '@/shared/contracts/chat';
+import { CHAT_MEDIA_UNAVAILABLE, HIGGSFIELD_REGISTRY_NAME } from '@/shared/contracts/chat-media';
 
 const CONTEXT = { supabase: {} as never, ip: '127.0.0.1' };
 
@@ -97,7 +98,11 @@ function makeService(
 
   const service = new ChatAgentActionService({
     actions,
-    agent: { insertAgentMessage: vi.fn(), allowance: vi.fn() } as unknown as ChatAgentRepository,
+    agent: {
+      insertAgentMessage: vi.fn(),
+      allowance: vi.fn(),
+      setMessageMedia: vi.fn(async () => undefined),
+    } as unknown as ChatAgentRepository,
     chats: { getThread: vi.fn(async () => AGENT_THREAD) } as unknown as ChatService,
     resolveTool: () => tool,
     reserveAppCall,
@@ -249,6 +254,95 @@ describe('confirming an app’s proposal (#1225)', () => {
     });
     expect(action.status).toBe('applied');
     expect(action.result).toMatchObject({ result: { isError: false } });
+  });
+
+  it('stores the confirmed generation in our bucket and attaches it to the card’s line (ADR-0216)', async () => {
+    const call = vi.fn(async () => ({
+      isError: false,
+      content: [{ type: 'text', text: 'https://cdn.higgsfield.ai/out/clip.mp4' }],
+      structured: null,
+    }));
+    const fetchMedia = vi.fn(async () => ({
+      bytes: new Uint8Array([1, 2, 3]),
+      mimeType: 'video/mp4',
+    }));
+    const upload = vi.fn(async () => true);
+    const setMessageMedia = vi.fn(async () => undefined);
+    const agent = {
+      insertAgentMessage: vi.fn(),
+      allowance: vi.fn(),
+      setMessageMedia,
+    } as unknown as ChatAgentRepository;
+    const { service } = makeService({
+      repo: repository(remoteRow()).repo,
+      actions: {
+        agent,
+        apps: {
+          call,
+          fetchMedia,
+          catalog: vi.fn(async () => [
+            {
+              connectionId: 'conn-1',
+              registryName: HIGGSFIELD_REGISTRY_NAME,
+              appName: 'Higgsfield',
+              toolName: 'create_page',
+              description: 'Generate video',
+              inputSchema: {},
+              readOnly: false,
+              permissionLevel: 'ask' as const,
+            },
+          ]),
+        },
+        attachments: { upload },
+      },
+    });
+
+    const action = await service.confirm('user-1', 'conversation-1', 'action-1', CONTEXT);
+
+    expect(action.status).toBe('applied');
+    expect(fetchMedia).toHaveBeenCalledWith(expect.objectContaining({ connectionId: 'conn-1' }));
+    expect(upload).toHaveBeenCalledWith(
+      expect.stringMatching(/^conversation-1\/generated\/.*\.mp4$/),
+      expect.any(Uint8Array),
+      'video/mp4'
+    );
+    expect(setMessageMedia).toHaveBeenCalledWith(
+      'message-1',
+      expect.objectContaining({ kind: 'video', mimeType: 'video/mp4' })
+    );
+  });
+
+  it('says one Arabic sentence when a confirmed generation runs out of credits (ADR-0216)', async () => {
+    const call = vi.fn(async () => ({
+      isError: true,
+      content: [{ type: 'text', text: 'insufficient credits' }],
+      structured: null,
+    }));
+    const { service } = makeService({
+      repo: repository(remoteRow()).repo,
+      actions: {
+        apps: {
+          call,
+          catalog: vi.fn(async () => [
+            {
+              connectionId: 'conn-1',
+              registryName: HIGGSFIELD_REGISTRY_NAME,
+              appName: 'Higgsfield',
+              toolName: 'create_page',
+              description: 'Generate video',
+              inputSchema: {},
+              readOnly: false,
+              permissionLevel: 'ask' as const,
+            },
+          ]),
+        },
+      },
+    });
+
+    const action = await service.confirm('user-1', 'conversation-1', 'action-1', CONTEXT);
+
+    expect(action.status).toBe('failed');
+    expect(action.result).toEqual({ error: CHAT_MEDIA_UNAVAILABLE });
   });
 
   it('counts the call the member confirmed (#1226)', async () => {

@@ -22,6 +22,7 @@ import {
   type McpCatalogService,
 } from '../marketplace/catalog-service';
 import type { McpCatalogAdminUpdate } from '@/shared/contracts/mcp-catalog';
+import { HIGGSFIELD_REGISTRY_NAME } from '@/shared/contracts/chat-media';
 
 /**
  * The catalogue, driven against an in-memory store and a fake registry.
@@ -234,7 +235,9 @@ function build(options: {
  * filters those out rather than counting them as registry entries.
  */
 function mirrored(upserts: McpCatalogUpsertRow[]): McpCatalogUpsertRow[] {
-  return upserts.filter((row) => row.registryName !== 'com.github/mcp');
+  return upserts.filter(
+    (row) => row.registryName !== 'com.github/mcp' && row.registryName !== HIGGSFIELD_REGISTRY_NAME
+  );
 }
 
 describe('the registry pass', () => {
@@ -1036,6 +1039,24 @@ describe('a pre-registered client (issue #1229)', () => {
     });
     // Written before the sweep, so a pass never retires it as a vanished row.
     expect(repository.upserts.indexOf(curated!)).toBeGreaterThanOrEqual(120);
+  });
+
+  it('mirrors the member-paid media connector as an OAuth curated row', async () => {
+    const repository = fakeRepository();
+    const service = build({ repository, pages: [rows(120, null)] });
+
+    await service.sync();
+
+    const curated = repository.upserts.find((row) => row.registryName === HIGGSFIELD_REGISTRY_NAME);
+    expect(curated).toMatchObject({
+      title: 'Higgsfield',
+      remoteUrl: 'https://mcp.higgsfield.ai/mcp',
+      authMode: 'oauth',
+      status: 'active',
+    });
+    // No credential is carried in the row: the member signs in with their own
+    // account and their own credits pay for every generation (ADR-0216).
+    expect(JSON.stringify(curated)).not.toMatch(/token|secret|api[_-]?key/i);
   });
 
   it('seeds it with the launch set and names it in the admin list', async () => {

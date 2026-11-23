@@ -5,7 +5,8 @@ import type { ChatMessageRecord } from '@/backend/repositories/chat/chat-reposit
 import { repositoryFailure } from '@/backend/shared/repository-error';
 import type { ChatAgentMeters } from '@/shared/contracts/chat';
 import type { WebSource } from '@/shared/contracts/web-search';
-import type { VisualSpec } from '@/shared/contracts/visual';
+import { VisualSpecSchema, type VisualSpec } from '@/shared/contracts/visual';
+import { ChatMediaSchema, type ChatMedia } from '@/shared/contracts/chat-media';
 
 type MessageRow = Database['public']['Tables']['chat_messages']['Row'];
 type TurnRow = Database['public']['Tables']['agent_turns']['Row'];
@@ -42,6 +43,8 @@ function toMessage(row: MessageRow): ChatMessageRecord {
     createdAt: row.created_at,
     clientId: row.client_id,
     sources: (row.sources as WebSource[] | null) ?? null,
+    visual: row.visual_svg ? (VisualSpecSchema.safeParse(row.visual_svg).data ?? null) : null,
+    media: row.media ? (ChatMediaSchema.safeParse(row.media).data ?? null) : null,
   };
 }
 
@@ -80,8 +83,15 @@ export interface ChatAgentRepository {
     conversationId: string,
     body: string,
     sources?: WebSource[],
-    visual?: VisualSpec | null
+    visual?: VisualSpec | null,
+    media?: ChatMedia | null
   ): Promise<ChatMessageRecord>;
+  /**
+   * Attach the file a confirmed card generated to that card's assistant line
+   * (ADR-0216). The row is ours to write: the member may only read their thread,
+   * and the descriptor is never a vendor URL.
+   */
+  setMessageMedia(messageId: string, media: ChatMedia): Promise<void>;
   /** Opens the record of one turn and answers its id. */
   startTurn(conversationId: string, memberId: string, question: string): Promise<string>;
   /** The words a voice note turned out to hold, written once it is transcribed. */
@@ -117,7 +127,7 @@ export function createSupabaseChatAgentRepository(
       };
     },
 
-    async insertAgentMessage(conversationId, body, sources, visual) {
+    async insertAgentMessage(conversationId, body, sources, visual, media) {
       const { data, error } = await supabase
         .from('chat_messages')
         .insert({
@@ -127,12 +137,22 @@ export function createSupabaseChatAgentRepository(
           body,
           ...(sources && sources.length > 0 ? { sources } : {}),
           ...(visual ? { visual_svg: visual } : {}),
+          ...(media ? { media } : {}),
         })
         .select()
         .single();
 
       if (error) throw repositoryFailure('chat.agent.insertAgentMessage', error);
       return toMessage(data);
+    },
+
+    async setMessageMedia(messageId, media) {
+      const { error } = await supabase
+        .from('chat_messages')
+        .update({ media })
+        .eq('id', messageId)
+        .eq('sender_kind', 'agent');
+      if (error) throw repositoryFailure('chat.agent.setMessageMedia', error);
     },
 
     async startTurn(conversationId, memberId, question) {

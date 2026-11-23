@@ -403,6 +403,29 @@ describe('the catalog a turn plans from', () => {
     await expect(apps.names('user-2', ['conn-1'])).resolves.toEqual(new Map());
   });
 
+  it('fetches generated media with the member token and never returns it to the browser', async () => {
+    const fetchBinary = vi.fn(async () => ({
+      bytes: new Uint8Array([1, 2, 3]),
+      mimeType: 'image/png',
+    }));
+    const { apps } = service({ remote: fakeRemote({ fetchBinary }) });
+
+    await expect(
+      apps.fetchMedia({
+        userId: 'user-1',
+        connectionId: 'conn-1',
+        url: 'https://cdn.example/generated.png',
+      })
+    ).resolves.toEqual({ bytes: new Uint8Array([1, 2, 3]), mimeType: 'image/png' });
+
+    expect(fetchBinary).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: 'https://cdn.example/generated.png',
+        auth: { kind: 'bearer', token: 'access-1' },
+      })
+    );
+  });
+
   it('counts a live app for the composer’s meter and not a revoked one (#1226)', async () => {
     const live = service();
     await expect(live.apps.connectedCount('user-1')).resolves.toBe(1);

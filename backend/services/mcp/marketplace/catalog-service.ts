@@ -30,6 +30,7 @@ import {
   type McpCatalogWaitingRow,
 } from '@/shared/contracts/mcp-catalog';
 import type { McpAuthMode } from '@/backend/shared/domain/mcp-remote';
+import { HIGGSFIELD_REGISTRY_NAME } from '@/shared/contracts/chat-media';
 
 /**
  * The catalogue: the mirror of the official MCP registry, the search over it, the
@@ -127,6 +128,26 @@ const CURATED_SERVERS: readonly McpCatalogUpsertRow[] = [
       "Repositories, issues, pull requests, code search and projects, through GitHub's remote MCP server.",
     version: null,
     remoteUrl: 'https://api.githubcopilot.com/mcp/',
+    iconUrl: null,
+    iconMime: null,
+    status: 'active',
+    publishedAt: null,
+    registryUpdatedAt: null,
+    raw: null,
+  },
+  {
+    // Not in the official registry, so the mirror would never offer it. The
+    // member signs in with their own account and every generation spends their
+    // credits: we hold no key and pay no bill (ADR-0216). `oauth` is stated
+    // explicitly rather than left to the column default — this row is whose
+    // authentication the whole lane depends on.
+    registryName: HIGGSFIELD_REGISTRY_NAME,
+    title: 'Higgsfield',
+    description:
+      'Generate images and video clips with your own Higgsfield account; each generation spends your credits.',
+    version: null,
+    remoteUrl: 'https://mcp.higgsfield.ai/mcp',
+    authMode: 'oauth',
     iconUrl: null,
     iconMime: null,
     status: 'active',

@@ -586,6 +586,7 @@ export type Database = {
           deleted_at: string | null;
           edited_at: string | null;
           id: string;
+          media: Json | null;
           reply_to_id: string | null;
           sender_id: string | null;
           sender_kind: string;
@@ -600,6 +601,7 @@ export type Database = {
           deleted_at?: string | null;
           edited_at?: string | null;
           id?: string;
+          media?: Json | null;
           reply_to_id?: string | null;
           sender_id?: string | null;
           sender_kind?: string;
@@ -614,6 +616,7 @@ export type Database = {
           deleted_at?: string | null;
           edited_at?: string | null;
           id?: string;
+          media?: Json | null;
           reply_to_id?: string | null;
           sender_id?: string | null;
           sender_kind?: string;
