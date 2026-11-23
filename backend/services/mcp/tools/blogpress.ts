@@ -627,7 +627,8 @@ export async function listPostCommentsHandler(
       await createPostEngagementService().thread(
         params.slug,
         params.cursor ?? null,
-        POST_COMMENTS_PAGE_SIZE
+        POST_COMMENTS_PAGE_SIZE,
+        ctx.userId ?? null
       )
     );
     return params.format === 'json'

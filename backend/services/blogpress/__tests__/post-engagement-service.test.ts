@@ -165,6 +165,24 @@ describe('PostEngagementService.thread', () => {
     });
     expect(page.comments[1]?.author?.avatar_url).toBe('/s.png');
   });
+
+  it('passes the viewer to the block-aware repository read', async () => {
+    const repository = makeRepository();
+    const { service } = makeService(repository);
+
+    await service.thread('a-post', null, 20, OTHER_MEMBER);
+
+    expect(repository.listComments).toHaveBeenCalledWith(POST_ID, null, 20, OTHER_MEMBER);
+  });
+
+  it('reads as a guest when no viewer is signed in', async () => {
+    const repository = makeRepository();
+    const { service } = makeService(repository);
+
+    await service.thread('a-post', null, 20);
+
+    expect(repository.listComments).toHaveBeenCalledWith(POST_ID, null, 20, null);
+  });
 });
 
 describe('PostEngagementService.comment', () => {

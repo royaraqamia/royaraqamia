@@ -208,3 +208,109 @@ describe('listComments', () => {
     );
   });
 });
+
+const BLOCKED_AUTHOR = '33333333-3333-4333-8333-333333333333';
+const VIEWER = '44444444-4444-4444-8444-444444444444';
+
+interface RpcCall {
+  name: string;
+  args: Record<string, unknown>;
+}
+
+/**
+ * The block filter belongs to the SQL function, so the fake narrows rows BEFORE
+ * the limit the way `post_comments_page` does. A repository that filtered after
+ * paging would hand back a short page and fail these assertions.
+ */
+function createViewerClient(rows: StoredComment[], hidden: string[] = []) {
+  const calls: RpcCall[] = [];
+  const base = createClient(rows);
+  const hiddenSet = new Set(hidden);
+
+  const supabase = {
+    ...base.supabase,
+    rpc: (name: string, args: Record<string, unknown>) => {
+      calls.push({ name, args });
+      const cursorAt = args.p_cursor_at as string | null;
+      const cursorId = args.p_cursor_id as string | null;
+      const ordered = rows
+        .filter((row) => row.deleted_at === null && !hiddenSet.has(row.author_id))
+        .filter(
+          (row) =>
+            !cursorAt ||
+            row.created_at < cursorAt ||
+            (row.created_at === cursorAt && row.id < (cursorId ?? ''))
+        )
+        .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id));
+      return Promise.resolve({
+        data: ordered.slice(0, (args.p_limit as number) + 1).map((row) => ({
+          id: row.id,
+          author_id: row.author_id,
+          body: row.body,
+          created_at: row.created_at,
+          edited_at: row.edited_at,
+        })),
+        error: null,
+      });
+    },
+  } as unknown as SupabaseClient<Database>;
+
+  return { supabase, calls };
+}
+
+describe('listComments with a viewer', () => {
+  it('filters before the keyset limit and keeps the public total', async () => {
+    const rows = thread(23);
+    rows[21] = { ...rows[21]!, author_id: BLOCKED_AUTHOR };
+    rows[22] = { ...rows[22]!, author_id: BLOCKED_AUTHOR };
+    const { supabase, calls } = createViewerClient(rows, [BLOCKED_AUTHOR]);
+    const repo = createPostEngagementRepository(supabase);
+
+    const page = await repo.listComments(POST_ID, null, 20, VIEWER);
+
+    expect(page.rows).toHaveLength(20);
+    expect(page.rows.some((row) => row.authorId === BLOCKED_AUTHOR)).toBe(false);
+    expect(page.nextCursor).not.toBeNull();
+    expect(page.total).toBe(23);
+    expect(calls).toEqual([
+      {
+        name: 'post_comments_page',
+        args: {
+          p_post_id: POST_ID,
+          p_viewer_id: VIEWER,
+          p_cursor_at: null,
+          p_cursor_id: null,
+          p_limit: 20,
+        },
+      },
+    ]);
+  });
+
+  it('passes the decoded cursor to the block-aware function on the next page', async () => {
+    const { supabase, calls } = createViewerClient(thread(25));
+    const repo = createPostEngagementRepository(supabase);
+
+    const first = await repo.listComments(POST_ID, null, 20, VIEWER);
+    await repo.listComments(POST_ID, first.nextCursor, 20, VIEWER);
+
+    expect(calls).toHaveLength(2);
+    expect(calls[1]?.args).toEqual({
+      p_post_id: POST_ID,
+      p_viewer_id: VIEWER,
+      p_cursor_at: comment(5).created_at,
+      p_cursor_id: comment(5).id,
+      p_limit: 20,
+    });
+  });
+
+  it('uses the plain table read for a guest so no block session is needed', async () => {
+    const { supabase, calls } = createViewerClient(thread(20));
+    const repo = createPostEngagementRepository(supabase);
+
+    const page = await repo.listComments(POST_ID, null, 20, null);
+
+    expect(page.rows).toHaveLength(20);
+    expect(page.total).toBe(20);
+    expect(calls).toHaveLength(0);
+  });
+});

@@ -57,8 +57,17 @@ export interface PostEngagementRepository {
     userId: string,
     liked: boolean
   ): Promise<{ liked: boolean; likeCount: number }>;
-  /** One keyset page of live comments, newest first, with the post's total. */
-  listComments(postId: string, cursor: string | null, pageSize: number): Promise<PostCommentPage>;
+  /**
+   * One keyset page of live comments, newest first, with the post's public total.
+   * A viewer filters out authors on either side of a block before the page is
+   * cut; a null viewer is a guest and sees the unfiltered thread.
+   */
+  listComments(
+    postId: string,
+    cursor: string | null,
+    pageSize: number,
+    viewerId?: string | null
+  ): Promise<PostCommentPage>;
   /** The public identity of every author named by `ids`, in one read. */
   authorsByIds(ids: string[]): Promise<Record<string, PostCommentAuthorRow>>;
   getComment(commentId: string): Promise<PostCommentRow | null>;
@@ -130,10 +139,51 @@ export function createPostEngagementRepository(
   async function listComments(
     postId: string,
     cursor: string | null,
-    pageSize: number
+    pageSize: number,
+    viewerId: string | null = null
   ): Promise<PostCommentPage> {
     const decoded = cursor ? decodeCommentCursor(cursor) : null;
 
+    // A signed-in viewer reads through the block-aware function: the filter has
+    // to run before the keyset limit or a page comes back short. The public
+    // total is read separately, so it stays the count the feed's action bar
+    // prints even when this viewer cannot see every row behind it (ADR-0217).
+    if (viewerId) {
+      const [{ data, error }, liveTotal] = await Promise.all([
+        supabase.rpc('post_comments_page', {
+          p_post_id: postId,
+          p_viewer_id: viewerId,
+          p_cursor_at: decoded?.createdAt ?? null,
+          p_cursor_id: decoded?.id ?? null,
+          p_limit: pageSize,
+        }),
+        countLiveComments(supabase, postId),
+      ]);
+      if (error) throw error;
+
+      const rows = (data ?? []).map((row) => ({
+        id: row.id,
+        postId,
+        authorId: row.author_id,
+        body: row.body,
+        createdAt: row.created_at,
+        editedAt: row.edited_at,
+      }));
+
+      const hasMore = rows.length > pageSize;
+      const page = hasMore ? rows.slice(0, pageSize) : rows;
+      const last = page[page.length - 1];
+
+      return {
+        rows: page,
+        nextCursor:
+          hasMore && last ? encodeCommentCursor({ createdAt: last.createdAt, id: last.id }) : null,
+        total: liveTotal,
+      };
+    }
+
+    // A guest has no block rows, so the plain table read is still the cheapest
+    // path: the first page gets its rows and its count in one request.
     let query = supabase
       .from('post_comments')
       .select('id, post_id, author_id, body, created_at, edited_at', { count: 'exact' })
@@ -142,11 +192,6 @@ export function createPostEngagementRepository(
 
     if (decoded) query = query.or(commentCursorFilter(decoded));
 
-    // One extra row answers "is there another page" without guessing from the
-    // count, and the count answers the action bar's number in the same read —
-    // but only on the first page: PostgREST counts the rows the filter matches,
-    // and the cursor filter matches the remainder, not the thread. A cursor page
-    // asks the live total separately, beside the rows it reads.
     const [{ data, error, count }, liveTotal] = await Promise.all([
       query
         .order('created_at', { ascending: false })

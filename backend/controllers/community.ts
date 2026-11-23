@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { NO_STORE, publicEdgeCache } from '@/backend/transport/cache-policy';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
@@ -205,10 +206,12 @@ export async function getPostComments(slug: string, cursor: string | null): Prom
   }
 
   try {
+    const { user } = await getOptionalUser();
     const page = await createPostEngagementService().thread(
       parsed.data,
       cursor,
-      POST_COMMENTS_PAGE_SIZE
+      POST_COMMENTS_PAGE_SIZE,
+      user?.id ?? null
     );
     // A shape guard on the way out: the page and the app both decode this body,
     // and a field that silently disappeared would be a blank row, not a failure.

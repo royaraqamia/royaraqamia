@@ -80,14 +80,19 @@ export class PostEngagementService {
     return this.deps.engagement.setLike(postId, viewerId, liked);
   }
 
-  /** One keyed page of a thread, its page cursor and the post's live total. */
+  /**
+   * One keyed page of a thread, its page cursor and the post's public total.
+   * A signed-in viewer's blocks hide the authors they cannot see; a guest gets
+   * the same thread a block-free member gets (ADR-0217).
+   */
   async thread(
     slug: string,
     cursor: string | null,
-    pageSize: number
+    pageSize: number,
+    viewerId: string | null = null
   ): Promise<PostCommentsResponse> {
     const postId = await this.postIdOf(slug);
-    const page = await this.deps.engagement.listComments(postId, cursor, pageSize);
+    const page = await this.deps.engagement.listComments(postId, cursor, pageSize, viewerId);
     const comments = await this.hydrate(page.rows);
 
     return { comments, nextCursor: page.nextCursor, total: page.total };

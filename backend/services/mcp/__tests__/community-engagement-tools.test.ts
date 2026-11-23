@@ -60,7 +60,7 @@ describe('community engagement handlers', () => {
       ctx(['community.read'])
     );
     expect(result.structuredContent).toEqual(page);
-    expect(engagement.thread).toHaveBeenCalledWith('how-to-start', 'opaque', 20);
+    expect(engagement.thread).toHaveBeenCalledWith('how-to-start', 'opaque', 20, 'u1');
   });
 
   it('sets a like, never toggles one, and answers the new count', async () => {

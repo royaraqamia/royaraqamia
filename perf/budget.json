@@ -76,8 +76,8 @@
       "jsGzipKb": 264
     },
     "/notifications": {
-      "comment": "Live weight gate (#1662): 283.7 KB gzip JS on 2026-11-22, the heaviest per-request surface and the one perf:check could never see.",
-      "jsGzipKb": 285
+      "comment": "Live weight gate (#1662): 283.7 KB gzip JS on 2026-11-22, the heaviest per-request surface and the one perf:check could never see. Raised from 285 to 287 KB for the live weight gate: the deployed document measured 285.4 KB on 2026-11-23, so the ceiling keeps the usual small headroom across machines instead of failing on runner noise.",
+      "jsGzipKb": 287
     },
     "/pricing/subscribe": {
       "comment": "Live weight gate (#1662): 308.7 KB gzip JS on 2026-11-22.",

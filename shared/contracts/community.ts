@@ -211,8 +211,11 @@ export type PostComment = z.infer<typeof PostCommentSchema>;
 /**
  * `GET /api/community/[slug]/comments`: one keyset page of a thread.
  *
- * `total` is the live-comment count the post's action bar prints; `nextCursor`
- * `null` is the last page. The app and the site page the thread the same way.
+ * `total` is the public live-comment count the post's action bar prints, not
+ * the number of rows this viewer can read: a member who has blocked an author,
+ * or has been blocked by them, does not see that author's comments (ADR-0217).
+ * Keeping the count viewer-independent is what lets the feed batch it for both
+ * clients. `nextCursor` `null` is the last page; both clients page the same way.
  */
 export const PostCommentsResponseSchema = z.object({
   comments: z.array(PostCommentSchema),
