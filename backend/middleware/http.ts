@@ -7,8 +7,12 @@ interface RateLimitConfig {
   limit: number;
   windowMs: number;
   message: string;
-  /** Deny on a limiter outage instead of allowing through. Use for security-sensitive paths. */
-  failClosed?: boolean;
+  /**
+   * Deny on a limiter outage instead of allowing through. Required so a caller
+   * cannot add a throttle that silently fails open; every policy sets it, and
+   * the ones guarding auth or brute-force paths set it to true.
+   */
+  failClosed: boolean;
 }
 
 export async function checkRateLimitApi(config: RateLimitConfig): Promise<HttpResult | null> {

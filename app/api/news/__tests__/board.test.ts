@@ -12,6 +12,7 @@ const mockPolicy = vi.fn((ip: string) => ({
   limit: 60,
   windowMs: 60_000,
   message: RATE_LIMIT_MESSAGE,
+  failClosed: true,
 }));
 
 vi.mock('next/server', () => ({
@@ -314,7 +315,7 @@ describe('GET /api/news/board', () => {
     expect(mockLoadNewsBoard).not.toHaveBeenCalled();
   });
 
-  it('throttles per client IP and fails open on a limiter outage', async () => {
+  it('throttles per client IP and fails closed on a limiter outage', async () => {
     await boardGET(request());
 
     expect(mockPolicy).toHaveBeenCalledWith(IP);
@@ -323,7 +324,7 @@ describe('GET /api/news/board', () => {
       limit: 60,
       windowMs: 60_000,
       message: RATE_LIMIT_MESSAGE,
-      failClosed: false,
+      failClosed: true,
     });
   });
 });

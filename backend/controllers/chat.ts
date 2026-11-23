@@ -14,7 +14,7 @@ import {
   withAuthenticatedStream,
   withAuthenticatedUser,
 } from '@/backend/transport/session-handler';
-import { isSameOrigin, getClientIpFromHeaders } from '@/backend/transport/http';
+import { isSameOrigin, clientAddress } from '@/backend/transport/http';
 import { jsonResult, toNextResponse, type HttpResult } from '@/backend/transport/http-result';
 import { ChatAgentError } from '@/backend/services/chat/chat-agent-service';
 import { ChatError } from '@/backend/services/chat/chat-service';
@@ -664,7 +664,7 @@ export async function streamChatAgentTurn(
             parsed.data.body ?? '',
             {
               supabase,
-              ip: getClientIpFromHeaders(headers),
+              ip: clientAddress(headers),
             },
             parsed.data.attachments,
             parsed.data.screen
@@ -752,7 +752,7 @@ export async function confirmChatAgentAction(
         userId,
         id,
         actionId,
-        { supabase, ip: getClientIpFromHeaders(headers) }
+        { supabase, ip: clientAddress(headers) }
       );
 
       return jsonResult(

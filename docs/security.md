@@ -53,7 +53,12 @@ keystore secrets below.
 
 - Validate all external inputs via Zod (`shared/contracts`)
 - Turnstile on auth forms
-- Upstash rate limiting
+- Upstash rate limiting, keyed on the visitor the current edge resolved: `cf-connecting-ip` is
+  trusted only alongside `cf-ray`, so a client-supplied address (or the proxy hop shared by every
+  visitor behind the CDN) cannot become a rate-limit key (`backend/transport/http.ts`, ADR-0174).
+  Every policy carries `failClosed`, so a store outage refuses a throttled request rather than
+  silently removing an auth or brute-force ceiling. The live ceiling probe belongs in the audit run
+  (issue #1666).
 - Least-privilege grants alongside RLS: policies choose rows, grants decide whether a role reaches
   the object at all. New `public` objects get no implicit grant for `anon`/`authenticated`, and the
   two public roles hold no TRUNCATE, REFERENCES, TRIGGER or MAINTAIN on existing tables. Writes a

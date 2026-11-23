@@ -41,7 +41,7 @@ function makeReq(fields: Record<string, string> = {}): NextRequest {
   }
   return {
     url: 'http://localhost/mcp/revoke',
-    headers: new Headers({ 'x-real-ip': IP }),
+    headers: new Headers({ 'cf-ray': '8f3c-test', 'cf-connecting-ip': IP }),
     formData: async () => form,
   } as unknown as NextRequest;
 }

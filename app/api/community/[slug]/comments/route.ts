@@ -14,7 +14,6 @@ const MAX_CURSOR_LENGTH = COMMUNITY_INDEX_CURSOR_MAX_LENGTH;
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const rateLimited = await checkRateLimitApi({
     ...communityEngagementRateLimitPolicy(getClientIp(req)),
-    failClosed: false,
   });
   if (rateLimited) return toNextResponse(rateLimited);
 

@@ -15,7 +15,6 @@ import { toNextResponse } from '@/backend/transport/http-result';
 export async function POST(req: NextRequest) {
   const rateLimited = await checkRateLimitApi({
     ...communityEngagementRateLimitPolicy(getClientIp(req)),
-    failClosed: false,
   });
   if (rateLimited) return toNextResponse(rateLimited);
 

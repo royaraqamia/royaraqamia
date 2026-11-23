@@ -40,7 +40,6 @@ export async function recordOfflineServe(body: unknown, ip: string): Promise<Htt
 
   const rateLimited = await checkRateLimitApi({
     ...offlineServeRateLimitPolicy(ip),
-    failClosed: true,
   });
   if (rateLimited) return rateLimited;
 

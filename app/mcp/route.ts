@@ -28,7 +28,6 @@ export const maxDuration = 60;
 async function handleRequest(request: NextRequest): Promise<Response> {
   const rateLimited = await checkRateLimitApi({
     ...mcpDataPlaneRateLimitPolicy(getClientIp(request)),
-    failClosed: true,
   });
   if (rateLimited) return toNextResponse(rateLimited);
 

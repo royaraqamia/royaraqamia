@@ -41,7 +41,7 @@ function makeReq(query: Record<string, string>): NextRequest {
   return {
     url: url.toString(),
     nextUrl: url,
-    headers: new Headers({ 'x-real-ip': IP }),
+    headers: new Headers({ 'cf-ray': '8f3c-test', 'cf-connecting-ip': IP }),
   } as unknown as NextRequest;
 }
 

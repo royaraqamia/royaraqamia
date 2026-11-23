@@ -22,7 +22,6 @@ export const runtime = 'nodejs';
 export async function GET(req: NextRequest) {
   const rateLimited = await checkRateLimitApi({
     ...mcpMarketplaceIconRateLimitPolicy(getClientIp(req)),
-    failClosed: false,
   });
   if (rateLimited) return toNextResponse(rateLimited);
 

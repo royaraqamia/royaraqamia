@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
   // Before the client lookup and getUser(): both are anonymous-reachable work.
   const rateLimited = await checkRateLimitApi({
     ...mcpAuthorizeRateLimitPolicy(getClientIp(req)),
-    failClosed: true,
   });
   if (rateLimited) return toNextResponse(rateLimited);
 

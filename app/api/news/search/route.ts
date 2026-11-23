@@ -51,7 +51,6 @@ export async function GET(request: NextRequest) {
 
   const rateLimited = await checkRateLimitApi({
     ...newsSearchRateLimitPolicy(getClientIp(request)),
-    failClosed: false,
   });
   if (rateLimited) return toNextResponse(rateLimited);
 
