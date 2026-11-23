@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -540,7 +540,7 @@ describe('perf-baseline CLI', () => {
 
 /* Live-document mode ------------------------------------------------------- */
 
-async function makeLiveServer() {
+async function makeLiveServer({ flaky = {} } = {}) {
   const bodies = {
     '/': [
       '<!DOCTYPE html><html><head>',
@@ -559,7 +559,16 @@ async function makeLiveServer() {
     '/_next/static/media/font.woff2': pseudoText(13, 6000),
     '/_next/static/chunks/legacy.js': pseudoText(14, 45000),
   };
+  const hits = new Map();
   const server = createServer((req, res) => {
+    const attempts = flaky[req.url] ?? 0;
+    const seen = hits.get(req.url) ?? 0;
+    if (seen < attempts) {
+      hits.set(req.url, seen + 1);
+      res.writeHead(503);
+      res.end();
+      return;
+    }
     if (req.url === '/redirect') {
       res.writeHead(307, { location: '/account' });
       res.end();
@@ -591,6 +600,62 @@ describe('fetchRaw', () => {
     const { origin } = await makeLiveServer();
     const { raw } = await fetchRaw(`${origin}/_next/static/chunks/app.js`);
     expect(raw.toString()).toBe(pseudoText(11, 40000));
+  });
+
+  it('retries a timed-out request with a fresh signal instead of dropping the route', async () => {
+    const signals = [];
+    const fetchImpl = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('The operation was aborted due to timeout'))
+      .mockImplementation((_url, init) => {
+        signals.push(init.signal);
+        return Promise.resolve(new Response('ok'));
+      });
+
+    const { raw } = await fetchRaw('https://perf.local/', {
+      fetchImpl,
+      sleep: () => Promise.resolve(),
+    });
+
+    expect(raw.toString()).toBe('ok');
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(signals).toHaveLength(1);
+    expect(signals[0]).toBeInstanceOf(AbortSignal);
+    expect(signals[0].aborted).toBe(false);
+  });
+
+  it('backs off progressively across three attempts', async () => {
+    const sleep = vi.fn(() => Promise.resolve());
+    const fetchImpl = vi.fn().mockRejectedValue(new Error('socket hang up'));
+
+    await expect(
+      fetchRaw('https://perf.local/', { fetchImpl, sleep, attempts: 3 })
+    ).rejects.toThrow(/socket hang up/);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(sleep.mock.calls.map(([ms]) => ms)).toEqual([250, 500]);
+  });
+
+  it('never retries a definite answer such as a 404', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response('gone', { status: 404 }));
+
+    await expect(
+      fetchRaw('https://perf.local/missing', { fetchImpl, sleep: () => Promise.resolve() })
+    ).rejects.toThrow(/404/);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a 5xx up to the attempt limit, then fails with its status', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(new Response('busy', { status: 503, statusText: 'Service Unavailable' }));
+
+    await expect(
+      fetchRaw('https://perf.local/', { fetchImpl, sleep: () => Promise.resolve(), attempts: 3 })
+    ).rejects.toThrow(/503/);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -715,6 +780,28 @@ describe('perf-baseline CLI --live', () => {
     );
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('0 over budget');
+  });
+
+  it('prices every matrix route when the origin blips once', async () => {
+    const { origin } = await makeLiveServer({ flaky: { '/account': 1 } });
+    const { root } = makeFixture();
+    mkdirSync(join(root, 'perf'), { recursive: true });
+    writeFileSync(
+      join(root, 'perf', 'surfaces.json'),
+      JSON.stringify({
+        surfaces: [
+          { id: 'home', routes: ['/'] },
+          { id: 'account', routes: ['/account'] },
+        ],
+      })
+    );
+    const result = await runCliAsync(
+      ['--live', '--origin', origin, '--budget', 'absent.json', '--check'],
+      root
+    );
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('2 OK, 0 over budget across 2 route(s)');
+    expect(result.stdout).not.toContain('were not priced');
   });
 
   it('exits 1 on a budget breach measured from the origin', async () => {

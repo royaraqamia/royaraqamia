@@ -444,7 +444,10 @@ A dynamic pattern with no sample fails `check:surfaces` before the gate runs. Th
 `PERF_ORIGIN` (default `https://royaraqamia.com`), then prices them with the
 same `extractAssets`, `transferredSize` and bucket rules the build-artifact mode
 uses. One verdict line per route shows the JS weight against its ceiling;
-`--json` emits the full summaries.
+`--json` emits the full summaries. The origin is a third party, so a timed-out
+request, a dropped connection, a 429 or a 5xx is retried three times with a short
+backoff before a route is reported as unpriced; a definite answer such as a 404
+is not retried.
 
 Coverage is part of the check, not an afterthought: a route in the matrix that
 does not appear in the output fails the command just as an uncovered `page.tsx`

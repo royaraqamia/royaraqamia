@@ -359,6 +359,17 @@ export function measureRoutes(routes, opts) {
 
 /* Live-document mode ------------------------------------------------------- */
 
+/**
+ * The origin is a third party: its edge can drop a connection or answer 503
+ * while fifty routes are being priced in parallel. On 2026-11-23 a CI run
+ * priced 43 of 51 routes and lost the other eight to a 20-second timeout; one
+ * aborted request removed its whole route from the coverage gate. Transient
+ * failures are therefore retried with a short backoff. A definite answer
+ * (404, 410, ...) is never retried — that is a routing fact, not a blip.
+ */
+const NETWORK_ATTEMPTS = 3;
+const RETRY_BASE_MS = 250;
+
 /** Run a bounded number of async workers; assets are fetched in parallel but a
     fifty-route matrix must not open fifty connections per document. */
 async function mapWithLimit(items, limit, worker) {
@@ -380,17 +391,48 @@ async function mapWithLimit(items, limit, worker) {
  * asks the server not to compress; `fetch` decodes anything it sends anyway, so
  * the body here is raw and `transferredSize` remains the single place
  * compression is applied — just as it is for a build artifact read from disk.
+ *
+ * A timeout, a network drop, a 429 or a 5xx is transient and gets a fresh
+ * signal on each attempt. Everything else is a real answer and fails at once.
  */
-export async function fetchRaw(url, { timeoutMs = 20000 } = {}) {
-  const response = await fetch(url, {
-    headers: { 'accept-encoding': 'identity', 'user-agent': 'royaraqamia-perf/1' },
-    redirect: 'follow',
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-  if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText || ''} for ${url}`.trim());
+export async function fetchRaw(
+  url,
+  {
+    timeoutMs = 20000,
+    attempts = NETWORK_ATTEMPTS,
+    fetchImpl = globalThis.fetch,
+    sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  } = {}
+) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    if (attempt > 1) await sleep(RETRY_BASE_MS * 2 ** (attempt - 2));
+
+    let response;
+    try {
+      response = await fetchImpl(url, {
+        headers: { 'accept-encoding': 'identity', 'user-agent': 'royaraqamia-perf/1' },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (error) {
+      lastError = error;
+      continue;
+    }
+
+    if (!response.ok) {
+      lastError = new Error(`${response.status} ${response.statusText || ''} for ${url}`.trim());
+      if (response.status !== 429 && response.status < 500) break;
+      continue;
+    }
+
+    try {
+      return { raw: Buffer.from(await response.arrayBuffer()), url: response.url };
+    } catch (error) {
+      lastError = error; // the body was cut off mid-flight
+    }
   }
-  return { raw: Buffer.from(await response.arrayBuffer()), url: response.url };
+  throw lastError;
 }
 
 /** Price a fetched document with exactly the same buckets as a built one. */
