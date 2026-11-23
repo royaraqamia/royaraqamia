@@ -94,7 +94,7 @@ jobs:
       - name: Source marks and copy — DeepSeek 4.1 Flash
         id: source
         timeout-minutes: 15
-        uses: anomalyco/opencode/github@1c63fe9afeff4ead2623e9bbb2e2bc40e6205c0b # v1.18.21
+        uses: anomalyco/opencode/github@8ba44455a3819fdc288f7aefeae6538cfee8e867 # v1.18.21
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 120000
