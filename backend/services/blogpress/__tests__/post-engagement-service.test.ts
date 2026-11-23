@@ -25,6 +25,7 @@ function makeRepository(overrides: Partial<PostEngagementRepository> = {}) {
     setLike: vi.fn(async () => ({ liked: true, likeCount: 7 })),
     listComments: vi.fn(async () => ({ rows: [], nextCursor: null, total: 0 })),
     authorsByIds: vi.fn(async () => ({})),
+    commentWriteGate: vi.fn(async () => 'ok' as const),
     getComment: vi.fn(async () => null),
     createComment: vi.fn(async () => ({
       id: 'c1',
@@ -216,6 +217,29 @@ describe('PostEngagementService.comment', () => {
     const { service } = makeService(repository);
 
     await expect(service.comment(VIEWER, 'gone', 'نصّ')).rejects.toMatchObject({ status: 404 });
+    expect(repository.createComment).not.toHaveBeenCalled();
+  });
+
+  it('refuses a blocked pair with an actionable sentence', async () => {
+    const repository = makeRepository({
+      commentWriteGate: vi.fn(async () => 'blocked' as const),
+    });
+    const { service } = makeService(repository);
+
+    await expect(service.comment(VIEWER, 'a-post', 'نصّ')).rejects.toMatchObject({
+      status: 403,
+      message: 'لا يمكنك التعليق على منشور بينك وبين صاحبه حظر.',
+    });
+    expect(repository.createComment).not.toHaveBeenCalled();
+  });
+
+  it('refuses an unconfirmed writer without writing', async () => {
+    const repository = makeRepository({
+      commentWriteGate: vi.fn(async () => 'unverified' as const),
+    });
+    const { service } = makeService(repository);
+
+    await expect(service.comment(VIEWER, 'a-post', 'نصّ')).rejects.toMatchObject({ status: 403 });
     expect(repository.createComment).not.toHaveBeenCalled();
   });
 });

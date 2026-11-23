@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createPostEngagementRepository } from '@/backend/repositories/blogpress/post-engagement-repository';
@@ -312,5 +312,19 @@ describe('listComments with a viewer', () => {
     expect(page.rows).toHaveLength(20);
     expect(page.total).toBe(20);
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe('commentWriteGate', () => {
+  it('reads the gate from the database function', async () => {
+    const rpc = vi.fn(async () => ({ data: 'blocked', error: null }));
+    const supabase = { rpc } as unknown as SupabaseClient<Database>;
+    const repo = createPostEngagementRepository(supabase);
+
+    await expect(repo.commentWriteGate(POST_ID, AUTHOR_ID)).resolves.toBe('blocked');
+    expect(rpc).toHaveBeenCalledWith('post_comment_write_gate', {
+      p_post_id: POST_ID,
+      p_author_id: AUTHOR_ID,
+    });
   });
 });

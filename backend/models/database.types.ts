@@ -3897,6 +3897,10 @@ export type Database = {
           id: string;
         }[];
       };
+      post_comment_write_gate: {
+        Args: { p_author_id: string; p_post_id: string };
+        Returns: string;
+      };
       post_comment_delete: {
         Args: { p_author_id: string; p_comment_id: string };
         Returns: {
