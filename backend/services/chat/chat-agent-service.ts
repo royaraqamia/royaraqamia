@@ -79,6 +79,7 @@ import { USAGE_COUNTERS, type PlanId, type UsageState } from '@/shared/contracts
 import { isScreenContextBlind, type ScreenContextInput } from '@/shared/contracts/screen-context';
 import { CHAT_AGENT_TOOLS, chatAgentToolIsAdmin } from '@/shared/contracts/chat-agent-actions';
 import {
+  URL_EXTRACT_UNAVAILABLE,
   WEB_SEARCH_TOKEN_RESERVE,
   WEB_SEARCH_UNAVAILABLE,
   type WebSearchResult,
@@ -350,6 +351,18 @@ export interface ChatAgentServiceDeps {
    */
   search?: {
     run(userId: string, query: string, signal: AbortSignal): Promise<WebSearchResult>;
+  };
+  /**
+   * One page a member pointed at (ADR-0214). It shares the web allowance with
+   * search: one intent, one budget, one project ceiling on the shared credits.
+   */
+  urlExtract?: {
+    run(
+      userId: string,
+      url: string,
+      question: string,
+      signal: AbortSignal
+    ): Promise<WebSearchResult>;
   };
   /** The account's counters, so the composer draws the app meter (ADR-0093). */
   usageState(userId: string): Promise<UsageState>;
@@ -1004,7 +1017,7 @@ export class ChatAgentService {
    * pay for the evidence, which is the rule the roadmap already states.
    */
   private historyBudget(): number {
-    return this.deps.search
+    return this.deps.search || this.deps.urlExtract
       ? CHAT_AGENT_TOKEN_BUDGET - WEB_SEARCH_TOKEN_RESERVE
       : CHAT_AGENT_TOKEN_BUDGET;
   }
@@ -1050,6 +1063,7 @@ export class ChatAgentService {
     // The web, when the deployment has a search key (ADR-0206). It is read once
     // per turn, like the apps: the declaration and the call must agree.
     const search = this.deps.search;
+    const urlExtract = this.deps.urlExtract;
     const catalog = apps
       ? await apps.catalog(userId).catch((error: unknown) => {
           // A marketplace that cannot be read is a turn without app tools, never
@@ -1079,6 +1093,7 @@ export class ChatAgentService {
       hasApps: catalog.length > 0,
       hasScreen: visibleScreen,
       hasWebSearch: Boolean(search),
+      hasUrlExtract: Boolean(urlExtract),
       isAdmin: adminTurn,
     });
     const deadline = Date.now() + CHAT_AGENT_TURN_TIMEOUT_MS;
@@ -1098,6 +1113,8 @@ export class ChatAgentService {
     /** A search that failed stays failed for this turn; the model does not get
      * to spend the member's allowance asking the same dead vendor twice more. */
     let searchFailed = false;
+    /** A page that failed stays failed for this turn, like a failed search. */
+    let urlExtractFailed = false;
     /** The specialist whose body this turn already read (#1448). */
     let loadedSkill: string | null = null;
     /** How many of those came from each connection (#1226). */
@@ -1417,6 +1434,24 @@ export class ChatAgentService {
                     },
                   }
                 : {}),
+              ...(urlExtract
+                ? {
+                    readUrl: (url: string, question: string) => {
+                      if (urlExtractFailed) throw new Error(URL_EXTRACT_UNAVAILABLE);
+                      return urlExtract
+                        .run(
+                          userId,
+                          url,
+                          question,
+                          AbortSignal.timeout(Math.max(1_000, deadline - Date.now()))
+                        )
+                        .catch((error: unknown) => {
+                          urlExtractFailed = true;
+                          throw error;
+                        });
+                    },
+                  }
+                : {}),
             });
             const readTrace = traceByCall.get(call.id);
             if (readTrace) readTrace.ok = true;
@@ -1430,7 +1465,7 @@ export class ChatAgentService {
             // The card is drawn from this frame, and the same array is stored
             // with the row (ADR-0206). A failed search never reaches here, so a
             // card never shows sources the answer did not have.
-            if (tool.name === 'search_web') {
+            if (tool.name === 'search_web' || tool.name === 'read_url') {
               const found = (result as WebSearchResult).sources;
               if (found.length > 0) {
                 sources = found;

@@ -44,7 +44,7 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   'client-work': 2,
   // #1435: member lookup and the report queue's read, plus its tier-2 decision.
   admin: 3,
-  assistant: 5,
+  assistant: 6,
 };
 
 describe('the assistant door', () => {
@@ -248,6 +248,7 @@ describe('the assistant door', () => {
       'get_screen_context',
       'list_specialists',
       'load_specialist',
+      'read_url',
       'search_web',
     ]);
   });

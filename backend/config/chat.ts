@@ -46,6 +46,7 @@ import { getAdminSupabase } from '@/backend/config/supabase';
 import { createAiChatClient, createJudgeAiChatClient } from '@/backend/clients/ai-chat';
 import { createChatAgentJudge } from '@/backend/services/chat/chat-agent-judge-service';
 import { createWebSearchClient, searchLanguageFor } from '@/backend/clients/web-search';
+import { createUrlExtractClient } from '@/backend/clients/url-extract';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { USAGE_COUNTERS } from '@/shared/contracts/plans';
 
@@ -146,6 +147,8 @@ export function createSupabaseChatAgentService(
   // The web, when the deployment has a search key (ADR-0206). No key is no
   // client, and the turn then declares no search tool at all.
   const search = createWebSearchClient();
+  // The page reader shares the search key and the search allowance (ADR-0214).
+  const urlExtract = createUrlExtractClient();
 
   // The specialist shortlist reads the roster's own artifact, so its width is
   // the artifact's, not the memory table's (#1448). A deployment with no
@@ -175,6 +178,16 @@ export function createSupabaseChatAgentService(
             run: (userId: string, query: string, signal: AbortSignal) =>
               gate.count({ userId }, USAGE_COUNTERS.webSearches, () =>
                 search.search(query, { language: searchLanguageFor(query), signal })
+              ),
+          },
+        }
+      : {}),
+    ...(urlExtract
+      ? {
+          urlExtract: {
+            run: (userId: string, url: string, question: string, signal: AbortSignal) =>
+              gate.count({ userId }, USAGE_COUNTERS.webSearches, () =>
+                urlExtract.extract(url, question, { signal })
               ),
           },
         }

@@ -74,6 +74,7 @@ describe('the admin capabilities (#1435, ADR-0180 decision 10)', () => {
         hasApps: false,
         hasScreen: false,
         hasWebSearch: false,
+        hasUrlExtract: false,
         isAdmin,
       }).map((definition) => definition.function.name);
 

@@ -8,7 +8,7 @@ import {
   type ChatAgentToolContext,
 } from '@/backend/services/chat/chat-agent-tools';
 import type { ScreenContext } from '@/shared/contracts/screen-context';
-import { WEB_SEARCH_UNAVAILABLE } from '@/shared/contracts/web-search';
+import { URL_EXTRACT_UNAVAILABLE, WEB_SEARCH_UNAVAILABLE } from '@/shared/contracts/web-search';
 import {
   ADMIN_AGENT_TOOL_NAMES,
   CHAT_AGENT_TOOLS,
@@ -83,9 +83,12 @@ describe('the assistant’s tool registry (#818)', () => {
 
   it('declares the screen refresh only when the request brought eyes', () => {
     const names = (input: { hasApps: boolean; hasScreen: boolean }) =>
-      chatAgentToolDefinitionsForTurn({ ...input, hasWebSearch: false, isAdmin: false }).map(
-        (definition) => definition.function.name
-      );
+      chatAgentToolDefinitionsForTurn({
+        ...input,
+        hasWebSearch: false,
+        hasUrlExtract: false,
+        isAdmin: false,
+      }).map((definition) => definition.function.name);
 
     expect(names({ hasApps: false, hasScreen: false })).not.toContain('get_screen_context');
     expect(names({ hasApps: false, hasScreen: true })).toContain('get_screen_context');
@@ -98,6 +101,7 @@ describe('the assistant’s tool registry (#818)', () => {
       hasApps: false,
       hasScreen: false,
       hasWebSearch: false,
+      hasUrlExtract: false,
       isAdmin: false,
     }).map((definition) => definition.function.name);
 
@@ -109,6 +113,7 @@ describe('the assistant’s tool registry (#818)', () => {
       hasApps: false,
       hasScreen: false,
       hasWebSearch: false,
+      hasUrlExtract: false,
       isAdmin: true,
     }).map((definition) => definition.function.name);
 
@@ -184,5 +189,39 @@ describe('search_web failure (ADR-0206)', () => {
     await expect(tool.run({ query: 'سعر الذهب' }, turnContext({ searchWeb }))).rejects.not.toThrow(
       '403'
     );
+  });
+});
+
+describe('read_url (ADR-0214)', () => {
+  it('is declared only when the deployment has a page reader', () => {
+    const names = (hasUrlExtract: boolean) =>
+      chatAgentToolDefinitionsForTurn({
+        hasApps: false,
+        hasScreen: false,
+        hasWebSearch: false,
+        hasUrlExtract,
+        isAdmin: false,
+      }).map((definition) => definition.function.name);
+    expect(names(false)).not.toContain('read_url');
+    expect(names(true)).toContain('read_url');
+  });
+
+  it('hands the model one Arabic sentence when a page cannot be read', async () => {
+    const readUrl = vi.fn(async () => {
+      throw new Error('extract answered 403');
+    });
+    const tool = chatAgentTool('read_url')!;
+    const args = { url: 'https://example.com/a', question: 'ماذا يقول الرابط؟' };
+
+    await expect(tool.run(args, turnContext({ readUrl }))).rejects.toThrow(URL_EXTRACT_UNAVAILABLE);
+    await expect(tool.run(args, turnContext({ readUrl }))).rejects.not.toThrow('403');
+  });
+
+  it('passes the public address and the question to the reader', async () => {
+    const readUrl = vi.fn(async () => ({ sources: [], evidence: '' }));
+    const tool = chatAgentTool('read_url')!;
+    const args = { url: 'https://example.com/a', question: 'لخّص المقال' };
+    await tool.run(args, turnContext({ readUrl }));
+    expect(readUrl).toHaveBeenCalledWith(args.url, args.question);
   });
 });
