@@ -115,6 +115,7 @@ import {
 } from '@/shared/contracts/chat-agent-actions';
 import { CHAT_REPORT_STATUSES, type ChatReportStatus } from '@/shared/contracts/chat-reports';
 import {
+  URL_EXTRACT_UNAVAILABLE,
   WEB_SEARCH_QUERY_MAX,
   WEB_SEARCH_QUERY_MIN,
   WEB_SEARCH_UNAVAILABLE,
@@ -167,6 +168,11 @@ export interface ChatAgentToolContext {
    * `search_web` is not declared at all.
    */
   searchWeb?: (query: string) => Promise<WebSearchResult>;
+  /**
+   * The reader for a link the member pasted, when the deployment has a key
+   * (ADR-0214). Like search, the turn wires this to a counted call.
+   */
+  readUrl?: (url: string, question: string) => Promise<WebSearchResult>;
 }
 
 export interface ChatAgentTool {
@@ -477,6 +483,16 @@ const SearchWebArgs = z.strictObject({
     .trim()
     .min(WEB_SEARCH_QUERY_MIN, 'الاستعلام قصير جداً')
     .max(WEB_SEARCH_QUERY_MAX, 'الاستعلام طويل جداً'),
+});
+
+/** A pasted page: the public address, and the question it has to answer. */
+const ReadUrlArgs = z.strictObject({
+  url: z.string().trim().url('الرابط غير صالح').max(2048, 'الرابط طويل جداً'),
+  question: z
+    .string()
+    .trim()
+    .min(WEB_SEARCH_QUERY_MIN, 'السؤال قصير جداً')
+    .max(WEB_SEARCH_QUERY_MAX, 'السؤال طويل جداً'),
 });
 
 /**
@@ -2366,6 +2382,34 @@ const tools: ChatAgentTool[] = [
     },
   },
   {
+    name: 'read_url',
+    kind: 'read',
+    product: 'assistant',
+    tier: 0,
+    description:
+      'قراءة صفحة رابط أرسله العضو أو ذكره في سؤاله. استخدمها حين يطلب العضو تلخيص رابط أو معرفة ما فيه، ولا تستخدمها للبحث العام أو لتخمين رابط لم يذكره العضو. مرّر الرابط كما هو وسؤال العضو، ولا تكتب في السؤال معلومة شخصية عنه.',
+    schema: ReadUrlArgs,
+    async run(args, context) {
+      const input = ReadUrlArgs.parse(args);
+      if (!context.readUrl) throw new Error(URL_EXTRACT_UNAVAILABLE);
+      let result: WebSearchResult;
+      try {
+        result = await context.readUrl(input.url, input.question);
+      } catch (error) {
+        logger.warn('URL read tool failed', {
+          kind: error instanceof WebSearchError ? error.kind : 'unexpected',
+          error: String(error),
+        });
+        throw new Error(URL_EXTRACT_UNAVAILABLE, { cause: error });
+      }
+      return {
+        sources: result.sources,
+        evidence: result.evidence,
+        ...(result.sources.length === 0 ? { note: 'لم أستطع قراءة محتوى هذا الرابط.' } : {}),
+      };
+    },
+  },
+  {
     name: 'find_app_tools',
     kind: 'read',
     product: 'assistant',
@@ -2482,8 +2526,8 @@ export function chatAgentToolDefinitions(): Array<{
  * nothing to find. `get_screen_context` needs the snapshot the request brought
  * (ADR-0181, decision 7): a client with no eyes — an older tab, an opted-out
  * surface, the admin area — is a turn where the tool would answer "nothing"
- * after costing a round. `search_web` needs a search key (ADR-0206): a
- * deployment without one declares no web at all. The admin entries need the
+ * after costing a round. `search_web` and `read_url` need a vendor key
+ * (ADR-0206, ADR-0214): a deployment without one declares no web at all. The admin entries need the
  * turn to be an admin's own (ADR-0180, decision 10), and every other tool is
  * always declared.
  */
@@ -2491,6 +2535,7 @@ export function chatAgentToolDefinitionsForTurn(input: {
   hasApps: boolean;
   hasScreen: boolean;
   hasWebSearch: boolean;
+  hasUrlExtract: boolean;
   isAdmin: boolean;
 }): ReturnType<typeof chatAgentToolDefinitions> {
   return chatAgentToolDefinitions().filter((definition) => {
@@ -2498,6 +2543,7 @@ export function chatAgentToolDefinitionsForTurn(input: {
     if (name === 'find_app_tools') return input.hasApps;
     if (name === 'get_screen_context') return input.hasScreen;
     if (name === 'search_web') return input.hasWebSearch;
+    if (name === 'read_url') return input.hasUrlExtract;
     if (chatAgentToolIsAdmin(name)) return input.isAdmin;
     return true;
   });

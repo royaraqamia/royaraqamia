@@ -89,3 +89,13 @@ export class WebSearchError extends Error {
 
 /** The one sentence the model is handed when a search cannot run. */
 export const WEB_SEARCH_UNAVAILABLE = 'تعذّر البحث في الويب الآن.';
+
+/** The reader's own ceiling, inside the turn's 55 seconds (ADR-0214). */
+export const URL_EXTRACT_TIMEOUT_MS = 8_000;
+export const URL_EXTRACT_RETRY_DELAY_MS = 250;
+
+/** One page is read, truncated to the same evidence budget as a search. */
+export const URL_EXTRACT_EVIDENCE_CHARS = WEB_SEARCH_EVIDENCE_CHARS;
+
+/** The one sentence the model is handed when a page cannot be read. */
+export const URL_EXTRACT_UNAVAILABLE = 'تعذّر قراءة الرابط الآن.';

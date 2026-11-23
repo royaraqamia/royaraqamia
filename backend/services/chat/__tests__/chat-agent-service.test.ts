@@ -1959,6 +1959,48 @@ describe('web search in the turn (ADR-0206)', () => {
     expect(names).toContain('search_web');
   });
 
+  it('declares read_url only when the deployment has a page reader', async () => {
+    const client = scriptedClient([textStream('أهلاً.')]);
+    const { service } = makeService({ client });
+    await collect(service.turn('user-1', 'conversation-1', 'أهلاً', TURN_CONTEXT));
+    expect(client.offered[0]?.map((tool) => tool.function.name)).not.toContain('read_url');
+
+    const wiredClient = scriptedClient([textStream('أهلاً.')]);
+    const { service: wired } = makeService({
+      client: wiredClient,
+      urlExtract: { run: vi.fn(async () => ({ sources: [], evidence: '' })) },
+    });
+    await collect(wired.turn('user-1', 'conversation-1', 'أهلاً', TURN_CONTEXT));
+    expect(wiredClient.offered[0]?.map((tool) => tool.function.name)).toContain('read_url');
+  });
+
+  it('streams a pasted page as the same sources card a search produces', async () => {
+    const args = { url: 'https://example.com/a', question: 'ماذا يقول؟' };
+    const client = scriptedClient([
+      [toolCall('read_url', args)],
+      textStream('حسب [1] يقول الرابط كذا.'),
+    ]);
+    const urlExtract = {
+      run: vi.fn(async () => ({ sources: SOURCES, evidence: '[1] example.com\nنص' })),
+    };
+    const { service, agent } = makeService({ client, urlExtract });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'سؤالي', TURN_CONTEXT));
+
+    expect(urlExtract.run).toHaveBeenCalledWith(
+      'user-1',
+      args.url,
+      args.question,
+      expect.anything()
+    );
+    expect(events.some((event) => event.type === 'sources')).toBe(true);
+    expect(agent.insertAgentMessage).toHaveBeenCalledWith(
+      'conversation-1',
+      'حسب [1] يقول الرابط كذا.',
+      SOURCES
+    );
+  });
+
   it('streams the sources and stores them with the answer', async () => {
     const client = scriptedClient([
       [toolCall('search_web', { query: 'سعر الذهب اليوم' })],

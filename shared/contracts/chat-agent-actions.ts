@@ -181,6 +181,8 @@ export const CHAT_AGENT_TOOL_NAMES = [
   // deployment has a search key, so a turn with no search carries no
   // invitation to look for one.
   'search_web',
+  // A page the member pointed at (ADR-0214). Declared only with a vendor key.
+  'read_url',
   // The recovery path for an app tool the router missed (ADR-0155, decision 7).
   // Declared only when the member has an enabled app, so a turn with no
   // connections carries no invitation to look for one.
@@ -379,6 +381,7 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
   },
   load_specialist: { kind: 'read', label: 'تحميل متخصص', activity: 'تحمّل متخصصاً' },
   search_web: { kind: 'read', label: 'البحث في الويب', activity: 'تبحث في الويب' },
+  read_url: { kind: 'read', label: 'قراءة رابط', activity: 'تقرأ الرابط' },
   find_app_tools: {
     kind: 'read',
     label: 'البحث في أدوات التطبيقات',
