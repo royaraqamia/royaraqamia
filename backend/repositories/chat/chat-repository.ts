@@ -1,5 +1,6 @@
 import type { ChatSenderKind } from '@/shared/contracts/chat';
 import type { WebSource } from '@/shared/contracts/web-search';
+import type { VisualSpec } from '@/shared/contracts/visual';
 
 /**
  * What the Chats tab reads. One row per conversation, already carrying the
@@ -59,6 +60,8 @@ export interface ChatMessageRecord {
   clientId: string | null;
   /** What the assistant read on the web before this line (ADR-0206). */
   sources?: WebSource[] | null;
+  /** A model-written drawing the page turns into a PNG (ADR-0215). */
+  visual?: VisualSpec | null;
 }
 
 export interface ChatAttachmentRecord {
@@ -100,6 +103,8 @@ export interface InsertMessageInput {
   clientId?: string | null;
   /** The assistant's evidence, written only on its own rows (ADR-0206). */
   sources?: WebSource[] | null;
+  /** A model-written drawing, written only on the assistant's rows (ADR-0215). */
+  visual?: VisualSpec | null;
   attachments?: {
     storagePath: string;
     fileName: string;

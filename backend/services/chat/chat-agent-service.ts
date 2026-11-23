@@ -86,6 +86,7 @@ import {
   type WebSource,
 } from '@/shared/contracts/web-search';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
+import { VisualSpecSchema, type VisualSpec } from '@/shared/contracts/visual';
 import { FAILURE_SENTENCES } from '@/shared/contracts/chat-agent-failures.mjs';
 
 /**
@@ -1107,6 +1108,8 @@ export class ChatAgentService {
     const traceByCall = new Map<string, JudgeTraceItem>();
     /** What a search read this turn, for the card and the stored row. */
     let sources: WebSource[] = [];
+    /** The sanitized drawing this turn made, for the frame and the stored row. */
+    let visual: VisualSpec | null = null;
     let rounds = 0;
     let retried = false;
     let appCalls = 0;
@@ -1472,6 +1475,13 @@ export class ChatAgentService {
                 yield { type: 'sources', sources };
               }
             }
+            if (tool.name === 'render_visual') {
+              const drawn = VisualSpecSchema.safeParse((result as { visual?: unknown }).visual);
+              if (drawn.success) {
+                visual = drawn.data;
+                yield { type: 'visual', visual };
+              }
+            }
             messages.push(toolAnswer(call.id, result, tool.maxResultChars));
             if (tool.name === 'load_specialist') {
               const loaded = (parsed.data as { id?: unknown }).id;
@@ -1541,8 +1551,14 @@ export class ChatAgentService {
     }
     // The sources are stored with the answer, not streamed and forgotten
     // (ADR-0206): a thread reopened tomorrow shows the same evidence.
-    const record =
-      sources.length > 0
+    const record = visual
+      ? await this.deps.agent.insertAgentMessage(
+          conversationId,
+          text,
+          sources.length > 0 ? sources : undefined,
+          visual
+        )
+      : sources.length > 0
         ? await this.deps.agent.insertAgentMessage(conversationId, text, sources)
         : await this.deps.agent.insertAgentMessage(conversationId, text);
     if (turnId) await this.deps.agent.settleTurn(turnId);
@@ -1586,6 +1602,7 @@ export class ChatAgentService {
         attachments: [],
         replyTo: null,
         sources: sources.length > 0 ? sources : (record.sources ?? null),
+        visual: visual ?? record.visual ?? null,
       },
     };
   }

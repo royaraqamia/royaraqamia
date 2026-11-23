@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { PlanId } from '@/shared/contracts/plans.constants';
 import { ChatAgentActionSchema, type ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import { ChatMessageSourceSchema, type WebSource } from '@/shared/contracts/web-search';
+import { VisualSpecSchema, type VisualSpec } from '@/shared/contracts/visual';
 import { ScreenContextInputSchema } from '@/shared/contracts/screen-context-schema';
 import { toLatinDigits } from '@/shared/contracts/text';
 
@@ -339,6 +340,11 @@ export interface ChatMessage {
    */
   sources?: WebSource[] | null;
   /**
+   * A drawing the assistant wrote in code (ADR-0215). The page rasterizes it;
+   * the stored spec is what makes a thread reopen with the same picture.
+   */
+  visual?: VisualSpec | null;
+  /**
    * The quoted line, one level deep: a reply to a reply quotes the message it
    * names, never a chain, so the thread cannot render an unbounded nest.
    */
@@ -499,6 +505,8 @@ export type ChatAgentEvent =
    * same one, so a stream and a reload cannot disagree about the sources.
    */
   | { type: 'sources'; sources: WebSource[] }
+  /** A sanitized SVG the page turns into a PNG (ADR-0215). */
+  | { type: 'visual'; visual: VisualSpec }
   | { type: 'tool_start'; id: string; name: string; activity: string }
   | { type: 'tool'; id: string; name: string; label: string; ok: boolean }
   /**
@@ -728,6 +736,7 @@ export const ChatMessageSchema = z.object({
   clientId: z.string().nullable().optional(),
   attachments: z.array(ChatAttachmentSchema),
   sources: z.array(ChatMessageSourceSchema).nullable().optional(),
+  visual: VisualSpecSchema.nullable().optional(),
 });
 
 export const ChatConversationSummarySchema = z.object({

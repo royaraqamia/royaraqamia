@@ -2001,6 +2001,30 @@ describe('web search in the turn (ADR-0206)', () => {
     );
   });
 
+  it('streams a drawing and stores its spec with the answer', async () => {
+    const visual = {
+      svg: '<svg viewBox="0 0 10 10"><rect width="10" height="10"></rect></svg>',
+      caption: 'مصاريف الشهر',
+    };
+    const client = scriptedClient([
+      [toolCall('render_visual', visual)],
+      textStream('هذا الرسم البياني.'),
+    ]);
+    const { service, agent } = makeService({ client });
+
+    const events = await collect(service.turn('user-1', 'conversation-1', 'ارسمها', TURN_CONTEXT));
+
+    expect(events.some((event) => event.type === 'visual')).toBe(true);
+    const done = events.find((event) => event.type === 'done');
+    expect(done).toMatchObject({ message: { visual } });
+    expect(agent.insertAgentMessage).toHaveBeenCalledWith(
+      'conversation-1',
+      'هذا الرسم البياني.',
+      undefined,
+      visual
+    );
+  });
+
   it('streams the sources and stores them with the answer', async () => {
     const client = scriptedClient([
       [toolCall('search_web', { query: 'سعر الذهب اليوم' })],

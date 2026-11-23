@@ -18,6 +18,7 @@ import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { chatTimeAgo } from './chats-panel';
 import { VoiceNotePlayer } from './voice-note-player';
 import { WebSources } from './web-sources';
+import { AssistantVisual } from './assistant-visual';
 import { readReceiptOf, type ChatReadReceipt } from './read-receipt';
 import { formatDaySeparator, isNewDay } from './thread-days';
 import {
@@ -423,11 +424,14 @@ export const ChatMessageRow = memo(function ChatMessageRow({
                 />
               </p>
               {message.senderKind === 'agent' ? (
-                <WebSources
-                  sources={message.sources}
-                  anchorPrefix={`source-${message.id}`}
-                  readNote={!/\[\d{1,2}\]/.test(message.body)}
-                />
+                <>
+                  <AssistantVisual visual={message.visual} />
+                  <WebSources
+                    sources={message.sources}
+                    anchorPrefix={`source-${message.id}`}
+                    readNote={!/\[\d{1,2}\]/.test(message.body)}
+                  />
+                </>
               ) : null}
             </>
           ) : attachmentOnlyLabel ? (
