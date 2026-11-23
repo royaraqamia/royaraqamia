@@ -330,9 +330,14 @@ describe('AuthService.login', () => {
       redirectTo: null,
       turnstileToken: 'token',
     });
-    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith('login:user@example.com', 5, 60 * 1000, {
-      failClosed: true,
-    });
+    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith(
+      'login:user@example.com',
+      5,
+      60 * 1000,
+      {
+        failClosed: true,
+      }
+    );
     expect(gateway.signInWithPassword).toHaveBeenCalledWith({
       email: 'user@example.com',
       password: 'hunter2',
@@ -575,9 +580,14 @@ describe('AuthService.resetPassword', () => {
       ok: false,
       message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً',
     });
-    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith('reset:user@example.com', 3, 3_600_000, {
-      failClosed: true,
-    });
+    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith(
+      'reset:user@example.com',
+      3,
+      3_600_000,
+      {
+        failClosed: true,
+      }
+    );
   });
 
   it('returns success even when the user does not exist', async () => {
