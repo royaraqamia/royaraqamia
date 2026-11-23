@@ -106,6 +106,18 @@ export class PostEngagementService {
     await this.assertUnderLimit(`post-comment:${viewerId}`, POST_COMMENT_WRITE_LIMIT);
 
     const postId = await this.postIdOf(slug);
+
+    // The database repeats this gate inside the write function, so it stays the
+    // authority. The read here only turns a refusal into a sentence the member
+    // can act on instead of a generic failure.
+    const gate = await this.deps.engagement.commentWriteGate(postId, viewerId);
+    if (gate === 'blocked') {
+      throw new PostEngagementRefusedError(403, 'لا يمكنك التعليق على منشور بينك وبين صاحبه حظر.');
+    }
+    if (gate === 'unverified') {
+      throw new PostEngagementRefusedError(403, 'يجب تأكيد بريدك الإلكتروني قبل التعليق.');
+    }
+
     const written = await this.deps.engagement.createComment(postId, viewerId, body);
     if (!written) {
       throw new PostEngagementRefusedError(404, 'المنشور غير موجود.');

@@ -70,6 +70,8 @@ export interface PostEngagementRepository {
   ): Promise<PostCommentPage>;
   /** The public identity of every author named by `ids`, in one read. */
   authorsByIds(ids: string[]): Promise<Record<string, PostCommentAuthorRow>>;
+  /** The write gate the database also enforces: ok, unverified or blocked. */
+  commentWriteGate(postId: string, authorId: string): Promise<'ok' | 'unverified' | 'blocked'>;
   getComment(commentId: string): Promise<PostCommentRow | null>;
   createComment(
     postId: string,
@@ -309,6 +311,15 @@ export function createPostEngagementRepository(
         };
       }
       return authors;
+    },
+
+    async commentWriteGate(postId, authorId) {
+      const { data, error } = await supabase.rpc('post_comment_write_gate', {
+        p_post_id: postId,
+        p_author_id: authorId,
+      });
+      if (error) throw error;
+      return (data ?? 'ok') as 'ok' | 'unverified' | 'blocked';
     },
 
     async getComment(commentId): Promise<PostCommentRow | null> {
