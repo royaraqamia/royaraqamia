@@ -18,6 +18,7 @@ import {
   type InsertMessageInput,
 } from '@/backend/repositories/chat/chat-repository';
 import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-error';
+import { VisualSpecSchema } from '@/shared/contracts/visual';
 import type { WebSource } from '@/shared/contracts/web-search';
 
 type ConversationRow = Database['public']['Tables']['chat_conversations']['Row'];
@@ -89,6 +90,7 @@ function toMessage(row: MessageRow): ChatMessageRecord {
     createdAt: row.created_at,
     clientId: row.client_id,
     sources: (row.sources as WebSource[] | null) ?? null,
+    visual: row.visual_svg ? (VisualSpecSchema.safeParse(row.visual_svg).data ?? null) : null,
   };
 }
 
@@ -393,6 +395,7 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
           reply_to_id: input.replyToId ?? null,
           client_id: input.clientId ?? null,
           ...(input.sources ? { sources: input.sources } : {}),
+          ...(input.visual ? { visual_svg: input.visual } : {}),
         })
         .select()
         .single();

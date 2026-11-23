@@ -590,6 +590,7 @@ export type Database = {
           sender_id: string | null;
           sender_kind: string;
           sources: Json | null;
+          visual_svg: Json | null;
         };
         Insert: {
           body?: string | null;
@@ -603,6 +604,7 @@ export type Database = {
           sender_id?: string | null;
           sender_kind?: string;
           sources?: Json | null;
+          visual_svg?: Json | null;
         };
         Update: {
           body?: string | null;
@@ -616,6 +618,7 @@ export type Database = {
           sender_id?: string | null;
           sender_kind?: string;
           sources?: Json | null;
+          visual_svg?: Json | null;
         };
         Relationships: [];
       };

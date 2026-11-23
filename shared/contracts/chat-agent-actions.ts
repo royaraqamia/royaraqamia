@@ -183,6 +183,8 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'search_web',
   // A page the member pointed at (ADR-0214). Declared only with a vendor key.
   'read_url',
+  // A model-written SVG the page turns into a PNG (ADR-0215).
+  'render_visual',
   // The recovery path for an app tool the router missed (ADR-0155, decision 7).
   // Declared only when the member has an enabled app, so a turn with no
   // connections carries no invitation to look for one.
@@ -382,6 +384,7 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
   load_specialist: { kind: 'read', label: 'تحميل متخصص', activity: 'تحمّل متخصصاً' },
   search_web: { kind: 'read', label: 'البحث في الويب', activity: 'تبحث في الويب' },
   read_url: { kind: 'read', label: 'قراءة رابط', activity: 'تقرأ الرابط' },
+  render_visual: { kind: 'read', label: 'رسم صورة', activity: 'ترسم صورة' },
   find_app_tools: {
     kind: 'read',
     label: 'البحث في أدوات التطبيقات',

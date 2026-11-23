@@ -123,6 +123,8 @@ import {
   type WebSearchResult,
 } from '@/shared/contracts/web-search';
 import { logger } from '@/backend/shared/logger';
+import { sanitizeVisualSvg } from '@/backend/services/chat/visual-sanitize';
+import { VISUAL_UNAVAILABLE, VisualSpecSchema } from '@/shared/contracts/visual';
 
 /**
  * The assistant's tools (ADR-0113, #818).
@@ -2407,6 +2409,21 @@ const tools: ChatAgentTool[] = [
         evidence: result.evidence,
         ...(result.sources.length === 0 ? { note: 'لم أستطع قراءة محتوى هذا الرابط.' } : {}),
       };
+    },
+  },
+  {
+    name: 'render_visual',
+    kind: 'read',
+    product: 'assistant',
+    tier: 0,
+    description:
+      'ارسم مخططاً أو ملصقاً أو رسماً توضيحياً باستخدام SVG ثابت. استخدمها حين يطلب العضو صورة توضيحية أو مخططاً أو ملصقاً فيه نص عربي. اكتب SVG بسيطاً بدون سكربتات أو صور خارجية؛ الصفحة تحوّله إلى صورة تعرض في المحادثة.',
+    schema: VisualSpecSchema,
+    async run(args) {
+      const input = VisualSpecSchema.parse(args);
+      const svg = sanitizeVisualSvg(input.svg);
+      if (!svg) throw new Error(VISUAL_UNAVAILABLE);
+      return { visual: { ...input, svg } };
     },
   },
   {

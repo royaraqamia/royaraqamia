@@ -5,6 +5,7 @@ import type { ChatMessageRecord } from '@/backend/repositories/chat/chat-reposit
 import { repositoryFailure } from '@/backend/shared/repository-error';
 import type { ChatAgentMeters } from '@/shared/contracts/chat';
 import type { WebSource } from '@/shared/contracts/web-search';
+import type { VisualSpec } from '@/shared/contracts/visual';
 
 type MessageRow = Database['public']['Tables']['chat_messages']['Row'];
 type TurnRow = Database['public']['Tables']['agent_turns']['Row'];
@@ -78,7 +79,8 @@ export interface ChatAgentRepository {
   insertAgentMessage(
     conversationId: string,
     body: string,
-    sources?: WebSource[]
+    sources?: WebSource[],
+    visual?: VisualSpec | null
   ): Promise<ChatMessageRecord>;
   /** Opens the record of one turn and answers its id. */
   startTurn(conversationId: string, memberId: string, question: string): Promise<string>;
@@ -115,7 +117,7 @@ export function createSupabaseChatAgentRepository(
       };
     },
 
-    async insertAgentMessage(conversationId, body, sources) {
+    async insertAgentMessage(conversationId, body, sources, visual) {
       const { data, error } = await supabase
         .from('chat_messages')
         .insert({
@@ -124,6 +126,7 @@ export function createSupabaseChatAgentRepository(
           sender_kind: 'agent',
           body,
           ...(sources && sources.length > 0 ? { sources } : {}),
+          ...(visual ? { visual_svg: visual } : {}),
         })
         .select()
         .single();
