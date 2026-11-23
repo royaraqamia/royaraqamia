@@ -25,13 +25,13 @@ Use these sources and quote their output:
 - `graphify path "A" "B"` to trace a request from route to query. A per-request fan-out
   claim must list the callers you found, not just the loop you read.
 
-## Scan both clients, in the day's rotating focus
+## Scope: the six launch areas, in the day's rotating focus
 
-Web: N+1 access patterns, unbounded list endpoints, per-request work that should be a
-queue, cache keys that grow without bound, uploads that bypass storage limits.
-Android: unbounded local queues, sync that replays the whole history, attachment growth,
-and any surface whose cost rises with account age. Cross-check with
-`docs/mobile/parity.json`.
+Check N+1 access patterns, unbounded list endpoints, per-request work that should be a
+queue, cache keys that grow without bound, uploads that bypass storage limits, and any
+surface whose cost rises with account age. The APK loads those routes in a WebView, so
+the web path is the one that scales. Use the `launch-scope` block to pick a route inside
+the six areas; Android-local queue and sync findings are out of scope.
 
 ## What counts as a finding here
 

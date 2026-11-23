@@ -26,17 +26,14 @@ For every screen you examine:
 3. Record the empty, error and loading states, not just the happy path. A state you could
    not reach is a gap to name in the report, not a finding.
 
-## Scan both clients, in the day's rotating focus
+## Scope: the six launch areas, in the day's rotating focus
 
-Web: RTL correctness, Arabic copy conventions (the active participle ends in a final ya,
-never a tanween — ADR 0054), readable type, focus order, keyboard reachability, labels and
-semantics, contrast, reduced motion, and the four states above.
-
-Android: run `npm run check:visual` for the ports you inspect and read its output. A port
-is on only when that measurement passes (ADR-0117, ADR-0118); check `docs/mobile/screens.json`
-for the enabled flag and `docs/mobile/parity.json` for the pair. Compare the web route and
-the Kotlin surface from the same generated copy; a string typed twice in Kotlin is a
-finding. Quote both files' lines.
+The APK renders the site in a WebView, so the page is the only screen. Check RTL
+correctness, Arabic copy conventions (the active participle ends in a final ya, never a
+tanween — ADR 0054), readable type, focus order, keyboard reachability, labels and
+semantics, contrast, reduced motion, and the four states above. Use the `launch-scope`
+block to choose a route inside the six areas; an Android-native screen or visual gate is
+not in scope.
 
 ## What counts as a finding here
 

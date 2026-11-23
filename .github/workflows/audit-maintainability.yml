@@ -6,6 +6,8 @@
 # missed or partial day. The guard counts issues actually filed with this label today.
 # ADR 0174 puts the origin on Render, so no Vercel credential or CLI is present.
 
+# Launch scope: only the six areas in .github/work-priorities.json are in scope.
+# Marketing pages, Android-native UI and real-device/adb/emulator work are excluded.
 name: 'Maintainability Audit'
 
 on:

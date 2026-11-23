@@ -9,6 +9,8 @@
 # ADR 0207 judges an advisory by reachability as well as severity; ADR 0174 puts the
 # origin on Render, so no Vercel credential or CLI is present.
 
+# Launch scope: only the six areas in .github/work-priorities.json are in scope.
+# Marketing pages, Android-native UI and real-device/adb/emulator work are excluded.
 name: 'Security Audit'
 
 on:
