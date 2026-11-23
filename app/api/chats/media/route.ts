@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getChatMedia } from '@/backend/controllers/chat';
+import { NO_STORE } from '@/backend/transport/cache-policy';
 import { toNextResponse } from '@/backend/transport/http-result';
 
 /**
@@ -17,6 +18,6 @@ export async function GET(req: NextRequest) {
   }
 
   const response = toNextResponse(await getChatMedia(conversationId, storagePath));
-  response.headers.set('Cache-Control', 'no-store');
+  response.headers.set('Cache-Control', NO_STORE['Cache-Control']);
   return response;
 }
