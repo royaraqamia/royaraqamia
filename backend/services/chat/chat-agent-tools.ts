@@ -11,7 +11,10 @@ import { createHabitService } from '@/backend/config/habitflow';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
 import { colorFromName } from '@/backend/services/spendtrack/spendtrack-csv';
 import { createPublicConsultationService } from '@/backend/config/consultation';
-import { createDefaultTrainingApplicationService } from '@/backend/config/training';
+import {
+  createDefaultTrainingApplicationService,
+  createDefaultTrainingCohortsRepository,
+} from '@/backend/config/training';
 import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
 import { createAdminUsersService, createProfileService } from '@/backend/config/users';
 import { createDefaultChatReportsAdminService } from '@/backend/config/chat-reports';
@@ -80,7 +83,7 @@ import {
 import { getProfileHandler, updateProfileHandler } from '@/backend/services/mcp/tools/profile';
 import type { ToolResult } from '@/backend/services/mcp/tools/tool-utils';
 import type { McpUserContext } from '@/backend/services/mcp/session';
-import { COURSE_SLUGS } from '@/shared/contracts/training';
+import { COURSE_SLUGS, trainingCohortSeatsLeft } from '@/shared/contracts/training';
 import {
   NEWS_CATEGORIES,
   NEWS_CATEGORY_LABELS,
@@ -373,6 +376,13 @@ const BookConsultationArgs = z.strictObject({
   full_name: z.string().trim().min(2, 'الاسم مطلوب').max(120, 'الاسم طويل جداً'),
   phone_whatsapp: z.string().trim().regex(whatsappPhoneRegex, 'رقم واتساب غير صحيح'),
   topic_description: z.string().trim().min(30, 'اشرح الموضوع').max(2_000, 'الوصف طويل جداً'),
+});
+
+const CancelConsultationArgs = z.strictObject({
+  booking_id: z.string().uuid('معرِّف الحجز غير صالح'),
+  // The card names the booking by the reference code the member quotes; the
+  // handler checks it against the row before the slot is freed.
+  name: z.string().trim().min(1, 'رمز الحجز مطلوب').max(40),
 });
 
 const ApplyTrainingArgs = z.strictObject({
@@ -868,6 +878,43 @@ const tools: ChatAgentTool[] = [
         service.getAvailableSlots(),
       ]);
       return { packages, slots };
+    },
+  },
+  {
+    name: 'list_training_applications',
+    kind: 'read',
+    product: 'training',
+    tier: 0,
+    description: 'طلبات الالتحاق بالتدريب الخاصة بالعضو وحالتها، كما تعرضها صفحة طلباتي.',
+    schema: NoArgs,
+    async run(_args, context) {
+      return createDefaultTrainingApplicationService().listMine(context.userId);
+    },
+  },
+  {
+    name: 'list_training_cohorts',
+    kind: 'read',
+    product: 'training',
+    tier: 0,
+    description: 'الدُّفعات المفتوحة للتدريب مع المقاعد المتاحة، لدُفعة يختارها العضو عند التقديم.',
+    schema: NoArgs,
+    async run() {
+      const cohorts = await createDefaultTrainingCohortsRepository().list({ status: 'open' });
+      return cohorts.map((cohort) => ({
+        ...cohort,
+        seats_left: trainingCohortSeatsLeft(cohort),
+      }));
+    },
+  },
+  {
+    name: 'list_project_requests',
+    kind: 'read',
+    product: 'client-work',
+    tier: 0,
+    description: 'طلبات المشروع الخاصة بالعضو وحالتها، كما تعرضها صفحة طلباتي.',
+    schema: NoArgs,
+    async run(_args, context) {
+      return createDefaultProjectRequestService().listMine(context.userId);
     },
   },
   {
@@ -1990,6 +2037,28 @@ const tools: ChatAgentTool[] = [
         ip: context.ip,
       });
       return { booking_id: booking.id, reference_code: booking.referenceCode };
+    },
+  },
+  {
+    name: 'cancel_consultation',
+    kind: 'write',
+    product: 'consultations',
+    tier: 3,
+    description:
+      'إلغاء حجز استشارة يملكه العضو بمعرّفه ورمزه. لا يُنفَّذ داخل الجولة؛ تُعرض بطاقة تسمّي الحجز، ولا يُلغى إلا بعد تأكيد العضو، وتُحرَّر مواعيده.',
+    schema: CancelConsultationArgs,
+    async run(args, context) {
+      const input = CancelConsultationArgs.parse(args);
+      const booking = await createPublicConsultationService().cancelMyBooking(
+        context.userId,
+        input.booking_id,
+        input.name
+      );
+      return {
+        booking_id: booking.id,
+        reference_code: booking.reference_code,
+        status: booking.status,
+      };
     },
   },
   {

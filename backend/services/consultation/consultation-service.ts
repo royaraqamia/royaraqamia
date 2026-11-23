@@ -1,14 +1,15 @@
 import { randomInt } from 'crypto';
-import type {
-  AvailabilitySlot,
-  ConsultationBooking,
-  ConsultationBookingStatus,
-  ConsultationPackage,
-  ConsultationSettings,
-  CreateBookingInput,
-  PackageUpsertInput,
-  SlotCreateInput,
-  UpdateBookingInput,
+import {
+  ACTIVE_BOOKING_STATUSES,
+  type AvailabilitySlot,
+  type ConsultationBooking,
+  type ConsultationBookingStatus,
+  type ConsultationPackage,
+  type ConsultationSettings,
+  type CreateBookingInput,
+  type PackageUpsertInput,
+  type SlotCreateInput,
+  type UpdateBookingInput,
 } from '@/shared/contracts/consultation';
 import type {
   AdminAvailabilitySlot,
@@ -41,6 +42,22 @@ export class ConsultationBookingNotReschedulableError extends Error {
   constructor() {
     super('BOOKING_NOT_RESCHEDULABLE');
     this.name = 'ConsultationBookingNotReschedulableError';
+  }
+}
+
+/** The typed target on a destructive card did not name the booking it cancels. */
+export class ConsultationBookingTargetMismatchError extends Error {
+  constructor() {
+    super('رمز الحجز غير مطابق.');
+    this.name = 'ConsultationBookingTargetMismatchError';
+  }
+}
+
+/** A booking that is already rejected or cancelled holds no slot to release. */
+export class ConsultationBookingNotCancellableError extends Error {
+  constructor() {
+    super('لا يمكن إلغاء هذا الحجز في حالته الحالية.');
+    this.name = 'ConsultationBookingNotCancellableError';
   }
 }
 
@@ -152,6 +169,48 @@ export class ConsultationService {
   /** The signed-in booker's own bookings, for the account submissions page. */
   async listMyBookings(userId: string): Promise<ConsultationBooking[]> {
     return this.repositories.bookings.listByUser(userId);
+  }
+
+  /**
+   * The signed-in booker's cancellation of their own booking, which frees its
+   * slot holds through the status trigger.
+   *
+   * The typed target is checked here rather than in the caller: `referenceCode`
+   * must name this very row, so a card that names another booking cannot free
+   * this one. A booking outside the reserving statuses is refused, because
+   * cancelling it would answer as if a slot were released when none is held.
+   */
+  async cancelMyBooking(
+    userId: string,
+    bookingId: string,
+    referenceCode: string
+  ): Promise<ConsultationBooking> {
+    const allowed = await this.config.checkRateLimit(
+      `consultation-cancel:${userId}`,
+      EDIT_LIMIT,
+      EDIT_WINDOW_MS
+    );
+    if (!allowed) throw new ConsultationRateLimitError();
+
+    const booking = (await this.repositories.bookings.listByUser(userId)).find(
+      (row) => row.id === bookingId
+    );
+    if (!booking) throw new ConsultationBookingNotFoundError();
+
+    if (
+      booking.reference_code.trim().toLocaleLowerCase() !== referenceCode.trim().toLocaleLowerCase()
+    ) {
+      throw new ConsultationBookingTargetMismatchError();
+    }
+
+    if (!ACTIVE_BOOKING_STATUSES.includes(booking.status)) {
+      throw new ConsultationBookingNotCancellableError();
+    }
+
+    const cancelled = await this.repositories.bookings.cancelOwned(bookingId, userId);
+    if (!cancelled) throw new ConsultationBookingNotFoundError();
+
+    return { ...booking, status: 'cancelled' };
   }
 
   /**

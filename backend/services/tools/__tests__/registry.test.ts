@@ -39,9 +39,9 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   community: 12,
   account: 5,
   certificates: 3,
-  consultations: 3,
-  training: 1,
-  'client-work': 1,
+  consultations: 4,
+  training: 3,
+  'client-work': 2,
   // #1435: member lookup and the report queue's read, plus its tier-2 decision.
   admin: 3,
   assistant: 5,
@@ -136,7 +136,14 @@ describe('the assistant door', () => {
         .filter((entry) => entry.tier === 3)
         .map((entry) => entry.agentName)
         .sort()
-    ).toEqual(['delete_expense', 'delete_habit', 'delete_link', 'delete_note', 'delete_post']);
+    ).toEqual([
+      'cancel_consultation',
+      'delete_expense',
+      'delete_habit',
+      'delete_link',
+      'delete_note',
+      'delete_post',
+    ]);
   });
 
   it('makes an admin write a card that no grant can ever make automatic', () => {

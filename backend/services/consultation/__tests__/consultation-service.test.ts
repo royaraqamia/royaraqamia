@@ -5,6 +5,8 @@ import {
   ConsultationValidationError,
   ConsultationBookingNotFoundError,
   ConsultationBookingNotReschedulableError,
+  ConsultationBookingTargetMismatchError,
+  ConsultationBookingNotCancellableError,
   SlotTakenError,
   PackageInUseError,
   SlotReservedError,
@@ -41,6 +43,7 @@ function makeRepositories(overrides: Partial<ConsultationRepositories> = {}) {
       reject: vi.fn(),
       updateContactOwned: vi.fn(),
       reschedule: vi.fn(),
+      cancelOwned: vi.fn(),
     },
     settings: {
       read: vi.fn(),
@@ -534,6 +537,66 @@ describe('ConsultationService', () => {
         })
       ).rejects.toBeInstanceOf(ConsultationRateLimitError);
       expect(repositories.bookings.listByUser).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('owner cancellation', () => {
+    const ownedBooking = {
+      id: 'booking-9',
+      reference_code: REFERENCE,
+      user_id: 'user-1',
+      status: 'pending' as const,
+    };
+
+    it('cancels an owned booking named by its reference code', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([
+        ownedBooking,
+      ]);
+      (repositories.bookings.cancelOwned as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+      const service = makeService(repositories);
+
+      const cancelled = await service.cancelMyBooking('user-1', 'booking-9', REFERENCE);
+
+      expect(repositories.bookings.cancelOwned).toHaveBeenCalledWith('booking-9', 'user-1');
+      expect(cancelled.status).toBe('cancelled');
+    });
+
+    it('refuses a typed target that does not name the booking', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([
+        ownedBooking,
+      ]);
+      const service = makeService(repositories);
+
+      await expect(
+        service.cancelMyBooking('user-1', 'booking-9', 'CONS-2026-ZZZZZZZZ')
+      ).rejects.toBeInstanceOf(ConsultationBookingTargetMismatchError);
+      expect(repositories.bookings.cancelOwned).not.toHaveBeenCalled();
+    });
+
+    it('treats a booking the visitor does not own as not found', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      const service = makeService(repositories);
+
+      await expect(
+        service.cancelMyBooking('user-1', 'booking-9', REFERENCE)
+      ).rejects.toBeInstanceOf(ConsultationBookingNotFoundError);
+      expect(repositories.bookings.cancelOwned).not.toHaveBeenCalled();
+    });
+
+    it('refuses a booking that already holds no slot', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([
+        { ...ownedBooking, status: 'rejected' },
+      ]);
+      const service = makeService(repositories);
+
+      await expect(
+        service.cancelMyBooking('user-1', 'booking-9', REFERENCE)
+      ).rejects.toBeInstanceOf(ConsultationBookingNotCancellableError);
+      expect(repositories.bookings.cancelOwned).not.toHaveBeenCalled();
     });
   });
 });
