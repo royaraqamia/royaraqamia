@@ -1,11 +1,11 @@
 {
-  "versionCode": 20400,
-  "versionName": "1.4.0",
-  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.4.0.apk",
-  "sha256": "65e418e5ac86e61f3c34acf36f332acf630ae573e645585ff076a7ea6d143b0a",
+  "versionCode": 20500,
+  "versionName": "1.5.0",
+  "apkUrl": "https://royaraqamia.com/android/royaraqamia-1.5.0.apk",
+  "sha256": "3b3bb392fb1e843e6cff321d9b8b213fa55d584e35bc2d66d025365cd24e1db6",
   "sizeBytes": 8285412,
   "minSupportedVersionCode": 20000,
   "rollout": 100,
-  "notes": "تحسين: يبقى عدّاد الأذكار متاحًا بعد اكتمال العدّ.",
-  "releasedAt": "2026-11-23"
+  "notes": "إصلاح: يبقى تنبيه تحديث التطبيق ظاهرًا حتى يختار المستخدم التثبيت أو التأجيل.",
+  "releasedAt": "2026-11-24"
 }
