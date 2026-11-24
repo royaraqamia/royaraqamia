@@ -491,6 +491,15 @@ synthetic error after the clean measurement (with the `/monitoring` tunnel
 blocked, so no event is posted) and records the reporter's gzip bytes as
 `reporterOnErrorGzipKb` — the error path is priced from the same run too.
 
+The gate keeps its three-at-a-time pace because the committed ceilings were
+recorded with it: serial visits load more lazy chunks inside the settle window
+and price `/downloader` 73 KB higher without the origin getting heavier. Under
+that burst the production edge can answer 503/502 with script-less error pages,
+which the coverage check used to report as an unpriced route even though the
+build was fine (`/hire` on the 2026-11-24 `main` push). A 5xx document is now
+named in the failure and retried on a longer backoff; a script-less success
+still fails with the document status in the message.
+
 Measured on the deployed origin on 2026-11-24, before the reporter fix (gzip KB):
 
 | Surface          | documentJs | afterLoadJs | totalJs |

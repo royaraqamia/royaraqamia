@@ -40,8 +40,18 @@ const KB = 1024;
 const DEFAULT_ORIGIN = 'https://royaraqamia.com';
 const DEFAULT_SETTLE_MS = 3500; // the old reporter used a 3000 ms idle timeout
 const DEFAULT_VIEWPORT = { width: 393, height: 852 };
-const NETWORK_ATTEMPTS = 5;
-const RETRY_BASE_MS = 250;
+const NETWORK_ATTEMPTS = 7;
+const RETRY_BASE_MS = 1000;
+// Keep the three-at-a-time pace: the committed ceilings were recorded with it.
+// Serial visits load more lazy chunks inside the settle window and price
+// `/downloader` 73 KB higher, which trips a budget the live origin does not
+// exceed. A transient 5xx is handled by the retry loop instead.
+const DEFAULT_CONCURRENCY = 3;
+
+/** A status is diagnostic only: fake browsers in tests need not implement it. */
+function responseStatus(response) {
+  return typeof response?.status === 'function' ? response.status() : null;
+}
 
 function readJson(path, fallback) {
   if (!existsSync(path)) return fallback;
@@ -218,6 +228,18 @@ export async function measureRuntimeRoute(
           return { ...entry, body: body.toString('utf8'), gzip: transferredSize(body) };
         })
       );
+      // The final navigation carries the status of the document the visitor
+      // got, even when the edge answers with an empty body. Do not wait for a
+      // parseable HTML body to learn that the origin returned a 5xx.
+      const documentStatus = responseStatus(navigationResponses[navigationResponses.length - 1]);
+      const finalUrl = page.url();
+      // A 5xx from the origin is not a 0 KB route: under load the edge serves
+      // script-less error pages. Name it and retry rather than price it.
+      if (documentStatus !== null && documentStatus >= 500) {
+        throw new Error(
+          `Origin returned HTTP ${documentStatus} for ${normalized} (final URL ${finalUrl})`
+        );
+      }
       let documentHtml = '';
       for (let index = navigationResponses.length - 1; index >= 0 && !documentHtml; index -= 1) {
         try {
@@ -231,12 +253,14 @@ export async function measureRuntimeRoute(
       const documentScripts = extractAssets(documentHtml).scripts;
       const classified = classifyScripts(entries, documentScripts, reporterMatchers);
       const summary = summarizeRuntime(classified);
-      const finalUrl = page.url();
       // A challenge page or a dropped connection can answer with no scripts at
       // all. That is not a 0 KB route; retry it in a fresh context like any
       // other transient failure so a silent miss cannot pass the gate.
       if (summary.totalJs === 0) {
-        throw new Error(`No script responses observed for ${normalized} (final URL ${finalUrl})`);
+        const status = documentStatus === null ? '' : `, document HTTP ${documentStatus}`;
+        throw new Error(
+          `No script responses observed for ${normalized} (final URL ${finalUrl}${status})`
+        );
       }
 
       let reporterOnError = summary.reporter;
@@ -297,7 +321,7 @@ function parseArgs(argv) {
     artifactPath: 'perf/runtime-weight.json',
     routes: [],
     settleMs: DEFAULT_SETTLE_MS,
-    concurrency: 3,
+    concurrency: DEFAULT_CONCURRENCY,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i];
