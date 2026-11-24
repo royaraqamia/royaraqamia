@@ -17,7 +17,7 @@ const entry = (pathname, gzip, body = '') => ({
   body,
 });
 
-function fakeBrowser({ html, scripts, failures = 0, probeScripts = [] }) {
+function fakeBrowser({ html, scripts, failures = 0, probeScripts = [], documentStatus = 200 }) {
   let left = failures;
   return {
     contexts: 0,
@@ -43,6 +43,7 @@ function fakeBrowser({ html, scripts, failures = 0, probeScripts = [] }) {
           this.urlValue = url;
           const document = {
             url: () => url,
+            status: () => documentStatus,
             text: async () => html,
             request: () => ({ isNavigationRequest: () => true }),
           };
@@ -51,6 +52,9 @@ function fakeBrowser({ html, scripts, failures = 0, probeScripts = [] }) {
           }
         },
         async waitForTimeout() {},
+        async content() {
+          return html;
+        },
         url() {
           return this.urlValue;
         },
@@ -220,6 +224,56 @@ describe('measureRuntimeRoute', () => {
     expect(browser.contexts).toBe(2);
     expect(sleepFn).toHaveBeenCalledOnce();
     expect(measured.summary.totalJs).toBeGreaterThan(0);
+  });
+
+  it('names an origin 5xx and retries it instead of pricing a script-less error page', async () => {
+    const browser = fakeBrowser({
+      html: '<html><head></head><body></body></html>',
+      scripts: [],
+      documentStatus: 503,
+    });
+    const sleepFn = vi.fn(() => Promise.resolve());
+
+    await expect(
+      measureRuntimeRoute('/hire', {
+        origin: ORIGIN,
+        browser,
+        settleMs: 0,
+        sleepFn,
+      })
+    ).rejects.toThrow(/Origin returned HTTP 503 for \/hire/);
+    expect(browser.contexts).toBe(7);
+    expect(sleepFn).toHaveBeenCalledTimes(6);
+  });
+
+  it('names a 5xx even when the edge sends an empty document body', async () => {
+    const browser = fakeBrowser({ html: '', scripts: [], documentStatus: 503 });
+
+    await expect(
+      measureRuntimeRoute('/hire', {
+        origin: ORIGIN,
+        browser,
+        settleMs: 0,
+        sleepFn: vi.fn(() => Promise.resolve()),
+      })
+    ).rejects.toThrow(/Origin returned HTTP 503 for \/hire/);
+  });
+
+  it('reports the document status when a non-5xx error page carries no scripts', async () => {
+    const browser = fakeBrowser({
+      html: '<html><head></head><body></body></html>',
+      scripts: [],
+      documentStatus: 404,
+    });
+
+    await expect(
+      measureRuntimeRoute('/missing', {
+        origin: ORIGIN,
+        browser,
+        settleMs: 0,
+        sleepFn: vi.fn(() => Promise.resolve()),
+      })
+    ).rejects.toThrow(/No script responses observed for \/missing.*document HTTP 404/);
   });
 
   it('prices the reporter fetched by an error probe without counting it in the clean load', async () => {
