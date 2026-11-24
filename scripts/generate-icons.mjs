@@ -3,6 +3,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import path from 'path';
 import { execSync } from 'child_process';
+import { checkRendered, parseGeneratorArgs } from './generated-artifacts.mjs';
 import {
   TARGET_DISC_RATIO,
   DISC_TOLERANCE_PX,
@@ -11,19 +12,34 @@ import {
   measure,
 } from './logo-shape.mjs';
 
+const REPO = process.cwd();
+const { check } = parseGeneratorArgs(
+  process.argv.slice(2),
+  'node scripts/generate-icons.mjs [--check]'
+);
 const PURPLE = { r: 120, g: 104, b: 234 };
 const OUT_DIR = 'public/icons';
-const MASTER = 'public/logo.webp';
+const MASTER = path.join(REPO, 'public/logo.webp');
 
 // Tile scale for every icon tile: the square logo is letterboxed (centered, same
 // purple background) so the glyph sits comfortably inside Android's minimum
 // maskable safe zone (a centered circle with a radius of 40% of the icon width).
 const TILE_SCALE = 0.86;
 
-/** The artwork's own disc proportion, measured off the master. */
-const ARTWORK_RATIO = await artworkDiscRatio(MASTER, PURPLE);
+/** Measured off the master once the source file has been found. */
+let ARTWORK_RATIO;
 /** The scale that puts the notification icon's disc at the app's `TARGET_DISC_RATIO`. */
-const NOTIFICATION_ARTWORK_SCALE = artworkScaleFor(ARTWORK_RATIO);
+let NOTIFICATION_ARTWORK_SCALE;
+
+async function loadShape() {
+  if (!fs.existsSync(MASTER)) {
+    throw new Error(
+      `Source logo not found at ${MASTER}. Place a square logo.webp there and run again.`
+    );
+  }
+  ARTWORK_RATIO = await artworkDiscRatio(MASTER, PURPLE);
+  NOTIFICATION_ARTWORK_SCALE = artworkScaleFor(ARTWORK_RATIO);
+}
 
 // "any" icons: the same artwork, circle-cropped to a disc. These are the ones a
 // surface draws *as they are* — a desktop install UI hands the file to the shell
@@ -64,12 +80,28 @@ const FAVICON_SMALL_SCALE = 1.3;
 // disc) so the tab icon never paints a square behind it, light theme or dark.
 const FAVICON_PNG_SIZES = [192, 512];
 
-if (!fs.existsSync(MASTER)) {
-  console.error(
-    `Source logo not found at ${MASTER}. Place a square logo.webp there and run again.`
-  );
-  process.exit(1);
-}
+/**
+ * Every output this generator owns. `--check` renders these into a temp tree
+ * and compares each one byte-for-byte with the committed file.
+ */
+const GENERATED_FILES = [
+  ...ANY_SIZES.map((s) => `${OUT_DIR}/icon-${s}x${s}.png`),
+  ...MASKABLE_SIZES.map((s) => `${OUT_DIR}/icon-maskable-${s}x${s}.png`),
+  ...APPLE_TOUCH_SIZES.map((s) => `${OUT_DIR}/apple-touch-icon-${s}x${s}.png`),
+  `${OUT_DIR}/notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}.png`,
+  `${OUT_DIR}/badge-icon-${BADGE_SIZE}x${BADGE_SIZE}.png`,
+  'public/favicon.ico',
+  ...FAVICON_PNG_SIZES.map((s) => `public/favicon-${s}x${s}.png`),
+  'public/manifest.json',
+  'backend/config/generated/asset-version.ts',
+];
+
+/**
+ * The checkout, except inside `--check`, where nothing may be written: the
+ * render target is a temporary directory removed after the comparison.
+ */
+let TARGET = REPO;
+const out = (...parts) => path.join(TARGET, ...parts);
 
 /** The artwork inset to `TILE_SCALE` of an opaque purple `size` square. */
 async function tileBuffer(size) {
@@ -125,7 +157,7 @@ async function generateNotificationIcon() {
   await sharp(logo)
     .composite([{ input: mask, blend: 'dest-in' }])
     .png()
-    .toFile(`${OUT_DIR}/notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}.png`);
+    .toFile(out(OUT_DIR, `notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}.png`));
 }
 
 // Badge: a white-on-transparent silhouette, because platforms that consume a
@@ -214,7 +246,7 @@ async function generateBadge() {
   })
     .composite([{ input: glyph, gravity: 'center' }])
     .png()
-    .toFile(`${OUT_DIR}/badge-icon-${BADGE_SIZE}x${BADGE_SIZE}.png`);
+    .toFile(out(OUT_DIR, `badge-icon-${BADGE_SIZE}x${BADGE_SIZE}.png`));
 }
 
 function buildIco(pngs) {
@@ -267,10 +299,10 @@ async function generateFavicon() {
     const scale = size === FAVICON_SMALL_SIZE ? FAVICON_SMALL_SCALE : 1;
     pngs.push({ size, buf: await circleCroppedPng(size, scale) });
   }
-  fs.writeFileSync('public/favicon.ico', buildIco(pngs));
+  fs.writeFileSync(out('public/favicon.ico'), buildIco(pngs));
 
   for (const size of FAVICON_PNG_SIZES) {
-    fs.writeFileSync(`public/favicon-${size}x${size}.png`, await circleCroppedPng(size));
+    fs.writeFileSync(out(`public/favicon-${size}x${size}.png`), await circleCroppedPng(size));
   }
 }
 
@@ -344,14 +376,14 @@ async function validate() {
 
   for (const size of ANY_SIZES) {
     errors += await validateDisc(
-      `${OUT_DIR}/icon-${size}x${size}.png`,
+      out(OUT_DIR, `icon-${size}x${size}.png`),
       size,
       `icon-${size}x${size}`
     );
   }
   for (const size of MASKABLE_SIZES) {
     errors += await validateTile(
-      `${OUT_DIR}/icon-maskable-${size}x${size}.png`,
+      out(OUT_DIR, `icon-maskable-${size}x${size}.png`),
       size,
       PURPLE_PX,
       `icon-maskable-${size}x${size} (maskable)`
@@ -359,14 +391,14 @@ async function validate() {
   }
   for (const size of APPLE_TOUCH_SIZES) {
     errors += await validateTile(
-      `${OUT_DIR}/apple-touch-icon-${size}x${size}.png`,
+      out(OUT_DIR, `apple-touch-icon-${size}x${size}.png`),
       size,
       PURPLE_PX,
       `apple-touch-icon-${size}x${size}`
     );
   }
 
-  const notifFp = `${OUT_DIR}/notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}.png`;
+  const notifFp = out(OUT_DIR, `notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}.png`);
   if (!fs.existsSync(notifFp)) {
     console.error(`  ✗ Missing: notification icon`);
     errors++;
@@ -394,7 +426,7 @@ async function validate() {
     }
   }
 
-  const badgeFp = `${OUT_DIR}/badge-icon-${BADGE_SIZE}x${BADGE_SIZE}.png`;
+  const badgeFp = out(OUT_DIR, `badge-icon-${BADGE_SIZE}x${BADGE_SIZE}.png`);
   if (!fs.existsSync(badgeFp)) {
     console.error(`  ✗ Missing: badge icon`);
     errors++;
@@ -429,7 +461,7 @@ async function validate() {
     }
   }
 
-  const icoFp = 'public/favicon.ico';
+  const icoFp = out('public/favicon.ico');
   if (!fs.existsSync(icoFp)) {
     console.error('  ✗ Missing: favicon.ico');
     errors++;
@@ -467,7 +499,7 @@ async function validate() {
 
   for (const size of FAVICON_PNG_SIZES) {
     errors += await validateDisc(
-      `public/favicon-${size}x${size}.png`,
+      out(`public/favicon-${size}x${size}.png`),
       size,
       `favicon-${size}x${size}`
     );
@@ -499,7 +531,7 @@ function computeAssetVersion() {
     // Fold the path in too, so a rename/addition changes the token even if the
     // concatenated bytes happen to collide.
     hash.update(file);
-    hash.update(fs.readFileSync(file));
+    hash.update(fs.readFileSync(out(file)));
   }
   return hash.digest('hex').slice(0, 10);
 }
@@ -545,13 +577,13 @@ function generateManifest(assetVersion) {
       },
     ],
   };
-  fs.writeFileSync('public/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
+  fs.writeFileSync(out('public/manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
 // Server components need the same token the manifest and service worker use, so
 // the generated metadata is the single source of truth for the asset version.
 function generateAssetVersionModule(assetVersion) {
-  const output = 'backend/config/generated/asset-version.ts';
+  const output = out('backend/config/generated/asset-version.ts');
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(
     output,
@@ -560,7 +592,7 @@ function generateAssetVersionModule(assetVersion) {
       '// favicon and manifest URLs so a change always busts client caches.\n' +
       `export const ASSET_VERSION = '${assetVersion}';\n`
   );
-  console.log(`  ✓ asset-version.ts → ${assetVersion}`);
+  if (!check) console.log(`  ✓ asset-version.ts → ${assetVersion}`);
 }
 
 function generateSwVersion(assetVersion) {
@@ -569,54 +601,88 @@ function generateSwVersion(assetVersion) {
     process.env.VERCEL_GIT_COMMIT_SHA ||
     execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim() ||
     'dev';
-  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  const pkg = JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'), 'utf8'));
   const cache = `royaraqamia-v${pkg.version}-${version}`;
+  // Gitignored, and its cache name depends on the commit: render it in the temp
+  // tree too, but never compare it with the checkout.
   fs.writeFileSync(
-    'public/sw-version.js',
+    out('public/sw-version.js'),
     `self.CACHE_VERSION = '${cache}';\n` + `self.ASSET_VERSION = '${assetVersion}';\n`
   );
-  console.log(`  ✓ sw-version.js → ${cache} (assets ${assetVersion})`);
+  if (!check) console.log(`  ✓ sw-version.js → ${cache} (assets ${assetVersion})`);
 }
 
-async function main() {
-  console.log('Generating icons...');
+async function generate() {
+  await loadShape();
+
+  if (!check) console.log('Generating icons...');
   for (const size of ANY_SIZES) {
-    await tileDisc(`${OUT_DIR}/icon-${size}x${size}.png`, size);
-    console.log(`  ✓ icon-${size}x${size} (circle-cropped disc)`);
+    await tileDisc(out(OUT_DIR, `icon-${size}x${size}.png`), size);
+    if (!check) console.log(`  ✓ icon-${size}x${size} (circle-cropped disc)`);
   }
   for (const size of MASKABLE_SIZES) {
-    await tileFullBleed(`${OUT_DIR}/icon-maskable-${size}x${size}.png`, size);
-    console.log(`  ✓ icon-maskable-${size}x${size} (maskable, full-bleed)`);
+    await tileFullBleed(out(OUT_DIR, `icon-maskable-${size}x${size}.png`), size);
+    if (!check) console.log(`  ✓ icon-maskable-${size}x${size} (maskable, full-bleed)`);
   }
   for (const size of APPLE_TOUCH_SIZES) {
-    await tileFullBleed(`${OUT_DIR}/apple-touch-icon-${size}x${size}.png`, size);
-    console.log(`  ✓ apple-touch-icon-${size}x${size} (full-bleed purple tile)`);
+    await tileFullBleed(out(OUT_DIR, `apple-touch-icon-${size}x${size}.png`), size);
+    if (!check) console.log(`  ✓ apple-touch-icon-${size}x${size} (full-bleed purple tile)`);
   }
   await generateNotificationIcon();
-  console.log(`  ✓ notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}`);
   await generateBadge();
-  console.log(`  ✓ badge-icon-${BADGE_SIZE}x${BADGE_SIZE}`);
   await generateFavicon();
-  console.log('  ✓ favicon.ico');
-  console.log(`  ✓ ${FAVICON_PNG_SIZES.map((s) => `favicon-${s}x${s}.png`).join(', ')}`);
-
-  console.log('\nValidating...');
-  const errors = await validate();
-  if (errors) {
-    console.error(`\n${errors} error(s) — fix and rerun`);
-    process.exit(1);
+  if (!check) {
+    console.log(`  ✓ notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}`);
+    console.log(`  ✓ badge-icon-${BADGE_SIZE}x${BADGE_SIZE}`);
+    console.log('  ✓ favicon.ico');
+    console.log(`  ✓ ${FAVICON_PNG_SIZES.map((s) => `favicon-${s}x${s}.png`).join(', ')}`);
+    console.log('\nValidating...');
   }
-  console.log('  All icons validated ✓');
 
-  console.log('\nGenerating asset version...');
+  const errors = await validate();
+  if (errors) throw new Error(`${errors} icon validation error(s) — fix and rerun`);
+  if (!check) console.log('  All icons validated ✓');
+
   const assetVersion = computeAssetVersion();
   generateManifest(assetVersion);
-  console.log(`  ✓ manifest.json → ?v=${assetVersion}`);
+  if (!check) console.log(`  ✓ manifest.json → ?v=${assetVersion}`);
   generateAssetVersionModule(assetVersion);
   generateSwVersion(assetVersion);
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+async function main() {
+  if (!check) {
+    await generate();
+    return 0;
+  }
+  return checkRendered({
+    prefix: 'roy-icons-',
+    root: REPO,
+    files: GENERATED_FILES,
+    ownedDirs: [
+      {
+        dir: 'public/icons',
+        include: (file) => file.startsWith('public/icons/') && file.endsWith('.png'),
+      },
+      {
+        dir: 'public',
+        include: (file) => /^public\/favicon[^/]*\.(ico|png)$/.test(file),
+      },
+    ],
+    label: 'Generated icons',
+    render: async (directory) => {
+      TARGET = directory;
+      await generate();
+    },
+  });
+}
+
+main().then(
+  (code) => {
+    process.exitCode = code;
+  },
+  (error) => {
+    console.error(error);
+    process.exitCode = 1;
+  }
+);

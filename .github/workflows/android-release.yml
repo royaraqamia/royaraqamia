@@ -159,6 +159,13 @@ jobs:
           node-version: '22'
           cache-next: 'false'
 
+      # `android:release` checks this too, but a cut must not spend a Gradle build
+      # on a launcher that is older than the site's mark (#1790): `cap sync` never
+      # regenerates these, so the drift would survive into an APK indefinitely.
+      - name: Launcher assets match the PWA mark
+        if: steps.plan.outputs.release == 'true'
+        run: npm run check:android-assets
+
       # `scripts/android.mjs` looks for the JDK itself and refuses anything but 21,
       # because AGP 8.13 does not run on newer ones.
       - name: Setup JDK 21

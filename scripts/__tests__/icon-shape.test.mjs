@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, relative, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { diffRendered } from '../generated-artifacts.mjs';
 import { DISC_TOLERANCE_PX, TARGET_DISC_RATIO, measure } from '../logo-shape.mjs';
 
 /**
@@ -380,5 +383,54 @@ describe('the logo is one shape on every surface', () => {
       }
     }
     expect(drifts).toEqual([]);
+  });
+});
+
+/**
+ * Proportion is not identity. A glyph changed at the same proportions passes
+ * every test above, which is why the generators render into a temp tree and
+ * compare bytes (#1790).
+ */
+describe("the shipped files are the generators' bytes", () => {
+  const run = (script, flag) =>
+    spawnSync(process.execPath, [join(ROOT, 'scripts', script), flag], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    });
+
+  it('accepts --check on both families with no drift', () => {
+    for (const script of ['generate-icons.mjs', 'generate-android-assets.mjs']) {
+      const result = run(script, '--check');
+      expect(result.status, `${script}: ${result.stderr}`).toBe(0);
+    }
+  });
+
+  it('rejects an unknown flag instead of silently regenerating', () => {
+    for (const script of ['generate-icons.mjs', 'generate-android-assets.mjs']) {
+      const result = run(script, '--bogus');
+      expect(result.status, `${script}: ${result.stderr}`).toBe(1);
+      expect(result.stderr).toContain('Unknown argument');
+    }
+  });
+
+  it('names a missing or changed owned file', async () => {
+    const fresh = mkdtempSync(join(tmpdir(), 'roy-artifact-fresh-'));
+    const committed = mkdtempSync(join(tmpdir(), 'roy-artifact-committed-'));
+    try {
+      mkdirSync(join(fresh, 'icons'));
+      mkdirSync(join(committed, 'icons'));
+      writeFileSync(join(fresh, 'icons/icon.png'), Buffer.from('from the master'));
+      writeFileSync(join(committed, 'icons/icon.png'), Buffer.from('hand edited'));
+      expect(await diffRendered({ rendered: fresh, committed, files: ['icons/icon.png'] })).toEqual(
+        ['icons/icon.png (differs)']
+      );
+      rmSync(join(committed, 'icons/icon.png'));
+      expect(await diffRendered({ rendered: fresh, committed, files: ['icons/icon.png'] })).toEqual(
+        ['icons/icon.png (missing)']
+      );
+    } finally {
+      rmSync(fresh, { recursive: true, force: true });
+      rmSync(committed, { recursive: true, force: true });
+    }
   });
 });

@@ -110,6 +110,16 @@ jobs:
       - name: Generated Tokens Are Current
         run: npm run check:tokens
 
+      # `build:render` runs `prebuild`, which silently regenerates the web icons
+      # inside the deploy container. This has to read the committed files, here
+      # in the lint job and before anything builds, or the drift disappears
+      # (#1790). The Android launcher has no such regeneration step at all.
+      - name: Generated Icons Are Current
+        run: npm run check:icons
+
+      - name: Generated Android Assets Are Current
+        run: npm run check:android-assets
+
       # `next/font/local` needs literal `unicode-range` values, so the two
       # reader faces are generated from the one mark-codepoint contract; a hand
       # edit would let the ranges and the subset drift apart (issue #1688).
