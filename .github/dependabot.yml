@@ -32,3 +32,9 @@ updates:
           - 'patch'
     commit-message:
       prefix: 'ci'
+    ignore:
+      # #1762 bumped this to a 2.x commit where github/action.yml no longer
+      # exists, so every agent workflow failed before its first step. The 1.x
+      # action installs the v1 CLI these prompts use; audits install v2 itself
+      # (ADR 0208). Do not move the pin without migrating all four callers.
+      - dependency-name: 'anomalyco/opencode/github'
