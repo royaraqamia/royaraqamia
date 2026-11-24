@@ -109,6 +109,20 @@ describe('UsageCard', () => {
     expect(screen.queryByRole('link', { name: /ترقية الخطَّة/ })).not.toBeInTheDocument();
   });
 
+  it('keeps the plan link when the usage read failed', () => {
+    mocks.session.user = { id: 'u1' };
+    mocks.usage.failed = true;
+
+    render(<UsageCard />);
+
+    expect(screen.getByRole('link', { name: /التَّفاصيل والسِّجل/ })).toHaveAttribute(
+      'href',
+      '/account/plan'
+    );
+    expect(screen.getByRole('button', { name: /إعادة المحاولة/ })).toBeInTheDocument();
+    expect(screen.queryByText('الخطَّة المجانيَّة')).not.toBeInTheDocument();
+  });
+
   it('reports an Admin as unlimited', () => {
     mocks.session.user = { id: 'admin-1' };
     mocks.usage.state = { ...freeState, unlimited: true };

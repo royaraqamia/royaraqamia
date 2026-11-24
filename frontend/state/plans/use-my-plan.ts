@@ -70,3 +70,22 @@ export function useMyPlan(enabled: boolean) {
 
   return { plan: state.value, loading: state.loading, failed: state.failed, reload };
 }
+
+/**
+ * The plan page's two reads: the plan body and the counted actions body. They
+ * fail apart, so one hook hands both to the page without tying the plan's one
+ * door to the counters request. A failed counters read leaves `usage` null and
+ * the page draws the plan and its standing bar without a daily block.
+ */
+export function usePlanPage(enabled: boolean) {
+  const plan = useMyPlan(enabled);
+  const usage = useMyUsage(enabled);
+
+  return {
+    plan: plan.plan,
+    loading: plan.loading,
+    failed: plan.failed,
+    reload: plan.reload,
+    usage: usage.state,
+  };
+}
