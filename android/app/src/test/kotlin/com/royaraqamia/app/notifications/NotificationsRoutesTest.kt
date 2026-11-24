@@ -21,6 +21,7 @@ class NotificationsRoutesTest {
         conversationId: String? = null,
         username: String? = null,
         slug: String? = null,
+        post_slug: String? = null,
     ) = NotificationsResponseNotificationsItem(
         id = "n-1",
         user_id = "u-1",
@@ -33,6 +34,7 @@ class NotificationsRoutesTest {
                 conversationId = conversationId,
                 username = username,
                 slug = slug,
+                post_slug = post_slug,
             ),
         is_read = false,
         created_at = "2026-11-13T00:00:00Z",
@@ -130,6 +132,34 @@ class NotificationsRoutesTest {
             "/community",
             NotificationsRoutes.targetOf(
                 item(NotificationsResponseNotificationsItemType.POST_PUBLISHED)
+            ),
+        )
+    }
+
+    @Test
+    fun `a reply opens the post's comments`() {
+        assertEquals(
+            "/community/new-post#comments",
+            NotificationsRoutes.targetOf(
+                item(
+                    NotificationsResponseNotificationsItemType.POST_COMMENT,
+                    post_slug = "new-post",
+                )
+            ),
+        )
+        assertEquals(
+            "/community/A%2FB#comments",
+            NotificationsRoutes.targetOf(
+                item(
+                    NotificationsResponseNotificationsItemType.POST_COMMENT,
+                    post_slug = "A/B",
+                )
+            ),
+        )
+        assertEquals(
+            "/community",
+            NotificationsRoutes.targetOf(
+                item(NotificationsResponseNotificationsItemType.POST_COMMENT)
             ),
         )
     }

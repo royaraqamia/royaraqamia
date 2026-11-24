@@ -16,6 +16,7 @@ export const NotificationTypeSchema = z.enum([
   'chat_request',
   'new_follower',
   'post_published',
+  'post_comment',
 ]);
 
 export type NotificationType = z.infer<typeof NotificationTypeSchema>;
@@ -72,6 +73,14 @@ export const NOTIFICATION_DESTINATIONS: Record<NotificationType, NotificationDes
     metadataKey: 'slug',
     fallbackPath: '/community',
   },
+  // A reply points at the thread, not just the post (#1576). The page owns the
+  // `comments` anchor; the app's shell normalizes the fragment away and opens
+  // the same post screen a card's `/community/<slug>#comments` link opens.
+  post_comment: {
+    path: '/community/{post_slug}#comments',
+    metadataKey: 'post_slug',
+    fallbackPath: '/community',
+  },
 };
 
 /** The path one row leads to, or `null` when the row only marks itself read. */
@@ -102,6 +111,8 @@ export const NotificationMetadataSchema = z.object({
   conversationId: z.string().optional(),
   username: z.string().optional(),
   slug: z.string().optional(),
+  post_slug: z.string().optional(),
+  comment_id: z.string().optional(),
 });
 
 export const NotificationSchema = z.object({

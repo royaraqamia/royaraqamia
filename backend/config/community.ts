@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
+import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import {
@@ -43,6 +44,7 @@ export function createPostEngagementService(
 ): PostEngagementService {
   return new PostEngagementService({
     engagement: createPostEngagementRepository(supabase ?? getAdminSupabase()),
+    notify: createAdminNotificationProducer(),
     checkRateLimit: (key, limit, windowMs) =>
       checkRateLimit(key, limit, windowMs, { failClosed: true }),
   });

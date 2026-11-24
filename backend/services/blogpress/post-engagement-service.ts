@@ -1,3 +1,4 @@
+import type { NotificationProducer } from '@/backend/config/notifications';
 import type {
   PostCommentAuthorRow,
   PostCommentRow,
@@ -26,6 +27,8 @@ export class PostEngagementRefusedError extends Error {
 
 export interface PostEngagementServiceDeps {
   engagement: PostEngagementRepository;
+  /** Fail-safe: a notification never blocks the comment that caused it. */
+  notify: NotificationProducer;
   checkRateLimit: (key: string, limit: number, windowMs: number) => Promise<boolean>;
 }
 
@@ -137,7 +140,48 @@ export class PostEngagementService {
 
     if (!comment) throw new PostEngagementRefusedError(404, 'التعليق غير موجود.');
 
+    // The row is written. From here nothing may fail the member's request: the
+    // post's author is read and the notice produced off the write's path.
+    void this.deliverCommentNotice(postId, slug, viewerId, comment);
+
     return { comment, commentCount: written.commentCount };
+  }
+
+  /**
+   * One notice for one reply, to the post's host and never to the writer.
+   *
+   * ADR-0217 makes the host the thread's moderator, so the sentence points at a
+   * thread they can clear. A blocked pair cannot write here at all, and a hidden
+   * member's byline still draws, so naming the writer tells the host what the
+   * thread shows. Both failures - the host read and the producer - are swallowed:
+   * a comment that was written must never come back as a failed request.
+   */
+  private async deliverCommentNotice(
+    postId: string,
+    slug: string,
+    viewerId: string,
+    comment: PostComment
+  ): Promise<void> {
+    try {
+      const host = await this.deps.engagement.postAuthor(postId);
+      if (!host || host === viewerId) return;
+
+      const who =
+        comment.author?.name?.trim() ||
+        (comment.author?.username ? `@${comment.author.username}` : 'عضو');
+      const text = comment.body.trim().replace(/\s+/g, ' ');
+      const excerpt = text.slice(0, 120) + (text.length > 120 ? '…' : '');
+
+      await this.deps.notify({
+        user_id: host,
+        type: 'post_comment',
+        title: 'تعليق جديد على منشورك',
+        body: `تعليق جديد من ${who}: «${excerpt}». يمكنك حذفه من منشورك.`,
+        metadata: { post_slug: slug, comment_id: comment.id },
+      });
+    } catch {
+      // The producer is fail-safe by contract; a read failure must be too.
+    }
   }
 
   async editComment(

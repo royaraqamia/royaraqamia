@@ -12,7 +12,7 @@
   "notes": {
     "source": "The notification centre's Alerts list, in both clients (#1391): the loading and empty faces, the guest sentence, the one failure line, the mark-all and delete controls, the unread announcement, and the relative-time words. `frontend/ui/notifications/notifications-view.tsx` is the reference, and the surface owns the sentence around the shared `timeAgoParts` (ADR-0104), so the row and its port cannot word the same instant differently.",
     "placeholders": "The `ago*` strings carry `{count}`; each client substitutes the shared formatter's count.",
-    "postPublished": "`postPublishedOpen` is the press label on a row whose type is `post_published`: the row leads to the post, and both clients name that press the same way.",
+    "postPublished": "`postPublishedOpen` is the press label on a row whose type is `post_published` or `post_comment`: both rows lead to the post (the reply's row to its thread), and both clients name that press the same way.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference view does not render or a state the app's `NotificationsUiState` declares that the row does not list."
   },
   "strings": {
