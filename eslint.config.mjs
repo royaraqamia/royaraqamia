@@ -45,6 +45,9 @@ export default [
       // Same shape, from `scripts/build-sync-flush.mjs`: the Android shell's
       // headless drain page bundle. Its source is `frontend/api/sync-flush-entry.ts`.
       'public/sync-flush.js',
+      // Same shape, from `scripts/build-sentry-client.mjs`: the lazy error
+      // reporter. Its source is `frontend/shared/sentry-client-entry.ts`.
+      'public/sentry-client.js',
     ],
   },
   js.configs.recommended,

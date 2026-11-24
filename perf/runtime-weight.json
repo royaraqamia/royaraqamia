@@ -1,0 +1,506 @@
+{
+  "schemaVersion": 1,
+  "notes": "Post-paint script weight, measured by `npm run perf:runtime` in Chromium at 393x852 @ 2.75 against PERF_ORIGIN (default https://royaraqamia.com). `documentJsGzipKb` is the subset `perf:weight` already prices; `afterLoadGzipKb` is the scripts the document does not reference; `totalJsGzipKb` is their sum. `ceiling` is the committed guard on after-load JS, in the same gzip KB unit as perf/budget.json. A dynamic pattern expands through perf/surfaces.json weightSamples, and an exact key wins over a pattern, as in perf/budget.json. Ceilings were recorded from the deployed origin on 2026-11-24 (issue #1820): the reporter was 148.8 KB gzip on every route sampled, and the product shells also fetch their own lazy chunks (SpendTrack's editor, the community cards, the profile and news readers), which is why the default is above the reporter alone. Ratchet them down only after the reduction is deployed, because this gate reads the deployed origin and not the pull request's build. `reporter.matchers` identifies the error-reporting SDK in a script body (every string in one matcher must be present), since its filename is a content hash that changes on every release; several markers are needed because a Next chunk also carries the DSN, `captureException` and `__RoyaSentry`.",
+  "origin": "https://royaraqamia.com",
+  "measuredAt": "2026-11-24T14:49:56.398Z",
+  "reporter": {
+    "matchers": [
+      ["event_id", "getCurrentScope"],
+      ["event_id", "captureException", "sentry.io"]
+    ]
+  },
+  "default": {
+    "ceiling": 260
+  },
+  "routes": {
+    "/": {
+      "comment": "Audit 2026-11-24: after load 196.2 KB, of which the reporter was 148.8 KB.",
+      "ceiling": 202,
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 195.8,
+      "totalJsGzipKb": 448.7,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/terms": {
+      "comment": "Audit 2026-11-24: after load 155.9 KB, of which the reporter was 148.8 KB.",
+      "ceiling": 161,
+      "documentJsGzipKb": 202,
+      "afterLoadGzipKb": 155.7,
+      "totalJsGzipKb": 357.7,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/quran/[surah]": {
+      "comment": "Audit 2026-11-24: /quran/1 after load 155.9 KB, of which the reporter was 148.8 KB. Both published samples share this ceiling.",
+      "ceiling": 161
+    },
+    "/notifications": {
+      "comment": "Audit 2026-11-24: after load 166.4 KB, of which the reporter was 148.8 KB.",
+      "ceiling": 172,
+      "documentJsGzipKb": 285.3,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 451.4,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/chats/[id]": {
+      "comment": "Audit 2026-11-24: /chats/new after load 166.4 KB, of which the reporter was 148.8 KB. The pattern resolves through weightSamples to that concrete sample.",
+      "ceiling": 172
+    },
+    "/account/links": {
+      "comment": "Audit 2026-11-24: after load 197.6 KB, of which the reporter was 148.8 KB.",
+      "ceiling": 203,
+      "documentJsGzipKb": 366.1,
+      "afterLoadGzipKb": 197.3,
+      "totalJsGzipKb": 563.4,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/community/explore": {
+      "comment": "2026-11-24 live run: up to 342.1 KB after load, of which the reporter was 148.8 KB; the hub also pulls the community card chunks. Ceiling sits above the heaviest observed run.",
+      "ceiling": 360,
+      "documentJsGzipKb": 277.3,
+      "afterLoadGzipKb": 155.7,
+      "totalJsGzipKb": 433,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/habitflow": {
+      "comment": "2026-11-24 live run: 310.3 KB after load, of which the reporter was 148.8 KB; the dashboard's own lazy chunks make up the rest.",
+      "ceiling": 325,
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 310.3,
+      "totalJsGzipKb": 563.3,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/spendtrack": {
+      "comment": "2026-11-24 live runs: 408.8-433.0 KB after load, of which the reporter was 148.8 KB; the editor and chart chunks are the heaviest legitimate lazy load in the matrix.",
+      "ceiling": 450,
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 433,
+      "totalJsGzipKb": 686,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/notes": {
+      "comment": "2026-11-24 live run: 392.5 KB after load, of which the reporter was 148.8 KB.",
+      "ceiling": 405,
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 392.5,
+      "totalJsGzipKb": 645.5,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/news": {
+      "comment": "2026-11-24 live run: 283.5 KB after load, of which the reporter was 148.8 KB.",
+      "ceiling": 295,
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 283.5,
+      "totalJsGzipKb": 536.5,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/u/[username]": {
+      "comment": "2026-11-24 live run: /u/royaraqamia measured 335.4 KB after load. The pattern covers the profile and its follower/following routes.",
+      "ceiling": 350
+    },
+    "/account": {
+      "documentJsGzipKb": 272,
+      "afterLoadGzipKb": 197.3,
+      "totalJsGzipKb": 469.3,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/account/blocked": {
+      "documentJsGzipKb": 248.8,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 414.9,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/account/connected-apps": {
+      "documentJsGzipKb": 267.3,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 433.4,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/account/faq": {
+      "documentJsGzipKb": 206.5,
+      "afterLoadGzipKb": 155.7,
+      "totalJsGzipKb": 362.2,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/account/memory": {
+      "documentJsGzipKb": 210.7,
+      "afterLoadGzipKb": 197.3,
+      "totalJsGzipKb": 408,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/account/news": {
+      "documentJsGzipKb": 262.4,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 428.5,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/account/plan": {
+      "documentJsGzipKb": 209.5,
+      "afterLoadGzipKb": 197.3,
+      "totalJsGzipKb": 406.8,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/account/submissions": {
+      "documentJsGzipKb": 352.8,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 518.9,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/admin": {
+      "documentJsGzipKb": 243.5,
+      "afterLoadGzipKb": 166.5,
+      "totalJsGzipKb": 410.1,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/app-info": {
+      "documentJsGzipKb": 202.8,
+      "afterLoadGzipKb": 155.7,
+      "totalJsGzipKb": 358.5,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/athkar": {
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 200.4,
+      "totalJsGzipKb": 453.4,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/athkar/evening": {
+      "documentJsGzipKb": 237,
+      "afterLoadGzipKb": 215.6,
+      "totalJsGzipKb": 452.6,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/auth/error": {
+      "documentJsGzipKb": 203.4,
+      "afterLoadGzipKb": 197.3,
+      "totalJsGzipKb": 400.7,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/auth/login": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 211.7,
+      "totalJsGzipKb": 211.7,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/auth/reset-password": {
+      "documentJsGzipKb": 241.2,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 407.3,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/auth/signup": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 211.1,
+      "totalJsGzipKb": 211.1,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/auth/update-password": {
+      "documentJsGzipKb": 241.8,
+      "afterLoadGzipKb": 157.1,
+      "totalJsGzipKb": 399,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/auth/verify-otp": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 212.5,
+      "totalJsGzipKb": 212.5,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/chats/new": {
+      "documentJsGzipKb": 264.6,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 430.7,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.398Z"
+    },
+    "/community": {
+      "documentJsGzipKb": 277.3,
+      "afterLoadGzipKb": 245.6,
+      "totalJsGzipKb": 522.9,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/consultation/book": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 213.1,
+      "totalJsGzipKb": 213.1,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/downloader": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 209.6,
+      "totalJsGzipKb": 209.6,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/hire": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 214.8,
+      "totalJsGzipKb": 214.8,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/linksnap/unlock/invalid": {
+      "documentJsGzipKb": 206.9,
+      "afterLoadGzipKb": 207.9,
+      "totalJsGzipKb": 414.8,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/mcp/apps": {
+      "documentJsGzipKb": 267.3,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 433.4,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/mcp/apps/invalid": {
+      "documentJsGzipKb": 262.4,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 428.5,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/mcp/connect": {
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 195.8,
+      "totalJsGzipKb": 448.7,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/mcp/guide": {
+      "documentJsGzipKb": 203.2,
+      "afterLoadGzipKb": 155.7,
+      "totalJsGzipKb": 359,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/pricing": {
+      "documentJsGzipKb": 222.2,
+      "afterLoadGzipKb": 197.3,
+      "totalJsGzipKb": 419.5,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/pricing/subscribe": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 211.1,
+      "totalJsGzipKb": 211.1,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/privacy": {
+      "documentJsGzipKb": 202,
+      "afterLoadGzipKb": 155.7,
+      "totalJsGzipKb": 357.7,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/quran": {
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 225.2,
+      "totalJsGzipKb": 478.2,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/quran/1": {
+      "documentJsGzipKb": 247.2,
+      "afterLoadGzipKb": 155.7,
+      "totalJsGzipKb": 402.9,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/quran/2": {
+      "documentJsGzipKb": 247.2,
+      "afterLoadGzipKb": 155.7,
+      "totalJsGzipKb": 402.9,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/rates": {
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 236.3,
+      "totalJsGzipKb": 489.2,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/request-project": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 216.9,
+      "totalJsGzipKb": 216.9,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/scan": {
+      "documentJsGzipKb": 253,
+      "afterLoadGzipKb": 169.8,
+      "totalJsGzipKb": 422.8,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/security": {
+      "documentJsGzipKb": 202,
+      "afterLoadGzipKb": 155.7,
+      "totalJsGzipKb": 357.7,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/training/apply": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 212.6,
+      "totalJsGzipKb": 212.6,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/u/royaraqamia": {
+      "documentJsGzipKb": 0,
+      "afterLoadGzipKb": 217.6,
+      "totalJsGzipKb": 217.6,
+      "reporterGzipKb": 0,
+      "reporterUrls": [],
+      "reporterOnErrorGzipKb": 0,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/verify": {
+      "documentJsGzipKb": 295.4,
+      "afterLoadGzipKb": 166.1,
+      "totalJsGzipKb": 461.4,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    },
+    "/verify/invalid": {
+      "documentJsGzipKb": 257.4,
+      "afterLoadGzipKb": 156.9,
+      "totalJsGzipKb": 414.3,
+      "reporterGzipKb": 148.8,
+      "reporterUrls": ["https://royaraqamia.com/_next/static/chunks/149j31a0mb_5h.js"],
+      "reporterOnErrorGzipKb": 148.8,
+      "measuredAt": "2026-11-24T14:49:56.399Z"
+    }
+  }
+}

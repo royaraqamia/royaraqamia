@@ -76,6 +76,7 @@ public/sw-precache.js
 public/sw-push-config.js
 public/sw-outbox.js
 public/sync-flush.js
+public/sentry-client.js
 # Copied out of node_modules by scripts/sync-zxing-wasm.mjs so it always matches
 # the installed zxing-wasm version (ADR-0035).
 public/zxing_reader.wasm
