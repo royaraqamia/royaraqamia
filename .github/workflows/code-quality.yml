@@ -231,6 +231,18 @@ jobs:
         env:
           PERF_ORIGIN: 'https://royaraqamia.com'
 
+      # The document-only gate cannot see a chunk pulled in after load; #1820
+      # measured a 148.8 KB reporter chunk that way. This prices the same
+      # surface list in a real browser, including every script the HTML does
+      # not reference.
+      - name: Install Chromium for the runtime weight gate
+        run: npx playwright install --with-deps chromium
+
+      - name: Runtime script weight budget
+        run: npm run perf:runtime -- --check
+        env:
+          PERF_ORIGIN: 'https://royaraqamia.com'
+
       # Also reads .next: the committed public/sw-precache.js has to match what
       # the build derives, and every public page has to either be prerendered or
       # be declared dynamic by design (#557).

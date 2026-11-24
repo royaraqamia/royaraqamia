@@ -274,7 +274,7 @@ export function checkBudget(summary, budget, route, weightSamples) {
   return { ok: violations.length === 0, violations, checked };
 }
 
-function normalizeRoute(route) {
+export function normalizeRoute(route) {
   const trimmed = (route ?? '/').split('?')[0].split('#')[0].trim();
   const withSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
   return withSlash.replace(/\/+$/, '') || '/';

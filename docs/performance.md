@@ -9,13 +9,13 @@ perf:check` fails the build when a route pushes past its budget.
 `scripts/perf-baseline.mjs` reads the `next build` output statically — no server
 or network — and reports **raw and gzip** bytes per category for each route:
 
-| Category | What it covers                                                     |
-| -------- | ------------------------------------------------------------------ |
-| `html`   | The prerendered HTML for the route (including inline RSC payload)  |
-| `js`     | Same-origin module scripts the HTML requests                       |
-| `css`    | Stylesheets the HTML links                                         |
-| `fonts`  | Font preloads plus `woff2` files referenced from those stylesheets |
-| `legacy` | `<script nomodule>` polyfills — **reported, excluded from TOTAL**  |
+| Category | What it covers                                                                                                        |
+| -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `html`   | The prerendered HTML for the route (including inline RSC payload)                                                     |
+| `js`     | Same-origin module scripts the HTML requests (see [Post-paint script weight](#post-paint-script-weight) for the rest) |
+| `css`    | Stylesheets the HTML links                                                                                            |
+| `fonts`  | Font preloads plus `woff2` files referenced from those stylesheets                                                    |
+| `legacy` | `<script nomodule>` polyfills — **reported, excluded from TOTAL**                                                     |
 
 `legacy` is excluded on purpose: a modern browser (including the low-end Android
 devices this program targets) never requests a `nomodule` script, so counting
@@ -48,6 +48,10 @@ npm run perf:check             # same, but exit 1 on a budget breach (used in CI
 npm run perf:baseline:update   # re-record perf/baseline.json after an intended change
 npm run perf:weight            # price every surface from the live origin, exit 1 on a breach
 npm run perf:weight:report     # same, but report only
+npm run perf:runtime           # price scripts fetched after load in Chromium, report only
+npm run perf:runtime -- --check # same, but exit 1 above perf/runtime-weight.json
+npm run perf:runtime -- --update # re-record the measured values, keeping the ceilings
+npm run perf:runtime -- --probe-error # also price the reporter fetched on an error
 ```
 
 Point it at other built routes, or a different build directory:
@@ -462,14 +466,65 @@ in the pull request that added the gate, each with its 2026-11-22 measurement in
 `perf/budget.json`, per the ratchet policy above. Lower them as those surfaces
 are trimmed rather than treating the new number as a target.
 
+## Post-paint script weight
+
+Both gates above price the document's own script list. A chunk pulled in by a
+lazy import after `load` has no `<script src>` tag, so neither gate can see it.
+Issue #1820 found the client error reporter doing exactly that: an idle callback
+requested a 148.8 KB gzip chunk on every route, twice the largest document
+chunk, and nothing in the repository failed when it doubled.
+
+`npm run perf:runtime` closes the hole. It resolves the same concrete paths
+`perf:weight` uses from `perf/surfaces.json`, loads each one in a fresh Chromium
+context at 393x852 @ 2.75 with the service worker blocked and no warm cache,
+waits 3.5 seconds past `load`, and records every same-origin script response
+with its gzip bytes. A response whose URL is in the document's script list is
+`documentJs` — the subset the other gates price; everything else is
+`afterLoadJs`; `totalJs` is the sum. `--json` includes the individual URLs and
+`--update` re-records the measured values without moving a ceiling. The error
+reporter is recognised by matchers on the script body rather than by filename,
+because its filename is a content hash that changes on every release. Every
+string in a matcher must be present: the app chunk also carries the DSN,
+`captureException` and `__RoyaSentry`, so those alone would misidentify it. The
+matchers live in `perf/runtime-weight.json`. `--probe-error` dispatches one
+synthetic error after the clean measurement (with the `/monitoring` tunnel
+blocked, so no event is posted) and records the reporter's gzip bytes as
+`reporterOnErrorGzipKb` — the error path is priced from the same run too.
+
+Measured on the deployed origin on 2026-11-24, before the reporter fix (gzip KB):
+
+| Surface          | documentJs | afterLoadJs | totalJs |
+| ---------------- | ---------- | ----------- | ------- |
+| `/terms`         | 202.2      | 155.9       | 358.0   |
+| `/`              | 253.4      | 196.2       | 449.6   |
+| `/quran/1`       | 247.6      | 155.9       | 403.4   |
+| `/notifications` | 285.4      | 166.4       | 451.7   |
+| `/chats/new`     | 264.9      | 166.4       | 431.3   |
+| `/account/links` | 367.1      | 197.6       | 564.7   |
+
+The reporter contributed 148.8 KB to every after-load column. The fix in
+`frontend/shared/sentry.ts` installs first-party `error` and `unhandledrejection`
+listeners at boot and buffers the first events. On the first event it appends a
+plain same-origin `<script src="/sentry-client.js">`: Turbopack emits a
+`<script async>` in prerendered HTML for every reachable dynamic import, so a
+lazy `import()` would have kept loading the SDK on a clean visit. The standalone
+bundle is built by `scripts/build-sentry-client.mjs` in `prebuild`, esbuild
+tree-shakes the unused Replay and feedback exports, and the result is about
+31 KB gzip. A clean visit requests no reporter script at all. The committed
+ceilings in `perf/runtime-weight.json` still describe the deployed numbers:
+this gate reads the origin, so a reduction is reflected only after the branch
+is deployed. Ratchet them down then.
+
 ## CI
 
 The `Code Quality` workflow runs `npm run build` and then `npm run perf:check`
 for the prerendered routes. It also runs `npm run perf:weight` against the
 public origin, so a budget breach on a per-request surface fails the same
-pipeline (and therefore blocks a release, which gates on Code Quality). To raise
-a ceiling, change `perf/budget.json` in the same PR and paste the measurement
-that justifies it there.
+pipeline (and therefore blocks a release, which gates on Code Quality). The
+Chromium step after it runs `npm run perf:runtime -- --check` over the same
+surface list, so a chunk fetched after load fails that pipeline too. To raise
+a ceiling, change `perf/budget.json` or `perf/runtime-weight.json` in the same
+PR and paste the measurement that justifies it there.
 
 ## Rendering policy
 
@@ -509,10 +564,12 @@ The win here is runtime — paint, compositing and battery — which this tool d
   not sign in. A route that only renders for a signed-in member is measured as
   the login redirect that an anonymous visitor receives; its own signed-in
   bundle still needs `perf:pages` evidence.
-- **Initial request only.** It counts the document plus the subresources its HTML
-  references. Chunks pulled in later by client-side navigation or hydration are
-  invisible, so it is a faithful proxy for first-load weight, not for everything
-  a session eventually downloads.
+- **Initial request only (the static and live gates).** They count the document
+  plus the subresources its HTML references. Chunks pulled in later by an idle
+  callback, a lazy import or hydration are invisible to those two numbers.
+  `npm run perf:runtime` measures the first 3.5 seconds after load in a real
+  browser, including those chunks, and splits them from the document's own
+  scripts; it does not follow later navigations or signed-in sessions.
 - **No module attribution.** It prices chunks, not the packages inside them. When
   a cut needs to know which dependency the bytes belong to, use
   `next experimental-analyze` and the method in
