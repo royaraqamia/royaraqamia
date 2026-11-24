@@ -173,7 +173,12 @@ export class PostEngagementService {
     const existing = await this.deps.engagement.getComment(commentId);
     if (!existing) throw new PostEngagementRefusedError(404, 'التعليق غير موجود.');
     if (existing.authorId !== viewerId) {
-      throw new PostEngagementRefusedError(403, 'لا يمكنك حذف تعليق عضو آخر.');
+      // ADR-0217: the post's host may clear a reply. The write function repeats
+      // the same rule, so this read only makes a refusal answerable to a member.
+      const host = await this.deps.engagement.postAuthor(existing.postId);
+      if (host !== viewerId) {
+        throw new PostEngagementRefusedError(403, 'لا يمكنك حذف تعليق عضو آخر.');
+      }
     }
 
     const removed = await this.deps.engagement.deleteComment(commentId, viewerId);

@@ -315,6 +315,20 @@ describe('listComments with a viewer', () => {
   });
 });
 
+describe('postAuthor', () => {
+  it('reads the post owner for the host-removal check', async () => {
+    const maybeSingle = vi.fn(async () => ({ data: { author_id: AUTHOR_ID }, error: null }));
+    const eq = vi.fn(() => ({ maybeSingle }));
+    const supabase = {
+      from: vi.fn(() => ({ select: () => ({ eq }) })),
+    } as unknown as SupabaseClient<Database>;
+    const repo = createPostEngagementRepository(supabase);
+
+    await expect(repo.postAuthor(POST_ID)).resolves.toBe(AUTHOR_ID);
+    expect(eq).toHaveBeenCalledWith('id', POST_ID);
+  });
+});
+
 describe('commentWriteGate', () => {
   it('reads the gate from the database function', async () => {
     const rpc = vi.fn(async () => ({ data: 'blocked', error: null }));
