@@ -23,6 +23,13 @@ describe('comment host removal migration', () => {
     expect(code).toMatch(/c\.deleted_at is null/i);
   });
 
+  it('drops the old signature before renaming the input parameter', () => {
+    const drop = code.indexOf('drop function if exists public.post_comment_delete(uuid, uuid)');
+    const create = code.indexOf('create or replace function public.post_comment_delete(');
+    expect(drop).toBeGreaterThanOrEqual(0);
+    expect(create).toBeGreaterThan(drop);
+  });
+
   it('never edits the body or the writer’s edited stamp', () => {
     expect(code).not.toMatch(/set body/i);
     expect(code).not.toMatch(/edited_at\s*=/i);
