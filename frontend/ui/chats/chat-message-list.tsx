@@ -12,6 +12,8 @@ import { ActionCard, type ActionCardLabels } from './chat-agent-action-card';
 import { AttachmentChip } from './attachment-chip';
 import { ChatBody } from './chat-body';
 import { ChatField } from './chat-field';
+import { assistantPhaseText } from './assistant-phase';
+import { PresenceIndicator } from './presence-indicator';
 import { CHAT_FIELD_LABELS } from './chat-field-labels';
 import { ChatImage } from './chat-image';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
@@ -249,6 +251,21 @@ export function ChatMessageList({
               resolveAttachmentUrl={pendingUrl}
               onDelete={() => undefined}
               attachmentOnlyLabel={attachmentOnlyLabel}
+            />
+          </div>
+        )}
+
+        {/* The turn's state lives in the list too, where the big assistants put
+            it: it appears on the first frame, before the answer has a word, and
+            follows each phase until the turn settles. The header keeps its own
+            line; this one belongs to the list's log, which already announces a
+            turn, so the indicator does not add a second live region (ADR-0173). */}
+        {assistant.isStreaming && (
+          <div className="flex w-full justify-start">
+            <PresenceIndicator
+              label={assistantPhaseText(assistant.phase) ?? ASSISTANT_PANEL_COPY.thinking}
+              className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-3 py-2 text-sm"
+              live={false}
             />
           </div>
         )}

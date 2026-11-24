@@ -1,4 +1,5 @@
 import { cn } from '@/frontend/shared/cn';
+import { AssistantPresenceDot } from '@/frontend/ui/assistant/assistant-presence-dot';
 
 /**
  * The assistant's own mark: a lit orb.
@@ -16,30 +17,34 @@ import { cn } from '@/frontend/shared/cn';
 export function AssistantMark({
   className,
   glyphClassName,
+  online = false,
+  onlineLabel,
 }: {
   className?: string;
   /** Sizing for the glyph inside the tile; defaults to a little over half. */
   glyphClassName?: string;
+  /** The availability dot, where a member's `PresenceAvatar` draws theirs. */
+  online?: boolean;
+  onlineLabel?: string;
 }) {
   return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-full bg-linear-to-br from-violet-500 via-fuchsia-500 to-indigo-600 text-white shadow-[0_6px_16px_-8px_rgba(139,92,246,0.9)]',
-        'size-9',
-        className
-      )}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        className={cn('size-[58%]', glyphClassName)}
+    <span className={cn('relative inline-flex shrink-0 size-9', className)}>
+      <span
         aria-hidden="true"
+        className="inline-flex size-full items-center justify-center rounded-full bg-linear-to-br from-violet-500 via-fuchsia-500 to-indigo-600 text-white shadow-[0_6px_16px_-8px_rgba(139,92,246,0.9)]"
       >
-        {/* A crescent, not a sphere: at 36px a filled disc reads as a dot, and the
-            ringed version before it read as a planet. */}
-        <path d="M12 4a8 8 0 1 0 0 16 10 10 0 0 1 0-16Z" fill="currentColor" />
-      </svg>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          className={cn('size-[58%]', glyphClassName)}
+          aria-hidden="true"
+        >
+          {/* A crescent, not a sphere: at 36px a filled disc reads as a dot, and the
+              ringed version before it read as a planet. */}
+          <path d="M12 4a8 8 0 1 0 0 16 10 10 0 0 1 0-16Z" fill="currentColor" />
+        </svg>
+      </span>
+      {online ? <AssistantPresenceDot label={onlineLabel} /> : null}
     </span>
   );
 }

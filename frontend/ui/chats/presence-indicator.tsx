@@ -14,13 +14,22 @@ const TRAILING_DOTS = /\.\.\.$/;
  * still. The colour is the site's primary — the live line is the one thing in
  * the header and the row that is happening now.
  */
-export function PresenceIndicator({ label, className }: { label: string; className?: string }) {
+export function PresenceIndicator({
+  label,
+  className,
+  live = true,
+}: {
+  label: string;
+  className?: string;
+  /** False inside a parent `role="log"`, which already announces the turn. */
+  live?: boolean;
+}) {
   const text = label.replace(TRAILING_DOTS, '');
   const animated = text !== label;
 
   return (
     <span
-      aria-live="polite"
+      aria-live={live ? 'polite' : undefined}
       className={cn('flex min-w-0 items-baseline gap-0.5 text-primary', className)}
     >
       <span className="min-w-0 truncate">{text}</span>

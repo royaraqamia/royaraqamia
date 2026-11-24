@@ -1,4 +1,5 @@
 import { cn } from '@/frontend/shared/cn';
+import { AssistantPresenceDot } from './assistant-presence-dot';
 
 /**
  * نور's mark, at the size the floating door and its panel draw it (ADR-0143).
@@ -16,18 +17,30 @@ import { cn } from '@/frontend/shared/cn';
 export function AssistantOrb({
   className,
   glyphClassName,
+  online = false,
+  onlineLabel,
 }: {
   className?: string;
   /** Sizing for the crescent inside the sphere; defaults to a little under half. */
   glyphClassName?: string;
+  /** The availability dot, where a member's `PresenceAvatar` draws theirs. */
+  online?: boolean;
+  onlineLabel?: string;
 }) {
   return (
-    <span aria-hidden="true" className={cn('assistant-orb size-11', className)}>
-      <span className="assistant-orb-halo" />
-      <svg viewBox="0 0 24 24" fill="none" className={cn('size-[46%] text-white', glyphClassName)}>
-        {/* The crescent, not a disc: at 56px a filled circle reads as a dot. */}
-        <path d="M12 4a8 8 0 1 0 0 16 10 10 0 0 1 0-16Z" fill="currentColor" />
-      </svg>
+    <span className={cn('relative inline-flex shrink-0 size-11', className)}>
+      <span aria-hidden="true" className="assistant-orb size-full">
+        <span className="assistant-orb-halo" />
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          className={cn('size-[46%] text-white', glyphClassName)}
+        >
+          {/* The crescent, not a disc: at 56px a filled circle reads as a dot. */}
+          <path d="M12 4a8 8 0 1 0 0 16 10 10 0 0 1 0-16Z" fill="currentColor" />
+        </svg>
+      </span>
+      {online ? <AssistantPresenceDot label={onlineLabel} /> : null}
     </span>
   );
 }

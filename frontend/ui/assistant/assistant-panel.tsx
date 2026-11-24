@@ -287,7 +287,7 @@ export function AssistantPanel({
         )}
       >
         <header className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card/40 px-4 py-3 pe-12">
-          <AssistantOrb className="size-10" />
+          <AssistantOrb className="size-10" online onlineLabel={LAST_SEEN_LABELS.assistantOnline} />
           <div className="min-w-0 flex-1">
             <DialogTitle className="text-xl leading-none text-foreground">
               {ASSISTANT_PANEL_COPY.title}

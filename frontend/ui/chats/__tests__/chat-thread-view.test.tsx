@@ -747,14 +747,18 @@ describe('ChatThreadView assistant', () => {
     fireEvent.change(box, { target: { value: 'مرحباً' } });
     fireEvent.click(screen.getByRole('button', { name: 'إرسال السؤال' }));
 
-    // The line is the header's, and the thread draws no placeholder bubble for
-    // a turn that has not produced text yet (ADR-0173).
-    expect(await screen.findByText('تفكّر')).toBeInTheDocument();
+    // The phase is in the header and in the list, where the answer will land:
+    // a turn with no text yet still has a line in both places (ADR-0173).
+    const lines = await screen.findAllByText('تفكّر');
+    expect(lines).toHaveLength(2);
+    expect(lines[0]?.closest('[aria-live="polite"]')).not.toBeNull();
+    expect(lines[1]?.closest('[data-chat-list]')).not.toBeNull();
+    expect(lines[1]?.closest('[aria-live]')).toBeNull();
 
     await act(async () => {
       release();
     });
-    await waitFor(() => expect(screen.queryByText('تفكّر')).toBeNull());
+    await waitFor(() => expect(screen.queryAllByText('تفكّر')).toHaveLength(0));
   });
 });
 
