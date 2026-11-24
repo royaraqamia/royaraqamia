@@ -60,6 +60,8 @@
     "check:plan": "node scripts/check-plan.mjs",
     "check:contracts": "node scripts/generate-contracts.mjs --check",
     "contracts:generate": "node scripts/generate-contracts.mjs",
+    "check:grants": "node scripts/check-grants.mjs",
+    "grants:generate": "node scripts/check-grants.mjs --generate",
     "check:capabilities": "node scripts/generate-capabilities.mjs --check",
     "capabilities:generate": "node scripts/generate-capabilities.mjs",
     "check:tokens": "node scripts/generate-tokens.mjs --check",
