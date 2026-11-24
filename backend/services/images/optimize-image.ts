@@ -32,19 +32,6 @@ export interface OptimizeRequest {
   accept: string;
 }
 
-/** Storage is the only source this optimizer is allowed to fetch. */
-export function isAllowedImageSource(src: string): boolean {
-  try {
-    const url = new URL(src);
-    return (
-      url.protocol === 'https:' &&
-      (url.hostname === 'supabase.co' || url.hostname.endsWith('.supabase.co'))
-    );
-  } catch {
-    return false;
-  }
-}
-
 /** A width the browser asked for, clamped to the max edge we ever encode. */
 function boundedWidth(width: number): number {
   if (!Number.isFinite(width) || width <= 0) return IMAGE_MAX_EDGE_PX;
@@ -62,11 +49,26 @@ export async function optimizeImage({
   quality,
   accept,
 }: OptimizeRequest): Promise<OptimizedImage> {
-  if (!isAllowedImageSource(src)) return { ok: false, status: 400 };
+  // Storage is the only source this optimizer may fetch. The check is inline
+  // so the tainted request URL is visibly bounded to HTTPS on our bucket host
+  // before it reaches fetch, not routed through a helper.
+  let source: URL;
+  try {
+    const parsed = new URL(src);
+    if (
+      parsed.protocol !== 'https:' ||
+      !(parsed.hostname === 'supabase.co' || parsed.hostname.endsWith('.supabase.co'))
+    ) {
+      return { ok: false, status: 400 };
+    }
+    source = parsed;
+  } catch {
+    return { ok: false, status: 400 };
+  }
 
   let response: Response;
   try {
-    response = await fetch(src, {
+    response = await fetch(source.href, {
       headers: { Accept: 'image/avif,image/webp,image/*' },
       signal: AbortSignal.timeout(7_000),
     });

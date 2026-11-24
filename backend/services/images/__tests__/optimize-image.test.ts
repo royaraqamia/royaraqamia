@@ -2,7 +2,7 @@ import sharp from 'sharp';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { imageDecodeStats } from '@/backend/services/images/decode-slot';
-import { isAllowedImageSource, optimizeImage } from '@/backend/services/images/optimize-image';
+import { optimizeImage } from '@/backend/services/images/optimize-image';
 import { IMAGE_MAX_EDGE_PX } from '@/shared/contracts/images';
 
 const SOURCE = 'https://example.supabase.co/storage/v1/object/public/post-images/u/cover.png';
@@ -21,10 +21,21 @@ afterEach(() => {
 });
 
 describe('optimizeImage', () => {
-  it('only fetches images from Storage', () => {
-    expect(isAllowedImageSource(SOURCE)).toBe(true);
-    expect(isAllowedImageSource('https://evil.example/cover.png')).toBe(false);
-    expect(isAllowedImageSource('http://example.supabase.co/cover.png')).toBe(false);
+  it('only fetches images from Storage', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    for (const src of [
+      'https://evil.example/cover.png',
+      'http://example.supabase.co/cover.png',
+      'https://example.supabase.co.evil.test/cover.png',
+      'not a url',
+    ]) {
+      await expect(
+        optimizeImage({ src, width: 576, quality: 75, accept: 'image/webp' })
+      ).resolves.toEqual({ ok: false, status: 400 });
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('holds at most one decode for two concurrent first hits', async () => {
