@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   chatAgentTool,
+  chatAgentToolDeclarations,
   chatAgentToolDefinitions,
   chatAgentToolDefinitionsForTurn,
-  chatAgentTools,
   type ChatAgentToolContext,
 } from '@/backend/services/chat/chat-agent-tools';
 import type { ScreenContext } from '@/shared/contracts/screen-context';
@@ -37,12 +37,12 @@ function turnContext(overrides: Partial<ChatAgentToolContext> = {}): ChatAgentTo
 describe('the assistant’s tool registry (#818)', () => {
   it('declares every named tool exactly once, with the kind the contract says', () => {
     expect(
-      chatAgentTools()
+      chatAgentToolDeclarations()
         .map((tool) => tool.name)
         .sort()
     ).toEqual([...CHAT_AGENT_TOOL_NAMES].sort());
 
-    for (const tool of chatAgentTools()) {
+    for (const tool of chatAgentToolDeclarations()) {
       expect(tool.kind).toBe(CHAT_AGENT_TOOLS[tool.name].kind);
     }
   });

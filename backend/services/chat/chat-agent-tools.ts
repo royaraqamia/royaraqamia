@@ -2,42 +2,16 @@ import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
-import {
-  createCertificatesRepository,
-  verifyCertificateByCode,
-} from '@/backend/config/certificates';
-import { createPostsRepository } from '@/backend/config/blogpress';
-import { createHabitService } from '@/backend/config/habitflow';
-import { createSpendtrackService } from '@/backend/config/spendtrack';
+import type { ChatAgentToolsDeps } from '@/backend/services/chat/chat-agent-tools-deps';
 import { colorFromName } from '@/backend/services/spendtrack/spendtrack-csv';
-import { createPublicConsultationService } from '@/backend/config/consultation';
-import {
-  createDefaultTrainingApplicationService,
-  createDefaultTrainingCohortsRepository,
-} from '@/backend/config/training';
-import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
-import { createAdminUsersService, createProfileService } from '@/backend/config/users';
-import {
-  createDefaultMcpAppToolsService,
-  createDefaultMcpCatalogService,
-  createDefaultMcpConnectService,
-  createDefaultMcpConnectionService,
-  createDefaultMcpConnectedAppService,
-  mcpCallbackUrl,
-} from '@/backend/config/mcp';
 import type { McpConnection } from '@/shared/contracts/mcp-marketplace';
 import type { McpConnectedApp } from '@/shared/contracts/mcp-connected-apps';
-import { createDefaultChatReportsAdminService } from '@/backend/config/chat-reports';
 import { isAdmin as isAdminEmail } from '@/backend/shared/admin-validator';
-import { env } from '@/backend/config/env';
 import { MissingScopeError } from '@/backend/services/mcp/tools/guards';
-import { createUsageService, createPlanGate } from '@/backend/config/plans';
-import { createNotesService } from '@/backend/config/notes';
-import { resolveOrigin } from '@/backend/config/origin';
-import { createAgentMemoryFor } from '@/backend/config/agent-memory';
-import { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/backend/config/news';
-import { createRatesService } from '@/backend/config/rates';
-import { createScanHistoryService } from '@/backend/config/scan-history';
+// Pure configuration, not wiring: the administrator list is a deployment
+// value. It chooses no implementation, so it stays an import; the rule exempts
+// it by name.
+import { env } from '@/backend/config/env';
 import { listAthkarSets, readAthkarSet } from '@/backend/services/athkar/athkar-read';
 import {
   QURAN_SEARCH_MAX_HITS,
@@ -185,6 +159,12 @@ export interface ChatAgentToolContext {
    * (ADR-0214). Like search, the turn wires this to a counted call.
    */
   readUrl?: (url: string, question: string) => Promise<WebSearchResult>;
+  /**
+   * The product services, wired once in `backend/config/chat.ts` (#1804). A
+   * tool handed out by `chatAgentTools(deps)` carries these; one looked up by
+   * `chatAgentTool(name)` must be given them here by its caller.
+   */
+  deps?: ChatAgentToolsDeps;
 }
 
 export interface ChatAgentTool {
@@ -211,6 +191,19 @@ export interface ChatAgentTool {
    * a tool returning a document (a specialist's instructions) raises it.
    */
   maxResultChars?: number;
+}
+
+/**
+ * The bundle a tool runs on. Turn contexts get it from
+ * `chatAgentTools(deps)`; a bare `chatAgentTool(name)` lookup outside a turn
+ * gets it from the caller, and forgetting it fails loudly rather than wiring
+ * a product service behind the catalogue's back.
+ */
+function depsOf(context: ChatAgentToolContext): ChatAgentToolsDeps {
+  if (!context.deps) {
+    throw new Error('Assistant tools need ChatAgentToolsDeps on their context');
+  }
+  return context.deps;
 }
 
 const NoArgs = z.strictObject({});
@@ -589,14 +582,15 @@ function storeAppName(connection: McpConnection): string {
  * rather than picked arbitrarily, least of all on a destructive card.
  */
 async function storeConnectionNamed(
-  userId: string,
+  context: ChatAgentToolContext,
   name: string
 ): Promise<{ connection: McpConnection } | { error: string }> {
   const wanted = name.trim().toLocaleLowerCase();
-  const matches = (await createDefaultMcpConnectionService().list(userId)).filter((connection) =>
-    [connection.displayName, connection.registryName]
-      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
-      .some((value) => value.trim().toLocaleLowerCase() === wanted)
+  const matches = (await depsOf(context).mcp.createConnectionService().list(context.userId)).filter(
+    (connection) =>
+      [connection.displayName, connection.registryName]
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .some((value) => value.trim().toLocaleLowerCase() === wanted)
   );
   const connection = matches[0];
   if (!connection) return { error: 'لم أجد تطبيقاً بهذا الاسم.' };
@@ -612,9 +606,12 @@ async function storeConnectionNamed(
  * member speak in the title, so the resolution belongs here and an unknown
  * name is a refusal rather than a guessed connection.
  */
-async function storeRegistryName(name: string): Promise<string | null> {
+async function storeRegistryName(
+  context: ChatAgentToolContext,
+  name: string
+): Promise<string | null> {
   const wanted = name.trim().toLocaleLowerCase();
-  const page = await createDefaultMcpCatalogService().search({ q: name, cursor: null });
+  const page = await depsOf(context).mcp.createCatalogService().search({ q: name, cursor: null });
   const match = page.servers.find((row) =>
     [row.registryName, row.title, row.nameAr]
       .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
@@ -641,11 +638,13 @@ const InboundClientArgs = z.strictObject({
  * registration was pruned has no name to type and cannot be revoked here.
  */
 async function inboundClientNamed(
-  userId: string,
+  context: ChatAgentToolContext,
   name: string
 ): Promise<{ app: McpConnectedApp } | { error: string }> {
   const wanted = name.trim().toLocaleLowerCase();
-  const matches = (await createDefaultMcpConnectedAppService().list(userId)).filter((app) =>
+  const matches = (
+    await depsOf(context).mcp.createConnectedAppService().list(context.userId)
+  ).filter((app) =>
     typeof app.clientName === 'string'
       ? app.clientName.trim().toLocaleLowerCase() === wanted
       : false
@@ -753,8 +752,8 @@ function mcpAnswer(result: ToolResult, failure: string): Record<string, unknown>
   return result.structuredContent;
 }
 
-function shortLinkUrl(code: string): string {
-  return `${resolveOrigin().replace(/\/+$/, '')}/${code}`;
+function shortLinkUrl(context: ChatAgentToolContext, code: string): string {
+  return `${depsOf(context).origin().replace(/\/+$/, '')}/${code}`;
 }
 
 /** The name a note is listed under: its first non-empty line, Markdown markers gone (ADR-0110). */
@@ -799,9 +798,9 @@ function slugOf(title: string, fallbackId: string): string {
 
 /** The member's categories by name, which is how a model can name one. */
 async function categoriesByName(context: ChatAgentToolContext): Promise<Map<string, string>> {
-  const categories = await createSpendtrackService(context.supabase).getUserCategories(
-    context.userId
-  );
+  const categories = await depsOf(context)
+    .spendtrack.createService(context.supabase)
+    .getUserCategories(context.userId);
   return new Map(categories.map((category) => [category.name.trim(), category.id]));
 }
 
@@ -821,14 +820,14 @@ function unknownCategory(name: string, categories: Map<string, string>): { error
  * wrong — the same answer the loader gives (#620).
  */
 async function newsBoardFor(context: ChatAgentToolContext, category?: NewsCategory) {
-  const preferences = await createNewsPreferencesServiceFor(context.supabase)
+  const preferences = await depsOf(context)
+    .news.createPreferencesServiceFor(context.supabase)
     .get(context.userId)
     .catch(() => null);
 
-  const board = await createNewsServiceFor(context.supabase).getBoard(
-    category ? { category } : {},
-    { sourceIds: preferences?.sourceIds ?? null }
-  );
+  const board = await depsOf(context)
+    .news.createServiceFor(context.supabase)
+    .getBoard(category ? { category } : {}, { sourceIds: preferences?.sourceIds ?? null });
 
   const cap = await resolveNewsCardCap(context.userId);
   return applyNewsCardLimit(board, cap, false);
@@ -899,9 +898,9 @@ const tools: ChatAgentTool[] = [
     description: 'الشهادات التي حصل عليها العضو.',
     schema: NoArgs,
     async run(_args, context) {
-      const certificates = await createCertificatesRepository(context.supabase).listByRecipient(
-        context.userId
-      );
+      const certificates = await depsOf(context)
+        .certificates.createRepository(context.supabase)
+        .listByRecipient(context.userId);
       return certificates.map(toPublicCertificate);
     },
   },
@@ -915,9 +914,9 @@ const tools: ChatAgentTool[] = [
     schema: CertificateIdArgs,
     async run(args, context) {
       const { id } = CertificateIdArgs.parse(args);
-      const certificates = await createCertificatesRepository(context.supabase).listByRecipient(
-        context.userId
-      );
+      const certificates = await depsOf(context)
+        .certificates.createRepository(context.supabase)
+        .listByRecipient(context.userId);
       const certificate = certificates.find((item) => item.id === id);
       if (!certificate) return { found: false };
       return { found: true, certificate: toPublicCertificate(certificate) };
@@ -935,7 +934,7 @@ const tools: ChatAgentTool[] = [
       const { code } = VerifyCertificateArgs.parse(args);
       // The public verifier is the read-only path the /verify page uses: same
       // format check, same limits, same verdict. Never a write path.
-      return verifyCertificateByCode(code, context.ip);
+      return depsOf(context).certificates.verifyByCode(code, context.ip);
     },
   },
   {
@@ -946,7 +945,7 @@ const tools: ChatAgentTool[] = [
     description: 'خطة العضو واستخدامه لما تسمح به الخطة.',
     schema: NoArgs,
     async run(_args, context) {
-      return createUsageService().state(context.userId);
+      return depsOf(context).plans.createUsageService().state(context.userId);
     },
   },
   {
@@ -981,7 +980,7 @@ const tools: ChatAgentTool[] = [
     description: 'حجوزات الاستشارة الخاصة بالعضو وحالتها.',
     schema: NoArgs,
     async run(_args, context) {
-      return createPublicConsultationService().listMyBookings(context.userId);
+      return depsOf(context).consultation.createService().listMyBookings(context.userId);
     },
   },
   {
@@ -991,8 +990,8 @@ const tools: ChatAgentTool[] = [
     tier: 0,
     description: 'باقات الاستشارة المتاحة والمواعيد الفارغة، لاختيار ما يُحجز.',
     schema: NoArgs,
-    async run() {
-      const service = createPublicConsultationService();
+    async run(_args, context) {
+      const service = depsOf(context).consultation.createService();
       const [packages, slots] = await Promise.all([
         service.getActivePackages(),
         service.getAvailableSlots(),
@@ -1008,7 +1007,7 @@ const tools: ChatAgentTool[] = [
     description: 'طلبات الالتحاق بالتدريب الخاصة بالعضو وحالتها، كما تعرضها صفحة طلباتي.',
     schema: NoArgs,
     async run(_args, context) {
-      return createDefaultTrainingApplicationService().listMine(context.userId);
+      return depsOf(context).training.createApplicationService().listMine(context.userId);
     },
   },
   {
@@ -1018,8 +1017,10 @@ const tools: ChatAgentTool[] = [
     tier: 0,
     description: 'الدُّفعات المفتوحة للتدريب مع المقاعد المتاحة، لدُفعة يختارها العضو عند التقديم.',
     schema: NoArgs,
-    async run() {
-      const cohorts = await createDefaultTrainingCohortsRepository().list({ status: 'open' });
+    async run(_args, context) {
+      const cohorts = await depsOf(context)
+        .training.createCohortsRepository()
+        .list({ status: 'open' });
       return cohorts.map((cohort) => ({
         ...cohort,
         seats_left: trainingCohortSeatsLeft(cohort),
@@ -1034,7 +1035,7 @@ const tools: ChatAgentTool[] = [
     description: 'طلبات المشروع الخاصة بالعضو وحالتها، كما تعرضها صفحة طلباتي.',
     schema: NoArgs,
     async run(_args, context) {
-      return createDefaultProjectRequestService().listMine(context.userId);
+      return depsOf(context).projectRequests.createService().listMine(context.userId);
     },
   },
   {
@@ -1048,7 +1049,9 @@ const tools: ChatAgentTool[] = [
     schema: PostStatusArgs,
     async run(args, context) {
       const { status } = PostStatusArgs.parse(args);
-      const posts = await createPostsRepository(context.supabase).listPostsByAuthor(context.userId);
+      const posts = await depsOf(context)
+        .posts.createRepository(context.supabase)
+        .listPostsByAuthor(context.userId);
       return posts
         .filter((post) => !post.deleted_at && (!status || post.status === status))
         .map((post) => ({
@@ -1071,7 +1074,9 @@ const tools: ChatAgentTool[] = [
     schema: PostSlugArgs,
     async run(args, context) {
       const { slug } = PostSlugArgs.parse(args);
-      const post = await createPostsRepository(context.supabase).getPublishedPostBySlug(slug);
+      const post = await depsOf(context)
+        .posts.createRepository(context.supabase)
+        .getPublishedPostBySlug(slug);
       if (!post) return { found: false };
       return {
         found: true,
@@ -1111,7 +1116,7 @@ const tools: ChatAgentTool[] = [
     description: 'ملخّص عادات العضو وتذكيراتها وإنجاز آخر سبعة أيام.',
     schema: NoArgs,
     async run(_args, context) {
-      const { service } = createHabitService(context.userId, context.supabase);
+      const { service } = depsOf(context).habits.createService(context.userId, context.supabase);
       const habits = await service.getAllHabits();
       const today = damascusToday();
       const start = daysAgo(today, 6);
@@ -1145,7 +1150,7 @@ const tools: ChatAgentTool[] = [
     description: 'مصروفات العضو هذا الشهر، وأحدث العمليات لاختيار واحدة لتعديلها.',
     schema: NoArgs,
     async run(_args, context) {
-      const service = createSpendtrackService(context.supabase);
+      const service = depsOf(context).spendtrack.createService(context.supabase);
       const today = damascusToday();
       const start = `${today.slice(0, 7)}-01`;
 
@@ -1344,7 +1349,7 @@ const tools: ChatAgentTool[] = [
     schema: NewsItemArgs,
     async run(args, context) {
       const { id } = NewsItemArgs.parse(args);
-      const story = await createNewsServiceFor(context.supabase).getStory(id);
+      const story = await depsOf(context).news.createServiceFor(context.supabase).getStory(id);
       // The retained window is seven days, so "not found" is also "the site no
       // longer has it".
       if (!story) return { found: false };
@@ -1381,7 +1386,7 @@ const tools: ChatAgentTool[] = [
         };
       }
 
-      const board = await createRatesService(context.supabase).getBoard();
+      const board = await depsOf(context).rates.createService(context.supabase).getBoard();
       if (!board) return { error: 'لا توجد أسعار حفظها الخادم بعد. تُحدَّث أسعار الصرف يومياً.' };
 
       const lookup = buildLookup(board);
@@ -1421,7 +1426,9 @@ const tools: ChatAgentTool[] = [
       const input = RateHistoryArgs.parse(args);
       const range = input.range ?? '1M';
       const basis = input.basis ?? 'official';
-      const series = await createRatesService(context.supabase).getSeries(input.code, range, basis);
+      const series = await depsOf(context)
+        .rates.createService(context.supabase)
+        .getSeries(input.code, range, basis);
 
       if (!series || series.points.length === 0) {
         return { found: false, code: input.code, range, basis };
@@ -1593,7 +1600,9 @@ const tools: ChatAgentTool[] = [
     maxResultChars: 8_000,
     async run(args, context) {
       const input = ScanHistoryArgs.parse(args);
-      const entries = await createScanHistoryService(context.supabase).list(context.userId);
+      const entries = await depsOf(context)
+        .scanHistory.createService(context.supabase)
+        .list(context.userId);
       const limit = input.limit ?? 20;
 
       return {
@@ -1667,7 +1676,9 @@ const tools: ChatAgentTool[] = [
     maxResultChars: 8_000,
     async run(args, context) {
       const { limit } = ListNotesArgs.parse(args);
-      const snapshot = await createNotesService(context.supabase).getSyncSnapshot(context.userId);
+      const snapshot = await depsOf(context)
+        .notes.createService(context.supabase)
+        .getSyncSnapshot(context.userId);
       const notes = snapshot.notes
         .filter((note) => note.deletedAt === null)
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -1694,7 +1705,9 @@ const tools: ChatAgentTool[] = [
     maxResultChars: 12_000,
     async run(args, context) {
       const { id } = NoteIdArgs.parse(args);
-      const note = await createNotesService(context.supabase).getNote(context.userId, id);
+      const note = await depsOf(context)
+        .notes.createService(context.supabase)
+        .getNote(context.userId, id);
       if (!note || note.deletedAt !== null) return { found: false };
       return {
         found: true,
@@ -1716,11 +1729,13 @@ const tools: ChatAgentTool[] = [
     async run(args, context) {
       const input = CreateDraftArgs.parse(args);
       const id = crypto.randomUUID();
-      const created = await createPostsRepository(context.supabase).createPost(context.userId, {
-        slug: slugOf(input.meta_title, id),
-        content: input.content,
-        meta_title: input.meta_title,
-      });
+      const created = await depsOf(context)
+        .posts.createRepository(context.supabase)
+        .createPost(context.userId, {
+          slug: slugOf(input.meta_title, id),
+          content: input.content,
+          meta_title: input.meta_title,
+        });
       return { post_id: created.id };
     },
   },
@@ -1733,7 +1748,7 @@ const tools: ChatAgentTool[] = [
     schema: EditDraftArgs,
     async run(args, context) {
       const input = EditDraftArgs.parse(args);
-      const posts = createPostsRepository(context.supabase);
+      const posts = depsOf(context).posts.createRepository(context.supabase);
       const post = await posts.getPostForUser(input.post_id, context.userId);
       if (!post) return { error: 'لم أجد هذه المسودة' };
       if (post.status !== 'draft') return { error: 'لا يمكن تعديل منشور بعد نشره' };
@@ -1754,7 +1769,7 @@ const tools: ChatAgentTool[] = [
     schema: PublishDraftArgs,
     async run(args, context) {
       const input = PublishDraftArgs.parse(args);
-      const posts = createPostsRepository(context.supabase);
+      const posts = depsOf(context).posts.createRepository(context.supabase);
       const post = await posts.getPostForUser(input.post_id, context.userId);
       if (!post) return { error: 'لم أجد هذه المسودة' };
       if (post.status !== 'draft') return { error: 'هذا المنشور ليس مسودة' };
@@ -1792,7 +1807,7 @@ const tools: ChatAgentTool[] = [
     schema: PostIdArgs,
     async run(args, context) {
       const input = PostIdArgs.parse(args);
-      const posts = createPostsRepository(context.supabase);
+      const posts = depsOf(context).posts.createRepository(context.supabase);
       const post = await posts.getPostForUser(input.id, context.userId);
       if (!post) return { error: 'لم أجد هذا المنشور' };
       return mcpAnswer(
@@ -1896,13 +1911,15 @@ const tools: ChatAgentTool[] = [
       const categoryId = categories.get(input.category);
       if (!categoryId) return unknownCategory(input.category, categories);
 
-      const id = await createSpendtrackService(context.supabase).createExpense(context.userId, {
-        amount: input.amount,
-        category_id: categoryId,
-        date: input.date ?? damascusToday(),
-        description: input.description ?? null,
-        currency: input.currency ?? null,
-      });
+      const id = await depsOf(context)
+        .spendtrack.createService(context.supabase)
+        .createExpense(context.userId, {
+          amount: input.amount,
+          category_id: categoryId,
+          date: input.date ?? damascusToday(),
+          description: input.description ?? null,
+          currency: input.currency ?? null,
+        });
       return { expense_id: id };
     },
   },
@@ -1929,11 +1946,9 @@ const tools: ChatAgentTool[] = [
         update.category_id = categoryId;
       }
 
-      await createSpendtrackService(context.supabase).updateExpense(
-        input.expense_id,
-        context.userId,
-        update
-      );
+      await depsOf(context)
+        .spendtrack.createService(context.supabase)
+        .updateExpense(input.expense_id, context.userId, update);
       return { expense_id: input.expense_id };
     },
   },
@@ -1946,10 +1961,12 @@ const tools: ChatAgentTool[] = [
     schema: CreateHabitArgs,
     async run(args, context) {
       const input = CreateHabitArgs.parse(args);
-      const habit = await createHabitService(context.userId, context.supabase).service.createHabit({
-        name: input.name,
-        ...(input.frequency ? { frequency: input.frequency } : {}),
-      });
+      const habit = await depsOf(context)
+        .habits.createService(context.userId, context.supabase)
+        .service.createHabit({
+          name: input.name,
+          ...(input.frequency ? { frequency: input.frequency } : {}),
+        });
       return { habit_id: habit.id, name: habit.name };
     },
   },
@@ -1962,7 +1979,7 @@ const tools: ChatAgentTool[] = [
     schema: HabitReminderArgs,
     async run(args, context) {
       const input = HabitReminderArgs.parse(args);
-      const { service } = createHabitService(context.userId, context.supabase);
+      const { service } = depsOf(context).habits.createService(context.userId, context.supabase);
       const habits = await service.getAllHabits();
       const habit = habits.find((candidate) => candidate.name.trim() === input.habit_name.trim());
       if (!habit) return { error: 'لا توجد عادة بهذا الاسم' };
@@ -2033,10 +2050,9 @@ const tools: ChatAgentTool[] = [
     schema: DeleteHabitArgs,
     async run(args, context) {
       const input = DeleteHabitArgs.parse(args);
-      const habits = await createHabitService(
-        context.userId,
-        context.supabase
-      ).service.getAllHabits();
+      const habits = await depsOf(context)
+        .habits.createService(context.userId, context.supabase)
+        .service.getAllHabits();
       const habit = habits.find((candidate) => candidate.id === input.id);
       if (!habit) return { error: 'لم أجد هذه العادة' };
       // The name on the card is a typed target: it must name this very row.
@@ -2115,15 +2131,17 @@ const tools: ChatAgentTool[] = [
     schema: DeleteExpenseArgs,
     async run(args, context) {
       const input = DeleteExpenseArgs.parse(args);
-      const found = await createSpendtrackService(context.supabase).getTransactions({
-        userId: context.userId,
-        start: '2000-01-01',
-        end: '2100-12-31',
-        filterCategories: [],
-        sort: 'date_desc',
-        pageSize: 100,
-        search: input.name,
-      });
+      const found = await depsOf(context)
+        .spendtrack.createService(context.supabase)
+        .getTransactions({
+          userId: context.userId,
+          start: '2000-01-01',
+          end: '2100-12-31',
+          filterCategories: [],
+          sort: 'date_desc',
+          pageSize: 100,
+          search: input.name,
+        });
       const expense = found.expenses.find((candidate) => candidate.id === input.expense_id);
       if (!expense) return { error: 'لم أجد هذا المصروف' };
       // The name on the card is a typed target: the description must name this
@@ -2152,7 +2170,7 @@ const tools: ChatAgentTool[] = [
     schema: BookConsultationArgs,
     async run(args, context) {
       const input = BookConsultationArgs.parse(args);
-      const booking = await createPublicConsultationService().createBooking(input, {
+      const booking = await depsOf(context).consultation.createService().createBooking(input, {
         userId: context.userId,
         ip: context.ip,
       });
@@ -2169,11 +2187,9 @@ const tools: ChatAgentTool[] = [
     schema: CancelConsultationArgs,
     async run(args, context) {
       const input = CancelConsultationArgs.parse(args);
-      const booking = await createPublicConsultationService().cancelMyBooking(
-        context.userId,
-        input.booking_id,
-        input.name
-      );
+      const booking = await depsOf(context)
+        .consultation.createService()
+        .cancelMyBooking(context.userId, input.booking_id, input.name);
       return {
         booking_id: booking.id,
         reference_code: booking.reference_code,
@@ -2190,7 +2206,7 @@ const tools: ChatAgentTool[] = [
     schema: ApplyTrainingArgs,
     async run(args, context) {
       const input = ApplyTrainingArgs.parse(args);
-      const application = await createDefaultTrainingApplicationService().submit(input, {
+      const application = await depsOf(context).training.createApplicationService().submit(input, {
         userId: context.userId,
         ip: context.ip,
       });
@@ -2206,7 +2222,7 @@ const tools: ChatAgentTool[] = [
     schema: ProjectRequestArgs,
     async run(args, context) {
       const input = ProjectRequestArgs.parse(args);
-      const request = await createDefaultProjectRequestService().submit(input, {
+      const request = await depsOf(context).projectRequests.createService().submit(input, {
         userId: context.userId,
         ip: context.ip,
       });
@@ -2222,10 +2238,9 @@ const tools: ChatAgentTool[] = [
     schema: ChangeNameArgs,
     async run(args, context) {
       const input = ChangeNameArgs.parse(args);
-      const updated = await createProfileService(context.supabase).updateName(
-        context.userId,
-        input.name
-      );
+      const updated = await depsOf(context)
+        .users.createProfileService(context.supabase)
+        .updateName(context.userId, input.name);
       return { name: updated.name };
     },
   },
@@ -2266,11 +2281,13 @@ const tools: ChatAgentTool[] = [
     schema: RememberArgs,
     async run(args, context) {
       const input = RememberArgs.parse(args);
-      const memory = await createAgentMemoryFor(context.supabase).remember({
-        userId: context.userId,
-        text: input.text,
-        ...(input.kind ? { kind: input.kind } : {}),
-      });
+      const memory = await depsOf(context)
+        .memory.createFor(context.supabase)
+        .remember({
+          userId: context.userId,
+          text: input.text,
+          ...(input.kind ? { kind: input.kind } : {}),
+        });
       return { memory_id: memory.id, text: memory.text };
     },
   },
@@ -2299,7 +2316,7 @@ const tools: ChatAgentTool[] = [
       );
       if ('error' in answer) return answer;
       const code = typeof answer.code === 'string' ? answer.code : '';
-      return { ...answer, short_url: code ? shortLinkUrl(code) : null };
+      return { ...answer, short_url: code ? shortLinkUrl(context, code) : null };
     },
   },
   {
@@ -2357,12 +2374,12 @@ const tools: ChatAgentTool[] = [
     schema: CreateNoteArgs,
     async run(args, context) {
       const input = CreateNoteArgs.parse(args);
-      const service = createNotesService(context.supabase);
+      const service = depsOf(context).notes.createService(context.supabase);
       const id = crypto.randomUUID();
       // The same slot check the notes route applies to a first write (ADR-0075).
       const existing = await service.getNote(context.userId, id);
       if (!existing || existing.deletedAt) {
-        await createPlanGate().cap(context.userId, OWNED_ITEMS.notes);
+        await depsOf(context).plans.createPlanGate().cap(context.userId, OWNED_ITEMS.notes);
       }
       await service.saveNote(
         context.userId,
@@ -2383,7 +2400,7 @@ const tools: ChatAgentTool[] = [
     schema: UpdateNoteArgs,
     async run(args, context) {
       const input = UpdateNoteArgs.parse(args);
-      const service = createNotesService(context.supabase);
+      const service = depsOf(context).notes.createService(context.supabase);
       const existing = await service.getNote(context.userId, input.id);
       if (!existing || existing.deletedAt !== null) {
         return { error: 'لم أجد هذه الملاحظة' };
@@ -2407,7 +2424,7 @@ const tools: ChatAgentTool[] = [
     schema: DeleteNoteArgs,
     async run(args, context) {
       const input = DeleteNoteArgs.parse(args);
-      const service = createNotesService(context.supabase);
+      const service = depsOf(context).notes.createService(context.supabase);
       const existing = await service.getNote(context.userId, input.id);
       if (!existing || existing.deletedAt !== null) {
         return { error: 'لم أجد هذه الملاحظة' };
@@ -2571,7 +2588,7 @@ const tools: ChatAgentTool[] = [
       'التطبيقات المرتبطة بحساب العضو، باسم كل تطبيق وعدد أدواته. استخدمها حين يسأل ما التطبيقات المتصلة أو كم أداة لكل تطبيق. تُعيد الأسماء والأعداد فقط، بلا رموز أو بيانات اعتماد.',
     schema: NoArgs,
     async run(_args, context) {
-      const connections = await createDefaultMcpConnectionService().list(context.userId);
+      const connections = await depsOf(context).mcp.createConnectionService().list(context.userId);
       return {
         apps: connections.map((connection) => ({
           name: storeAppName(connection),
@@ -2591,9 +2608,9 @@ const tools: ChatAgentTool[] = [
     schema: StoreAppArgs,
     async run(args, context) {
       const input = StoreAppArgs.parse(args);
-      const found = await storeConnectionNamed(context.userId, input.name);
+      const found = await storeConnectionNamed(context, input.name);
       if ('error' in found) return found;
-      const catalog = await createDefaultMcpAppToolsService().catalog(context.userId);
+      const catalog = await depsOf(context).mcp.createAppToolsService().catalog(context.userId);
       return {
         app: storeAppName(found.connection),
         tools: catalog
@@ -2616,15 +2633,17 @@ const tools: ChatAgentTool[] = [
     schema: StoreAppArgs,
     async run(args, context) {
       const input = StoreAppArgs.parse(args);
-      const registryName = await storeRegistryName(input.name);
+      const registryName = await storeRegistryName(context, input.name);
       if (!registryName) return { error: 'لم أجد تطبيقاً بهذا الاسم في المتجر.' };
       // `start` only: the redirect, the code and the token exchange belong to
       // the member's browser and the callback, never to a tool call.
-      const started = await createDefaultMcpConnectService().start({
-        userId: context.userId,
-        registryName,
-        redirectUri: mcpCallbackUrl(),
-      });
+      const started = await depsOf(context)
+        .mcp.createConnectService()
+        .start({
+          userId: context.userId,
+          registryName,
+          redirectUri: depsOf(context).mcp.callbackUrl(),
+        });
       return {
         app: input.name,
         ...(started.kind === 'authorize'
@@ -2643,11 +2662,13 @@ const tools: ChatAgentTool[] = [
     schema: StoreAppArgs,
     async run(args, context) {
       const input = StoreAppArgs.parse(args);
-      const found = await storeConnectionNamed(context.userId, input.name);
+      const found = await storeConnectionNamed(context, input.name);
       if ('error' in found) return found;
-      await createDefaultMcpConnectionService().update(context.userId, found.connection.id, {
-        enabled: false,
-      });
+      await depsOf(context)
+        .mcp.createConnectionService()
+        .update(context.userId, found.connection.id, {
+          enabled: false,
+        });
       return { app: storeAppName(found.connection), enabled: false };
     },
   },
@@ -2661,7 +2682,7 @@ const tools: ChatAgentTool[] = [
     schema: StoreAppArgs,
     async run(args, context) {
       const input = StoreAppArgs.parse(args);
-      const found = await storeConnectionNamed(context.userId, input.name);
+      const found = await storeConnectionNamed(context, input.name);
       if ('error' in found) return found;
       const shown = storeAppName(found.connection);
       // The typed target of a tier-3 card (ADR-0180, decision 5): the name the
@@ -2669,7 +2690,9 @@ const tools: ChatAgentTool[] = [
       if (input.name.toLocaleLowerCase() !== shown.toLocaleLowerCase()) {
         return { error: 'اسم التطبيق غير مطابق.' };
       }
-      await createDefaultMcpConnectionService().disconnect(context.userId, found.connection.id);
+      await depsOf(context)
+        .mcp.createConnectionService()
+        .disconnect(context.userId, found.connection.id);
       return { app: shown, revoked: true };
     },
   },
@@ -2687,7 +2710,7 @@ const tools: ChatAgentTool[] = [
       'العملاء الذين يمنحهم العضو صلاحية الوصول إلى حسابه عبر خادمنا، باسم كل عميل ونطاقاته وآخر استخدام له. استخدمها حين يسأل من المتصل بحسابه أو ما الصلاحيات الممنوحة. تُعيد الأسماء والنطاقات والأوقات فقط، بلا رموز أو بيانات اعتماد.',
     schema: NoArgs,
     async run(_args, context) {
-      const apps = await createDefaultMcpConnectedAppService().list(context.userId);
+      const apps = await depsOf(context).mcp.createConnectedAppService().list(context.userId);
       return {
         clients: apps.map((app) => ({
           name: app.clientName,
@@ -2709,7 +2732,7 @@ const tools: ChatAgentTool[] = [
     schema: InboundClientArgs,
     async run(args, context) {
       const input = InboundClientArgs.parse(args);
-      const found = await inboundClientNamed(context.userId, input.name);
+      const found = await inboundClientNamed(context, input.name);
       if ('error' in found) return found;
       const shown = found.app.clientName;
       if (!shown) return { error: 'هذا العميل بلا اسم، فلا يمكن سحب صلاحيته بالاسم.' };
@@ -2718,7 +2741,9 @@ const tools: ChatAgentTool[] = [
       if (input.name.toLocaleLowerCase() !== shown.toLocaleLowerCase()) {
         return { error: 'اسم العميل غير مطابق.' };
       }
-      await createDefaultMcpConnectedAppService().disconnect(context.userId, found.app.clientId);
+      await depsOf(context)
+        .mcp.createConnectedAppService()
+        .disconnect(context.userId, found.app.clientId);
       return { client: shown, revoked: true };
     },
   },
@@ -2738,7 +2763,9 @@ const tools: ChatAgentTool[] = [
     async run(args, context) {
       await assertAdminAtExecution(context);
       const input = AdminListMembersArgs.parse(args);
-      return createAdminUsersService().list(input.search ?? '', input.limit);
+      return depsOf(context)
+        .users.createAdminService()
+        .list(input.search ?? '', input.limit);
     },
   },
   {
@@ -2753,9 +2780,9 @@ const tools: ChatAgentTool[] = [
     async run(args, context) {
       await assertAdminAtExecution(context);
       const input = AdminListReportsArgs.parse(args);
-      return createDefaultChatReportsAdminService().list(
-        (input.status ?? null) as ChatReportStatus | null
-      );
+      return depsOf(context)
+        .chatReports.createAdminService()
+        .list((input.status ?? null) as ChatReportStatus | null);
     },
   },
   {
@@ -2770,7 +2797,7 @@ const tools: ChatAgentTool[] = [
     async run(args, context) {
       await assertAdminAtExecution(context);
       const input = AdminDecideReportArgs.parse(args);
-      return createDefaultChatReportsAdminService().decide(input.id, input.status);
+      return depsOf(context).chatReports.createAdminService().decide(input.id, input.status);
     },
   },
 ];
@@ -2781,8 +2808,26 @@ export function chatAgentTool(name: string): ChatAgentTool | null {
   return byName.get(name) ?? null;
 }
 
-export function chatAgentTools(): readonly ChatAgentTool[] {
+/**
+ * The declarations alone, with no bundle bound. For readers that only ask what
+ * exists — the capability registry and its report — never to run a tool.
+ */
+export function chatAgentToolDeclarations(): readonly ChatAgentTool[] {
   return tools;
+}
+
+/**
+ * The catalogue the turn runs. The bundle is bound here, once, so every tool
+ * reaches the product services through the container's wiring rather than
+ * choosing a client at each call site (#1804). `chatAgentTool(name)` stays the
+ * metadata lookup for callers that only read a declaration; a caller that runs
+ * one of its tools supplies the bundle on the context.
+ */
+export function chatAgentTools(deps: ChatAgentToolsDeps): readonly ChatAgentTool[] {
+  return tools.map((tool) => ({
+    ...tool,
+    run: (args, context) => tool.run(args, { ...context, deps }),
+  }));
 }
 
 /** What the provider is sent: the OpenAI-compatible function declarations. */

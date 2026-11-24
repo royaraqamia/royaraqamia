@@ -50,7 +50,35 @@ const BOUNDARIES = {
   frontend: { suffix: 'frontend' },
   backendDataLayer: { suffix: 'backend/(repositories|clients|services)' },
   backendPersistence: { suffix: 'backend/(repositories|clients)', rootOptional: true },
+  backendConfig: { suffix: 'backend/config', rootOptional: true },
 };
+
+/**
+ * Pure configuration: a deployment value or a fixed client, not a choice
+ * between service implementations. A re-export of a factory is *not* pure —
+ * importing `backend/config/certificates` to get
+ * `createCertificatesRepository` is exactly what the zone below refuses
+ * (#1804).
+ */
+const PURE_CONFIG_SOURCES = [
+  /^@\/backend\/config\/(?:env|origin|supabase|mcp-scopes|generated\/.*)$/,
+  /(^|\/)(\.\.\/)+(?:backend\/)?config\/(?:env|origin|supabase|mcp-scopes|generated\/.*)$/,
+];
+
+/**
+ * Files still allowed to reach the container from the service layer. Every
+ * entry is a follow-up, named here so a new one cannot be added quietly; a
+ * service that needs a product service takes it through its own deps instead.
+ */
+const CONFIG_IMPORT_ALLOW = [
+  // chat-agent-tools.ts is deliberately absent: #1804 moved its wiring out.
+  // News' card limit still calls the plan factory itself — follow-up to #1804.
+  /^backend\/services\/news\/card-limit\.ts$/,
+  // The other door's adapters: the MCP tools are a separate composition root
+  // and are explicitly out of scope for #1804.
+  /^backend\/services\/mcp\/tools\//,
+  /^backend\/services\/mcp\/marketplace\/connect-service\.ts$/,
+];
 
 const importForms = (boundary) => [
   alias(boundary.suffix),
@@ -83,6 +111,14 @@ const ZONES = [
     importer: /^backend\/services\//,
     forbidden: importForms(BOUNDARIES.backendPersistence),
     why: 'a service depends on the interface it declares, and `backend/config` wires it',
+  },
+  {
+    importer: /^backend\/services\//,
+    forbidden: importForms(BOUNDARIES.backendConfig),
+    except: PURE_CONFIG_SOURCES,
+    allow: CONFIG_IMPORT_ALLOW,
+    skipTests: true,
+    why: 'a service depends on the interface it declares, and `backend/config` wires it (#1804)',
   },
   {
     importer: /^backend\/controllers\//,
@@ -132,6 +168,11 @@ const plugin = {
           if (typeof source !== 'string') return;
           if (isTypeOnly(node)) return;
           for (const zone of zones) {
+            // Tests assemble real dependencies to exercise a unit; they are not
+            // production wiring and are not part of this boundary (#1804).
+            if (zone.skipTests && relative.includes('/__tests__/')) continue;
+            if (zone.except?.some((pattern) => pattern.test(source))) continue;
+            if (zone.allow?.some((pattern) => pattern.test(relative))) continue;
             if (!zone.forbidden.some((pattern) => pattern.test(source))) continue;
             context.report({
               node: node.source,

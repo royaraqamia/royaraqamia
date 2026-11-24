@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { chatAgentTool, type ChatAgentToolContext } from '@/backend/services/chat/chat-agent-tools';
+import { toolsDepsFor } from '@/backend/services/chat/__tests__/support/tools-deps';
 import { ATHKAR_PERIOD_LABELS } from '@/shared/contracts/athkar';
 import type { ScanHistoryEntry } from '@/shared/contracts/scan-history';
 
@@ -19,12 +20,12 @@ import type { ScanHistoryEntry } from '@/shared/contracts/scan-history';
 
 const { list } = vi.hoisted(() => ({ list: vi.fn() }));
 
-vi.mock('@/backend/config/scan-history', () => ({
-  createScanHistoryService: () => ({ list }),
-}));
+const deps = toolsDepsFor({
+  scanHistory: { createService: () => ({ list }) as never },
+});
 
 function context(overrides: Partial<ChatAgentToolContext> = {}): ChatAgentToolContext {
-  return { userId: 'member-1', supabase: {} as never, ip: '127.0.0.1', ...overrides };
+  return { userId: 'member-1', supabase: {} as never, ip: '127.0.0.1', deps, ...overrides };
 }
 
 function scanEntry(overrides: Partial<ScanHistoryEntry> = {}): ScanHistoryEntry {

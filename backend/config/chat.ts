@@ -31,13 +31,23 @@ import { ChatAttachmentSweepService } from '@/backend/services/chat/chat-attachm
 import { attachAppNames } from '@/backend/services/chat/chat-app-tools';
 import { appToolParts } from '@/shared/contracts/chat-agent-actions';
 import {
+  createAdminUsersService,
+  createProfileService,
   createPublicUsersRepositoryServer,
   createServerUserProfileRepository,
 } from '@/backend/config/users';
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
-import { createDefaultMcpAppToolsService } from '@/backend/config/mcp';
+import {
+  createDefaultMcpAppToolsService,
+  createDefaultMcpCatalogService,
+  createDefaultMcpConnectService,
+  createDefaultMcpConnectionService,
+  createDefaultMcpConnectedAppService,
+  mcpCallbackUrl,
+} from '@/backend/config/mcp';
 import { createPlanGate, createUsageService } from '@/backend/config/plans';
 import {
+  createAgentMemoryFor,
   createAgentRecallFor,
   createConversationSummaryFor,
   createMemoryExtractionFor,
@@ -55,6 +65,26 @@ import { createWebSearchClient, searchLanguageFor } from '@/backend/clients/web-
 import { createUrlExtractClient } from '@/backend/clients/url-extract';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { USAGE_COUNTERS } from '@/shared/contracts/plans';
+import type { ChatAgentToolsDeps } from '@/backend/services/chat/chat-agent-tools-deps';
+import {
+  createCertificatesRepository,
+  verifyCertificateByCode,
+} from '@/backend/config/certificates';
+import { createPostsRepository } from '@/backend/config/blogpress';
+import { createHabitService } from '@/backend/config/habitflow';
+import { createSpendtrackService } from '@/backend/config/spendtrack';
+import { createPublicConsultationService } from '@/backend/config/consultation';
+import {
+  createDefaultTrainingApplicationService,
+  createDefaultTrainingCohortsRepository,
+} from '@/backend/config/training';
+import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
+import { createDefaultChatReportsAdminService } from '@/backend/config/chat-reports';
+import { createNotesService } from '@/backend/config/notes';
+import { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/backend/config/news';
+import { createRatesService } from '@/backend/config/rates';
+import { createScanHistoryService } from '@/backend/config/scan-history';
+import { resolveOrigin } from '@/backend/config/origin';
 
 /**
  * Chat's wiring. The service runs on the caller's own client, so every read and
@@ -120,6 +150,58 @@ export function createSupabaseChatService(
  */
 export function createChatAttachmentSweepService(): ChatAttachmentSweepService {
   return new ChatAttachmentSweepService(createChatAttachmentSweepRepository(getAdminSupabase()));
+}
+
+/**
+ * The assistant's product services, in one place (#1804).
+ *
+ * The tools used to construct these at each call site — a second composition
+ * root inside the service layer that a test could only reach by mocking the
+ * wiring module. Every choice of client and options is made here, beside the
+ * service's other dependencies; a tool only sees the interface it calls.
+ */
+export function createChatAgentToolsDeps(): ChatAgentToolsDeps {
+  return {
+    certificates: {
+      createRepository: createCertificatesRepository,
+      verifyByCode: verifyCertificateByCode,
+    },
+    posts: { createRepository: createPostsRepository },
+    habits: { createService: createHabitService },
+    spendtrack: { createService: createSpendtrackService },
+    consultation: { createService: createPublicConsultationService },
+    training: {
+      createApplicationService: createDefaultTrainingApplicationService,
+      createCohortsRepository: createDefaultTrainingCohortsRepository,
+    },
+    projectRequests: { createService: createDefaultProjectRequestService },
+    users: {
+      createAdminService: createAdminUsersService,
+      createProfileService,
+    },
+    mcp: {
+      createAppToolsService: createDefaultMcpAppToolsService,
+      createCatalogService: createDefaultMcpCatalogService,
+      createConnectService: createDefaultMcpConnectService,
+      createConnectionService: createDefaultMcpConnectionService,
+      createConnectedAppService: createDefaultMcpConnectedAppService,
+      callbackUrl: mcpCallbackUrl,
+    },
+    chatReports: { createAdminService: createDefaultChatReportsAdminService },
+    plans: {
+      createUsageService,
+      createPlanGate,
+    },
+    notes: { createService: createNotesService },
+    memory: { createFor: createAgentMemoryFor },
+    news: {
+      createServiceFor: createNewsServiceFor,
+      createPreferencesServiceFor: createNewsPreferencesServiceFor,
+    },
+    rates: { createService: createRatesService },
+    scanHistory: { createService: createScanHistoryService },
+    origin: resolveOrigin,
+  };
 }
 
 /**
@@ -250,6 +332,9 @@ export function createSupabaseChatAgentService(
     // turn declares at most sixteen of their tools, and a write among them is a
     // card like any other (ADR-0155, decision 7).
     apps,
+    // The tools' product services, wired here beside the other dependencies
+    // (#1804). The catalogue is bound to this bundle once, in the service.
+    toolsDeps: createChatAgentToolsDeps(),
     ...deps,
   });
 }
@@ -284,6 +369,9 @@ export function createSupabaseChatAgentActionService(
 ): ChatAgentActionService {
   const admin = getAdminSupabase();
   const gate = createPlanGate();
+  // A confirmed card runs the same catalogue as the turn, bound to the same
+  // product services (#1804).
+  const tools = chatAgentTools(createChatAgentToolsDeps());
 
   return new ChatAgentActionService({
     actions: createSupabaseChatAgentActionRepository(supabase, admin),
@@ -297,6 +385,7 @@ export function createSupabaseChatAgentActionService(
     // a turn uses, so the thread's signed URL reads them from our own storage.
     attachments: createChatAttachmentStorage(admin),
     reserveAppCall: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.mcpCalls),
+    resolveTool: (name) => tools.find((tool) => tool.name === name) ?? null,
     ...deps,
   });
 }
@@ -313,9 +402,10 @@ export function createSupabaseAgentToolGrantService(
   supabase: SupabaseClient<Database>,
   deps: Partial<AgentToolGrantServiceDeps> = {}
 ): AgentToolGrantService {
+  const toolsDeps = createChatAgentToolsDeps();
   return new AgentToolGrantService({
     grants: createSupabaseAgentToolGrantRepository(supabase, getAdminSupabase()),
-    tools: () => chatAgentTools(),
+    tools: () => chatAgentTools(toolsDeps),
     ...deps,
   });
 }

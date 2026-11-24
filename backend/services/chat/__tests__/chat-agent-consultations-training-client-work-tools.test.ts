@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { chatAgentTool, type ChatAgentToolContext } from '@/backend/services/chat/chat-agent-tools';
-import { createPublicConsultationService } from '@/backend/config/consultation';
-import {
-  createDefaultTrainingApplicationService,
-  createDefaultTrainingCohortsRepository,
-} from '@/backend/config/training';
-import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
+import { toolsDepsFor } from '@/backend/services/chat/__tests__/support/tools-deps';
 import type { ConsultationBooking } from '@/shared/contracts/consultation';
 import type { TrainingApplication, TrainingCohort } from '@/shared/contracts/training';
 import type { ProjectRequest } from '@/shared/contracts/project-requests';
@@ -20,17 +15,22 @@ import type { ProjectRequest } from '@/shared/contracts/project-requests';
  * target names the booking.
  */
 
-vi.mock('@/backend/config/consultation', () => ({ createPublicConsultationService: vi.fn() }));
-vi.mock('@/backend/config/training', () => ({
-  createDefaultTrainingApplicationService: vi.fn(),
-  createDefaultTrainingCohortsRepository: vi.fn(),
-}));
-vi.mock('@/backend/config/project-requests', () => ({
-  createDefaultProjectRequestService: vi.fn(),
-}));
+// Product-service fakes, handed to the catalogue through `ChatAgentToolsDeps`.
+const createPublicConsultationService = vi.fn();
+const createDefaultTrainingApplicationService = vi.fn();
+const createDefaultTrainingCohortsRepository = vi.fn();
+const createDefaultProjectRequestService = vi.fn();
+const deps = toolsDepsFor({
+  consultation: { createService: createPublicConsultationService },
+  training: {
+    createApplicationService: createDefaultTrainingApplicationService,
+    createCohortsRepository: createDefaultTrainingCohortsRepository,
+  },
+  projectRequests: { createService: createDefaultProjectRequestService },
+});
 
 function turnContext(): ChatAgentToolContext {
-  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1' };
+  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1', deps };
 }
 
 const booking: ConsultationBooking = {

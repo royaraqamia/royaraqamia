@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { chatAgentTool, type ChatAgentToolContext } from '@/backend/services/chat/chat-agent-tools';
+import { toolsDepsFor } from '@/backend/services/chat/__tests__/support/tools-deps';
 import {
   deleteHabitHandler,
   getLogsHandler,
@@ -17,8 +18,6 @@ import {
   listTransactionsHandler,
   setBudgetHandler,
 } from '@/backend/services/mcp/tools/spendtrack';
-import { createHabitService } from '@/backend/config/habitflow';
-import { createSpendtrackService } from '@/backend/config/spendtrack';
 import { CHAT_AGENT_TOOLS, chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
 
 /**
@@ -49,12 +48,17 @@ vi.mock('@/backend/services/mcp/tools/spendtrack', () => ({
   deleteExpenseHandler: vi.fn(),
 }));
 
-vi.mock('@/backend/config/habitflow', () => ({ createHabitService: vi.fn() }));
+// Product-service fakes, handed to the catalogue through `ChatAgentToolsDeps`.
+const createHabitService = vi.fn();
+const createSpendtrackService = vi.fn();
 
-vi.mock('@/backend/config/spendtrack', () => ({ createSpendtrackService: vi.fn() }));
+const deps = toolsDepsFor({
+  habits: { createService: createHabitService },
+  spendtrack: { createService: createSpendtrackService },
+});
 
 function turnContext(): ChatAgentToolContext {
-  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1' };
+  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1', deps };
 }
 
 function answer(value: Record<string, unknown>) {

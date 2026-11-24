@@ -5,6 +5,7 @@ import {
   chatAgentToolDefinitions,
   type ChatAgentToolContext,
 } from '@/backend/services/chat/chat-agent-tools';
+import { toolsDepsFor } from '@/backend/services/chat/__tests__/support/tools-deps';
 import { createMcpConnectedAppService } from '@/backend/services/mcp/connected-apps';
 import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
 import { hashToken } from '@/backend/shared/mcp-token-crypto';
@@ -28,12 +29,14 @@ const inbound = vi.hoisted(() => ({
   disconnect: vi.fn(),
 }));
 
-vi.mock('@/backend/config/mcp', () => ({
-  createDefaultMcpConnectedAppService: () => inbound.service,
-}));
+const deps = toolsDepsFor({
+  mcp: {
+    createConnectedAppService: () => inbound.service as never,
+  },
+});
 
 function context(): ChatAgentToolContext {
-  return { userId: 'member-1', supabase: {} as never, ip: '127.0.0.1' };
+  return { userId: 'member-1', supabase: {} as never, ip: '127.0.0.1', deps };
 }
 
 function grant(patch: Partial<McpConnectedApp> = {}): McpConnectedApp {
