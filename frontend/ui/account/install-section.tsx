@@ -8,6 +8,7 @@ import { installChannelFor, type InstallChannel } from '@/frontend/shared/instal
 import { isNativeApp } from '@/frontend/shared/native-shell';
 import {
   fetchShellManifest,
+  requestAppUpdateOffer,
   shellVersionFromUserAgent,
   shellVersionNameFromUserAgent,
   toShellUpdateState,
@@ -25,12 +26,15 @@ import { rowClasses } from './row-classes';
  */
 type ShellMode = 'pending' | 'app' | 'web';
 
-type CheckStatus = 'idle' | 'checking' | 'current' | 'update-available' | 'error';
+type CheckStatus = 'idle' | 'checking' | 'current' | 'offer-opened' | 'update-available' | 'error';
 
 const CHECK_MESSAGES: Record<CheckStatus, string> = {
   idle: '',
   checking: '',
   current: 'أنت على أحدث إصدار.',
+  'offer-opened': 'يتوفَّر تحديث جديد',
+  // A WebView too old to expose `offer()` cannot be shown the card; telling the
+  // member to reopen is the honest answer there, and the only one we have.
   'update-available': 'يتوفَّر تحديث جديد — سيُعرَض عليك عند إعادة فتح التَّطبيق.',
   error: 'تعذَّر التَّحقُّق من التَّحديث. حاول مرَّة أخرى.',
 };
@@ -50,7 +54,9 @@ const INSTALL_LABEL = 'تثبيت التَّطبيق';
  * Inside the shell neither applies — there is nothing to install — so the same
  * row becomes an on-demand check against the manifest, and it names the installed
  * version beside it: the number belongs with the check that reads it, not at the
- * foot of the page (ADR-0046).
+ * foot of the page (ADR-0046). When the check finds a release, the row asks the
+ * shell for its dismissable offer rather than just saying one will appear on the
+ * next launch; a WebView too old to expose the interface keeps that notice.
  *
  * The shell is recognised from its user agent first. `isNativeApp()` reads the
  * bridge, which the page does not always receive on an older WebView
@@ -101,7 +107,15 @@ export function InstallSection() {
     }
 
     const state = toShellUpdateState(latest, installedCode);
-    setStatus(state.updatePending || state.unsupported ? 'update-available' : 'current');
+    if (!state.updatePending && !state.unsupported) {
+      setStatus('current');
+      return;
+    }
+    // The card belongs to the shell, so the page only asks for the offer it
+    // already knows about. No floor and no APK URL cross this boundary: a check
+    // must never become a forced update. An old WebView with no interface keeps
+    // the inline notice instead.
+    setStatus(requestAppUpdateOffer() ? 'offer-opened' : 'update-available');
   };
 
   if (mode === 'pending') return null;

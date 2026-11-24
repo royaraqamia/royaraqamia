@@ -47,6 +47,7 @@ import com.royaraqamia.app.theme.RoyFonts
 import com.royaraqamia.app.update.ShellUpdateCard
 import com.royaraqamia.app.update.ShellUpdateFailure
 import com.royaraqamia.app.update.ShellUpdateUiState
+import com.royaraqamia.app.update.dismissable
 
 /**
  * The shell's update card, drawn where the app draws its own chrome (#652).
@@ -80,7 +81,7 @@ fun ShellUpdatePrompt(
     when (state) {
         ShellUpdateUiState.Idle -> Unit
         is ShellUpdateUiState.Asking ->
-            OfferCard(card = state.card, onInstall = onInstall, onLater = onLater)
+            OfferCard(state = state, onInstall = onInstall, onLater = onLater)
         is ShellUpdateUiState.Downloading ->
             DownloadCard(state = state, onCancel = onCancelDownload)
         is ShellUpdateUiState.Failed ->
@@ -90,11 +91,17 @@ fun ShellUpdatePrompt(
 
 /** The offer — and, below a floor, the same card with nothing to decline. */
 @Composable
-private fun OfferCard(card: ShellUpdateCard, onInstall: () -> Unit, onLater: () -> Unit) {
+private fun OfferCard(
+    state: ShellUpdateUiState.Asking,
+    onInstall: () -> Unit,
+    onLater: () -> Unit,
+) {
+    val card = state.card
     val required = card is ShellUpdateCard.Required
     // A floor has nothing to decline: the site refuses this build's routes, so the
     // card is the way forward rather than a question. An offer can always be put off.
-    CardDialog(dismissable = !required, onDismiss = onLater) {
+    // The predicate is the same one the activity's back callback reads.
+    CardDialog(dismissable = state.dismissable, onDismiss = onLater) {
         Headline(
             stringResource(
                 if (required) R.string.shell_update_required_title else R.string.shell_update_title
@@ -134,7 +141,7 @@ private fun DownloadCard(state: ShellUpdateUiState.Downloading, onCancel: () -> 
         else 0f
     val percent = (fraction * 100f).toInt()
 
-    CardDialog(dismissable = false, onDismiss = {}) {
+    CardDialog(dismissable = state.dismissable, onDismiss = {}) {
         Headline(stringResource(R.string.shell_update_downloading))
 
         // The brand's gradient on a track one step up from the card. RTL is what
@@ -209,7 +216,7 @@ private fun DownloadCard(state: ShellUpdateUiState.Downloading, onCancel: () -> 
  */
 @Composable
 private fun FailedCard(state: ShellUpdateUiState.Failed, onRetry: () -> Unit, onLater: () -> Unit) {
-    CardDialog(dismissable = true, onDismiss = onLater) {
+    CardDialog(dismissable = state.dismissable, onDismiss = onLater) {
         Headline(stringResource(R.string.shell_update_failed_title))
         Message(stringResource(reasonOf(state.reason)))
         PrimaryAction(label = stringResource(R.string.shell_update_retry), onClick = onRetry)

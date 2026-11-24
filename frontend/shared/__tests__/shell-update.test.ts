@@ -149,6 +149,26 @@ describe('requestAppUpdate', () => {
   });
 });
 
+describe('requestAppUpdateOffer', () => {
+  it('asks the shell for the offer without passing a floor', async () => {
+    const { requestAppUpdateOffer } = await loadModule();
+    const offer = vi.fn();
+    vi.stubGlobal('RoyShellUpdate', { offer });
+
+    expect(requestAppUpdateOffer()).toBe(true);
+    expect(offer).toHaveBeenCalledWith();
+    vi.unstubAllGlobals();
+  });
+
+  it('is quiet when the shell cannot show a card', async () => {
+    const { requestAppUpdateOffer } = await loadModule();
+    vi.stubGlobal('RoyShellUpdate', { required: vi.fn() });
+
+    expect(requestAppUpdateOffer()).toBe(false);
+    vi.unstubAllGlobals();
+  });
+});
+
 describe('fetchShellManifest', () => {
   it('reads the published APK from beside the site, uncached', async () => {
     const { fetchShellManifest } = await loadModule();

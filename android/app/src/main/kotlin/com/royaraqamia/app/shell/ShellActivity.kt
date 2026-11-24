@@ -100,6 +100,7 @@ import com.royaraqamia.app.theme.RoyaraqamiaTheme
 import com.royaraqamia.app.update.ShellUpdateChannel
 import com.royaraqamia.app.update.ShellUpdateController
 import com.royaraqamia.app.update.ShellUpdateUiState
+import com.royaraqamia.app.update.dismissable
 import com.royaraqamia.app.verify.VerifyCodeScreen
 import com.royaraqamia.app.verify.VerifyRoutes
 import com.royaraqamia.app.verify.VerifyScreen
@@ -826,6 +827,13 @@ class ShellActivity : ComponentActivity() {
                     update.requireUpdate(ShellUpdateChannel.floor)
                 }
 
+                // The account checker asked for the offer (#503). No floor travels
+                // with the request: the shell re-reads its own manifest, so a page
+                // can neither force the update nor name the APK it would install.
+                LaunchedEffect(ShellUpdateChannel.offerRequests) {
+                    if (ShellUpdateChannel.offerRequests > 0L) update.maybeCheck(true)
+                }
+
                 // An update the user has to answer is the one screen the frame still
                 // owns (#872, #652): the document is on top, so the frame is brought
                 // forward to be seen at all, and answering the card hands the
@@ -900,8 +908,10 @@ class ShellActivity : ComponentActivity() {
             return
         }
         // A card the frame was brought forward for is a screen of its own (#652):
-        // back is "later", not a walk down a stack the user cannot see.
-        if (update.state !is ShellUpdateUiState.Idle) {
+        // back is "later" only where the card can be put off. A floor has nothing
+        // to decline and a download has «إلغاء» as its one honest exit, so neither
+        // may be dismissed by a back the dialog itself does not consume.
+        if (update.state.dismissable) {
             update.decline()
             return
         }

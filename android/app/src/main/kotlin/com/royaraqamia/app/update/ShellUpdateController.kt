@@ -77,13 +77,13 @@ class ShellUpdateController(
     /**
      * Whether a destination may be handed over to the document (#652, ADR-0114).
      *
-     * A build below the floor has a site that will refuse its routes, so the
-     * shell keeps the user on its own frame with the blocking card rather than
-     * opening a document that answers `426` to everything. An update that is
-     * merely offered does not block anything.
+     * Any card the shell drew owns the frame until the user answers it: a document
+     * opening over an unanswered offer is what made the card flash and vanish on a
+     * cold launch. Below a floor this is also the whole point — the site would
+     * answer `426` to every route — but the same hold applies to an offer.
      */
     val blocksHandover: Boolean
-        get() = ShellUpdateDecision.cardFor(status, floor, debug) is ShellUpdateCard.Required
+        get() = state.holdsFrame
 
     private val floor: Int
         get() = maxOf(serverFloor, ShellUpdateChannel.floor)
