@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 
 const MIGRATION = resolve(
   process.cwd(),
-  'supabase/migrations/20261229000000_comment_write_gate.sql'
+  'supabase/migrations/20261229000001_comment_write_gate.sql'
 );
 const sql = readFileSync(MIGRATION, 'utf8');
 const code = sql.replace(/--[^\n]*/g, ' ');
