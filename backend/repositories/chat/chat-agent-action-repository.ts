@@ -68,7 +68,24 @@ export interface ChatAgentActionRepository {
     messageId: string;
     tool: string;
     args: Record<string, unknown>;
+    tier?: number | null;
   }): Promise<ChatAgentAction>;
+  /**
+   * The audit row a granted call leaves (ADR-0180 decision 3). It is inserted
+   * already `applied` or `failed`, because no member is asked: the grant is the
+   * asking, and `grant_id` is the record of which trust caused the run.
+   */
+  insertAudit(input: {
+    userId: string;
+    conversationId: string;
+    messageId: string;
+    tool: string;
+    args: Record<string, unknown>;
+    tier: number;
+    grantId: string;
+    status: 'applied' | 'failed';
+    result: Record<string, unknown>;
+  }): Promise<void>;
 }
 
 export function createSupabaseChatAgentActionRepository(
@@ -155,12 +172,30 @@ export function createSupabaseChatAgentActionRepository(
           tool: input.tool,
           args: input.args as Json,
           status: 'proposed',
+          tier: input.tier ?? null,
         })
         .select()
         .single();
 
       if (error) throw repositoryFailure('chat.agent.actions.insert', error);
       return toRecord(data);
+    },
+
+    async insertAudit(input) {
+      const { error } = await admin.from('chat_agent_actions').insert({
+        conversation_id: input.conversationId,
+        message_id: input.messageId,
+        tool: input.tool,
+        args: input.args as Json,
+        status: input.status,
+        result: input.result as Json,
+        resolved_at: new Date().toISOString(),
+        resolved_by: input.userId,
+        tier: input.tier,
+        grant_id: input.grantId,
+      });
+
+      if (error) throw repositoryFailure('chat.agent.actions.audit', error);
     },
   };
 }

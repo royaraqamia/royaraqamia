@@ -268,6 +268,7 @@ function buildService(messages: Array<{ role: 'user' | 'assistant'; content: str
     })),
     client: realClient(),
     actions: {
+      recordRun: vi.fn(async () => undefined),
       propose: vi.fn(async () => ({
         message: wireMessage(100, 'assistant', 'اقتراح'),
         action: {

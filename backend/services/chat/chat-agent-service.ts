@@ -5,6 +5,8 @@ import type {
   AgentTurnRow,
 } from '@/backend/repositories/chat/chat-agent-repository';
 import type { ChatAgentActionService } from '@/backend/services/chat/chat-agent-action-service';
+import type { AgentToolGrantService } from '@/backend/services/agent/agent-tool-grant-service';
+import { executeFirstPartyTool } from '@/backend/services/chat/chat-agent-tool-execution';
 import {
   DocumentReadError,
   readDocumentText,
@@ -420,7 +422,13 @@ export interface ChatAgentServiceDeps {
    */
   judge?: Pick<ChatAgentJudge, 'review'>;
   /** The proposals a write tool leaves, and the member's own resolution. */
-  actions: Pick<ChatAgentActionService, 'propose'>;
+  actions: Pick<ChatAgentActionService, 'propose' | 'recordRun'>;
+  /**
+   * The member's live per-tool grants (ADR-0180 decisions 2 and 3, #1438).
+   * Absent in a test and never required for a turn to answer: without it every
+   * tier-1 tool is simply a card, which is the first-run experience.
+   */
+  grants?: Pick<AgentToolGrantService, 'liveFor' | 'touch'>;
   /** The registry, overridable so a test can pin the loop without a service. */
   resolveTool?: (name: string) => ChatAgentTool | null;
   /**
@@ -1112,6 +1120,19 @@ export class ChatAgentService {
      */
     const trace: JudgeTraceItem[] = [];
     const traceByCall = new Map<string, JudgeTraceItem>();
+    /**
+     * The granted runs this turn made, written as audit rows once the answer's
+     * message exists (ADR-0180 decision 3, #1438). The row names the grant, so
+     * the settings surface and the thread both say why the tool ran unasked.
+     */
+    const grantRuns: Array<{
+      tool: string;
+      args: Record<string, unknown>;
+      tier: number;
+      grantId: string;
+      status: 'applied' | 'failed';
+      result: Record<string, unknown>;
+    }> = [];
     /** What a search read this turn, for the card and the stored row. */
     let sources: WebSource[] = [];
     /** The sanitized drawing this turn made, for the frame and the stored row. */
@@ -1217,6 +1238,9 @@ export class ChatAgentService {
             if (!declaration.readOnly && declaration.permissionLevel !== 'all') {
               const proposal = await this.deps.actions.propose(conversationId, auditName, args, {
                 appName: declaration.appName,
+                // A write on an app we do not own is tier 2: a third party can
+                // see it, so no grant ever makes it automatic (ADR-0180).
+                tier: 2,
               });
               const proposedApp = traceByCall.get(call.id);
               if (proposedApp) proposedApp.proposed = true;
@@ -1396,13 +1420,96 @@ export class ChatAgentService {
             continue;
           }
 
-          // A tool above tier 0 is proposed, never run here: the member
-          // confirms it (ADR-0180). Today every write is above tier 0 and every
-          // read is 0, so this is the same boundary `kind` drew; the tier is
-          // what lets a granted tier-1 tool run in a later change without moving
-          // the boundary itself.
+          /*
+            A tier-1 tool the member granted runs here, through the confirm
+            path's executor (ADR-0180 decisions 1-3, #1438). The grant is read
+            again for this call, so a revocation between two calls is already
+            felt; the audit row is written against the answer's message once it
+            exists. Without a live grant — and for every tier-2 or tier-3 tool —
+            the call is the card it has always been.
+          */
+          if (tool.tier === 1 && this.deps.grants) {
+            const grant = await this.deps.grants
+              .liveFor(userId, tool.name)
+              .catch((error: unknown) => {
+                logger.warn('Assistant tool grant could not be read', {
+                  tool: tool.name,
+                  error: String(error),
+                });
+                return null;
+              });
+
+            if (grant) {
+              yield {
+                type: 'tool_start',
+                id: call.id,
+                name: tool.name,
+                activity: CHAT_AGENT_TOOLS[tool.name].activity,
+              };
+              const outcome = await executeFirstPartyTool(tool, args ?? {}, {
+                userId,
+                supabase: context.supabase,
+                ip: context.ip,
+              });
+              const grantedTrace = traceByCall.get(call.id);
+              if (grantedTrace) grantedTrace.ok = outcome.status === 'applied';
+
+              if (outcome.status === 'applied') {
+                grantRuns.push({
+                  tool: tool.name,
+                  args: args ?? {},
+                  tier: tool.tier,
+                  grantId: grant.id,
+                  status: 'applied',
+                  result: { result: outcome.result ?? null },
+                });
+                yield {
+                  type: 'tool',
+                  id: call.id,
+                  name: tool.name,
+                  label: CHAT_AGENT_TOOLS[tool.name].label,
+                  ok: true,
+                };
+                messages.push(toolAnswer(call.id, outcome.result, tool.maxResultChars));
+              } else {
+                grantRuns.push({
+                  tool: tool.name,
+                  args: args ?? {},
+                  tier: tool.tier,
+                  grantId: grant.id,
+                  status: 'failed',
+                  result: { error: outcome.error },
+                });
+                yield {
+                  type: 'tool',
+                  id: call.id,
+                  name: tool.name,
+                  label: CHAT_AGENT_TOOLS[tool.name].label,
+                  ok: false,
+                };
+                messages.push(toolAnswer(call.id, { error: outcome.error }));
+              }
+
+              await this.deps.grants.touch(grant.id).catch((error: unknown) => {
+                logger.warn('Assistant tool grant use could not be dated', {
+                  tool: tool.name,
+                  error: String(error),
+                });
+              });
+              continue;
+            }
+          }
+
+          // A tool above tier 0 without a grant is proposed, never run here: the
+          // member confirms it (ADR-0180). The tier is what lets the granted
+          // tier-1 branch above run without moving this boundary.
           if (tool.tier > 0) {
-            const proposal = await this.deps.actions.propose(conversationId, tool.name, args ?? {});
+            const proposal = await this.deps.actions.propose(
+              conversationId,
+              tool.name,
+              args ?? {},
+              { tier: tool.tier }
+            );
             const proposed = traceByCall.get(call.id);
             if (proposed) proposed.proposed = true;
             yield { type: 'proposal', message: proposal.message, action: proposal.action };
@@ -1608,6 +1715,31 @@ export class ChatAgentService {
         : sources.length > 0
           ? await this.deps.agent.insertAgentMessage(conversationId, text, sources)
           : await this.deps.agent.insertAgentMessage(conversationId, text);
+
+    // A granted run leaves the same audit a tap leaves, and names the grant that
+    // caused it (ADR-0180 decision 3, #1438). A failure to write is the
+    // operator's warning, not the member's failed answer: the tool already ran.
+    for (const run of grantRuns) {
+      await this.deps.actions
+        .recordRun({
+          userId,
+          conversationId,
+          messageId: record.id,
+          tool: run.tool,
+          args: run.args,
+          tier: run.tier,
+          grantId: run.grantId,
+          status: run.status,
+          result: run.result,
+        })
+        .catch((error: unknown) => {
+          logger.warn('Assistant granted run audit could not be written', {
+            tool: run.tool,
+            error: String(error),
+          });
+        });
+    }
+
     if (turnId) await this.deps.agent.settleTurn(turnId);
     await this.recordSkills(turnId, skills, loadedSkill);
 

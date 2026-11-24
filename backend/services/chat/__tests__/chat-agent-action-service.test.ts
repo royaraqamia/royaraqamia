@@ -77,6 +77,7 @@ function repository(row: ChatAgentAction) {
       return { ...current };
     }),
     insertProposal: vi.fn(async () => ({ ...current })),
+    insertAudit: vi.fn(async () => undefined),
   };
 
   return { repo, writes, current: () => current };

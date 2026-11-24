@@ -227,6 +227,7 @@ function makeService(overrides: Partial<ChatAgentServiceDeps> = {}) {
       message: message('message-p', 'agent', 'اقتراح'),
       action: PROPOSAL,
     })),
+    recordRun: vi.fn(async () => undefined),
   };
 
   const service = new ChatAgentService({
@@ -1299,9 +1300,94 @@ describe('the assistant’s tools (#818)', () => {
       service.turn('user-1', 'conversation-1', 'سجِّل مصروفاً', TURN_CONTEXT)
     );
 
-    expect(actions.propose).toHaveBeenCalledWith('conversation-1', 'record_expense', { amount: 5 });
+    expect(actions.propose).toHaveBeenCalledWith(
+      'conversation-1',
+      'record_expense',
+      { amount: 5 },
+      {
+        tier: 1,
+      }
+    );
     expect(writeTool.run).not.toHaveBeenCalled();
     expect(events.some((event) => event.type === 'proposal')).toBe(true);
+  });
+
+  it('runs a granted tier-1 tool in the turn and records the grant on the audit row', async () => {
+    const writeTool: ChatAgentTool = {
+      name: 'record_expense',
+      kind: 'write',
+      product: 'spendtrack',
+      tier: 1,
+      description: 'مصروف',
+      schema: z.strictObject({ amount: z.number() }),
+      run: vi.fn(async () => ({ expense_id: 'expense-1' })),
+    };
+
+    const client = scriptedClient([
+      [toolCall('record_expense', { amount: 5 })],
+      textStream('سجّلت المصروف.'),
+    ]);
+    const touch = vi.fn(async () => undefined);
+    const { service, actions } = makeService({
+      client,
+      resolveTool: (name) => (name === 'record_expense' ? writeTool : null),
+      grants: {
+        liveFor: vi.fn(async () => ({
+          id: 'grant-1',
+          toolId: 'record_expense',
+          label: 'تسجيل مصروف',
+          grantedAt: '2026-11-24T10:00:00.000Z',
+          lastUsedAt: null,
+        })),
+        touch,
+      },
+    });
+
+    const events = await collect(
+      service.turn('user-1', 'conversation-1', 'سجِّل مصروفاً', TURN_CONTEXT)
+    );
+
+    expect(writeTool.run).toHaveBeenCalledTimes(1);
+    expect(actions.propose).not.toHaveBeenCalled();
+    expect(touch).toHaveBeenCalledWith('grant-1');
+    expect(actions.recordRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        grantId: 'grant-1',
+        tool: 'record_expense',
+        tier: 1,
+        status: 'applied',
+        messageId: 'message-2',
+      })
+    );
+    expect(events.some((event) => event.type === 'tool' && event.ok)).toBe(true);
+  });
+
+  it('leaves a tier-1 tool as a card when its grant is gone', async () => {
+    const writeTool: ChatAgentTool = {
+      name: 'record_expense',
+      kind: 'write',
+      product: 'spendtrack',
+      tier: 1,
+      description: 'مصروف',
+      schema: z.strictObject({ amount: z.number() }),
+      run: vi.fn(async () => ({ expense_id: 'expense-1' })),
+    };
+
+    const client = scriptedClient([
+      [toolCall('record_expense', { amount: 5 })],
+      textStream('جاهز للتأكيد.'),
+    ]);
+    const { service, actions } = makeService({
+      client,
+      resolveTool: (name) => (name === 'record_expense' ? writeTool : null),
+      grants: { liveFor: vi.fn(async () => null), touch: vi.fn(async () => undefined) },
+    });
+
+    await collect(service.turn('user-1', 'conversation-1', 'سجِّل مصروفاً', TURN_CONTEXT));
+
+    expect(writeTool.run).not.toHaveBeenCalled();
+    expect(actions.propose).toHaveBeenCalledTimes(1);
+    expect(actions.recordRun).not.toHaveBeenCalled();
   });
 
   it('stops after three tool rounds and answers with what it has', async () => {
@@ -1587,7 +1673,7 @@ describe('the assistant turn, with a connected app', () => {
       'conversation-1',
       'app:conn-1:create_page',
       { title: 'خطة' },
-      { appName: 'Notion' }
+      { appName: 'Notion', tier: 2 }
     );
     // The card is the write: nothing ran on the server.
     expect(apps.call).not.toHaveBeenCalled();
