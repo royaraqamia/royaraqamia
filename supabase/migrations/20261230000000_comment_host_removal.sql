@@ -14,6 +14,7 @@
 -- Rollback:
 --   alter table public.post_comments drop column if exists deleted_reason;
 --   alter table public.post_comments drop column if exists deleted_by;
+--   drop function if exists public.post_comment_delete(uuid, uuid);
 --   (then restore post_comment_delete from 20261212120000_post_engagement.sql)
 -- ============================================================
 
@@ -27,6 +28,12 @@ comment on column public.post_comments.deleted_by is
   'The member who tombstoned the comment: its writer, or the post''s author (ADR-0217).';
 comment on column public.post_comments.deleted_reason is
   'post_author when the post''s host removed a reply; null when its writer deleted it.';
+
+-- PostgreSQL will not rename an input parameter through CREATE OR REPLACE
+-- (42P13). The shipped function takes p_author_id; this rule needs an actor who
+-- may be the post's host, so drop that signature and recreate it below with the
+-- grants and comment it had.
+drop function if exists public.post_comment_delete(uuid, uuid);
 
 create or replace function public.post_comment_delete(
   p_comment_id uuid,

@@ -315,6 +315,26 @@ describe('listComments with a viewer', () => {
   });
 });
 
+describe('deleteComment', () => {
+  it('passes the acting member under the function’s p_actor_id argument', async () => {
+    const rpc = vi.fn(async () => ({
+      data: [{ post_id: POST_ID, comment_count: 2 }],
+      error: null,
+    }));
+    const supabase = { rpc } as unknown as SupabaseClient<Database>;
+    const repo = createPostEngagementRepository(supabase);
+
+    await expect(repo.deleteComment('c1', AUTHOR_ID)).resolves.toEqual({
+      postId: POST_ID,
+      commentCount: 2,
+    });
+    expect(rpc).toHaveBeenCalledWith('post_comment_delete', {
+      p_comment_id: 'c1',
+      p_actor_id: AUTHOR_ID,
+    });
+  });
+});
+
 describe('reportComment', () => {
   it('calls the reporting function with the member and the reason', async () => {
     const rpc = vi.fn(async () => ({

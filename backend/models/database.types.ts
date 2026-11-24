@@ -3950,7 +3950,7 @@ export type Database = {
         Returns: string;
       };
       post_comment_delete: {
-        Args: { p_author_id: string; p_comment_id: string };
+        Args: { p_actor_id: string; p_comment_id: string };
         Returns: {
           comment_count: number;
           post_id: string;

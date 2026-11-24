@@ -390,7 +390,7 @@ export function createPostEngagementRepository(
     async deleteComment(commentId, authorId) {
       const { data, error } = await supabase.rpc('post_comment_delete', {
         p_comment_id: commentId,
-        p_author_id: authorId,
+        p_actor_id: authorId,
       });
       if (error) throw error;
 
