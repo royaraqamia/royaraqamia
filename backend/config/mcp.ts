@@ -59,6 +59,16 @@ export function createDefaultMcpConnectedAppService(): McpConnectedAppService {
 }
 
 /**
+ * The one redirect URI every provider registers, from our own origin (ADR-0155).
+ *
+ * The start controller and the assistant's store tools both need it, and neither
+ * may take one from a request: a callback is ours, not the caller's Host.
+ */
+export function mcpCallbackUrl(): string {
+  return new URL('/mcp/callback', env.origin).toString();
+}
+
+/**
  * The unattended run's scoped door (#1293). It is the same catalogue service an
  * admin writes through, plus the four rules that keep a publish measured; the
  * redirect URI is ours, so a pre-registered client is probed against the one
@@ -69,7 +79,7 @@ export function createDefaultMcpCatalogAgentService(): McpCatalogAgentService {
     repository: createMcpMarketplaceRepository(),
     catalog: createDefaultMcpCatalogService(),
     staticClients: readMcpStaticClients(),
-    redirectUri: new URL('/mcp/callback', env.origin).toString(),
+    redirectUri: mcpCallbackUrl(),
   });
 }
 

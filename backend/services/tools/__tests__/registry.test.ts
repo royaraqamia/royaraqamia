@@ -42,6 +42,9 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   consultations: 4,
   training: 3,
   'client-work': 2,
+  // #1436: two reads of the store, a consent-starting connect and a reversible
+  // disconnect at tier 2, and a typed-target revoke at tier 3.
+  'mcp-store': 5,
   // #1435: member lookup and the report queue's read, plus its tier-2 decision.
   admin: 3,
   assistant: 7,
@@ -126,7 +129,9 @@ describe('the assistant door', () => {
       'admin_decide_report',
       'apply_training',
       'book_consultation',
+      'connect_app',
       'create_post_comment',
+      'disconnect_app',
       'publish_post_draft',
       'submit_project_request',
     ]);
@@ -143,6 +148,7 @@ describe('the assistant door', () => {
       'delete_link',
       'delete_note',
       'delete_post',
+      'revoke_app',
     ]);
   });
 
@@ -159,6 +165,19 @@ describe('the assistant door', () => {
       expect(entry.tier).toBeGreaterThan(1);
       expect(toolIsGrantable(entry.tier)).toBe(false);
     }
+  });
+
+  it('keeps the store writes at card tiers no grant can make automatic', () => {
+    const storeWrites = capabilities.filter(
+      (entry) => entry.owner === 'mcp-store' && entry.kind === 'write'
+    );
+
+    expect(storeWrites.map((entry) => entry.agentName).sort()).toEqual([
+      'connect_app',
+      'disconnect_app',
+      'revoke_app',
+    ]);
+    for (const entry of storeWrites) expect(toolIsGrantable(entry.tier)).toBe(false);
   });
 
   it('gives the turn every HabitFlow and SpendTrack capability the MCP door declares', () => {

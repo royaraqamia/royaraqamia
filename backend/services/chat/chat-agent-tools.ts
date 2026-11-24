@@ -17,6 +17,14 @@ import {
 } from '@/backend/config/training';
 import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
 import { createAdminUsersService, createProfileService } from '@/backend/config/users';
+import {
+  createDefaultMcpAppToolsService,
+  createDefaultMcpCatalogService,
+  createDefaultMcpConnectService,
+  createDefaultMcpConnectionService,
+  mcpCallbackUrl,
+} from '@/backend/config/mcp';
+import type { McpConnection } from '@/shared/contracts/mcp-marketplace';
 import { createDefaultChatReportsAdminService } from '@/backend/config/chat-reports';
 import { isAdmin as isAdminEmail } from '@/backend/shared/admin-validator';
 import { env } from '@/backend/config/env';
@@ -557,6 +565,61 @@ const DeleteNoteArgs = z.strictObject({
   // The name the card shows must be the name of the row the hand will delete.
   name: z.string().trim().min(1, 'اسم الملاحظة مطلوب').max(120),
 });
+
+/**
+ * The MCP store's hands address an app by the name the member reads, never by
+ * an id or a credential (issue #1436). Strict, so an argument that tries to
+ * carry a key or a consent code is refused rather than quietly dropped.
+ */
+const StoreAppArgs = z.strictObject({
+  name: z.string().trim().min(1, 'اسم التطبيق مطلوب').max(200),
+});
+
+/** The name shown for a connection, the same one the apps sheet draws. */
+function storeAppName(connection: McpConnection): string {
+  return connection.displayName?.trim() || connection.registryName;
+}
+
+/**
+ * The member's connection by its displayed name, or the reason it cannot be
+ * found. Resolving from `list` rather than accepting an id from the model keeps
+ * the lookup on the member's own rows; two apps with one name are refused
+ * rather than picked arbitrarily, least of all on a destructive card.
+ */
+async function storeConnectionNamed(
+  userId: string,
+  name: string
+): Promise<{ connection: McpConnection } | { error: string }> {
+  const wanted = name.trim().toLocaleLowerCase();
+  const matches = (await createDefaultMcpConnectionService().list(userId)).filter((connection) =>
+    [connection.displayName, connection.registryName]
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .some((value) => value.trim().toLocaleLowerCase() === wanted)
+  );
+  const connection = matches[0];
+  if (!connection) return { error: 'لم أجد تطبيقاً بهذا الاسم.' };
+  if (matches.length > 1) {
+    return { error: 'يوجد أكثر من تطبيق بهذا الاسم. استخدم الاسم المعروض في «تطبيقاتنا».' };
+  }
+  return { connection };
+}
+
+/**
+ * The catalogue row the member means, by the name they read in the store.
+ * `start` addresses a row by its stable registry name; the model and the
+ * member speak in the title, so the resolution belongs here and an unknown
+ * name is a refusal rather than a guessed connection.
+ */
+async function storeRegistryName(name: string): Promise<string | null> {
+  const wanted = name.trim().toLocaleLowerCase();
+  const page = await createDefaultMcpCatalogService().search({ q: name, cursor: null });
+  const match = page.servers.find((row) =>
+    [row.registryName, row.title, row.nameAr]
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .some((value) => value.trim().toLocaleLowerCase() === wanted)
+  );
+  return match?.registryName ?? null;
+}
 
 /**
  * The Admin Console's three hands (ADR-0180, decision 10, #1435).
@@ -2453,6 +2516,122 @@ const tools: ChatAgentTool[] = [
       // is a caller that asked anyway rather than a page with nothing to say.
       if (!context.screen) return { screen: null, updatedAt: null };
       return screenContextAnswer(context.screen);
+    },
+  },
+  // --- the MCP store -------------------------------------------------------
+  // The apps sheet's marketplace tab, from the thread (#1436). Reads answer
+  // with names and counts only: no token, key, credential or consent code ever
+  // enters a tool result or a proposal. A consent is started here and finished
+  // by the member in their own browser — `complete` is never a tool (ADR-0180).
+  {
+    name: 'list_apps',
+    kind: 'read',
+    product: 'mcp-store',
+    tier: 0,
+    description:
+      'التطبيقات المرتبطة بحساب العضو، باسم كل تطبيق وعدد أدواته. استخدمها حين يسأل ما التطبيقات المتصلة أو كم أداة لكل تطبيق. تُعيد الأسماء والأعداد فقط، بلا رموز أو بيانات اعتماد.',
+    schema: NoArgs,
+    async run(_args, context) {
+      const connections = await createDefaultMcpConnectionService().list(context.userId);
+      return {
+        apps: connections.map((connection) => ({
+          name: storeAppName(connection),
+          tool_count: connection.toolCount,
+        })),
+        total: connections.length,
+      };
+    },
+  },
+  {
+    name: 'list_app_tools',
+    kind: 'read',
+    product: 'mcp-store',
+    tier: 0,
+    description:
+      'أدوات تطبيق مرتبط بحساب العضو، باسم كل أداة ووصفها ونوعها قراءة أم كتابة. استخدمها حين يسأل ماذا يستطيع تطبيق مرتبط أن يفعل. تُعيد أوصافاً فقط، بلا رموز أو بيانات اعتماد.',
+    schema: StoreAppArgs,
+    async run(args, context) {
+      const input = StoreAppArgs.parse(args);
+      const found = await storeConnectionNamed(context.userId, input.name);
+      if ('error' in found) return found;
+      const catalog = await createDefaultMcpAppToolsService().catalog(context.userId);
+      return {
+        app: storeAppName(found.connection),
+        tools: catalog
+          .filter((tool) => tool.connectionId === found.connection.id)
+          .map((tool) => ({
+            name: tool.toolName,
+            description: tool.description,
+            read_only: tool.readOnly,
+          })),
+      };
+    },
+  },
+  {
+    name: 'connect_app',
+    kind: 'write',
+    product: 'mcp-store',
+    tier: 2,
+    description:
+      'بدء ربط تطبيق من المتجر بالاسم المعروض فيه أو باسمه المعتمد. تُعيد صفحة الموافقة التي يفتحها العضو بنفسه، ولا تُكمل الربط ولا تطلب رمز الموافقة نيابةً عنه، ولا تحمل مفتاحاً أو بيانات اعتماد. تُعرض بطاقة تسمّي التطبيق ولا تُنفَّذ إلا بعد تأكيد العضو.',
+    schema: StoreAppArgs,
+    async run(args, context) {
+      const input = StoreAppArgs.parse(args);
+      const registryName = await storeRegistryName(input.name);
+      if (!registryName) return { error: 'لم أجد تطبيقاً بهذا الاسم في المتجر.' };
+      // `start` only: the redirect, the code and the token exchange belong to
+      // the member's browser and the callback, never to a tool call.
+      const started = await createDefaultMcpConnectService().start({
+        userId: context.userId,
+        registryName,
+        redirectUri: mcpCallbackUrl(),
+      });
+      return {
+        app: input.name,
+        ...(started.kind === 'authorize'
+          ? { consent_url: started.authorizeUrl }
+          : { connected: true, connection_id: started.connectionId }),
+      };
+    },
+  },
+  {
+    name: 'disconnect_app',
+    kind: 'write',
+    product: 'mcp-store',
+    tier: 2,
+    description:
+      'إيقاف تطبيق مرتبط بحساب العضو دون حذفه، فيبقى في «تطبيقاتنا» ويمكن إعادة تفعيله من صفحته. لا يمسّ بيانات الاعتماد المخزّنة. تُعرض بطاقة تسمّي التطبيق ولا تُنفَّذ إلا بعد تأكيد العضو.',
+    schema: StoreAppArgs,
+    async run(args, context) {
+      const input = StoreAppArgs.parse(args);
+      const found = await storeConnectionNamed(context.userId, input.name);
+      if ('error' in found) return found;
+      await createDefaultMcpConnectionService().update(context.userId, found.connection.id, {
+        enabled: false,
+      });
+      return { app: storeAppName(found.connection), enabled: false };
+    },
+  },
+  {
+    name: 'revoke_app',
+    kind: 'write',
+    product: 'mcp-store',
+    tier: 3,
+    description:
+      'إلغاء ربط تطبيق نهائياً وسحب صلاحيته عند مزوّده، مع حذف بيانات الربط محلياً. إجراء مدمّر لا رجوع فيه؛ بطاقته تسمّي التطبيق، ويجب أن يطابق الاسم المكتوب اسم التطبيق المعروض بالضبط. استخدم «فصل التطبيق» حين يريد العضو إيقافه فقط.',
+    schema: StoreAppArgs,
+    async run(args, context) {
+      const input = StoreAppArgs.parse(args);
+      const found = await storeConnectionNamed(context.userId, input.name);
+      if ('error' in found) return found;
+      const shown = storeAppName(found.connection);
+      // The typed target of a tier-3 card (ADR-0180, decision 5): the name the
+      // member confirms must be the very app that will be removed.
+      if (input.name.toLocaleLowerCase() !== shown.toLocaleLowerCase()) {
+        return { error: 'اسم التطبيق غير مطابق.' };
+      }
+      await createDefaultMcpConnectionService().disconnect(context.userId, found.connection.id);
+      return { app: shown, revoked: true };
     },
   },
   // --- admin ---------------------------------------------------------------

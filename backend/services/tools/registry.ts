@@ -43,6 +43,9 @@ export const PRODUCTS = [
   'consultations',
   'training',
   'client-work',
+  // The apps sheet's store and its inbound clients (#1436, #1437). They own no
+  // product row of their own; the tools manage connections, not content.
+  'mcp-store',
   'admin',
 ] as const;
 
