@@ -49,15 +49,24 @@ export async function optimizeImage({
   quality,
   accept,
 }: OptimizeRequest): Promise<OptimizedImage> {
-  // Storage is the only source this optimizer may fetch. The check is inline
-  // so the tainted request URL is visibly bounded to HTTPS on our bucket host
-  // before it reaches fetch, not routed through a helper.
+  // Storage is the only source this optimizer may fetch: HTTPS on the one host
+  // this deployment is configured for, not any other tenant on supabase.co.
+  // The check is inline so the tainted URL is visibly bounded before fetch.
+  const configured = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  let allowedHost = '';
+  try {
+    if (configured) allowedHost = new URL(configured).hostname;
+  } catch {
+    // An unparseable configuration must not open the allowlist.
+  }
   let source: URL;
   try {
     const parsed = new URL(src);
     if (
+      !allowedHost ||
       parsed.protocol !== 'https:' ||
-      !(parsed.hostname === 'supabase.co' || parsed.hostname.endsWith('.supabase.co'))
+      parsed.hostname !== allowedHost ||
+      !parsed.hostname.endsWith('.supabase.co')
     ) {
       return { ok: false, status: 400 };
     }

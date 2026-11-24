@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { imageDecodeStats } from '@/backend/services/images/decode-slot';
 import { optimizeImage } from '@/backend/services/images/optimize-image';
@@ -16,8 +16,13 @@ function stubSource(bytes: Uint8Array) {
   );
 }
 
+beforeEach(() => {
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co');
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('optimizeImage', () => {
@@ -28,6 +33,7 @@ describe('optimizeImage', () => {
     for (const src of [
       'https://evil.example/cover.png',
       'http://example.supabase.co/cover.png',
+      'https://other.supabase.co/cover.png',
       'https://example.supabase.co.evil.test/cover.png',
       'not a url',
     ]) {
