@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { chatAgentTool, type ChatAgentToolContext } from '@/backend/services/chat/chat-agent-tools';
-import { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/backend/config/news';
-import { createRatesService } from '@/backend/config/rates';
+import { toolsDepsFor } from '@/backend/services/chat/__tests__/support/tools-deps';
 import { resolveNewsCardCap } from '@/backend/services/news/card-limit';
 import type { NewsBoard, NewsStory } from '@/shared/contracts/news';
 import type { RateSeries, RatesBoard } from '@/shared/contracts/rates';
@@ -17,12 +16,17 @@ import type { RateSeries, RatesBoard } from '@/shared/contracts/rates';
  * the date it was read.
  */
 
-vi.mock('@/backend/config/news', () => ({
-  createNewsServiceFor: vi.fn(),
-  createNewsPreferencesServiceFor: vi.fn(),
-}));
+const createNewsServiceFor = vi.fn();
+const createNewsPreferencesServiceFor = vi.fn();
+const createRatesService = vi.fn();
 
-vi.mock('@/backend/config/rates', () => ({ createRatesService: vi.fn() }));
+const deps = toolsDepsFor({
+  news: {
+    createServiceFor: createNewsServiceFor,
+    createPreferencesServiceFor: createNewsPreferencesServiceFor,
+  },
+  rates: { createService: createRatesService },
+});
 
 // The real card limit runs (it is pure); only the plan read beneath it is a stub.
 vi.mock('@/backend/services/news/card-limit', async (importOriginal) => {
@@ -123,7 +127,7 @@ const SERIES: RateSeries = {
 };
 
 function turnContext(): ChatAgentToolContext {
-  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1' };
+  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1', deps };
 }
 
 function newsService(overrides: Record<string, unknown> = {}) {

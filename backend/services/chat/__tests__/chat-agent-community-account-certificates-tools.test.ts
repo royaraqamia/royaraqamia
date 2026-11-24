@@ -9,12 +9,8 @@ import {
   setPostLikeHandler,
 } from '@/backend/services/mcp/tools/blogpress';
 import { getProfileHandler, updateProfileHandler } from '@/backend/services/mcp/tools/profile';
-import {
-  createCertificatesRepository,
-  verifyCertificateByCode,
-} from '@/backend/config/certificates';
-import { createPostsRepository } from '@/backend/config/blogpress';
 import { chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
+import { toolsDepsFor } from '@/backend/services/chat/__tests__/support/tools-deps';
 
 /**
  * The last three product packs of phase 3 (issue #1433). The turn and the MCP
@@ -37,15 +33,20 @@ vi.mock('@/backend/services/mcp/tools/profile', () => ({
   updateProfileHandler: vi.fn(),
 }));
 
-vi.mock('@/backend/config/certificates', () => ({
-  createCertificatesRepository: vi.fn(),
-  verifyCertificateByCode: vi.fn(),
-}));
-
-vi.mock('@/backend/config/blogpress', () => ({ createPostsRepository: vi.fn() }));
+// Product-service fakes, handed to the catalogue through `ChatAgentToolsDeps`.
+const createCertificatesRepository = vi.fn();
+const verifyCertificateByCode = vi.fn();
+const createPostsRepository = vi.fn();
+const deps = toolsDepsFor({
+  certificates: {
+    createRepository: createCertificatesRepository,
+    verifyByCode: verifyCertificateByCode,
+  },
+  posts: { createRepository: createPostsRepository },
+});
 
 function turnContext(): ChatAgentToolContext {
-  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1' };
+  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1', deps };
 }
 
 function answer(value: Record<string, unknown>) {

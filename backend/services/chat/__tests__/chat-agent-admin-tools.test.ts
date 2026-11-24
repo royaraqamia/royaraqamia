@@ -5,9 +5,11 @@ import type { ChatAgentActionRepository } from '@/backend/repositories/chat/chat
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import {
   chatAgentTool,
+  chatAgentTools,
   chatAgentToolDefinitionsForTurn,
   type ChatAgentToolContext,
 } from '@/backend/services/chat/chat-agent-tools';
+import { toolsDepsFor } from '@/backend/services/chat/__tests__/support/tools-deps';
 import { MissingScopeError } from '@/backend/services/mcp/tools/guards';
 import {
   ADMIN_AGENT_TOOL_NAMES,
@@ -15,18 +17,17 @@ import {
 } from '@/shared/contracts/chat-agent-actions';
 
 const adminUsers = vi.hoisted(() => ({ list: vi.fn() }));
-vi.mock('@/backend/config/users', () => ({
-  createAdminUsersService: () => ({ list: adminUsers.list }),
-  createProfileService: () => ({}),
-}));
-
 const reports = vi.hoisted(() => ({ list: vi.fn(), decide: vi.fn() }));
-vi.mock('@/backend/config/chat-reports', () => ({
-  createDefaultChatReportsAdminService: () => ({
-    list: reports.list,
-    decide: reports.decide,
-  }),
-}));
+
+/** Fakes handed to the tools through their deps, not through a module mock. */
+const deps = toolsDepsFor({
+  users: {
+    createAdminService: () => ({ list: adminUsers.list }) as never,
+  },
+  chatReports: {
+    createAdminService: () => ({ list: reports.list, decide: reports.decide }),
+  },
+});
 
 const ADMIN_ID = 'admin-1';
 
@@ -43,7 +44,7 @@ function session(user: { id: string; email: string } | null) {
 }
 
 function context(email = 'admin@example.com', id = ADMIN_ID): ChatAgentToolContext {
-  return { userId: id, supabase: session({ id, email }), ip: '127.0.0.1' };
+  return { userId: id, supabase: session({ id, email }), ip: '127.0.0.1', deps };
 }
 
 const memberContext = () => context('member@example.com', 'member-1');
@@ -94,6 +95,7 @@ describe('the admin capabilities (#1435, ADR-0180 decision 10)', () => {
       userId: ADMIN_ID,
       supabase: session({ id: 'someone-else', email: 'admin@example.com' }),
       ip: '127.0.0.1',
+      deps,
     } satisfies ChatAgentToolContext;
 
     await expect(tool!.run({}, borrowed)).rejects.toBeInstanceOf(MissingScopeError);
@@ -171,7 +173,7 @@ describe('the admin capabilities (#1435, ADR-0180 decision 10)', () => {
         chats: {
           getThread: vi.fn(async () => ({ kind: 'agent' })),
         } as unknown as ChatService,
-        resolveTool: (name) => chatAgentTool(name),
+        resolveTool: (name) => chatAgentTools(deps).find((tool) => tool.name === name) ?? null,
         reserveAppCall: vi.fn(),
       });
     }

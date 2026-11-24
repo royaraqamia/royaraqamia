@@ -14,10 +14,12 @@ import {
 } from '@/backend/services/chat/document-text';
 import {
   chatAgentTool,
+  chatAgentTools,
   chatAgentToolDefinitionsForTurn,
   turnIsAdmin,
   type ChatAgentTool,
 } from '@/backend/services/chat/chat-agent-tools';
+import type { ChatAgentToolsDeps } from '@/backend/services/chat/chat-agent-tools-deps';
 import {
   appToolDefinition,
   planAppTools,
@@ -432,6 +434,12 @@ export interface ChatAgentServiceDeps {
   /** The registry, overridable so a test can pin the loop without a service. */
   resolveTool?: (name: string) => ChatAgentTool | null;
   /**
+   * The product services the first-party tools call, assembled by the container
+   * (#1804). Bound to the catalogue once here so a tool never reaches for the
+   * container itself. Absent in a test that supplies its own `resolveTool`.
+   */
+  toolsDeps?: ChatAgentToolsDeps;
+  /**
    * The apps the member connected (ADR-0155, phase 4 / #1225). Absent in a
    * deployment without the marketplace, and the turn then carries the 21 tools
    * we own and nothing else.
@@ -486,7 +494,11 @@ export class ChatAgentService {
 
   /** The tool registry, unless a test pinned its own. */
   private toolOf(name: string): ChatAgentTool | null {
-    return (this.deps.resolveTool ?? chatAgentTool)(name);
+    if (this.deps.resolveTool) return this.deps.resolveTool(name);
+    if (this.deps.toolsDeps) {
+      return chatAgentTools(this.deps.toolsDeps).find((tool) => tool.name === name) ?? null;
+    }
+    return chatAgentTool(name);
   }
 
   /**

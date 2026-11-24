@@ -1,4 +1,4 @@
-import { chatAgentTools } from '@/backend/services/chat/chat-agent-tools';
+import { chatAgentToolDeclarations } from '@/backend/services/chat/chat-agent-tools';
 import { mcpCapabilities } from '@/backend/services/tools/mcp-capabilities';
 
 /**
@@ -102,7 +102,7 @@ export function agentCapabilities(): Capability[] {
       .map((entry) => [entry.id, entry.mcpName])
   );
 
-  return chatAgentTools().map((tool) => {
+  return chatAgentToolDeclarations().map((tool) => {
     const capabilityName = tool.capabilityName ?? tool.name;
     const id = capabilityId(tool.product, capabilityName);
     return {

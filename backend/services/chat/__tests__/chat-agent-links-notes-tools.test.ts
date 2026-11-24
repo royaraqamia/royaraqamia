@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { chatAgentTool, type ChatAgentToolContext } from '@/backend/services/chat/chat-agent-tools';
+import { toolsDepsFor } from '@/backend/services/chat/__tests__/support/tools-deps';
 import {
   createLinkHandler,
   deleteLinkHandler,
@@ -8,9 +9,6 @@ import {
   listLinksHandler,
   updateLinkHandler,
 } from '@/backend/services/mcp/tools/linksnap';
-import { createNotesService } from '@/backend/config/notes';
-import { createPlanGate } from '@/backend/config/plans';
-import { resolveOrigin } from '@/backend/config/origin';
 import { CHAT_AGENT_TOOLS, chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
 import type { Note } from '@/shared/contracts/notes';
 
@@ -33,19 +31,19 @@ vi.mock('@/backend/services/mcp/tools/linksnap', () => ({
   deleteLinkHandler: vi.fn(),
 }));
 
-vi.mock('@/backend/config/notes', () => ({ createNotesService: vi.fn() }));
+// Product-service fakes, handed to the catalogue through `ChatAgentToolsDeps`.
+const createNotesService = vi.fn();
+const createPlanGate = vi.fn();
+const resolveOrigin = vi.fn(() => 'https://royaraqamia.com');
 
-vi.mock('@/backend/config/plans', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/backend/config/plans')>();
-  return { ...actual, createPlanGate: vi.fn() };
+const deps = toolsDepsFor({
+  notes: { createService: createNotesService },
+  plans: { createPlanGate },
+  origin: resolveOrigin,
 });
 
-vi.mock('@/backend/config/origin', () => ({
-  resolveOrigin: vi.fn(() => 'https://royaraqamia.com'),
-}));
-
 function turnContext(): ChatAgentToolContext {
-  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1' };
+  return { userId: 'user-1', supabase: {} as never, ip: '127.0.0.1', deps };
 }
 
 function answer(value: Record<string, unknown>) {

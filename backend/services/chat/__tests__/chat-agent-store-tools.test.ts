@@ -5,6 +5,7 @@ import {
   chatAgentToolDefinitions,
   type ChatAgentToolContext,
 } from '@/backend/services/chat/chat-agent-tools';
+import { toolsDepsFor } from '@/backend/services/chat/__tests__/support/tools-deps';
 import type { McpAppTool } from '@/backend/services/mcp/marketplace/app-tools-service';
 import { CHAT_AGENT_TOOLS, chatAgentActionSentence } from '@/shared/contracts/chat-agent-actions';
 import type { McpConnection } from '@/shared/contracts/mcp-marketplace';
@@ -23,20 +24,23 @@ const store = vi.hoisted(() => ({
   search: vi.fn(),
 }));
 
-vi.mock('@/backend/config/mcp', () => ({
-  createDefaultMcpConnectionService: () => ({
-    list: store.list,
-    update: store.update,
-    disconnect: store.disconnect,
-  }),
-  createDefaultMcpConnectService: () => ({ start: store.start }),
-  createDefaultMcpAppToolsService: () => ({ catalog: store.catalog }),
-  createDefaultMcpCatalogService: () => ({ search: store.search }),
-  mcpCallbackUrl: () => 'https://example.test/mcp/callback',
-}));
+const deps = toolsDepsFor({
+  mcp: {
+    createConnectionService: () =>
+      ({
+        list: store.list,
+        update: store.update,
+        disconnect: store.disconnect,
+      }) as never,
+    createConnectService: () => ({ start: store.start }) as never,
+    createAppToolsService: () => ({ catalog: store.catalog }) as never,
+    createCatalogService: () => ({ search: store.search }) as never,
+    callbackUrl: () => 'https://example.test/mcp/callback',
+  },
+});
 
 function context(): ChatAgentToolContext {
-  return { userId: 'member-1', supabase: {} as never, ip: '127.0.0.1' };
+  return { userId: 'member-1', supabase: {} as never, ip: '127.0.0.1', deps };
 }
 
 function connection(patch: Partial<McpConnection> = {}): McpConnection {
