@@ -15,6 +15,10 @@
       "anon": [],
       "authenticated": ["INSERT", "SELECT", "UPDATE"]
     },
+    "agent_tool_grants": {
+      "anon": [],
+      "authenticated": ["SELECT", "UPDATE"]
+    },
     "analytics_events": {
       "anon": ["SELECT"],
       "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
