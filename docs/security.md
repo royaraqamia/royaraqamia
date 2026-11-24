@@ -60,10 +60,12 @@ keystore secrets below.
   silently removing an auth or brute-force ceiling. The live ceiling probe belongs in the audit run
   (issue #1666).
 - Least-privilege grants alongside RLS: policies choose rows, grants decide whether a role reaches
-  the object at all. New `public` objects get no implicit grant for `anon`/`authenticated`, and the
-  two public roles hold no TRUNCATE, REFERENCES, TRIGGER or MAINTAIN on existing tables. Writes a
-  client must not perform stay behind a SECURITY DEFINER RPC. `pg_net` stays in `public` because it
-  is not relocatable, but its `net.*` functions have no PUBLIC EXECUTE (#1741).
+  the object at all. New `public` objects get no implicit grant for `anon`/`authenticated`, neither
+  public role holds TRUNCATE, REFERENCES, TRIGGER or MAINTAIN, and `anon` holds no write grant.
+  `security/grant-baseline.json` is generated from the live ACL; `npm run check:grants` keeps this
+  claim true (#1823). Writes a client must not perform stay behind a SECURITY DEFINER RPC. `pg_net`
+  stays in `public` because it is not relocatable, but its `net.*` functions have no PUBLIC EXECUTE
+  (#1741).
 - Strict TS config (`noUncheckedIndexedAccess`, `noImplicitReturns`, `noUnusedLocals/Parameters`)
 - Keep DB/SDK/3rd-party off the UI boundary
 

@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "source": "information_schema.role_table_grants",
+  "schema": "public",
+  "relations": {
+    "agent_memories": {
+      "anon": [],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "agent_memory_embeddings_1024": {
+      "anon": [],
+      "authenticated": ["SELECT"]
+    },
+    "agent_memory_settings": {
+      "anon": [],
+      "authenticated": ["INSERT", "SELECT", "UPDATE"]
+    },
+    "analytics_events": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "availability_slots": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "blocks": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "budgets": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "categories": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "certificates": {
+      "anon": [],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "chat_agent_actions": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "chat_attachments": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "chat_conversations": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "chat_messages": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "chat_participants": {
+      "anon": ["SELECT"],
+      "authenticated": ["INSERT", "SELECT", "UPDATE"]
+    },
+    "chat_reports": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "community_categories": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "community_tags": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "consultation_packages": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "device_push_tokens": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "expense_splits": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "expenses": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "following_feed": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "follows": {
+      "anon": [],
+      "authenticated": ["SELECT"]
+    },
+    "habit_logs": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "habits": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "home_services": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "mcp_catalog_latest_verifications": {
+      "anon": [],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "mcp_catalog_verification_events": {
+      "anon": [],
+      "authenticated": ["SELECT"]
+    },
+    "news_digests": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "news_source_preferences": {
+      "anon": [],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "news_source_requests": {
+      "anon": [],
+      "authenticated": ["DELETE", "INSERT", "SELECT"]
+    },
+    "news_sources": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "news_stories": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "news_user_digests": {
+      "anon": [],
+      "authenticated": ["SELECT"]
+    },
+    "news_user_sources": {
+      "anon": [],
+      "authenticated": ["DELETE", "SELECT"]
+    },
+    "news_user_stories": {
+      "anon": [],
+      "authenticated": ["SELECT"]
+    },
+    "notes": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "notifications": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "plan_limits": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "plan_quotas": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "plan_settings": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "post_categories": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "post_comment_reports": {
+      "anon": [],
+      "authenticated": ["SELECT"]
+    },
+    "post_comments": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "post_likes": {
+      "anon": [],
+      "authenticated": ["SELECT"]
+    },
+    "post_tags": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "posts": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "push_subscriptions": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "quran_bookmarks": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "quran_reading_positions": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "rate_snapshots": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "recurring_expenses": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "scan_history": {
+      "anon": [],
+      "authenticated": ["DELETE", "SELECT"]
+    },
+    "short_links": {
+      "anon": [],
+      "authenticated": ["SELECT"]
+    },
+    "usage_limits": {
+      "anon": ["SELECT"],
+      "authenticated": ["SELECT"]
+    },
+    "user_settings": {
+      "anon": ["SELECT"],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
+    "users": {
+      "anon": [],
+      "authenticated": ["SELECT"]
+    }
+  }
+}
