@@ -23,6 +23,13 @@ export const McpConnectedAppPayloadSchema = z.object({
   connectedAt: z.string(),
   /** Last time the client used the grant, or `null` when it never has. */
   lastUsedAt: z.string().nullable(),
+  /**
+   * The scopes the client can still exercise, sorted for a stable display.
+   * Optional only so a payload cached before this field existed
+   * still decodes (the site's inbound cache and the app's generated contract);
+   * the service always fills it (#1437).
+   */
+  scopes: z.array(z.string()).optional(),
 });
 
 export type McpConnectedApp = z.infer<typeof McpConnectedAppPayloadSchema>;

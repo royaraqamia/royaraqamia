@@ -22,9 +22,11 @@ import {
   createDefaultMcpCatalogService,
   createDefaultMcpConnectService,
   createDefaultMcpConnectionService,
+  createDefaultMcpConnectedAppService,
   mcpCallbackUrl,
 } from '@/backend/config/mcp';
 import type { McpConnection } from '@/shared/contracts/mcp-marketplace';
+import type { McpConnectedApp } from '@/shared/contracts/mcp-connected-apps';
 import { createDefaultChatReportsAdminService } from '@/backend/config/chat-reports';
 import { isAdmin as isAdminEmail } from '@/backend/shared/admin-validator';
 import { env } from '@/backend/config/env';
@@ -619,6 +621,43 @@ async function storeRegistryName(name: string): Promise<string | null> {
       .some((value) => value.trim().toLocaleLowerCase() === wanted)
   );
   return match?.registryName ?? null;
+}
+
+/**
+ * The inbound clients' hands (issue #1437). Like the store's, they address a
+ * grant by the name the member reads, never by an id or a credential. Strict,
+ * so a token, a refresh token or a client secret cannot be smuggled into a
+ * revoke any more than it can be returned from a list.
+ */
+const InboundClientArgs = z.strictObject({
+  name: z.string().trim().min(1, 'اسم العميل مطلوب').max(200),
+});
+
+/**
+ * The member's own grant by its displayed name. The lookup goes through the
+ * same service the apps sheet's inbound tab reads, so the tool can only name
+ * a grant the member can see there. Two clients with one name are refused
+ * rather than picked arbitrarily on a destructive card, and a client whose
+ * registration was pruned has no name to type and cannot be revoked here.
+ */
+async function inboundClientNamed(
+  userId: string,
+  name: string
+): Promise<{ app: McpConnectedApp } | { error: string }> {
+  const wanted = name.trim().toLocaleLowerCase();
+  const matches = (await createDefaultMcpConnectedAppService().list(userId)).filter((app) =>
+    typeof app.clientName === 'string'
+      ? app.clientName.trim().toLocaleLowerCase() === wanted
+      : false
+  );
+  const app = matches[0];
+  if (!app) return { error: 'لم أجد عميلاً متصلاً بهذا الاسم.' };
+  if (matches.length > 1) {
+    return {
+      error: 'يوجد أكثر من عميل متصل بهذا الاسم. استخدم الاسم المعروض في تبويب العملاء الواردين.',
+    };
+  }
+  return { app };
 }
 
 /**
@@ -2632,6 +2671,55 @@ const tools: ChatAgentTool[] = [
       }
       await createDefaultMcpConnectionService().disconnect(context.userId, found.connection.id);
       return { app: shown, revoked: true };
+    },
+  },
+  // --- the inbound MCP clients ---------------------------------------------
+  // The apps sheet's third tab, from the thread (#1437). The list is the very
+  // one that tab draws, read through the same service; the revoke is the same
+  // disconnect the tab's button calls. No hand creates a grant, changes a
+  // scope, or returns a token, a refresh token or a client secret.
+  {
+    name: 'list_inbound_clients',
+    kind: 'read',
+    product: 'mcp-store',
+    tier: 0,
+    description:
+      'العملاء الذين يمنحهم العضو صلاحية الوصول إلى حسابه عبر خادمنا، باسم كل عميل ونطاقاته وآخر استخدام له. استخدمها حين يسأل من المتصل بحسابه أو ما الصلاحيات الممنوحة. تُعيد الأسماء والنطاقات والأوقات فقط، بلا رموز أو بيانات اعتماد.',
+    schema: NoArgs,
+    async run(_args, context) {
+      const apps = await createDefaultMcpConnectedAppService().list(context.userId);
+      return {
+        clients: apps.map((app) => ({
+          name: app.clientName,
+          scopes: app.scopes ?? [],
+          last_used_at: app.lastUsedAt,
+          connected_at: app.connectedAt,
+        })),
+        total: apps.length,
+      };
+    },
+  },
+  {
+    name: 'revoke_inbound_client',
+    kind: 'write',
+    product: 'mcp-store',
+    tier: 3,
+    description:
+      'سحب صلاحية عميل متصل بحساب العضو نهائياً، فيصبح أي طلب جديد منه مرفوضاً. إجراء مدمّر لا رجوع فيه؛ بطاقته تسمّي العميل، ويجب أن يطابق الاسم المكتوب الاسم المعروض بالضبط. استخدمها لسحب صلاحية عميل وارد، لا لإيقاف تطبيق من المتجر.',
+    schema: InboundClientArgs,
+    async run(args, context) {
+      const input = InboundClientArgs.parse(args);
+      const found = await inboundClientNamed(context.userId, input.name);
+      if ('error' in found) return found;
+      const shown = found.app.clientName;
+      if (!shown) return { error: 'هذا العميل بلا اسم، فلا يمكن سحب صلاحيته بالاسم.' };
+      // The typed target of a tier-3 card (ADR-0180, decision 5): the name the
+      // member confirms must be the very client whose grant will be revoked.
+      if (input.name.toLocaleLowerCase() !== shown.toLocaleLowerCase()) {
+        return { error: 'اسم العميل غير مطابق.' };
+      }
+      await createDefaultMcpConnectedAppService().disconnect(context.userId, found.app.clientId);
+      return { client: shown, revoked: true };
     },
   },
   // --- admin ---------------------------------------------------------------
