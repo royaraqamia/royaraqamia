@@ -49,6 +49,14 @@
        class string and in Kotlin (issue #1648).
      */
     --placeholder: 0 0% 52%;
+    /*
+       The relative time in a row or a thread: one step lighter than --placeholder
+       so it clears 4.5:1 on the lighter --card (5.03:1) and on an unread row's
+       tinted surface (4.73:1), not just on --background (5.41:1). Opaque for the
+       same reason as --placeholder — one value the site and the app read, never an
+       alpha composed onto muted-foreground in a class string (issue #1833).
+     */
+    --metadata: 0 0% 54%;
     --accent: 240 6% 16%;
     --accent-foreground: 0 0% 96%;
     --destructive: 0 84.2% 60.2%;

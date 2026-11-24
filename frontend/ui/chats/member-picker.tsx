@@ -67,7 +67,7 @@ export function MemberPicker({
           aria-label={copy.searchLabel}
           autoComplete="off"
           spellCheck={false}
-          className="min-w-0 flex-1 rounded bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+          className="min-w-0 flex-1 rounded bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-metadata focus-visible:ring-2 focus-visible:ring-primary/40"
         />
         {onClose && (
           <button

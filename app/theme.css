@@ -17,6 +17,9 @@
   /* The search hint: an opaque token, so the AA ratio is one value in both
      clients rather than an alpha copied into four class strings (issue #1648). */
   --color-placeholder: hsl(var(--placeholder));
+  /* The relative-time line: opaque, like the hint, so its AA ratio holds on the
+     card as well as the page and both clients read one value (issue #1833). */
+  --color-metadata: hsl(var(--metadata));
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
   --color-destructive: hsl(var(--destructive));

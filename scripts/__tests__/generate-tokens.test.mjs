@@ -221,6 +221,43 @@ describe('the search hint', () => {
   });
 });
 
+describe('the metadata line', () => {
+  const channels = (hsl) => {
+    const argb = hslToArgbValue(hsl);
+    return [(argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff];
+  };
+
+  const luminance = ([red, green, blue]) => {
+    const linear = (value) => {
+      const c = value / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
+  };
+
+  const contrast = (foreground, background) => {
+    const [light, dark] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+    return (light + 0.05) / (dark + 0.05);
+  };
+
+  it('is generated for both clients, not just the stylesheet', () => {
+    expect(declarations(renderCss(tokens)).get('--metadata')).toBe(tokens.color.metadata);
+    expect(renderKotlin(tokens)).toContain(
+      `const val metadata: Long = ${hslToArgb(tokens.color.metadata)}`
+    );
+    expect(renderThemeColors(tokens)).toContain(
+      'val metadata = Color(DesignTokens.Colors.metadata.toInt())'
+    );
+  });
+
+  it('clears AA against the card and the page', () => {
+    const time = channels(tokens.color.metadata);
+    for (const surface of ['background', 'card', 'popover']) {
+      expect(contrast(time, channels(tokens.color[surface])), surface).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
 describe('renderCss', () => {
   const css = renderCss(tokens);
 

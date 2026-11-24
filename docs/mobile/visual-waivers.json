@@ -70,8 +70,8 @@
     },
     {
       "surface": "notifications",
-      "reason": "The web change only touches rows of the new `post_published` type: a screen-reader-only press label and that type's icon. The recorded Alerts states seed existing types, so no recorded row draws the new label or glyph, and every box, colour and visible word stays the same. The type's press and destination are asserted in the notification-target and notifications-view tests in #1752.",
-      "issue": "#1752",
+      "reason": "The web change adds a screen-reader-only press label and the icon for the `post_published` type (#1752), and now paints the relative-time line with the opaque --metadata token instead of an alpha composed onto muted-foreground (#1833). The recorded Alerts states seed existing types, so no recorded row draws the new label or glyph; the time keeps its 11px and the contract records boxes, font and radius but not colour, so no recorded number or visible word moves. The type's press and destination are asserted in the notification-target and notifications-view tests.",
+      "issue": "#1833",
       "until": "2026-12-22"
     },
     {

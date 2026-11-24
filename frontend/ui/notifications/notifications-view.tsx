@@ -359,9 +359,13 @@ function NotificationRow({ notification, onMarkRead, onDelete }: NotificationRow
           </p>
         )}
 
+        {/*
+          Only the colour moves: this line's 11px is recorded in the gated app
+          pair, so a size step needs a native re-record rather than a web edit.
+        */}
         <p
           data-visual="notification-time"
-          className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-muted-foreground/60"
+          className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-metadata"
         >
           {notificationsTimeAgo(notification.created_at)}
         </p>
