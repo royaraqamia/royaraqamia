@@ -407,10 +407,11 @@ public class MainActivity extends BridgeActivity {
     }
 
     /**
-     * Exposes `RoyShellUpdate.required()` to the page (#503).
+     * Exposes `RoyShellUpdate.required()` and `.offer()` to the page (#503).
      *
      * An owned API below the supported floor answers `426`; the page's transport
-     * cannot reach native code, so it passes the floor here. Like the sync bridge,
+     * cannot reach native code, so it passes the floor here. The account checker
+     * calls `offer()` with no floor when it finds a release. Like the sync bridge,
      * this is a plain WebView interface rather than a Capacitor plugin, because the
      * plugin bridge is exactly what this path cannot assume.
      *
@@ -425,7 +426,7 @@ public class MainActivity extends BridgeActivity {
         if (webView == null) return;
 
         webView.addJavascriptInterface(
-            new ShellUpdateBridge(this::requireUpdate),
+            new ShellUpdateBridge(this::requireUpdate, this::offerUpdate),
             ShellUpdateBridge.NAME
         );
     }
@@ -434,6 +435,24 @@ public class MainActivity extends BridgeActivity {
     private void requireUpdate(int minimumVersionCode) {
         if (minimumVersionCode <= 0) return;
         ShellUpdateChannel.require(minimumVersionCode);
+        bringShellForward();
+    }
+
+    /**
+     * The account checker asked for the update offer (#503).
+     *
+     * No floor is published: the checker only found a release, and the shell still
+     * reads its own manifest before deciding what card — if any — it can draw.
+     * Bringing the frame forward is necessary because the document is on top, and
+     * the card the shell draws is its own.
+     */
+    private void offerUpdate() {
+        ShellUpdateChannel.requestOffer();
+        bringShellForward();
+    }
+
+    /** Returns to the shell frame, which owns the update card. */
+    private void bringShellForward() {
         startActivity(
             new Intent(this, ShellActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP)

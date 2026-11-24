@@ -827,6 +827,13 @@ class ShellActivity : ComponentActivity() {
                     update.requireUpdate(ShellUpdateChannel.floor)
                 }
 
+                // The account checker asked for the offer (#503). No floor travels
+                // with the request: the shell re-reads its own manifest, so a page
+                // can neither force the update nor name the APK it would install.
+                LaunchedEffect(ShellUpdateChannel.offerRequests) {
+                    if (ShellUpdateChannel.offerRequests > 0L) update.maybeCheck(true)
+                }
+
                 // An update the user has to answer is the one screen the frame still
                 // owns (#872, #652): the document is on top, so the frame is brought
                 // forward to be seen at all, and answering the card hands the

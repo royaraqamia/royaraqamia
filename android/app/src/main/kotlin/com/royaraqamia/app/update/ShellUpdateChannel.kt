@@ -5,7 +5,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 /**
- * The one floor the app has been told about (#503, #652).
+ * What the page has told the shell about updates (#503, #652).
+ *
+ * The floor is the server's word; the offer request is the member's own tap on
+ * the account checker. Neither draws a card — the shell re-reads its manifest for
+ * that — but both have to reach the frame from a WebView interface thread.
  *
  * Two servers say "this build is too old", and only one of them has a view:
  *
@@ -31,6 +35,15 @@ object ShellUpdateChannel {
         private set
 
     /**
+     * How many times the page has asked for the dismissable offer, or 0 while it
+     * never has. A counter rather than a flag so a second tap is a second request
+     * even though the first one is still remembered; the frame observes it and
+     * re-reads its manifest, the same way it observes [floor].
+     */
+    var offerRequests: Long by mutableStateOf(0L)
+        private set
+
+    /**
      * Records the floor a server stated. `0` — what a browser-side caller sends
      * when it has no number — is not a floor and changes nothing.
      */
@@ -38,5 +51,14 @@ object ShellUpdateChannel {
     fun require(minimumVersionCode: Int) {
         if (minimumVersionCode <= 0) return
         if (minimumVersionCode > floor) floor = minimumVersionCode
+    }
+
+    /**
+     * The account checker asked for the offer. No number is involved: the shell
+     * still reads its own manifest, and a page cannot raise the floor by asking.
+     */
+    @JvmStatic
+    fun requestOffer() {
+        offerRequests++
     }
 }

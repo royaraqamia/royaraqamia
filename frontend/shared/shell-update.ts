@@ -220,6 +220,11 @@ export function observeShellUpdate(): () => void {
   return () => {};
 }
 
+type ShellUpdateBridgeGlobal = {
+  required?: (code: number) => void;
+  offer?: () => void;
+};
+
 /**
  * Hands a typed `426` to the shell's own update dialog (#503).
  *
@@ -232,8 +237,7 @@ export function observeShellUpdate(): () => void {
  * error the caller throws.
  */
 export function requestAppUpdate(minimumVersionCode = 0): boolean {
-  const shell = (globalThis as { RoyShellUpdate?: { required?: (code: number) => void } })
-    .RoyShellUpdate;
+  const shell = (globalThis as { RoyShellUpdate?: ShellUpdateBridgeGlobal }).RoyShellUpdate;
   if (typeof shell?.required !== 'function') return false;
 
   try {
@@ -243,6 +247,28 @@ export function requestAppUpdate(minimumVersionCode = 0): boolean {
     return true;
   } catch (error) {
     logger.warn('Failed to ask the shell to show its update card', { error: String(error) });
+    return false;
+  }
+}
+
+/**
+ * Asks the shell for the dismissable update offer it already knows about (#503).
+ *
+ * This carries no floor and no APK details: the shell re-reads its own manifest
+ * and draws the offer, so a page can neither turn an offer into a forced update
+ * nor hand the installer a URL of its choosing. A browser — or a WebView whose
+ * injected interface this old, has never heard of `offer()` — gets `false`, and
+ * the caller keeps its inline notice.
+ */
+export function requestAppUpdateOffer(): boolean {
+  const shell = (globalThis as { RoyShellUpdate?: ShellUpdateBridgeGlobal }).RoyShellUpdate;
+  if (typeof shell?.offer !== 'function') return false;
+
+  try {
+    shell.offer();
+    return true;
+  } catch (error) {
+    logger.warn('Failed to ask the shell for the update offer', { error: String(error) });
     return false;
   }
 }

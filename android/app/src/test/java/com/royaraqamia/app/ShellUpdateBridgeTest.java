@@ -1,6 +1,7 @@
 package com.royaraqamia.app;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -19,10 +20,20 @@ public class ShellUpdateBridgeTest {
     @Test
     public void theServerFloorReachesTheNativeCard() {
         int[] received = {0};
-        ShellUpdateBridge bridge = new ShellUpdateBridge(code -> received[0] = code);
+        ShellUpdateBridge bridge = new ShellUpdateBridge(code -> received[0] = code, () -> {});
 
         bridge.required(20042);
 
         assertEquals(20042, received[0]);
+    }
+
+    @Test
+    public void theAccountCheckerAsksForAnOfferWithoutAFloor() {
+        boolean[] offered = {false};
+        ShellUpdateBridge bridge = new ShellUpdateBridge(code -> {}, () -> offered[0] = true);
+
+        bridge.offer();
+
+        assertTrue(offered[0]);
     }
 }

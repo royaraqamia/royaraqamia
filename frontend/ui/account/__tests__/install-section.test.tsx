@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => ({
     promptInstall: vi.fn(async () => true),
   },
   manifest: null as unknown,
+  offer: vi.fn(),
 }));
 
 vi.mock('@/frontend/ui/PWAProvider', () => ({
@@ -180,6 +181,14 @@ describe('InstallSection on iOS', () => {
 describe('InstallSection inside the Android shell', () => {
   beforeEach(() => {
     setDevice(SHELL_UA);
+    Object.defineProperty(globalThis, 'RoyShellUpdate', {
+      value: { offer: mocks.offer },
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, 'RoyShellUpdate');
   });
 
   it('names the installed version under the check', async () => {
@@ -198,21 +207,35 @@ describe('InstallSection inside the Android shell', () => {
     expect(screen.queryByText(/تنزيل تطبيق الأندرويد/)).not.toBeInTheDocument();
   });
 
-  it('reports a published APK newer than the one it is running', async () => {
+  it('opens the shell’s offer when a newer APK is published', async () => {
+    render(<InstallSection />);
+    fireEvent.click(await screen.findByRole('button', { name: 'التَّحقُّق من وجود تحديث' }));
+
+    expect(await screen.findByText('يتوفَّر تحديث جديد')).toBeInTheDocument();
+    expect(mocks.offer).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the reopen notice when the shell cannot show the card', async () => {
+    Object.defineProperty(globalThis, 'RoyShellUpdate', {
+      value: {},
+      configurable: true,
+    });
     render(<InstallSection />);
     fireEvent.click(await screen.findByRole('button', { name: 'التَّحقُّق من وجود تحديث' }));
 
     expect(
       await screen.findByText('يتوفَّر تحديث جديد — سيُعرَض عليك عند إعادة فتح التَّطبيق.')
     ).toBeInTheDocument();
+    expect(mocks.offer).not.toHaveBeenCalled();
   });
 
-  it('reports being current', async () => {
+  it('reports being current without asking for a card', async () => {
     mocks.manifest = { ...manifest, versionCode: 20000 };
     render(<InstallSection />);
     fireEvent.click(await screen.findByRole('button', { name: 'التَّحقُّق من وجود تحديث' }));
 
     expect(await screen.findByText('أنت على أحدث إصدار.')).toBeInTheDocument();
+    expect(mocks.offer).not.toHaveBeenCalled();
   });
 
   it('says so when the manifest cannot be read', async () => {
@@ -221,5 +244,6 @@ describe('InstallSection inside the Android shell', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'التَّحقُّق من وجود تحديث' }));
 
     expect(await screen.findByText('تعذَّر التَّحقُّق من التَّحديث. حاول مرَّة أخرى.')).toBeInTheDocument();
+    expect(mocks.offer).not.toHaveBeenCalled();
   });
 });
