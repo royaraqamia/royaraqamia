@@ -202,6 +202,11 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'connect_app',
   'disconnect_app',
   'revoke_app',
+  // The inbound MCP clients' hands (issue #1437): the third tab of the apps
+  // sheet, read through the same service and revoked through the same
+  // disconnect. Neither hand creates a grant nor changes a scope.
+  'list_inbound_clients',
+  'revoke_inbound_client',
   // The Admin Console's hands (ADR-0180, decision 10, #1435). They are declared
   // only inside a verified admin's own turn, and the executor re-reads `isAdmin`
   // from the session before one runs. Member lookup carries the hidden
@@ -417,6 +422,16 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
   connect_app: { kind: 'write', label: 'ربط تطبيق', activity: 'تربط تطبيقاً' },
   disconnect_app: { kind: 'write', label: 'فصل تطبيق', activity: 'تفصل تطبيقاً' },
   revoke_app: { kind: 'write', label: 'إلغاء ربط تطبيق', activity: 'تلغي ربط تطبيق' },
+  list_inbound_clients: {
+    kind: 'read',
+    label: 'قراءة العملاء المتصلين',
+    activity: 'تقرأ العملاء المتصلين',
+  },
+  revoke_inbound_client: {
+    kind: 'write',
+    label: 'سحب صلاحية عميل',
+    activity: 'تسحب صلاحية عميل',
+  },
   admin_list_members: {
     kind: 'read',
     label: 'البحث عن الأعضاء',
@@ -667,7 +682,8 @@ export function chatAgentActionSentence(
     // so nothing secret can be read off a proposal or its history.
     case 'connect_app':
     case 'disconnect_app':
-    case 'revoke_app': {
+    case 'revoke_app':
+    case 'revoke_inbound_client': {
       const app = text(values.name);
       return app ? `${label} — «${app.slice(0, 60)}»` : label;
     }

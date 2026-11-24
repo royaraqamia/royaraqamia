@@ -13,7 +13,7 @@ that reads `Turn + MCP` is the same operation reached two ways.
 a read is always tier 0 and runs inside the turn; a write is above it, and
 tier 2 or 3 is always a card. Every write's tier is in the table below.
 
-**91 capabilities** (49 read, 42 write): 83 declared by the turn, 42 by the MCP server.
+**93 capabilities** (50 read, 43 write): 85 declared by the turn, 42 by the MCP server.
 
 | Product | Reads | Writes | Turn | MCP |
 | --- | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | `consultations` | 2 | 2 | 4 | 0 |
 | `training` | 2 | 1 | 3 | 0 |
 | `client-work` | 1 | 1 | 2 | 0 |
-| `mcp-store` | 2 | 3 | 5 | 0 |
+| `mcp-store` | 3 | 4 | 7 | 0 |
 | `admin` | 2 | 1 | 3 | 0 |
 | `assistant` | 8 | 0 | 7 | 1 |
 
@@ -218,7 +218,7 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 
 ## `mcp-store`
 
-2 read, 3 write.
+3 read, 4 write.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
@@ -227,6 +227,8 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | `mcp-store.connect_app` | write | 2 | Turn |
 | `mcp-store.disconnect_app` | write | 2 | Turn |
 | `mcp-store.revoke_app` | write | 3 | Turn |
+| `mcp-store.list_inbound_clients` | read | 0 | Turn |
+| `mcp-store.revoke_inbound_client` | write | 3 | Turn |
 
 ## `admin`
 

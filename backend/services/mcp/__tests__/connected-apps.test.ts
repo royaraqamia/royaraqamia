@@ -25,6 +25,7 @@ const GRANT = {
   client_name: 'Claude Code',
   connected_at: '2026-09-01T10:00:00.000Z',
   last_used_at: '2026-10-13T10:00:00.000Z',
+  scopes: ['community.read', 'notes.read'],
 };
 
 describe('createMcpConnectedAppService.list', () => {
@@ -44,6 +45,7 @@ describe('createMcpConnectedAppService.list', () => {
         clientName: 'Claude Code',
         connectedAt: '2026-09-01T10:00:00.000Z',
         lastUsedAt: '2026-10-13T10:00:00.000Z',
+        scopes: ['community.read', 'notes.read'],
       },
     ]);
   });

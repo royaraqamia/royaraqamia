@@ -282,6 +282,7 @@ function makeGrantsClient(
       kind: 'access' | 'refresh';
       created_at: string;
       last_used_at: string | null;
+      scope?: string[] | null;
     }> | null;
     tokensError?: Error | null;
     clients?: Array<{ id: string; client_name: string | null }> | null;
@@ -320,7 +321,7 @@ describe('createMcpOAuthRepository.listUserGrants', () => {
 
     await createMcpOAuthRepository(client).listUserGrants('user-1', NOW);
 
-    expect(selectTokens).toHaveBeenCalledWith('client_id, kind, created_at, last_used_at');
+    expect(selectTokens).toHaveBeenCalledWith('client_id, kind, created_at, last_used_at, scope');
     // Both kinds in one read: the refresh row is the grant, the access row is
     // the only row that carries a use worth showing.
     expect(eq).toHaveBeenCalledTimes(1);
@@ -368,6 +369,7 @@ describe('createMcpOAuthRepository.listUserGrants', () => {
         connected_at: '2026-09-01T10:00:00Z',
         // The newest stamp on any live row; refresh rows are never stamped.
         last_used_at: '2026-10-13T10:00:00Z',
+        scopes: [],
       },
     ]);
     // The token rows carry the client's row id, so the name is keyed on `id`.
@@ -464,6 +466,48 @@ describe('createMcpOAuthRepository.listUserGrants', () => {
     const [grant] = await createMcpOAuthRepository(client).listUserGrants('user-1', NOW);
 
     expect(grant).toMatchObject({ client_id: 'client-1', client_name: null });
+  });
+
+  it('unions the scopes of every live row, sorted, with no token row in the answer', async () => {
+    const { client } = makeGrantsClient({
+      rows: [
+        {
+          client_id: 'client-1',
+          kind: 'refresh',
+          created_at: '2026-09-01T10:00:00Z',
+          last_used_at: null,
+          scope: ['read'],
+        },
+        {
+          client_id: 'client-1',
+          kind: 'refresh',
+          created_at: '2026-10-01T10:00:00Z',
+          last_used_at: null,
+          scope: ['admin', 'read'],
+        },
+        {
+          client_id: 'client-1',
+          kind: 'access',
+          created_at: '2026-10-13T10:00:00Z',
+          last_used_at: null,
+          scope: ['write'],
+        },
+      ],
+      clients: [{ id: 'client-1', client_name: 'Claude Code' }],
+    });
+
+    const [grant] = await createMcpOAuthRepository(client).listUserGrants('user-1', NOW);
+
+    // Both refresh rows left alive by re-consent count: the union is what the
+    // client can still exercise, and sorting keeps a displayed list stable.
+    expect(grant?.scopes).toEqual(['admin', 'read', 'write']);
+    expect(grant).toEqual({
+      client_id: 'client-1',
+      client_name: 'Claude Code',
+      connected_at: '2026-09-01T10:00:00Z',
+      last_used_at: null,
+      scopes: ['admin', 'read', 'write'],
+    });
   });
 
   it('skips the client lookup when the user has no live grants', async () => {

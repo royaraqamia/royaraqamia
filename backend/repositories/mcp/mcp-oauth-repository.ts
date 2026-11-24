@@ -72,6 +72,13 @@ export interface McpUserGrantRecord {
   client_name: string | null;
   connected_at: string;
   last_used_at: string | null;
+  /**
+   * The scopes the client can still exercise: the union over every live token
+   * row. A re-consent can leave an earlier refresh row alive, so the union —
+   * not one row's set — is what the grant actually permits today. Sorted, so a
+   * list a member reads is stable across calls.
+   */
+  scopes: string[];
 }
 
 /** The columns `listUserGrants` folds; the rest of a token row never leaves here. */
@@ -80,6 +87,7 @@ interface GrantRow {
   kind: 'access' | 'refresh';
   created_at: string;
   last_used_at: string | null;
+  scope: string[] | null;
 }
 
 const CLIENTS_TABLE = 'mcp_oauth_clients';
@@ -384,7 +392,7 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
     async listUserGrants(userId, now) {
       const { data, error } = await (supabase as any)
         .from(TOKENS_TABLE)
-        .select('client_id, kind, created_at, last_used_at')
+        .select('client_id, kind, created_at, last_used_at, scope')
         .eq('user_id', userId)
         .is('revoked_at', null)
         .gt('expires_at', now.toISOString());
@@ -491,6 +499,7 @@ function foldGrants(rows: GrantRow[]): McpUserGrantRecord[] {
         client_name: null,
         connected_at: row.created_at,
         last_used_at: null,
+        scopes: [],
       });
       continue;
     }
@@ -502,14 +511,23 @@ function foldGrants(rows: GrantRow[]): McpUserGrantRecord[] {
 
   for (const row of rows) {
     const grant = grants.get(row.client_id);
-    const usedAt = row.last_used_at;
-    if (!grant || usedAt === null) continue;
+    if (!grant) continue;
 
-    const best = grant.last_used_at;
-    if (best === null || Date.parse(usedAt) > Date.parse(best)) {
-      grant.last_used_at = usedAt;
+    const usedAt = row.last_used_at;
+    if (usedAt !== null) {
+      const best = grant.last_used_at;
+      if (best === null || Date.parse(usedAt) > Date.parse(best)) {
+        grant.last_used_at = usedAt;
+      }
+    }
+
+    for (const scope of row.scope ?? []) {
+      if (!grant.scopes.includes(scope)) grant.scopes.push(scope);
     }
   }
 
-  return [...grants.values()];
+  return [...grants.values()].map((grant) => ({
+    ...grant,
+    scopes: [...grant.scopes].sort(),
+  }));
 }

@@ -42,6 +42,7 @@ export function createMcpConnectedAppService(deps: McpConnectedAppsDeps): McpCon
           clientName: grant.client_name,
           connectedAt: grant.connected_at,
           lastUsedAt: grant.last_used_at,
+          scopes: grant.scopes,
         }))
         .sort(byMostRecentlyUsed);
     },

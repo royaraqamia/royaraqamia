@@ -19,6 +19,7 @@ data class McpConnectedAppListResultDataItem(
     val clientName: String?,
     val connectedAt: String,
     val lastUsedAt: String?,
+    val scopes: List<String>? = null,
 )
 
 @Serializable

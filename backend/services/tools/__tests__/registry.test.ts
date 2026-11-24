@@ -43,8 +43,9 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   training: 3,
   'client-work': 2,
   // #1436: two reads of the store, a consent-starting connect and a reversible
-  // disconnect at tier 2, and a typed-target revoke at tier 3.
-  'mcp-store': 5,
+  // disconnect at tier 2, and a typed-target revoke at tier 3. #1437 adds the
+  // inbound clients' read and typed-target revoke from the apps sheet's tab.
+  'mcp-store': 7,
   // #1435: member lookup and the report queue's read, plus its tier-2 decision.
   admin: 3,
   assistant: 7,
@@ -149,6 +150,7 @@ describe('the assistant door', () => {
       'delete_note',
       'delete_post',
       'revoke_app',
+      'revoke_inbound_client',
     ]);
   });
 
@@ -176,8 +178,28 @@ describe('the assistant door', () => {
       'connect_app',
       'disconnect_app',
       'revoke_app',
+      'revoke_inbound_client',
     ]);
     for (const entry of storeWrites) expect(toolIsGrantable(entry.tier)).toBe(false);
+  });
+
+  it('gives the store no hand that creates a grant or changes a scope', () => {
+    // #1437: the inbound tab is a read and a revoke, and nothing more. A tool
+    // that minted a grant or edited a scope would make the card's typed target
+    // meaningless, so the registry names exactly these seven and no others.
+    const store = capabilities.filter((entry) => entry.owner === 'mcp-store');
+    expect(store.map((entry) => entry.agentName).sort()).toEqual([
+      'connect_app',
+      'disconnect_app',
+      'list_app_tools',
+      'list_apps',
+      'list_inbound_clients',
+      'revoke_app',
+      'revoke_inbound_client',
+    ]);
+    for (const entry of store) {
+      expect(entry.agentName).not.toMatch(/grant|scope|permission/);
+    }
   });
 
   it('gives the turn every HabitFlow and SpendTrack capability the MCP door declares', () => {
