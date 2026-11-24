@@ -25,6 +25,7 @@ function makeRepository(overrides: Partial<PostEngagementRepository> = {}) {
     setLike: vi.fn(async () => ({ liked: true, likeCount: 7 })),
     listComments: vi.fn(async () => ({ rows: [], nextCursor: null, total: 0 })),
     authorsByIds: vi.fn(async () => ({})),
+    postAuthor: vi.fn(async () => OTHER_MEMBER),
     commentWriteGate: vi.fn(async () => 'ok' as const),
     getComment: vi.fn(async () => null),
     createComment: vi.fn(async () => ({
@@ -263,6 +264,18 @@ describe('PostEngagementService comment ownership', () => {
 
     await expect(service.deleteComment(VIEWER, 'c1')).rejects.toMatchObject({ status: 403 });
     expect(repository.deleteComment).not.toHaveBeenCalled();
+  });
+
+  it('lets the post author remove another member’s reply', async () => {
+    const repository = makeRepository({
+      getComment: vi.fn(async () => comment({ authorId: OTHER_MEMBER })),
+      postAuthor: vi.fn(async () => VIEWER),
+      deleteComment: vi.fn(async () => ({ postId: POST_ID, commentCount: 2 })),
+    });
+    const { service } = makeService(repository);
+
+    expect(await service.deleteComment(VIEWER, 'c1')).toEqual({ deleted: true, commentCount: 2 });
+    expect(repository.deleteComment).toHaveBeenCalledWith('c1', VIEWER);
   });
 
   it('answers the count the tombstone reported', async () => {

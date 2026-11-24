@@ -68,6 +68,8 @@ export interface PostEngagementRepository {
     pageSize: number,
     viewerId?: string | null
   ): Promise<PostCommentPage>;
+  /** The author of a post, for the host-removal check. */
+  postAuthor(postId: string): Promise<string | null>;
   /** The public identity of every author named by `ids`, in one read. */
   authorsByIds(ids: string[]): Promise<Record<string, PostCommentAuthorRow>>;
   /** The write gate the database also enforces: ok, unverified or blocked. */
@@ -289,6 +291,16 @@ export function createPostEngagementRepository(
     },
 
     listComments,
+
+    async postAuthor(postId) {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('author_id')
+        .eq('id', postId)
+        .maybeSingle();
+      if (error && !isNotFoundError(error)) throw error;
+      return data?.author_id ?? null;
+    },
 
     async authorsByIds(ids): Promise<Record<string, PostCommentAuthorRow>> {
       const unique = [...new Set(ids)];

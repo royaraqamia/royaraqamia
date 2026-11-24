@@ -70,6 +70,7 @@ internal fun PostCommentsSection(
     repository: PostEngagementRepository,
     composer: CommentComposerState,
     currentUserId: String?,
+    postAuthorId: String?,
     onCountChanged: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -170,6 +171,7 @@ internal fun PostCommentsSection(
                         CommentRow(
                             comment = comment,
                             mine = currentUserId != null && comment.author?.id == currentUserId,
+                            host = currentUserId != null && postAuthorId == currentUserId,
                             editing = editingId == comment.id,
                             editDraft = editDraft,
                             onEditDraft = { editDraft = it },
@@ -241,10 +243,21 @@ internal fun PostCommentsSection(
         }
 
         pendingDelete?.let { target ->
+            val removing = target.author?.id != currentUserId
             AlertDialog(
                 onDismissRequest = { pendingDelete = null },
-                title = { Text(CommunityPostCopy.COMMENT_DELETE_TITLE) },
-                text = { Text(CommunityPostCopy.COMMENT_DELETE_BODY) },
+                title = {
+                    Text(
+                        if (removing) CommunityPostCopy.COMMENT_REMOVE_TITLE
+                        else CommunityPostCopy.COMMENT_DELETE_TITLE
+                    )
+                },
+                text = {
+                    Text(
+                        if (removing) CommunityPostCopy.COMMENT_REMOVE_BODY
+                        else CommunityPostCopy.COMMENT_DELETE_BODY
+                    )
+                },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -260,7 +273,10 @@ internal fun PostCommentsSection(
                             }
                         },
                     ) {
-                        Text(CommunityPostCopy.COMMENT_DELETE)
+                        Text(
+                            if (removing) CommunityPostCopy.COMMENT_REMOVE
+                            else CommunityPostCopy.COMMENT_DELETE
+                        )
                     }
                 },
                 dismissButton = {
@@ -278,6 +294,7 @@ internal fun PostCommentsSection(
 private fun CommentRow(
     comment: PostCommentsResponseCommentsItem,
     mine: Boolean,
+    host: Boolean,
     editing: Boolean,
     editDraft: String,
     onEditDraft: (String) -> Unit,
@@ -344,10 +361,16 @@ private fun CommentRow(
                         color = RoyColors.mutedForeground.copy(alpha = 0.7f),
                     )
                 }
-                if (mine && !editing) {
+                if ((mine || host) && !editing) {
                     Spacer(Modifier.weight(1f))
-                    IconAction(LucideVectors.PenLine, CommunityPostCopy.COMMENT_EDIT, onStartEdit)
-                    IconAction(LucideVectors.Trash2, CommunityPostCopy.COMMENT_DELETE, onDelete)
+                    if (mine) {
+                        IconAction(LucideVectors.PenLine, CommunityPostCopy.COMMENT_EDIT, onStartEdit)
+                    }
+                    IconAction(
+                        LucideVectors.Trash2,
+                        if (host) CommunityPostCopy.COMMENT_REMOVE else CommunityPostCopy.COMMENT_DELETE,
+                        onDelete,
+                    )
                 }
             }
 

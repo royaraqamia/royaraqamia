@@ -2401,6 +2401,8 @@ export type Database = {
           body: string;
           created_at: string;
           deleted_at: string | null;
+          deleted_by: string | null;
+          deleted_reason: string | null;
           edited_at: string | null;
           id: string;
           post_id: string;
@@ -2410,6 +2412,8 @@ export type Database = {
           body: string;
           created_at?: string;
           deleted_at?: string | null;
+          deleted_by?: string | null;
+          deleted_reason?: string | null;
           edited_at?: string | null;
           id?: string;
           post_id: string;
@@ -2419,6 +2423,8 @@ export type Database = {
           body?: string;
           created_at?: string;
           deleted_at?: string | null;
+          deleted_by?: string | null;
+          deleted_reason?: string | null;
           edited_at?: string | null;
           id?: string;
           post_id?: string;

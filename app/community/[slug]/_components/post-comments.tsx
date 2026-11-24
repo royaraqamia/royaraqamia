@@ -29,6 +29,8 @@ import { COMMUNITY_POST_COPY } from '../community-post-copy';
 interface PostCommentsProps {
   postId: string;
   slug: string;
+  /** The post's author may remove a reply without being its writer (ADR-0217). */
+  postAuthorId: string | null;
 }
 
 /**
@@ -41,7 +43,7 @@ interface PostCommentsProps {
  * Reads page oldest-last (newest first); a write prepends its own row and settles
  * the action bar's number from the server's count, so the two never disagree.
  */
-export function PostComments({ postId, slug }: PostCommentsProps) {
+export function PostComments({ postId, slug, postAuthorId }: PostCommentsProps) {
   const { user } = useSession();
   const pathname = usePathname();
   const setCommentCount = useCommentCountSetter();
@@ -200,6 +202,7 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
           <ul className="flex flex-col gap-5">
             {comments.map((comment) => {
               const mine = user?.id === comment.author?.id;
+              const isHost = !mine && !!user && postAuthorId === user.id;
               const editing = editingId === comment.id;
 
               return (
@@ -235,10 +238,11 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
                         </span>
                       )}
 
-                      {mine && !editing && (
+                      {(mine || isHost) && !editing && (
                         <PostCommentOwnerActions
-                          onEdit={() => startEdit(comment)}
+                          onEdit={mine ? () => startEdit(comment) : undefined}
                           onDelete={() => void confirmDelete(comment)}
+                          isHost={isHost}
                         />
                       )}
                     </div>
