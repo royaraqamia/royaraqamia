@@ -97,6 +97,12 @@
       "reason": "The web change adds a remove control for the post's author and a report selector for other signed-in members to comment rows, and passes the post's author id into the thread; it only adds copy keys. The recorded at-rest state is a public post with no signed-in comments, and the contract measures only the post column, author chip, cover, tags and body, so no recorded box, colour or word moves. #1799 and #1800 carry the controls and their interaction tests.",
       "issue": "#1800",
       "until": "2026-12-24"
+    },
+    {
+      "surface": "account-plan",
+      "reason": "The contract records only the guest at-rest state - the title and guest card. The change gives the signed-in member's empty history a key chosen from the plan in force; shared/visual/account-plan.json explicitly excludes the member's Ready state and the capture never draws it. No recorded box, colour, word or raster can move, and #1806 carries component tests for all three new sentences.",
+      "issue": "#1806",
+      "until": "2026-12-24"
     }
   ]
 }
