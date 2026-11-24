@@ -185,6 +185,38 @@ describe('ChatsPanel', () => {
   });
 
   /**
+   * #1832: the launcher is a disclosure. The audit measured aria-expanded="true"
+   * with no panel in the DOM, no aria-controls, focus left on the button and an
+   * Escape that did nothing — four defects in one hand-written contract.
+   */
+  it('announces the picker, focuses it on open and returns focus on Escape', async () => {
+    render(<ChatsPanel />);
+    const launcher = screen.getByRole('button', { name: /محادثة جديدة/ });
+    expect(launcher).toHaveAttribute('aria-expanded', 'false');
+    const panelId = launcher.getAttribute('aria-controls');
+    expect(panelId).toBeTruthy();
+    expect(document.getElementById(panelId!)).not.toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'البحث عن عضو' })).toBeNull();
+
+    fireEvent.click(launcher);
+    const search = await screen.findByRole('textbox', { name: 'البحث عن عضو' });
+    expect(launcher).toHaveAttribute('aria-expanded', 'true');
+    await waitFor(() => expect(search).toHaveFocus());
+
+    // The launcher is fixed visually, so putting it first in the tab order costs
+    // no layout: the field is the next focusable after it.
+    launcher.focus();
+    expect(
+      search.compareDocumentPosition(launcher) & Node.DOCUMENT_POSITION_PRECEDING
+    ).toBeTruthy();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('textbox', { name: 'البحث عن عضو' })).toBeNull();
+    expect(launcher).toHaveAttribute('aria-expanded', 'false');
+    expect(launcher).toHaveFocus();
+  });
+
+  /**
    * Group threads are hidden with the group feature: a row the member can no
    * longer open is a row that lies.
    */
