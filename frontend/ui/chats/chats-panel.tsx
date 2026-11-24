@@ -16,7 +16,7 @@ import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
 import { PresenceAvatar } from '@/frontend/ui/shared/presence-avatar';
 import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
-import { FabButton } from '@/frontend/ui/shared/fab-button';
+import { FabDisclosure } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
 import { AssistantMark } from './assistant-mark';
@@ -91,7 +91,6 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
   // The dot comes from the row's own Realtime channel; the list is read once on
   // open and once per page step, never on a timer (#1803).
   const presence = useChatPresenceList(threads, identityUserId(identity));
-  const [panel, setPanel] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [answering, setAnswering] = useState<{
@@ -153,7 +152,6 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
    * so browsing the directory never sends a request on the member's behalf.
    */
   function openWith(peer: ChatPeer) {
-    setPanel(false);
     router.push(`/chats/new?to=${encodeURIComponent(peer.username)}`);
   }
 
@@ -200,7 +198,25 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
         </p>
       )}
 
-      {panel && <NewConversationPanel onPick={openWith} onClose={() => setPanel(false)} />}
+      {/* The primary action floats, like the community composer: the list owns
+          the screen, and starting a chat is never a row inside it. The disclosure
+          owns the announcement, the focus move and the Escape return (#1832). */}
+      <FabDisclosure
+        label={CHATS_LIST_COPY.newChat}
+        panelId="chats-new-conversation-panel"
+        initialFocus='input[name="chat-member-search"]'
+        panel={(close) => (
+          <NewConversationPanel
+            onPick={(peer) => {
+              close();
+              openWith(peer);
+            }}
+            onClose={close}
+          />
+        )}
+      >
+        <Plus className="size-6" />
+      </FabDisclosure>
 
       {!hasAssistant && (
         <button
@@ -309,15 +325,6 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
           onConfirm={() => void answer(answering.thread.id, answering.choice)}
         />
       )}
-      {/* The primary action floats, like the community composer: the list owns
-          the screen, and starting a chat is never a row inside it. */}
-      <FabButton
-        label={CHATS_LIST_COPY.newChat}
-        aria-expanded={panel !== null}
-        onClick={() => setPanel((current) => !current)}
-      >
-        <Plus className="size-6" />
-      </FabButton>
     </div>
   );
 }
