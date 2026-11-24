@@ -15,11 +15,17 @@
  * across devDependencies as well — one image-generation convenience is not worth
  * failing that gate. `sharp` is already a pinned dependency.
  *
- * Usage: node scripts/generate-android-assets.mjs   (after `npm run icons`)
+ * Usage:
+ *
+ *   node scripts/generate-android-assets.mjs            # write the resources
+ *   node scripts/generate-android-assets.mjs --check    # fail if they are stale
+ *
+ * (Generation runs after `npm run icons`: the maskable tile is its source.)
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
+import { checkRendered, parseGeneratorArgs } from './generated-artifacts.mjs';
 import {
   DISC_TOLERANCE_PX,
   TARGET_DISC_RATIO,
@@ -28,6 +34,11 @@ import {
   measure,
 } from './logo-shape.mjs';
 
+const REPO = process.cwd();
+const { check } = parseGeneratorArgs(
+  process.argv.slice(2),
+  'node scripts/generate-android-assets.mjs [--check]'
+);
 const BRAND_PURPLE = '#7868ea';
 /**
  * The PWA's full-bleed tile, not its `any` icon: the maskable set is the artwork
@@ -36,8 +47,11 @@ const BRAND_PURPLE = '#7868ea';
  * `scripts/generate-icons.mjs`), so cutting these from it would drop transparent
  * corners inside the adaptive canvas and the legacy launcher icon.
  */
-const SOURCE = 'public/icons/icon-maskable-1024x1024.png';
+const SOURCE = path.join(REPO, 'public/icons/icon-maskable-1024x1024.png');
 const RES = 'android/app/src/main/res';
+/** The checkout, except inside `--check`, where no file may be written. */
+let TARGET = REPO;
+const res = (...parts) => path.join(TARGET, RES, ...parts);
 
 const DENSITIES = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
 /** Legacy launcher icon size in dp. */
@@ -80,13 +94,19 @@ function rgb(hex) {
 
 const PURPLE = rgb(BRAND_PURPLE);
 
-if (!fs.existsSync(SOURCE)) {
-  console.error(`Missing ${SOURCE}. Run: node scripts/generate-icons.mjs`);
-  process.exit(1);
-}
+/** Every resource this generator owns, checked byte-for-byte in `--check`. */
+const GENERATED_FILES = [
+  ...Object.entries(DENSITIES).flatMap(([density]) =>
+    ['ic_launcher.png', 'ic_launcher_round.png', 'ic_launcher_foreground.png'].map(
+      (file) => `${RES}/mipmap-${density}/${file}`
+    )
+  ),
+  `${RES}/values/ic_launcher_background.xml`,
+  `${RES}/drawable-xxxhdpi/splash_icon.png`,
+];
 
-/** The artwork's own disc proportion, measured off the shipped icon. */
-const ARTWORK_RATIO = await artworkDiscRatio(SOURCE, PURPLE);
+const SPLASH_MASK_RATIO = 3 / 2;
+let ARTWORK_RATIO;
 /**
  * The scales that reach `TARGET_DISC_RATIO`, per surface.
  *
@@ -100,15 +120,22 @@ const ARTWORK_RATIO = await artworkDiscRatio(SOURCE, PURPLE);
  * exactly. Every scale is one expression, so moving `TARGET_DISC_RATIO` moves all
  * of them together.
  */
-const SURFACE_ARTWORK_SCALE = artworkScaleFor(ARTWORK_RATIO);
-const ADAPTIVE_ARTWORK_SCALE = TARGET_DISC_RATIO / (ARTWORK_RATIO * LAUNCHER_MAGNIFICATION);
-const SPLASH_MASK_RATIO = 3 / 2;
-const SPLASH_ARTWORK_SCALE = TARGET_DISC_RATIO / (ARTWORK_RATIO * SPLASH_MASK_RATIO);
+let SURFACE_ARTWORK_SCALE;
+let ADAPTIVE_ARTWORK_SCALE;
+let SPLASH_ARTWORK_SCALE;
 
-const tile = await sharp(SOURCE).metadata();
-if (!tile.width || tile.width !== tile.height) {
-  console.error(`${SOURCE} must be a square; got ${tile.width}x${tile.height}`);
-  process.exit(1);
+async function loadShape() {
+  if (!fs.existsSync(SOURCE)) {
+    throw new Error(`Missing ${SOURCE}. Run: node scripts/generate-icons.mjs`);
+  }
+  ARTWORK_RATIO = await artworkDiscRatio(SOURCE, PURPLE);
+  SURFACE_ARTWORK_SCALE = artworkScaleFor(ARTWORK_RATIO);
+  ADAPTIVE_ARTWORK_SCALE = TARGET_DISC_RATIO / (ARTWORK_RATIO * LAUNCHER_MAGNIFICATION);
+  SPLASH_ARTWORK_SCALE = TARGET_DISC_RATIO / (ARTWORK_RATIO * SPLASH_MASK_RATIO);
+  const tile = await sharp(SOURCE).metadata();
+  if (!tile.width || tile.width !== tile.height) {
+    throw new Error(`${SOURCE} must be a square; got ${tile.width}x${tile.height}`);
+  }
 }
 
 /**
@@ -155,10 +182,10 @@ async function artworkOnTransparency(size, scale, file) {
  * agree on the disc (see `SPLASH_ICON_DP`).
  */
 async function writeSplashIcon(written) {
-  const file = path.join(RES, 'drawable-xxxhdpi', 'splash_icon.png');
+  const file = res('drawable-xxxhdpi', 'splash_icon.png');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   await artworkOnTransparency(SPLASH_ICON_DP * 4, SPLASH_ARTWORK_SCALE, file);
-  written.push(`${file} (${SPLASH_ICON_DP * 4}²)`);
+  written.push(`${path.relative(TARGET, file).split(path.sep).join('/')} (${SPLASH_ICON_DP * 4}²)`);
 }
 
 /**
@@ -184,7 +211,7 @@ async function discTile(size) {
 }
 
 function writeBackgroundColour() {
-  const file = path.join(RES, 'values', 'ic_launcher_background.xml');
+  const file = res('values', 'ic_launcher_background.xml');
   fs.writeFileSync(
     file,
     '<?xml version="1.0" encoding="utf-8"?>\n' +
@@ -204,7 +231,7 @@ function writeBackgroundColour() {
  * enough".
  */
 async function validate() {
-  const where = (file) => path.relative(RES, file).split(path.sep).join('/');
+  const where = (file) => path.relative(res(), file).split(path.sep).join('/');
   let errors = 0;
 
   /** The white disc, which is what a person reads as "the logo's size". */
@@ -240,7 +267,7 @@ async function validate() {
   };
 
   for (const [density, scale] of Object.entries(DENSITIES)) {
-    const dir = path.join(RES, `mipmap-${density}`);
+    const dir = res(`mipmap-${density}`);
     const icon = Math.round(LAUNCHER_DP * scale);
     const launcher = path.join(dir, 'ic_launcher.png');
     await expectDisc(launcher, icon, TARGET_DISC_RATIO, 'the icon');
@@ -266,7 +293,7 @@ async function validate() {
   // exist. A layer-list, a frame bitmap or the plugin's colour file would be a
   // second splash again — and this one is the launcher's own construction, so it
   // cannot drift from the icon it mirrors.
-  const splashIcon = path.join(RES, 'drawable-xxxhdpi', 'splash_icon.png');
+  const splashIcon = res('drawable-xxxhdpi', 'splash_icon.png');
   await expectDisc(
     splashIcon,
     SPLASH_ICON_DP * 4,
@@ -276,61 +303,104 @@ async function validate() {
   await expectArtwork(splashIcon, SPLASH_ICON_DP * 4, SPLASH_ARTWORK_SCALE);
 
   const allowed = new Set(['splash_icon.png']);
-  for (const dir of fs.readdirSync(RES).filter((name) => name.startsWith('drawable'))) {
-    for (const file of fs.readdirSync(path.join(RES, dir))) {
+  for (const dir of fs.readdirSync(res()).filter((name) => name.startsWith('drawable'))) {
+    for (const file of fs.readdirSync(res(dir))) {
       if (!/^splash/i.test(file) || allowed.has(file)) continue;
-      console.error(`  ✗ ${where(path.join(RES, dir, file))}: no splash asset may exist`);
+      console.error(`  ✗ ${where(res(dir, file))}: no splash asset may exist`);
       errors += 1;
     }
   }
-  for (const name of fs.readdirSync(path.join(RES, 'values'))) {
+  for (const name of fs.readdirSync(res('values'))) {
     if (!/^splash/i.test(name)) continue;
-    console.error(`  ✗ ${where(path.join(RES, 'values', name))}: no splash asset may exist`);
+    console.error(`  ✗ ${where(res('values', name))}: no splash asset may exist`);
     errors += 1;
   }
 
   if (errors) {
-    console.error(`\n${errors} error(s) — these assets no longer match the chosen proportions`);
-    process.exit(1);
+    throw new Error(`${errors} error(s) — these assets no longer match the chosen proportions`);
   }
-  console.log(
-    `  ✓ surfaces read at ${(100 * TARGET_DISC_RATIO).toFixed(1)}% of their shape ` +
-      `(PWA artwork ${(100 * ARTWORK_RATIO).toFixed(1)}%, launcher magnification ` +
-      `${LAUNCHER_MAGNIFICATION}x)`
-  );
+  if (!check)
+    console.log(
+      `  ✓ surfaces read at ${(100 * TARGET_DISC_RATIO).toFixed(1)}% of their shape ` +
+        `(PWA artwork ${(100 * ARTWORK_RATIO).toFixed(1)}%, launcher magnification ` +
+        `${LAUNCHER_MAGNIFICATION}x)`
+    );
 }
 
-const written = [];
+const relative = (file) => path.relative(TARGET, file).split(path.sep).join('/');
 
-for (const [density, scale] of Object.entries(DENSITIES)) {
-  const dir = path.join(RES, `mipmap-${density}`);
-  fs.mkdirSync(dir, { recursive: true });
+async function generate() {
+  await loadShape();
+  const written = [];
 
-  const launcher = {
-    file: path.join(dir, 'ic_launcher.png'),
-    size: Math.round(LAUNCHER_DP * scale),
-  };
-  await fullBleedTile(launcher.size, launcher.file);
-  written.push(`${launcher.file} (${launcher.size}²)`);
+  for (const [density, scale] of Object.entries(DENSITIES)) {
+    const dir = res(`mipmap-${density}`);
+    fs.mkdirSync(dir, { recursive: true });
 
-  const round = path.join(dir, 'ic_launcher_round.png');
-  fs.writeFileSync(round, await discTile(launcher.size));
-  written.push(`${round} (${launcher.size}²)`);
+    const launcher = {
+      file: path.join(dir, 'ic_launcher.png'),
+      size: Math.round(LAUNCHER_DP * scale),
+    };
+    await fullBleedTile(launcher.size, launcher.file);
+    written.push(`${relative(launcher.file)} (${launcher.size}²)`);
 
-  const adaptive = {
-    file: path.join(dir, 'ic_launcher_foreground.png'),
-    size: Math.round(ADAPTIVE_DP * scale),
-  };
-  await artworkOnTransparency(adaptive.size, ADAPTIVE_ARTWORK_SCALE, adaptive.file);
-  written.push(`${adaptive.file} (${adaptive.size}²)`);
+    const round = path.join(dir, 'ic_launcher_round.png');
+    fs.writeFileSync(round, await discTile(launcher.size));
+    written.push(`${relative(round)} (${launcher.size}²)`);
+
+    const adaptive = {
+      file: path.join(dir, 'ic_launcher_foreground.png'),
+      size: Math.round(ADAPTIVE_DP * scale),
+    };
+    await artworkOnTransparency(adaptive.size, ADAPTIVE_ARTWORK_SCALE, adaptive.file);
+    written.push(`${relative(adaptive.file)} (${adaptive.size}²)`);
+  }
+
+  written.push(relative(writeBackgroundColour()));
+  await writeSplashIcon(written);
+
+  if (!check) {
+    console.log(`Generated ${written.length} Android resources in ${RES}:`);
+    for (const entry of written) console.log(`  ✓ ${entry}`);
+    console.log('\nValidating each surface against its target...');
+  }
+  await validate();
 }
 
-written.push(writeBackgroundColour());
+async function main() {
+  if (!check) {
+    await generate();
+    return 0;
+  }
+  return checkRendered({
+    prefix: 'roy-android-assets-',
+    root: REPO,
+    files: GENERATED_FILES,
+    ownedDirs: [
+      {
+        dir: RES,
+        include: (file) =>
+          /^android\/app\/src\/main\/res\/mipmap-[^/]+\/(ic_launcher|ic_launcher_round|ic_launcher_foreground)\.png$/.test(
+            file
+          ) ||
+          file === `${RES}/values/ic_launcher_background.xml` ||
+          /^android\/app\/src\/main\/res\/drawable-[^/]+\/splash_icon\.png$/.test(file),
+      },
+    ],
+    label: 'Generated Android assets',
+    render: async (directory) => {
+      TARGET = directory;
+      await generate();
+    },
+  });
+}
 
-await writeSplashIcon(written);
-
-console.log(`Generated ${written.length} Android resources in ${RES}:`);
-for (const entry of written) console.log(`  ✓ ${entry}`);
-
-console.log('\nValidating each surface against its target...');
-await validate();
+main().then(
+  (code) => {
+    process.exitCode = code;
+  },
+  (error) => {
+    console.error(error);
+    process.exitCode = 1;
+  }
+);
