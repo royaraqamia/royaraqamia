@@ -17,7 +17,8 @@ const PLAN_LABELS = {
  * The member's plan at a glance. The per-item numbers moved to `/account/plan`,
  * where the whole allowance — counted actions and owned-item caps — is stated
  * together, so this card keeps only what the account row needs: which plan is
- * in force and the two ways to act on it.
+ * in force and the two ways to act on it. The link to that page is outside the
+ * `state` guard: a failed read cannot take away the card's only door.
  *
  * Nothing renders for a visitor: the card is the account's own data, and the
  * pricing page is where a guest learns what a plan would give them.
@@ -71,26 +72,24 @@ export function UsageCard() {
         </p>
       )}
 
-      {state && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold">
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold">
+        <Link
+          href="/account/plan"
+          className="inline-flex items-center gap-1.5 text-primary hover:underline underline-offset-4"
+        >
+          {ACCOUNT_USAGE_COPY.details}
+          <ArrowLeft className="size-3.5" aria-hidden="true" />
+        </Link>
+        {state?.plan === 'free' && !state.unlimited && (
           <Link
-            href="/account/plan"
+            href="/pricing"
             className="inline-flex items-center gap-1.5 text-primary hover:underline underline-offset-4"
           >
-            {ACCOUNT_USAGE_COPY.details}
-            <ArrowLeft className="size-3.5" aria-hidden="true" />
+            <Sparkles className="size-3.5" aria-hidden="true" />
+            {ACCOUNT_USAGE_COPY.upgrade}
           </Link>
-          {state.plan === 'free' && !state.unlimited && (
-            <Link
-              href="/pricing"
-              className="inline-flex items-center gap-1.5 text-primary hover:underline underline-offset-4"
-            >
-              <Sparkles className="size-3.5" aria-hidden="true" />
-              {ACCOUNT_USAGE_COPY.upgrade}
-            </Link>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 }

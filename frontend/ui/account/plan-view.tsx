@@ -8,10 +8,15 @@ import { Badge } from '@/frontend/ui/primitives/badge';
 import { Button } from '@/frontend/ui/primitives/button';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
-import { useMyPlan } from '@/frontend/state/plans/use-my-plan';
+import { usePlanPage } from '@/frontend/state/plans/use-my-plan';
 import { useSession } from '@/frontend/state/session-provider';
 import { formatCount, formatHijriDate } from '@/frontend/shared/format';
-import type { OwnedItemState, PlanActivationMethod, UsageState } from '@/shared/contracts/plans';
+import type {
+  OwnedItemState,
+  PlanActivationMethod,
+  UsageCounterState,
+  UsageState,
+} from '@/shared/contracts/plans';
 
 const PLAN_LABELS = { free: PLAN_CARD_COPY.planFree, pro: PLAN_CARD_COPY.planPro } as const;
 
@@ -50,6 +55,21 @@ export function usageShare(limits: OwnedItemState[]): number {
   if (cap <= 0) return 0;
   const used = limits.reduce((total, item) => total + item.used, 0);
   return Math.min(100, Math.round((used / cap) * 100));
+}
+
+/**
+ * The counted actions that reset daily, closest to their cap first. The body
+ * names them — no key is listed here — so a cap added to `usage_limits` reaches
+ * the page without a second change. Four lines are enough to say where the day
+ * stands; a cap of zero is an Admin's unlimited placeholder, not a meter.
+ */
+export function dailyCounters(counters: UsageCounterState[], limit = 4): UsageCounterState[] {
+  return counters
+    .filter((counter) => counter.window === 'daily' && counter.cap > 0)
+    .sort(
+      (a, b) => b.used / b.cap - a.used / a.cap || b.used - a.used || a.key.localeCompare(b.key)
+    )
+    .slice(0, limit);
 }
 
 /**
@@ -97,7 +117,7 @@ export function PlanView() {
  */
 function PlanBody() {
   const { user, isLoading: sessionLoading } = useSession();
-  const { plan, loading, failed, reload } = useMyPlan(Boolean(user));
+  const { plan, loading, failed, reload, usage } = usePlanPage(Boolean(user));
 
   if (sessionLoading) {
     return (
@@ -161,16 +181,18 @@ function PlanBody() {
   const { state, limits, activations } = plan;
 
   /**
-   * One bar for the whole allowance. The page used to print one row per item and
-   * per counted action; a member had to read nineteen numbers to learn one thing —
-   * how much of the plan is in use — so the standing caps are summed into one
-   * share, and the plan page stops being a table.
+   * One bar for the standing allowance. The page used to print one row per item
+   * and per counted action; a member had to read nineteen numbers to learn one
+   * thing — how much of the plan is in use — so the owned-item caps are summed
+   * into one share, named for what it is, while the daily counts get a short
+   * block of their own. Folding the two would make this bar fall at midnight.
    *
    * The bar is a div with a `transform` rather than a `<progress>`: the app fills
    * the same track with `fillMaxWidth(fraction)`, and a recipe only both clients
    * can draw is the point (ADR-0099).
    */
   const share = usageShare(limits);
+  const today = dailyCounters(usage?.counters ?? []);
 
   return (
     <div className="space-y-4">
@@ -182,25 +204,57 @@ function PlanBody() {
           </Badge>
         </div>
 
+        {today.length > 0 && (
+          <section
+            data-visual="plan-today"
+            aria-label={PLAN_CARD_COPY.todayTitle}
+            className="space-y-1"
+          >
+            <h2 className="text-fluid-small font-bold text-foreground">
+              {PLAN_CARD_COPY.todayTitle}
+            </h2>
+            <ul className="space-y-1">
+              {today.map((counter) => (
+                <li
+                  key={counter.key}
+                  data-visual="plan-today-row"
+                  className="flex items-center justify-between gap-3"
+                >
+                  <span className="text-fluid-xs text-muted-foreground">{counter.label}</span>
+                  <span className="roy-row-value">
+                    {formatCount(counter.used)} / {formatCount(counter.cap)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-fluid-xs text-muted-foreground">{PLAN_CARD_COPY.dailyReset}</p>
+          </section>
+        )}
+
         {state.unlimited ? (
           <p className="text-fluid-small font-bold text-foreground">{PLAN_CARD_COPY.unlimited}</p>
         ) : (
-          <div className="roy-progress">
-            <div
-              role="progressbar"
-              aria-label={PLAN_CARD_COPY.usageLabel}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={share}
-              className="roy-progress-track"
-            >
+          <div className="space-y-1">
+            <p data-visual="plan-standing-label" className="text-fluid-xs text-muted-foreground">
+              {PLAN_CARD_COPY.usageLabel}
+            </p>
+            <div className="roy-progress">
               <div
-                className="roy-progress-fill"
-                style={{ transform: `scaleX(${share / 100})` }}
-                aria-hidden="true"
-              />
+                role="progressbar"
+                aria-label={PLAN_CARD_COPY.usageLabel}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={share}
+                className="roy-progress-track"
+              >
+                <div
+                  className="roy-progress-fill"
+                  style={{ transform: `scaleX(${share / 100})` }}
+                  aria-hidden="true"
+                />
+              </div>
+              <span className="roy-progress-value">{formatCount(share)}%</span>
             </div>
-            <span className="roy-progress-value">{formatCount(share)}%</span>
           </div>
         )}
 

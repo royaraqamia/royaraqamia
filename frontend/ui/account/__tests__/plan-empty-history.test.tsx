@@ -7,11 +7,12 @@ const mocks = vi.hoisted(() => ({
     user: null as { id: string } | null,
     isLoading: false as boolean,
   },
-  plan: {
+  page: {
     plan: null as MyPlan | null,
     loading: false as boolean,
     failed: false as boolean,
     reload: vi.fn(),
+    usage: null as UsageState | null,
   },
 }));
 
@@ -20,7 +21,7 @@ vi.mock('@/frontend/state/session-provider', () => ({
 }));
 
 vi.mock('@/frontend/state/plans/use-my-plan', () => ({
-  useMyPlan: () => mocks.plan,
+  usePlanPage: () => mocks.page,
 }));
 
 import { formatHijriDate } from '@/frontend/shared/format';
@@ -50,16 +51,16 @@ function history() {
 beforeEach(() => {
   mocks.session.user = { id: 'u1' };
   mocks.session.isLoading = false;
-  mocks.plan.plan = null;
-  mocks.plan.loading = false;
-  mocks.plan.failed = false;
+  mocks.page.plan = null;
+  mocks.page.loading = false;
+  mocks.page.failed = false;
 });
 
 afterEach(cleanup);
 
 describe('PlanView empty history', () => {
   it('names the plan in force and its expiry, never the free plan', () => {
-    mocks.plan.plan = { state: proState, limits, activations: [] };
+    mocks.page.plan = { state: proState, limits, activations: [] };
 
     render(<PlanView />);
 
@@ -70,7 +71,7 @@ describe('PlanView empty history', () => {
   });
 
   it('still names the free plan for a free member with no history', () => {
-    mocks.plan.plan = { state: freeState, limits, activations: [] };
+    mocks.page.plan = { state: freeState, limits, activations: [] };
 
     render(<PlanView />);
 
@@ -80,7 +81,7 @@ describe('PlanView empty history', () => {
   });
 
   it('does not call an unlimited Admin free when they have no history', () => {
-    mocks.plan.plan = {
+    mocks.page.plan = {
       state: { ...freeState, unlimited: true },
       limits,
       activations: [],

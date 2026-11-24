@@ -7,11 +7,12 @@ const mocks = vi.hoisted(() => ({
     user: null as { id: string } | null,
     isLoading: false as boolean,
   },
-  plan: {
+  page: {
     plan: null as MyPlan | null,
     loading: false as boolean,
     failed: false as boolean,
     reload: vi.fn(),
+    usage: null as UsageState | null,
   },
 }));
 
@@ -20,7 +21,7 @@ vi.mock('@/frontend/state/session-provider', () => ({
 }));
 
 vi.mock('@/frontend/state/plans/use-my-plan', () => ({
-  useMyPlan: () => mocks.plan,
+  usePlanPage: () => mocks.page,
 }));
 
 import { PlanView, usageShare } from '../plan-view';
@@ -61,9 +62,9 @@ const freeLimits: OwnedItemState[] = [
 beforeEach(() => {
   mocks.session.user = null;
   mocks.session.isLoading = false;
-  mocks.plan.plan = null;
-  mocks.plan.loading = false;
-  mocks.plan.failed = false;
+  mocks.page.plan = null;
+  mocks.page.loading = false;
+  mocks.page.failed = false;
 });
 
 afterEach(cleanup);
@@ -95,7 +96,7 @@ describe('PlanView', () => {
 
   it('draws one bar for the whole allowance, and every activation behind it', () => {
     mocks.session.user = { id: 'u1' };
-    mocks.plan.plan = {
+    mocks.page.plan = {
       state: { ...freeState, plan: 'pro', expiresAt: '2026-11-21T12:00:00.000Z' },
       limits: freeLimits,
       activations: [
@@ -115,10 +116,11 @@ describe('PlanView', () => {
     render(<PlanView />);
 
     // The owned-item caps only: the lifetime downloader count is not a slot.
-    const bar = screen.getByRole('progressbar', { name: 'نسبة الاستهلاك' });
+    const bar = screen.getByRole('progressbar', { name: 'الحد الأقصى لما تملكه' });
     expect(bar).toHaveAttribute('aria-valuenow', '17');
     expect(bar).toHaveAttribute('aria-valuemax', '100');
     expect(screen.getByText('17%')).toBeInTheDocument();
+    expect(screen.getByText('الحد الأقصى لما تملكه')).toBeInTheDocument();
 
     // The rows and their per-item numbers are gone; the bar is the section.
     expect(screen.queryByText('الملاحظات')).not.toBeInTheDocument();
@@ -133,7 +135,7 @@ describe('PlanView', () => {
 
   it('keeps the payment note off the page', () => {
     mocks.session.user = { id: 'u1' };
-    mocks.plan.plan = { state: freeState, limits: freeLimits, activations: [] };
+    mocks.page.plan = { state: freeState, limits: freeLimits, activations: [] };
 
     render(<PlanView />);
 
@@ -142,7 +144,7 @@ describe('PlanView', () => {
 
   it('reports an Admin as unlimited, with no bar to fill', () => {
     mocks.session.user = { id: 'admin-1' };
-    mocks.plan.plan = {
+    mocks.page.plan = {
       state: { ...freeState, unlimited: true },
       limits: freeLimits,
       activations: [],
@@ -159,7 +161,7 @@ describe('PlanView', () => {
 
   it('offers the retry when the read failed and there is nothing to show', () => {
     mocks.session.user = { id: 'u1' };
-    mocks.plan.failed = true;
+    mocks.page.failed = true;
 
     render(<PlanView />);
 
