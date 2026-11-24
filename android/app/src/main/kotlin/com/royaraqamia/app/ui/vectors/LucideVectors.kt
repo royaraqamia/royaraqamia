@@ -485,13 +485,6 @@ object LucideVectors {
             viewportHeight = 24f,
         ).apply {
             addPath(
-                addPathNodes("M16 14v2.2l1.6 1"),
-                stroke = stroke,
-                strokeLineWidth = 2f,
-                strokeLineCap = StrokeCap.Round,
-                strokeLineJoin = StrokeJoin.Round,
-            )
-            addPath(
                 addPathNodes("M16 2v3"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
@@ -499,14 +492,21 @@ object LucideVectors {
                 strokeLineJoin = StrokeJoin.Round,
             )
             addPath(
-                addPathNodes("M21 7.338V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h2.338"),
+                addPathNodes("M17 15.5v1.7l1 .625"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round,
             )
             addPath(
-                addPathNodes("M3 9h5.859"),
+                addPathNodes("M21 8.936V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h3.935"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M3 9h9.873"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
@@ -520,7 +520,7 @@ object LucideVectors {
                 strokeLineJoin = StrokeJoin.Round,
             )
             addPath(
-                addPathNodes("M10 16a6 6 0 1 0 12 0a6 6 0 1 0 -12 0"),
+                addPathNodes("M12 17a5 5 0 1 0 10 0a5 5 0 1 0 -10 0"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
