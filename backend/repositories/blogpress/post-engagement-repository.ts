@@ -89,6 +89,12 @@ export interface PostEngagementRepository {
     commentId: string,
     authorId: string
   ): Promise<{ postId: string; commentCount: number } | null>;
+  /** File a report; the database freezes the evidence from the real rows. */
+  reportComment(
+    commentId: string,
+    reporterId: string,
+    reason: string
+  ): Promise<{ id: string; createdAt: string } | null>;
 }
 
 const UUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -391,6 +397,19 @@ export function createPostEngagementRepository(
       const row = data?.[0];
       if (!row) return null;
       return { postId: row.post_id, commentCount: Number(row.comment_count) };
+    },
+
+    async reportComment(commentId, reporterId, reason) {
+      const { data, error } = await supabase.rpc('post_comment_report', {
+        p_comment_id: commentId,
+        p_reporter_id: reporterId,
+        p_reason: reason,
+      });
+      if (error) throw error;
+
+      const row = data?.[0];
+      if (!row) return null;
+      return { id: row.id, createdAt: row.created_at };
     },
   });
 }

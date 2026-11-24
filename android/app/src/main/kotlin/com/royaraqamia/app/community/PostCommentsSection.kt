@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -87,6 +89,7 @@ internal fun PostCommentsSection(
     var editingId by remember(slug) { mutableStateOf<String?>(null) }
     var editDraft by remember(slug) { mutableStateOf("") }
     var pendingDelete by remember(slug) { mutableStateOf<PostCommentsResponseCommentsItem?>(null) }
+    var reportTarget by remember(slug) { mutableStateOf<PostCommentsResponseCommentsItem?>(null) }
 
     fun publish(list: List<PostCommentsResponseCommentsItem>, cursor: String?, count: Long) {
         comments = list
@@ -204,6 +207,8 @@ internal fun PostCommentsSection(
                                 }
                             },
                             onDelete = { pendingDelete = comment },
+                            canReport = currentUserId != null && comment.author?.id != currentUserId,
+                            onReport = { reportTarget = comment },
                         )
                     }
                 }
@@ -286,6 +291,27 @@ internal fun PostCommentsSection(
                 },
             )
         }
+
+        reportTarget?.let { target ->
+            DropdownMenu(
+                expanded = true,
+                onDismissRequest = { reportTarget = null },
+            ) {
+                listOf(
+                    "spam" to CommunityPostCopy.COMMENT_REPORT_SPAM,
+                    "abuse" to CommunityPostCopy.COMMENT_REPORT_ABUSE,
+                    "other" to CommunityPostCopy.COMMENT_REPORT_OTHER,
+                ).forEach { (reason, label) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            reportTarget = null
+                            scope.launch { repository.report(target.id, reason) }
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -302,6 +328,8 @@ private fun CommentRow(
     onCancelEdit: () -> Unit,
     onSaveEdit: () -> Unit,
     onDelete: () -> Unit,
+    canReport: Boolean,
+    onReport: () -> Unit,
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
@@ -371,6 +399,9 @@ private fun CommentRow(
                         if (host) CommunityPostCopy.COMMENT_REMOVE else CommunityPostCopy.COMMENT_DELETE,
                         onDelete,
                     )
+                }
+                if (canReport && !editing) {
+                    IconAction(LucideVectors.Flag, CommunityPostCopy.COMMENT_REPORT, onReport)
                 }
             }
 

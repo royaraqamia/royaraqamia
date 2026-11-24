@@ -4,6 +4,7 @@ import type {
   PostEngagementRepository,
 } from '@/backend/repositories/blogpress/post-engagement-repository';
 import {
+  POST_COMMENT_REPORT_LIMIT,
   POST_COMMENT_WRITE_LIMIT,
   POST_ENGAGEMENT_WRITE_WINDOW_MS,
   POST_LIKE_WRITE_LIMIT,
@@ -185,6 +186,25 @@ export class PostEngagementService {
     if (!removed) throw new PostEngagementRefusedError(404, 'التعليق غير موجود.');
 
     return { deleted: true, commentCount: removed.commentCount };
+  }
+
+  /** File a report; the frozen evidence is built by Postgres, not the caller. */
+  async reportComment(
+    viewerId: string,
+    commentId: string,
+    reason: string
+  ): Promise<{ id: string; createdAt: string }> {
+    await this.assertUnderLimit(`post-comment-report:${viewerId}`, POST_COMMENT_REPORT_LIMIT);
+
+    const existing = await this.deps.engagement.getComment(commentId);
+    if (!existing) throw new PostEngagementRefusedError(404, 'التعليق غير موجود.');
+
+    const reported = await this.deps.engagement.reportComment(commentId, viewerId, reason);
+    if (!reported) {
+      // The unique (reporter, comment) pair makes a second report a no-op.
+      throw new PostEngagementRefusedError(409, 'أبلغت عن هذا التعليق من قبل.');
+    }
+    return reported;
   }
 
   /** A slug that names no public post is the page's own 404, said now. */

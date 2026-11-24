@@ -1,5 +1,5 @@
-import { ChatReportsView } from '@/frontend/ui/admin/chat-reports/chat-reports-view';
+import { ReportsTabs } from './reports-tabs';
 
 export default function AdminReportsPage() {
-  return <ChatReportsView />;
+  return <ReportsTabs />;
 }

@@ -315,6 +315,27 @@ describe('listComments with a viewer', () => {
   });
 });
 
+describe('reportComment', () => {
+  it('calls the reporting function with the member and the reason', async () => {
+    const rpc = vi.fn(async () => ({
+      data: [{ id: 'r1', created_at: '2026-01-01T00:00:00Z' }],
+      error: null,
+    }));
+    const supabase = { rpc } as unknown as SupabaseClient<Database>;
+    const repo = createPostEngagementRepository(supabase);
+
+    await expect(repo.reportComment('c1', AUTHOR_ID, 'spam')).resolves.toEqual({
+      id: 'r1',
+      createdAt: '2026-01-01T00:00:00Z',
+    });
+    expect(rpc).toHaveBeenCalledWith('post_comment_report', {
+      p_comment_id: 'c1',
+      p_reporter_id: AUTHOR_ID,
+      p_reason: 'spam',
+    });
+  });
+});
+
 describe('postAuthor', () => {
   it('reads the post owner for the host-removal check', async () => {
     const maybeSingle = vi.fn(async () => ({ data: { author_id: AUTHOR_ID }, error: null }));

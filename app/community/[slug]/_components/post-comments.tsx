@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Loader2, MessageCircle } from 'lucide-react';
+import { Flag, Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { cn } from '@/frontend/shared/cn';
@@ -15,6 +15,8 @@ import {
 } from '@/frontend/api/community-engagement';
 import { useSession } from '@/frontend/state/session-provider';
 import { useCommentCountSetter } from '@/frontend/state/community/post-engagement-provider';
+import { reportComment } from '@/frontend/api/comment-reports';
+import type { CommentReportReason } from '@/shared/contracts/comment-reports';
 import { ChatBody } from '@/frontend/ui/chats/chat-body';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
@@ -59,6 +61,7 @@ export function PostComments({ postId, slug, postAuthorId }: PostCommentsProps) 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [reportingId, setReportingId] = useState<string | null>(null);
 
   const publishTotal = useCallback(
     (count: number) => {
@@ -162,6 +165,18 @@ export function PostComments({ postId, slug, postAuthorId }: PostCommentsProps) 
     }
   };
 
+  const report = async (comment: PostComment, reason: CommentReportReason) => {
+    setReportingId(comment.id);
+    try {
+      await reportComment(comment.id, reason);
+      toast.success(COMMUNITY_POST_COPY.commentReported);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : COMMUNITY_POST_COPY.commentFailed);
+    } finally {
+      setReportingId(null);
+    }
+  };
+
   return (
     <>
       <section
@@ -244,6 +259,26 @@ export function PostComments({ postId, slug, postAuthorId }: PostCommentsProps) 
                           onDelete={() => void confirmDelete(comment)}
                           isHost={isHost}
                         />
+                      )}
+
+                      {user && !mine && (
+                        <label className="ms-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Flag className="size-3.5" aria-hidden="true" />
+                          <select
+                            aria-label={COMMUNITY_POST_COPY.commentReport}
+                            value=""
+                            disabled={reportingId === comment.id}
+                            onChange={(event) =>
+                              void report(comment, event.target.value as CommentReportReason)
+                            }
+                            className="rounded-md border border-border/60 bg-background px-1.5 py-0.5 text-[11px]"
+                          >
+                            <option value="">{COMMUNITY_POST_COPY.commentReport}</option>
+                            <option value="spam">{COMMUNITY_POST_COPY.commentReportSpam}</option>
+                            <option value="abuse">{COMMUNITY_POST_COPY.commentReportAbuse}</option>
+                            <option value="other">{COMMUNITY_POST_COPY.commentReportOther}</option>
+                          </select>
+                        </label>
                       )}
                     </div>
 

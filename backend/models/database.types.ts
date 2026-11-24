@@ -2453,6 +2453,39 @@ export type Database = {
           },
         ];
       };
+      post_comment_reports: {
+        Row: {
+          comment_id: string;
+          created_at: string;
+          id: string;
+          post_id: string;
+          reason: string;
+          reporter_id: string;
+          snapshot: Json;
+          status: string;
+        };
+        Insert: {
+          comment_id: string;
+          created_at?: string;
+          id?: string;
+          post_id: string;
+          reason: string;
+          reporter_id: string;
+          snapshot: Json;
+          status?: string;
+        };
+        Update: {
+          comment_id?: string;
+          created_at?: string;
+          id?: string;
+          post_id?: string;
+          reason?: string;
+          reporter_id?: string;
+          snapshot?: Json;
+          status?: string;
+        };
+        Relationships: [];
+      };
       post_likes: {
         Row: {
           created_at: string;
@@ -3930,6 +3963,14 @@ export type Database = {
           edited_at: string;
           id: string;
         }[];
+      };
+      post_comment_report: {
+        Args: { p_comment_id: string; p_reason: string; p_reporter_id: string };
+        Returns: { created_at: string; id: string }[];
+      };
+      post_comment_reports_decide: {
+        Args: { p_report_id: string; p_status: string };
+        Returns: { id: string; status: string }[];
       };
       post_comments_page: {
         Args: {

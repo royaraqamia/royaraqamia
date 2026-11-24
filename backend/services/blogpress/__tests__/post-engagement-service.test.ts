@@ -35,6 +35,7 @@ function makeRepository(overrides: Partial<PostEngagementRepository> = {}) {
     })),
     updateComment: vi.fn(async () => null),
     deleteComment: vi.fn(async () => null),
+    reportComment: vi.fn(async () => ({ id: 'r1', createdAt: '2026-01-01T00:00:00Z' })),
     ...overrides,
   };
   return repository;
@@ -242,6 +243,33 @@ describe('PostEngagementService.comment', () => {
 
     await expect(service.comment(VIEWER, 'a-post', 'نصّ')).rejects.toMatchObject({ status: 403 });
     expect(repository.createComment).not.toHaveBeenCalled();
+  });
+});
+
+describe('PostEngagementService.reportComment', () => {
+  it('files a report with the reason and rate-limits it separately', async () => {
+    const repository = makeRepository({
+      getComment: vi.fn(async () => comment({ authorId: OTHER_MEMBER })),
+    });
+    const { service, checkRateLimit } = makeService(repository);
+
+    const result = await service.reportComment(VIEWER, 'c1', 'spam');
+
+    expect(result.id).toBe('r1');
+    expect(checkRateLimit).toHaveBeenCalledWith(`post-comment-report:${VIEWER}`, 5, 5 * 60 * 1000);
+    expect(repository.reportComment).toHaveBeenCalledWith('c1', VIEWER, 'spam');
+  });
+
+  it('answers a repeated report with 409 instead of a server failure', async () => {
+    const repository = makeRepository({
+      getComment: vi.fn(async () => comment({ authorId: OTHER_MEMBER })),
+      reportComment: vi.fn(async () => null),
+    });
+    const { service } = makeService(repository);
+
+    await expect(service.reportComment(VIEWER, 'c1', 'spam')).rejects.toMatchObject({
+      status: 409,
+    });
   });
 });
 
