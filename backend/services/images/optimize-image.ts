@@ -59,7 +59,7 @@ export async function optimizeImage({
   } catch {
     // An unparseable configuration must not open the allowlist.
   }
-  let source: URL;
+  let path: string;
   try {
     const parsed = new URL(src);
     if (
@@ -70,14 +70,17 @@ export async function optimizeImage({
     ) {
       return { ok: false, status: 400 };
     }
-    source = parsed;
+    // Build the request URL from the configured host and only the object path:
+    // no part of the host can be supplied by the caller.
+    path = `${parsed.pathname}${parsed.search}`;
   } catch {
     return { ok: false, status: 400 };
   }
 
+  const requestUrl = `https://${allowedHost}${path}`;
   let response: Response;
   try {
-    response = await fetch(source.href, {
+    response = await fetch(requestUrl, {
       headers: { Accept: 'image/avif,image/webp,image/*' },
       signal: AbortSignal.timeout(7_000),
     });
