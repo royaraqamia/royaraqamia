@@ -65,6 +65,34 @@ sealed interface ShellUpdateUiState {
 }
 
 /**
+ * Whether this update answer owns the frame (#652, ADR-0114).
+ *
+ * A card the shell drew is a screen of its own: the document opening over it is
+ * what made an offer flash and vanish on a cold launch. Idle is the only state
+ * in which the shell has nothing to say, and the only one in which a destination
+ * may be handed over. Below a floor that hold is also the point — the site would
+ * answer `426` to every route — but an unanswered offer needs it just as much.
+ */
+val ShellUpdateUiState.holdsFrame: Boolean
+    get() = this !is ShellUpdateUiState.Idle
+
+/**
+ * Whether back or an outside tap is an answer to this card.
+ *
+ * A floor has nothing to decline and a download has one honest exit — «إلغاء» —
+ * so neither may be dismissed that way; an offer and a failed download may be put
+ * off. Keeping this beside [holdsFrame] stops the dialog's back properties and
+ * the activity's back callback from disagreeing about which cards can be answered.
+ */
+val ShellUpdateUiState.dismissable: Boolean
+    get() =
+        when (this) {
+            is ShellUpdateUiState.Asking -> card is ShellUpdateCard.Offer
+            is ShellUpdateUiState.Failed -> true
+            is ShellUpdateUiState.Downloading, ShellUpdateUiState.Idle -> false
+        }
+
+/**
  * Which card — if any — a manifest answer asks for (#652).
  *
  * Pure, and the whole of the decision: everything else in the update path is

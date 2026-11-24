@@ -100,6 +100,7 @@ import com.royaraqamia.app.theme.RoyaraqamiaTheme
 import com.royaraqamia.app.update.ShellUpdateChannel
 import com.royaraqamia.app.update.ShellUpdateController
 import com.royaraqamia.app.update.ShellUpdateUiState
+import com.royaraqamia.app.update.dismissable
 import com.royaraqamia.app.verify.VerifyCodeScreen
 import com.royaraqamia.app.verify.VerifyRoutes
 import com.royaraqamia.app.verify.VerifyScreen
@@ -900,8 +901,10 @@ class ShellActivity : ComponentActivity() {
             return
         }
         // A card the frame was brought forward for is a screen of its own (#652):
-        // back is "later", not a walk down a stack the user cannot see.
-        if (update.state !is ShellUpdateUiState.Idle) {
+        // back is "later" only where the card can be put off. A floor has nothing
+        // to decline and a download has «إلغاء» as its one honest exit, so neither
+        // may be dismissed by a back the dialog itself does not consume.
+        if (update.state.dismissable) {
             update.decline()
             return
         }
