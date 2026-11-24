@@ -69,6 +69,16 @@ describe('notificationTarget', () => {
     expect(notificationTarget(notification('post_published'))).toBe('/community');
   });
 
+  it('opens the thread of a commented post, not just the post', () => {
+    expect(
+      notificationTarget(notification('post_comment', { post_slug: 'new-post', comment_id: 'c1' }))
+    ).toBe('/community/new-post#comments');
+    expect(notificationTarget(notification('post_comment', { post_slug: 'a/b' }))).toBe(
+      '/community/a%2Fb#comments'
+    );
+    expect(notificationTarget(notification('post_comment'))).toBe('/community');
+  });
+
   it('survives a null metadata column', () => {
     const row = {
       type: 'certificate_issued' as const,

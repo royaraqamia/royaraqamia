@@ -315,7 +315,10 @@ private fun NotificationRow(
                 .clickable(
                     onClick = onOpen,
                     onClickLabel =
-                        if (item.type == NotificationsResponseNotificationsItemType.POST_PUBLISHED)
+                        if (
+                            item.type == NotificationsResponseNotificationsItemType.POST_PUBLISHED ||
+                                item.type == NotificationsResponseNotificationsItemType.POST_COMMENT
+                        )
                             NotificationsCopy.POST_PUBLISHED_OPEN
                         else null,
                 )
@@ -559,6 +562,7 @@ private fun iconFor(type: NotificationsResponseNotificationsItemType): ImageVect
         NotificationsResponseNotificationsItemType.CHAT_REQUEST -> LucideVectors.MessagesSquare
         NotificationsResponseNotificationsItemType.NEW_FOLLOWER -> LucideVectors.UserPlus
         NotificationsResponseNotificationsItemType.POST_PUBLISHED -> LucideVectors.FileText
+        NotificationsResponseNotificationsItemType.POST_COMMENT -> LucideVectors.MessagesSquare
         NotificationsResponseNotificationsItemType.PROJECT_REQUEST,
         NotificationsResponseNotificationsItemType.RETAINER_REQUEST,
         NotificationsResponseNotificationsItemType.SUBSCRIPTION_REQUEST -> LucideVectors.Bell

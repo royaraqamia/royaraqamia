@@ -44,10 +44,15 @@ function makeRepository(overrides: Partial<PostEngagementRepository> = {}) {
 function makeService(
   repository: PostEngagementRepository,
   allowed = true
-): { service: PostEngagementService; checkRateLimit: ReturnType<typeof vi.fn> } {
+): {
+  service: PostEngagementService;
+  checkRateLimit: ReturnType<typeof vi.fn>;
+  notify: ReturnType<typeof vi.fn>;
+} {
   const checkRateLimit = vi.fn(async () => allowed);
-  const deps: PostEngagementServiceDeps = { engagement: repository, checkRateLimit };
-  return { service: new PostEngagementService(deps), checkRateLimit };
+  const notify = vi.fn(async () => undefined);
+  const deps: PostEngagementServiceDeps = { engagement: repository, notify, checkRateLimit };
+  return { service: new PostEngagementService(deps), checkRateLimit, notify };
 }
 
 const comment = (overrides: Partial<PostCommentRow> = {}): PostCommentRow => ({
@@ -243,6 +248,71 @@ describe('PostEngagementService.comment', () => {
 
     await expect(service.comment(VIEWER, 'a-post', 'نصّ')).rejects.toMatchObject({ status: 403 });
     expect(repository.createComment).not.toHaveBeenCalled();
+  });
+
+  it('tells the post author once, with the type, excerpt and thread destination', async () => {
+    const repository = makeRepository({
+      authorsByIds: vi.fn(async () => ({
+        [VIEWER]: { id: VIEWER, username: 'sara', name: 'سارة', avatarUrl: null },
+      })),
+    });
+    const { service, notify } = makeService(repository);
+
+    await service.comment(VIEWER, 'a-post', 'نصّ طويل');
+
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
+    expect(notify).toHaveBeenCalledWith({
+      user_id: OTHER_MEMBER,
+      type: 'post_comment',
+      title: 'تعليق جديد على منشورك',
+      body: 'تعليق جديد من سارة: «نصّ طويل». يمكنك حذفه من منشورك.',
+      metadata: { post_slug: 'a-post', comment_id: 'c1' },
+    });
+  });
+
+  it('bounds the excerpt to one short line', async () => {
+    const long = 'كلمة '.repeat(60);
+    const { service, notify } = makeService(makeRepository());
+
+    await service.comment(VIEWER, 'a-post', long);
+
+    await vi.waitFor(() => expect(notify).toHaveBeenCalledTimes(1));
+    const body = (notify.mock.calls[0]?.[0] as { body: string }).body;
+    expect(body).toContain('…');
+    expect(body.length).toBeLessThan(200);
+  });
+
+  it('writes no notice when members comment on their own post', async () => {
+    const repository = makeRepository({ postAuthor: vi.fn(async () => VIEWER) });
+    const { service, notify } = makeService(repository);
+
+    await expect(service.comment(VIEWER, 'a-post', 'نصّ')).resolves.toMatchObject({
+      commentCount: 1,
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('never lets a rejected producer fail a comment that was written', async () => {
+    const { service, notify } = makeService(makeRepository());
+    notify.mockRejectedValue(new Error('push is down'));
+
+    await expect(service.comment(VIEWER, 'a-post', 'نصّ')).resolves.toMatchObject({
+      commentCount: 1,
+    });
+  });
+
+  it('never lets a failed host read fail a comment that was written', async () => {
+    const repository = makeRepository({
+      postAuthor: vi.fn(async () => {
+        throw new Error('read is down');
+      }),
+    });
+    const { service } = makeService(repository);
+
+    await expect(service.comment(VIEWER, 'a-post', 'نصّ')).resolves.toMatchObject({
+      commentCount: 1,
+    });
   });
 });
 

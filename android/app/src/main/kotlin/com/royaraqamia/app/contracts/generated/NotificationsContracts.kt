@@ -46,6 +46,7 @@ enum class NotificationsResponseNotificationsItemType {
     @SerialName("chat_request") CHAT_REQUEST,
     @SerialName("new_follower") NEW_FOLLOWER,
     @SerialName("post_published") POST_PUBLISHED,
+    @SerialName("post_comment") POST_COMMENT,
 }
 
 @Serializable
@@ -54,4 +55,6 @@ data class NotificationsResponseNotificationsItemMetadata(
     val conversationId: String? = null,
     val username: String? = null,
     val slug: String? = null,
+    val post_slug: String? = null,
+    val comment_id: String? = null,
 )

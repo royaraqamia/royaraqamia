@@ -1,6 +1,7 @@
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { resolve } from 'path';
 import { describe, it, expect } from 'vitest';
+import { NotificationTypeSchema } from '@/shared/contracts/notifications';
 
 /**
  * The likes/comments schema (#1573) is exercised from the API through the
@@ -89,5 +90,53 @@ describe('post engagement migration', () => {
     expect(code).not.toMatch(
       /grant\s+(?:insert|update|delete)\s+on\s+public\.post_(?:likes|comments)/i
     );
+  });
+});
+
+/**
+ * The reply notification is a type, so it lives in the CHECK on `notifications`
+ * rather than in the engagement migration above. Replaying the constraint in
+ * migration order catches the way a type goes missing here: a later migration
+ * drops the named constraint and adds a list that quietly leaves one member out
+ * — the same shape that retired `post_published` before it was restored.
+ */
+describe('post comment notification type migration', () => {
+  const directory = resolve(process.cwd(), 'supabase/migrations');
+
+  function finalTypeMembers(): string[] {
+    let members = new Set<string>();
+
+    for (const file of readdirSync(directory)
+      .filter((name) => name.endsWith('.sql'))
+      .sort()) {
+      const sql = readFileSync(resolve(directory, file), 'utf8').replace(/--[^\n]*/g, ' ');
+      const drops = [
+        ...sql.matchAll(
+          /alter\s+table\s+public\.notifications\s+drop\s+constraint\s+if\s+exists\s+notifications_type_check\s*;/gi
+        ),
+      ].map((match) => ({ at: match.index ?? 0, members: null as string[] | null }));
+      const adds = [
+        ...sql.matchAll(
+          /alter\s+table\s+public\.notifications\s+add\s+constraint\s+notifications_type_check\s+check\s*\(\s*type\s+in\s*\(([\s\S]*?)\)\s*\)\s*;/gi
+        ),
+      ].map((match) => ({
+        at: match.index ?? 0,
+        members: [...(match[1] ?? '').matchAll(/'([a-z_]+)'/g)].map((member) => member[1] ?? ''),
+      }));
+
+      for (const change of [...drops, ...adds].sort((a, b) => a.at - b.at)) {
+        members = new Set(change.members ?? []);
+      }
+    }
+
+    return [...members].sort();
+  }
+
+  it('keeps post_comment in the constraint after every migration', () => {
+    expect(finalTypeMembers()).toContain('post_comment');
+  });
+
+  it('lets the database accept exactly the types the contract declares', () => {
+    expect(finalTypeMembers()).toEqual([...NotificationTypeSchema.options].sort());
   });
 });
