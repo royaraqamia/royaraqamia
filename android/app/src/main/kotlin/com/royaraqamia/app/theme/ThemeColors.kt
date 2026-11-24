@@ -29,6 +29,7 @@ object RoyColors {
     val muted = Color(DesignTokens.Colors.muted.toInt())
     val mutedForeground = Color(DesignTokens.Colors.mutedForeground.toInt())
     val placeholder = Color(DesignTokens.Colors.placeholder.toInt())
+    val metadata = Color(DesignTokens.Colors.metadata.toInt())
     val accent = Color(DesignTokens.Colors.accent.toInt())
     val accentForeground = Color(DesignTokens.Colors.accentForeground.toInt())
     val destructive = Color(DesignTokens.Colors.destructive.toInt())

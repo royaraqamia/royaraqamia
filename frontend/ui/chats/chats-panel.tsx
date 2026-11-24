@@ -353,7 +353,7 @@ function ThreadRow({
         <ThreadIdentity thread={thread} presence={presence} />
         <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5">
           {thread.lastMessageAt ? (
-            <span className="text-[11px] font-medium text-muted-foreground/60">
+            <span data-visual="chat-row-time" className="text-fluid-xs font-medium text-metadata">
               {chatTimeAgo(thread.lastMessageAt)}
             </span>
           ) : null}

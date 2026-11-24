@@ -508,7 +508,10 @@ export const ChatMessageRow = memo(function ChatMessageRow({
         </div>
       )}
 
-      <div className="flex items-center gap-2 text-[11px] text-muted-foreground/60">
+      <div
+        data-visual="chat-message-time"
+        className="flex items-center gap-2 text-fluid-xs text-metadata"
+      >
         <span>{chatTimeAgo(message.createdAt)}</span>
         {state === 'failed' && (
           <span className="inline-flex items-center gap-1 text-destructive/80">

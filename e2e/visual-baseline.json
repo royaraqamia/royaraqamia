@@ -15,6 +15,7 @@
     "--muted": "rgb(44, 44, 48)",
     "--muted-foreground": "rgb(173, 173, 173)",
     "--placeholder": "rgb(133, 133, 133)",
+    "--metadata": "rgb(138, 138, 138)",
     "--accent": "rgb(38, 38, 43)",
     "--accent-foreground": "rgb(245, 245, 245)",
     "--destructive": "rgb(239, 68, 68)",
