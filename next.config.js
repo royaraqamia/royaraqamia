@@ -37,6 +37,18 @@ const sentryRelease = () => {
   return `web-${require('./package.json').version}`;
 };
 
+/**
+ * The upload paths and the built-in optimizer share one pixel ceiling
+ * (`shared/contracts/images.ts`). Config is CommonJS, so read the number the
+ * contract declares instead of repeating it here (#1787).
+ */
+const imageMaxPixels = () => {
+  const source = readFileSync(join(__dirname, 'shared', 'contracts', 'images.ts'), 'utf8');
+  const match = /export const IMAGE_MAX_PIXELS = ([\d_]+);/.exec(source);
+  if (!match) throw new Error('IMAGE_MAX_PIXELS is missing from shared/contracts/images.ts');
+  return Number(match[1].replaceAll('_', ''));
+};
+
 /** @type {import('next').NextConfig} */
 const csp = `
 default-src 'self';
@@ -86,6 +98,10 @@ const nextConfig = {
     // Expand lucide-react named imports to per-icon modules so only used
     // glyphs are bundled instead of the barrel's icon map.
     optimizePackageImports: ['lucide-react'],
+    // Defence in depth for every image that still uses Next's built-in
+    // optimizer. sharp's own default (268 MP, about 1 GiB of RGBA) is far above
+    // this container; uploads enforce the same number before Storage (#1787).
+    imgOptMaxInputPixels: imageMaxPixels(),
   },
   typescript: {
     ignoreBuildErrors: true,

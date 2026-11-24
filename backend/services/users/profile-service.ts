@@ -1,6 +1,8 @@
 import type { UserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import type { PublicUsersRepository } from '@/backend/repositories/users/public-users-repository';
 import type { AvatarStorageRepository } from '@/backend/repositories/users/avatar-storage-repository';
+import { prepareBoundedImage } from '@/backend/services/images/bounded-image';
+import { IMAGE_MAX_PIXELS, IMAGE_PIXEL_REFUSAL } from '@/shared/contracts/images';
 import { AVATAR_ALLOWED_MIME_TYPES, AVATAR_MAX_BYTES } from '@/shared/contracts/users';
 
 /** The requested handle is already claimed by another member. */
@@ -86,10 +88,10 @@ export class ProfileService {
    * file. A failed row write rolls the fresh upload back.
    */
   async updateAvatar(userId: string, file: File): Promise<{ avatarUrl: string }> {
-    this.assertValidAvatar(file);
+    const bounded = await this.assertValidAvatar(file);
 
     const previous = await this.deps.profiles.getById(userId);
-    const avatarUrl = await this.deps.avatars.upload(userId, file);
+    const avatarUrl = await this.deps.avatars.upload(userId, bounded);
 
     try {
       await this.deps.profiles.updateProfile(userId, { avatar_url: avatarUrl });
@@ -117,13 +119,21 @@ export class ProfileService {
     }
   }
 
-  private assertValidAvatar(file: File): void {
+  private async assertValidAvatar(file: File): Promise<File> {
     if (!(AVATAR_ALLOWED_MIME_TYPES as readonly string[]).includes(file.type)) {
       throw new AvatarValidationError('يجب أن يكون الملف صورة صالحة');
     }
     if (file.size > AVATAR_MAX_BYTES) {
       throw new AvatarValidationError('يجب أن تكون الصورة أقل من 5 ميغابايت');
     }
+
+    const prepared = await prepareBoundedImage(file, IMAGE_MAX_PIXELS);
+    if (!prepared.accepted) {
+      throw new AvatarValidationError(
+        prepared.reason === 'pixels' ? IMAGE_PIXEL_REFUSAL : 'يجب أن يكون الملف صورة صالحة'
+      );
+    }
+    return prepared.file;
   }
 }
 
