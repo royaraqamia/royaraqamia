@@ -1,0 +1,173 @@
+{
+  "generatedAt": "2026-11-24T23:13:23.134Z",
+  "model": "deepseek-v4.1-flash",
+  "promptHash": "ce283791791f4efd7d9a70c4640ae2c64846f4e78f3f4335431e487005c5053e",
+  "summary": {
+    "scores": {
+      "tool_choice": 1,
+      "argument_validity": 1,
+      "confirmation_discipline": 1,
+      "arabic_quality": 1
+    }
+  },
+  "tiers": [
+    {
+      "name": "agent",
+      "cases": [
+        {
+          "id": "agent-data-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-memory-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-order-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-web-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-religious-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-religious-02",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-fatawa-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": null, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-context-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-noise-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-injection-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": null, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-en-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-community-read-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-community-write-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-consultations-read-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-ambiguous-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": null, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-remote-injection-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        },
+        {
+          "id": "agent-consultations-write-01",
+          "scores": {
+            "tool_choice": { "score": 1, "failures": [] },
+            "argument_validity": { "score": 1, "failures": [] },
+            "confirmation_discipline": { "score": 1, "failures": [] },
+            "arabic_quality": { "score": 1, "failures": [] }
+          }
+        }
+      ]
+    }
+  ]
+}

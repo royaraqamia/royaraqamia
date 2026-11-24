@@ -13,6 +13,12 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { arg, deterministic } from './lib.mjs';
+import {
+  SCORE_NAMES,
+  baselineFailures,
+  scoreAgentCase,
+  transcriptProblem,
+} from './score-agent.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(arg('repo', resolve(here, '../..')));
@@ -89,6 +95,58 @@ for (const report of reports) {
       `report axis ${axis}: stored mean ${value}, recomputed ${expected}`
     );
   }
+}
+
+// 4. The agent transcript is the provider record the scorecard was computed
+// from: same prompt hash, same named scores, and no named regression against
+// the committed baseline. This is the token-free half of ADR-0185 decision 3.
+const transcript = read(resolve(here, 'agent-transcript.json'));
+const baseline = read(resolve(here, 'agent-baseline.json'));
+const agentReport = reports[1];
+const promptProblem = transcriptProblem(transcript, root);
+check(!promptProblem, `transcript: ${promptProblem}`);
+
+const transcriptIds = new Set(transcript.cases.map((entry) => entry.id));
+for (const testCase of suite.agent) {
+  check(transcriptIds.has(testCase.id), `suite ${testCase.id}: no transcript recording`);
+}
+
+const agentReportById = new Map(
+  (agentReport.tiers?.[0]?.cases ?? []).map((entry) => [entry.id, entry])
+);
+for (const entry of transcript.cases) {
+  const expectation = expectations.get(entry.id);
+  check(Boolean(expectation), `transcript ${entry.id}: no matching case in suite.json`);
+  if (!expectation) continue;
+  const scored = scoreAgentCase(entry, expectation);
+  const reported = agentReportById.get(entry.id);
+  check(Boolean(reported), `transcript ${entry.id}: not in the agent report`);
+  if (!reported) continue;
+  for (const name of SCORE_NAMES) {
+    const wanted = scored[name]?.score ?? null;
+    const stored = reported.scores?.[name]?.score ?? null;
+    check(
+      wanted === stored,
+      `report ${entry.id} ${name}: stored ${stored}, recomputed from the transcript ${wanted}`
+    );
+  }
+}
+
+for (const name of SCORE_NAMES) {
+  const values = (agentReport.tiers?.[0]?.cases ?? [])
+    .map((entry) => entry.scores?.[name]?.score)
+    .filter((value) => typeof value === 'number');
+  const expected = values.length
+    ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2))
+    : null;
+  check(
+    String(agentReport.summary?.scores?.[name]) === String(expected),
+    `agent summary ${name}: stored ${agentReport.summary?.scores?.[name]}, recomputed ${expected}`
+  );
+}
+
+for (const regression of baselineFailures(agentReport, baseline)) {
+  check(false, `baseline: ${regression}`);
 }
 
 if (failures.length) {
