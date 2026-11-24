@@ -28,6 +28,8 @@ object PlanCardCopy {
     const val SIGN_IN = "تسجيل الدُّخول"
     const val HISTORY_TITLE = "سجل الاشتراك"
     const val HISTORY_EMPTY = "لا يوجد سجل اشتراك بعد. أنت على {plan}، ويمكنك التَّرقية من صفحة الاشتراكات."
+    const val HISTORY_EMPTY_ACTIVE = "خطتك المدفوعة مفعَّلة حتى {date}، ولم يُسجَّل أي دفع على هذا الحساب."
+    const val HISTORY_EMPTY_UNLIMITED = "خطتك غير محدودة، ولم يُسجَّل أي دفع على هذا الحساب."
     const val ACTIVATED_LINE = "فُعِّلت في {activated}، وتنتهي في {expires}."
     const val NOTE_LINE = "«{note}»"
     const val METHOD_SHAMCASH = "ShamCash"

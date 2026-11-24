@@ -11,7 +11,7 @@ import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { useMyPlan } from '@/frontend/state/plans/use-my-plan';
 import { useSession } from '@/frontend/state/session-provider';
 import { formatCount, formatHijriDate } from '@/frontend/shared/format';
-import type { OwnedItemState, PlanActivationMethod } from '@/shared/contracts/plans';
+import type { OwnedItemState, PlanActivationMethod, UsageState } from '@/shared/contracts/plans';
 
 const PLAN_LABELS = { free: PLAN_CARD_COPY.planFree, pro: PLAN_CARD_COPY.planPro } as const;
 
@@ -50,6 +50,24 @@ export function usageShare(limits: OwnedItemState[]): number {
   if (cap <= 0) return 0;
   const used = limits.reduce((total, item) => total + item.used, 0);
   return Math.min(100, Math.round((used / cap) * 100));
+}
+
+/**
+ * The empty history is a sentence about the plan in force, not about the
+ * missing rows. A comped or unlimited member has no payment to show, but
+ * naming the free plan would be a false statement about what they hold — so
+ * each state reads its own key and no plan is described by another's words.
+ */
+function emptyHistoryCopy(state: UsageState): string {
+  if (state.plan !== 'pro' && !state.unlimited) {
+    return PLAN_CARD_COPY.historyEmpty.replace('{plan}', PLAN_CARD_COPY.planFree);
+  }
+  if (state.expiresAt) {
+    return PLAN_CARD_COPY.historyEmptyActive.replace('{date}', formatHijriDate(state.expiresAt));
+  }
+  // An Admin holds no plan row, so there is no expiry to name. Never fall
+  // through to the free sentence here: that is the claim this state rejects.
+  return PLAN_CARD_COPY.historyEmptyUnlimited;
 }
 
 /**
@@ -200,7 +218,7 @@ function PlanBody() {
 
         {activations.length === 0 ? (
           <p className="rounded-2xl border border-border/50 bg-card/60 p-4 text-sm text-muted-foreground">
-            {PLAN_CARD_COPY.historyEmpty.replace('{plan}', PLAN_CARD_COPY.planFree)}
+            {emptyHistoryCopy(state)}
           </p>
         ) : (
           <ul className="space-y-2">
