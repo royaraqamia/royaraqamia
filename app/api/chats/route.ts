@@ -3,8 +3,8 @@ import { NextRequest } from 'next/server';
 import { listChatThreads, startChat } from '@/backend/controllers/chat';
 import { toNextResponse } from '@/backend/transport/http-result';
 
-export async function GET() {
-  return toNextResponse(await listChatThreads());
+export async function GET(req: NextRequest) {
+  return toNextResponse(await listChatThreads(req.nextUrl.searchParams));
 }
 
 export async function POST(req: NextRequest) {

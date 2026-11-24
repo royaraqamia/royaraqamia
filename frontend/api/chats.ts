@@ -7,6 +7,7 @@ import {
   type ChatAgentEvent,
   type ChatAssistantState,
   type ChatConversationSummary,
+  type ChatThreadPage,
   type ChatMessage,
   type ChatMessagePage,
   type ChatMessageSendInput,
@@ -35,6 +36,7 @@ import {
 interface ChatThreadsResponse {
   success: boolean;
   threads?: ChatConversationSummary[];
+  nextCursor?: string | null;
   error?: string;
 }
 
@@ -74,9 +76,22 @@ interface ChatAttachmentResponse {
   error?: string;
 }
 
-export async function getChatThreads(): Promise<ChatConversationSummary[]> {
-  const result = await request<ChatThreadsResponse>('/api/chats', { cache: 'no-store' });
-  return result.threads ?? [];
+/**
+ * One bounded page of the Chats tab. The first call sends no cursor; a page
+ * step sends the opaque `(last_message_at, id)` the server returned (#1803).
+ */
+export async function getChatThreads(cursor: string | null = null): Promise<ChatThreadPage> {
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+  const result = await request<ChatThreadsResponse>(`/api/chats${query}`, { cache: 'no-store' });
+  return { threads: result.threads ?? [], nextCursor: result.nextCursor ?? null };
+}
+
+/** The badge's one sum, deliberately not the list endpoint. */
+export async function getChatUnreadCount(): Promise<number> {
+  const result = await request<{ count?: number }>('/api/chats/unread-count', {
+    cache: 'no-store',
+  });
+  return result.count ?? 0;
 }
 
 export async function getChatThread(id: string): Promise<ChatThread | null> {

@@ -66,6 +66,10 @@ export interface ChatThreadsState {
    * tab keeps drawing the rows and the reason is kept for the next empty read.
    */
   error: unknown;
+  /** The next page's opaque cursor, or null when the list is exhausted. */
+  nextCursor: string | null;
+  /** One bounded read per page step; a no-op once the cursor is exhausted. */
+  loadMore: () => Promise<void>;
   refresh: () => Promise<void>;
   respond: (id: string, answer: 'accept' | 'decline') => Promise<string | null>;
   start: (userId: string) => Promise<string | null>;
@@ -87,6 +91,9 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
   const { threads, readyFor, error } = state;
   const storeRef = useRef<ChatsLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
+  // The cursor travels through a ref so a timer's or a stream's `refresh` can
+  // never resume an old page after the panel stepped to a newer one.
+  const cursorRef = useRef<string | null>(null);
 
   const ready = readyFor === identity;
   // The last screen this identity painted (#495), read during render: the rows
@@ -100,14 +107,28 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
     }
 
     try {
-      const rows = await getChatThreads();
+      cursorRef.current = null;
+      const { threads: rows, nextCursor } = await getChatThreads();
       // Write the answer down before painting it, so the next cold start reads
       // exactly what this one drew.
       await storeRef.current?.saveThreads(rows);
-      dispatch({ type: 'refreshed', threads: rows });
+      dispatch({ type: 'refreshed', threads: rows, nextCursor });
     } catch (cause) {
       // The device's rows stay on screen; only a read with nothing cached is a
       // failure the tab draws.
+      dispatch({ type: 'refreshFailed', error: cause });
+    }
+  }, [enabled]);
+
+  const loadMore = useCallback(async () => {
+    if (!enabled || cursorRef.current === null) return;
+    try {
+      const { threads: rows, nextCursor } = await getChatThreads(cursorRef.current);
+      await storeRef.current?.saveThreads(rows);
+      cursorRef.current = nextCursor;
+      dispatch({ type: 'appended', threads: rows, nextCursor });
+    } catch (cause) {
+      // The rows already on screen stay; the page can be asked for again.
       dispatch({ type: 'refreshFailed', error: cause });
     }
   }, [enabled]);
@@ -234,6 +255,8 @@ export function useChatThreads(enabled: boolean, identity: LocalIdentity): ChatT
     isLoading: !ready && snapshot === null,
     painted: rendered.length > 0,
     error,
+    nextCursor: state.nextCursor,
+    loadMore,
     refresh,
     respond,
     start,

@@ -7,7 +7,6 @@ import { Check, MessagesSquare, Plus, X } from 'lucide-react';
 
 import { useChatThreads, type ChatThreadsState } from '@/frontend/state/chats/use-chat-threads';
 import { useChatPresenceList } from '@/frontend/state/chats/use-chat-presence-list';
-import { usePresenceRefresh } from '@/frontend/state/chats/use-presence-refresh';
 import { useAssistantPhase } from '@/frontend/state/chats/assistant-turn';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { startAssistantChat } from '@/frontend/api/chats';
@@ -87,11 +86,12 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
   // The store is partitioned by identity, resolved before the session answers
   // (#493), so the tab paints the rows this device already holds (#1033).
   const { identity } = useLocalIdentity();
-  const { threads, isLoading, painted, error, refresh, respond } = chats;
-  // One list read every 30s keeps every row's dot honest (ADR 0212).
-  usePresenceRefresh(refresh);
+  const { threads, isLoading, painted, error, refresh, respond, nextCursor, loadMore } = chats;
+  // The dot comes from the row's own Realtime channel; the list is read once on
+  // open and once per page step, never on a timer (#1803).
   const presence = useChatPresenceList(threads, identityUserId(identity));
   const [panel, setPanel] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [answering, setAnswering] = useState<{
     thread: ChatConversationSummary;
@@ -156,6 +156,16 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
     router.push(`/chats/new?to=${encodeURIComponent(peer.username)}`);
   }
 
+  /** One page step, bounded by the cursor the server handed back. */
+  async function more() {
+    setLoadingMore(true);
+    try {
+      await loadMore();
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   // The failure face is for a tab with nothing to show (#1033): a list the
   // device already holds stays on screen while the read is retried behind it.
   if (error && !painted) {
@@ -211,14 +221,27 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
       )}
 
       {assistant || open.length > 0 ? (
-        <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
-          {assistant ? (
-            <ThreadRow thread={assistant} presence={presence[assistant.id] ?? null} pinned />
+        <>
+          <ul className="divide-y divide-border/40 overflow-hidden rounded-2xl border border-border/70 bg-card/60 shadow-xs">
+            {assistant ? (
+              <ThreadRow thread={assistant} presence={presence[assistant.id] ?? null} pinned />
+            ) : null}
+            {open.map((thread) => (
+              <ThreadRow key={thread.id} thread={thread} presence={presence[thread.id] ?? null} />
+            ))}
+          </ul>
+          {nextCursor ? (
+            <button
+              type="button"
+              data-visual="chats-load-more"
+              onClick={() => void more()}
+              disabled={loadingMore}
+              className="mx-auto block rounded-xl border border-border/70 px-4 py-2 text-xs font-medium text-primary transition-safe hover:bg-primary/10 disabled:opacity-60"
+            >
+              {CHATS_LIST_COPY.loadMore}
+            </button>
           ) : null}
-          {open.map((thread) => (
-            <ThreadRow key={thread.id} thread={thread} presence={presence[thread.id] ?? null} />
-          ))}
-        </ul>
+        </>
       ) : pending.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 py-14 text-center shadow-xs">
           <div className="mb-3 rounded-full border border-border/40 bg-muted/60 p-3.5 text-muted-foreground/80 shadow-inner">

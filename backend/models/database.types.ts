@@ -3670,8 +3670,16 @@ export type Database = {
         Args: { p_conversation_id: string };
         Returns: string | null;
       };
-      list_chat_threads: {
+      chat_unread_count: {
         Args: Record<string, never>;
+        Returns: number;
+      };
+      list_chat_threads: {
+        Args: {
+          p_limit?: number;
+          p_before?: string | null;
+          p_before_id?: string | null;
+        };
         Returns: {
           counterpart_id: string | null;
           created_at: string;
@@ -3685,6 +3693,7 @@ export type Database = {
           my_last_read_at: string | null;
           my_role: string;
           my_status: string;
+          open_actions: number;
           status: string;
           title: string | null;
           unread_count: number;

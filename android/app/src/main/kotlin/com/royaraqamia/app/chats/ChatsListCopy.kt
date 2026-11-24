@@ -43,4 +43,5 @@ object ChatsListCopy {
     const val AGO_DAYS = "منذ {count} يوم"
     const val AGO_WEEKS = "منذ {count} أسبوع"
     const val LIST_ERROR = "تعذّر تحميل المحادثات. أعد المحاولة."
+    const val LOAD_MORE = "تحميل المزيد"
 }

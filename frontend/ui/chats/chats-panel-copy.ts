@@ -41,6 +41,7 @@ export const CHATS_LIST_COPY = {
   agoDays: 'منذ {count} يوم',
   agoWeeks: 'منذ {count} أسبوع',
   listError: 'تعذّر تحميل المحادثات. أعد المحاولة.',
+  loadMore: 'تحميل المزيد',
 } as const;
 
 export type ChatsListCopyStrings = typeof CHATS_LIST_COPY;

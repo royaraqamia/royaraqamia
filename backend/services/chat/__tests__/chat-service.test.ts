@@ -24,6 +24,7 @@ function makeRepository(
 ) {
   const repository: ChatRepository = {
     listThreads: vi.fn(async () => []),
+    chatUnreadCount: vi.fn(async () => 0),
     findConversation: vi.fn(async () => null),
     findParticipants: vi.fn(async () => []),
     findDirectPeer: vi.fn(async () => null),
@@ -1279,7 +1280,7 @@ describe('ChatService.listThreads', () => {
       ]),
     });
 
-    const [thread] = await service.listThreads(me);
+    const [thread] = (await service.listThreads(me)).threads;
 
     expect(thread).toMatchObject({
       title: 'سارة',
@@ -1315,7 +1316,7 @@ describe('ChatService.listThreads', () => {
       ]),
     });
 
-    const [thread] = await service.listThreads(me);
+    const [thread] = (await service.listThreads(me)).threads;
 
     expect(thread).toMatchObject({ title: 'فريق التصميم', counterpart: null });
   });
@@ -1344,9 +1345,82 @@ describe('ChatService.listThreads', () => {
       listThreads: vi.fn(async () => [row('group', 'declined'), row('direct', 'declined')]),
     });
 
-    const threads = await service.listThreads(me);
+    const { threads } = await service.listThreads(me);
 
     // The direct row stays: its own thread is closed and the surface says so.
     expect(threads.map((thread) => thread.id)).toEqual(['direct-1']);
+  });
+});
+
+describe('ChatService.listThreads pages', () => {
+  const row = (id: string, lastMessageAt: string | null) => ({
+    id,
+    kind: 'direct' as const,
+    title: id,
+    status: 'active' as const,
+    createdAt: '2026-11-01T10:00:00.000Z',
+    lastMessageAt,
+    unreadCount: 0,
+    openActions: 0,
+    lastMessageBody: null,
+    lastMessageSenderKind: null,
+    lastMessageCreatedAt: null,
+    lastMessageHasAttachments: false,
+    counterpartId: null,
+    myStatus: 'active' as const,
+    myRole: 'owner' as const,
+    myLastReadAt: null,
+  });
+
+  it('returns one bounded page and a cursor only when a lookahead row exists', async () => {
+    const listThreads = vi.fn(async () => [
+      row('c-1', '2026-11-02T10:00:00.000Z'),
+      row('c-2', null),
+    ]);
+    const { repository, service } = makeRepository({ listThreads });
+
+    const page = await service.listThreads(me, { limit: 1, before: null, beforeId: null });
+
+    expect(page.threads.map((thread) => thread.id)).toEqual(['c-1']);
+    expect(page.nextCursor).toBe('2026-11-02T10:00:00.000Z|c-1');
+    expect(listThreads).toHaveBeenCalledWith({
+      limit: 2,
+      before: null,
+      beforeId: null,
+    });
+    expect(repository.chatUnreadCount).not.toHaveBeenCalled();
+  });
+
+  it('has no next cursor when the page is the last one', async () => {
+    const { service } = makeRepository({
+      listThreads: vi.fn(async () => [row('c-1', null)]),
+    });
+
+    const page = await service.listThreads(me, { limit: 1, before: null, beforeId: null });
+
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it('passes the caller’s cursor through to the repository', async () => {
+    const listThreads = vi.fn(async () => []);
+    const { service } = makeRepository({ listThreads });
+    const cursor = '2026-11-01T10:00:00.000Z|c-old';
+
+    await service.listThreads(me, { limit: 50, before: cursor.split('|')[0]!, beforeId: 'c-old' });
+
+    expect(listThreads).toHaveBeenCalledWith({
+      limit: 51,
+      before: '2026-11-01T10:00:00.000Z',
+      beforeId: 'c-old',
+    });
+  });
+
+  it('answers the badge with the aggregate instead of the list', async () => {
+    const { repository, service } = makeRepository({
+      chatUnreadCount: vi.fn(async () => 7),
+    });
+
+    await expect(service.chatUnreadCount()).resolves.toBe(7);
+    expect(repository.listThreads).not.toHaveBeenCalled();
   });
 });
