@@ -1,5 +1,7 @@
 import type { MediaRepository } from '@/backend/repositories/blogpress/media-repository';
+import { prepareBoundedImage } from '@/backend/services/images/bounded-image';
 import { logger } from '@/backend/shared/logger';
+import { IMAGE_MAX_PIXELS, IMAGE_PIXEL_REFUSAL } from '@/shared/contracts/images';
 import {
   POST_IMAGE_QUOTA_REFUSALS,
   type PostImageQuotaReason,
@@ -72,21 +74,32 @@ export class BlogpressMediaService {
       return { error: 'يجب أن يكون الملف أقل من 5 ميغابايت' };
     }
 
+    // Pixels, not just bytes: a 198 KB flat PNG can decode to 244 MiB on the
+    // origin. Refuse it here, then store only a web-sized derivative so the
+    // first `next/image` hit can never decode the member's original (#1787).
+    const prepared = await prepareBoundedImage(file, IMAGE_MAX_PIXELS);
+    if (!prepared.accepted) {
+      return {
+        error: prepared.reason === 'pixels' ? IMAGE_PIXEL_REFUSAL : 'صيغة الصُّورة غير مدعومة',
+      };
+    }
+    const bounded = prepared.file;
+
     // A preflight, not the authority: the trigger in 20261219000000 reads the
     // size Storage recorded and is what actually bounds the bucket. This answer
     // arrives in the product's voice before a doomed upload starts.
     const usage = await this.repository.usage();
-    if (usage.memberBytes + file.size > usage.memberLimitBytes) {
+    if (usage.memberBytes + bounded.size > usage.memberLimitBytes) {
       return { error: POST_IMAGE_QUOTA_REFUSALS['post image member storage is full'] };
     }
-    if (usage.projectBytes + file.size > usage.projectLimitBytes) {
+    if (usage.projectBytes + bounded.size > usage.projectLimitBytes) {
       return { error: POST_IMAGE_QUOTA_REFUSALS['post image project storage is full'] };
     }
 
-    const ext = file.name.split('.').pop();
+    const ext = bounded.name.split('.').pop();
     const fileName = `${userId}/${crypto.randomUUID()}.${ext}`;
 
-    const result = await this.repository.uploadImage('post-images', fileName, file);
+    const result = await this.repository.uploadImage('post-images', fileName, bounded);
     if ('error' in result) {
       const reason: PostImageQuotaReason | undefined = result.reason;
       return { error: reason ? POST_IMAGE_QUOTA_REFUSALS[reason] : result.error };

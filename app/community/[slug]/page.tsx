@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import { BoundedImage } from '@/frontend/ui/shared/bounded-image';
 import ReactMarkdown, { type ExtraProps } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -183,7 +183,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                     className="flex w-fit items-center gap-2.5 hover:opacity-85 transition-opacity duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                   >
                     {author.avatar_url?.trim() ? (
-                      <Image
+                      <BoundedImage
                         src={author.avatar_url}
                         alt={author.name}
                         width={28}
@@ -224,7 +224,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                   data-visual="community-post-cover"
                   className="group relative aspect-video overflow-hidden rounded-2xl sm:rounded-3xl mb-8 bg-muted/60 border border-border/50 shadow-xl shadow-foreground/3 transition-safe duration-500 hover:shadow-2xl hover:border-border/80"
                 >
-                  <Image
+                  <BoundedImage
                     src={p.cover_image}
                     alt={excerpt}
                     fill

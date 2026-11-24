@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { User } from 'lucide-react';
+import { BoundedImage } from '@/frontend/ui/shared/bounded-image';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { PostViews } from '@/frontend/ui/shared/post-views';
@@ -39,7 +39,7 @@ export function PostCard({ post, index, showPinned = false }: PostCardProps) {
             className="block h-full w-full focus:outline-none"
             tabIndex={-1}
           >
-            <Image
+            <BoundedImage
               src={post.cover_image}
               alt={label}
               fill
@@ -70,7 +70,7 @@ export function PostCard({ post, index, showPinned = false }: PostCardProps) {
               className="relative z-20 mb-3 flex w-fit items-center gap-2.5 rounded-full transition-safe duration-150 ease-out hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             >
               {post.author.avatar_url?.trim() ? (
-                <Image
+                <BoundedImage
                   src={post.author.avatar_url}
                   alt={post.author.name}
                   width={28}

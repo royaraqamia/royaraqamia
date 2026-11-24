@@ -1,6 +1,6 @@
-import Image from 'next/image';
 import { User } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
+import { BoundedImage } from '@/frontend/ui/shared/bounded-image';
 
 export type MemberAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -58,7 +58,7 @@ export function MemberAvatar({
       )}
     >
       {avatarUrl?.trim() ? (
-        <Image
+        <BoundedImage
           src={avatarUrl}
           alt={name ?? ''}
           width={96}

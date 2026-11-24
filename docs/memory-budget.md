@@ -18,7 +18,7 @@ that floor; the numbers are ceilings, not reservations.
 | Chat inline image (assistant turn) | 5 MB                                                                                                 | `ATTACHMENT_IMAGE_MAX` in `chat-agent-service.ts`                  |
 | Chat document (assistant turn)     | 25 MB upload; 5 MB PDF; 1 MB per inflated entry; 2 MB across entries; 2,000 entries; 100k characters | `document-text.ts`                                                 |
 | Concurrent document reads          | 1                                                                                                    | `withDocumentSlot` in `document-text.ts`                           |
-| Optimized image (first hit)        | one source at a time; edge-cached afterwards                                                         | `next/image` + `sharp`                                             |
+| Optimized image (first hit)        | one decode at a time; 12 MP source; 2400 px stored edge                                              | `withImageDecodeSlot`, `IMAGE_MAX_PIXELS`, `imgOptMaxInputPixels`  |
 | Exports, boards, feeds             | page-bounded reads; no whole-table materialisation                                                   | the query contracts                                                |
 
 The multipart rows used to be unbounded before the controller's own `file.size` check: `formData()`
@@ -51,9 +51,12 @@ A refused archive answers the existing "the document could not be read" sentence
 
 - **PDF.js on a PDF under 5 MB.** The page cap (20) bounds the text, not the file's object graph or
   its embedded images; the 5 MB file budget bounds the file. A larger PDF is an ordinary refusal.
-- **`sharp` on a large source image.** The first request for a `next/image` variant pays the decode;
-  the edge pays it once per variant. The allowlisted hosts are the source of truth for which images
-  can arrive.
+- **`sharp` on a large source image.** Uploads refuse anything above 12 MP and store a copy whose
+  longest edge is 2400 px, so a stored cover cannot ask libvips for more than 48 MiB of RGBA
+  (#1787). The community cards and avatars draw that copy through `/api/media/optimize`, where
+  `withImageDecodeSlot` lets one decode run at a time; other images keep Next's optimizer, bounded by
+  the same number through `experimental.imgOptMaxInputPixels`. An image stored before the cap is
+  passed through unchanged rather than decoded.
 - **Concurrent paths.** A multipart upload and a document read can overlap; both are capped
   independently. The sum is what the memory graph watches.
 

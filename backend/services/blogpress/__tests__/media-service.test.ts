@@ -1,6 +1,8 @@
+import sharp from 'sharp';
 import { describe, it, expect, vi } from 'vitest';
 import { BlogpressMediaService } from '@/backend/services/blogpress/media-service';
 import type { MediaRepository } from '@/backend/repositories/blogpress/media-repository';
+import { IMAGE_PIXEL_REFUSAL } from '@/shared/contracts/images';
 
 function makeRepo(overrides: Partial<MediaRepository> = {}) {
   const repository: MediaRepository = {
@@ -26,9 +28,29 @@ function buildForm(file: File | null): FormData {
   return fd;
 }
 
-function makeFile({ name = 'photo.png', type = 'image/png', size = 1024 } = {}) {
-  const blob = new Blob([new Uint8Array(size)], { type });
-  return new File([blob], name, { type });
+const TINY_PNG = await sharp({
+  create: { width: 2, height: 2, channels: 3, background: '#ffffff' },
+})
+  .png()
+  .toBuffer();
+
+function makeFile({
+  name = 'photo.png',
+  type = 'image/png',
+  size,
+}: {
+  name?: string;
+  type?: string;
+  size?: number;
+} = {}) {
+  const bytes = size === undefined ? TINY_PNG : new Uint8Array(size);
+  return new File([bytes], name, { type });
+}
+
+/** A valid image padded to the byte boundary, to check the byte cap separately. */
+function paddedFile(size: number): File {
+  const bytes = Buffer.concat([Buffer.from(TINY_PNG), Buffer.alloc(size - TINY_PNG.length)]);
+  return new File([bytes], 'photo.png', { type: 'image/png' });
 }
 
 describe('BlogpressMediaService.uploadImage', () => {
@@ -43,7 +65,7 @@ describe('BlogpressMediaService.uploadImage', () => {
     expect(repository.uploadImage).toHaveBeenCalledWith(
       'post-images',
       expect.stringContaining('user-123/'),
-      file
+      expect.any(File)
     );
   });
 
@@ -58,7 +80,7 @@ describe('BlogpressMediaService.uploadImage', () => {
       string,
       string,
     ];
-    expect(fileName).toMatch(/^user-123\/[0-9a-f-]{36}\.jpeg$/);
+    expect(fileName).toMatch(/^user-123\/[0-9a-f-]{36}\.webp$/);
   });
 
   it('returns an error when no file is provided', async () => {
@@ -134,9 +156,47 @@ describe('BlogpressMediaService.uploadImage', () => {
   it('accepts a file exactly at the 5MB boundary', async () => {
     const { repository, service } = makeRepo();
     (repository.uploadImage as ReturnType<typeof vi.fn>).mockResolvedValue({ url: 'https://cdn' });
-    const file = makeFile({ size: 5 * 1024 * 1024 });
+    const file = paddedFile(5 * 1024 * 1024);
     const result = await service.uploadImage(buildForm(file), 'user-123');
     expect(result).toEqual({ url: 'https://cdn' });
+  });
+
+  it('refuses an upload over the pixel ceiling even when its bytes are small', async () => {
+    const { repository, service } = makeRepo();
+    const large = await sharp({
+      create: { width: 4000, height: 3001, channels: 3, background: '#ffffff' },
+    })
+      .png()
+      .toBuffer();
+    expect(large.byteLength).toBeLessThan(5 * 1024 * 1024);
+
+    const result = await service.uploadImage(
+      buildForm(new File([large], 'cover.png', { type: 'image/png' })),
+      'user-123'
+    );
+
+    expect(result).toEqual({ error: IMAGE_PIXEL_REFUSAL });
+    expect(repository.uploadImage).not.toHaveBeenCalled();
+  });
+
+  it('stores a web-sized derivative of an oversized source', async () => {
+    const { repository, service } = makeRepo();
+    (repository.uploadImage as ReturnType<typeof vi.fn>).mockResolvedValue({ url: 'https://cdn' });
+    const large = await sharp({
+      create: { width: 3000, height: 2000, channels: 3, background: '#ffffff' },
+    })
+      .png()
+      .toBuffer();
+
+    await service.uploadImage(
+      buildForm(new File([large], 'cover.png', { type: 'image/png' })),
+      'user-123'
+    );
+
+    const stored = (repository.uploadImage as ReturnType<typeof vi.fn>).mock.calls[0]?.[2] as File;
+    const metadata = await sharp(new Uint8Array(await stored.arrayBuffer())).metadata();
+    expect(Math.max(metadata.width ?? 0, metadata.height ?? 0)).toBeLessThanOrEqual(2400);
+    expect(stored.name).toBe('cover.webp');
   });
 
   it('handles a file with no extension', async () => {
@@ -159,14 +219,14 @@ describe('BlogpressMediaService.uploadImage', () => {
   it('refuses an upload that would take the member past its cap', async () => {
     const { repository, service } = makeRepo({
       usage: vi.fn().mockResolvedValue({
-        memberBytes: 100 * 1024 * 1024 - 512,
+        memberBytes: 100 * 1024 * 1024 - 1,
         memberLimitBytes: 100 * 1024 * 1024,
         projectBytes: 0,
         projectLimitBytes: 500 * 1024 * 1024,
       }),
     });
 
-    const result = await service.uploadImage(buildForm(makeFile({ size: 1024 })), 'user-123');
+    const result = await service.uploadImage(buildForm(makeFile()), 'user-123');
 
     expect(result).toEqual({
       error: 'تخزين صورك ممتلئ، احذف صورة قديمة ثم أعد المحاولة',
@@ -179,12 +239,12 @@ describe('BlogpressMediaService.uploadImage', () => {
       usage: vi.fn().mockResolvedValue({
         memberBytes: 0,
         memberLimitBytes: 100 * 1024 * 1024,
-        projectBytes: 500 * 1024 * 1024 - 512,
+        projectBytes: 500 * 1024 * 1024 - 1,
         projectLimitBytes: 500 * 1024 * 1024,
       }),
     });
 
-    const result = await service.uploadImage(buildForm(makeFile({ size: 1024 })), 'user-123');
+    const result = await service.uploadImage(buildForm(makeFile()), 'user-123');
 
     expect(result).toEqual({ error: 'تخزين الصور في الموقع ممتلئ، حاول لاحقاً' });
     expect(repository.uploadImage).not.toHaveBeenCalled();

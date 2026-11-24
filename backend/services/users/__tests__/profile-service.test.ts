@@ -7,6 +7,16 @@ import {
 import type { UserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import type { PublicUsersRepository } from '@/backend/repositories/users/public-users-repository';
 import type { AvatarStorageRepository } from '@/backend/repositories/users/avatar-storage-repository';
+import { prepareBoundedImage } from '@/backend/services/images/bounded-image';
+import { IMAGE_PIXEL_REFUSAL } from '@/shared/contracts/images';
+
+vi.mock('@/backend/services/images/bounded-image', () => ({
+  prepareBoundedImage: vi.fn(async () => ({
+    accepted: true as const,
+    file: new File([new Uint8Array(2)], 'me.webp', { type: 'image/webp' }),
+    pixels: 4,
+  })),
+}));
 
 function createService(overrides?: {
   existing?: { id: string } | null;
@@ -163,6 +173,17 @@ describe('ProfileService.updateAvatar', () => {
     await expect(service.updateAvatar('u-1', png(5 * 1024 * 1024 + 1))).rejects.toBeInstanceOf(
       AvatarValidationError
     );
+    expect(avatars.upload).not.toHaveBeenCalled();
+  });
+
+  it('rejects an image over the pixel ceiling without touching storage', async () => {
+    const { service, avatars } = createService();
+    vi.mocked(prepareBoundedImage).mockResolvedValueOnce({
+      accepted: false,
+      reason: 'pixels',
+    });
+
+    await expect(service.updateAvatar('u-1', png())).rejects.toThrow(IMAGE_PIXEL_REFUSAL);
     expect(avatars.upload).not.toHaveBeenCalled();
   });
 
