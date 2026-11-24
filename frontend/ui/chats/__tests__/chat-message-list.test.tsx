@@ -194,6 +194,36 @@ describe('ChatMessageList', () => {
     rerender(list([older, first, message({ id: 'm-3', body: 'جديد' })]));
     expect(top).toBe(400);
   });
+
+  it('shows the turn in the list from the first frame, before any answer text', () => {
+    render(
+      list([], {
+        assistant: { ...assistant, isStreaming: true, phase: { kind: 'thinking' } },
+      })
+    );
+
+    expect(screen.getByText('تفكّر')).toBeInTheDocument();
+    // The list is the log: a second live region here would announce the turn twice.
+    expect(screen.getByText('تفكّر').parentElement).not.toHaveAttribute('aria-live');
+    expect(screen.queryByText('ابدأ')).toBeNull();
+  });
+
+  it('follows the phase while the answer streams and clears when the turn settles', () => {
+    const inFlight = {
+      ...assistant,
+      isStreaming: true,
+      phase: { kind: 'tool' as const, label: 'تبحث في الويب' },
+      streamingText: 'ويكي',
+    };
+    const { rerender } = render(list([], { assistant: inFlight }));
+
+    expect(screen.getByText('تبحث في الويب')).toBeInTheDocument();
+    expect(screen.getByText('ويكي')).toBeInTheDocument();
+
+    rerender(list([], { assistant }));
+    expect(screen.queryByText('تبحث في الويب')).toBeNull();
+    expect(screen.getByText('ابدأ')).toBeInTheDocument();
+  });
 });
 
 describe('web citations (ADR-0206)', () => {

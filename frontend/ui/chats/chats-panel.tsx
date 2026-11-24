@@ -383,7 +383,7 @@ function ThreadIdentity({
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3">
       {thread.kind === 'agent' ? (
-        <AssistantMark className="size-9" />
+        <AssistantMark className="size-9" online />
       ) : (
         <PresenceAvatar
           name={label}
