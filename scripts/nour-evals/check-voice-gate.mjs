@@ -49,7 +49,6 @@ function earnedWarmth(report) {
 
 const baseWarmth = earnedWarmth(baseline);
 const varWarmth = earnedWarmth(variant);
-const axes = ['naturalness', 'warmth', 'helpfulness', 'boundaries'];
 const failures = [];
 
 const row = (label, from, to, delta) =>
