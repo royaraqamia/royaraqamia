@@ -25,7 +25,8 @@ function makeClient(result: unknown) {
   builder.then = (onFulfilled: (value: unknown) => unknown) =>
     Promise.resolve(result).then(onFulfilled);
   const from = vi.fn(() => builder);
-  return { client: { from } as unknown as SupabaseClient<Database>, from, builder };
+  const rpc = vi.fn(() => Promise.resolve(result));
+  return { client: { from, rpc } as unknown as SupabaseClient<Database>, from, rpc, builder };
 }
 
 const ROW = {
@@ -53,10 +54,18 @@ describe('createSupabaseNotificationRepository failure contract', () => {
   });
 
   it('throws from findUnreadCount instead of returning zero', async () => {
-    const { client } = makeClient({ count: null, error: DB_ERROR });
+    const { client } = makeClient({ data: null, error: DB_ERROR });
     const repo = createSupabaseNotificationRepository(client);
 
     await expect(repo.findUnreadCount('u-1')).rejects.toBeInstanceOf(RepositoryError);
+  });
+
+  it('reads the badge through the bounded count RPC, not an exact count', async () => {
+    const { client, rpc } = makeClient({ data: 100, error: null });
+    const repo = createSupabaseNotificationRepository(client);
+
+    await expect(repo.findUnreadCount('u-1')).resolves.toBe(100);
+    expect(rpc).toHaveBeenCalledWith('notification_unread_count', { p_user_id: 'u-1' });
   });
 
   it('throws from create instead of returning null', async () => {

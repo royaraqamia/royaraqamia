@@ -128,8 +128,11 @@ export type NotificationsResponse = z.infer<typeof NotificationsResponseSchema>;
  *
  * `/api/notifications/unread-count` answers `{ count }` with `Cache-Control: no-store`,
  * and a guest is answered zero rather than 401 - the bell is chrome, so the answer
- * it draws has to exist for everyone. Both clients read this one shape: the
- * aria-label and the badge say the same number or neither is right.
+ * it draws has to exist for everyone. Both clients read this one shape.
+ *
+ * The server stops counting at 100 (#1652): the badge distinguishes 0..99 from
+ * `99+`, so a body of 100 means "100 or more" and both clients draw `99+`. A
+ * smaller count is exact, and the aria-label and the badge say that same number.
  */
 export const UnreadNotificationCountSchema = z.object({
   count: z.coerce.number().int().nonnegative(),

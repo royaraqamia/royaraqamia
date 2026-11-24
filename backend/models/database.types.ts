@@ -3937,6 +3937,7 @@ export type Database = {
       };
       materialize_due_recurring_expenses: { Args: never; Returns: boolean };
       news_card_cap: { Args: { p_user_id: string }; Returns: number };
+      notification_unread_count: { Args: { p_user_id: string }; Returns: number };
       post_comment_create: {
         Args: { p_author_id: string; p_body: string; p_post_id: string };
         Returns: {
@@ -4090,6 +4091,7 @@ export type Database = {
       sweep_expired_mcp_connect_attempts: { Args: never; Returns: undefined };
       sweep_expired_mcp_oauth_auth_codes: { Args: never; Returns: undefined };
       sweep_expired_mcp_oauth_tokens: { Args: never; Returns: undefined };
+      sweep_notifications: { Args: never; Returns: undefined };
       sweep_stale_push_subscriptions: { Args: never; Returns: undefined };
       transliterate_arabic: { Args: { raw: string }; Returns: string };
       unpublish_post: { Args: { p_post_id: string }; Returns: string };
