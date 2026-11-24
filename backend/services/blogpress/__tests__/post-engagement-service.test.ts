@@ -25,6 +25,8 @@ function makeRepository(overrides: Partial<PostEngagementRepository> = {}) {
     setLike: vi.fn(async () => ({ liked: true, likeCount: 7 })),
     listComments: vi.fn(async () => ({ rows: [], nextCursor: null, total: 0 })),
     authorsByIds: vi.fn(async () => ({})),
+    postAuthor: vi.fn(async () => OTHER_MEMBER),
+    commentWriteGate: vi.fn(async () => 'ok' as const),
     getComment: vi.fn(async () => null),
     createComment: vi.fn(async () => ({
       id: 'c1',
@@ -33,6 +35,7 @@ function makeRepository(overrides: Partial<PostEngagementRepository> = {}) {
     })),
     updateComment: vi.fn(async () => null),
     deleteComment: vi.fn(async () => null),
+    reportComment: vi.fn(async () => ({ id: 'r1', createdAt: '2026-01-01T00:00:00Z' })),
     ...overrides,
   };
   return repository;
@@ -218,6 +221,56 @@ describe('PostEngagementService.comment', () => {
     await expect(service.comment(VIEWER, 'gone', 'نصّ')).rejects.toMatchObject({ status: 404 });
     expect(repository.createComment).not.toHaveBeenCalled();
   });
+
+  it('refuses a blocked pair with an actionable sentence', async () => {
+    const repository = makeRepository({
+      commentWriteGate: vi.fn(async () => 'blocked' as const),
+    });
+    const { service } = makeService(repository);
+
+    await expect(service.comment(VIEWER, 'a-post', 'نصّ')).rejects.toMatchObject({
+      status: 403,
+      message: 'لا يمكنك التعليق على منشور بينك وبين صاحبه حظر.',
+    });
+    expect(repository.createComment).not.toHaveBeenCalled();
+  });
+
+  it('refuses an unconfirmed writer without writing', async () => {
+    const repository = makeRepository({
+      commentWriteGate: vi.fn(async () => 'unverified' as const),
+    });
+    const { service } = makeService(repository);
+
+    await expect(service.comment(VIEWER, 'a-post', 'نصّ')).rejects.toMatchObject({ status: 403 });
+    expect(repository.createComment).not.toHaveBeenCalled();
+  });
+});
+
+describe('PostEngagementService.reportComment', () => {
+  it('files a report with the reason and rate-limits it separately', async () => {
+    const repository = makeRepository({
+      getComment: vi.fn(async () => comment({ authorId: OTHER_MEMBER })),
+    });
+    const { service, checkRateLimit } = makeService(repository);
+
+    const result = await service.reportComment(VIEWER, 'c1', 'spam');
+
+    expect(result.id).toBe('r1');
+    expect(checkRateLimit).toHaveBeenCalledWith(`post-comment-report:${VIEWER}`, 5, 5 * 60 * 1000);
+    expect(repository.reportComment).toHaveBeenCalledWith('c1', VIEWER, 'spam');
+  });
+
+  it('answers a repeated report with 409 instead of a server failure', async () => {
+    const repository = makeRepository({
+      getComment: vi.fn(async () => comment({ authorId: OTHER_MEMBER })),
+      reportComment: vi.fn(async () => null),
+    });
+    const { service } = makeService(repository);
+
+    await expect(service.reportComment(VIEWER, 'c1', 'spam')).rejects.toMatchObject({
+      status: 409,
+    });
+  });
 });
 
 describe('PostEngagementService comment ownership', () => {
@@ -239,6 +292,18 @@ describe('PostEngagementService comment ownership', () => {
 
     await expect(service.deleteComment(VIEWER, 'c1')).rejects.toMatchObject({ status: 403 });
     expect(repository.deleteComment).not.toHaveBeenCalled();
+  });
+
+  it('lets the post author remove another member’s reply', async () => {
+    const repository = makeRepository({
+      getComment: vi.fn(async () => comment({ authorId: OTHER_MEMBER })),
+      postAuthor: vi.fn(async () => VIEWER),
+      deleteComment: vi.fn(async () => ({ postId: POST_ID, commentCount: 2 })),
+    });
+    const { service } = makeService(repository);
+
+    expect(await service.deleteComment(VIEWER, 'c1')).toEqual({ deleted: true, commentCount: 2 });
+    expect(repository.deleteComment).toHaveBeenCalledWith('c1', VIEWER);
   });
 
   it('answers the count the tombstone reported', async () => {

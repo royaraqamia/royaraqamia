@@ -4,6 +4,7 @@ import type {
   PostEngagementRepository,
 } from '@/backend/repositories/blogpress/post-engagement-repository';
 import {
+  POST_COMMENT_REPORT_LIMIT,
   POST_COMMENT_WRITE_LIMIT,
   POST_ENGAGEMENT_WRITE_WINDOW_MS,
   POST_LIKE_WRITE_LIMIT,
@@ -106,6 +107,18 @@ export class PostEngagementService {
     await this.assertUnderLimit(`post-comment:${viewerId}`, POST_COMMENT_WRITE_LIMIT);
 
     const postId = await this.postIdOf(slug);
+
+    // The database repeats this gate inside the write function, so it stays the
+    // authority. The read here only turns a refusal into a sentence the member
+    // can act on instead of a generic failure.
+    const gate = await this.deps.engagement.commentWriteGate(postId, viewerId);
+    if (gate === 'blocked') {
+      throw new PostEngagementRefusedError(403, 'لا يمكنك التعليق على منشور بينك وبين صاحبه حظر.');
+    }
+    if (gate === 'unverified') {
+      throw new PostEngagementRefusedError(403, 'يجب تأكيد بريدك الإلكتروني قبل التعليق.');
+    }
+
     const written = await this.deps.engagement.createComment(postId, viewerId, body);
     if (!written) {
       throw new PostEngagementRefusedError(404, 'المنشور غير موجود.');
@@ -161,13 +174,37 @@ export class PostEngagementService {
     const existing = await this.deps.engagement.getComment(commentId);
     if (!existing) throw new PostEngagementRefusedError(404, 'التعليق غير موجود.');
     if (existing.authorId !== viewerId) {
-      throw new PostEngagementRefusedError(403, 'لا يمكنك حذف تعليق عضو آخر.');
+      // ADR-0217: the post's host may clear a reply. The write function repeats
+      // the same rule, so this read only makes a refusal answerable to a member.
+      const host = await this.deps.engagement.postAuthor(existing.postId);
+      if (host !== viewerId) {
+        throw new PostEngagementRefusedError(403, 'لا يمكنك حذف تعليق عضو آخر.');
+      }
     }
 
     const removed = await this.deps.engagement.deleteComment(commentId, viewerId);
     if (!removed) throw new PostEngagementRefusedError(404, 'التعليق غير موجود.');
 
     return { deleted: true, commentCount: removed.commentCount };
+  }
+
+  /** File a report; the frozen evidence is built by Postgres, not the caller. */
+  async reportComment(
+    viewerId: string,
+    commentId: string,
+    reason: string
+  ): Promise<{ id: string; createdAt: string }> {
+    await this.assertUnderLimit(`post-comment-report:${viewerId}`, POST_COMMENT_REPORT_LIMIT);
+
+    const existing = await this.deps.engagement.getComment(commentId);
+    if (!existing) throw new PostEngagementRefusedError(404, 'التعليق غير موجود.');
+
+    const reported = await this.deps.engagement.reportComment(commentId, viewerId, reason);
+    if (!reported) {
+      // The unique (reporter, comment) pair makes a second report a no-op.
+      throw new PostEngagementRefusedError(409, 'أبلغت عن هذا التعليق من قبل.');
+    }
+    return reported;
   }
 
   /** A slug that names no public post is the page's own 404, said now. */

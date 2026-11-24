@@ -182,6 +182,9 @@ export const POST_ENGAGEMENT_WRITE_WINDOW_MS = 5 * 60 * 1000;
 export const POST_LIKE_WRITE_LIMIT = 240;
 export const POST_COMMENT_WRITE_LIMIT = 10;
 
+/** Reporting is a deliberate act, so its bucket is tighter than commenting. */
+export const POST_COMMENT_REPORT_LIMIT = 5;
+
 /** A comment's public author: the same identity a card's publisher draws. */
 export const PostCommentAuthorSchema = z.object({
   id: z.string(),

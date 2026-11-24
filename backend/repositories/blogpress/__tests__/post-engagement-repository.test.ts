@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createPostEngagementRepository } from '@/backend/repositories/blogpress/post-engagement-repository';
@@ -312,5 +312,54 @@ describe('listComments with a viewer', () => {
     expect(page.rows).toHaveLength(20);
     expect(page.total).toBe(20);
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe('reportComment', () => {
+  it('calls the reporting function with the member and the reason', async () => {
+    const rpc = vi.fn(async () => ({
+      data: [{ id: 'r1', created_at: '2026-01-01T00:00:00Z' }],
+      error: null,
+    }));
+    const supabase = { rpc } as unknown as SupabaseClient<Database>;
+    const repo = createPostEngagementRepository(supabase);
+
+    await expect(repo.reportComment('c1', AUTHOR_ID, 'spam')).resolves.toEqual({
+      id: 'r1',
+      createdAt: '2026-01-01T00:00:00Z',
+    });
+    expect(rpc).toHaveBeenCalledWith('post_comment_report', {
+      p_comment_id: 'c1',
+      p_reporter_id: AUTHOR_ID,
+      p_reason: 'spam',
+    });
+  });
+});
+
+describe('postAuthor', () => {
+  it('reads the post owner for the host-removal check', async () => {
+    const maybeSingle = vi.fn(async () => ({ data: { author_id: AUTHOR_ID }, error: null }));
+    const eq = vi.fn(() => ({ maybeSingle }));
+    const supabase = {
+      from: vi.fn(() => ({ select: () => ({ eq }) })),
+    } as unknown as SupabaseClient<Database>;
+    const repo = createPostEngagementRepository(supabase);
+
+    await expect(repo.postAuthor(POST_ID)).resolves.toBe(AUTHOR_ID);
+    expect(eq).toHaveBeenCalledWith('id', POST_ID);
+  });
+});
+
+describe('commentWriteGate', () => {
+  it('reads the gate from the database function', async () => {
+    const rpc = vi.fn(async () => ({ data: 'blocked', error: null }));
+    const supabase = { rpc } as unknown as SupabaseClient<Database>;
+    const repo = createPostEngagementRepository(supabase);
+
+    await expect(repo.commentWriteGate(POST_ID, AUTHOR_ID)).resolves.toBe('blocked');
+    expect(rpc).toHaveBeenCalledWith('post_comment_write_gate', {
+      p_post_id: POST_ID,
+      p_author_id: AUTHOR_ID,
+    });
   });
 });

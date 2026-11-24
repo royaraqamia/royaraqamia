@@ -273,7 +273,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                   thread's count, and the owner's menu. The thread follows, so
                   the page ends in a conversation rather than in whitespace. */}
               <PostEngagementBar post={p} label={excerpt} />
-              <PostComments postId={p.id} slug={p.slug} />
+              <PostComments postId={p.id} slug={p.slug} postAuthorId={p.author_id} />
             </div>
 
             {hasHeadings && <PostTableOfContents headings={headings} />}

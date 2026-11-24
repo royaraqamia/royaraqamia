@@ -397,6 +397,7 @@ private fun Post(
                     repository = engagementRepository,
                     composer = composer,
                     currentUserId = currentUserId,
+                    postAuthorId = post.author_id,
                     onCountChanged = onCountChanged,
                 )
             }

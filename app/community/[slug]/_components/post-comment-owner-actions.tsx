@@ -7,8 +7,10 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { COMMUNITY_POST_COPY } from '../community-post-copy';
 
 interface PostCommentOwnerActionsProps {
-  onEdit: () => void;
+  /** The writer may edit; the post's host may only remove. */
+  onEdit?: () => void;
   onDelete: () => void;
+  isHost?: boolean;
 }
 
 /**
@@ -19,26 +21,34 @@ interface PostCommentOwnerActionsProps {
  * glyph the site draws is a glyph the app has to draw too. The thread itself is
  * the shared design; these two buttons are the web's.
  */
-export function PostCommentOwnerActions({ onEdit, onDelete }: PostCommentOwnerActionsProps) {
+export function PostCommentOwnerActions({
+  onEdit,
+  onDelete,
+  isHost = false,
+}: PostCommentOwnerActionsProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   return (
     <>
       <span className="ms-auto flex items-center gap-0.5 opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover/comment:opacity-100 max-sm:opacity-100">
-        <button
-          type="button"
-          onClick={onEdit}
-          aria-label={COMMUNITY_POST_COPY.commentEdit}
-          title={COMMUNITY_POST_COPY.commentEdit}
-          className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-        >
-          <PenLine className="size-4" aria-hidden="true" />
-        </button>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={COMMUNITY_POST_COPY.commentEdit}
+            title={COMMUNITY_POST_COPY.commentEdit}
+            className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          >
+            <PenLine className="size-4" aria-hidden="true" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setConfirmOpen(true)}
-          aria-label={COMMUNITY_POST_COPY.commentDelete}
-          title={COMMUNITY_POST_COPY.commentDelete}
+          aria-label={
+            isHost ? COMMUNITY_POST_COPY.commentRemove : COMMUNITY_POST_COPY.commentDelete
+          }
+          title={isHost ? COMMUNITY_POST_COPY.commentRemove : COMMUNITY_POST_COPY.commentDelete}
           className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2 className="size-4" aria-hidden="true" />
@@ -47,9 +57,15 @@ export function PostCommentOwnerActions({ onEdit, onDelete }: PostCommentOwnerAc
 
       <ConfirmDialog
         open={confirmOpen}
-        title={COMMUNITY_POST_COPY.commentDeleteTitle}
-        message={COMMUNITY_POST_COPY.commentDeleteBody}
-        confirmLabel={COMMUNITY_POST_COPY.commentDelete}
+        title={
+          isHost ? COMMUNITY_POST_COPY.commentRemoveTitle : COMMUNITY_POST_COPY.commentDeleteTitle
+        }
+        message={
+          isHost ? COMMUNITY_POST_COPY.commentRemoveBody : COMMUNITY_POST_COPY.commentDeleteBody
+        }
+        confirmLabel={
+          isHost ? COMMUNITY_POST_COPY.commentRemove : COMMUNITY_POST_COPY.commentDelete
+        }
         cancelLabel={COMMUNITY_POST_COPY.commentCancel}
         icon={Trash2}
         variant="danger"

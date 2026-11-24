@@ -9,6 +9,7 @@ import com.royaraqamia.app.contracts.generated.PostEngagementBatch
 import com.royaraqamia.app.contracts.generated.PostLikeResponse
 import com.royaraqamia.app.contracts.generated.UpdateCommentResponse
 import java.net.URLEncoder
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -80,6 +81,19 @@ class PostEngagementRepository(private val client: ApiClient) {
             "/api/community/comments/${URLEncoder.encode(commentId, "UTF-8")}",
             DeleteCommentResponse.serializer(),
         )
+
+    /** The report route's answer; the snapshot stays on the server. */
+    @Serializable
+    data class ReportAck(val success: Boolean = true, val id: String = "", val createdAt: String = "")
+
+    suspend fun report(commentId: String, reason: String): ApiResult<ReportAck> {
+        val payload = buildJsonObject { put("reason", reason) }.toString()
+        return client.post(
+            "/api/community/comments/${URLEncoder.encode(commentId, "UTF-8")}/report",
+            payload,
+            ReportAck.serializer(),
+        )
+    }
 
     companion object {
         const val ENGAGEMENT_PATH = "/api/community/engagement"

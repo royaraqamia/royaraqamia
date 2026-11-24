@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -70,6 +72,7 @@ internal fun PostCommentsSection(
     repository: PostEngagementRepository,
     composer: CommentComposerState,
     currentUserId: String?,
+    postAuthorId: String?,
     onCountChanged: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -86,6 +89,7 @@ internal fun PostCommentsSection(
     var editingId by remember(slug) { mutableStateOf<String?>(null) }
     var editDraft by remember(slug) { mutableStateOf("") }
     var pendingDelete by remember(slug) { mutableStateOf<PostCommentsResponseCommentsItem?>(null) }
+    var reportTarget by remember(slug) { mutableStateOf<PostCommentsResponseCommentsItem?>(null) }
 
     fun publish(list: List<PostCommentsResponseCommentsItem>, cursor: String?, count: Long) {
         comments = list
@@ -170,6 +174,7 @@ internal fun PostCommentsSection(
                         CommentRow(
                             comment = comment,
                             mine = currentUserId != null && comment.author?.id == currentUserId,
+                            host = currentUserId != null && postAuthorId == currentUserId,
                             editing = editingId == comment.id,
                             editDraft = editDraft,
                             onEditDraft = { editDraft = it },
@@ -202,6 +207,8 @@ internal fun PostCommentsSection(
                                 }
                             },
                             onDelete = { pendingDelete = comment },
+                            canReport = currentUserId != null && comment.author?.id != currentUserId,
+                            onReport = { reportTarget = comment },
                         )
                     }
                 }
@@ -241,10 +248,21 @@ internal fun PostCommentsSection(
         }
 
         pendingDelete?.let { target ->
+            val removing = target.author?.id != currentUserId
             AlertDialog(
                 onDismissRequest = { pendingDelete = null },
-                title = { Text(CommunityPostCopy.COMMENT_DELETE_TITLE) },
-                text = { Text(CommunityPostCopy.COMMENT_DELETE_BODY) },
+                title = {
+                    Text(
+                        if (removing) CommunityPostCopy.COMMENT_REMOVE_TITLE
+                        else CommunityPostCopy.COMMENT_DELETE_TITLE
+                    )
+                },
+                text = {
+                    Text(
+                        if (removing) CommunityPostCopy.COMMENT_REMOVE_BODY
+                        else CommunityPostCopy.COMMENT_DELETE_BODY
+                    )
+                },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -260,7 +278,10 @@ internal fun PostCommentsSection(
                             }
                         },
                     ) {
-                        Text(CommunityPostCopy.COMMENT_DELETE)
+                        Text(
+                            if (removing) CommunityPostCopy.COMMENT_REMOVE
+                            else CommunityPostCopy.COMMENT_DELETE
+                        )
                     }
                 },
                 dismissButton = {
@@ -270,6 +291,27 @@ internal fun PostCommentsSection(
                 },
             )
         }
+
+        reportTarget?.let { target ->
+            DropdownMenu(
+                expanded = true,
+                onDismissRequest = { reportTarget = null },
+            ) {
+                listOf(
+                    "spam" to CommunityPostCopy.COMMENT_REPORT_SPAM,
+                    "abuse" to CommunityPostCopy.COMMENT_REPORT_ABUSE,
+                    "other" to CommunityPostCopy.COMMENT_REPORT_OTHER,
+                ).forEach { (reason, label) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            reportTarget = null
+                            scope.launch { repository.report(target.id, reason) }
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -278,6 +320,7 @@ internal fun PostCommentsSection(
 private fun CommentRow(
     comment: PostCommentsResponseCommentsItem,
     mine: Boolean,
+    host: Boolean,
     editing: Boolean,
     editDraft: String,
     onEditDraft: (String) -> Unit,
@@ -285,6 +328,8 @@ private fun CommentRow(
     onCancelEdit: () -> Unit,
     onSaveEdit: () -> Unit,
     onDelete: () -> Unit,
+    canReport: Boolean,
+    onReport: () -> Unit,
 ) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
@@ -344,10 +389,19 @@ private fun CommentRow(
                         color = RoyColors.mutedForeground.copy(alpha = 0.7f),
                     )
                 }
-                if (mine && !editing) {
+                if ((mine || host) && !editing) {
                     Spacer(Modifier.weight(1f))
-                    IconAction(LucideVectors.PenLine, CommunityPostCopy.COMMENT_EDIT, onStartEdit)
-                    IconAction(LucideVectors.Trash2, CommunityPostCopy.COMMENT_DELETE, onDelete)
+                    if (mine) {
+                        IconAction(LucideVectors.PenLine, CommunityPostCopy.COMMENT_EDIT, onStartEdit)
+                    }
+                    IconAction(
+                        LucideVectors.Trash2,
+                        if (host) CommunityPostCopy.COMMENT_REMOVE else CommunityPostCopy.COMMENT_DELETE,
+                        onDelete,
+                    )
+                }
+                if (canReport && !editing) {
+                    IconAction(LucideVectors.Flag, CommunityPostCopy.COMMENT_REPORT, onReport)
                 }
             }
 

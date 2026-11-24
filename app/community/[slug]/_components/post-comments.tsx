@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Loader2, MessageCircle } from 'lucide-react';
+import { Flag, Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { cn } from '@/frontend/shared/cn';
@@ -15,6 +15,8 @@ import {
 } from '@/frontend/api/community-engagement';
 import { useSession } from '@/frontend/state/session-provider';
 import { useCommentCountSetter } from '@/frontend/state/community/post-engagement-provider';
+import { reportComment } from '@/frontend/api/comment-reports';
+import type { CommentReportReason } from '@/shared/contracts/comment-reports';
 import { ChatBody } from '@/frontend/ui/chats/chat-body';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
@@ -29,6 +31,8 @@ import { COMMUNITY_POST_COPY } from '../community-post-copy';
 interface PostCommentsProps {
   postId: string;
   slug: string;
+  /** The post's author may remove a reply without being its writer (ADR-0217). */
+  postAuthorId: string | null;
 }
 
 /**
@@ -41,7 +45,7 @@ interface PostCommentsProps {
  * Reads page oldest-last (newest first); a write prepends its own row and settles
  * the action bar's number from the server's count, so the two never disagree.
  */
-export function PostComments({ postId, slug }: PostCommentsProps) {
+export function PostComments({ postId, slug, postAuthorId }: PostCommentsProps) {
   const { user } = useSession();
   const pathname = usePathname();
   const setCommentCount = useCommentCountSetter();
@@ -57,6 +61,7 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [reportingId, setReportingId] = useState<string | null>(null);
 
   const publishTotal = useCallback(
     (count: number) => {
@@ -160,6 +165,18 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
     }
   };
 
+  const report = async (comment: PostComment, reason: CommentReportReason) => {
+    setReportingId(comment.id);
+    try {
+      await reportComment(comment.id, reason);
+      toast.success(COMMUNITY_POST_COPY.commentReported);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : COMMUNITY_POST_COPY.commentFailed);
+    } finally {
+      setReportingId(null);
+    }
+  };
+
   return (
     <>
       <section
@@ -200,6 +217,7 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
           <ul className="flex flex-col gap-5">
             {comments.map((comment) => {
               const mine = user?.id === comment.author?.id;
+              const isHost = !mine && !!user && postAuthorId === user.id;
               const editing = editingId === comment.id;
 
               return (
@@ -235,11 +253,32 @@ export function PostComments({ postId, slug }: PostCommentsProps) {
                         </span>
                       )}
 
-                      {mine && !editing && (
+                      {(mine || isHost) && !editing && (
                         <PostCommentOwnerActions
-                          onEdit={() => startEdit(comment)}
+                          onEdit={mine ? () => startEdit(comment) : undefined}
                           onDelete={() => void confirmDelete(comment)}
+                          isHost={isHost}
                         />
+                      )}
+
+                      {user && !mine && (
+                        <label className="ms-auto inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                          <Flag className="size-3.5" aria-hidden="true" />
+                          <select
+                            aria-label={COMMUNITY_POST_COPY.commentReport}
+                            value=""
+                            disabled={reportingId === comment.id}
+                            onChange={(event) =>
+                              void report(comment, event.target.value as CommentReportReason)
+                            }
+                            className="rounded-md border border-border/60 bg-background px-1.5 py-0.5 text-[11px]"
+                          >
+                            <option value="">{COMMUNITY_POST_COPY.commentReport}</option>
+                            <option value="spam">{COMMUNITY_POST_COPY.commentReportSpam}</option>
+                            <option value="abuse">{COMMUNITY_POST_COPY.commentReportAbuse}</option>
+                            <option value="other">{COMMUNITY_POST_COPY.commentReportOther}</option>
+                          </select>
+                        </label>
                       )}
                     </div>
 

@@ -18,6 +18,7 @@ import {
 } from '@/shared/contracts/community';
 import { loadCommunityMember, loadCommunityPost } from '@/backend/loaders/community';
 import { CommunityPostViewRateLimitError } from '@/backend/services/blogpress/community-view-recorder';
+import { ReportCommentInputSchema } from '@/shared/contracts/comment-reports';
 import { isRepositoryError } from '@/backend/shared/repository-error';
 import { UsernameSchema } from '@/shared/contracts/users';
 
@@ -301,6 +302,35 @@ export async function removePostComment(id: string): Promise<HttpResult> {
       }
     },
     { whenFailed: { success: false, error: 'تعذَّر حذف التعليق.' } }
+  );
+}
+
+/** File a report; the snapshot and the dedupe both belong to the database. */
+export async function reportPostComment(id: string, rawBody: unknown): Promise<HttpResult> {
+  const parsedId = CommentIdSchema.safeParse(id);
+  const parsed = ReportCommentInputSchema.safeParse(rawBody);
+  if (!parsedId.success || !parsed.success) {
+    return jsonResult(
+      400,
+      { success: false, error: parsed.success ? 'معرِّف تعليق غير صالح.' : 'سبب الإبلاغ غير صالح.' },
+      { headers: NO_STORE }
+    );
+  }
+
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      try {
+        const result = await createPostEngagementService().reportComment(
+          userId,
+          parsedId.data,
+          parsed.data.reason
+        );
+        return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
+      } catch (error) {
+        return engagementFailure(error) ?? unexpectedEngagementFailure('تعذَّر إرسال الإبلاغ.');
+      }
+    },
+    { whenFailed: { success: false, error: 'تعذَّر إرسال الإبلاغ.' } }
   );
 }
 

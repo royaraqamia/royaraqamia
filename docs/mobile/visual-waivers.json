@@ -91,6 +91,12 @@
       "reason": "The web change is a state refactor in both panels: the preferences' sources/selection/loading/load-error/saving and the private sources' summary/loading/load-error/removing/busy fields move from `useState` calls into one reducer per panel (#1102). Every JSX expression, class name, copy string and rendered state value is identical, so neither the recorded contract numbers nor the captures can move.",
       "issue": "#1102",
       "until": "2026-12-22"
+    },
+    {
+      "surface": "community",
+      "reason": "The web change adds a remove control for the post's author and a report selector for other signed-in members to comment rows, and passes the post's author id into the thread; it only adds copy keys. The recorded at-rest state is a public post with no signed-in comments, and the contract measures only the post column, author chip, cover, tags and body, so no recorded box, colour or word moves. #1799 and #1800 carry the controls and their interaction tests.",
+      "issue": "#1800",
+      "until": "2026-12-24"
     }
   ]
 }

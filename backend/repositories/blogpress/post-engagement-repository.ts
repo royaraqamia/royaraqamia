@@ -68,8 +68,12 @@ export interface PostEngagementRepository {
     pageSize: number,
     viewerId?: string | null
   ): Promise<PostCommentPage>;
+  /** The author of a post, for the host-removal check. */
+  postAuthor(postId: string): Promise<string | null>;
   /** The public identity of every author named by `ids`, in one read. */
   authorsByIds(ids: string[]): Promise<Record<string, PostCommentAuthorRow>>;
+  /** The write gate the database also enforces: ok, unverified or blocked. */
+  commentWriteGate(postId: string, authorId: string): Promise<'ok' | 'unverified' | 'blocked'>;
   getComment(commentId: string): Promise<PostCommentRow | null>;
   createComment(
     postId: string,
@@ -85,6 +89,12 @@ export interface PostEngagementRepository {
     commentId: string,
     authorId: string
   ): Promise<{ postId: string; commentCount: number } | null>;
+  /** File a report; the database freezes the evidence from the real rows. */
+  reportComment(
+    commentId: string,
+    reporterId: string,
+    reason: string
+  ): Promise<{ id: string; createdAt: string } | null>;
 }
 
 const UUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -288,6 +298,16 @@ export function createPostEngagementRepository(
 
     listComments,
 
+    async postAuthor(postId) {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('author_id')
+        .eq('id', postId)
+        .maybeSingle();
+      if (error && !isNotFoundError(error)) throw error;
+      return data?.author_id ?? null;
+    },
+
     async authorsByIds(ids): Promise<Record<string, PostCommentAuthorRow>> {
       const unique = [...new Set(ids)];
       if (unique.length === 0) return {};
@@ -309,6 +329,15 @@ export function createPostEngagementRepository(
         };
       }
       return authors;
+    },
+
+    async commentWriteGate(postId, authorId) {
+      const { data, error } = await supabase.rpc('post_comment_write_gate', {
+        p_post_id: postId,
+        p_author_id: authorId,
+      });
+      if (error) throw error;
+      return (data ?? 'ok') as 'ok' | 'unverified' | 'blocked';
     },
 
     async getComment(commentId): Promise<PostCommentRow | null> {
@@ -368,6 +397,19 @@ export function createPostEngagementRepository(
       const row = data?.[0];
       if (!row) return null;
       return { postId: row.post_id, commentCount: Number(row.comment_count) };
+    },
+
+    async reportComment(commentId, reporterId, reason) {
+      const { data, error } = await supabase.rpc('post_comment_report', {
+        p_comment_id: commentId,
+        p_reporter_id: reporterId,
+        p_reason: reason,
+      });
+      if (error) throw error;
+
+      const row = data?.[0];
+      if (!row) return null;
+      return { id: row.id, createdAt: row.created_at };
     },
   });
 }
