@@ -62,6 +62,24 @@ async function loadRegistry() {
       // rather than an installed stub, so nothing new lands in `node_modules`.
       plugins: [
         {
+          // sharp's ESM entry resolves its native binary through
+          // `createRequire(import.meta.url)`, which is undefined inside this
+          // CommonJS report bundle. The registry only reads static capability
+          // tables, so the image service's dependency is stubbed rather than
+          // bundled — the same trick used for `server-only` below.
+          name: 'native-image-stub',
+          setup(build) {
+            build.onResolve({ filter: /^sharp$/ }, () => ({
+              path: 'sharp',
+              namespace: 'native-image-stub',
+            }));
+            build.onLoad({ filter: /.*/, namespace: 'native-image-stub' }, () => ({
+              contents: 'module.exports = {};',
+              loader: 'js',
+            }));
+          },
+        },
+        {
           name: 'server-only',
           setup(build) {
             build.onResolve({ filter: /^server-only$/ }, () => ({
