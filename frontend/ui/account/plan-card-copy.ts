@@ -26,6 +26,8 @@ export const PLAN_CARD_COPY = {
   signIn: 'تسجيل الدُّخول',
   historyTitle: 'سجل الاشتراك',
   historyEmpty: 'لا يوجد سجل اشتراك بعد. أنت على {plan}، ويمكنك التَّرقية من صفحة الاشتراكات.',
+  historyEmptyActive: 'خطتك المدفوعة مفعَّلة حتى {date}، ولم يُسجَّل أي دفع على هذا الحساب.',
+  historyEmptyUnlimited: 'خطتك غير محدودة، ولم يُسجَّل أي دفع على هذا الحساب.',
   activatedLine: 'فُعِّلت في {activated}، وتنتهي في {expires}.',
   noteLine: '«{note}»',
   methodShamcash: 'ShamCash',

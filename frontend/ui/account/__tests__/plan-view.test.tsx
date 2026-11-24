@@ -152,11 +152,9 @@ describe('PlanView', () => {
 
     expect(screen.getAllByText('غير محدود').length).toBeGreaterThan(0);
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'لا يوجد سجل اشتراك بعد. أنت على الخطَّة المجَّانيَّة، ويمكنك التَّرقية من صفحة الاشتراكات.'
-      )
-    ).toBeInTheDocument();
+    // An Admin has no payments to show, but they are not on the free plan.
+    expect(screen.getByText(/خطتك غير محدودة، ولم يُسجَّل أي دفع/)).toBeInTheDocument();
+    expect(screen.queryByText(/أنت على الخط/)).not.toBeInTheDocument();
   });
 
   it('offers the retry when the read failed and there is nothing to show', () => {
