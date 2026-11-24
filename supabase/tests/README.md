@@ -32,6 +32,16 @@ test here.
   interval, including the monthly one.
 - The view and the expectation table are readable by `service_role` and not by a member.
 
+`notifications_retention_test.sql` (#1652):
+
+- The retention sweep is scheduled, declares a health expectation, has a `created_at` index,
+  and drains every batch: read rows past 90 days and unread rows past 365 go, the fresh ones
+  stay.
+- `notification_unread_count` is executable by `authenticated` and not by `anon`, returns the
+  exact number below the cap, and stops at 100 for a 150-row backlog.
+- Tombstoning a habit removes its `habit_reminder` and `recovery_nudge` rows (but not other
+  notifications that name the same habit), and a hard delete does the same.
+
 `rls_authorization_test.sql`:
 
 - `is_admin()` is false with no email claim, false for a non-allowlisted email, and true

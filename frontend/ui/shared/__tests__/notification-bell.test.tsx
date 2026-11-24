@@ -41,6 +41,20 @@ describe('NotificationBell', () => {
     expect(screen.getByRole('link')).toHaveTextContent('99+');
   });
 
+  it('keeps 99 exact and draws the server-capped 100 as 99+, like the app', () => {
+    state.unreadCount = 99;
+    const first = render(<NotificationBell />);
+    expect(screen.getByRole('link')).toHaveTextContent('99');
+    expect(screen.getByRole('link')).not.toHaveTextContent('99+');
+
+    // The bell is memoised and takes no props, so a fresh mount is needed for
+    // a second count.
+    first.unmount();
+    state.unreadCount = 100;
+    render(<NotificationBell />);
+    expect(screen.getByRole('link')).toHaveTextContent('99+');
+  });
+
   it('marks itself current on the page it points at', () => {
     state.pathname = '/notifications';
 

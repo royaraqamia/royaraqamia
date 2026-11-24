@@ -58,15 +58,16 @@ export function createSupabaseNotificationRepository(
     },
 
     async findUnreadCount(userId: string) {
-      const { count, error } = await supabase
-        .from('notifications')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('is_read', false);
+      // The badge only distinguishes 0..99 from `99+` on both clients. The SQL
+      // read stops at 100 (#1652): an exact count scanned a member's whole
+      // unread backlog on every page mount and every app open.
+      const { data, error } = await supabase.rpc('notification_unread_count', {
+        p_user_id: userId,
+      });
 
       if (error) throw repositoryFailure('notifications.findUnreadCount', error);
 
-      return count ?? 0;
+      return Number(data ?? 0);
     },
 
     async create(input: NotificationCreateInput) {
