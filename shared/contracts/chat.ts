@@ -410,6 +410,16 @@ export interface ChatThread extends ChatConversationSummary {
   attachmentQuota: ChatAttachmentQuota;
 }
 
+/**
+ * One page of the Chats tab. `nextCursor` is opaque to the surface: the server
+ * encodes `(last_message_at, id)` after pinning the assistant row, so a page
+ * step is one bounded read rather than the member's whole history (#1803).
+ */
+export interface ChatThreadPage {
+  threads: ChatConversationSummary[];
+  nextCursor: string | null;
+}
+
 export interface ChatMessagePage {
   messages: ChatMessage[];
   /** Opaque `created_at` cursor for the next page, or null at the start. */

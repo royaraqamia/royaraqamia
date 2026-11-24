@@ -17,7 +17,12 @@ function stateOf(patch: Partial<ChatThreadsData> = {}): ChatThreadsData {
 
 describe('chatThreadsInitialState', () => {
   it('starts with nothing read and nothing wrong', () => {
-    expect(chatThreadsInitialState()).toEqual({ threads: [], readyFor: null, error: null });
+    expect(chatThreadsInitialState()).toEqual({
+      threads: [],
+      nextCursor: null,
+      readyFor: null,
+      error: null,
+    });
   });
 });
 
@@ -42,9 +47,27 @@ describe('reading the list', () => {
     const state = chatThreadsReducer(stateOf({ readyFor: IDENTITY, error: new Error('offline') }), {
       type: 'refreshed',
       threads: [THREAD],
+      nextCursor: null,
     });
 
-    expect(state).toEqual({ threads: [THREAD], readyFor: IDENTITY, error: null });
+    expect(state).toEqual({
+      threads: [THREAD],
+      nextCursor: null,
+      readyFor: IDENTITY,
+      error: null,
+    });
+  });
+
+  it('appends a page step behind the rows already on screen', () => {
+    const older = { id: 'c-2', unreadCount: 1 } as unknown as ChatConversationSummary;
+    const state = chatThreadsReducer(stateOf({ threads: [THREAD], readyFor: IDENTITY }), {
+      type: 'appended',
+      threads: [older],
+      nextCursor: '2026-11-01T10:00:00.000Z|c-2',
+    });
+
+    expect(state.threads).toEqual([THREAD, older]);
+    expect(state.nextCursor).toBe('2026-11-01T10:00:00.000Z|c-2');
   });
 
   it('keeps the device rows on screen when the read failed', () => {
@@ -66,7 +89,7 @@ describe('turning the surface off', () => {
       { type: 'reset' }
     );
 
-    expect(state).toEqual({ threads: [], readyFor: null, error: null });
+    expect(state).toEqual({ threads: [], nextCursor: null, readyFor: null, error: null });
   });
 
   it('empties a read that ran while off without forgetting the identity', () => {
@@ -75,6 +98,6 @@ describe('turning the surface off', () => {
       { type: 'cleared' }
     );
 
-    expect(state).toEqual({ threads: [], readyFor: OTHER, error: null });
+    expect(state).toEqual({ threads: [], nextCursor: null, readyFor: OTHER, error: null });
   });
 });

@@ -12,6 +12,8 @@ import type { ChatConversationSummary } from '@/shared/contracts/chat';
  */
 export interface ChatThreadsData {
   threads: ChatConversationSummary[];
+  /** Where the next page starts, or null when the list is exhausted. */
+  nextCursor: string | null;
   readyFor: LocalIdentity | null;
   error: unknown;
 }
@@ -25,11 +27,13 @@ export type ChatThreadsAction =
   | { type: 'storeRows'; threads: ChatConversationSummary[] }
   /** The store answered for this identity: rows may be painted. */
   | { type: 'storeAnswered'; identity: LocalIdentity }
-  | { type: 'refreshed'; threads: ChatConversationSummary[] }
+  | { type: 'refreshed'; threads: ChatConversationSummary[]; nextCursor: string | null }
+  /** A page step appends; the newest page is never thrown away. */
+  | { type: 'appended'; threads: ChatConversationSummary[]; nextCursor: string | null }
   | { type: 'refreshFailed'; error: unknown };
 
 export function chatThreadsInitialState(): ChatThreadsData {
-  return { threads: [], readyFor: null, error: null };
+  return { threads: [], nextCursor: null, readyFor: null, error: null };
 }
 
 export function chatThreadsReducer(
@@ -50,7 +54,20 @@ export function chatThreadsReducer(
       return { ...state, readyFor: action.identity };
 
     case 'refreshed':
-      return { ...state, threads: action.threads, error: null };
+      return {
+        ...state,
+        threads: action.threads,
+        nextCursor: action.nextCursor,
+        error: null,
+      };
+
+    case 'appended':
+      return {
+        ...state,
+        threads: [...state.threads, ...action.threads],
+        nextCursor: action.nextCursor,
+        error: null,
+      };
 
     case 'refreshFailed':
       // The device's rows stay on screen; only a read with nothing cached is a

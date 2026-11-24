@@ -25,6 +25,7 @@ import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { cn } from '@/frontend/shared/cn';
 import { useNotifications } from '@/frontend/state/NotificationContext';
 import { useChatThreads } from '@/frontend/state/chats/use-chat-threads';
+import { useChatUnreadCount } from '@/frontend/state/chats/use-chat-unread-count';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { ChatsPanel } from '@/frontend/ui/chats/chats-panel';
@@ -99,7 +100,6 @@ function defaultTab(notifications: NotificationWithMeta[]): TabId {
 
 export function NotificationsView() {
   const { user } = useSession();
-  const { identity } = useLocalIdentity();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -113,11 +113,10 @@ export function NotificationsView() {
     deleteNotification,
     refresh,
   } = useNotifications();
-  // One device-first list serves both the badge and the panel (#1033). The
-  // second hook call here used to reopen the store, refetch and resubscribe on
-  // the same tap that switched to Chats. Guests still see a zero badge: their
-  // local threads belong to the panel, not to an account's unread total.
-  const chats = useChatThreads(true, identity);
+  // The badge has its own one-row read: opening the bell must not read every
+  // conversation a member ever had (#1803). The list hook lives in ChatsTab,
+  // which is mounted only when that tab is actually on screen.
+  const chatUnreadCount = useChatUnreadCount(Boolean(user), user?.id ?? null);
 
   const baseId = useId();
   const [chosen, setChosen] = useState<TabId | null>(null);
@@ -145,12 +144,12 @@ export function NotificationsView() {
    * The badge on each tab. Alerts carries the server's unread count rather than a
    * count of the rows on screen: the feed is the newest 20, and a badge that
    * shrinks because older rows fell off the list would disagree with the bell.
-   * Chats is the sum of its threads' unread messages, from the same read that
-   * paints the list.
+   * Chats is the server's own sum of unread messages, read without opening the
+   * list — the bell's badge and the panel are now two different reads (#1803).
    */
   const unreadByTab = useMemo<Record<TabId, number>>(
-    () => ({ chats: user ? chats.unreadCount : 0, alerts: unreadCount }),
-    [user, chats.unreadCount, unreadCount]
+    () => ({ chats: user ? chatUnreadCount : 0, alerts: unreadCount }),
+    [user, chatUnreadCount, unreadCount]
   );
 
   const selectTab = useCallback(
@@ -227,7 +226,7 @@ export function NotificationsView() {
             rows={4}
           />
         ) : activeTab === 'chats' ? (
-          <ChatsPanel chats={chats} />
+          <ChatsTab />
         ) : failed ? (
           <PanelState icon={<Bell size={24} />} testId="notifications-failed">
             <p className="text-sm font-bold text-foreground">{NOTIFICATIONS_COPY.listError}</p>
@@ -262,6 +261,18 @@ export function NotificationsView() {
       </section>
     </main>
   );
+}
+
+/**
+ * The Chats tab's list is its own surface, mounted only while the tab is
+ * selected. Keeping the hook here — rather than at the page's top level — is
+ * what makes a `/notifications?tab=alerts` visit issue no `/api/chats` read at
+ * all (#1803).
+ */
+function ChatsTab() {
+  const { identity } = useLocalIdentity();
+  const chats = useChatThreads(true, identity);
+  return <ChatsPanel chats={chats} />;
 }
 
 interface PanelStateProps {

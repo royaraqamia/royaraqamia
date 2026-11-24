@@ -17,6 +17,8 @@ const { state, mocks } = vi.hoisted(() => {
       markAsRead: vi.fn(),
       markAllAsRead: vi.fn(),
       deleteNotification: vi.fn(),
+      chatThreads: vi.fn(),
+      chatUnreadCount: vi.fn(),
     },
   };
 });
@@ -48,17 +50,26 @@ vi.mock('@/frontend/ui/shared/push-notification-toggle', () => ({
 
 /**
  * The Chats tab's list is its own read (ADR-0113); this file is about the tab
- * frame, so the panel is stubbed as a settled, empty list.
+ * frame, so the panel is stubbed as a settled, empty list. The spy is the point:
+ * an alerts-only visit must not call it at all (#1803).
  */
 vi.mock('@/frontend/state/chats/use-chat-threads', () => ({
-  useChatThreads: () => ({
+  useChatThreads: mocks.chatThreads.mockReturnValue({
     threads: [],
     unreadCount: 0,
     isLoading: false,
+    painted: true,
+    error: null,
+    nextCursor: null,
+    loadMore: vi.fn(),
     refresh: vi.fn(),
     respond: vi.fn(),
     start: vi.fn(),
   }),
+}));
+
+vi.mock('@/frontend/state/chats/use-chat-unread-count', () => ({
+  useChatUnreadCount: mocks.chatUnreadCount,
 }));
 
 function notification(
@@ -87,6 +98,7 @@ function tab(name: RegExp) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.chatUnreadCount.mockReturnValue(0);
   state.search = '';
   state.user = { id: 'user-1' };
   state.notifications = [];
@@ -136,6 +148,26 @@ describe('NotificationsView tabs', () => {
     render(<NotificationsView />);
 
     expect(mocks.replace).toHaveBeenCalledWith('/notifications?tab=alerts', { scroll: false });
+  });
+
+  it('never opens the chat list when the alerts tab is on screen', () => {
+    state.search = 'tab=alerts';
+    state.notifications = [notification('n1', 'system_announcement')];
+
+    render(<NotificationsView />);
+
+    expect(mocks.chatThreads).not.toHaveBeenCalled();
+    expect(screen.queryByText('لا توجد محادثات بعد')).not.toBeInTheDocument();
+  });
+
+  it('reads the chat badge from the aggregate, not from the list it has not opened', () => {
+    state.search = 'tab=chats';
+    mocks.chatUnreadCount.mockReturnValue(3);
+
+    render(<NotificationsView />);
+
+    expect(tab(/المحادثات/)).toHaveTextContent('3');
+    expect(mocks.chatThreads).toHaveBeenCalled();
   });
 
   it('opens on Alerts when a waiting alert outranks an unread conversation', () => {

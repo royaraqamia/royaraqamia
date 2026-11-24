@@ -7,6 +7,7 @@ import {
 import type {
   ChatRepository,
   ChatMessageRecord,
+  ChatThreadsPageRequest,
 } from '@/backend/repositories/chat/chat-repository';
 import type { ChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import type { MemberProfile, PublicUser } from '@/shared/contracts/users';
@@ -26,6 +27,7 @@ import {
   type ChatParticipantStatus,
   type ChatPreview,
   type ChatThread,
+  type ChatThreadPage,
 } from '@/shared/contracts/chat';
 
 /**
@@ -83,6 +85,15 @@ export interface ChatServiceDeps {
 }
 
 const PAGE_SIZE = 30;
+
+/** The Chats panel asks for one bounded page; the badge never uses this read. */
+export const CHAT_THREAD_PAGE_SIZE = 50;
+/**
+ * A thread open still resolves its summary through the list projection. That
+ * lookup is one read per open, not a timer, and is capped rather than unbounded;
+ * a per-thread projection can replace it without changing the surface.
+ */
+const THREAD_LOOKUP_LIMIT = 1000;
 
 /** The database's quota refusal, and a policy refusal, as sentences. */
 const QUOTA_EXCEEDED_CODE = '53400';
@@ -169,58 +180,81 @@ export class ChatService {
     private readonly deps: ChatServiceDeps
   ) {}
 
-  /** The Chats tab. */
-  async listThreads(_userId: string): Promise<ChatConversationSummary[]> {
-    const rows = await this.repo.listThreads();
+  /**
+   * One page of the Chats tab. The extra row is the lookahead: a page that
+   * filled completely without it has no next cursor, so a panel open costs one
+   * read and a page step costs one more (#1803).
+   */
+  async listThreads(_userId: string, page?: ChatThreadsPageRequest): Promise<ChatThreadPage> {
+    const limit = page?.limit ?? CHAT_THREAD_PAGE_SIZE;
+    const rows = await this.repo.listThreads({
+      limit: limit + 1,
+      before: page?.before ?? null,
+      beforeId: page?.beforeId ?? null,
+    });
+    const hasMore = rows.length > limit;
+    const pageRows = hasMore ? rows.slice(0, limit) : rows;
     const peers = await this.loadPeers(
-      rows.map((row) => row.counterpartId).filter((id): id is string => Boolean(id))
+      pageRows.map((row) => row.counterpartId).filter((id): id is string => Boolean(id))
     );
 
-    return (
-      rows
-        // A declined group invite is not a thread the member can enter: the room
-        // stays open for everyone else, and this side never agreed to be in it,
-        // so leaving the row in the list would be a dead entry that never closes.
-        .filter((row) => !(row.kind === 'group' && row.myStatus === 'declined'))
-        .map((row) => {
-          // A group is named by its title, so its "counterpart" — whichever
-          // member the list read happened to order first — is nobody's face.
-          const counterpart =
-            row.kind === 'direct' && row.counterpartId
-              ? toPeer(peers.get(row.counterpartId))
-              : null;
+    const threads = pageRows
+      // A declined group invite is not a thread the member can enter: the room
+      // stays open for everyone else, and this side never agreed to be in it,
+      // so leaving the row in the list would be a dead entry that never closes.
+      .filter((row) => !(row.kind === 'group' && row.myStatus === 'declined'))
+      .map((row) => {
+        // A group is named by its title, so its "counterpart" — whichever
+        // member the list read happened to order first — is nobody's face.
+        const counterpart =
+          row.kind === 'direct' && row.counterpartId ? toPeer(peers.get(row.counterpartId)) : null;
 
-          return {
-            id: row.id,
+        return {
+          id: row.id,
+          kind: row.kind as ChatConversationSummary['kind'],
+          status: row.status as ChatConversationSummary['status'],
+          title: chatTitle({
             kind: row.kind as ChatConversationSummary['kind'],
-            status: row.status as ChatConversationSummary['status'],
-            title: chatTitle({
-              kind: row.kind as ChatConversationSummary['kind'],
-              title: row.title,
-              counterpart,
-            }),
+            title: row.title,
             counterpart,
-            myStatus: row.myStatus as ChatParticipantStatus,
-            lastMessage: row.lastMessageCreatedAt
-              ? {
-                  body: row.lastMessageBody,
-                  senderKind: row.lastMessageSenderKind ?? 'user',
-                  createdAt: row.lastMessageCreatedAt,
-                  hasAttachments: row.lastMessageHasAttachments,
-                }
-              : null,
-            unreadCount: row.unreadCount,
-            openActions: row.openActions,
-            lastMessageAt: row.lastMessageAt,
-            createdAt: row.createdAt,
-          };
-        })
-    );
+          }),
+          counterpart,
+          myStatus: row.myStatus as ChatParticipantStatus,
+          lastMessage: row.lastMessageCreatedAt
+            ? {
+                body: row.lastMessageBody,
+                senderKind: row.lastMessageSenderKind ?? 'user',
+                createdAt: row.lastMessageCreatedAt,
+                hasAttachments: row.lastMessageHasAttachments,
+              }
+            : null,
+          unreadCount: row.unreadCount,
+          openActions: row.openActions,
+          lastMessageAt: row.lastMessageAt,
+          createdAt: row.createdAt,
+        };
+      });
+
+    const last = pageRows[pageRows.length - 1];
+    const nextCursor = hasMore && last ? `${last.lastMessageAt ?? '-infinity'}|${last.id}` : null;
+
+    return { threads, nextCursor };
+  }
+
+  /** The tab badge's own aggregate: one sum, never the list read (#1803). */
+  async chatUnreadCount(): Promise<number> {
+    return this.repo.chatUnreadCount();
   }
 
   /** One thread's header, roster and the caller's own rights in it. */
   async getThread(userId: string, conversationId: string): Promise<ChatThread | null> {
-    const summary = (await this.listThreads(userId)).find((thread) => thread.id === conversationId);
+    const summary = (
+      await this.listThreads(userId, {
+        limit: THREAD_LOOKUP_LIMIT,
+        before: null,
+        beforeId: null,
+      })
+    ).threads.find((thread) => thread.id === conversationId);
     if (!summary) return null;
 
     const [conversation, participants] = await Promise.all([

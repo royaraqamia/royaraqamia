@@ -135,8 +135,12 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
   }
 
   return {
-    async listThreads() {
-      const { data, error } = await supabase.rpc('list_chat_threads');
+    async listThreads(page) {
+      const { data, error } = await supabase.rpc('list_chat_threads', {
+        p_limit: page?.limit ?? 50,
+        p_before: page?.before ?? null,
+        p_before_id: page?.beforeId ?? null,
+      });
       if (error) throw repositoryFailure('chat.listThreads', error);
 
       return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
@@ -158,6 +162,12 @@ export function createSupabaseChatRepository(supabase: SupabaseClient<Database>)
         myRole: String(row.my_role),
         myLastReadAt: (row.my_last_read_at as string | null) ?? null,
       }));
+    },
+
+    async chatUnreadCount() {
+      const { data, error } = await supabase.rpc('chat_unread_count');
+      if (error) throw repositoryFailure('chat.chatUnreadCount', error);
+      return Number(data ?? 0);
     },
 
     async findConversation(id) {

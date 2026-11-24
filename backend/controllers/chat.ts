@@ -30,11 +30,11 @@ import {
   StartDirectChatSchema,
   type ChatAgentEvent,
   type ChatAssistantState,
-  type ChatConversationSummary,
   type ChatMessage,
   type ChatMessagePage,
   type ChatPreview,
   type ChatThread,
+  type ChatThreadPage,
 } from '@/shared/contracts/chat';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import { FAILURE_SENTENCES } from '@/shared/contracts/chat-agent-failures.mjs';
@@ -80,20 +80,56 @@ function firstIssue(error: { issues: { message: string }[] }): string {
   return error.issues[0]?.message ?? 'بيانات غير صالحة';
 }
 
-export async function listChatThreads(): Promise<HttpResult> {
+/** The panel's page size, mirrored by the client and clamped by the database. */
+const THREAD_PAGE_SIZE = 50;
+
+/**
+ * The thread cursor is `(last_message_at, id)` as one opaque string. The `|`
+ * separator cannot occur in either half, and an id is only read when a cursor
+ * was actually sent — the first page asks for neither.
+ */
+function threadPage(search: URLSearchParams) {
+  const requested = Number(search.get('limit'));
+  const limit =
+    Number.isFinite(requested) && requested > 0
+      ? Math.min(Math.floor(requested), 100)
+      : THREAD_PAGE_SIZE;
+  const cursor = search.get('cursor');
+  const split = cursor?.indexOf('|') ?? -1;
+  return {
+    limit,
+    before: split > 0 ? cursor!.slice(0, split) : null,
+    beforeId: split > 0 ? cursor!.slice(split + 1) || null : null,
+  };
+}
+
+export async function listChatThreads(search: URLSearchParams): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const threads = await createSupabaseChatService(supabase).listThreads(userId);
+      const { threads, nextCursor } = await createSupabaseChatService(supabase).listThreads(
+        userId,
+        threadPage(search)
+      );
       return jsonResult(
         200,
-        { success: true, threads } satisfies {
+        { success: true, threads, nextCursor } satisfies {
           success: true;
-          threads: ChatConversationSummary[];
-        },
+        } & ChatThreadPage,
         { headers: NO_STORE }
       );
     },
     { mapError: chatFailure('تعذّر تحميل المحادثات') }
+  );
+}
+
+/** One cheap sum for the tab badge; it never reads the list (#1803). */
+export async function getChatUnreadCount(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ supabase }) => {
+      const count = await createSupabaseChatService(supabase).chatUnreadCount();
+      return jsonResult(200, { count }, { headers: NO_STORE });
+    },
+    { mapError: chatFailure('تعذّر تحميل عدد المحادثات غير المقروءة') }
   );
 }
 

@@ -146,8 +146,17 @@ export interface ChatAttachmentAllowanceRecord {
  * holds the rules (RLS, the derived conversation status, the block check) and
  * this interface only speaks the rows to them.
  */
+/** The keyset a page of threads starts after. Null is the first page. */
+export interface ChatThreadsPageRequest {
+  limit: number;
+  before: string | null;
+  beforeId: string | null;
+}
+
 export interface ChatRepository {
-  listThreads(): Promise<ChatThreadRow[]>;
+  listThreads(page?: ChatThreadsPageRequest): Promise<ChatThreadRow[]>;
+  /** The badge's one aggregate, without the list's per-row projection (#1803). */
+  chatUnreadCount(): Promise<number>;
   findConversation(id: string): Promise<ChatConversationRecord | null>;
   findParticipants(conversationId: string): Promise<ChatParticipantRecord[]>;
   /**

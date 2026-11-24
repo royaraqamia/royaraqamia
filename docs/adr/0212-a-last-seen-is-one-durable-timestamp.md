@@ -50,7 +50,9 @@ line is a statement about the service, not a timestamp.
    predicate; a visible chat list polls the existing thread-list endpoint once every 30 seconds,
    not once per row. The profile ages its stamp on a client tick and does not poll — a member who
    comes online while someone is reading their profile appears on the next load, which is a better
-   trade than a request per open profile.
+   trade than a request per open profile. The list-poll half of this decision is superseded by
+   [ADR 0218](0218-a-list-is-read-when-it-opens-not-on-a-timer.md): the list is now read on open and
+   per page step, with each row's own Realtime channel carrying its dot.
 
 ## Why not the alternatives
 

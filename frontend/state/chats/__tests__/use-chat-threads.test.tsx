@@ -76,7 +76,7 @@ describe('useChatThreads writes', () => {
       configurable: true,
       writable: true,
     });
-    api.getChatThreads.mockReset().mockResolvedValue([]);
+    api.getChatThreads.mockReset().mockResolvedValue({ threads: [], nextCursor: null });
     api.respondToChat.mockReset();
     api.startDirectChat.mockReset();
     api.subscribeToChatList.mockReset().mockReturnValue(() => {});
@@ -143,7 +143,10 @@ describe('useChatThreads cache', () => {
   });
 
   it('paints the cached list when the read fails', async () => {
-    api.getChatThreads.mockReset().mockResolvedValue([thread('c-1', '2026-11-01T10:00:00.000Z')]);
+    api.getChatThreads.mockReset().mockResolvedValue({
+      threads: [thread('c-1', '2026-11-01T10:00:00.000Z')],
+      nextCursor: null,
+    });
     const first = render(<Harness />);
     await waitFor(() => expect(captured?.threads).toHaveLength(1));
     first.unmount();
@@ -166,7 +169,7 @@ describe('useChatThreads cache', () => {
   it('keeps the list in the device store, newest first', async () => {
     const older = thread('c-old', '2026-10-01T10:00:00.000Z');
     const newer = thread('c-new', '2026-11-01T10:00:00.000Z');
-    api.getChatThreads.mockReset().mockResolvedValue([older, newer]);
+    api.getChatThreads.mockReset().mockResolvedValue({ threads: [older, newer], nextCursor: null });
 
     render(<Harness />);
     await waitFor(() => expect(captured?.threads).toHaveLength(2));
