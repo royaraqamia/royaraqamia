@@ -9,7 +9,14 @@ import { cn } from '@/frontend/shared/cn';
  * the dot is steady availability, never an activity signal; a turn's activity
  * is the phase line, which has its own animated dots.
  */
-export function AssistantPresenceDot({ label, className }: { label: string; className?: string }) {
+export function AssistantPresenceDot({
+  label,
+  className,
+}: {
+  /** Always pass this when the dot is drawn: a dot alone is colour only. */
+  label?: string;
+  className?: string;
+}) {
   return (
     <>
       <span
@@ -19,7 +26,7 @@ export function AssistantPresenceDot({ label, className }: { label: string; clas
           className
         )}
       />
-      <span className="sr-only">{label}</span>
+      {label ? <span className="sr-only">{label}</span> : null}
     </>
   );
 }

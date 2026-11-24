@@ -1,5 +1,4 @@
 import { cn } from '@/frontend/shared/cn';
-import { LAST_SEEN_LABELS } from '@/frontend/ui/chats/last-seen-labels';
 import { AssistantPresenceDot } from './assistant-presence-dot';
 
 /**
@@ -19,7 +18,7 @@ export function AssistantOrb({
   className,
   glyphClassName,
   online = false,
-  onlineLabel = LAST_SEEN_LABELS.assistantOnline,
+  onlineLabel,
 }: {
   className?: string;
   /** Sizing for the crescent inside the sphere; defaults to a little under half. */

@@ -1,6 +1,5 @@
 import { cn } from '@/frontend/shared/cn';
 import { AssistantPresenceDot } from '@/frontend/ui/assistant/assistant-presence-dot';
-import { LAST_SEEN_LABELS } from './last-seen-labels';
 
 /**
  * The assistant's own mark: a lit orb.
@@ -19,7 +18,7 @@ export function AssistantMark({
   className,
   glyphClassName,
   online = false,
-  onlineLabel = LAST_SEEN_LABELS.assistantOnline,
+  onlineLabel,
 }: {
   className?: string;
   /** Sizing for the glyph inside the tile; defaults to a little over half. */

@@ -20,6 +20,7 @@ import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
 import { AssistantMark } from './assistant-mark';
+import { LAST_SEEN_LABELS } from './last-seen-labels';
 import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
 import { assistantPhaseText } from './assistant-phase';
 import { PresenceIndicator } from './presence-indicator';
@@ -383,7 +384,7 @@ function ThreadIdentity({
   return (
     <div className="flex min-w-0 flex-1 items-start gap-3">
       {thread.kind === 'agent' ? (
-        <AssistantMark className="size-9" online />
+        <AssistantMark className="size-9" online onlineLabel={LAST_SEEN_LABELS.assistantOnline} />
       ) : (
         <PresenceAvatar
           name={label}
