@@ -144,6 +144,7 @@ describe('the admin capabilities (#1435, ADR-0180 decision 10)', () => {
           return { ...current };
         }),
         insertProposal: vi.fn(async () => ({ ...current })),
+        insertAudit: vi.fn(async () => undefined),
       };
       return repo;
     }

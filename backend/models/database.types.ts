@@ -128,6 +128,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      agent_tool_grants: {
+        Row: {
+          granted_at: string;
+          granted_from: string;
+          id: string;
+          last_used_at: string | null;
+          revoked_at: string | null;
+          tool_id: string;
+          user_id: string;
+        };
+        Insert: {
+          granted_at?: string;
+          granted_from?: string;
+          id?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+          tool_id: string;
+          user_id: string;
+        };
+        Update: {
+          granted_at?: string;
+          granted_from?: string;
+          id?: string;
+          last_used_at?: string | null;
+          revoked_at?: string | null;
+          tool_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'agent_tool_grants_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       agent_turn_skills: {
         Row: {
           created_at: string;
@@ -487,39 +525,53 @@ export type Database = {
           args: Json;
           conversation_id: string;
           created_at: string;
+          grant_id: string | null;
           id: string;
           message_id: string;
           resolved_at: string | null;
           resolved_by: string | null;
           result: Json | null;
           status: string;
+          tier: number | null;
           tool: string;
         };
         Insert: {
           args?: Json;
           conversation_id: string;
           created_at?: string;
+          grant_id?: string | null;
           id?: string;
           message_id: string;
           resolved_at?: string | null;
           resolved_by?: string | null;
           result?: Json | null;
           status?: string;
+          tier?: number | null;
           tool: string;
         };
         Update: {
           args?: Json;
           conversation_id?: string;
           created_at?: string;
+          grant_id?: string | null;
           id?: string;
           message_id?: string;
           resolved_at?: string | null;
           resolved_by?: string | null;
           result?: Json | null;
           status?: string;
+          tier?: number | null;
           tool?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'chat_agent_actions_grant_id_fkey';
+            columns: ['grant_id'];
+            isOneToOne: false;
+            referencedRelation: 'agent_tool_grants';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       chat_conversations: {
         Row: {

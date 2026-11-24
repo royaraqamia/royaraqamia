@@ -5,6 +5,12 @@ import { createSupabaseChatRepository } from '@/backend/repositories/chat/supaba
 import { createSupabaseChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
 import { createSupabaseSkillTelemetryRepository } from '@/backend/repositories/chat/skill-telemetry-repository';
 import { createSupabaseChatAgentActionRepository } from '@/backend/repositories/chat/chat-agent-action-repository';
+import { createSupabaseAgentToolGrantRepository } from '@/backend/repositories/agent/agent-tool-grant-repository';
+import {
+  AgentToolGrantService,
+  type AgentToolGrantServiceDeps,
+} from '@/backend/services/agent/agent-tool-grant-service';
+import { chatAgentTools } from '@/backend/services/chat/chat-agent-tools';
 import {
   ChatAgentActionService,
   type ChatAgentActionServiceDeps,
@@ -212,6 +218,9 @@ export function createSupabaseChatAgentService(
     // not be able to forge one); the member's own confirmation is a separate
     // service, on their own session.
     actions: createSupabaseChatAgentActionService(supabase),
+    // The tier-1 tools the member trusts (ADR-0180 decisions 2 and 3, #1438).
+    // The read is the member's own, so a revoked row is absent on the next call.
+    grants: createSupabaseAgentToolGrantService(supabase),
     // Who the turn is talking to, before it asks anything (ADR-0182, decision
     // 1): the account row plus the plan the gate just read, so "من أنا؟" costs
     // no tool call. A read that fails leaves the block out; it never refuses the
@@ -288,6 +297,25 @@ export function createSupabaseChatAgentActionService(
     // a turn uses, so the thread's signed URL reads them from our own storage.
     attachments: createChatAttachmentStorage(admin),
     reserveAppCall: (userId) => gate.reserve({ userId }, USAGE_COUNTERS.mcpCalls),
+    ...deps,
+  });
+}
+
+/**
+ * The member's tool grants (ADR-0180 decisions 2 and 3, #1438).
+ *
+ * The reads and the revocation run on the caller's session, so RLS is the
+ * boundary. Creating a grant is the server's: the tier and the "seen it run
+ * once" checks happen before the row exists, so a signed-in client cannot write
+ * a grant for a tool the executor must always card.
+ */
+export function createSupabaseAgentToolGrantService(
+  supabase: SupabaseClient<Database>,
+  deps: Partial<AgentToolGrantServiceDeps> = {}
+): AgentToolGrantService {
+  return new AgentToolGrantService({
+    grants: createSupabaseAgentToolGrantRepository(supabase, getAdminSupabase()),
+    tools: () => chatAgentTools(),
     ...deps,
   });
 }
