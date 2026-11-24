@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   createDefaultMcpConnectService,
   createDefaultMcpConnectionService,
+  mcpCallbackUrl,
 } from '@/backend/config/mcp';
 import { env } from '@/backend/config/env';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
@@ -46,11 +47,6 @@ function appUrl(path: string, search: Record<string, string> = {}): string {
   const url = new URL(path, env.origin);
   for (const [key, value] of Object.entries(search)) url.searchParams.set(key, value);
   return url.toString();
-}
-
-/** The one redirect URI every provider registers, never the request's Host. */
-export function mcpCallbackUrl(): string {
-  return new URL('/mcp/callback', env.origin).toString();
 }
 
 export async function startMcpConnection(headers: Headers, body: string): Promise<HttpResult> {

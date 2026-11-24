@@ -193,6 +193,15 @@ export const CHAT_AGENT_TOOL_NAMES = [
   // Declared only when the request brought a snapshot, so a client without eyes
   // carries no invitation to read a screen it does not have.
   'get_screen_context',
+  // The MCP store's hands (issue #1436, ADR-0180). The reads name connected
+  // apps and their tools; the writes start a consent the member finishes in
+  // their own browser, stop an app, or revoke one. None of them holds a
+  // credential, a token or an authorization code.
+  'list_apps',
+  'list_app_tools',
+  'connect_app',
+  'disconnect_app',
+  'revoke_app',
   // The Admin Console's hands (ADR-0180, decision 10, #1435). They are declared
   // only inside a verified admin's own turn, and the executor re-reads `isAdmin`
   // from the session before one runs. Member lookup carries the hidden
@@ -395,6 +404,19 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
     label: 'قراءة الشاشة الحالية',
     activity: 'تقرأ الشاشة الحالية',
   },
+  list_apps: {
+    kind: 'read',
+    label: 'قراءة التطبيقات المرتبطة',
+    activity: 'تقرأ التطبيقات المرتبطة',
+  },
+  list_app_tools: {
+    kind: 'read',
+    label: 'قراءة أدوات تطبيق مرتبط',
+    activity: 'تقرأ أدوات تطبيق مرتبط',
+  },
+  connect_app: { kind: 'write', label: 'ربط تطبيق', activity: 'تربط تطبيقاً' },
+  disconnect_app: { kind: 'write', label: 'فصل تطبيق', activity: 'تفصل تطبيقاً' },
+  revoke_app: { kind: 'write', label: 'إلغاء ربط تطبيق', activity: 'تلغي ربط تطبيق' },
   admin_list_members: {
     kind: 'read',
     label: 'البحث عن الأعضاء',
@@ -639,6 +661,15 @@ export function chatAgentActionSentence(
       // (ADR-0180). The handler checks the name against the row before deleting.
       const name = text(values.name) || text(values.body).split('\n')[0]?.trim() || '';
       return name ? `${label} — «${name.slice(0, 60)}»` : label;
+    }
+    // The store cards (issue #1436). The app's own name is the whole card: a
+    // consent URL, a key, a token or a provider's code never rides in `args`,
+    // so nothing secret can be read off a proposal or its history.
+    case 'connect_app':
+    case 'disconnect_app':
+    case 'revoke_app': {
+      const app = text(values.name);
+      return app ? `${label} — «${app.slice(0, 60)}»` : label;
     }
     // The admin cards (ADR-0180, decision 10). A report decision names the
     // outcome; the member lookup names the term it searched, so an empty search
