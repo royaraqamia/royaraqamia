@@ -1,6 +1,10 @@
 -- ============================================================
 -- Least-privilege grants, part two: the write privileges anon still holds
 --
+-- Renumbered from 20270102000000: #1825 had already claimed that stamp, so the
+-- integration recorded the version without applying this SQL. The REVOKEs below
+-- are idempotent and this file now sorts after every recorded version.
+--
 -- 20261224000000 closed the incidental TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on
 -- tables and the implicit EXECUTE on pg_net. It deliberately left
 -- INSERT/UPDATE/DELETE alone because RLS refused those writes and the grants
