@@ -2,7 +2,9 @@
 
 ## Status
 
-Proposed (2026-11-25). Builds on [ADR-0089](0089-the-android-app-is-native.md).
+Accepted (2026-11-25), subject to the phase 0 engine gate in
+[the keyboard plan](../mobile/keyboard-plan.md). Builds on
+[ADR-0089](0089-the-android-app-is-native.md).
 Does not contradict [ADR-0100](0100-a-port-draws-the-sites-glyphs-and-scale.md): that rule stops a
 port from imitating OS furniture, while here the keyboard itself is the product.
 
@@ -22,16 +24,19 @@ end of the field ([android-shell.md](../mobile/android-shell.md)). The new IME i
 
 The owner's decisions are fixed: sideload distribution only; Arabic and English; a full engine with
 plain typing, autocorrect and prediction, swipe, emoji and clipboard; no GIF in any release; and
-GPL-3.0 obligations accepted for a fork. AI rewrite and reply are separate and governed by
+a fork accepted under its actual license. That license was initially believed to be GPL-3.0; the
+pinned upstream source shows Apache-2.0 instead, which removes the copyleft consequence. AI rewrite
+and reply are separate and governed by
 [ADR-0220](0220-typed-text-is-never-uploaded-without-a-tap.md).
 
 ## Decision
 
 1. **The IME is a new Gradle module `:keyboard` inside the existing APK.** It shares the application
    id and signing identity. There is no second app, no second install and no second update channel.
-2. **The engine is a fork of FlorisBoard at a pinned upstream commit**, licensed GPL-3.0. The
-   upstream `LICENSE` and `NOTICE` are vendored, the pinned commit is recorded, and our changes stay
-   public. Swipe decoding, clipboard, emoji, themes and the suggestion pipeline come from the base;
+2. **The engine is a fork of FlorisBoard at a pinned upstream commit**, licensed Apache-2.0. The
+   upstream `LICENSE` and `NOTICE` are vendored and the pinned commit is recorded; the optional
+   GPL-3.0 Chinese language packs are not vendored. Swipe decoding, clipboard, emoji, themes and the
+   suggestion pipeline come from the base;
    we add the Arabic layout and copy, our own visual identity, and the account bridge.
 3. **The account-page toggle is "set as default", and says so.** On means opening the system IME
    picker and then reflecting whatever the system reports as the default; off means opening the same
@@ -61,9 +66,8 @@ GPL-3.0 obligations accepted for a fork. AI rewrite and reply are separate and g
 - **Write the engine from scratch.** Arabic shaping, gesture decoding and a usable language model
   are multi-year problems; a fork buys a measured baseline to harden instead of an invention to
   debug.
-- **An Apache-2.0 AOSP-LatinIME-derived engine.** Cleaner license, weaker out-of-box gesture and
-  clipboard experience, and more integration work before the first release. Chosen only if the
-  copyleft consequence below becomes unacceptable.
+- **An AOSP-LatinIME-derived engine.** The same permissive license, but weaker out-of-box gesture
+  and clipboard experience and more integration work before the first release.
 - **Silently changing the default IME.** Not available to a normal app, and a UI that promises it
   would lie to the member.
 - **Reusing our WebView's `InputConnection`.** That is the exact path that broke Arabic caret
@@ -71,9 +75,9 @@ GPL-3.0 obligations accepted for a fork. AI rewrite and reply are separate and g
 
 ## Consequences
 
-- GPL-3.0 attaches to the keyboard module and, if linked into the same APK, plausibly to the
-  combined work. The repo being public makes source release natural; a future proprietary license
-  would require replacing the engine, not relicensing it.
+- Apache-2.0 imposes notice and attribution duties but no copyleft, so the combined APK is not
+  forced under a new license. The upstream `LICENSE` and our changes to upstream files must be
+  recorded; the GPL-3.0 Chinese language packs stay out.
 - The release APK grows beyond the 11.4 MiB minified baseline
   ([ADR-0094](0094-the-release-build-is-minified.md)). The delta is measured at the spike gate and
   recorded in [the keyboard plan](../mobile/keyboard-plan.md) rather than guessed here.

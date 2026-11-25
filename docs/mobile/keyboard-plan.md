@@ -1,7 +1,7 @@
 # The in-app keyboard: order of work
 
 [ADR-0219](../adr/0219-the-keyboard-is-an-ime-in-the-same-apk.md) decides the shape: a real Android
-IME in the existing APK, built on a pinned GPL-3.0 FlorisBoard fork, with an account toggle that
+IME in the existing APK, built on a pinned Apache-2.0 FlorisBoard fork, with an account toggle that
 opens the system picker rather than pretending to switch a keyboard silently.
 [ADR-0220](../adr/0220-typed-text-is-never-uploaded-without-a-tap.md) bounds the only network feature.
 This file is the order of work and the evidence each phase needs before the next one starts. It is a
@@ -10,6 +10,29 @@ plan, not a claim: nothing below has been built or measured yet.
 The risk is front-loaded. Phase 0 decides whether the forked engine is good enough at Arabic and
 swipe to be worth carrying at all; phase 4 is where privacy and cost can quietly escape. The middle
 phases are integration volume.
+
+## Phase 0 findings (2026-11-25)
+
+The upstream was fetched and inspected, but the gate is **not passed**: the engine has the features,
+the build does not drop into ours.
+
+- Pinned upstream: FlorisBoard **v0.5.2**, commit
+  `2e82060251897226c0739b9f52d1d051b02305fb`. Its `LICENSE` and every source header say
+  **Apache-2.0**, not GPL-3.0; only the optional Chinese language packs are GPL-3.0 and they are not
+  vendored. ADR 0219 was corrected to match.
+- The features are present: an Arabic layout asset and Arabic resources, `GlideTypingManager` for
+  gesture typing, and clipboard and media contexts in the IME.
+- The build does not match ours: upstream is Gradle 9.2 with Kotlin DSL, version catalogs and
+  type-safe project accessors; this repo is Gradle 8.14.3 with Groovy scripts. Upstream also needs
+  a `tools` catalog for build tools, NDK and CMake, a Sonatype snapshots repository for a jetpref
+  snapshot, the AboutLibraries plugin from the plugin portal, and a Rust toolchain to compile
+  `fl_native` through CMake. NDK and CMake are installed here; `cargo` and `rustup` are not.
+- Upstream declares `minSdk` 26 where our app declares 24, so the IME would not run on API 24-25
+  devices even if the build were adapted.
+
+No source has been vendored into the APK. The open choice is recorded below and must be closed
+before phase 1: adapt the upstream build and its toolchain, move to an engine with a smaller build
+surface, or accept an API 26 floor for the keyboard and document it.
 
 ## Budgets
 
@@ -116,6 +139,7 @@ reports the new version. Signing and the release dispatch remain the owner's man
 
 These are deliberately not assumed; each is closed at the phase named above.
 
+- How the upstream build is adapted, or which engine replaces it (phase 0, open now).
 - The route and the allowance row for the AI rewrite endpoint (phase 4).
 - Clipboard history retention, if any (phase 3).
 - The TTL of the scoped IME token and the exact bridge mechanism that delivers it (phase 4).
