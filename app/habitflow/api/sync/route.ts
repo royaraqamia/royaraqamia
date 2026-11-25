@@ -1,6 +1,9 @@
-import { toNextResponse } from '@/backend/transport/http-result';
-import { getHabitSync } from '@/backend/controllers/habitflow';
+import { NextRequest } from 'next/server';
 
-export async function GET() {
-  return toNextResponse(await getHabitSync());
+import { getHabitSync } from '@/backend/controllers/habitflow';
+import { toNextResponse } from '@/backend/transport/http-result';
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  return toNextResponse(await getHabitSync(searchParams));
 }

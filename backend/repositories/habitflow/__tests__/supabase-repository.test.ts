@@ -51,11 +51,17 @@ class Builder {
   gte(column: string, value: unknown) {
     return this.log(`gte ${column}=${String(value)}`);
   }
+  gt(column: string, value: unknown) {
+    return this.log(`gt ${column}=${String(value)}`);
+  }
   lte(column: string, value: unknown) {
     return this.log(`lte ${column}=${String(value)}`);
   }
-  order(column: string) {
-    return this.log(`order ${column}`);
+  limit(count: number) {
+    return this.log(`limit ${count}`);
+  }
+  order(column: string, options?: { ascending?: boolean }) {
+    return this.log(`order ${column} asc=${options?.ascending ?? true}`);
   }
   maybeSingle() {
     this.log('maybeSingle');
@@ -301,8 +307,37 @@ describe('SupabaseHabitRepository — offline write contract', () => {
       expect(calls).not.toContain('habit_logs:is deleted_at=null');
       expect(calls).toContain('habits:eq user_id=u-1');
       expect(calls).toContain('habit_logs:eq user_id=u-1');
+      expect(calls).toContain('habits:order server_updated_at asc=true');
+      expect(calls).toContain('habit_logs:order id asc=true');
+      expect(calls).toContain('habits:limit 501');
+      expect(calls).toContain('habit_logs:limit 501');
       expect(data.habits[0]?.deletedAt).toBe(deletedAt);
       expect(data.logs[0]?.deletedAt).toBe(deletedAt);
+    });
+
+    it('getSyncData pages from the cursor and echoes the newest stamp', async () => {
+      const since = '2026-08-01T00:00:00.000Z';
+      const { client, calls } = makeClient({
+        habits: {
+          data: [{ ...habitRow, server_updated_at: '2026-08-02T00:00:00.000Z' }],
+          error: null,
+        },
+        habit_logs: {
+          data: [
+            { ...logRow, id: 'l-2', server_updated_at: '2026-08-03T00:00:00.000Z' },
+            { ...logRow, id: 'l-1', server_updated_at: '2026-08-02T00:00:00.000Z' },
+          ],
+          error: null,
+        },
+      });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const page = await repo.getSyncData(since);
+
+      expect(calls).toContain(`habits:gt server_updated_at=${since}`);
+      expect(calls).toContain(`habit_logs:gt server_updated_at=${since}`);
+      expect(page.cursor).toBe('2026-08-03T00:00:00.000Z');
+      expect(page.logs.map((row) => row.id)).toEqual(['l-1', 'l-2']);
     });
 
     it('deleteHabit tombstones with last-write-wins on updated_at', async () => {

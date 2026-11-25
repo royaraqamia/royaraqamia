@@ -6,6 +6,7 @@ import {
   HabitLogKind,
   HabitRepository,
   HabitRestoreInput,
+  HabitSyncSnapshot,
 } from '@/shared/contracts/habitflow';
 import { logger } from '@/backend/shared/logger';
 
@@ -137,9 +138,10 @@ export class JsonFileHabitRepository implements HabitRepository {
     }
   }
 
-  /** Local mode has no tombstones; the raw file is already the sync snapshot. */
-  async getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
-    return this.getLocalData();
+  /** Local mode has no tombstones or server stamps; the raw file is the snapshot. */
+  async getSyncData(): Promise<HabitSyncSnapshot> {
+    const { habits, logs } = await this.getLocalData();
+    return { habits, logs, cursor: null };
   }
 
   async restoreFromBackup(input: HabitRestoreInput): Promise<void> {

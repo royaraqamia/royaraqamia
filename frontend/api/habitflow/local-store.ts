@@ -4,6 +4,7 @@ import type {
   HabitLogKind,
   HabitRepository,
   HabitRestoreInput,
+  HabitSyncSnapshot,
   HabitTargetPeriod,
 } from '@/shared/contracts/habitflow';
 import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
@@ -28,6 +29,9 @@ import {
 const PRODUCT = 'habitflow';
 const HABITS_STORE = 'habits';
 const LOGS_STORE = 'logs';
+const META_STORE = 'meta';
+
+const SYNC_CURSOR_KEY = 'syncCursor';
 
 /** A durable write-intent paired with the mutation that produced it. */
 interface OutboxIntent {
@@ -39,9 +43,10 @@ interface OutboxIntent {
 /**
  * Forward-only schema. v1 is the rendered data (`habits`, `logs`); v2 adds the
  * Outbox alongside it, so a write and its replay-intent commit atomically in
- * the same IndexedDB transaction. New versions are appended, never edited.
+ * the same IndexedDB transaction; v3 adds the `meta` store that holds the sync
+ * cursor (#1788). New versions are appended, never edited.
  */
-export const HABIT_STORE_VERSION = 2;
+export const HABIT_STORE_VERSION = 3;
 
 export const habitStoreMigrations: readonly LocalStoreMigration[] = [
   {
@@ -60,6 +65,14 @@ export const habitStoreMigrations: readonly LocalStoreMigration[] = [
     migrate: (db) => {
       // `seq` is auto-increment so replay order is the exact write order.
       db.createObjectStore(OUTBOX_STORE, { keyPath: 'seq', autoIncrement: true });
+    },
+  },
+  {
+    version: 3,
+    migrate: (db) => {
+      // The cursor lives with the rows it describes: a device that has not
+      // applied every row in a page must not advance past one of them (#313).
+      db.createObjectStore(META_STORE, { keyPath: 'key' });
     },
   },
 ];
@@ -458,8 +471,9 @@ export class HabitLocalStore implements HabitRepository {
   }
 
   /** The raw store (tombstones included) — the local twin of the sync read. */
-  async getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
-    return this.getLocalData();
+  async getSyncData(): Promise<HabitSyncSnapshot> {
+    const { habits, logs } = await this.getLocalData();
+    return { habits, logs, cursor: null };
   }
 
   async restoreFromBackup(input: HabitRestoreInput): Promise<void> {
@@ -569,12 +583,13 @@ export class HabitLocalStore implements HabitRepository {
   }
 
   /**
-   * Merges server rows into the store, last-write-wins on `updated_at` with the
-   * server as the tiebreaker (ADR-0029). Rows with a queued local intent are
+   * Merges one server page into the store, last-write-wins on `updated_at` with
+   * the server as the tiebreaker (ADR-0029). Rows with a queued local intent are
    * left alone: the device's unflushed edit must not be clobbered by an older
-   * server copy.
+   * server copy. Returns how many rows a pending intent held back, so the page's
+   * cursor is advanced only when every row was applied (#313).
    */
-  async mergeServerData(habits: readonly Habit[], logs: readonly HabitLog[]): Promise<void> {
+  async mergeServerData(habits: readonly Habit[], logs: readonly HabitLog[]): Promise<number> {
     const [localHabits, localLogs, outbox] = await Promise.all([
       this.readAll<Habit>(HABITS_STORE),
       this.readAll<HabitLog>(LOGS_STORE),
@@ -582,7 +597,14 @@ export class HabitLocalStore implements HabitRepository {
     ]);
 
     const pendingHabitIds = new Set(
-      outbox.filter((e) => e.entity === 'habit').map((e) => (e.payload as { id?: string }).id)
+      outbox
+        .filter((e) => e.entity === 'habit')
+        .flatMap((e) => {
+          const payload = e.payload as { id?: string; clientId?: string };
+          return [payload.id, payload.clientId].filter(
+            (value): value is string => typeof value === 'string'
+          );
+        })
     );
     const pendingLogKeys = new Set(
       outbox
@@ -597,10 +619,13 @@ export class HabitLocalStore implements HabitRepository {
     const localLogByKey = new Map(localLogs.map((l) => [`${l.habitId}#${l.date}`, l]));
 
     const writes: Array<[string, unknown]> = [];
+    let skipped = 0;
 
     for (const server of habits) {
       const local = localHabitById.get(server.id) ?? null;
-      if (conflictWinner({ local, server, pending: pendingHabitIds.has(server.id) }) !== 'server') {
+      const pending = pendingHabitIds.has(server.id);
+      if (conflictWinner({ local, server, pending }) !== 'server') {
+        if (pending) skipped += 1;
         continue;
       }
       writes.push([HABITS_STORE, { ...local, ...server, deletedAt: server.deletedAt ?? null }]);
@@ -609,7 +634,9 @@ export class HabitLocalStore implements HabitRepository {
     for (const server of logs) {
       const key = `${server.habitId}#${server.date}`;
       const local = localLogByKey.get(key) ?? null;
-      if (conflictWinner({ local, server, pending: pendingLogKeys.has(key) }) !== 'server') {
+      const pending = pendingLogKeys.has(key);
+      if (conflictWinner({ local, server, pending }) !== 'server') {
+        if (pending) skipped += 1;
         continue;
       }
       writes.push([
@@ -619,6 +646,24 @@ export class HabitLocalStore implements HabitRepository {
     }
 
     if (writes.length > 0) await this.commit(writes);
+    return skipped;
+  }
+
+  /** Applies a bounded server page and persists its cursor when nothing was held back. */
+  async applySyncSnapshot(snapshot: HabitSyncSnapshot): Promise<void> {
+    const skipped = await this.mergeServerData(snapshot.habits, snapshot.logs);
+    if (skipped > 0 || !snapshot.cursor) return;
+    await this.setSyncCursor(snapshot.cursor);
+  }
+
+  /** The stamp to send as `?since=` on the next pull, or null on a fresh store. */
+  async getSyncCursor(): Promise<string | null> {
+    const row = await this.getOne<{ key: string; value: string }>(META_STORE, SYNC_CURSOR_KEY);
+    return row?.value ?? null;
+  }
+
+  private async setSyncCursor(value: string): Promise<void> {
+    await this.commit([[META_STORE, { key: SYNC_CURSOR_KEY, value }]]);
   }
 
   /**
@@ -677,10 +722,14 @@ export class HabitLocalStore implements HabitRepository {
   /** Empties every owned store (used after a successful claim). */
   async clear(): Promise<void> {
     const cleared = await this.connection.run(async (db) => {
-      const transaction = db.transaction([HABITS_STORE, LOGS_STORE, OUTBOX_STORE], 'readwrite');
+      const transaction = db.transaction(
+        [HABITS_STORE, LOGS_STORE, OUTBOX_STORE, META_STORE],
+        'readwrite'
+      );
       transaction.objectStore(HABITS_STORE).clear();
       transaction.objectStore(LOGS_STORE).clear();
       transaction.objectStore(OUTBOX_STORE).clear();
+      transaction.objectStore(META_STORE).clear();
       await transactionDone(transaction);
       return true;
     }, false);

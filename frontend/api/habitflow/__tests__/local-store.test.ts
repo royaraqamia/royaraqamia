@@ -419,4 +419,91 @@ describe('HabitLocalStore', () => {
     expect(calls).toBe(2);
     repo.close();
   });
+
+  it('persists the cursor and converges to the same store as one full snapshot', async () => {
+    const stamp = '9999-01-01T00:00:00.000Z';
+    const firstHabit: Habit = {
+      id: 'habit-1',
+      name: 'قراءة',
+      frequency: 'daily',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      archived: false,
+      updatedAt: stamp,
+    };
+    const secondHabit: Habit = {
+      id: 'habit-2',
+      name: 'مشى',
+      frequency: 'weekly',
+      createdAt: '2026-01-02T00:00:00.000Z',
+      archived: false,
+      updatedAt: stamp,
+    };
+    const firstLog: HabitLog = {
+      id: 'log-1',
+      habitId: firstHabit.id,
+      date: '2026-08-02',
+      completed: true,
+      completedAt: stamp,
+      updatedAt: stamp,
+    };
+    const secondLog: HabitLog = {
+      id: 'log-2',
+      habitId: secondHabit.id,
+      date: '2026-08-03',
+      completed: false,
+      completedAt: null,
+      updatedAt: stamp,
+    };
+
+    const paged = await openGuest();
+    await paged.applySyncSnapshot({
+      habits: [firstHabit],
+      logs: [firstLog],
+      cursor: '2026-08-02T00:00:00.000Z',
+    });
+    expect(await paged.getSyncCursor()).toBe('2026-08-02T00:00:00.000Z');
+    await paged.applySyncSnapshot({
+      habits: [secondHabit],
+      logs: [secondLog],
+      cursor: '2026-08-03T00:00:00.000Z',
+    });
+    expect(await paged.getSyncCursor()).toBe('2026-08-03T00:00:00.000Z');
+
+    const full = await openGuest();
+    await full.applySyncSnapshot({
+      habits: [firstHabit, secondHabit],
+      logs: [firstLog, secondLog],
+      cursor: '2026-08-03T00:00:00.000Z',
+    });
+
+    const pagedData = await paged.getLocalData();
+    const fullData = await full.getLocalData();
+    const byId = (a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    expect(pagedData.habits.sort(byId)).toEqual(fullData.habits.sort(byId));
+    expect(pagedData.logs.sort(byId)).toEqual(fullData.logs.sort(byId));
+    paged.close();
+    full.close();
+  });
+
+  it('does not advance the cursor past a row held back by a queued write', async () => {
+    const repo = await openGuest();
+    const local = await repo.createHabit({ name: 'محلي', frequency: 'daily' });
+    const server: Habit = {
+      ...local,
+      name: 'من الخادم',
+      updatedAt: '9999-01-01T00:00:00.000Z',
+    };
+
+    await repo.applySyncSnapshot({ habits: [server], logs: [], cursor: 'c-1' });
+
+    expect(await repo.getSyncCursor()).toBeNull();
+    expect((await repo.getHabits())[0]?.name).toBe('محلي');
+
+    for (const entry of await repo.getOutbox()) await repo.removeOutbox(entry.seq);
+    await repo.applySyncSnapshot({ habits: [server], logs: [], cursor: 'c-1' });
+
+    expect(await repo.getSyncCursor()).toBe('c-1');
+    expect((await repo.getHabits())[0]?.name).toBe('من الخادم');
+    repo.close();
+  });
 });

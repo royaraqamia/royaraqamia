@@ -6,16 +6,18 @@ import { ApiClient } from '@/frontend/api/habitflow/habit-api';
  *
  * Two callers, one implementation: the surface pulls with it on mount, focus,
  * reconnect and a Realtime hint, and the background tier pulls with it when
- * nobody is looking (`refresh-products.ts`). The merge is the store's own
- * last-write-wins, pending-aware one, so a pull can never overwrite a write that
- * has not been delivered yet, and it is idempotent — a pull that arrives twice
- * costs a request, never state.
+ * nobody is looking (`refresh-products.ts`). The cursor lives in the store, so
+ * both ask for "what changed since last time" through the same path, and the
+ * store only advances it past rows it actually applied (#313, #1788). The merge
+ * is the store's last-write-wins, pending-aware one, so a pull can never
+ * overwrite a write that has not been delivered yet.
  *
- * Returns how many rows the server sent. That is all a refresh can honestly
- * report: it cannot know which of them were new.
+ * Returns how many rows the server sent in this page. That is all a refresh can
+ * honestly report: it cannot know which of them were new.
  */
 export async function pullHabitData(store: HabitLocalStore): Promise<number> {
-  const data = await ApiClient.fetchSyncData();
-  await store.mergeServerData(data.habits, data.logs);
+  const since = await store.getSyncCursor();
+  const data = await ApiClient.fetchSyncData(since);
+  await store.applySyncSnapshot(data);
   return data.habits.length + data.logs.length;
 }

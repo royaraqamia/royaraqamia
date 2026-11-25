@@ -3,12 +3,37 @@ import {
   HabitLogKindWriteSchema,
   HabitLogNoteWriteSchema,
   HabitLogWriteSchema,
+  HabitSyncResponseSchema,
   HabitUpdateSchema,
   HabitWriteSchema,
 } from '@/shared/contracts/habitflow';
 
 const clientId = '11111111-1111-4111-8111-111111111111';
 const habitId = '22222222-2222-4222-8222-222222222222';
+
+describe('HabitSyncResponseSchema', () => {
+  const body = {
+    habits: [],
+    logs: [],
+    mode: 'supabase' as const,
+    cursor: '2026-08-02T10:00:00.000Z',
+  };
+
+  it('carries the cursor both clients persist', () => {
+    expect(HabitSyncResponseSchema.safeParse(body).success).toBe(true);
+    expect(HabitSyncResponseSchema.parse(body).cursor).toBe(body.cursor);
+  });
+
+  it('accepts null on an empty first page', () => {
+    const parsed = HabitSyncResponseSchema.parse({ ...body, cursor: null });
+    expect(parsed.cursor).toBeNull();
+  });
+
+  it('refuses a body with no cursor at all', () => {
+    const { cursor: _cursor, ...withoutCursor } = body;
+    expect(HabitSyncResponseSchema.safeParse(withoutCursor).success).toBe(false);
+  });
+});
 
 describe('HabitWriteSchema', () => {
   const base = { clientId, name: 'قراءة' };

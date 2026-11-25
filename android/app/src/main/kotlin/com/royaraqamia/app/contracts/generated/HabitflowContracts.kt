@@ -12,6 +12,7 @@ data class HabitSyncResponse(
     val habits: List<HabitSyncResponseHabitsItem>,
     val logs: List<HabitSyncResponseLogsItem>,
     val mode: HabitSyncResponseMode,
+    val cursor: String?,
 )
 
 @Serializable

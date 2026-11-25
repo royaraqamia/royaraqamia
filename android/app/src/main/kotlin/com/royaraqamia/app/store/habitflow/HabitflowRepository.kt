@@ -23,6 +23,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.net.URLEncoder
 
 /**
  * HabitFlow's store, as the screen uses it (#768), and its Outbox (#650).
@@ -227,10 +228,19 @@ class HabitflowRepository(
      * row (it is about to be told to the server), otherwise last write wins on
      * `updatedAt` with ties going to the device. Tombstones are written like any
      * other row — the route is tombstone-inclusive (ADR-0029) — so a delete made
-     * elsewhere lands here instead of being invisible.
+     * elsewhere lands here instead of being invisible. The pull sends the cursor
+     * the last page earned and keeps the new one only when no row was held back
+     * by a queued intent (#1788).
      */
     suspend fun pull(): ApiResult<Int> = withContext(Dispatchers.IO) {
-        when (val answer = client.get<HabitSyncResponse>(SYNC_PATH)) {
+        val since = dao().meta(KEY_CURSOR)
+        val path =
+            if (since == null) {
+                SYNC_PATH
+            } else {
+                "$SYNC_PATH?since=${URLEncoder.encode(since, "UTF-8")}"
+            }
+        when (val answer = client.get<HabitSyncResponse>(path)) {
             is ApiResult.Success -> {
                 val body = answer.value
                 val dao = dao()
@@ -251,29 +261,46 @@ class HabitflowRepository(
                 val localHabits = dao.allHabits().associateBy { it.id }
                 val localLogs = dao.allLogs().associateBy { "${it.habitId}#${it.date}" }
 
+                var skipped = 0
                 val habits = body.habits.mapNotNull { server ->
                     val local = localHabits[server.id]
+                    val pending = pendingHabitIds.contains(server.id)
                     val winner =
                         OutboxRules.conflictWinner(
                             localUpdatedAt = local?.updatedAt,
                             serverUpdatedAt = server.updatedAt,
-                            pending = pendingHabitIds.contains(server.id),
+                            pending = pending,
                         )
-                    if (winner == ConflictWinner.Server) server.toRow() else null
+                    if (winner == ConflictWinner.Server) server.toRow()
+                    else {
+                        if (pending) skipped += 1
+                        null
+                    }
                 }
                 val logs = body.logs.mapNotNull { server ->
                     val key = "${server.habitId}#${server.date}"
                     val local = localLogs[key]
+                    val pending = pendingLogKeys.contains(key)
                     val winner =
                         OutboxRules.conflictWinner(
                             localUpdatedAt = local?.updatedAt,
                             serverUpdatedAt = server.updatedAt,
-                            pending = pendingLogKeys.contains(key),
+                            pending = pending,
                         )
-                    if (winner == ConflictWinner.Server) server.toRow(local?.id) else null
+                    if (winner == ConflictWinner.Server) server.toRow(local?.id)
+                    else {
+                        if (pending) skipped += 1
+                        null
+                    }
                 }
 
                 dao.apply(habits, logs)
+                // A held-back row must be asked for again: advancing past it
+                // would hide the device's own queued edit until the next wake
+                // (the same rule Notes and SpendTrack use, #313).
+                if (skipped == 0 && body.cursor != null) {
+                    dao.putMeta(HabitMetaRow(KEY_CURSOR, body.cursor))
+                }
                 ApiResult.Success(body.habits.size + body.logs.size)
             }
             // A failed pull is passed through as it is: the screen decides what
@@ -322,6 +349,9 @@ class HabitflowRepository(
     companion object {
         /** The route both clients pull from. */
         const val SYNC_PATH = "/habitflow/api/sync"
+
+        /** The meta row holding the stamp the last pull was allowed to keep. */
+        const val KEY_CURSOR = "syncCursor"
     }
 }
 

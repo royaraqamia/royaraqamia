@@ -25,16 +25,21 @@ export async function getHabits(): Promise<HttpResult> {
 }
 
 /**
- * The whole owned snapshot for on-open reconciliation, tombstone-inclusive so a
- * delete made on another device lands here (ADR-0029). Display reads keep using
+ * One bounded page for on-open reconciliation, tombstone-inclusive so a delete
+ * made on another device lands here (ADR-0029). Display reads keep using
  * `getHabits`/`getLogs`, which exclude tombstones.
  */
-export async function getHabitSync(): Promise<HttpResult> {
+export async function getHabitSync(query: URLSearchParams): Promise<HttpResult> {
+  const since = query.get('since');
+  if (since && Number.isNaN(Date.parse(since))) {
+    return jsonResult(400, { success: false, error: 'تاريخ المزامنة غير صالح.' });
+  }
+
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { service, mode } = createHabitService(userId, supabase);
-      const { habits, logs } = await service.getSyncData();
-      return jsonResult(200, { habits, logs, mode });
+      const snapshot = await service.getSyncData(since);
+      return jsonResult(200, { ...snapshot, mode });
     },
     { mapError: errorResult }
   );
