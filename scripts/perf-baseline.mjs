@@ -435,13 +435,39 @@ export async function fetchRaw(
   throw lastError;
 }
 
+/**
+ * A document the edge served can outlive the build it was rendered from: its
+ * chunk hashes belong to the previous deployment, whose files are already
+ * gone, so pricing it hits a 404 that says nothing about this route. That is
+ * the one 404 worth a second look — the document is discarded and priced once
+ * more against what the origin serves now. A subresource that is genuinely
+ * missing survives that second pass and still fails, so nothing real is hidden.
+ */
+function isMissingSubresource(error) {
+  return error instanceof Error && /^(404|410)\b/.test(error.message);
+}
+
 /** Price a fetched document with exactly the same buckets as a built one. */
-export async function measureLiveRoute(
-  route,
-  { origin = 'https://royaraqamia.com', cache = new Map(), concurrency = 8 } = {}
-) {
+export async function measureLiveRoute(route, opts = {}) {
+  const { origin = 'https://royaraqamia.com', cache = new Map(), concurrency = 8 } = opts;
+  try {
+    return await priceLiveRoute(route, { origin, cache, concurrency });
+  } catch (error) {
+    if (!error?.staleDocument) throw error;
+    return await priceLiveRoute(route, { origin, cache, concurrency, refetchDocument: true });
+  }
+}
+
+async function priceLiveRoute(route, { origin, cache, concurrency, refetchDocument = false }) {
   const normalized = normalizeRoute(route);
   const originUrl = new URL(origin);
+  const documentUrl = new URL(normalized, originUrl);
+  if (refetchDocument) {
+    // A fresh key defeats the in-process cache and any edge cache that keys on
+    // the URL, so the second read is the deployment serving now, not the one
+    // that produced the stale document.
+    documentUrl.searchParams.set('__perf_weight', String(Date.now()));
+  }
   const get = async (url) => {
     const key = new URL(url, originUrl).href;
     if (!cache.has(key)) {
@@ -456,7 +482,7 @@ export async function measureLiveRoute(
     return cache.get(key);
   };
 
-  const document = await get(new URL(normalized, originUrl).href);
+  const document = await get(documentUrl.href);
   const assets = extractAssets(document.raw.toString('utf8'));
 
   const entries = [
@@ -475,27 +501,36 @@ export async function measureLiveRoute(
     ...assets.legacyScripts.map((url) => ({ url, kind: 'legacy' })),
   ];
 
-  // Fonts named inside a stylesheet are part of the document's first load, the
-  // same way the static mode discovers them inside the on-disk CSS file.
-  for (const cssUrl of assets.styles) {
-    const css = await get(cssUrl);
-    for (const fontUrl of extractCssFontUrls(css.raw.toString('utf8'), cssUrl)) {
-      if (!specs.some((spec) => spec.kind === 'fonts' && spec.url === fontUrl)) {
-        specs.push({ url: fontUrl, kind: 'fonts' });
+  try {
+    // Fonts named inside a stylesheet are part of the document's first load, the
+    // same way the static mode discovers them inside the on-disk CSS file.
+    for (const cssUrl of assets.styles) {
+      const css = await get(cssUrl);
+      for (const fontUrl of extractCssFontUrls(css.raw.toString('utf8'), cssUrl)) {
+        if (!specs.some((spec) => spec.kind === 'fonts' && spec.url === fontUrl)) {
+          specs.push({ url: fontUrl, kind: 'fonts' });
+        }
       }
     }
-  }
 
-  const measured = await mapWithLimit(specs, concurrency, async (spec) => {
-    const asset = await get(spec.url);
-    return {
-      url: spec.url,
-      kind: spec.kind,
-      raw: asset.raw.length,
-      gzip: transferredSize(asset.raw),
-    };
-  });
-  entries.push(...measured);
+    const measured = await mapWithLimit(specs, concurrency, async (spec) => {
+      const asset = await get(spec.url);
+      return {
+        url: spec.url,
+        kind: spec.kind,
+        raw: asset.raw.length,
+        gzip: transferredSize(asset.raw),
+      };
+    });
+    entries.push(...measured);
+  } catch (error) {
+    if (isMissingSubresource(error)) {
+      // Mark it only here: a 404 on the document itself is a routing fact about
+      // the route and must fail at once, not trigger a second read.
+      error.staleDocument = true;
+    }
+    throw error;
+  }
 
   return {
     route: normalized,
