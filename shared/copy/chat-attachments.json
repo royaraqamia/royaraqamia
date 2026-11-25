@@ -9,10 +9,14 @@
     "file": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatAttachmentsCopy.kt",
     "object": "ChatAttachmentsCopy"
   },
+  "server": {
+    "file": "backend/services/chat/chat-attachments-copy.ts",
+    "export": "CHAT_ATTACHMENTS_SERVER_COPY"
+  },
   "notes": {
-    "source": "The allowance sentences both composers show before a file is staged (#933, ADR-0113, ADR-0127): the per-file ceiling, the five-per-message ceiling, and the three spent allowances — today, the caller's own, and the project's. They lived only on the site (`frontend/ui/chats/attachment-quota.ts`) until the app could stage a file; now one source writes both, so a refusal reads the same in either client.",
-    "placeholders": "`tooLarge` carries `{size}`, the per-file ceiling already formatted by the client.",
-    "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `attachment-quota.ts` does not render, or a state the app's `ChatAttachmentQuotaUiState` declares that the row does not list."
+    "source": "The allowance sentences both composers show before a file is staged (#933, ADR-0113, ADR-0127): the per-file ceiling, the five-per-message ceiling, and the three spent allowances — today, the caller's own, and the project's. They lived only on the site (`frontend/ui/chats/attachment-quota.ts`) until the app could stage a file; now one source writes the site, the app and the server's answer to the trigger's refusal (#1805), so a refusal reads the same wherever it is met.",
+    "placeholders": "`tooLarge` carries `{size}`, the per-file ceiling: formatted from the quota by the client's pre-check, and from the live cap by the server's refused send.",
+    "gate": "`npm run check:copy` fails a stale generated output — including the server module — and `npm run check:parity` fails a key `attachment-quota.ts` does not render, or a state the app's `ChatAttachmentQuotaUiState` declares that the row does not list."
   },
   "strings": {
     "tooLarge": "حجم الملف يتجاوز {size}، اختر ملفاً أصغر",

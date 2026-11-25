@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ChatService, ChatError, type ChatServiceDeps } from '@/backend/services/chat/chat-service';
 import { AgentThreadExistsError, ChatThreadFullError } from '@/backend/shared/domain/chat';
 import type { ChatRepository } from '@/backend/repositories/chat/chat-repository';
+import copy from '@/shared/copy/chat-attachments.json';
 import type { MemberProfile } from '@/shared/contracts/users';
 
 const me = '5f0f3c62-6a37-4a0b-9f0e-2b4c8f7a1d33';
@@ -1100,6 +1101,53 @@ describe('ChatService.sendMessage attachments', () => {
         ],
       })
     ).rejects.toMatchObject({ status: 409, message: 'تعذّر إرسال الرسالة' });
+
+    expect(repository.tombstoneMessage).toHaveBeenCalledWith('m-9', me);
+  });
+
+  it('answers the too-large refusal with the one copy sentence and the live cap (#1805)', async () => {
+    const { service, repository } = makeRepository({
+      insertMessage: vi.fn(async () => ({
+        record: {
+          id: 'm-9',
+          conversationId: 'c-1',
+          senderId: me,
+          senderKind: 'user' as const,
+          body: null,
+          replyToId: null,
+          editedAt: null,
+          deletedAt: null,
+          createdAt: '2026-11-01T10:05:00.000Z',
+          clientId: null,
+        },
+        attachmentFailure: { code: '53400', message: 'chat attachment file is too large' },
+      })),
+      attachmentAllowance: vi.fn(async () => ({
+        fileBytes: 8 * 1024 * 1024,
+        todayUsedBytes: 0,
+        todayLimitBytes: 50 * 1024 * 1024,
+        totalUsedBytes: 0,
+        totalLimitBytes: 100 * 1024 * 1024,
+        projectUsedBytes: 0,
+        projectLimitBytes: 500 * 1024 * 1024,
+      })),
+    });
+
+    await expect(
+      service.sendMessage(me, 'c-1', {
+        attachments: [
+          {
+            storagePath: 'c-1/u-1/report.pdf',
+            fileName: 'report.pdf',
+            mimeType: 'application/pdf',
+            byteSize: 9 * 1024 * 1024,
+          },
+        ],
+      })
+    ).rejects.toMatchObject({
+      status: 413,
+      message: copy.strings.tooLarge.replace('{size}', '8.0 م.ب'),
+    });
 
     expect(repository.tombstoneMessage).toHaveBeenCalledWith('m-9', me);
   });
