@@ -4,7 +4,7 @@
   "defaultUngated": "No paint budget or behaviour spec asserts this row yet — #558 tracks the paint budgets and the owners' issues add the specs.",
   "weightSamples": {
     "/chats/[id]": "/chats/new",
-    "/coding/[taskId]": "/coding/invalid",
+    "/coding/[taskId]": "/coding",
     "/u/[username]": "/u/royaraqamia",
     "/u/[username]/followers": "/u/royaraqamia",
     "/u/[username]/following": "/u/royaraqamia",
