@@ -42,10 +42,11 @@ export function toolsDepsFor(overrides: GroupOverrides = {}): ChatAgentToolsDeps
   };
   for (const [group, value] of Object.entries(overrides)) {
     const current = deps[group as keyof ChatAgentToolsDeps];
+    if (value === undefined) continue;
     if (typeof current === 'function') {
       // A scalar field such as `origin` replaces the default; a group merges.
       (deps as unknown as Record<string, unknown>)[group] = value;
-    } else {
+    } else if (current && typeof current === 'object') {
       Object.assign(current, value);
     }
   }

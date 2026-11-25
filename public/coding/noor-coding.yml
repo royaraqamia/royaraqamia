@@ -1,0 +1,90 @@
+# Template installed into a member's repository by the GitHub App bootstrap PR.
+# It is copied verbatim to .github/workflows/noor-coding.yml. The only credential
+# it sees is GitHub's own short-lived job token; the model key and every platform
+# secret stay in the control plane (ADR-0219).
+name: Noor coding
+
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: Control-plane task id; also the concurrency key.
+        required: true
+        type: string
+      callback_url:
+        description: Task-scoped progress endpoint on the control plane.
+        required: true
+        type: string
+      callback_token:
+        description: Short-lived, single-task bearer token.
+        required: true
+        type: string
+      runner_minutes:
+        description: Maximum execution time for this task.
+        required: true
+        type: string
+      max_input_tokens:
+        description: Input token cap for this task.
+        required: true
+        type: string
+      max_output_tokens:
+        description: Output token cap for this task.
+        required: true
+        type: string
+      runner_url:
+        description: Public URL of the self-contained runner script.
+        required: true
+        type: string
+      task_json:
+        description: The CodingRunnerTask spec, without any credential.
+        required: true
+        type: string
+      ref:
+        description: Optional checkout ref; defaults to the dispatch ref.
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: noor-coding-${{ github.event.inputs.task_id }}
+  cancel-in-progress: false
+
+jobs:
+  code:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(github.event.inputs.runner_minutes) }}
+    steps:
+      - name: Check out the task ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve control-plane origin
+        env:
+          RUNNER_URL: ${{ github.event.inputs.runner_url }}
+        run: |
+          origin="${RUNNER_URL%/coding/runner-v1.mjs}"
+          echo "NOOR_API_URL=$origin" >> "$GITHUB_ENV"
+
+      - name: Download the runner
+        env:
+          RUNNER_URL: ${{ github.event.inputs.runner_url }}
+        run: curl -fsSL "$RUNNER_URL" -o runner.mjs
+
+      - name: Run the coding task
+        env:
+          NOOR_API_URL: ${{ env.NOOR_API_URL }}
+          NOOR_CALLBACK_TOKEN: ${{ github.event.inputs.callback_token }}
+          NOOR_TASK_JSON: ${{ github.event.inputs.task_json }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node runner.mjs

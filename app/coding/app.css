@@ -1,0 +1,10 @@
+/* Coding-agent surface stylesheet (ADR-0219, phase 1).
+
+   The shell compiles Tailwind with `source(none)`, so the utilities used by
+   these document views need their own compilation. Same preamble and tokens as
+   every other surface, and only this surface's files are scanned. */
+
+@import '../surface.css';
+
+@source '.';
+@source '../../frontend/ui/coding';

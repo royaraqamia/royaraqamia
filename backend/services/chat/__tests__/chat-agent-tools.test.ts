@@ -5,8 +5,11 @@ import {
   chatAgentToolDeclarations,
   chatAgentToolDefinitions,
   chatAgentToolDefinitionsForTurn,
+  CODING_TOOLS_UNAVAILABLE,
   type ChatAgentToolContext,
 } from '@/backend/services/chat/chat-agent-tools';
+import type { ChatAgentToolsDeps } from '@/backend/services/chat/chat-agent-tools-deps';
+import type { CodingTaskDto } from '@/shared/contracts/coding-agent';
 import type { ScreenContext } from '@/shared/contracts/screen-context';
 import { URL_EXTRACT_UNAVAILABLE, WEB_SEARCH_UNAVAILABLE } from '@/shared/contracts/web-search';
 import {
@@ -174,6 +177,27 @@ describe('the assistant’s tool registry (#818)', () => {
       remember!.schema.safeParse({ text: 'أحبّ القهوة', user_id: 'someone-else' }).success
     ).toBe(false);
   });
+
+  it('names the task and the step on a coding card (ADR-0219)', () => {
+    const taskId = '00000000-0000-4000-8000-000000000001';
+    const stepId = '00000000-0000-4000-8000-000000000002';
+
+    expect(chatAgentActionSentence('start_coding_task', { title: 'إصلاح البحث' })).toBe(
+      'بدء مهمة برمجية — «إصلاح البحث»'
+    );
+    expect(chatAgentActionSentence('coding_task_status', { taskId })).toBe(
+      `قراءة حالة مهمة برمجية — ${taskId}`
+    );
+    expect(chatAgentActionSentence('coding_task_diff', { taskId, stepId })).toBe(
+      `قراءة فروق مهمة برمجية — ${taskId} — ${stepId}`
+    );
+    // The typed target is the step itself, the way a delete names its row.
+    expect(chatAgentActionSentence('approve_coding_step', { taskId, stepId })).toContain(stepId);
+    expect(chatAgentActionSentence('reject_coding_step', { taskId, stepId })).toContain(stepId);
+    expect(chatAgentActionSentence('approve_coding_step', { taskId })).toBe(
+      'الموافقة على خطوة برمجية'
+    );
+  });
 });
 
 describe('search_web failure (ADR-0206)', () => {
@@ -223,5 +247,151 @@ describe('read_url (ADR-0214)', () => {
     const args = { url: 'https://example.com/a', question: 'لخّص المقال' };
     await tool.run(args, turnContext({ readUrl }));
     expect(readUrl).toHaveBeenCalledWith(args.url, args.question);
+  });
+});
+
+describe('the coding agent’s control plane (ADR-0219)', () => {
+  const workspaceId = '00000000-0000-4000-8000-000000000001';
+  const taskId = '00000000-0000-4000-8000-000000000002';
+  const stepId = '00000000-0000-4000-8000-000000000003';
+  const task: CodingTaskDto = {
+    id: taskId,
+    workspaceId,
+    title: 'إصلاح البحث',
+    instruction: 'أصلح ترتيب نتائج البحث',
+    mode: 'plan',
+    status: 'awaiting_plan',
+    branch: 'noor/12345678',
+    pullRequestUrl: null,
+    summary: '',
+    failureCode: null,
+    steps: [
+      {
+        id: stepId,
+        kind: 'plan',
+        status: 'proposed',
+        summary: 'خطة التغيير',
+        diff: '+ سطر واحد',
+        createdAt: '2026-11-25T00:00:00.000Z',
+      },
+    ],
+    createdAt: '2026-11-25T00:00:00.000Z',
+    updatedAt: '2026-11-25T00:00:00.000Z',
+  };
+
+  function wiredDeps(
+    overrides: {
+      createTask?: (...args: unknown[]) => Promise<CodingTaskDto>;
+      getTask?: (...args: unknown[]) => Promise<CodingTaskDto>;
+      listTasks?: (...args: unknown[]) => Promise<{ tasks: CodingTaskDto[]; nextCursor: null }>;
+      decideStep?: (...args: unknown[]) => Promise<CodingTaskDto>;
+    } = {}
+  ): ChatAgentToolsDeps {
+    return {
+      coding: {
+        createTask: overrides.createTask ?? vi.fn(async () => task),
+        getTask: overrides.getTask ?? vi.fn(async () => task),
+        listTasks: overrides.listTasks ?? vi.fn(async () => ({ tasks: [task], nextCursor: null })),
+        decideStep: overrides.decideStep ?? vi.fn(async () => task),
+      },
+    } as unknown as ChatAgentToolsDeps;
+  }
+
+  it('starts a task as the caller and answers with its id, status and branch', async () => {
+    const createTask = vi.fn(async () => task);
+    const tool = chatAgentTool('start_coding_task')!;
+    const args = {
+      workspaceId,
+      title: 'إصلاح البحث',
+      instruction: 'أصلح ترتيب نتائج البحث',
+      mode: 'plan',
+    };
+
+    const answer = (await tool.run(args, turnContext({ deps: wiredDeps({ createTask }) }))) as {
+      taskId: string;
+      status: string;
+      branch: string;
+    };
+
+    expect(answer).toEqual({ taskId, status: 'awaiting_plan', branch: 'noor/12345678' });
+    expect(createTask).toHaveBeenCalledWith('user-1', { ...args, baseBranch: 'main' });
+  });
+
+  it('refuses a task that tries to name another member or skip a uuid', () => {
+    const tool = chatAgentTool('start_coding_task')!;
+    const args = { workspaceId, title: 'إصلاح البحث', instruction: 'أصلح', mode: 'plan' };
+
+    expect(tool.schema.safeParse({ ...args, user_id: 'someone-else' }).success).toBe(false);
+    expect(tool.schema.safeParse({ ...args, workspaceId: 'not-a-uuid' }).success).toBe(false);
+    expect(tool.schema.safeParse({ ...args, mode: 'full' }).success).toBe(true);
+  });
+
+  it('reads one task by id or lists recent tasks without one', async () => {
+    const getTask = vi.fn(async () => task);
+    const listTasks = vi.fn(async () => ({ tasks: [task], nextCursor: null }));
+    const context = turnContext({ deps: wiredDeps({ getTask, listTasks }) });
+    const tool = chatAgentTool('coding_task_status')!;
+
+    expect(await tool.run({ taskId }, context)).toEqual(task);
+    expect(getTask).toHaveBeenCalledWith('user-1', taskId);
+    expect(await tool.run({}, context)).toEqual([task]);
+    expect(listTasks).toHaveBeenCalledWith('user-1', { limit: 50 });
+  });
+
+  it('returns the step diffs, narrowed to one step when asked', async () => {
+    const tool = chatAgentTool('coding_task_diff')!;
+    const context = turnContext({ deps: wiredDeps() });
+
+    expect(await tool.run({ taskId }, context)).toEqual([
+      {
+        id: stepId,
+        kind: 'plan',
+        status: 'proposed',
+        summary: 'خطة التغيير',
+        diff: '+ سطر واحد',
+      },
+    ]);
+    expect(await tool.run({ taskId, stepId }, context)).toHaveLength(1);
+    expect(
+      await tool.run({ taskId, stepId: '00000000-0000-4000-8000-000000000009' }, context)
+    ).toEqual([]);
+  });
+
+  it('passes the member’s approve or reject to the step decision', async () => {
+    const decideStep = vi.fn(async () => task);
+    const context = turnContext({ deps: wiredDeps({ decideStep }) });
+    const args = { taskId, stepId };
+
+    await chatAgentTool('approve_coding_step')!.run(args, context);
+    expect(decideStep).toHaveBeenCalledWith('user-1', taskId, stepId, { decision: 'approve' });
+
+    await chatAgentTool('reject_coding_step')!.run(args, context);
+    expect(decideStep).toHaveBeenCalledWith('user-1', taskId, stepId, { decision: 'reject' });
+  });
+
+  it('stays declared but refuses in Arabic when the coding service is absent', async () => {
+    for (const name of [
+      'start_coding_task',
+      'coding_task_status',
+      'coding_task_diff',
+      'approve_coding_step',
+      'reject_coding_step',
+    ]) {
+      expect(
+        chatAgentToolDefinitionsForTurn({
+          hasApps: false,
+          hasScreen: false,
+          hasWebSearch: false,
+          hasUrlExtract: false,
+          isAdmin: false,
+        }).map((definition) => definition.function.name)
+      ).toContain(name);
+
+      const tool = chatAgentTool(name)!;
+      expect(await tool.run({}, turnContext())).toBe(CODING_TOOLS_UNAVAILABLE);
+      expect(await tool.run({}, turnContext({ deps: {} as ChatAgentToolsDeps }))).toBe(
+        CODING_TOOLS_UNAVAILABLE
+      );
+    }
   });
 });

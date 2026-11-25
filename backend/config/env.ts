@@ -83,6 +83,26 @@ export const env = {
   get mcpTokenEncryptionKey(): string | undefined {
     return read('MCP_TOKEN_ENCRYPTION_KEY');
   },
+  /**
+   * The coding agent's GitHub App (ADR-0219). The client reads these at call time;
+   * these getters are the documented, typed door for the same four values. The
+   * PEM may arrive with literal `\n` escapes from a secret manager, so real
+   * newlines are restored here as well.
+   */
+  get githubAppId(): string | undefined {
+    return read('GITHUB_APP_ID')?.trim() || undefined;
+  },
+  get githubAppPrivateKey(): string | undefined {
+    const raw = read('GITHUB_APP_PRIVATE_KEY')?.trim();
+    if (!raw) return undefined;
+    return raw.includes('\\n') ? raw.replace(/\\n/g, '\n') : raw;
+  },
+  get githubAppClientId(): string | undefined {
+    return read('GITHUB_APP_CLIENT_ID')?.trim() || undefined;
+  },
+  get githubAppClientSecret(): string | undefined {
+    return read('GITHUB_APP_CLIENT_SECRET')?.trim() || undefined;
+  },
   get adminEmails(): string[] {
     return (read('ADMIN_EMAILS') ?? '')
       .split(',')

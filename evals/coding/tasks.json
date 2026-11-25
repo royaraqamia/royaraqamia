@@ -1,0 +1,240 @@
+{
+  "version": 1,
+  "runner": "runner-v1.mjs",
+  "model": "deepseek-v4.1-flash",
+  "description": "Deterministic phase-1 coding-runner gates. Each fixture is a small repository written to an empty directory before the runner starts; checks run from that directory after the runner's handoff.",
+  "tasks": [
+    {
+      "id": "sum-function",
+      "prompt": "Create src/math.js exporting a function sum(a, b) that returns the numeric sum of its two arguments.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "package.json": "{\"name\":\"fixture\",\"private\":true,\"type\":\"commonjs\"}"
+        },
+        "setup": []
+      },
+      "checks": [
+        "node -e \"const { sum } = require('./src/math.js'); if (sum(2, 3) !== 5) process.exit(1)\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 20000,
+        "outputTokens": 4000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "fix-off-by-one",
+      "prompt": "src/count.js counts past the end of the array. Fix the loop so count(items) returns the number of elements.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "src/count.js": "function count(items) {\n  let total = 0;\n  for (let i = 0; i <= items.length; i++) total++;\n  return total;\n}\nmodule.exports = { count };\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "node -e \"const { count } = require('./src/count.js'); if (count([1, 2, 3]) !== 3 || count([]) !== 0) process.exit(1)\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 20000,
+        "outputTokens": 4000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "validate-email",
+      "prompt": "Add an exported validateEmail(value) function to src/validate.js. It must accept normal email addresses and reject empty strings, strings without @ and strings without a dot after @.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "src/validate.js": "function validateEmail(value) {\n  return true;\n}\nmodule.exports = { validateEmail };\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "node -e \"const { validateEmail } = require('./src/validate.js'); if (!validateEmail('a@example.com') || validateEmail('') || validateEmail('a@b') || validateEmail('nope')) process.exit(1)\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 25000,
+        "outputTokens": 5000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "extract-helper",
+      "prompt": "Move formatName from src/index.js into a new src/format.js module, export it there, and update index.js to import it. Keep the public behavior unchanged.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "src/index.js": "function formatName(first, last) {\n  return (first + ' ' + last).trim();\n}\nmodule.exports = { formatName };\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "node -e \"const { formatName } = require('./src/format.js'); if (formatName('Ada', 'Lovelace') !== 'Ada Lovelace') process.exit(1)\"",
+        "node -e \"const { formatName } = require('./src/index.js'); if (formatName('Ada', 'Lovelace') !== 'Ada Lovelace') process.exit(1)\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 30000,
+        "outputTokens": 6000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "add-cli-flag",
+      "prompt": "Make cli.js support a --upper flag. Without it, print the first argument unchanged; with it, print the argument uppercased.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "cli.js": "const words = process.argv.slice(2);\nconsole.log(words[0] ?? '');\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "test \"$(node cli.js hello)\" = \"hello\"",
+        "test \"$(node cli.js --upper hello)\" = \"HELLO\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 25000,
+        "outputTokens": 5000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "fix-async-race",
+      "prompt": "src/sequence.js logs an async value before it is ready. Add the missing await so collect() resolves to ['a', 'b'] in order.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "src/sequence.js": "async function later(value) {\n  return Promise.resolve(value);\n}\nasync function collect() {\n  const out = [];\n  const value = later('a');\n  out.push(value);\n  out.push(await later('b'));\n  return out;\n}\nmodule.exports = { collect };\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "node -e \"require('./src/sequence.js').collect().then((v) => { if (JSON.stringify(v) !== JSON.stringify(['a', 'b'])) process.exit(1); })\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 25000,
+        "outputTokens": 5000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "name-the-timeout",
+      "prompt": "Replace the magic number 3000 in src/wait.js with an exported constant TIMEOUT_MS and use it in the function.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "src/wait.js": "function deadline() {\n  return Date.now() + 3000;\n}\nmodule.exports = { deadline };\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "node -e \"const m = require('./src/wait.js'); if (m.TIMEOUT_MS !== 3000 || typeof m.deadline !== 'function') process.exit(1)\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 20000,
+        "outputTokens": 4000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "json-error-handling",
+      "prompt": "src/config.js throws on malformed JSON. Change parseConfig(text) to return null for invalid JSON and the parsed object otherwise.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "src/config.js": "function parseConfig(text) {\n  return JSON.parse(text);\n}\nmodule.exports = { parseConfig };\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "node -e \"const { parseConfig } = require('./src/config.js'); if (parseConfig('{oops') !== null || parseConfig(JSON.stringify({ a: 1 })).a !== 1) process.exit(1)\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 20000,
+        "outputTokens": 4000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "add-unit-test",
+      "prompt": "Add test/math.test.js using node:test to cover src/math.js for positive, zero and negative inputs. Do not change src/math.js.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "package.json": "{\"name\":\"fixture\",\"private\":true,\"type\":\"commonjs\",\"scripts\":{\"test\":\"node --test\"}}",
+          "src/math.js": "function double(value) {\n  return value * 2;\n}\nmodule.exports = { double };\n"
+        },
+        "setup": []
+      },
+      "checks": ["test -f test/math.test.js", "npm test"],
+      "expectedTokenBudget": {
+        "inputTokens": 35000,
+        "outputTokens": 7000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "sort-by-age",
+      "prompt": "Implement exported sortByAge(people) in src/sort.js. It must return a new array sorted by ascending age and must not mutate the input.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "src/sort.js": "function sortByAge(people) {\n  return people;\n}\nmodule.exports = { sortByAge };\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "node -e \"const { sortByAge } = require('./src/sort.js'); const people = [{age: 3}, {age: 1}, {age: 2}]; const out = sortByAge(people); if (out.map((p) => p.age).join(',') !== '1,2,3' || people[0].age !== 3) process.exit(1)\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 25000,
+        "outputTokens": 5000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "nonempty-string-guard",
+      "prompt": "Implement exported isNonEmptyString(value) in src/guard.js. It returns true only for strings with at least one non-whitespace character.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "src/guard.js": "function isNonEmptyString(value) {\n  return Boolean(value);\n}\nmodule.exports = { isNonEmptyString };\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "node -e \"const { isNonEmptyString } = require('./src/guard.js'); if (!isNonEmptyString('ok') || isNonEmptyString('') || isNonEmptyString('   ') || isNonEmptyString(7)) process.exit(1)\""
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 20000,
+        "outputTokens": 4000,
+        "runnerMinutes": 10
+      }
+    },
+    {
+      "id": "document-usage",
+      "prompt": "Add a Usage section to README.md showing how to run `node cli.js hello`. Keep the existing title.",
+      "fixture": {
+        "baseBranch": "main",
+        "files": {
+          "README.md": "# Tiny CLI\n\nA tiny command line tool.\n",
+          "cli.js": "console.log(process.argv.slice(2)[0] ?? '');\n"
+        },
+        "setup": []
+      },
+      "checks": [
+        "grep -q '^# Tiny CLI$' README.md",
+        "grep -q '^## Usage$' README.md",
+        "grep -q 'node cli.js hello' README.md"
+      ],
+      "expectedTokenBudget": {
+        "inputTokens": 20000,
+        "outputTokens": 4000,
+        "runnerMinutes": 10
+      }
+    }
+  ]
+}

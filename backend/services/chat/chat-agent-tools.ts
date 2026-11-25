@@ -2,7 +2,10 @@ import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
-import type { ChatAgentToolsDeps } from '@/backend/services/chat/chat-agent-tools-deps';
+import type {
+  ChatAgentToolsDeps,
+  CodingToolsDeps,
+} from '@/backend/services/chat/chat-agent-tools-deps';
 import { colorFromName } from '@/backend/services/spendtrack/spendtrack-csv';
 import type { McpConnection } from '@/shared/contracts/mcp-marketplace';
 import type { McpConnectedApp } from '@/shared/contracts/mcp-connected-apps';
@@ -109,6 +112,7 @@ import {
 import { logger } from '@/backend/shared/logger';
 import { sanitizeVisualSvg } from '@/backend/services/chat/visual-sanitize';
 import { VISUAL_UNAVAILABLE, VisualSpecSchema } from '@/shared/contracts/visual';
+import { CODING_TASK_MODES } from '@/shared/contracts/coding-agent';
 
 /**
  * The assistant's tools (ADR-0113, #818).
@@ -885,6 +889,45 @@ function pairQuote(
 
   return { rate: conversion.rate, as_of: asOf, change_pct: changePct };
 }
+
+/**
+ * The coding tools are control-plane hands only (ADR-0219): they start a task,
+ * read its state and diffs, and carry a decision. No shell, file-write or git
+ * primitive belongs in this registry — the sandboxed runner owns execution.
+ *
+ * A deployment without a configured GitHub App keeps every declaration and
+ * refuses the call in Arabic. It neither throws into the turn nor pretends the
+ * capability exists in the wiring.
+ */
+export const CODING_TOOLS_UNAVAILABLE = 'الوكيل البرمجي غير متاح في هذا النشر.';
+
+function codingService(context: ChatAgentToolContext): CodingToolsDeps | null {
+  // Same deps bundle `depsOf` binds; read it softly so a missing deployment
+  // configuration is a refusal sentence, not a thrown error in a chat turn.
+  return context.deps ? (depsOf(context).coding ?? null) : null;
+}
+
+const StartCodingTaskArgs = z.strictObject({
+  workspaceId: z.string().uuid('معرّف مساحة العمل غير صالح'),
+  title: z.string().trim().min(1, 'عنوان المهمة مطلوب').max(200, 'العنوان طويل جداً'),
+  instruction: z.string().trim().min(1, 'وصف المهمة مطلوب').max(20_000, 'وصف المهمة طويل جداً'),
+  mode: z.enum(CODING_TASK_MODES),
+  baseBranch: z.string().trim().min(1).max(200).default('main'),
+});
+
+const CodingTaskStatusArgs = z.strictObject({
+  taskId: z.string().uuid('معرّف المهمة غير صالح').optional(),
+});
+
+const CodingTaskDiffArgs = z.strictObject({
+  taskId: z.string().uuid('معرّف المهمة غير صالح'),
+  stepId: z.string().uuid('معرّف الخطوة غير صالح').optional(),
+});
+
+const CodingStepDecisionArgs = z.strictObject({
+  taskId: z.string().uuid('معرّف المهمة غير صالح'),
+  stepId: z.string().uuid('معرّف الخطوة غير صالح'),
+});
 
 const tools: ChatAgentTool[] = [
   // --- reads ---------------------------------------------------------------
@@ -2798,6 +2841,92 @@ const tools: ChatAgentTool[] = [
       await assertAdminAtExecution(context);
       const input = AdminDecideReportArgs.parse(args);
       return depsOf(context).chatReports.createAdminService().decide(input.id, input.status);
+    },
+  },
+  // --- coding agent (ADR-0219) ----------------------------------------------
+  // Control-plane hands only: no execution primitive is declared here. A task,
+  // its status, its diffs and the member's decision on one step — the approvals
+  // are tier 2, never grantable, and their card names the step (ADR-0180).
+  {
+    name: 'start_coding_task',
+    kind: 'write',
+    product: 'assistant',
+    tier: 2,
+    description: 'بدء مهمة برمجية على مستودع مرتبط؛ تُعرض كبطاقة موافقة ولا يمكن منحها.',
+    schema: StartCodingTaskArgs,
+    async run(args, context) {
+      const coding = codingService(context);
+      if (!coding) return CODING_TOOLS_UNAVAILABLE;
+      const task = await coding.createTask(context.userId, StartCodingTaskArgs.parse(args));
+      return { taskId: task.id, status: task.status, branch: task.branch };
+    },
+  },
+  {
+    name: 'coding_task_status',
+    kind: 'read',
+    product: 'assistant',
+    tier: 0,
+    description: 'حالة مهمة برمجية واحدة، أو آخر المهام إن لم يُحدَّد معرّف.',
+    schema: CodingTaskStatusArgs,
+    async run(args, context) {
+      const coding = codingService(context);
+      if (!coding) return CODING_TOOLS_UNAVAILABLE;
+      const { taskId } = CodingTaskStatusArgs.parse(args);
+      if (taskId) return coding.getTask(context.userId, taskId);
+      const page = await coding.listTasks(context.userId, { limit: 50 });
+      return page.tasks;
+    },
+  },
+  {
+    name: 'coding_task_diff',
+    kind: 'read',
+    product: 'assistant',
+    tier: 0,
+    description: 'فروق خطوات مهمة برمجية، أو فروق خطوة واحدة إن حُدِّدت.',
+    schema: CodingTaskDiffArgs,
+    async run(args, context) {
+      const coding = codingService(context);
+      if (!coding) return CODING_TOOLS_UNAVAILABLE;
+      const { taskId, stepId } = CodingTaskDiffArgs.parse(args);
+      const task = await coding.getTask(context.userId, taskId);
+      // The task DTO carries its steps and their diffs; no execution primitive
+      // and no second read path is added to the chat side (ADR-0219).
+      const steps = stepId ? task.steps.filter((step) => step.id === stepId) : task.steps;
+      return steps.map(({ id, kind, status, summary, diff }) => ({
+        id,
+        kind,
+        status,
+        summary,
+        diff,
+      }));
+    },
+  },
+  {
+    name: 'approve_coding_step',
+    kind: 'write',
+    product: 'assistant',
+    tier: 2,
+    description: 'الموافقة على خطوة مقترحة في مهمة برمجية؛ بطاقة دائماً، تُسمّي الخطوة.',
+    schema: CodingStepDecisionArgs,
+    async run(args, context) {
+      const coding = codingService(context);
+      if (!coding) return CODING_TOOLS_UNAVAILABLE;
+      const { taskId, stepId } = CodingStepDecisionArgs.parse(args);
+      return coding.decideStep(context.userId, taskId, stepId, { decision: 'approve' });
+    },
+  },
+  {
+    name: 'reject_coding_step',
+    kind: 'write',
+    product: 'assistant',
+    tier: 2,
+    description: 'رفض خطوة مقترحة في مهمة برمجية؛ بطاقة دائماً، تُسمّي الخطوة.',
+    schema: CodingStepDecisionArgs,
+    async run(args, context) {
+      const coding = codingService(context);
+      if (!coding) return CODING_TOOLS_UNAVAILABLE;
+      const { taskId, stepId } = CodingStepDecisionArgs.parse(args);
+      return coding.decideStep(context.userId, taskId, stepId, { decision: 'reject' });
     },
   },
 ];
