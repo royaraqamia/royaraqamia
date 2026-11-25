@@ -29,6 +29,11 @@ import {
   type ChatThread,
   type ChatThreadPage,
 } from '@/shared/contracts/chat';
+import {
+  CHAT_ATTACHMENTS_SERVER_COPY,
+  type ChatAttachmentsServerCopyStrings,
+} from '@/backend/services/chat/chat-attachments-copy';
+import { formatAttachmentSize } from '@/shared/format-attachment-size';
 
 /**
  * A refusal the surface can act on. `status` is the HTTP status the controller
@@ -100,37 +105,36 @@ const QUOTA_EXCEEDED_CODE = '53400';
 const POLICY_REFUSAL_CODE = '42501';
 
 /**
- * The four attachment caps answer four different sentences, keyed by the text
- * the trigger raised. A member needs to know whether to pick a smaller file, wait
- * for tomorrow, delete an old message, or try again later. An object Storage
- * cannot measure (#1077) is a failed send, not a cap, so it keeps the sentence
- * the rest of the composer uses for one.
+ * A cap's refusal key names the sentence in the one copy source (#1805). The
+ * status stays here — it is behaviour, not words — and the database's raise text
+ * stays the key: the trigger's contract is unchanged.
  */
-const ATTACHMENT_REFUSALS: Record<string, { status: number; sentence: string }> = {
-  'chat attachment file is too large': {
-    status: 413,
-    sentence: 'حجم الملف يتجاوز الحد المسموح',
-  },
-  'chat attachment daily allowance reached': {
-    status: 429,
-    sentence: 'بلغت حدّ المرفقات اليوم، يعود غداً',
-  },
-  'chat attachment storage is full': {
-    status: 409,
-    sentence: 'مساحة مرفقاتك ممتلئة، احذف رسالة قديمة فيها ملفات',
-  },
-  'chat attachment project storage is full': {
-    status: 409,
-    sentence: 'مساحة مرفقات الموقع ممتلئة، حاول لاحقاً',
-  },
-  'chat attachment size is unknown': {
-    // A permanent refusal, not a retry: the object is gone or Storage never
-    // recorded its size, so a replay would fail the same way (the outbox treats
-    // 409 as "give up and say so").
-    status: 409,
-    sentence: 'تعذّر إرسال الرسالة',
-  },
+export type AttachmentRefusalKey = Exclude<keyof ChatAttachmentsServerCopyStrings, 'tooMany'>;
+
+export const ATTACHMENT_REFUSALS: Record<string, { status: number; key: AttachmentRefusalKey }> = {
+  'chat attachment file is too large': { status: 413, key: 'tooLarge' },
+  'chat attachment daily allowance reached': { status: 429, key: 'today' },
+  'chat attachment storage is full': { status: 409, key: 'total' },
+  'chat attachment project storage is full': { status: 409, key: 'project' },
 };
+
+/**
+ * The sentence for a refusal key, with `{size}` filled from the cap the server
+ * actually enforces when the source asks for it. The composer's snapshot can be
+ * older than that cap, so the number must be read now, not guessed here.
+ */
+export function attachmentRefusalSentence(key: AttachmentRefusalKey, fileBytes?: number): string {
+  const sentence: string = CHAT_ATTACHMENTS_SERVER_COPY[key];
+  return fileBytes === undefined
+    ? sentence
+    : sentence.replace('{size}', formatAttachmentSize(fileBytes));
+}
+
+/** A permanent refusal, not a retry: the object is gone or Storage never
+ * recorded its size, so a replay would fail the same way (the outbox treats
+ * 409 as "give up and say so"). It is a failed send, not a cap (#1077), and its
+ * sentence is the composer's own fallback rather than an allowance. */
+const UNKNOWN_SIZE_REFUSAL = { status: 409, sentence: 'تعذّر إرسال الرسالة' };
 
 function toPeer(user: PublicUser | undefined): ChatPeer | null {
   if (!user) return null;
@@ -656,10 +660,21 @@ export class ChatService {
       await this.repo.tombstoneMessage(result.record.id, userId);
 
       if (result.attachmentFailure.code === QUOTA_EXCEEDED_CODE) {
-        const refusal = ATTACHMENT_REFUSALS[result.attachmentFailure.message ?? ''];
-        throw refusal
-          ? new ChatError(refusal.status, refusal.sentence)
-          : new ChatError(409, 'مساحة المرفقات ممتلئة');
+        const raise = result.attachmentFailure.message ?? '';
+        const refusal = ATTACHMENT_REFUSALS[raise];
+        if (refusal) {
+          const fileBytes =
+            refusal.key === 'tooLarge'
+              ? (await this.repo.attachmentAllowance()).fileBytes
+              : undefined;
+          throw new ChatError(refusal.status, attachmentRefusalSentence(refusal.key, fileBytes));
+        }
+        // Not a cap: Storage never measured the object, so a replay would fail
+        // the same way. Its sentence is the composer's failed-send fallback.
+        if (raise === 'chat attachment size is unknown') {
+          throw new ChatError(UNKNOWN_SIZE_REFUSAL.status, UNKNOWN_SIZE_REFUSAL.sentence);
+        }
+        throw new ChatError(409, 'مساحة المرفقات ممتلئة');
       }
       if (result.attachmentFailure.code === POLICY_REFUSAL_CODE) {
         throw new ChatError(403, 'لا يمكن إرفاق ملف في هذه الرسالة');

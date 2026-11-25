@@ -6,6 +6,7 @@ import {
   packageOf,
   placeholders,
   renderNative,
+  renderServer,
   renderWeb,
   validate,
 } from '../generate-copy.mjs';
@@ -101,6 +102,38 @@ describe('the two outputs', () => {
     // ending in `\` swallow the literal's closing quote.
     const risky = { ...source, strings: { a: "it's \\ fine" } };
     expect(renderWeb(risky).contents).toContain(String.raw`  a: 'it\'s \\ fine',`);
+  });
+});
+
+describe('the server output (#1805)', () => {
+  const withServer = {
+    ...source,
+    server: { file: 'backend/services/plan/copy.ts', export: 'PLAN_SERVER_COPY' },
+  };
+
+  it('carries the same strings as the other two clients', () => {
+    const server = renderServer(withServer, 'shared/copy/plan-card.json');
+    expect(server.file).toBe('backend/services/plan/copy.ts');
+    expect(server.contents).toContain('export const PLAN_SERVER_COPY = {');
+    expect(server.contents).toContain('shared/copy/plan-card.json');
+    for (const [key, value] of Object.entries(withServer.strings)) {
+      expect(server.contents).toContain(`${key}: '${value}'`);
+    }
+  });
+
+  it('is generated and diffed by check:copy, not hand-written beside the trigger', async () => {
+    expect(validate(withServer)).toEqual([]);
+    const files = await generate();
+    expect(files.has('backend/services/chat/chat-attachments-copy.ts')).toBe(true);
+  });
+
+  it('refuses a server entry that would emit an unusable module', () => {
+    expect(validate({ ...withServer, server: { file: '' } }).join('\n')).toContain(
+      '"server.file" is required'
+    );
+    expect(
+      validate({ ...withServer, server: { file: 'server/copy.ts', export: 'lower' } }).join('\n')
+    ).toContain('"server.export" must be an UPPER_SNAKE identifier');
   });
 });
 
