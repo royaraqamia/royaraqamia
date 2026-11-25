@@ -43,9 +43,9 @@ Local change: four new files under `ime/rewrite/` add the opt-in AI rewrite
 claim in an Android Keystore-encrypted app-private file shared with the app
 process; `RewriteGateway.kt` makes one bounded POST only with a one-use tap
 capability, sends only the composing text and no tools, history or telemetry;
-`RewriteUi.kt` draws the consent-gated button and the suggestion strip; and the
-generated `RewriteCopy.kt` reads the Arabic strings from `shared/copy`. No call
-happens on a keystroke, and a failed call leaves the editor untouched.
+`RewriteUi.kt` draws the consent-gated button and the suggestion strip; and
+`RewriteCopy.kt` holds the Arabic strings for this keyboard-only surface. No
+call happens on a keystroke, and a failed call leaves the editor untouched.
 
 Local change: `ime/smartbar/Smartbar.kt` and `ime/smartbar/CandidatesRow.kt` host
 the rewrite button and strip in the existing smartbar, and `build.gradle` adds a
