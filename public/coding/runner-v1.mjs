@@ -142,7 +142,12 @@ async function waitForDecision() {
     const state = await taskState();
     if (state.decision === 'reject') return 'reject';
     if (state.decision === 'approve') return 'approve';
-    if (!isActive(state.status)) return 'stopped';
+    // The control plane moves the task to awaiting_* while the member decides.
+    // Those are waiting states, not terminal ones: keep polling until the
+    // decision arrives instead of treating the gate itself as a stop.
+    if (!isActive(state.status) && state.status !== 'awaiting_plan' && state.status !== 'awaiting_push') {
+      return 'stopped';
+    }
     await sleep(Math.min(POLL_MS, Math.max(0, end - Date.now())));
   }
   return 'timeout';

@@ -30,8 +30,8 @@
       "jsGzipKb": 372
     },
     "/account": {
-      "comment": "Live weight gate (#1662): the deployed document measured 272.3 KB gzip JS on 2026-11-22, then 274.2 KB on 2026-11-25 after the main merge. The ceiling keeps the usual small headroom above the live measurement instead of failing on runner noise.",
-      "jsGzipKb": 275
+      "comment": "Live weight gate (#1662): the deployed document measured 272.3 KB gzip JS on 2026-11-22, then 274.2-275.6 KB across 2026-11-25 runs. The ceiling keeps the usual small headroom above the live measurement instead of failing on runner noise.",
+      "jsGzipKb": 277
     },
     "/account/links": {
       "comment": "Live weight gate (#1662): 366.8 KB JS and 590.2 KB total gzip on 2026-11-22. Both ceilings sit just above the measured document.",
