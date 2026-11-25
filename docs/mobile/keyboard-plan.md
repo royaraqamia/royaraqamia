@@ -161,14 +161,33 @@ nothing.
 **Exit:** a signed APK installed over the current one keeps the IME enabled and the update card
 reports the new version. Signing and the release dispatch remain the owner's manual steps.
 
-## Open decisions
+## Implementation status (2026-11-25)
 
-These are deliberately not assumed; each is closed at the phase named above.
+Phases 0 through 4 are implemented on branch `keyboard-ime` and committed locally; nothing has been
+pushed or released.
 
-- How the upstream build is adapted, or which engine replaces it (phase 0, open now).
-- The route and the allowance row for the AI rewrite endpoint (phase 4).
-- Clipboard history retention, if any (phase 3).
-- The TTL of the scoped IME token and the exact bridge mechanism that delivers it (phase 4).
-- Whether the IME needs its own settings surface, and if so how it is represented without becoming
-  a port (phase 1).
-- The Arabic prediction corpus: which words are included and whose data may feed it (phase 2).
+- Phase 0: one `android/keyboard` module builds into the APK; the IME is registered in the merged
+  manifest, with `minSdk` 26 behind a manifest `overrideLibrary` while the app stays at 24.
+- Phase 1: `RoyShellKeyboard` reads Android's IME state and opens the system picker or settings; the
+  account row never claims to switch a keyboard itself.
+- Phase 2: the vendored Arabic and English layouts and gesture typing ship. Every committed digit is
+  folded to ASCII at the `commitText` boundary, with four JVM tests.
+- Phase 3: clipboard history is process-local only and nothing copied is written to Room. Branded
+  `roy_day` and `roy_night` stylesheets are the fresh-install defaults; upstream themes stay
+  selectable. GIF remains cancelled.
+- Phase 4: opt-in rewrite is behind a 15-minute HMAC credential, two bounded routes, the
+  `keyboard.rewrite` allowance row and a tap-only network capability in the IME.
+
+## Still open
+
+These need a device, a release cut or an owner decision; none was assumed.
+
+- **Device gates:** release APK size delta, first-key and keystroke latency, swipe acceptance and
+  the mid-word Arabic caret test on the RMX3195. Until they pass, phase 0's budget rows stay
+  proposed rather than measured.
+- **Network capture:** assertion on a real device that typing alone produces no packet and only a
+  rewrite tap makes a request. The code-level tap capability is tested; the device capture is not.
+- **Release cut:** Arabic release-note fragments are staged but have not been folded; signing and
+  dispatch stay the owner's manual steps (phase 5).
+- **Arabic prediction corpus:** the upstream dictionary is vendored as published; no decision has
+  been taken about contributing member data to it.
