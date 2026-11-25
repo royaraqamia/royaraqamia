@@ -19,6 +19,11 @@ JetPref is a separate Apache-2.0 library by Patrick Goldinger
 longer exists, so this build uses the published 0.3.0-beta02 (commit d6e12dda,
 2025-11-19), which is the same v3 API as the snapshot.
 
+Local change: `ime/editor/KeyboardDigits.kt` folds every Unicode decimal digit to
+ASCII before a key is committed, because this product writes ASCII digits only.
+The upstream numeric-row assets stay as published; the fold happens at the
+commit boundary, so choosing any of them cannot emit a non-ASCII digit.
+
 Not vendored: the optional full Chinese shape-based language packs documented
 in upstream LANGUAGEPACKS-CHINESE.md, which are GPL-3.0. The default barebones
 Chinese pack shipped in the upstream assets is Apache-2.0 and is retained.

@@ -384,7 +384,7 @@ abstract class AbstractEditorInstance(context: Context) {
         return true
     }
 
-    open fun commitText(text: String): Boolean = commitTextInternal(text)
+    open fun commitText(text: String): Boolean = commitTextInternal(text.toAsciiDigits())
 
     private fun commitTextInternal(text: String): Boolean {
         val ic = currentInputConnection() ?: return false

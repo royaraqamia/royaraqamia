@@ -110,4 +110,8 @@ dependencies {
     implementation "dev.patrickgold.jetpref:jetpref-material-ui:$jetprefVersion"
     implementation 'io.coil-kt.coil3:coil-compose:3.3.0'
     implementation 'io.coil-kt.coil3:coil-gif:3.3.0'
+
+    // The digit gate's JVM half: the IME folds every numeric row to ASCII before
+    // committing it, and this test holds that promise without a device.
+    testImplementation "junit:junit:$junitVersion"
 }
