@@ -1,10 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  HABIT_SYNC_PAGE_SIZE,
   Habit,
   HabitLog,
   HabitLogKind,
   HabitRepository,
   HabitRestoreInput,
+  HabitSyncSnapshot,
   HabitTargetPeriod,
 } from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
@@ -23,6 +25,8 @@ interface HabitRow {
   client_id?: string | null;
   updated_at?: string;
   deleted_at?: string | null;
+  /** Server-owned sync stamp, set by a trigger — the cursor's source (#1788). */
+  server_updated_at?: string;
 }
 
 interface LogRow {
@@ -37,6 +41,34 @@ interface LogRow {
   client_id?: string | null;
   updated_at?: string;
   deleted_at?: string | null;
+  /** Server-owned sync stamp, set by a trigger — the cursor's source (#1788). */
+  server_updated_at?: string;
+}
+
+type StampedRow = { server_updated_at?: string; id: string };
+
+/**
+ * The stamp both pages stop at. A table that filled its page is the bound: a
+ * later stamp belongs to the next pull, and the other table contributes only
+ * rows at or before it. When no table filled, the newest stamp in the page is
+ * the bound, so a device with nothing left to fetch keeps the cursor it sent.
+ */
+function syncBoundary(
+  habitRows: readonly StampedRow[],
+  logRows: readonly StampedRow[],
+  since?: string | null
+): string | null {
+  const pageEnds = [habitRows, logRows]
+    .filter((rows) => rows.length > HABIT_SYNC_PAGE_SIZE)
+    .map((rows) => rows[HABIT_SYNC_PAGE_SIZE - 1]?.server_updated_at)
+    .filter((stamp): stamp is string => typeof stamp === 'string');
+
+  if (pageEnds.length > 0) return pageEnds.reduce((a, b) => (a < b ? a : b));
+
+  const stamps = [...habitRows, ...logRows]
+    .map((row) => row.server_updated_at)
+    .filter((stamp): stamp is string => typeof stamp === 'string');
+  return stamps.length > 0 ? stamps.reduce((a, b) => (a > b ? a : b)) : (since ?? null);
 }
 
 const nowIso = () => new Date().toISOString();
@@ -344,21 +376,42 @@ export class SupabaseHabitRepository implements HabitRepository {
   }
 
   /**
-   * The sync snapshot: like `getLocalData`, but deliberately unfiltered by
-   * `deleted_at`. A tombstone must reach the client so a delete made on another
-   * device removes the row locally (ADR-0029); the display reads (`getHabits`,
-   * `getLogs`) keep excluding tombstones.
+   * One bounded page of the sync snapshot (#1788): like `getLocalData`, but
+   * deliberately unfiltered by `deleted_at`. A tombstone must reach the client
+   * so a delete made on another device removes the row locally (ADR-0029); the
+   * display reads (`getHabits`, `getLogs`) keep excluding tombstones.
+   *
+   * `updated_at` is the client's LWW clock and can be backdated, so the page is
+   * keyed on the server's `server_updated_at` stamp instead. Both tables are
+   * read in the same pass and cut at one shared boundary, so a row that falls
+   * past the page is fetched by the next one rather than skipped by a cursor
+   * taken from the other table. The trigger stamps every row write, including
+   * tombstones, so a deletion is part of the feed.
    */
-  async getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
-    let habitsQuery = this.client.from('habits').select('*');
-    let logsQuery = this.client.from('habit_logs').select('*');
+  async getSyncData(since?: string | null): Promise<HabitSyncSnapshot> {
+    let habitsQuery = this.client
+      .from('habits')
+      .select('*')
+      .order('server_updated_at', { ascending: true })
+      .order('id', { ascending: true })
+      .limit(HABIT_SYNC_PAGE_SIZE + 1);
+    let logsQuery = this.client
+      .from('habit_logs')
+      .select('*')
+      .order('server_updated_at', { ascending: true })
+      .order('id', { ascending: true })
+      .limit(HABIT_SYNC_PAGE_SIZE + 1);
 
+    if (since) {
+      habitsQuery = habitsQuery.gt('server_updated_at', since);
+      logsQuery = logsQuery.gt('server_updated_at', since);
+    }
     if (this.userId) {
       habitsQuery = habitsQuery.eq('user_id', this.userId);
       logsQuery = logsQuery.eq('user_id', this.userId);
     }
 
-    const [{ data: habitRows, error: habitsError }, { data: logRows, error: logsError }] =
+    const [{ data: habitsData, error: habitsError }, { data: logsData, error: logsError }] =
       await Promise.all([habitsQuery, logsQuery]);
 
     if (habitsError) {
@@ -368,9 +421,24 @@ export class SupabaseHabitRepository implements HabitRepository {
       throw logsError;
     }
 
+    const allHabits = (habitsData ?? []) as HabitRow[];
+    const allLogs = (logsData ?? []) as LogRow[];
+    const cursor = syncBoundary(allHabits, allLogs, since);
+    const inPage = (row: StampedRow) =>
+      cursor === null ||
+      (typeof row.server_updated_at === 'string' && row.server_updated_at <= cursor);
+    const byStamp = (a: StampedRow, b: StampedRow) => {
+      const left = a.server_updated_at ?? '';
+      const right = b.server_updated_at ?? '';
+      if (left < right) return -1;
+      if (left > right) return 1;
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    };
+
     return {
-      habits: (habitRows || []).map(toHabit),
-      logs: (logRows || []).map(toLog),
+      habits: allHabits.filter(inPage).sort(byStamp).map(toHabit),
+      logs: allLogs.filter(inPage).sort(byStamp).map(toLog),
+      cursor,
     };
   }
 

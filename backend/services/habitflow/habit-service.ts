@@ -3,6 +3,7 @@ import {
   HabitLog,
   HabitLogKind,
   HabitRepository,
+  HabitSyncSnapshot,
   HabitTargetPeriod,
 } from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
@@ -112,11 +113,12 @@ export class HabitService {
   }
 
   /**
-   * The sync snapshot (tombstones included) the client merges on open, so a
-   * delete made on another device lands here (ADR-0029).
+   * One bounded page (tombstones included) the client merges on open, so a
+   * delete made on another device lands here (ADR-0029). The cursor is opaque
+   * to the service: the repository owns the query and its stamp.
    */
-  async getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
-    return this.repository.getSyncData();
+  async getSyncData(since?: string | null): Promise<HabitSyncSnapshot> {
+    return this.repository.getSyncData(since);
   }
 
   async toggleHabitLog(data: {

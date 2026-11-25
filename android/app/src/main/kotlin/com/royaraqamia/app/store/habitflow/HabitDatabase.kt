@@ -38,8 +38,8 @@ import com.royaraqamia.app.store.outbox.OutboxIntentRow
  * [ADR 0107]: ../../../../../../../docs/adr/0107-the-habit-store-is-one-database-per-identity.md
  */
 @Database(
-    entities = [HabitRow::class, HabitLogRow::class, OutboxIntentRow::class],
-    version = 2,
+    entities = [HabitRow::class, HabitLogRow::class, OutboxIntentRow::class, HabitMetaRow::class],
+    version = 3,
     exportSchema = true,
 )
 abstract class HabitDatabase : RoomDatabase() {
@@ -85,6 +85,23 @@ abstract class HabitDatabase : RoomDatabase() {
                 )
             }
         }
+
+        /**
+         * The sync cursor joined a file that already holds rows (#1788): a
+         * device that has pulled before starts without a cursor, so the first
+         * page after the upgrade is a full bounded page rather than a lost
+         * history. No rows are touched.
+         */
+        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `meta` (" +
+                        "`key` TEXT NOT NULL, " +
+                        "`value` TEXT NOT NULL, " +
+                        "PRIMARY KEY(`key`))"
+                )
+            }
+        }
     }
 }
 
@@ -117,6 +134,13 @@ data class HabitRow(
 )
 
 /** One habit log as the store holds it; `kind` and `note` are the optional extras. */
+/** The one fact kept beside the rows: the stamp to send as `?since=` (#1788). */
+@Entity(tableName = "meta")
+data class HabitMetaRow(
+    @PrimaryKey val key: String,
+    val value: String,
+)
+
 @Entity(tableName = "habit_logs")
 data class HabitLogRow(
     @PrimaryKey val id: String,
@@ -217,6 +241,14 @@ interface HabitDao {
         upsertLog(log)
         insertIntent(intent)
     }
+
+    // --- Meta -----------------------------------------------------------------
+
+    @Query("SELECT value FROM meta WHERE key = :key")
+    suspend fun meta(key: String): String?
+
+    @Upsert
+    suspend fun putMeta(row: HabitMetaRow)
 
     // --- Outbox ---------------------------------------------------------------
 

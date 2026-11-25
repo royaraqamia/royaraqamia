@@ -1,4 +1,4 @@
-import { Habit, HabitLog } from '@/shared/contracts/habitflow';
+import { Habit, HabitLog, HabitSyncSnapshot } from '@/shared/contracts/habitflow';
 import { request, ApiError } from '@/frontend/transport/http';
 
 export { ApiError };
@@ -22,25 +22,32 @@ export class ApiClient {
   }
 
   /**
-   * The whole owned snapshot for on-open reconciliation, tombstone-inclusive so
-   * a delete made on another device lands here (ADR-0029). Display reads keep
-   * using the filtered habits/logs endpoints.
+   * One bounded page for on-open reconciliation, tombstone-inclusive so a delete
+   * made on another device lands here (ADR-0029). `since` is the cursor the
+   * store holds; the returned cursor is what it persists for the next pull.
+   * Display reads keep using the filtered habits/logs endpoints.
    */
-  static async fetchSyncData(): Promise<{
-    habits: Habit[];
-    logs: HabitLog[];
-    mode: 'supabase' | 'local';
-  }> {
+  static async fetchSyncData(since?: string | null): Promise<
+    HabitSyncSnapshot & {
+      mode: 'supabase' | 'local';
+    }
+  > {
+    const query = new URLSearchParams();
+    if (since) query.set('since', since);
+    const params = query.toString();
+    const suffix = params ? `?${params}` : '';
     const data = await request<{
       habits: Habit[];
       logs: HabitLog[];
       mode: 'supabase' | 'local';
-    }>('/habitflow/api/sync');
+      cursor: string | null;
+    }>(`/habitflow/api/sync${suffix}`);
 
     return {
       habits: data.habits || [],
       logs: data.logs || [],
       mode: data.mode || 'local',
+      cursor: data.cursor ?? null,
     };
   }
 

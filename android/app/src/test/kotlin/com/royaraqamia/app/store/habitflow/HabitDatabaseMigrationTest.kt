@@ -51,7 +51,7 @@ class HabitDatabaseMigrationTest {
 
     @Test
     fun `a version 1 store gains the outbox and keeps its habits`() = runBlocking {
-        writeVersionOneFile()
+        writeVersionFile("1.json", 1)
 
         val dao = databases.forIdentity(alice).dao()
 
@@ -60,9 +60,19 @@ class HabitDatabaseMigrationTest {
         assertEquals(0, dao.countIntents(OutboxIntentRow.STATUS_PENDING))
     }
 
-    /** The `1.json` Room exported, executed as the device holds it before #650. */
-    private fun writeVersionOneFile() {
-        val schema = schema(databaseName = "1.json")
+    @Test
+    fun `a version 2 store gains the cursor table and keeps its habits`() = runBlocking {
+        writeVersionFile("2.json", 2)
+
+        val dao = databases.forIdentity(alice).dao()
+
+        assertEquals("the habit survived the upgrade", listOf("Read Quran"), dao.habits().map { it.name })
+        assertEquals("an empty cursor, not a missing table", null, dao.meta(HabitflowRepository.KEY_CURSOR))
+    }
+
+    /** A Room-exported schema, executed as a device holds it before that version's migration. */
+    private fun writeVersionFile(databaseName: String, databaseVersion: Int) {
+        val schema = schema(databaseName = databaseName)
         val entities = schema.getValue("database").jsonObject.getValue("entities").jsonArray
         val identityHash = schema.getValue("database").jsonObject.getValue("identityHash").jsonPrimitive.content
 
@@ -82,7 +92,7 @@ class HabitDatabaseMigrationTest {
                     "VALUES ('h-1', 'Read Quran', 'daily', '2026-01-01T00:00:00.000Z', 0, NULL, " +
                     "NULL, NULL, 'h-1', '2026-01-01T00:00:00.000Z', NULL)"
             )
-            db.version = 1
+            db.version = databaseVersion
         } finally {
             db.close()
         }

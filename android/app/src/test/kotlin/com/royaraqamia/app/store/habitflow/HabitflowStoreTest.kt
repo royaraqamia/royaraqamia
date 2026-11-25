@@ -81,6 +81,28 @@ class HabitflowStoreTest {
     }
 
     @Test
+    fun `a pull sends the stored cursor and keeps the newest one`() = runBlocking {
+        val firstTransport = RecordingTransport { HttpResponse(200, SYNC_BODY) }
+        repository(firstTransport).pull()
+
+        assertEquals(1, firstTransport.requests.size)
+        assertTrue(firstTransport.requests.single().url.endsWith(HabitflowRepository.SYNC_PATH))
+        val dao = databases.forIdentity(alice).dao()
+        assertEquals("2026-02-01T00:00:00Z", dao.meta(HabitflowRepository.KEY_CURSOR))
+
+        val secondTransport = RecordingTransport { HttpResponse(200, BOB_SYNC_BODY) }
+        repository(secondTransport).pull()
+
+        assertTrue(
+            secondTransport.requests.single().url,
+            secondTransport.requests.single().url.endsWith(
+                "/habitflow/api/sync?since=2026-02-01T00%3A00%3A00Z"
+            ),
+        )
+        assertEquals("2026-03-01T00:00:00Z", dao.meta(HabitflowRepository.KEY_CURSOR))
+    }
+
+    @Test
     fun `a tombstone is stored but never painted`() = runBlocking {
         val repository = repository(RecordingTransport { HttpResponse(200, SYNC_BODY) })
 
@@ -163,7 +185,7 @@ class HabitflowStoreTest {
                 val id = "h-${index.toString().padStart(3, '0')}"
                 """{"id":"$id","name":"Habit $index","frequency":"daily","createdAt":"2026-01-01T00:00:00Z","archived":false}"""
             }
-        val body = """{"habits":[$habits],"logs":[],"mode":"supabase"}"""
+        val body = """{"habits":[$habits],"logs":[],"mode":"supabase","cursor":"2026-01-01T00:00:00Z"}"""
         val repository = repository(RecordingTransport { HttpResponse(200, body) })
 
         repository.pull()
@@ -204,7 +226,8 @@ class HabitflowStoreTest {
             {"id":"log-1","habitId":"a-1","date":"2026-01-02","completed":true,"completedAt":"2026-01-02T06:00:00Z","kind":"complete","note":null,"clientId":"l-1","updatedAt":"2026-01-02T06:00:00Z","deletedAt":null},
             {"id":"log-2","habitId":"a-1","date":"2026-01-03","completed":false,"completedAt":null,"clientId":"l-2","updatedAt":"2026-01-03T06:00:00Z","deletedAt":"2026-01-03T07:00:00Z"}
           ],
-          "mode": "supabase"
+          "mode": "supabase",
+          "cursor": "2026-02-01T00:00:00Z"
         }
         """
 
@@ -212,7 +235,8 @@ class HabitflowStoreTest {
         {
           "habits": [{"id":"b-1","name":"Swim","frequency":"weekly","createdAt":"2026-03-01T00:00:00Z","archived":false}],
           "logs": [],
-          "mode": "supabase"
+          "mode": "supabase",
+          "cursor": "2026-03-01T00:00:00Z"
         }
         """
     }

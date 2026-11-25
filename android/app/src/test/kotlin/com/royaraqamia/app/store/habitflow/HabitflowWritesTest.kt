@@ -108,11 +108,13 @@ class HabitflowWritesTest {
         var syncBody = SYNC_BODY
         val repository = repository(
             RecordingTransport { request ->
-                if (request.url.endsWith("/sync")) HttpResponse(200, syncBody) else HttpResponse(200, "{}")
+                if (request.url.contains("/habitflow/api/sync")) HttpResponse(200, syncBody) else HttpResponse(200, "{}")
             }
         )
         repository.pull()
         assertFalse(repository.logsToday()["h-1"]!!.completed)
+        val dao = databases.forIdentity(alice).dao()
+        assertEquals("2026-01-01T00:00:00.000Z", dao.meta(HabitflowRepository.KEY_CURSOR))
 
         // The user records the habit offline: the local row and its intent commit.
         repository.toggleLog("h-1", repository.today(), true)
@@ -125,6 +127,11 @@ class HabitflowWritesTest {
             "an unflushed write is not clobbered by the server's copy",
             repository.logsToday()["h-1"]!!.completed,
         )
+        assertEquals(
+            "a page with a held-back row cannot advance the cursor",
+            "2026-01-01T00:00:00.000Z",
+            dao.meta(HabitflowRepository.KEY_CURSOR),
+        )
     }
 
     @Test
@@ -132,7 +139,7 @@ class HabitflowWritesTest {
         var syncBody = SYNC_BODY
         val repository = repository(
             RecordingTransport { request ->
-                if (request.url.endsWith("/sync")) HttpResponse(200, syncBody) else HttpResponse(200, "{}")
+                if (request.url.contains("/habitflow/api/sync")) HttpResponse(200, syncBody) else HttpResponse(200, "{}")
             }
         )
         repository.pull()
@@ -195,8 +202,8 @@ class HabitflowWritesTest {
     fun `a replay after a lost acknowledgement sends the same create again`() = runBlocking {
         var attempts = 0
         val transport = RecordingTransport { request ->
-            if (request.url.endsWith("/sync")) {
-                HttpResponse(200, """{"habits":[],"logs":[],"mode":"supabase"}""")
+            if (request.url.contains("/habitflow/api/sync")) {
+                HttpResponse(200, """{"habits":[],"logs":[],"mode":"supabase","cursor":null}""")
             } else {
                 attempts += 1
                 // The server took the first create; the answer never arrived.
@@ -235,7 +242,7 @@ class HabitflowWritesTest {
         var syncBody = SYNC_BODY
         val repository = repository(
             RecordingTransport { request ->
-                if (request.url.endsWith("/sync")) HttpResponse(200, syncBody) else HttpResponse(200, "{}")
+                if (request.url.contains("/habitflow/api/sync")) HttpResponse(200, syncBody) else HttpResponse(200, "{}")
             }
         )
         repository.pull()
@@ -311,7 +318,8 @@ class HabitflowWritesTest {
           "logs": [
             {"id":"l-1","habitId":"h-1","date":"2026-01-01","completed":false,"completedAt":null,"clientId":"l-1","updatedAt":"2026-01-01T00:00:00.000Z","deletedAt":null}
           ],
-          "mode": "supabase"
+          "mode": "supabase",
+          "cursor": "2026-01-01T00:00:00.000Z"
         }
         """
 
@@ -324,7 +332,8 @@ class HabitflowWritesTest {
           "logs": [
             {"id":"l-1","habitId":"h-1","date":"2026-01-01","completed":false,"completedAt":null,"clientId":"l-1","updatedAt":"2026-01-02T00:00:00.000Z","deletedAt":null}
           ],
-          "mode": "supabase"
+          "mode": "supabase",
+          "cursor": "2026-01-02T00:00:00.000Z"
         }
         """
     }

@@ -34,10 +34,11 @@ class HabitStores internal constructor(private val database: HabitDatabase) : Au
                     HabitDatabase::class.java,
                     HabitDatabase.fileName(identity),
                 )
-                    // Forward-only (#650): an existing file gains the Outbox
-                    // table and keeps its rows. No destructive fallback — a
-                    // device that lost its habits on upgrade has no way to say so.
-                    .addMigrations(HabitDatabase.MIGRATION_1_2)
+                    // Forward-only (#650, #1788): an existing file gains the
+                    // Outbox and the cursor's meta table and keeps its rows. No
+                    // destructive fallback — a device that lost its habits on
+                    // upgrade has no way to say so.
+                    .addMigrations(HabitDatabase.MIGRATION_1_2, HabitDatabase.MIGRATION_2_3)
                     .build()
             )
     }

@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 export type HabitTargetPeriod = 'week' | 'month';
 
+/** Rows the sync sends in one bounded page (the other page waits for the next pull). */
+export const HABIT_SYNC_PAGE_SIZE = 500;
+
 /**
  * Fields every Outbox-replayed owned record carries (ADR-0029): the
  * client-minted id that makes an upsert idempotent, plus the LWW/tombstone
@@ -76,17 +79,28 @@ export const HabitLogSyncRowSchema = z.object({
 });
 
 /**
- * `GET /habitflow/api/sync` (#768): the whole owned snapshot, which is what the
- * web's pull reads too (`frontend/api/habitflow/habit-api.ts`). The app takes the
- * same route rather than the narrower display pair, so a delete made on another
- * device reaches the store instead of being invisible to it (ADR-0029).
+ * `GET /habitflow/api/sync` (#768, #1788): one bounded page of the owned rows,
+ * which is what the web's pull reads too (`frontend/api/habitflow/habit-api.ts`).
+ * The app takes the same route rather than the narrower display pair, so a delete
+ * made on another device reaches the store instead of being invisible to it
+ * (ADR-0029). `cursor` is the newest `server_updated_at` in the page: pass it back
+ * as `?since=` to fetch only what was written afterwards.
  */
 export const HabitSyncResponseSchema = z.object({
   habits: z.array(HabitSyncRowSchema),
   logs: z.array(HabitLogSyncRowSchema),
   mode: z.enum(['supabase', 'local']),
+  cursor: z.string().nullable(),
 });
 export type HabitSyncResponse = z.infer<typeof HabitSyncResponseSchema>;
+
+/** One bounded page of the owned dataset, tombstones included (#1788). */
+export interface HabitSyncSnapshot {
+  habits: Habit[];
+  logs: HabitLog[];
+  /** Opaque `server_updated_at` cursor for the next pull, or null before the first. */
+  cursor: string | null;
+}
 
 /** Write payload for the Outbox — carries the idempotency + LWW fields. */
 export const HabitWriteSchema = z.object({
@@ -187,11 +201,12 @@ export interface HabitRepository {
   restoreFromBackup(input: HabitRestoreInput): Promise<void>;
   getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }>;
   /**
-   * Sync snapshot for cross-device reconciliation: like `getLocalData`, but
+   * One bounded page for cross-device reconciliation: like `getLocalData`, but
    * includes tombstoned rows so a delete made on another device propagates
-   * (ADR-0029). Display reads keep excluding tombstones.
+   * (ADR-0029). The cursor is the stamp to send back for the next page.
+   * Display reads keep excluding tombstones.
    */
-  getSyncData(): Promise<{ habits: Habit[]; logs: HabitLog[] }>;
+  getSyncData(since?: string | null): Promise<HabitSyncSnapshot>;
 }
 
 /** Caps that bound a restore payload before the destructive clear-then-insert. */
