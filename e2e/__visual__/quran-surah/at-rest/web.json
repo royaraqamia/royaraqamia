@@ -34,6 +34,13 @@
     "first-marker": {
       "width": 32.39,
       "height": 32.39
+    },
+    "first-mark": {
+      "width": 32.39,
+      "height": 32.39
+    },
+    "first-tafsir": {
+      "height": 28
     }
   }
 }

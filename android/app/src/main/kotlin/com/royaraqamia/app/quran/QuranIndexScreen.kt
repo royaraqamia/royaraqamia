@@ -81,6 +81,8 @@ fun QuranIndexScreen(
     loadSearch: (suspend () -> QuranSearchAsset?)?,
     onOpenSurah: (Int) -> Unit,
     onOpenAyah: (surah: Int, ayah: Int) -> Unit,
+    bookmarks: List<QuranBookmarkRow> = emptyList(),
+    onRemoveBookmark: (clientId: String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val scroll = rememberScrollState()
@@ -175,9 +177,13 @@ fun QuranIndexScreen(
             )
         }
 
-        if (position != null) {
-            ResumeCard(position = position, names = index.surahs, onOpen = onOpenAyah)
-        }
+        QuranReadingPanel(
+            position = position,
+            names = index.surahs,
+            bookmarks = bookmarks,
+            onOpenAyah = onOpenAyah,
+            onRemoveBookmark = onRemoveBookmark,
+        )
 
         Column(verticalArrangement = Arrangement.spacedBy(QuranIndexMetrics.searchGap)) {
             SearchField(
@@ -532,55 +538,6 @@ private fun highlighted(text: String, match: QuranSearch.Match?): AnnotatedStrin
             append(QuranFonts.annotated(match.after))
         }
     }
-
-@Composable
-private fun ResumeCard(
-    position: QuranReadingPosition,
-    names: List<QuranSurahSummary>,
-    onOpen: (Int, Int) -> Unit,
-) {
-    val shape = RoundedCornerShape(16.dp)
-    Row(
-        modifier =
-            Modifier.fillMaxWidth()
-                .clip(shape)
-                .background(RoyColors.primary.copy(alpha = 0.05f))
-                .border(1.dp, RoyColors.primary.copy(alpha = 0.3f), shape)
-                .clickable(role = Role.Button) { onOpen(position.surah, position.ayah) }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = LucideVectors.BookOpen,
-            contentDescription = null,
-            tint = RoyColors.primary,
-            modifier = Modifier.size(20.dp),
-        )
-        Column {
-            Text(
-                text = QuranIndexCopy.RESUME_READING,
-                color = RoyColors.mutedForeground,
-                fontSize = 11.sp,
-                lineHeight = 17.6.sp,
-            )
-            Text(
-                text = buildAnnotatedString {
-                    append("${names.getOrNull(position.surah - 1)?.name.orEmpty()} · ${QuranIndexCopy.RESUME_AYAH} ")
-                    withStyle(SpanStyle(fontFamily = RoyFonts.digits, fontWeight = FontWeight.Bold)) {
-                        append(position.ayah.toString())
-                    }
-                },
-                color = RoyColors.foreground,
-                fontSize = QuranIndexMetrics.rowNameSize,
-                lineHeight = QuranIndexMetrics.rowNameLineHeight,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
 
 @Composable
 private fun PageJump(pages: QuranPages, onOpenAyah: (Int, Int) -> Unit) {

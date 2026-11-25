@@ -103,7 +103,7 @@ The things a surface row cannot hold: the cutover, the screens the app needs to 
 
 ## Components
 
-A component is finished when the surface that draws it is native, or when it belongs to the shell frame the visual gate measures: 89 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
+A component is finished when the surface that draws it is native, or when it belongs to the shell frame the visual gate measures: 92 ported components, listed by the screen they belong to and gated by `check:parity` (ADR-0098).
 
 - [x] `scan-history` on **scan** · #1430
 - [x] `scan` on **scan** · #1707
@@ -184,6 +184,9 @@ A component is finished when the surface that draws it is native, or when it bel
 - [x] `account-news-request` on **account-news** · #950
 - [x] `quran-index` on **quran** · #955
 - [x] `quran-surah` on **quran** · #955
+- [x] `quran-ayah-mark` on **quran** · #1751
+- [x] `quran-ayah-tafsir` on **quran** · #1751
+- [x] `quran-reading-panel` on **quran** · #1751
 - [x] `quran-player` on **quran-surah** · #956
 - [x] `news-digest` on **news** · #926
 - [x] `news-archive` on **news** · #926

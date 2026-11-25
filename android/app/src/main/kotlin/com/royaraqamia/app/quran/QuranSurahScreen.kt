@@ -73,6 +73,10 @@ fun QuranSurahScreen(
     marks: Map<Int, QuranAyahMarks>,
     position: QuranReadingPosition?,
     onSavePosition: (ayah: Int) -> Unit,
+    bookmarks: Set<Int> = emptySet(),
+    onToggleBookmark: (ayah: Int) -> Unit = {},
+    refusal: String? = null,
+    loadTafsir: suspend () -> QuranSurahTafsir? = { null },
     modifier: Modifier = Modifier,
     face: QuranPlayerFace = QuranPlayerFace.Idle,
     saved: QuranPlayerSaved = QuranPlayerSaved(),
@@ -149,6 +153,10 @@ fun QuranSurahScreen(
                     AyahCard(
                         number = number,
                         ayah = ayah,
+                        marked = number in bookmarks,
+                        onToggleBookmark = onToggleBookmark,
+                        refusal = refusal,
+                        loadTafsir = loadTafsir,
                         onPositioned = { top -> cardTops = cardTops + (number to top) },
                     )
                 }
@@ -226,7 +234,15 @@ private fun SurahHeader(summary: QuranSurahSummary) {
 }
 
 @Composable
-private fun AyahCard(number: Int, ayah: String, onPositioned: (Float) -> Unit) {
+private fun AyahCard(
+    number: Int,
+    ayah: String,
+    marked: Boolean,
+    onToggleBookmark: (Int) -> Unit,
+    refusal: String?,
+    loadTafsir: suspend () -> QuranSurahTafsir?,
+    onPositioned: (Float) -> Unit,
+) {
     val markerId = "ayah-marker-$number"
     val inline =
         mapOf(
@@ -267,6 +283,34 @@ private fun AyahCard(number: Int, ayah: String, onPositioned: (Float) -> Unit) {
             fontSize = QuranSurahMetrics.ayahSize,
             lineHeight = QuranSurahMetrics.ayahLineHeight,
         )
+
+        // The reader's two owned controls (#1751), beside the Ayah the site
+        // carries them on. Both are drawn by the same copy and assets as the
+        // page, so the mark and the study note are not app-only omissions.
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(32.dp).testTag(QuranSurahMetrics.markTag(number)),
+                contentAlignment = Alignment.Center,
+            ) {
+                QuranAyahMarkButton(
+                    number = number,
+                    marked = marked,
+                    onToggle = { onToggleBookmark(number) },
+                    refusal = refusal?.takeIf { number == 1 },
+                )
+            }
+            Box(
+                modifier =
+                    Modifier.height(28.dp).weight(1f).testTag(QuranSurahMetrics.tafsirTag(number)),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                QuranAyahTafsir(ayah = number, load = loadTafsir)
+            }
+        }
     }
 }
 
@@ -386,6 +430,8 @@ internal object QuranSurahMetrics {
     fun cardTag(number: Int) = "quran-ayah-card-$number"
     fun ayahTag(number: Int) = "quran-ayah-$number"
     fun markerTag(number: Int) = "quran-ayah-marker-$number"
+    fun markTag(number: Int) = "quran-ayah-mark-$number"
+    fun tafsirTag(number: Int) = "quran-ayah-tafsir-$number"
 
     val horizontalPadding = 16.dp
     val topPadding = 32.dp

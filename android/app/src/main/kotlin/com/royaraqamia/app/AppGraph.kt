@@ -33,7 +33,8 @@ import com.royaraqamia.app.notifications.NotificationsRepository
 import com.royaraqamia.app.plans.UsageRepository
 import com.royaraqamia.app.profile.ProfileRepository
 import com.royaraqamia.app.quran.AssetQuranRepository
-import com.royaraqamia.app.quran.PreferencesQuranPositionStore
+import com.royaraqamia.app.quran.QuranOwnStores
+import com.royaraqamia.app.quran.QuranReaderStore
 import com.royaraqamia.app.quran.QuranRepository
 import com.royaraqamia.app.rates.RatesRepository
 import com.royaraqamia.app.realtime.RealtimeClient
@@ -147,8 +148,10 @@ class AppGraph private constructor(
     val notes: NotesRepository,
     /** BlogPress's store and queue (#952). */
     val blogpress: BlogpressRepository,
-    /** The Quran reader's vendored text and the reader's last place (#955). */
+    /** The Quran reader's vendored text and the reader's owned records (#955, #1751). */
     val quran: QuranRepository,
+    /** The reader's marks and position in the device's Local Store (#1751). */
+    val quranStore: QuranReaderStore,
     /** The Athkar reader's vendored text and today's device count (#1389). */
     val athkar: AthkarRepository,
     /** The homepage's app set (#1194): the picker's read and replace. */
@@ -163,6 +166,7 @@ class AppGraph private constructor(
     private val spendtrackDatabases: IdentityScopedStore<SpendtrackStores>,
     private val linksnapDatabases: IdentityScopedStore<LinksnapStores>,
     private val notesDatabases: IdentityScopedStore<NotesStores>,
+    private val quranDatabases: IdentityScopedStore<QuranOwnStores>,
     private val blogpressDatabases: IdentityScopedStore<BlogpressStores>,
     private val chatsDatabases: IdentityScopedStore<ChatsStores>,
     private val grant: SupabasePasswordGrant,
@@ -211,16 +215,17 @@ class AppGraph private constructor(
         val notes = notes.drain()
         val posts = blogpress.drain()
         val chatLines = chats.drain()
+        val quran = quranStore.drain()
         return DrainReport(
             replayed =
                 habit.replayed + spend.replayed + links.replayed + notes.replayed + posts.replayed +
-                    chatLines.replayed,
+                    chatLines.replayed + quran.replayed,
             pending =
                 habit.pending + spend.pending + links.pending + notes.pending + posts.pending +
-                    chatLines.pending,
+                    chatLines.pending + quran.pending,
             failed =
                 habit.failed + spend.failed + links.failed + notes.failed + posts.failed +
-                    chatLines.failed,
+                    chatLines.failed + quran.failed,
         )
     }
 
@@ -232,11 +237,12 @@ class AppGraph private constructor(
         val notes = notes.outboxStatus()
         val posts = blogpress.outboxStatus()
         val chatLines = chats.outboxStatus()
+        val quran = quranStore.outboxStatus()
         return DrainReport(
             replayed = 0,
             pending =
                 habit.pending + spend.pending + links.pending + notes.pending + posts.pending +
-                    chatLines.pending,
+                    chatLines.pending + quran.pending,
             failed =
                 habit.failed + spend.failed + links.failed + notes.failed + posts.failed +
                     chatLines.failed,
@@ -246,7 +252,12 @@ class AppGraph private constructor(
     /** Signs in with a password grant, and holds the pair it mints. */
     suspend fun signIn(email: String, password: String): SignInOutcome {
         val outcome = grant.signIn(email, password)
-        if (outcome is SignInOutcome.SignedIn) session.signIn(outcome.pair)
+        if (outcome is SignInOutcome.SignedIn) {
+            session.signIn(outcome.pair)
+            // A guest's marks and place follow the reader into the account,
+            // the way the site's store claims them on sign-in (#1751).
+            runCatching { quranStore.claimFromGuest() }
+        }
         return outcome
     }
 
@@ -263,6 +274,7 @@ class AppGraph private constructor(
         spendtrackDatabases.close()
         linksnapDatabases.close()
         notesDatabases.close()
+        quranDatabases.close()
         blogpressDatabases.close()
         chatsDatabases.close()
     }
@@ -283,6 +295,7 @@ class AppGraph private constructor(
         spendtrackDatabases.close()
         linksnapDatabases.close()
         notesDatabases.close()
+        quranDatabases.close()
         blogpressDatabases.close()
         chatsDatabases.close()
     }
@@ -361,6 +374,8 @@ class AppGraph private constructor(
                 IdentityScopedStore { identity -> LinksnapStores.open(context, identity) }
             val notesDatabases =
                 IdentityScopedStore { identity -> NotesStores.open(context, identity) }
+            val quranDatabases =
+                IdentityScopedStore { identity -> QuranOwnStores.open(context, identity) }
             val blogpressDatabases =
                 IdentityScopedStore { identity -> BlogpressStores.open(context, identity) }
             val chatsDatabases =
@@ -371,6 +386,17 @@ class AppGraph private constructor(
             // learning what the platform already knows (#650).
             val signedIn = { session.signedIn }
             val online = { Connectivity.isOnline(context) }
+
+            // The reader's marks and place (#1751): one Local Store per
+            // identity, drained by the app's one Outbox path.
+            val quranStore =
+                QuranReaderStore(
+                    databases = quranDatabases,
+                    identity = { session.storeIdentity },
+                    client = client,
+                    signedIn = signedIn,
+                    online = online,
+                )
 
             // BlogPress's store is also the community editor's device store (#925):
             // a community post is a BlogPress post, so the draft, its Outbox intent
@@ -436,11 +462,8 @@ class AppGraph private constructor(
                 realtime = realtime,
                 chatHints = chatHints,
                 chatPresence = chatPresence,
-                quran =
-                    AssetQuranRepository(
-                        context = context,
-                        positions = PreferencesQuranPositionStore(context),
-                    ),
+                quran = AssetQuranRepository(context = context, own = quranStore),
+                quranStore = quranStore,
                 athkar = AssetAthkarRepository(context),
                 habitflow =
                     HabitflowRepository(
@@ -481,6 +504,7 @@ class AppGraph private constructor(
                 spendtrackDatabases = spendtrackDatabases,
                 linksnapDatabases = linksnapDatabases,
                 notesDatabases = notesDatabases,
+                quranDatabases = quranDatabases,
                 blogpressDatabases = blogpressDatabases,
                 chatsDatabases = chatsDatabases,
                 grant = SupabasePasswordGrant(authUrl, anonKey),

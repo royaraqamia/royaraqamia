@@ -63,6 +63,27 @@ data class QuranAyahMarks(
 data class QuranReadingPosition(val surah: Int, val ayah: Int, val updatedAt: String)
 
 /**
+ * One Ayah's tafsir in the vendored edition, as `tafsir/moyassar/<surah>.json`
+ * stores it (#1751). The app reads the same file the page fetches, so a study
+ * note cannot differ between the two clients. `text` is null where this edition
+ * has no note for that Ayah.
+ */
+@Serializable
+data class QuranSurahTafsir(
+    val edition: String,
+    val surah: Int,
+    val name: String,
+    val ayahCount: Int,
+    val attribution: String? = null,
+    val source: String,
+    val licence: String,
+    val ayat: List<QuranTafsirAyah> = emptyList(),
+)
+
+@Serializable
+data class QuranTafsirAyah(val ayah: Int, val text: String? = null)
+
+/**
  * What each of one sura's Ayat carries, keyed by Ayah number.
  *
  * A mark belongs to the Ayah that opens the range, so an Ayah with no mark is

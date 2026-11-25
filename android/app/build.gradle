@@ -209,6 +209,9 @@ def quranAssets =
             include "meta/NOTICE.txt"
             include "surah/*.json"
             include "search/index.json"
+            // The reader's study notes (#1751): the same vendored files the
+            // page fetches on first open, so an Ayah's tafsir works offline.
+            include "tafsir/moyassar/*.json"
             into "quran"
         }
         into layout.buildDirectory.dir("generated/quranAssets")

@@ -226,6 +226,32 @@ object LucideVectors {
         }.build()
     }
 
+    /** `book-bookmark`, the site's own drawing. */
+    val BookMarked: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "book-bookmark",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M10 2v7.751a.25.25 0 00.407.195l2.28-1.834a.5.5 0 01.627 0l2.28 1.834A.25.25 0 0016 9.751V2"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M4 19.5v-15A2.5 2.5 0 016.5 2H19a1 1 0 011 1v18a1 1 0 01-1 1H6.5a1 1 0 010-5H20"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
     /** `book-open`, the site's own drawing. */
     val BookOpen: ImageVector by lazy {
         ImageVector.Builder(
@@ -244,6 +270,58 @@ object LucideVectors {
             )
             addPath(
                 addPathNodes("M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `book-open-check`, the site's own drawing. */
+    val BookOpenCheck: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "book-open-check",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M12 5v16"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("m16 12 2 2 4-4"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+            addPath(
+                addPathNodes("M22 6V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2h4.001A2 2 0 0022 17v-1.344"),
+                stroke = stroke,
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round,
+            )
+        }.build()
+    }
+
+    /** `bookmark`, the site's own drawing. */
+    val Bookmark: ImageVector by lazy {
+        ImageVector.Builder(
+            name = "bookmark",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+        ).apply {
+            addPath(
+                addPathNodes("M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"),
                 stroke = stroke,
                 strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,

@@ -13,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.royaraqamia.app.QuranPlayerController
 import com.royaraqamia.app.R
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -41,18 +43,28 @@ fun QuranIndexRoute(
 ) {
     var loaded by remember { mutableStateOf<LoadedIndex?>(null) }
     var failed by remember { mutableStateOf(false) }
+    var bookmarks by remember { mutableStateOf<List<QuranBookmarkRow>>(emptyList()) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         runCatching {
                 withContext(Dispatchers.IO) {
+                    // A signed-in reader resumes the account's place and marks,
+                    // not only this phone's (ADR-0056, #1751). A guest's pull is
+                    // a no-op and its rows stay on the device.
+                    runCatching { repository.pull() }
                     LoadedIndex(
                         index = repository.index(),
                         pages = repository.pages(),
                         position = repository.position(),
+                        bookmarks = repository.bookmarks(),
                     )
                 }
             }
-            .onSuccess { loaded = it }
+            .onSuccess {
+                loaded = it
+                bookmarks = it.bookmarks
+            }
             .onFailure { failed = true }
     }
 
@@ -63,9 +75,18 @@ fun QuranIndexRoute(
                 index = value.index,
                 pages = value.pages,
                 position = value.position,
+                bookmarks = bookmarks,
                 loadSearch = { withContext(Dispatchers.IO) { repository.searchCorpus() } },
                 onOpenSurah = onOpenSurah,
                 onOpenAyah = onOpenAyah,
+                onRemoveBookmark = { clientId ->
+                    scope.launch {
+                        bookmarks.firstOrNull { it.clientId == clientId }?.let {
+                            repository.toggleBookmark(it.surah, it.ayah)
+                        }
+                        bookmarks = repository.bookmarks()
+                    }
+                },
                 modifier = modifier,
             )
         failed -> LoadFailure(modifier)
@@ -83,6 +104,9 @@ fun QuranSurahRoute(
 ) {
     var loaded by remember(number, targetAyah) { mutableStateOf<LoadedSurah?>(null) }
     var failed by remember(number, targetAyah) { mutableStateOf(false) }
+    var marked by remember(number) { mutableStateOf(emptySet<Int>()) }
+    var refusal by remember(number) { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     val context = LocalContext.current
     val player = remember(number) { QuranPlayerController(context) }
@@ -101,6 +125,7 @@ fun QuranSurahRoute(
     LaunchedEffect(number, targetAyah) {
         runCatching {
                 withContext(Dispatchers.IO) {
+                    runCatching { repository.pull() }
                     val index = repository.index()
                     val surah = repository.surah(number) ?: error("no surah $number")
                     val summary = index.surahs.firstOrNull { it.n == number } ?: error("no summary")
@@ -114,7 +139,14 @@ fun QuranSurahRoute(
                     )
                 }
             }
-            .onSuccess { loaded = it }
+            .onSuccess {
+                loaded = it
+                marked =
+                    repository.bookmarks()
+                        .filter { it.surah == number && it.deletedAt == null }
+                        .map { it.ayah }
+                        .toSet()
+            }
             .onFailure { failed = true }
     }
 
@@ -127,6 +159,17 @@ fun QuranSurahRoute(
                 marks = value.marks,
                 position = value.position,
                 onSavePosition = onSavePosition,
+                bookmarks = marked,
+                onToggleBookmark = { ayah ->
+                    scope.launch {
+                        val result = repository.toggleBookmark(number, ayah)
+                        marked =
+                            if (result.marked) marked + ayah else marked - ayah
+                        refusal = result.refusal
+                    }
+                },
+                refusal = refusal,
+                loadTafsir = { repository.tafsir(number) },
                 modifier = modifier,
                 face = QuranPlayerFace.of(number, snapshot),
                 saved =
@@ -150,6 +193,7 @@ private data class LoadedIndex(
     val index: QuranIndex,
     val pages: QuranPages,
     val position: QuranReadingPosition?,
+    val bookmarks: List<QuranBookmarkRow> = emptyList(),
 )
 
 private data class LoadedSurah(

@@ -1,5 +1,6 @@
 package com.royaraqamia.app.quran
 
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -61,5 +62,15 @@ class QuranRepositoryTest {
     @Test
     fun `the search corpus is the whole text`() {
         assertEquals(6236, repository.searchCorpus()?.ayahs?.size)
+    }
+
+    @Test
+    fun `the tafsir is the page's vendored file, read without a network`() = runBlocking {
+        val tafsir = requireNotNull(repository.tafsir(108))
+        assertEquals("moyassar", tafsir.edition)
+        assertEquals(108, tafsir.surah)
+        assertEquals(3, tafsir.ayat.size)
+        assertEquals(1, tafsir.ayat.first().ayah)
+        assertTrue(tafsir.ayat.first().text!!.isNotBlank())
     }
 }

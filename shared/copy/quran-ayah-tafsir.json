@@ -1,0 +1,21 @@
+{
+  "surface": "quran",
+  "component": "quran-ayah-tafsir",
+  "web": {
+    "file": "frontend/ui/quran/ayah-tafsir-copy.ts",
+    "export": "QURAN_AYAH_TAFSIR_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranAyahTafsirCopy.kt",
+    "object": "QuranAyahTafsirCopy"
+  },
+  "strings": {
+    "toggle": "التفسير",
+    "loading": "جاري تحميل التفسير…",
+    "failed": "تعذّر تحميل التفسير.",
+    "retry": "إعادة المحاولة",
+    "panelLabel": "تفسير الآية {ayah}",
+    "missing": "لا تفسير لهذه الآية في هذه الطبعة.",
+    "credit": "مركز تفسير للدراسات القرآنية"
+  }
+}
