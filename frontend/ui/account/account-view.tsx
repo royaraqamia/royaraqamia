@@ -8,6 +8,7 @@ import { UsageCard } from '@/frontend/ui/account/usage-card';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
+import { KeyboardSection } from '@/frontend/ui/account/keyboard-section';
 import { AccountRows } from '@/frontend/ui/account/account-rows';
 import { AssistantGrantsView } from '@/frontend/ui/account/assistant-grants-view';
 
@@ -89,6 +90,9 @@ export function AccountView() {
         }}
       >
         <InstallSection />
+        {/* The IME row is native-only and resolves the bridge after mount; in a
+            browser it draws nothing beside the install row. */}
+        <KeyboardSection />
       </AccountRows>
     </div>
   );

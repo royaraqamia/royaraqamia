@@ -99,6 +99,7 @@ public class MainActivity extends BridgeActivity {
         // bridge that Capacitor has just created.
         announceShellVersion();
         installUpdateBridge(getBridge());
+        installKeyboardBridge(getBridge());
         // The page reports its own launch marks here (#1639), so the shell can
         // attribute the gap between the document's commit and owned rows to the
         // document or to the app on the same fork-relative timeline.
@@ -429,6 +430,21 @@ public class MainActivity extends BridgeActivity {
             new ShellUpdateBridge(this::requireUpdate, this::offerUpdate),
             ShellUpdateBridge.NAME
         );
+    }
+
+    /**
+     * Exposes `RoyShellKeyboard` to the account page (ADR-0219).
+     *
+     * The IME ships in this APK, but Android alone can enable it or make it the
+     * default, so the page reads the system's answer through this plain WebView
+     * interface and asks the system to show its own settings or picker. It writes
+     * no secure setting, and no typed text crosses the boundary (ADR-0220).
+     */
+    private void installKeyboardBridge(@Nullable Bridge bridge) {
+        WebView webView = bridge != null ? bridge.getWebView() : null;
+        if (webView == null) return;
+
+        webView.addJavascriptInterface(new ShellKeyboardBridge(this), ShellKeyboardBridge.NAME);
     }
 
     /** Publishes the floor the page was told, and returns to the card that draws it. */
