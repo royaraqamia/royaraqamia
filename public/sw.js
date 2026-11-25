@@ -1686,6 +1686,11 @@ self.addEventListener('fetch', (event) => {
   // deadline. Let the browser fetch them untouched instead.
   if (isDownload(url)) return;
 
+  // A GitHub OAuth callback consumes its one-time state on the first hit. The
+  // worker's navigation preload and its own retry can issue the same URL twice,
+  // so this one navigation goes untouched to the browser: one code, one claim.
+  if (url.pathname === '/api/coding/connect/callback') return;
+
   if (request.method !== 'GET') return;
 
   // Retry what a truly-offline serve could not send (ADR-0074's amendment).

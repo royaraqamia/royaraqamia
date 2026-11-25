@@ -1227,6 +1227,16 @@ describe('service worker navigation deadline (#447)', () => {
     expect(ctx.state.fetchCalls).toHaveLength(0);
   });
 
+  it('leaves the one-time coding OAuth callback to the browser', async () => {
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const event = fetchEvent(request('/api/coding/connect/callback?code=one-time&state=one-time'));
+    ctx.dispatch('fetch', event);
+
+    // No respondWith and no worker fetch: exactly one request consumes the code.
+    expect(event.response).toBeUndefined();
+    expect(ctx.state.fetchCalls).toHaveLength(0);
+  });
+
   it('answers a cached navigation instantly while the network hangs', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
     const cache = await ctx.caches.open(DATA_CACHE);
