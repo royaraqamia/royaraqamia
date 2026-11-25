@@ -23,7 +23,9 @@
  *     `supabase/migrations/` are history and must not be rewritten (the
  *     digit-normalising migration carries the literals);
  *   - `android/gradle.properties` quotes an external Gradle error verbatim;
- *   - `.agents/` and `public/quran/` are vendored as published;
+ *   - `.agents/`, `public/quran/` and `android/keyboard/src/main/` are
+ *     vendored as published; the FlorisBoard numeric-row layouts carry
+ *     Arabic-Indic and Persian digit glyphs as their key labels;
  *   - the vendored i18n engineer's prompt quotes an Arabic-locale number format
  *     to show locale-aware output, so the digits are the example.
  *
@@ -42,6 +44,10 @@ const ANY_DIGIT = /[\u0660-\u0669\u06f0-\u06f9]/;
 export const EXCLUDED = [
   '.agents/',
   'public/quran/',
+  // FlorisBoard is vendored as published (ADR-0219): its Eastern Arabic and
+  // Persian numeric rows display those digit glyphs, and its translations
+  // carry them verbatim. Rewriting them would change the upstream data.
+  'android/keyboard/src/main/',
   // The vendored i18n engineer's prompt quotes an Arabic-locale number format to
   // show locale-aware output; the Arabic-Indic digits there are the example.
   '.opencode/skills/agency/engineering-i18n-engineer/SKILL.md',

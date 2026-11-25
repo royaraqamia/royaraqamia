@@ -3,6 +3,14 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!--
+      The keyboard library's floor is API 26 (upstream FlorisBoard v0.5.2).
+      The shell itself still runs on API 24-25; this merge override keeps that
+      floor while the IME service is simply unavailable on those old devices.
+      Raising this to 26 is a product decision, not a build one.
+    -->
+    <uses-sdk tools:overrideLibrary="dev.patrickgold.florisboard" />
+
+    <!--
       `.RoyApplication` is the app's process entry point, for one job: a crash
       handler has to be installed before the process can fail, including a
       process the launcher did not start (#667). Everything else it arms runs off

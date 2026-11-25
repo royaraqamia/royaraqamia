@@ -16,7 +16,8 @@
  * only matches one of them. The banned form is written as escapes so this file
  * passes its own check; the files that must name both spellings are allowlisted.
  *
- * `public/quran/**` is excluded by design: that text is vendored as published
+ * `public/quran/**` and the vendored FlorisBoard tree are excluded by design:
+ * that text is vendored as published
  * (ADR 0057, ADR 0062), and for it NFC composes marks rather than reordering
  * them, which would rewrite the shipped text. Measured over the rest of the repo,
  * NFC only ever reorders — no file outside `public/quran/` changes length.
@@ -30,7 +31,12 @@ import { fileURLToPath } from 'node:url';
 import { isNfc, nonNfcLines } from '../eslint-rules/no-non-nfc.mjs';
 
 /** Vendored as published, so never rewritten. See the header. */
-export const EXCLUDED = ['public/quran/'];
+export const EXCLUDED = [
+  'public/quran/',
+  // FlorisBoard's sources, layouts and translations are vendored verbatim
+  // (ADR-0219); folding their marks or their copy would edit upstream data.
+  'android/keyboard/src/main/',
+];
 
 export const isExcluded = (file) => EXCLUDED.some((prefix) => file.startsWith(prefix));
 

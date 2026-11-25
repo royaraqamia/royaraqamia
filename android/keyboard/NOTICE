@@ -1,0 +1,28 @@
+FlorisBoard IME vendored in this module
+=======================================
+
+Upstream: https://github.com/florisboard/florisboard
+Pinned commit: 2e82060251897226c0739b9f52d1d051b02305fb (tag v0.5.2)
+License: Apache License, Version 2.0. The upstream LICENSE is copied verbatim
+as android/keyboard/LICENSE.
+
+The Kotlin sources of the upstream :app and :lib:android, :lib:color,
+:lib:compose, :lib:kotlin, :lib:native and :lib:snygg modules are merged into
+src/main/kotlin; their resources and assets are merged into src/main/res and
+src/main/assets. The Rust source of :lib:native is kept under src/main/rust
+for provenance but is not compiled: the only native entry point is called from
+FlorisApplication.onCreate, and the shell uses its own Application class, so
+the JNI library is never loaded in this APK.
+
+JetPref is a separate Apache-2.0 library by Patrick Goldinger
+(https://github.com/patrickgold/jetpref). The upstream snapshot dependency no
+longer exists, so this build uses the published 0.3.0-beta02 (commit d6e12dda,
+2025-11-19), which is the same v3 API as the snapshot.
+
+Not vendored: the optional full Chinese shape-based language packs documented
+in upstream LANGUAGEPACKS-CHINESE.md, which are GPL-3.0. The default barebones
+Chinese pack shipped in the upstream assets is Apache-2.0 and is retained.
+
+The AboutLibraries third-party-licenses screen is omitted from the merged
+sources: it depends on a Gradle plugin absent from this build and would list
+the upstream app's licenses rather than this APK's.
