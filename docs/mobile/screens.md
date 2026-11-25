@@ -9,6 +9,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 
 | Screen | Routes | App | Why / ticket |
 | --- | --- | --- | --- |
+| `coding` | `/coding`<br>`/coding/[taskId]` | _web only_ | Phase 1 of ADR-0219 is a document surface: workspaces, plan approval and diffs are per-member reads with live writes, so a native copy would have to reproduce RLS-scoped state and a diff viewer before it could be the same screen. The shell hands the route to the document. |
 | `chats` | `/chats/[id]`<br>`/chats/new` | `ChatsScreen.kt` (off) | Ported (#819) and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117). |
 | `home` | `/` | `HomeScreen.kt` |  |
 | `marketing` | `/pricing`<br>`/privacy`<br>`/security`<br>`/terms`<br>`/app-info` | _web only_ | The page is the deliverable (ADR-0178): five static pages whose words the site owns, so a policy edit costs a deploy and no release. |

@@ -215,6 +215,14 @@ export const CHAT_AGENT_TOOL_NAMES = [
   'admin_list_members',
   'admin_list_reports',
   'admin_decide_report',
+  // The coding agent's control plane (ADR-0219, ADR-0180). None of these runs
+  // code: the first starts a task, the next two read its state and diffs, and
+  // the last two are tier-2 approvals. No shell, file or git hand lives here.
+  'start_coding_task',
+  'coding_task_status',
+  'coding_task_diff',
+  'approve_coding_step',
+  'reject_coding_step',
 ] as const;
 
 export type ChatAgentToolName = (typeof CHAT_AGENT_TOOL_NAMES)[number];
@@ -508,6 +516,33 @@ export const CHAT_AGENT_TOOLS: Record<ChatAgentToolName, ChatAgentToolInfo> = {
   create_note: { kind: 'write', label: 'إنشاء ملاحظة', activity: 'تنشئ ملاحظة' },
   update_note: { kind: 'write', label: 'تعديل ملاحظة', activity: 'تعدّل ملاحظة' },
   delete_note: { kind: 'write', label: 'حذف ملاحظة', activity: 'تحذف ملاحظة' },
+  // The coding agent (ADR-0219). Its reads and writes are all control-plane
+  // hands: a task, its status, its diffs and the two decisions on a step.
+  start_coding_task: {
+    kind: 'write',
+    label: 'بدء مهمة برمجية',
+    activity: 'تبدأ مهمة برمجية',
+  },
+  coding_task_status: {
+    kind: 'read',
+    label: 'قراءة حالة مهمة برمجية',
+    activity: 'تقرأ حالة مهمة برمجية',
+  },
+  coding_task_diff: {
+    kind: 'read',
+    label: 'قراءة فروق مهمة برمجية',
+    activity: 'تقرأ فروق مهمة برمجية',
+  },
+  approve_coding_step: {
+    kind: 'write',
+    label: 'الموافقة على خطوة برمجية',
+    activity: 'توافق على خطوة برمجية',
+  },
+  reject_coding_step: {
+    kind: 'write',
+    label: 'رفض خطوة برمجية',
+    activity: 'ترفض خطوة برمجية',
+  },
 };
 
 export function isChatAgentToolName(value: string): value is ChatAgentToolName {
@@ -702,6 +737,27 @@ export function chatAgentActionSentence(
     case 'admin_list_reports': {
       const term = text(values.search) || text(values.status);
       return term ? `${label} — «${term.slice(0, 60)}»` : label;
+    }
+    // The coding agent's cards (ADR-0219). Starting a task names the work; a
+    // step decision names the step itself, the way a delete names its row, so
+    // the member confirms that step and not an opaque task id.
+    case 'start_coding_task': {
+      const title = text(values.title);
+      return title ? `${label} — «${title.slice(0, 60)}»` : label;
+    }
+    case 'coding_task_status': {
+      const id = text(values.taskId);
+      return id ? `${label} — ${id}` : label;
+    }
+    case 'coding_task_diff': {
+      const id = text(values.taskId);
+      const step = text(values.stepId);
+      return id ? `${label} — ${id}${step ? ` — ${step}` : ''}` : label;
+    }
+    case 'approve_coding_step':
+    case 'reject_coding_step': {
+      const step = text(values.stepId);
+      return step ? `${label} — «${step}»` : label;
     }
     default:
       return parts.length > 0 ? `${label} — ${parts[0]}` : label;

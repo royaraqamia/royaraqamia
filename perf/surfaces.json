@@ -4,6 +4,7 @@
   "defaultUngated": "No paint budget or behaviour spec asserts this row yet — #558 tracks the paint budgets and the owners' issues add the specs.",
   "weightSamples": {
     "/chats/[id]": "/chats/new",
+    "/coding/[taskId]": "/coding",
     "/u/[username]": "/u/royaraqamia",
     "/u/[username]/followers": "/u/royaraqamia",
     "/u/[username]/following": "/u/royaraqamia",
@@ -221,6 +222,16 @@
       "shell": "swr",
       "specs": [],
       "ungated": "The feed is per-identity and read on the client (`/api/notifications`), so with the radio off the panel reports the missing connection. There is no snapshot to render: read and delete are writes the server owns, and the page caches nothing between visits. The worker caches the document at runtime, not in the precache list — that slot stays with `/verify` (DYNAMIC_BY_DESIGN)."
+    },
+    {
+      "id": "coding",
+      "routes": ["/coding", "/coding/[taskId]"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "swr",
+      "specs": [],
+      "ungated": "Workspaces, tasks and steps are per-member reads behind RLS (`/api/coding/...`), so with the radio off the page reports the missing connection instead of showing another member's repo. Approvals and task creation are live requests, never an outbox replay. It is not in the precache list — the slot belongs to `/verify` (DYNAMIC_BY_DESIGN); the worker caches the document after the first live visit."
     },
     {
       "id": "chats",

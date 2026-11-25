@@ -743,6 +743,204 @@ export type Database = {
         };
         Relationships: [];
       };
+      coding_connect_attempts: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          state_hash: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          state_hash: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          state_hash?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      coding_installations: {
+        Row: {
+          account_login: string;
+          account_type: string;
+          created_at: string;
+          id: string;
+          installation_id: number;
+          repository_selection: string;
+          token_enc: string;
+          token_expires_at: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          account_login: string;
+          account_type?: string;
+          created_at?: string;
+          id?: string;
+          installation_id: number;
+          repository_selection?: string;
+          token_enc: string;
+          token_expires_at: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          account_login?: string;
+          account_type?: string;
+          created_at?: string;
+          id?: string;
+          installation_id?: number;
+          repository_selection?: string;
+          token_enc?: string;
+          token_expires_at?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      coding_steps: {
+        Row: {
+          created_at: string;
+          diff: string | null;
+          failure_code: string | null;
+          id: string;
+          input_tokens: number;
+          kind: string;
+          output_tokens: number;
+          status: string;
+          summary: string;
+          task_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          diff?: string | null;
+          failure_code?: string | null;
+          id?: string;
+          input_tokens?: number;
+          kind: string;
+          output_tokens?: number;
+          status: string;
+          summary?: string;
+          task_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          diff?: string | null;
+          failure_code?: string | null;
+          id?: string;
+          input_tokens?: number;
+          kind?: string;
+          output_tokens?: number;
+          status?: string;
+          summary?: string;
+          task_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      coding_tasks: {
+        Row: {
+          base_branch: string;
+          branch: string | null;
+          callback_token_hash: string | null;
+          created_at: string;
+          failure_code: string | null;
+          id: string;
+          input_tokens: number;
+          instruction: string;
+          mode: string;
+          output_tokens: number;
+          pull_request_url: string | null;
+          runner_minutes: number;
+          server_updated_at: string;
+          status: string;
+          summary: string;
+          title: string;
+          updated_at: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          base_branch?: string;
+          branch?: string | null;
+          callback_token_hash?: string | null;
+          created_at?: string;
+          failure_code?: string | null;
+          id?: string;
+          input_tokens?: number;
+          instruction: string;
+          mode: string;
+          output_tokens?: number;
+          pull_request_url?: string | null;
+          runner_minutes?: number;
+          server_updated_at?: string;
+          status?: string;
+          summary?: string;
+          title: string;
+          updated_at?: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          base_branch?: string;
+          branch?: string | null;
+          callback_token_hash?: string | null;
+          created_at?: string;
+          failure_code?: string | null;
+          id?: string;
+          input_tokens?: number;
+          instruction?: string;
+          mode?: string;
+          output_tokens?: number;
+          pull_request_url?: string | null;
+          runner_minutes?: number;
+          server_updated_at?: string;
+          status?: string;
+          summary?: string;
+          title?: string;
+          updated_at?: string;
+          user_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [];
+      };
+      coding_workspaces: {
+        Row: {
+          created_at: string;
+          default_branch: string;
+          id: string;
+          installation_id: number;
+          repo_name: string;
+          repo_owner: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          default_branch?: string;
+          id?: string;
+          installation_id: number;
+          repo_name: string;
+          repo_owner: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          default_branch?: string;
+          id?: string;
+          installation_id?: number;
+          repo_name?: string;
+          repo_owner?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       community_categories: {
         Row: {
           created_at: string;

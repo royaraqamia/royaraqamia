@@ -3,6 +3,11 @@
   "notes": "One row per surface in perf/surfaces.json: either the Kotlin screen that draws it, or the reason the app does not have one. A row may also be a port that is switched off (\"enabled\": false plus a reason) - the screen exists in the tree and the shell hands the route to the document until the port is the same screen as the page (#872, ADR-0117). docs/mobile/screens.md is generated from this file by npm run check:screens, which fails on a surface with no row and on a *Screen.kt with no row. The rules: docs/mobile/two-clients.md (#665).",
   "screens": [
     {
+      "surface": "coding",
+      "native": null,
+      "reason": "Phase 1 of ADR-0219 is a document surface: workspaces, plan approval and diffs are per-member reads with live writes, so a native copy would have to reproduce RLS-scoped state and a diff viewer before it could be the same screen. The shell hands the route to the document."
+    },
+    {
       "surface": "chats",
       "native": "android/app/src/main/kotlin/com/royaraqamia/app/chats/ChatsScreen.kt",
       "reason": "Ported (#819) and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117).",

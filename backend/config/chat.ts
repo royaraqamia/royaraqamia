@@ -85,6 +85,7 @@ import { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/backend
 import { createRatesService } from '@/backend/config/rates';
 import { createScanHistoryService } from '@/backend/config/scan-history';
 import { resolveOrigin } from '@/backend/config/origin';
+import { createCodingServiceForUser } from '@/backend/config/coding';
 
 /**
  * Chat's wiring. The service runs on the caller's own client, so every read and
@@ -153,6 +154,22 @@ export function createChatAttachmentSweepService(): ChatAttachmentSweepService {
 }
 
 /**
+ * Whether this deployment can drive the coding agent (ADR-0219). The four keys
+ * are the App's identity and its OAuth credentials; without them the five chat
+ * tools stay declared but their `run` answers with a refusal. The check is made
+ * here, at composition, not in a tool, so a partial configuration can never
+ * half-wire the control plane.
+ */
+function codingAppConfigured(): boolean {
+  return Boolean(
+    process.env.GITHUB_APP_ID &&
+    process.env.GITHUB_APP_PRIVATE_KEY &&
+    process.env.GITHUB_APP_CLIENT_ID &&
+    process.env.GITHUB_APP_CLIENT_SECRET
+  );
+}
+
+/**
  * The assistant's product services, in one place (#1804).
  *
  * The tools used to construct these at each call site — a second composition
@@ -160,7 +177,13 @@ export function createChatAttachmentSweepService(): ChatAttachmentSweepService {
  * wiring module. Every choice of client and options is made here, beside the
  * service's other dependencies; a tool only sees the interface it calls.
  */
-export function createChatAgentToolsDeps(): ChatAgentToolsDeps {
+export function createChatAgentToolsDeps(supabase?: SupabaseClient<Database>): ChatAgentToolsDeps {
+  // The member's client is the RLS boundary for a task; the service-role client
+  // behind it is the one the runner's callback and encrypted installation rows
+  // need. Both are bound in `backend/config/coding.ts`; with no App configured
+  // no service is built and the chat tools refuse in Arabic instead.
+  const coding =
+    supabase && codingAppConfigured() ? createCodingServiceForUser(supabase) : undefined;
   return {
     certificates: {
       createRepository: createCertificatesRepository,
@@ -201,6 +224,7 @@ export function createChatAgentToolsDeps(): ChatAgentToolsDeps {
     rates: { createService: createRatesService },
     scanHistory: { createService: createScanHistoryService },
     origin: resolveOrigin,
+    ...(coding ? { coding } : {}),
   };
 }
 
@@ -334,7 +358,7 @@ export function createSupabaseChatAgentService(
     apps,
     // The tools' product services, wired here beside the other dependencies
     // (#1804). The catalogue is bound to this bundle once, in the service.
-    toolsDeps: createChatAgentToolsDeps(),
+    toolsDeps: createChatAgentToolsDeps(supabase),
     ...deps,
   });
 }
@@ -371,7 +395,7 @@ export function createSupabaseChatAgentActionService(
   const gate = createPlanGate();
   // A confirmed card runs the same catalogue as the turn, bound to the same
   // product services (#1804).
-  const tools = chatAgentTools(createChatAgentToolsDeps());
+  const tools = chatAgentTools(createChatAgentToolsDeps(supabase));
 
   return new ChatAgentActionService({
     actions: createSupabaseChatAgentActionRepository(supabase, admin),

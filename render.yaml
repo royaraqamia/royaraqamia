@@ -116,6 +116,17 @@ services:
         sync: false
       - key: MCP_TOKEN_ENCRYPTION_KEY
         sync: false
+      # The coding agent's GitHub App (ADR-0219). Its installation tokens are
+      # encrypted with the key above; neither the App secret nor the PEM is
+      # committed to the blueprint.
+      - key: GITHUB_APP_ID
+        sync: false
+      - key: GITHUB_APP_PRIVATE_KEY
+        sync: false
+      - key: GITHUB_APP_CLIENT_ID
+        sync: false
+      - key: GITHUB_APP_CLIENT_SECRET
+        sync: false
       - key: UPSTASH_REDIS_REST_URL
         sync: false
       - key: UPSTASH_REDIS_REST_TOKEN

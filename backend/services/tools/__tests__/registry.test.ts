@@ -48,7 +48,9 @@ const expectedPerOwner: Record<CapabilityOwner, number> = {
   'mcp-store': 7,
   // #1435: member lookup and the report queue's read, plus its tier-2 decision.
   admin: 3,
-  assistant: 7,
+  // ADR-0219: the seven assistant mechanisms plus the coding agent's five
+  // control-plane hands. No execution primitive is in this count.
+  assistant: 12,
 };
 
 describe('the assistant door', () => {
@@ -129,11 +131,14 @@ describe('the assistant door', () => {
     ).toEqual([
       'admin_decide_report',
       'apply_training',
+      'approve_coding_step',
       'book_consultation',
       'connect_app',
       'create_post_comment',
       'disconnect_app',
       'publish_post_draft',
+      'reject_coding_step',
+      'start_coding_task',
       'submit_project_request',
     ]);
     // The tier-3 writes on the turn: a delete whose card names its target.
@@ -152,6 +157,33 @@ describe('the assistant door', () => {
       'revoke_app',
       'revoke_inbound_client',
     ]);
+  });
+
+  it('keeps execution out of the chat registry and its approvals ungrantable (ADR-0219)', () => {
+    const names = capabilities.map((entry) => entry.agentName ?? '');
+    for (const forbidden of ['run_command', 'write_file', 'shell', 'execute_code', 'git_push']) {
+      expect(names).not.toContain(forbidden);
+    }
+
+    const coding = capabilities.filter(
+      (entry) =>
+        entry.agentName === 'start_coding_task' ||
+        entry.agentName?.startsWith('coding_task_') ||
+        entry.agentName?.endsWith('coding_step')
+    );
+    expect(coding.map((entry) => entry.agentName).sort()).toEqual([
+      'approve_coding_step',
+      'coding_task_diff',
+      'coding_task_status',
+      'reject_coding_step',
+      'start_coding_task',
+    ]);
+    for (const entry of coding) {
+      if (entry.kind === 'write') {
+        expect(entry.tier).toBe(2);
+        expect(toolIsGrantable(entry.tier)).toBe(false);
+      }
+    }
   });
 
   it('makes an admin write a card that no grant can ever make automatic', () => {
@@ -285,13 +317,18 @@ describe('the assistant door', () => {
   it('marks the turn’s own mechanisms as the assistant’s, not a product’s', () => {
     const mechanisms = capabilities.filter((entry) => entry.owner === 'assistant');
     expect(mechanisms.map((entry) => entry.agentName).sort()).toEqual([
+      'approve_coding_step',
+      'coding_task_diff',
+      'coding_task_status',
       'find_app_tools',
       'get_screen_context',
       'list_specialists',
       'load_specialist',
       'read_url',
+      'reject_coding_step',
       'render_visual',
       'search_web',
+      'start_coding_task',
     ]);
   });
 });

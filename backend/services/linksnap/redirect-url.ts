@@ -20,6 +20,7 @@ export const APP_ROUTE_SEGMENTS: readonly string[] = [
   'athkar',
   'auth',
   'chats',
+  'coding',
   'community',
   'consultation',
   'downloader',

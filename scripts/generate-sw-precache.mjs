@@ -82,6 +82,11 @@ function isUnderPrefix(route, prefix) {
  * without saying why the page cannot be a shell.
  */
 export const DYNAMIC_BY_DESIGN = [
+  {
+    route: '/coding',
+    reason:
+      'workspaces and tasks are per-member reads behind RLS; a frozen shell cannot render a member\u2019s repos or task state, and the worker caches the document after the first live visit',
+  },
   // The lead forms call `getOptionalUser()` (and the price loaders) on the
   // server, so they render per request; the booking shell joined them when it
   // started reading the geo header (ADR-0176). Their writes are outbox rows, so

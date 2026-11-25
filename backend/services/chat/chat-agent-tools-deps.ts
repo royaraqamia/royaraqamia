@@ -28,6 +28,34 @@ import type { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/ba
 import type { createRatesService } from '@/backend/config/rates';
 import type { createScanHistoryService } from '@/backend/config/scan-history';
 import type { resolveOrigin } from '@/backend/config/origin';
+import type {
+  CodingTaskDto,
+  CodingTaskPage,
+  CodingTaskListQuery,
+  CreateCodingTaskInput,
+  DecideCodingStepInput,
+} from '@/shared/contracts/coding-agent';
+
+/**
+ * The coding agent's control plane (ADR-0219). The chat service holds none of
+ * its execution primitives: these five hands only start a task, read its state
+ * and diffs, and carry a member's decision on one step. `userId` is always the
+ * caller's, injected by the turn, never a tool argument.
+ *
+ * The bundle is absent when the deployment has no GitHub App configured; the
+ * tools stay declared and answer with a refusal instead of failing the turn.
+ */
+export interface CodingToolsDeps {
+  createTask(userId: string, input: CreateCodingTaskInput): Promise<CodingTaskDto>;
+  getTask(userId: string, taskId: string): Promise<CodingTaskDto>;
+  listTasks(userId: string, query: CodingTaskListQuery): Promise<CodingTaskPage>;
+  decideStep(
+    userId: string,
+    taskId: string,
+    stepId: string,
+    decision: DecideCodingStepInput
+  ): Promise<CodingTaskDto>;
+}
 
 /**
  * The product services the assistant's tools reach, assembled once by the
@@ -101,4 +129,6 @@ export interface ChatAgentToolsDeps {
   };
   /** The public address this server answers on, for a short link's card. */
   origin: typeof resolveOrigin;
+  /** The coding agent, only when this deployment has a GitHub App (ADR-0219). */
+  coding?: CodingToolsDeps;
 }

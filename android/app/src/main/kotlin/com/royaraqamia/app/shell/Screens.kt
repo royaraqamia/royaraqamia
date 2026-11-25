@@ -70,6 +70,8 @@ object Screens {
             ScreenRouteRow("/account/faq", "account-faq", "account", null),
             ScreenRouteRow("/account/news", "account-news", "account", null),
             ScreenRouteRow("/notifications", "notifications", "notifications", null),
+            ScreenRouteRow("/coding", "coding", "coding", null),
+            ScreenRouteRow("/coding/[taskId]", "coding", "coding", null),
             ScreenRouteRow("/chats/[id]", "chats", "chats", null),
             ScreenRouteRow("/chats/new", "chats", "chats", null),
             ScreenRouteRow("/community", "community", "community", null),

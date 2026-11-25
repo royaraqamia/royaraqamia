@@ -65,6 +65,7 @@ _The local-store products, where the app has a real reason to be native: offline
 - [x] **quran** `/?tab=/quran` `/quran` — native · #955
 - [x] **quran-surah** `/quran/[surah]` — native · #955
 - [x] **notes** `/?tab=/notes` `/notes` — native · #1628
+- [-] **coding** `/coding` `/coding/[taskId]` — document, by design · Phase 1 of ADR-0219 is a per-member workspace with RLS-scoped task state and a diff viewer; a native copy would have to reproduce both before it could be the same screen, so the document is the deliverable.
 
 ## Requests and bookings
 
@@ -196,4 +197,4 @@ A component is finished when the surface that draws it is native, or when it bel
 
 ## Where this stands
 
-26 native · 3 to do · 4 document · 5 blocked of 38 surfaces. 3 of 10 release items done.
+26 native · 3 to do · 5 document · 5 blocked of 39 surfaces. 3 of 10 release items done.

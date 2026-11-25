@@ -240,6 +240,12 @@
       "issue": "#1628"
     },
     {
+      "surface": "coding",
+      "phase": "products",
+      "state": "document",
+      "why": "Phase 1 of ADR-0219 is a per-member workspace with RLS-scoped task state and a diff viewer; a native copy would have to reproduce both before it could be the same screen, so the document is the deliverable."
+    },
+    {
       "surface": "leads",
       "phase": "leads",
       "state": "blocked",

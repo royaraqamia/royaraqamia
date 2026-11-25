@@ -63,6 +63,8 @@ export const SCREEN_ROUTES: readonly ScreenRouteRow[] = [
   { pattern: '/account/faq', surface: 'account-faq', product: 'account', tab: null },
   { pattern: '/account/news', surface: 'account-news', product: 'account', tab: null },
   { pattern: '/notifications', surface: 'notifications', product: 'notifications', tab: null },
+  { pattern: '/coding', surface: 'coding', product: 'coding', tab: null },
+  { pattern: '/coding/[taskId]', surface: 'coding', product: 'coding', tab: null },
   { pattern: '/chats/[id]', surface: 'chats', product: 'chats', tab: null },
   { pattern: '/chats/new', surface: 'chats', product: 'chats', tab: null },
   { pattern: '/community', surface: 'community', product: 'community', tab: null },
