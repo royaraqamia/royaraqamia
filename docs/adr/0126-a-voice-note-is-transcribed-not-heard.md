@@ -90,3 +90,49 @@ Two ways to buy one, both the owner's decision and neither taken here:
 
 When the plan gains an audio-output model, `node scripts/agent-probe.mjs --only speech` asks the
 route again; when it answers, #1038 applies as written and this amendment is superseded.
+
+## Amendment (2026-11-25): the blocker is deployment-owned speech, not member-owned speech
+
+The 2026-11-21 amendment concluded that the mirror waits on a model, and offered two ways to buy
+one: a second vendor's speech API, or a self-hosted model. Both would put the speech credential and
+its bill on this deployment, which is why neither was taken. The owner's decision of 2026-11-23
+narrows the blocker to exactly that: speech the deployment owns stays refused, and speech a member
+owns is allowed because it costs us nothing. That is a re-framing of the blocker, not a new vendor.
+
+The gateway is unchanged. Re-measured on 2026-11-25 with
+`node scripts/agent-probe.mjs --only models,speech` against
+`https://opencode.ai/inference/go/openai/v1`:
+
+- `POST /audio/speech` answers **404** with an empty body.
+- `GET /models` answers **200** with 37 ids — chat, vision and embedding models — and no
+  text-to-speech model among them.
+
+So the gateway lane is still closed. What the owner's decision adds is the third way the 2026-11-21
+amendment did not consider, because it was not yet a decision: a **member-owned** speech connection,
+riding the same seam as a member-paid image or video (ADR-0216). The member supplies the key or
+account, `mcp_connection_credentials` holds it encrypted, every call spends the member's own credits
+behind a card, and the deployment holds no key and pays no bill. No environment variable and no
+line in `render.yaml` is added.
+
+That seam is built; a TTS vendor on it is not. The catalogue carries TTS rows — `ae.easyvoice/tts`,
+`io.elevenlabs/mcp` and others the mirror has swept — but none is verified: `verified_at` is null on
+every one, and `connect-service` refuses an unverified row with «هذا التطبيق غير معتمد في المتجر».
+No row is an `api_key` TTS connection. Selecting a vendor and vouching for it is a curator's
+decision — the same decision that admitted Higgsfield (ADR-0216) — so an agent may not invent one by
+writing an adapter to a vendor it chose. The mirror therefore stays unbuilt for a new reason: not
+"no speech exists anywhere", but "no member-owned speech connection is verified yet".
+
+When one is, #1038's shape applies unchanged:
+
+- A per-message toggle beside send, off by default, with the text still the answer and the
+  transcript still on screen.
+- A `SpeechClient` seam, so the vendor is one adapter and the turn never names it.
+- The clip as an attachment on the assistant's reply, written with the member as uploader — the clip
+  exists because they asked for it — which means `insertAgentMessage` needs the attachments path it
+  does not have today.
+- A text-hash cache, so the same sentence is not synthesised twice.
+- A failed synthesis as one Arabic sentence, with the text answer kept.
+
+The 2026-11-21 amendment's test is therefore widened. The member's own connection is the route to
+ask, and `node scripts/agent-probe.mjs --only models,speech` rules out only the gateway. Until a
+member-owned connection is verified, the honest result is the text answer and nothing synthesised.

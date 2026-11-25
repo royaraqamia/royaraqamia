@@ -540,7 +540,7 @@ describe('perf-baseline CLI', () => {
 
 /* Live-document mode ------------------------------------------------------- */
 
-async function makeLiveServer({ flaky = {} } = {}) {
+async function makeLiveServer({ flaky = {}, staleDocument = null, bodies: extraBodies = {} } = {}) {
   const bodies = {
     '/': [
       '<!DOCTYPE html><html><head>',
@@ -553,34 +553,51 @@ async function makeLiveServer({ flaky = {} } = {}) {
     ].join('\n'),
     '/account':
       '<!DOCTYPE html><html><head><script src="/_next/static/chunks/app.js"></script></head></html>',
+    '/stale':
+      '<!DOCTYPE html><html><head><script src="/_next/static/chunks/app.js"></script></head></html>',
     '/_next/static/chunks/app.js': pseudoText(11, 40000),
     '/_next/static/chunks/styles.css':
       '@font-face{src:url(../media/font.woff2)}' + pseudoText(12, 8000),
     '/_next/static/media/font.woff2': pseudoText(13, 6000),
     '/_next/static/chunks/legacy.js': pseudoText(14, 45000),
+    ...extraBodies,
   };
   const hits = new Map();
+  const requests = new Map();
+  let staleServed = false;
   const server = createServer((req, res) => {
-    const attempts = flaky[req.url] ?? 0;
-    const seen = hits.get(req.url) ?? 0;
+    const { pathname } = new URL(req.url, 'http://perf.local');
+    requests.set(pathname, (requests.get(pathname) ?? 0) + 1);
+
+    // The edge can still have the previous deployment's document while its
+    // chunk hashes are already gone. Serve that stale HTML once.
+    if (staleDocument && pathname === staleDocument.path && !staleServed) {
+      staleServed = true;
+      res.writeHead(200);
+      res.end(staleDocument.body);
+      return;
+    }
+
+    const attempts = flaky[pathname] ?? 0;
+    const seen = hits.get(pathname) ?? 0;
     if (seen < attempts) {
-      hits.set(req.url, seen + 1);
+      hits.set(pathname, seen + 1);
       res.writeHead(503);
       res.end();
       return;
     }
-    if (req.url === '/redirect') {
+    if (pathname === '/redirect') {
       res.writeHead(307, { location: '/account' });
       res.end();
       return;
     }
-    const body = bodies[req.url];
+    const body = bodies[pathname];
     if (body === undefined) {
       res.writeHead(404);
       res.end();
       return;
     }
-    if (req.url === '/_next/static/chunks/app.js') {
+    if (pathname === '/_next/static/chunks/app.js') {
       // Deliberately ignore Accept-Encoding: identity: fetchRaw must decode so
       // transferredSize stays the single place compression is applied.
       res.writeHead(200, { 'content-encoding': 'gzip' });
@@ -592,7 +609,7 @@ async function makeLiveServer({ flaky = {} } = {}) {
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   madeServers.push(server);
-  return { origin: `http://127.0.0.1:${server.address().port}`, bodies };
+  return { origin: `http://127.0.0.1:${server.address().port}`, bodies, requests };
 }
 
 describe('fetchRaw', () => {
@@ -685,6 +702,33 @@ describe('measureLiveRoute', () => {
   it('throws a readable error when the document is missing', async () => {
     const { origin } = await makeLiveServer();
     await expect(measureLiveRoute('/not-here', { origin })).rejects.toThrow(/404/);
+  });
+
+  it('prices a document again when the edge serves one from the previous deployment', async () => {
+    const { origin, bodies, requests } = await makeLiveServer({
+      staleDocument: {
+        path: '/stale',
+        body: '<!DOCTYPE html><html><head><script src="/_next/static/chunks/from-old-build.js"></script></head></html>',
+      },
+    });
+
+    const result = await measureLiveRoute('/stale', { origin });
+
+    expect(result.summary.js.count).toBe(1);
+    expect(result.summary.js.raw).toBe(Buffer.byteLength(bodies['/_next/static/chunks/app.js']));
+    expect(requests.get('/stale')).toBe(2);
+  });
+
+  it('still fails when a missing subresource survives the second read', async () => {
+    const stale =
+      '<!DOCTYPE html><html><head><script src="/_next/static/chunks/gone.js"></script></head></html>';
+    const { origin, requests } = await makeLiveServer({
+      staleDocument: { path: '/broken', body: stale },
+      bodies: { '/broken': stale },
+    });
+
+    await expect(measureLiveRoute('/broken', { origin })).rejects.toThrow(/404/);
+    expect(requests.get('/broken')).toBe(2);
   });
 });
 
