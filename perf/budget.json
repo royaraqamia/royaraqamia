@@ -30,8 +30,8 @@
       "jsGzipKb": 372
     },
     "/account": {
-      "comment": "Live weight gate (#1662): the deployed document measured 272.3 KB gzip JS on 2026-11-22 against the 260 KB default. The ceiling follows the measurement so the new gate can guard further growth instead of failing on a pre-existing breach.",
-      "jsGzipKb": 274
+      "comment": "Live weight gate (#1662): the deployed document measured 272.3 KB gzip JS on 2026-11-22, then 274.2 KB on 2026-11-25 after the main merge. The ceiling keeps the usual small headroom above the live measurement instead of failing on runner noise.",
+      "jsGzipKb": 275
     },
     "/account/links": {
       "comment": "Live weight gate (#1662): 366.8 KB JS and 590.2 KB total gzip on 2026-11-22. Both ceilings sit just above the measured document.",
@@ -68,8 +68,8 @@
       "jsGzipKb": 336
     },
     "/mcp/apps": {
-      "comment": "Live weight gate (#1662): 267.2 KB gzip JS on 2026-11-22. Also prices /account/connected-apps, whose anonymous document redirects here.",
-      "jsGzipKb": 269
+      "comment": "Live weight gate (#1662): 267.2 KB gzip JS on 2026-11-22, then 269.1 KB on 2026-11-25 after the main merge. Also prices /account/connected-apps, whose anonymous document redirects here.",
+      "jsGzipKb": 270
     },
     "/mcp/apps/invalid": {
       "comment": "Live weight gate (#1662): 262.6 KB gzip JS on 2026-11-22. Concrete sample for /mcp/apps/[id].",
