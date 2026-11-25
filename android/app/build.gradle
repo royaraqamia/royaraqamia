@@ -340,6 +340,8 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    // The IME lives in its own library module but ships in this APK (ADR-0219).
+    implementation project(':keyboard')
 }
 
 apply from: 'capacitor.build.gradle'

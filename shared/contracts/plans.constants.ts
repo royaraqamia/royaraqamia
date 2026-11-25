@@ -61,6 +61,12 @@ export const USAGE_COUNTERS = {
    * counts.
    */
   webSearches: 'web.search',
+  /**
+   * One keyboard rewrite, paid from the member's own daily allowance (ADR-0220).
+   * It is a signed-in action only: the IME holds a scoped token, never a site
+   * session, and a failed or timed-out call releases the count.
+   */
+  keyboardRewrites: 'keyboard.rewrite',
 } as const;
 
 export type UsageCounterKey = (typeof USAGE_COUNTERS)[keyof typeof USAGE_COUNTERS];
@@ -87,6 +93,8 @@ export const VISITOR_COUNTER_CAPS: Record<UsageCounterKey, number> = {
   'mcp.call': 0,
   // The web search rides the assistant's turn: no account, no search (ADR-0206).
   'web.search': 0,
+  // A rewrite needs the scoped credential minted from a signed-in web session.
+  'keyboard.rewrite': 0,
 };
 
 /**

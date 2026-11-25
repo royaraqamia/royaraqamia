@@ -1,0 +1,60 @@
+FlorisBoard IME vendored in this module
+=======================================
+
+Upstream: https://github.com/florisboard/florisboard
+Pinned commit: 2e82060251897226c0739b9f52d1d051b02305fb (tag v0.5.2)
+License: Apache License, Version 2.0. The upstream LICENSE is copied verbatim
+as android/keyboard/LICENSE.
+
+The Kotlin sources of the upstream :app and :lib:android, :lib:color,
+:lib:compose, :lib:kotlin, :lib:native and :lib:snygg modules are merged into
+src/main/kotlin; their resources and assets are merged into src/main/res and
+src/main/assets. The Rust source of :lib:native is kept under src/main/rust
+for provenance but is not compiled: the only native entry point is called from
+FlorisApplication.onCreate, and the shell uses its own Application class, so
+the JNI library is never loaded in this APK.
+
+JetPref is a separate Apache-2.0 library by Patrick Goldinger
+(https://github.com/patrickgold/jetpref). The upstream snapshot dependency no
+longer exists, so this build uses the published 0.3.0-beta02 (commit d6e12dda,
+2025-11-19), which is the same v3 API as the snapshot.
+
+Local change: `ime/editor/KeyboardDigits.kt` folds every Unicode decimal digit to
+ASCII before a key is committed, because this product writes ASCII digits only.
+The upstream numeric-row assets stay as published; the fold happens at the
+commit boundary, so choosing any of them cannot emit a non-ASCII digit.
+
+Local change: `ime/clipboard/ClipboardManager.kt` keeps clipboard history in a
+process-local list instead of the upstream Room `clipboard_history` table. The
+Room schema in `ime/clipboard/provider/ClipboardDatabase.kt` is retained and
+still compiles, but is never opened by the running IME, so no clip survives
+process death. Media clips are no longer cloned into app storage, and `close`
+only deletes media URIs owned by this app. `AppPrefs.kt` enables the in-memory
+history by default so the clipboard panel remains usable.
+
+Local change: two new stylesheets, `roy_day.json` and `roy_night.json`, are added
+under `assets/ime/theme/org.florisboard.themes/stylesheets/` and registered in
+that extension's `extension.json`. They recolor the upstream day and night
+palettes with this product's purple brand tokens. `AppPrefs.kt` selects them as
+the default day and night themes; all upstream themes remain selectable.
+
+Local change: four new files under `ime/rewrite/` add the opt-in AI rewrite
+(ADR-0220). `RewriteCredentialStore.kt` keeps a short-lived, rewrite-only HMAC
+claim in an Android Keystore-encrypted app-private file shared with the app
+process; `RewriteGateway.kt` makes one bounded POST only with a one-use tap
+capability, sends only the composing text and no tools, history or telemetry;
+`RewriteUi.kt` draws the consent-gated button and the suggestion strip; and
+`RewriteCopy.kt` holds the Arabic strings for this keyboard-only surface. No
+call happens on a keystroke, and a failed call leaves the editor untouched.
+
+Local change: `ime/smartbar/Smartbar.kt` and `ime/smartbar/CandidatesRow.kt` host
+the rewrite button and strip in the existing smartbar, and `build.gradle` adds a
+SITE_URL BuildConfig field from the same public config the app reads.
+
+Not vendored: the optional full Chinese shape-based language packs documented
+in upstream LANGUAGEPACKS-CHINESE.md, which are GPL-3.0. The default barebones
+Chinese pack shipped in the upstream assets is Apache-2.0 and is retained.
+
+The AboutLibraries third-party-licenses screen is omitted from the merged
+sources: it depends on a Gradle plugin absent from this build and would list
+the upstream app's licenses rather than this APK's.

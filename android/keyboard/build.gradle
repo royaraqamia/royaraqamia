@@ -1,0 +1,136 @@
+// FlorisBoard v0.5.2, pinned at commit 2e82060251897226c0739b9f52d1d051b02305fb.
+// The six upstream Gradle modules are merged into this one Android library: upstream
+// uses Kotlin DSL, version catalogs and type-safe project accessors, none of which
+// this build has. See android/keyboard/NOTICE and ../../docs/mobile/keyboard-plan.md.
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+apply plugin: 'com.google.devtools.ksp'
+
+// Upstream pins a Sonatype snapshot of jetpref which no longer exists. The
+// published 0.3.0-beta02 is the same v3 API (commit d6e12dda, 2025-11-19, only
+// updated dependencies), and Maven Central already has it, so no extra
+// repository is needed. The plugin classpath comes from the root build.gradle.
+def jetprefVersion = '0.3.0-beta02'
+
+// The rewrite button posts to our own gateway. It reads the same public site
+// origin as the app, with the per-machine override the app already honours, so
+// the IME can never be pointed at a different host by a source change.
+def keyboardLocalPropertiesFile = rootProject.file('local.properties')
+def keyboardLocalProperties = new Properties()
+if (keyboardLocalPropertiesFile.exists()) {
+    keyboardLocalPropertiesFile.withInputStream { keyboardLocalProperties.load(it) }
+}
+def keyboardSupabasePropertiesFile = rootProject.file('supabase.properties')
+def keyboardSupabaseProperties = new Properties()
+if (keyboardSupabasePropertiesFile.exists()) {
+    keyboardSupabasePropertiesFile.withInputStream { keyboardSupabaseProperties.load(it) }
+}
+def keyboardSiteUrl = keyboardLocalProperties.getProperty(
+    'siteUrl',
+    keyboardSupabaseProperties.getProperty('siteUrl', 'https://royaraqamia.com'),
+)
+
+android {
+    namespace 'dev.patrickgold.florisboard'
+    compileSdk rootProject.ext.compileSdkVersion
+    ndkVersion '26.1.10909125'
+
+    defaultConfig {
+        // Upstream's floor. The app stays at minSdk 24; see the app manifest's
+        // tools:overrideLibrary entry for why those two can coexist.
+        minSdk 26
+        // AGP libraries do not generate these three; upstream's code uses them
+        // for provider authorities and IME package checks. APPLICATION_ID must
+        // be the shell's, or the clipboard provider's authority would not match
+        // the one merged into the APK's manifest.
+        buildConfigField 'String', 'APPLICATION_ID', '"com.royaraqamia.app"'
+        buildConfigField 'String', 'VERSION_NAME', '"0.5.2"'
+        buildConfigField 'int', 'VERSION_CODE', '117'
+        buildConfigField 'String', 'BUILD_COMMIT_HASH', '"2e82060251897226c0739b9f52d1d051b02305fb"'
+        buildConfigField 'String', 'FLADDONS_API_VERSION', '"v~draft2"'
+        buildConfigField 'String', 'FLADDONS_STORE_URL', '"beta.addons.florisboard.org"'
+        buildConfigField 'String', 'SITE_URL', "\"${keyboardSiteUrl}\""
+        // Upstream defined these per build type; its resources and code still
+        // reference them even though the launcher activity is not registered.
+        resValue 'mipmap', 'floris_app_icon', '@mipmap/ic_app_icon_stable'
+        resValue 'mipmap', 'floris_app_icon_round', '@mipmap/ic_app_icon_stable_round'
+        resValue 'drawable', 'floris_app_icon_foreground', '@drawable/ic_app_icon_stable_foreground'
+        resValue 'string', 'floris_app_name', 'FlorisBoard'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    buildFeatures {
+        buildConfig true
+        compose true
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/kotlin']
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+}
+
+// Upstream exported Room's schemas; without a location its auto-migrations
+// cannot read older schemas and KSP fails the build.
+ksp {
+    arg 'room.schemaLocation', "$projectDir/schemas"
+    arg 'room.incremental', 'true'
+    arg 'room.expandProjection', 'true'
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+        freeCompilerArgs = [
+            '-opt-in=kotlin.contracts.ExperimentalContracts',
+            '-Xjvm-default=all-compatibility',
+            '-Xwhen-guards',
+        ]
+    }
+}
+
+dependencies {
+    implementation platform("androidx.compose:compose-bom:$composeBomVersion")
+    implementation "androidx.activity:activity-compose:$androidxActivityVersion"
+    implementation "androidx.activity:activity-ktx:$androidxActivityVersion"
+    implementation 'androidx.autofill:autofill:1.3.0'
+    implementation 'androidx.collection:collection-ktx:1.5.0'
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.runtime:runtime-livedata'
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation "androidx.core:core-ktx:$androidxCoreVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation 'androidx.emoji2:emoji2:1.6.0'
+    implementation 'androidx.emoji2:emoji2-views:1.6.0'
+    implementation 'androidx.exifinterface:exifinterface:1.4.1'
+    implementation 'androidx.navigation:navigation-compose:2.9.6'
+    implementation 'androidx.profileinstaller:profileinstaller:1.4.1'
+    implementation "androidx.room:room-runtime:$roomVersion"
+    ksp "androidx.room:room-compiler:$roomVersion"
+    implementation 'io.github.reactivecircus.cache4k:cache4k:0.7.0'
+    implementation "org.jetbrains.kotlin:kotlin-reflect:2.2.20"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$kotlinxCoroutinesVersion"
+    implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
+    implementation 'com.materialkolor:material-kolor-android:4.0.5'
+    implementation 'dev.patrickgold.compose.tooltip:tooltip:0.2.0-rc02'
+    implementation "dev.patrickgold.jetpref:jetpref-datastore-model:$jetprefVersion"
+    ksp "dev.patrickgold.jetpref:jetpref-datastore-model-processor:$jetprefVersion"
+    implementation "dev.patrickgold.jetpref:jetpref-datastore-ui:$jetprefVersion"
+    implementation "dev.patrickgold.jetpref:jetpref-material-ui:$jetprefVersion"
+    implementation 'io.coil-kt.coil3:coil-compose:3.3.0'
+    implementation 'io.coil-kt.coil3:coil-gif:3.3.0'
+
+    // The digit gate's JVM half: the IME folds every numeric row to ASCII before
+    // committing it, and this test holds that promise without a device.
+    testImplementation "junit:junit:$junitVersion"
+}

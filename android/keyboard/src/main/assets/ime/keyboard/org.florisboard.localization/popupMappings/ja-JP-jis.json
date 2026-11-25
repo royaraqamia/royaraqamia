@@ -1,0 +1,275 @@
+{
+  "all": {
+    "あ": {
+      "main": { "code": 12353, "label": "ぁ" }
+    },
+    "ア": {
+      "main": { "code": 12449, "label": "ァ" }
+    },
+    "ｱ": {
+      "main": { "code": 65383, "label": "ｧ" }
+    },
+    "い": {
+      "main": { "code": 12355, "label": "ぃ" },
+      "relevant": [
+        { "code": 12432, "label": "ゐ" },
+        { "code": 110928, "label": "𛅐" }
+      ]
+    },
+    "イ": {
+      "main": { "code": 12451, "label": "ィ" },
+      "relevant": [
+        { "code": 12528, "label": "ヰ" },
+        { "code": 110948, "label": "𛅤" }
+      ]
+    },
+    "ｲ": {
+      "main": { "code": 65384, "label": "ｨ" }
+    },
+    "う": {
+      "main": { "code": 12357, "label": "ぅ" }
+    },
+    "ウ": {
+      "main": { "code": 12453, "label": "ゥ" }
+    },
+    "ｳ": {
+      "main": { "code": 65385, "label": "ｩ" }
+    },
+    "え": {
+      "main": { "code": 12359, "label": "ぇ" },
+      "relevant": [
+        { "code": 12433, "label": "ゑ" },
+        { "code": 110929, "label": "𛅑" }
+      ]
+    },
+    "エ": {
+      "main": { "code": 12455, "label": "ェ" },
+      "relevant": [
+        { "code": 12529, "label": "ヱ" },
+        { "code": 110949, "label": "𛅥" }
+      ]
+    },
+    "ｴ": {
+      "main": { "code": 65386, "label": "ｪ" }
+    },
+    "お": {
+      "main": { "code": 12361, "label": "ぉ" }
+    },
+    "オ": {
+      "main": { "code": 12457, "label": "ォ" }
+    },
+    "ｵ": {
+      "main": { "code": 65387, "label": "ｫ" }
+    },
+    "や": {
+      "main": { "code": 12419, "label": "ゃ" }
+    },
+    "ヤ": {
+      "main": { "code": 12515, "label": "ャ" }
+    },
+    "ﾔ": {
+      "main": { "code": 65388, "label": "ｬ" }
+    },
+    "ゆ": {
+      "main": { "code": 12421, "label": "ゅ" }
+    },
+    "ユ": {
+      "main": { "code": 12517, "label": "ュ" }
+    },
+    "ﾕ": {
+      "main": { "code": 65389, "label": "ｭ" }
+    },
+    "よ": {
+      "main": { "code": 12423, "label": "ょ" }
+    },
+    "ヨ": {
+      "main": { "code": 12519, "label": "ョ" }
+    },
+    "ﾖ": {
+      "main": { "code": 65390, "label": "ｮ" }
+    },
+    "わ": {
+      "main": { "code": 12434, "label": "を" },
+      "relevant": [
+        { "code": 12430, "label": "ゎ" },
+        { "code": 110930, "label": "𛅒" }
+      ]
+    },
+    "ワ": {
+      "main": { "code": 12530, "label": "ヲ" },
+      "relevant": [
+        { "code": 12526, "label": "ヮ" },
+        { "code": 110950, "label": "𛅦" }
+      ]
+    },
+    "ﾜ": {
+      "main": { "code": 65382, "label": "ｦ" }
+    },
+    "つ": {
+      "main": { "code": 12387, "label": "っ" }
+    },
+    "ツ": {
+      "main": { "code": 12483, "label": "ッ" }
+    },
+    "ﾂ": {
+      "main": { "code": 65391, "label": "ｯ" }
+    },
+    "ト": {
+      "relevant": [{ "code": 12787, "label": "ㇳ" }]
+    },
+    "シ": {
+      "relevant": [{ "code": 12785, "label": "ㇱ" }]
+    },
+    "ス": {
+      "main": { "code": 12786, "label": "ㇲ" }
+    },
+    "か": {
+      "main": { "code": 12437, "label": "ゕ" }
+    },
+    "カ": {
+      "main": { "code": 12533, "label": "ヵ" }
+    },
+    "ク": {
+      "main": { "code": 12784, "label": "ㇰ" }
+    },
+    "け": {
+      "main": { "code": 12438, "label": "ゖ" }
+    },
+    "ケ": {
+      "main": { "code": 12534, "label": "ヶ" }
+    },
+    "ヌ": {
+      "relevant": [{ "code": 12788, "label": "ㇴ" }]
+    },
+    "ハ": {
+      "relevant": [{ "code": 12789, "label": "ㇵ" }]
+    },
+    "ヒ": {
+      "relevant": [{ "code": 12790, "label": "ㇶ" }]
+    },
+    "フ": {
+      "relevant": [{ "code": 12791, "label": "ㇷ" }]
+    },
+    "ヘ": {
+      "relevant": [{ "code": 12792, "label": "ㇸ" }]
+    },
+    "ホ": {
+      "relevant": [{ "code": 12793, "label": "ㇹ" }]
+    },
+    "ム": {
+      "relevant": [{ "code": 12794, "label": "ㇺ" }]
+    },
+    "ラ": {
+      "relevant": [{ "code": 12795, "label": "ㇻ" }]
+    },
+    "リ": {
+      "relevant": [{ "code": 12796, "label": "ㇼ" }]
+    },
+    "ル": {
+      "relevant": [{ "code": 12797, "label": "ㇽ" }]
+    },
+    "レ": {
+      "relevant": [{ "code": 12798, "label": "ㇾ" }]
+    },
+    "ロ": {
+      "relevant": [{ "code": 12799, "label": "ㇿ" }]
+    },
+    "゛": {
+      "main": { "code": 12443, "label": "゛" }
+    },
+    "゜": {
+      "main": { "code": 12444, "label": "゜" }
+    },
+    "~kana": {
+      "relevant": [
+        { "code": -9711, "label": "あ" },
+        { "code": -9712, "label": "ア" },
+        { "code": -9713, "label": "ｱ" }
+      ]
+    },
+    "~right": {
+      "main": {
+        "$": "char_width_selector",
+        "full": { "code": 12539, "label": "・" },
+        "half": { "code": 9834, "label": "♪" }
+      },
+      "relevant": [
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65286, "label": "＆" },
+          "half": { "code": 38, "label": "&" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65285, "label": "％" },
+          "half": { "code": 37, "label": "%" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65291, "label": "＋" },
+          "half": { "code": 43, "label": "+" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65340, "label": "＼" },
+          "half": { "code": 92, "label": "\\" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65293, "label": "－" },
+          "half": { "code": 45, "label": "-" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65306, "label": "：" },
+          "half": { "code": 58, "label": ":" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65287, "label": "＇" },
+          "half": { "code": 39, "label": "'" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65312, "label": "＠" },
+          "half": { "code": 64, "label": "@" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65307, "label": "；" },
+          "half": { "code": 59, "label": ";" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65295, "label": "／" },
+          "half": { "code": 47, "label": "/" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65288, "label": "（" },
+          "half": { "code": 40, "label": "(" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65289, "label": "）" },
+          "half": { "code": 41, "label": ")" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65283, "label": "＃" },
+          "half": { "code": 35, "label": "#" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65281, "label": "！" },
+          "half": { "code": 33, "label": "!" }
+        },
+        {
+          "$": "char_width_selector",
+          "full": { "code": 65311, "label": "？" },
+          "half": { "code": 63, "label": "?" }
+        }
+      ]
+    }
+  }
+}

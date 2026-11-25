@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The unit-test variant rebuilds its own manifest and does not inherit the
+  uses-sdk override in src/main. Without this, the :keyboard library's API 26
+  floor fails the test manifest merger while the APK itself builds fine.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-sdk tools:overrideLibrary="dev.patrickgold.florisboard" />
+
+</manifest>

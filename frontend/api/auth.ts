@@ -4,6 +4,7 @@ import { isNativeApp, openInSystemBrowser } from '@/frontend/shared/native-shell
 import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
 import { clearPersistedIdentity } from '@/frontend/shared/local-store/identity';
 import { clearSnapshots } from '@/frontend/shared/local-store/snapshot';
+
 import { unregisterNativePush } from '@/frontend/api/push-native';
 import { releasePushSubscription } from '@/frontend/api/push';
 import type { Session, User } from '@supabase/supabase-js';
@@ -63,7 +64,28 @@ export function subscribeToSessionChanges(listener: SessionChangeListener): () =
   };
 }
 
+/**
+ * Delete the IME's local credential on every sign-out path (ADR-0220).
+ *
+ * This stays a direct bridge read rather than an import of `shared/keyboard`:
+ * auth is in the shared chunk of every route, and a static import there lifts
+ * the keyboard helper into pages that never show a keyboard row. The shipped
+ * budget is measured per route and does not have a kilobyte to spare.
+ */
+function revokeKeyboardCredential(): void {
+  type Bridge = { revokeRewriteCredential?: () => boolean };
+  const bridge = (window as Window & { RoyShellKeyboard?: Bridge }).RoyShellKeyboard;
+  try {
+    bridge?.revokeRewriteCredential?.();
+  } catch {
+    // A browser has no keyboard bridge; there is nothing to revoke.
+  }
+}
+
 export async function signOutSession(): Promise<void> {
+  // The IME's credential is deleted before the session ends (ADR-0220): it is
+  // the only copy, and a keyboard resident in every app must not outlive consent.
+  revokeKeyboardCredential();
   // Every sign-out path releases this browser's push registration while the
   // session still authorizes the DELETE; see `logout()`.
   await unregisterNativePush();
@@ -85,6 +107,8 @@ export async function signOutSession(): Promise<void> {
 }
 
 export async function logout(): Promise<void> {
+  // Same deletion on the server-session path: no scoped token survives sign-out.
+  revokeKeyboardCredential();
   // Drop this device's native push token and browser subscription while the
   // session still authorizes the calls, so the next person to use the device
   // does not inherit the notifications. Best-effort: never block a sign-out on

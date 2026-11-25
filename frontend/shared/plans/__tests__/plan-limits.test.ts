@@ -43,6 +43,7 @@ const freeCaps: PlanCaps = {
     'chat.agent.turn': { window: 'daily', cap: 0 },
     'mcp.call': { window: 'daily', cap: 5 },
     'web.search': { window: 'daily', cap: 0 },
+    'keyboard.rewrite': { window: 'daily', cap: 5 },
   },
 };
 
