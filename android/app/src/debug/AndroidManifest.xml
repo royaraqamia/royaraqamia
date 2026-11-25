@@ -4,7 +4,15 @@
   that server's manifests and cover over http, which the release network policy
   refuses. The release manifest keeps cleartext off.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+      The shell's own manifest carries this override for the IME library's API 26
+      floor. The unit-test variant builds its own manifest and does not inherit
+      that uses-sdk node, so it needs the same override here.
+    -->
+    <uses-sdk tools:overrideLibrary="dev.patrickgold.florisboard" />
 
     <application android:usesCleartextTraffic="true">
 
