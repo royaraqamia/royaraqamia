@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { BookMarked, BookOpenCheck, X } from 'lucide-react';
 import { useQuranReader } from '@/frontend/state/quran/use-quran-reader';
 import { QURAN_INDEX_COPY } from './quran-index-copy';
+import { QURAN_READING_PANEL_COPY } from './reading-panel-copy';
 import { QuranSyncStatus } from './sync-status';
 
 interface ReadingPanelProps {
@@ -60,12 +61,12 @@ export function ReadingPanel({
 
       {bookmarks.length > 0 ? (
         <section
-          aria-label="علاماتي"
+          aria-label={QURAN_READING_PANEL_COPY.bookmarks}
           className="rounded-2xl border border-border/60 bg-card/60 px-4 py-3.5"
         >
           <p className="flex items-center gap-2 text-sm font-bold text-foreground">
             <BookMarked aria-hidden="true" className="size-4 text-primary" />
-            علاماتي
+            {QURAN_READING_PANEL_COPY.bookmarks}
             <span className="font-normal text-muted-foreground">
               (<span className="font-heading">{bookmarks.length}</span>)
             </span>
@@ -86,7 +87,9 @@ export function ReadingPanel({
                   type="button"
                   onClick={() => void removeBookmark(bookmark.clientId)}
                   disabled={!ready}
-                  aria-label={`إزالة علامة ${nameOf(bookmark.surah)} الآية ${bookmark.ayah}`}
+                  aria-label={QURAN_READING_PANEL_COPY.removeBookmark
+                    .replace('{surah}', nameOf(bookmark.surah))
+                    .replace('{ayah}', String(bookmark.ayah))}
                   className="rounded-md p-1 text-muted-foreground transition-safe hover:bg-destructive/10 hover:text-destructive focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50"
                 >
                   <X aria-hidden="true" className="size-3.5" />

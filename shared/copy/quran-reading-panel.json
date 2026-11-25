@@ -1,0 +1,16 @@
+{
+  "surface": "quran",
+  "component": "quran-reading-panel",
+  "web": {
+    "file": "frontend/ui/quran/reading-panel-copy.ts",
+    "export": "QURAN_READING_PANEL_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranReadingPanelCopy.kt",
+    "object": "QuranReadingPanelCopy"
+  },
+  "strings": {
+    "bookmarks": "علاماتي",
+    "removeBookmark": "إزالة علامة {surah} الآية {ayah}"
+  }
+}

@@ -2503,6 +2503,98 @@
       ]
     },
     {
+      "id": "quran-ayah-mark",
+      "surface": "quran",
+      "issue": "#1751",
+      "web": {
+        "route": "app/quran/[surah]/page.tsx",
+        "component": "frontend/ui/quran/ayah-mark-button.tsx",
+        "copyModule": "frontend/ui/quran/ayah-mark-button-copy.ts",
+        "copyExport": "QURAN_AYAH_MARK_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranAyahMarkButton.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranAyahMarkState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranAyahMarkCopy.kt",
+        "copyObject": "QuranAyahMarkCopy"
+      },
+      "copySource": "shared/copy/quran-ayah-mark.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "markAyah"
+        }
+      ]
+    },
+    {
+      "id": "quran-ayah-tafsir",
+      "surface": "quran",
+      "issue": "#1751",
+      "web": {
+        "route": "app/quran/[surah]/page.tsx",
+        "component": "frontend/ui/quran/ayah-tafsir.tsx",
+        "copyModule": "frontend/ui/quran/ayah-tafsir-copy.ts",
+        "copyExport": "QURAN_AYAH_TAFSIR_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranAyahTafsir.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranAyahTafsirState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranAyahTafsirCopy.kt",
+        "copyObject": "QuranAyahTafsirCopy"
+      },
+      "copySource": "shared/copy/quran-ayah-tafsir.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "toggle"
+        },
+        {
+          "name": "Loading",
+          "copy": "loading"
+        },
+        {
+          "name": "Failed",
+          "copy": "failed"
+        },
+        {
+          "name": "Missing",
+          "copy": "missing"
+        },
+        {
+          "name": "Open",
+          "copy": "panelLabel"
+        },
+        {
+          "name": "Credit",
+          "copy": "credit"
+        }
+      ]
+    },
+    {
+      "id": "quran-reading-panel",
+      "surface": "quran",
+      "issue": "#1751",
+      "web": {
+        "route": "app/quran/page.tsx",
+        "component": "frontend/ui/quran/reading-panel.tsx",
+        "copyModule": "frontend/ui/quran/reading-panel-copy.ts",
+        "copyExport": "QURAN_READING_PANEL_COPY"
+      },
+      "native": {
+        "component": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranReadingPanel.kt",
+        "state": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranReadingPanelState.kt",
+        "copy": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranReadingPanelCopy.kt",
+        "copyObject": "QuranReadingPanelCopy"
+      },
+      "copySource": "shared/copy/quran-reading-panel.json",
+      "states": [
+        {
+          "name": "AtRest",
+          "copy": "bookmarks"
+        }
+      ]
+    },
+    {
       "id": "quran-player",
       "surface": "quran-surah",
       "issue": "#956",

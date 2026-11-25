@@ -17,6 +17,7 @@ import { replaceSearch } from '@/frontend/shared/replace-search';
 import { useScreenScope } from '@/frontend/state/use-screen-scope';
 import { quranTafsirScope } from './quran-screen-scope';
 import { INITIAL_TAFSIR_STATE, tafsirReducer } from './ayah-tafsir.reducer';
+import { QURAN_AYAH_TAFSIR_COPY } from './ayah-tafsir-copy';
 
 /**
  * The Tafsir, read beside an Ayah (ADR-0057, P3).
@@ -162,7 +163,7 @@ export function AyahTafsir({ ayah }: { ayah: number }) {
     return (
       <div className="ayah-tafsir" data-tafsir-ayah={ayah}>
         <a href={`?tafsir=${ayah}#ayah-${ayah}`} className="ayah-tafsir-toggle">
-          التفسير
+          {QURAN_AYAH_TAFSIR_COPY.toggle}
         </a>
       </div>
     );
@@ -182,25 +183,25 @@ export function AyahTafsir({ ayah }: { ayah: number }) {
         aria-controls={panelId}
         className="ayah-tafsir-toggle"
       >
-        التفسير
+        {QURAN_AYAH_TAFSIR_COPY.toggle}
       </button>
 
       {open ? (
         <div
           id={panelId}
           role="region"
-          aria-label={`تفسير الآية ${ayah}`}
+          aria-label={QURAN_AYAH_TAFSIR_COPY.panelLabel.replace('{ayah}', String(ayah))}
           className="ayah-tafsir-panel"
         >
           {loading ? (
             <p className="ayah-tafsir-note" aria-live="polite">
-              جاري تحميل التفسير…
+              {QURAN_AYAH_TAFSIR_COPY.loading}
             </p>
           ) : failed ? (
             <p className="ayah-tafsir-note">
-              تعذّر تحميل التفسير.{' '}
+              {QURAN_AYAH_TAFSIR_COPY.failed}{' '}
               <button type="button" onClick={retry} className="ayah-tafsir-retry">
-                إعادة المحاولة
+                {QURAN_AYAH_TAFSIR_COPY.retry}
               </button>
             </p>
           ) : body ? (
@@ -210,7 +211,7 @@ export function AyahTafsir({ ayah }: { ayah: number }) {
                 {tafsir.attribution}
                 {' · '}
                 <a href={tafsir.source} target="_blank" rel="noreferrer">
-                  مركز تفسير للدراسات القرآنية
+                  {QURAN_AYAH_TAFSIR_COPY.credit}
                 </a>
                 {' · '}
                 <a href={tafsir.licenceUrl} target="_blank" rel="noreferrer">
@@ -219,7 +220,7 @@ export function AyahTafsir({ ayah }: { ayah: number }) {
               </p>
             </>
           ) : (
-            <p className="ayah-tafsir-note">لا تفسير لهذه الآية في هذه الطبعة.</p>
+            <p className="ayah-tafsir-note">{QURAN_AYAH_TAFSIR_COPY.missing}</p>
           )}
         </div>
       ) : null}

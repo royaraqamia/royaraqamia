@@ -57,6 +57,26 @@
             "tag": "quran-ayah-marker-1"
           },
           "properties": ["width", "height"]
+        },
+        {
+          "name": "first-mark",
+          "web": {
+            "selector": "[data-bookmark-ayah='1']"
+          },
+          "app": {
+            "tag": "quran-ayah-mark-1"
+          },
+          "properties": ["width", "height"]
+        },
+        {
+          "name": "first-tafsir",
+          "web": {
+            "selector": "[data-tafsir-ayah='1']"
+          },
+          "app": {
+            "tag": "quran-ayah-tafsir-1"
+          },
+          "properties": ["height"]
         }
       ]
     }

@@ -1,0 +1,17 @@
+{
+  "surface": "quran",
+  "component": "quran-ayah-mark",
+  "web": {
+    "file": "frontend/ui/quran/ayah-mark-button-copy.ts",
+    "export": "QURAN_AYAH_MARK_COPY"
+  },
+  "native": {
+    "file": "android/app/src/main/kotlin/com/royaraqamia/app/quran/QuranAyahMarkCopy.kt",
+    "object": "QuranAyahMarkCopy"
+  },
+  "strings": {
+    "markAyah": "علامة على الآية {ayah}",
+    "markTitle": "إضافة علامة أو إزالتها",
+    "saveFailed": "تعذَّر حفظ العلامة."
+  }
+}

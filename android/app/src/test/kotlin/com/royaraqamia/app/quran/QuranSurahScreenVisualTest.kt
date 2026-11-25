@@ -110,6 +110,13 @@ class QuranSurahScreenVisualTest {
                 "first-marker": {
                   "width": ${width(QuranSurahMetrics.markerTag(1))},
                   "height": ${height(QuranSurahMetrics.markerTag(1))}
+                },
+                "first-mark": {
+                  "width": ${width(QuranSurahMetrics.markTag(1))},
+                  "height": ${height(QuranSurahMetrics.markTag(1))}
+                },
+                "first-tafsir": {
+                  "height": ${height(QuranSurahMetrics.tafsirTag(1))}
                 }
               }
             }
