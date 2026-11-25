@@ -14,7 +14,8 @@ vi.mock('@/frontend/api/scan-history', () => ({
 
 import { ScanHistory } from '@/frontend/ui/scan/scan-history';
 import { SCAN_HISTORY_COPY } from '@/frontend/ui/scan/scan-history-copy';
-import { SCAN_HISTORY_KIND_LABELS, type ScanHistoryEntry } from '@/shared/contracts/scan-history';
+import { scanKindLabel } from '@/frontend/ui/scan/scan-labels';
+import { type ScanHistoryEntry } from '@/shared/contracts/scan-history';
 
 /**
  * The section's three promises (#1430): a guest is told what sign-in would do
@@ -67,10 +68,7 @@ describe('ScanHistory', () => {
     expect(await screen.findByText('cafe.example')).toBeInTheDocument();
     expect(
       screen.getByText(
-        historyMeta(
-          SCAN_HISTORY_KIND_LABELS.link,
-          SCAN_HISTORY_COPY.seenMany.replace('{count}', '3')
-        )
+        historyMeta(scanKindLabel('link'), SCAN_HISTORY_COPY.seenMany.replace('{count}', '3'))
       )
     ).toBeInTheDocument();
   });
@@ -80,7 +78,7 @@ describe('ScanHistory', () => {
 
     renderHistory();
 
-    expect(await screen.findByText(SCAN_HISTORY_KIND_LABELS.text)).toBeInTheDocument();
+    expect(await screen.findByText(scanKindLabel('text'))).toBeInTheDocument();
     expect(screen.getByText(historyMeta(SCAN_HISTORY_COPY.seenOnce))).toBeInTheDocument();
   });
 

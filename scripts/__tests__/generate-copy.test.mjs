@@ -103,6 +103,54 @@ describe('the two outputs', () => {
     const risky = { ...source, strings: { a: "it's \\ fine" } };
     expect(renderWeb(risky).contents).toContain(String.raw`  a: 'it\'s \\ fine',`);
   });
+
+  it('put one format row in both clients, under both names, with one label', () => {
+    const withFormats = {
+      ...source,
+      formats: {
+        webExport: 'SCAN_FORMAT_LABELS',
+        nativeProperty: 'FORMAT_LABELS',
+        entries: [{ detector: 'RSS_14', contract: 'databar', label: 'GS1 DataBar' }],
+      },
+    };
+    expect(validate(withFormats)).toEqual([]);
+    const web = renderWeb(withFormats).contents;
+    const native = renderNative(withFormats).contents;
+    expect(web).toContain("  RSS_14: 'GS1 DataBar',");
+    expect(web).toContain("  databar: 'GS1 DataBar',");
+    expect(native).toContain('"RSS_14" to "GS1 DataBar"');
+    expect(native).toContain('"databar" to "GS1 DataBar"');
+  });
+
+  it('give a server reader the same kind words, keyed by contract identity', () => {
+    const withKindMap = {
+      ...source,
+      strings: { ...source.strings, kindLink: 'رابط' },
+      server: {
+        file: 'shared/scan/labels.ts',
+        export: 'SCAN_COPY',
+        kindMapExport: 'SCAN_KIND_LABELS',
+      },
+    };
+    expect(validate(withKindMap)).toEqual([]);
+    const contents = renderServer(withKindMap).contents;
+    expect(contents).toContain("  link: 'رابط',");
+    expect(contents).toContain("  kindLink: 'رابط',");
+  });
+
+  it('refuse a format table with two names for the same format', () => {
+    const formats = {
+      webExport: 'SCAN_FORMAT_LABELS',
+      nativeProperty: 'FORMAT_LABELS',
+      entries: [
+        { detector: 'QR_CODE', contract: 'qr_code', label: 'QR' },
+        { detector: 'QR_CODE', contract: 'qr_code', label: 'QR' },
+      ],
+    };
+    const joined = validate({ ...source, formats }).join('\n');
+    expect(joined).toContain('duplicate detector');
+    expect(joined).toContain('duplicate contract');
+  });
 });
 
 describe('the server output (#1805)', () => {

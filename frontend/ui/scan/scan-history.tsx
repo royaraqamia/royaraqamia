@@ -5,8 +5,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { clearScanHistory, getScanHistory } from '@/frontend/api/scan-history';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
-import { SCAN_HISTORY_KIND_LABELS, type ScanHistoryEntry } from '@/shared/contracts/scan-history';
+import { type ScanHistoryEntry } from '@/shared/contracts/scan-history';
 import { SCAN_HISTORY_COPY } from './scan-history-copy';
+import { scanKindLabel } from './scan-labels';
 
 /**
  * The Scanner's history (#1430, ADR-0205).
@@ -105,10 +106,10 @@ export function ScanHistory({
               {entries.map((entry) => (
                 <li key={entry.id} className="flex flex-col gap-1 py-2 first:pt-0 last:pb-0">
                   <p className="text-sm font-medium [overflow-wrap:anywhere]">
-                    {entry.label ?? SCAN_HISTORY_KIND_LABELS[entry.kind]}
+                    {entry.label ?? scanKindLabel(entry.kind)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {entry.label ? `${SCAN_HISTORY_KIND_LABELS[entry.kind]} · ` : ''}
+                    {entry.label ? `${scanKindLabel(entry.kind)} · ` : ''}
                     {entry.seenCount === 1
                       ? SCAN_HISTORY_COPY.seenOnce
                       : SCAN_HISTORY_COPY.seenMany.replace('{count}', String(entry.seenCount))}

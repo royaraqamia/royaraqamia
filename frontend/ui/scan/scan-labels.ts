@@ -1,4 +1,4 @@
-import { SCAN_COPY } from './scan-copy';
+import { SCAN_COPY, SCAN_FORMAT_LABELS } from './scan-copy';
 import type { ScanResultKind } from '@/shared/contracts/scan';
 
 /**
@@ -27,6 +27,15 @@ export function scanKindLabel(kind: ScanResultKind): string {
     case 'text':
       return SCAN_COPY.kindText;
   }
+}
+
+/**
+ * The format's visible name. The browser reports a contract name (`qr_code`,
+ * `databar`) and the app's detector reports its own (`QR_CODE`, `RSS_14`); the
+ * generated table resolves both to the one label from `shared/copy/scan.json`.
+ */
+export function scanFormatLabel(format: string): string {
+  return SCAN_FORMAT_LABELS[format] ?? format;
 }
 
 /** The action's words, chosen from the destination's scheme. */

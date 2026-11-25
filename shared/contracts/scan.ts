@@ -31,39 +31,12 @@ export const SCAN_FORMATS = [
 
 export type ScanFormat = (typeof SCAN_FORMATS)[number];
 
-/** Arabic names for the formats a Scan Result reports. Unknown ones fall through. */
-export const SCAN_FORMAT_LABELS: Record<string, string> = {
-  qr_code: 'QR',
-  micro_qr_code: 'QR مصغَّر',
-  aztec: 'Aztec',
-  data_matrix: 'Data Matrix',
-  pdf417: 'PDF417',
-  code_128: 'Code 128',
-  code_39: 'Code 39',
-  code_93: 'Code 93',
-  codabar: 'Codabar',
-  itf: 'ITF',
-  ean_13: 'EAN-13',
-  ean_8: 'EAN-8',
-  upc_a: 'UPC-A',
-  upc_e: 'UPC-E',
-  databar: 'GS1 DataBar',
-};
-
 export type ScanResultKind =
   'link' | 'email' | 'phone' | 'sms' | 'wifi' | 'contact' | 'location' | 'otp' | 'text';
 
-export const SCAN_RESULT_KIND_LABELS: Record<ScanResultKind, string> = {
-  link: 'رابط',
-  email: 'بريد إلكترونيّ',
-  phone: 'رقم هاتف',
-  sms: 'رسالة نصِّيَّة',
-  wifi: 'شبكة WiFi',
-  contact: 'جهة اتِّصال',
-  location: 'موقع جغرافيّ',
-  otp: 'رمز تحقُّق بخطوتين',
-  text: 'نصّ',
-};
+// The kind and format labels live in `shared/copy/scan.json` and reach both
+// clients through `npm run copy:generate` (#1789, ADR-0098). This module keeps
+// the identities and the classifier, not a second home for those words.
 
 export interface WifiCredentials {
   ssid: string;

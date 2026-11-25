@@ -28,9 +28,9 @@ import { ScanHistory } from './scan-history';
 import { identityFromUser } from '@/frontend/shared/local-store/identity';
 import { canRecordLocalUsage, recordLocalUsage } from '@/frontend/shared/plans/plan-limits';
 import { useScannedCertificate } from '@/frontend/state/scan/use-scanned-certificate';
-import { SCAN_FORMAT_LABELS, classifyScanPayload } from '@/shared/contracts/scan';
+import { classifyScanPayload } from '@/shared/contracts/scan';
 import { SCAN_COPY } from './scan-copy';
-import { scanKindLabel } from './scan-labels';
+import { scanFormatLabel, scanKindLabel } from './scan-labels';
 import { computeFrameTransform, displayToFrame, frameToDisplay } from './overlay';
 import {
   FrameGrabber,
@@ -137,7 +137,7 @@ export function ScanPage() {
 
   const classification = hit ? classifyScanPayload(hit.rawValue) : null;
   const certificate = useScannedCertificate(hit?.rawValue ?? null);
-  const formatLabel = hit ? (SCAN_FORMAT_LABELS[hit.format] ?? hit.format) : '';
+  const formatLabel = hit ? scanFormatLabel(hit.format) : '';
 
   // Tear the camera and the worker down on unmount, whatever state we are in.
   useEffect(() => {

@@ -9,8 +9,13 @@
     "file": "android/app/src/main/kotlin/com/royaraqamia/app/scan/ScanCopy.kt",
     "object": "ScanCopy"
   },
+  "server": {
+    "file": "shared/scan/labels.ts",
+    "export": "SCAN_COPY",
+    "kindMapExport": "SCAN_KIND_LABELS"
+  },
   "notes": {
-    "source": "The Scanner's vocabulary (#1707, ADR-0098). `ScanScreen.kt` used to retype these words in `ScanMessages`, and the nine kind labels and four action labels lived in the `shared/contracts/scan.ts` table the page read; both drifted. One source now writes the site module and the app object, so a change reaches both clients in one commit.",
+    "source": "The Scanner's vocabulary (#1707, ADR-0098). `ScanScreen.kt` used to retype these words in `ScanMessages`, and the nine kind labels and four action labels lived in the `shared/contracts/scan.ts` table the page read; both drifted. One source now writes the site module and the app object, so a change reaches both clients in one commit. The format table below is part of that same source: a row carries the detector's name, the contract's name and the one label both clients print.",
     "platform": "The camera-permission sentence differs by client: `permissionDeniedWeb` is for a browser and `permissionDeniedApp` is for the shell with its own permission and settings. The component chooses the key; the source keeps both, rather than each client owning a sentence the other cannot check.",
     "differences": "The app prints the one-time-password secret and the contact name from the same rows as the page; the torch's off-state label is the page's «تشغيل الكشَّاف», not the app's old «الكشَّاف».",
     "gate": "`npm run check:copy` fails a stale output and `npm run check:parity` fails a key the page's component does not render."
@@ -81,5 +86,26 @@
     "actionSms": "إرسال رسالة",
     "actionGeo": "فتح الموقع",
     "linkAction": "فتح الرَّابط"
+  },
+  "formats": {
+    "webExport": "SCAN_FORMAT_LABELS",
+    "nativeProperty": "FORMAT_LABELS",
+    "entries": [
+      { "detector": "QR_CODE", "contract": "qr_code", "label": "QR" },
+      { "detector": "MICRO_QR_CODE", "contract": "micro_qr_code", "label": "QR مصغَّر" },
+      { "detector": "AZTEC", "contract": "aztec", "label": "Aztec" },
+      { "detector": "DATA_MATRIX", "contract": "data_matrix", "label": "Data Matrix" },
+      { "detector": "PDF_417", "contract": "pdf417", "label": "PDF417" },
+      { "detector": "CODE_128", "contract": "code_128", "label": "Code 128" },
+      { "detector": "CODE_39", "contract": "code_39", "label": "Code 39" },
+      { "detector": "CODE_93", "contract": "code_93", "label": "Code 93" },
+      { "detector": "CODABAR", "contract": "codabar", "label": "Codabar" },
+      { "detector": "ITF", "contract": "itf", "label": "ITF" },
+      { "detector": "EAN_13", "contract": "ean_13", "label": "EAN-13" },
+      { "detector": "EAN_8", "contract": "ean_8", "label": "EAN-8" },
+      { "detector": "UPC_A", "contract": "upc_a", "label": "UPC-A" },
+      { "detector": "UPC_E", "contract": "upc_e", "label": "UPC-E" },
+      { "detector": "RSS_14", "contract": "databar", "label": "GS1 DataBar" }
+    ]
   }
 }
