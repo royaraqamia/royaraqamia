@@ -121,6 +121,18 @@ function privateKey(): string {
   return required('GITHUB_APP_PRIVATE_KEY').replace(/\\n/g, '\n');
 }
 
+/**
+ * GitHub Apps do not use OAuth scopes: the only supported `scope` value is
+ * `offline_access`. Sending `read:user` makes the authorize endpoint fail, so
+ * the redirect URI is the only extra parameter here (docs: generating a user
+ * access token for a GitHub App).
+ */
+function callbackUrl(): string {
+  const origin = read('PUBLIC_ORIGIN') || read('NEXT_PUBLIC_SITE_URL');
+  if (!origin) throw new Error('GitHub App OAuth needs PUBLIC_ORIGIN');
+  return `${origin.replace(/\/+$/, '')}/api/coding/connect/callback`;
+}
+
 function base64url(value: string): string {
   return Buffer.from(value, 'utf8').toString('base64url');
 }
@@ -171,8 +183,8 @@ export function createGitHubAppClient(): GitHubAppClient {
     authorizeUrl(state) {
       const params = new URLSearchParams({
         client_id: required('GITHUB_APP_CLIENT_ID'),
+        redirect_uri: callbackUrl(),
         state,
-        scope: 'read:user',
       });
       return `https://github.com/login/oauth/authorize?${params.toString()}`;
     },
@@ -182,6 +194,7 @@ export function createGitHubAppClient(): GitHubAppClient {
         client_id: required('GITHUB_APP_CLIENT_ID'),
         client_secret: required('GITHUB_APP_CLIENT_SECRET'),
         code,
+        redirect_uri: callbackUrl(),
       });
       const response = await fetch('https://github.com/login/oauth/access_token', {
         method: 'POST',
@@ -194,12 +207,33 @@ export function createGitHubAppClient(): GitHubAppClient {
         body: body.toString(),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       });
-      const payload = await jsonBody<{
+      // GitHub answers this endpoint with JSON when Accept asks for it, but a
+      // proxy or an error page can answer with form encoding. Read it as text
+      // once so a real error description survives instead of becoming an
+      // "unreadable body" that hides the cause.
+      const raw = await response.text();
+      let payload: {
         access_token?: string;
         scope?: string;
         error?: string;
         error_description?: string;
-      }>(response, 'GitHub OAuth token exchange');
+      };
+      try {
+        payload = JSON.parse(raw) as typeof payload;
+      } catch {
+        const form = new URLSearchParams(raw);
+        payload = {
+          access_token: form.get('access_token') ?? undefined,
+          scope: form.get('scope') ?? undefined,
+          error: form.get('error') ?? undefined,
+          error_description: form.get('error_description') ?? undefined,
+        };
+        if (!payload.access_token && !payload.error) {
+          throw new Error(
+            `GitHub OAuth token exchange failed: status ${response.status}, unreadable body`
+          );
+        }
+      }
       if (!response.ok || !payload.access_token) {
         throw new Error(
           `GitHub OAuth token exchange failed: ${payload.error_description ?? payload.error ?? `status ${response.status}`}`
