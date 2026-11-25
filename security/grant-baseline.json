@@ -67,6 +67,18 @@
       "anon": ["SELECT"],
       "authenticated": ["SELECT"]
     },
+    "coding_steps": {
+      "anon": [],
+      "authenticated": ["INSERT", "SELECT"]
+    },
+    "coding_tasks": {
+      "anon": [],
+      "authenticated": ["INSERT", "SELECT", "UPDATE"]
+    },
+    "coding_workspaces": {
+      "anon": [],
+      "authenticated": ["DELETE", "INSERT", "SELECT"]
+    },
     "community_categories": {
       "anon": ["SELECT"],
       "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
