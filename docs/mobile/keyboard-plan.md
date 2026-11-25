@@ -49,15 +49,15 @@ Proposed targets, to be replaced by measurements at the gate that first reaches 
 device is the **RMX3195** (realme C25s, Android 13, 360 dp, Helio G85, 4 GB), the same phone
 [native-app.md](native-app.md) uses. An emulator is a regression comparison, not a sign-off.
 
-| Measure                             | Target                            | Baseline or gate                                                                                                                                                                 |
-| ----------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Field focus to first key drawn      | < 150 ms on the RMX3195           | proposed at phase 0                                                                                                                                                              |
-| Keystroke to committed character    | < 40 ms, entirely on device       | proposed at phase 0                                                                                                                                                              |
-| Prediction candidates after a word  | < 80 ms, no network               | proposed at phase 2                                                                                                                                                              |
-| AI tap to suggestion                | < 3 s, hard timeout 5 s           | proposed at phase 4                                                                                                                                                              |
-| Network packets from the IME typing | 0, in every phase                 | captured on device, asserted by a test                                                                                                                                           |
-| Release APK size                    | delta recorded, never unexplained | 11.4 MiB minified today ([ADR-0094](../adr/0094-the-release-build-is-minified.md)); debug APK with the IME is 45,219,038 bytes, not comparable until a release build is measured |
-| App cold start                      | no regression past 550 ms         | [native-app.md](native-app.md) budget                                                                                                                                            |
+| Measure                             | Target                            | Baseline or gate                                                                                                                                          |
+| ----------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Field focus to first key drawn      | < 150 ms on the RMX3195           | proposed at phase 0                                                                                                                                       |
+| Keystroke to committed character    | < 40 ms, entirely on device       | proposed at phase 0                                                                                                                                       |
+| Prediction candidates after a word  | < 80 ms, no network               | proposed at phase 2                                                                                                                                       |
+| AI tap to suggestion                | < 3 s, hard timeout 5 s           | proposed at phase 4                                                                                                                                       |
+| Network packets from the IME typing | 0, in every phase                 | captured on device, asserted by a test                                                                                                                    |
+| Release APK size                    | delta recorded, never unexplained | 11.4 MiB before the IME ([ADR-0094](../adr/0094-the-release-build-is-minified.md)); 15,072,211 bytes after the vendored module, minified and R8-processed |
+| App cold start                      | no regression past 550 ms         | [native-app.md](native-app.md) budget                                                                                                                     |
 
 ## Phase 0 — engine spike and license gate
 
@@ -182,9 +182,9 @@ pushed or released.
 
 These need a device, a release cut or an owner decision; none was assumed.
 
-- **Device gates:** release APK size delta, first-key and keystroke latency, swipe acceptance and
-  the mid-word Arabic caret test on the RMX3195. Until they pass, phase 0's budget rows stay
-  proposed rather than measured.
+- **Device gates:** first-key and keystroke latency, swipe acceptance and the mid-word Arabic caret
+  test on the RMX3195. The release APK delta is measured (15,072,211 bytes after R8 against the
+  11.4 MiB pre-keyboard baseline); the latency rows stay proposed until a device witnesses them.
 - **Network capture:** assertion on a real device that typing alone produces no packet and only a
   rewrite tap makes a request. The code-level tap capability is tested; the device capture is not.
 - **Release cut:** Arabic release-note fragments are staged but have not been folded; signing and
