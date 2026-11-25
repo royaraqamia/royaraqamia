@@ -131,6 +131,23 @@ change. GIF stays cancelled.
 **Exit:** the capture test passes, the caps are enforced outside the model, and a failed call spends
 nothing.
 
+## Phase 4 decisions (2026-11-25)
+
+- Routes: `POST /api/keyboard/credential` mints the credential from the signed-in
+  web session; `POST /api/keyboard/rewrite` accepts only that credential in an
+  `Authorization: Bearer` header. The rewrite route never reads a cookie.
+- Meter row: `keyboard.rewrite`, daily, visitor 0 / free 5 / pro 50, seeded by
+  `20270103000000_keyboard_rewrite_allowance.sql` and mirrored in the fallback
+  catalog. A failed or timed-out call releases the reservation.
+- Credential: a stateless HMAC claim scoped to `keyboard.rewrite`, TTL 15 minutes,
+  signed with a server-only secret. It is not a session cookie or refresh token.
+  Consent withdrawal and sign-out delete the only copy from the device; with no
+  server-side token row, the TTL is the bound on an extracted copy. No new token
+  table or migration was needed for the credential.
+- Bounds outside the model: 280 characters in, 280 out, one call, 5 s timeout, no
+  tools, no memory, no agent loop. Both ceilings are checked in TypeScript and
+  again in the IME.
+
 ## Phase 5 — release cut
 
 - Write the user-facing Arabic release note lines in the same pull request as the native change, and

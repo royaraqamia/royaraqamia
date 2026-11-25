@@ -14,6 +14,8 @@ import android.webkit.JavascriptInterface;
 
 import androidx.annotation.Nullable;
 
+import dev.patrickgold.florisboard.ime.rewrite.RewriteCredentialStore;
+
 import java.util.List;
 
 /**
@@ -22,9 +24,10 @@ import java.util.List;
  * A normal app cannot silently make an IME the default, so this interface does
  * two honest things: it reads what Android reports, and it opens the system's
  * settings or picker for the member to choose. It never writes a secure setting.
- * No typed text crosses it — booleans and user gestures only (ADR-0220) — and it
- * is a plain `addJavascriptInterface` object like the update and sync bridges,
- * not a Capacitor plugin the remote document may never receive (ADR-0043).
+ * No typed text crosses it — booleans, gestures and the narrow rewrite
+ * credential only (ADR-0220) — and it is a plain `addJavascriptInterface` object
+ * like the update and sync bridges, not a Capacitor plugin the remote document
+ * may never receive (ADR-0043).
  */
 final class ShellKeyboardBridge {
 
@@ -116,5 +119,28 @@ final class ShellKeyboardBridge {
                 if (manager != null) manager.showInputMethodPicker();
             }
         );
+    }
+
+    /**
+     * Stores the narrow rewrite credential the page just minted (ADR-0220). It
+     * is a short-lived HMAC claim, never a site session; the IME and the app
+     * share this UID, so the Keystore-encrypted file is readable by both.
+     */
+    @JavascriptInterface
+    public boolean storeRewriteCredential(String token) {
+        if (token == null || token.isEmpty() || token.length() > 4096) return false;
+        return RewriteCredentialStore.store(context, token);
+    }
+
+    /** Whether the IME currently has a rewrite credential. */
+    @JavascriptInterface
+    public boolean rewriteCredentialEnabled() {
+        return RewriteCredentialStore.enabled(context);
+    }
+
+    /** Consent withdrawal and sign-out delete the only copy. */
+    @JavascriptInterface
+    public void revokeRewriteCredential() {
+        RewriteCredentialStore.revoke(context);
     }
 }

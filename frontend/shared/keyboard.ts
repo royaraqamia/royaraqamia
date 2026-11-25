@@ -19,6 +19,10 @@ interface KeyboardBridge {
   isDefault?: () => boolean;
   openSettings?: () => void;
   openPicker?: () => void;
+  /** The rewrite credential is a narrow HMAC claim, never the site session. */
+  rewriteCredentialEnabled?: () => boolean;
+  storeRewriteCredential?: (token: string) => boolean;
+  revokeRewriteCredential?: () => boolean;
 }
 
 function bridge(): KeyboardBridge | undefined {
@@ -80,5 +84,52 @@ export function openKeyboardPicker(): void {
     keyboard.openPicker();
   } catch (error) {
     logger.warn('Failed to open the keyboard picker', { error: String(error) });
+  }
+}
+
+/** Whether the IME currently holds a rewrite credential. */
+export function keyboardRewriteEnabled(): boolean {
+  const keyboard = bridge();
+  if (typeof keyboard?.rewriteCredentialEnabled !== 'function') return false;
+  try {
+    return keyboard.rewriteCredentialEnabled() === true;
+  } catch (error) {
+    logger.warn('Failed to read the rewrite credential', { error: String(error) });
+    return false;
+  }
+}
+
+/**
+ * Explicit consent: mint a rewrite-only credential from the signed-in session
+ * and hand it to the shell, which encrypts it into app-private storage. The
+ * session cookie and refresh token never cross this boundary (ADR-0220).
+ */
+export async function enableKeyboardRewrite(): Promise<boolean> {
+  const keyboard = bridge();
+  if (typeof keyboard?.storeRewriteCredential !== 'function') return false;
+  try {
+    const response = await fetch('/api/keyboard/credential', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consent: true }),
+    });
+    if (!response.ok) return false;
+    const payload = (await response.json()) as { success?: boolean; token?: string };
+    if (payload.success !== true || typeof payload.token !== 'string') return false;
+    return keyboard.storeRewriteCredential(payload.token) === true;
+  } catch (error) {
+    logger.warn('Failed to grant keyboard rewrite', { error: String(error) });
+    return false;
+  }
+}
+
+/** Consent withdrawal and sign-out delete the only copy of the credential. */
+export function revokeKeyboardRewriteCredential(): void {
+  const keyboard = bridge();
+  if (typeof keyboard?.revokeRewriteCredential !== 'function') return;
+  try {
+    keyboard.revokeRewriteCredential();
+  } catch (error) {
+    logger.warn('Failed to revoke the rewrite credential', { error: String(error) });
   }
 }

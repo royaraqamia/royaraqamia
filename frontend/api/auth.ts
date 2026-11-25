@@ -4,6 +4,7 @@ import { isNativeApp, openInSystemBrowser } from '@/frontend/shared/native-shell
 import { purgeServiceWorkerCaches } from '@/frontend/shared/cache-maintenance';
 import { clearPersistedIdentity } from '@/frontend/shared/local-store/identity';
 import { clearSnapshots } from '@/frontend/shared/local-store/snapshot';
+import { revokeKeyboardRewriteCredential } from '@/frontend/shared/keyboard';
 import { unregisterNativePush } from '@/frontend/api/push-native';
 import { releasePushSubscription } from '@/frontend/api/push';
 import type { Session, User } from '@supabase/supabase-js';
@@ -64,6 +65,9 @@ export function subscribeToSessionChanges(listener: SessionChangeListener): () =
 }
 
 export async function signOutSession(): Promise<void> {
+  // The IME's credential is deleted before the session ends (ADR-0220): it is
+  // the only copy, and a keyboard resident in every app must not outlive consent.
+  revokeKeyboardRewriteCredential();
   // Every sign-out path releases this browser's push registration while the
   // session still authorizes the DELETE; see `logout()`.
   await unregisterNativePush();
@@ -85,6 +89,8 @@ export async function signOutSession(): Promise<void> {
 }
 
 export async function logout(): Promise<void> {
+  // Same deletion on the server-session path: no scoped token survives sign-out.
+  revokeKeyboardRewriteCredential();
   // Drop this device's native push token and browser subscription while the
   // session still authorizes the calls, so the next person to use the device
   // does not inherit the notifications. Best-effort: never block a sign-out on

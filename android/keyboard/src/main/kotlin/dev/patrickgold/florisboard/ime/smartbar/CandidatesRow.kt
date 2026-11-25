@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
+import dev.patrickgold.florisboard.ime.rewrite.RewriteButton
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.nlpManager
@@ -83,6 +84,9 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
             Arrangement.Center
         },
     ) {
+        // Consent-gated and tap-only: this button is the keyboard's visible
+        // indicator and the sole caller of the network gateway.
+        RewriteButton()
         if (candidates.isNotEmpty()) {
             val candidateModifier = if (candidates.size == 1) {
                 Modifier

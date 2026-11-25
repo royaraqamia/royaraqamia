@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Keyboard } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
@@ -12,6 +12,7 @@ import {
   openKeyboardSettings,
 } from '@/frontend/shared/keyboard';
 
+import { KeyboardRewriteConsent } from './keyboard-rewrite-consent';
 import { rowClasses } from './row-classes';
 
 /** Android owns the switch; the page only opens its controls and reads the result. */
@@ -71,42 +72,48 @@ export function KeyboardSection() {
     </span>
   );
 
+  let main: ReactNode;
   if (!state.enabled) {
-    return (
+    main = (
       <button type="button" onClick={openKeyboardSettings} className={rowClasses}>
         {body(ACTIVATE_LABEL)}
         {arrow}
       </button>
     );
-  }
-
-  if (!state.isDefault) {
-    return (
+  } else if (!state.isDefault) {
+    main = (
       <button type="button" onClick={openKeyboardPicker} className={rowClasses}>
         {body(DEFAULT_LABEL)}
         {arrow}
       </button>
     );
+  } else {
+    main = (
+      <div className={cn(rowClasses, 'cursor-default')}>
+        {body(ACTIVE_LABEL)}
+        <button
+          type="button"
+          onClick={openKeyboardPicker}
+          className="flex shrink-0 items-center gap-2 rounded-lg px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        >
+          {/* A drawn switch, not the site's Switch: tapping it would claim to
+              toggle the IME, while the only action is Android's own picker. */}
+          <span
+            aria-hidden="true"
+            className="relative inline-flex h-6 w-11 items-center rounded-full border border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 px-1"
+          >
+            <span className="inline-block size-4 rounded-full bg-background shadow-sm" />
+          </span>
+          {CHANGE_LABEL}
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className={cn(rowClasses, 'cursor-default')}>
-      {body(ACTIVE_LABEL)}
-      <button
-        type="button"
-        onClick={openKeyboardPicker}
-        className="flex shrink-0 items-center gap-2 rounded-lg px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-      >
-        {/* A drawn switch, not the site's Switch: tapping it would claim to
-            toggle the IME, while the only action is Android's own picker. */}
-        <span
-          aria-hidden="true"
-          className="relative inline-flex h-6 w-11 items-center rounded-full border border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 px-1"
-        >
-          <span className="inline-block size-4 rounded-full bg-background shadow-sm" />
-        </span>
-        {CHANGE_LABEL}
-      </button>
-    </div>
+    <>
+      {main}
+      <KeyboardRewriteConsent />
+    </>
   );
 }

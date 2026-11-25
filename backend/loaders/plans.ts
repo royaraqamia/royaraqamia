@@ -184,6 +184,15 @@ const CATALOG_FALLBACK: PlanCatalog = {
       proCap: 15,
       sortOrder: 70,
     },
+    {
+      key: 'keyboard.rewrite',
+      label: 'إعادة صياغة من لوحة المفاتيح',
+      window: 'daily',
+      visitorCap: 0,
+      freeCap: 5,
+      proCap: 50,
+      sortOrder: 80,
+    },
   ],
   quotas: FALLBACK_QUOTAS,
 };

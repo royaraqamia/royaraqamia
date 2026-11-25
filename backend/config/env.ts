@@ -165,6 +165,21 @@ export const env = {
     return read('DOWNLOADER_CALLBACK_SECRET');
   },
   /**
+   * The HMAC key behind the keyboard's rewrite-only credential (ADR-0220). The
+   * token is stateless, so this is the only server-side secret it needs; it is
+   * never sent to the app or the IME. It can fall back to the MCP encryption key,
+   * which is already required to be secret, but never to a fixed value: with no
+   * secret at all, minting and verification refuse rather than accepting a token
+   * anyone could sign.
+   */
+  get keyboardRewriteSecret(): string | undefined {
+    return (
+      read('KEYBOARD_REWRITE_SECRET')?.trim() ||
+      read('MCP_TOKEN_ENCRYPTION_KEY')?.trim() ||
+      undefined
+    );
+  },
+  /**
    * The assistant's provider (ADR-0113, #817). Any OpenAI-compatible endpoint
    * works, so switching vendor is these three values and nothing else: OpenCode's
    * gateway and `deepseek-v4.1-flash` are the defaults — the endpoint and key the

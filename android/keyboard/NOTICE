@@ -38,6 +38,19 @@ that extension's `extension.json`. They recolor the upstream day and night
 palettes with this product's purple brand tokens. `AppPrefs.kt` selects them as
 the default day and night themes; all upstream themes remain selectable.
 
+Local change: four new files under `ime/rewrite/` add the opt-in AI rewrite
+(ADR-0220). `RewriteCredentialStore.kt` keeps a short-lived, rewrite-only HMAC
+claim in an Android Keystore-encrypted app-private file shared with the app
+process; `RewriteGateway.kt` makes one bounded POST only with a one-use tap
+capability, sends only the composing text and no tools, history or telemetry;
+`RewriteUi.kt` draws the consent-gated button and the suggestion strip; and the
+generated `RewriteCopy.kt` reads the Arabic strings from `shared/copy`. No call
+happens on a keystroke, and a failed call leaves the editor untouched.
+
+Local change: `ime/smartbar/Smartbar.kt` and `ime/smartbar/CandidatesRow.kt` host
+the rewrite button and strip in the existing smartbar, and `build.gradle` adds a
+SITE_URL BuildConfig field from the same public config the app reads.
+
 Not vendored: the optional full Chinese shape-based language packs documented
 in upstream LANGUAGEPACKS-CHINESE.md, which are GPL-3.0. The default barebones
 Chinese pack shipped in the upstream assets is Apache-2.0 and is retained.

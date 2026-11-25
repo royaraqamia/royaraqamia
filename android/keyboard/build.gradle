@@ -14,6 +14,24 @@ apply plugin: 'com.google.devtools.ksp'
 // repository is needed. The plugin classpath comes from the root build.gradle.
 def jetprefVersion = '0.3.0-beta02'
 
+// The rewrite button posts to our own gateway. It reads the same public site
+// origin as the app, with the per-machine override the app already honours, so
+// the IME can never be pointed at a different host by a source change.
+def keyboardLocalPropertiesFile = rootProject.file('local.properties')
+def keyboardLocalProperties = new Properties()
+if (keyboardLocalPropertiesFile.exists()) {
+    keyboardLocalPropertiesFile.withInputStream { keyboardLocalProperties.load(it) }
+}
+def keyboardSupabasePropertiesFile = rootProject.file('supabase.properties')
+def keyboardSupabaseProperties = new Properties()
+if (keyboardSupabasePropertiesFile.exists()) {
+    keyboardSupabasePropertiesFile.withInputStream { keyboardSupabaseProperties.load(it) }
+}
+def keyboardSiteUrl = keyboardLocalProperties.getProperty(
+    'siteUrl',
+    keyboardSupabaseProperties.getProperty('siteUrl', 'https://royaraqamia.com'),
+)
+
 android {
     namespace 'dev.patrickgold.florisboard'
     compileSdk rootProject.ext.compileSdkVersion
@@ -33,6 +51,7 @@ android {
         buildConfigField 'String', 'BUILD_COMMIT_HASH', '"2e82060251897226c0739b9f52d1d051b02305fb"'
         buildConfigField 'String', 'FLADDONS_API_VERSION', '"v~draft2"'
         buildConfigField 'String', 'FLADDONS_STORE_URL', '"beta.addons.florisboard.org"'
+        buildConfigField 'String', 'SITE_URL', "\"${keyboardSiteUrl}\""
         // Upstream defined these per build type; its resources and code still
         // reference them even though the launcher activity is not registered.
         resValue 'mipmap', 'floris_app_icon', '@mipmap/ic_app_icon_stable'
