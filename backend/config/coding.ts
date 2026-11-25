@@ -336,7 +336,13 @@ export async function completeCodingConnect(
 ): Promise<void> {
   const admin = createCodingAdminRepository(getAdminSupabase());
   const attempt = await admin.claimConnectAttempt(hashToken(state));
-  if (!attempt) throw new Error('invalid_state');
+  if (!attempt) {
+    // Browsers and the service worker can replay a GitHub redirect after the
+    // first hit already consumed the one-time state. The installation belongs
+    // to the same authenticated member, so a replay is a harmless no-op.
+    if (await admin.hasInstallationForUser(userId)) return;
+    throw new Error('invalid_state');
+  }
 
   const github = createGitHubAppClient();
   const { accessToken } = await github.exchangeUserCode(code);
