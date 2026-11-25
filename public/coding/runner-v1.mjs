@@ -15,7 +15,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 
 const API = (process.env.NOOR_API_URL ?? '').replace(/\/+$/, '');
@@ -174,6 +174,33 @@ function safePath(value) {
   return target;
 }
 
+const MAX_FILE_BYTES = 200_000;
+
+/** Read by attempt, not by check-then-read: the file can change between them. */
+function readWorkspaceFile(target, label) {
+  try {
+    return readFileSync(target, 'utf8');
+  } catch (error) {
+    if (error && error.code === 'ENOENT') {
+      throw new Error(`file not found: ${label}`, { cause: error });
+    }
+    throw error;
+  }
+}
+
+/**
+ * The only write path in the runner. Model output is untrusted input, so it is
+ * re-confined to the workspace and size-bounded at the moment of the write.
+ */
+function writeWorkspaceFile(target, label, text) {
+  if (typeof text !== 'string') throw new Error('content must be a string');
+  if (Buffer.byteLength(text, 'utf8') > MAX_FILE_BYTES) throw new Error('file is too large');
+  safePath(relative(process.cwd(), target));
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, text, { encoding: 'utf8', flag: 'w' });
+  return label;
+}
+
 function walk(dir, files, limit) {
   if (files.length >= limit) return files;
   const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
@@ -197,8 +224,7 @@ function listFiles(args) {
 
 function readFile(args) {
   const target = safePath(args.path);
-  if (!existsSync(target)) throw new Error(`file not found: ${args.path}`);
-  const text = readFileSync(target, 'utf8');
+  const text = readWorkspaceFile(target, args.path);
   return { path: args.path, content: text.slice(0, 60_000), truncated: text.length > 60_000 };
 }
 
@@ -229,10 +255,8 @@ function searchText(args) {
 }
 
 function writeFile(args) {
-  if (typeof args.content !== 'string') throw new Error('content must be a string');
   const target = safePath(args.path);
-  mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, args.content, 'utf8');
+  writeWorkspaceFile(target, args.path, args.content);
   return { path: args.path, bytes: Buffer.byteLength(args.content, 'utf8') };
 }
 
@@ -259,9 +283,7 @@ function applyPatch(args) {
   if (!named || named === '/dev/null') throw new Error('patch has no target file');
   const path = named.replace(/^b\//, '').replace(/^a\//, '');
   const target = safePath(path);
-  if (!existsSync(target)) throw new Error(`file not found: ${path}`);
-
-  const original = readFileSync(target, 'utf8');
+  const original = readWorkspaceFile(target, path);
   const trailingNewline = original.endsWith('\n');
   const source = original.split('\n');
   if (trailingNewline) source.pop();
@@ -310,8 +332,7 @@ function applyPatch(args) {
     cursor++;
   }
   const next = result.join('\n') + (trailingNewline ? '\n' : '');
-  mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, next, 'utf8');
+  writeWorkspaceFile(target, path, next);
   return { path, lines: result.length };
 }
 

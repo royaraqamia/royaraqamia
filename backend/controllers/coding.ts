@@ -73,7 +73,9 @@ async function withRunner(
 export async function listCodingWorkspaces(_headers: Headers): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) =>
-      jsonResult(200, await createCodingServiceForUser(supabase).listWorkspaces(userId)),
+      jsonResult(200, await createCodingServiceForUser(supabase).listWorkspaces(userId), {
+        headers: NO_STORE,
+      }),
     { mapError: mapCodingError }
   );
 }
@@ -115,7 +117,9 @@ export async function listCodingTasks(
 ): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) =>
-      jsonResult(200, await createCodingServiceForUser(supabase).listTasks(userId, query)),
+      jsonResult(200, await createCodingServiceForUser(supabase).listTasks(userId, query), {
+        headers: NO_STORE,
+      }),
     { mapError: mapCodingError }
   );
 }
@@ -141,7 +145,9 @@ export async function getCodingTask(_headers: Headers, id: string): Promise<Http
   }
   return withAuthenticatedUser(
     async ({ userId, supabase }) =>
-      jsonResult(200, await createCodingServiceForUser(supabase).getTask(userId, id)),
+      jsonResult(200, await createCodingServiceForUser(supabase).getTask(userId, id), {
+        headers: NO_STORE,
+      }),
     { mapError: mapCodingError }
   );
 }
@@ -187,7 +193,7 @@ export async function decideCodingStep(
 /** Runner: read the task spec and the member's latest decision. */
 export async function getRunnerTask(headers: Headers): Promise<HttpResult> {
   return withRunner(headers, async ({ rawToken }, service) =>
-    jsonResult(200, await service.runnerTask(rawToken))
+    jsonResult(200, await service.runnerTask(rawToken), { headers: NO_STORE })
   );
 }
 

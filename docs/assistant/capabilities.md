@@ -13,7 +13,7 @@ that reads `Turn + MCP` is the same operation reached two ways.
 a read is always tier 0 and runs inside the turn; a write is above it, and
 tier 2 or 3 is always a card. Every write's tier is in the table below.
 
-**93 capabilities** (50 read, 43 write): 85 declared by the turn, 42 by the MCP server.
+**98 capabilities** (52 read, 46 write): 90 declared by the turn, 42 by the MCP server.
 
 | Product | Reads | Writes | Turn | MCP |
 | --- | --- | --- | --- | --- |
@@ -34,7 +34,7 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | `client-work` | 1 | 1 | 2 | 0 |
 | `mcp-store` | 3 | 4 | 7 | 0 |
 | `admin` | 2 | 1 | 3 | 0 |
-| `assistant` | 8 | 0 | 7 | 1 |
+| `assistant` | 10 | 3 | 12 | 1 |
 
 ## `news`
 
@@ -242,7 +242,7 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 
 ## `assistant`
 
-8 read, 0 write.
+10 read, 3 write.
 
 | Capability | Kind | Tier | Doors |
 | --- | --- | --- | --- |
@@ -253,4 +253,9 @@ tier 2 or 3 is always a card. Every write's tier is in the table below.
 | `assistant.render_visual` | read | 0 | Turn |
 | `assistant.find_app_tools` | read | 0 | Turn |
 | `assistant.get_screen_context` | read | 0 | Turn |
+| `assistant.start_coding_task` | write | 2 | Turn |
+| `assistant.coding_task_status` | read | 0 | Turn |
+| `assistant.coding_task_diff` | read | 0 | Turn |
+| `assistant.approve_coding_step` | write | 2 | Turn |
+| `assistant.reject_coding_step` | write | 2 | Turn |
 | `assistant.server_info` | read | 0 | MCP |
