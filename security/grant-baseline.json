@@ -69,7 +69,7 @@
     },
     "coding_steps": {
       "anon": [],
-      "authenticated": ["INSERT", "SELECT"]
+      "authenticated": ["INSERT", "SELECT", "UPDATE"]
     },
     "coding_tasks": {
       "anon": [],
