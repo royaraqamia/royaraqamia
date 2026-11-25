@@ -137,7 +137,7 @@ nothing.
   web session; `POST /api/keyboard/rewrite` accepts only that credential in an
   `Authorization: Bearer` header. The rewrite route never reads a cookie.
 - Meter row: `keyboard.rewrite`, daily, visitor 0 / free 5 / pro 50, seeded by
-  `20270103000000_keyboard_rewrite_allowance.sql` and mirrored in the fallback
+  `20270105000000_keyboard_rewrite_allowance.sql` and mirrored in the fallback
   catalog. A failed or timed-out call releases the reservation.
 - Credential: a stateless HMAC claim scoped to `keyboard.rewrite`, TTL 15 minutes,
   signed with a server-only secret. It is not a session cookie or refresh token.
