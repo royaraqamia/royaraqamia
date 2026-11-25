@@ -29,6 +29,7 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `account-faq` | `/account/faq` | server | needs-connection | none | precached | _ungated_ |  | #493 |
 | `account-news` | `/account/news` | server | needs-connection | none | precached | _ungated_ |  | #493 |
 | `notifications` | `/notifications` | server | needs-connection | none | swr | _ungated_ |  |  |
+| `coding` | `/coding`<br>`/coding/[taskId]` | server | needs-connection | none | swr | _ungated_ |  |  |
 | `chats` | `/chats/[id]`<br>`/chats/new` | server | needs-connection | none | swr | _ungated_ |  |  |
 | `community` | `/community`<br>`/community/explore` | server | snapshot | none | swr | `public-offline.spec.ts` |  | #555 |
 | `community-post` | `/community/[slug]` | server | snapshot | none | swr | `public-offline.spec.ts` |  | #555 |
