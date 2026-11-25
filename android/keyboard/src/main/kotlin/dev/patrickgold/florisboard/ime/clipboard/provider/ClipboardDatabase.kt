@@ -226,7 +226,9 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
      * Instructs the content provider to delete this URI. If not an image, is a noop
      */
     fun close(context: Context) {
-        if (type == ItemType.IMAGE) {
+        // Local change: only delete media this app owns. With in-memory history an
+        // image can reference another app's URI, which we must never delete.
+        if (type == ItemType.IMAGE && uri?.authority == ClipboardMediaProvider.AUTHORITY) {
             tryOrNull { context.contentResolver.delete(this.uri!!, null, null) }
         }
     }

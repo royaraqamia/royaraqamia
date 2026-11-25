@@ -44,6 +44,18 @@
       "label": "Floris Pure Night (Borderless)",
       "authors": ["serebit"],
       "isNight": true
+    },
+    {
+      "id": "roy_day",
+      "label": "Roy Day",
+      "authors": ["royaraqamia"],
+      "isNight": false
+    },
+    {
+      "id": "roy_night",
+      "label": "Roy Night",
+      "authors": ["royaraqamia"],
+      "isNight": true
     }
   ]
 }

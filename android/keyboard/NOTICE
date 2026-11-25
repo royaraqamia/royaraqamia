@@ -24,6 +24,20 @@ ASCII before a key is committed, because this product writes ASCII digits only.
 The upstream numeric-row assets stay as published; the fold happens at the
 commit boundary, so choosing any of them cannot emit a non-ASCII digit.
 
+Local change: `ime/clipboard/ClipboardManager.kt` keeps clipboard history in a
+process-local list instead of the upstream Room `clipboard_history` table. The
+Room schema in `ime/clipboard/provider/ClipboardDatabase.kt` is retained and
+still compiles, but is never opened by the running IME, so no clip survives
+process death. Media clips are no longer cloned into app storage, and `close`
+only deletes media URIs owned by this app. `AppPrefs.kt` enables the in-memory
+history by default so the clipboard panel remains usable.
+
+Local change: two new stylesheets, `roy_day.json` and `roy_night.json`, are added
+under `assets/ime/theme/org.florisboard.themes/stylesheets/` and registered in
+that extension's `extension.json`. They recolor the upstream day and night
+palettes with this product's purple brand tokens. `AppPrefs.kt` selects them as
+the default day and night themes; all upstream themes remain selectable.
+
 Not vendored: the optional full Chinese shape-based language packs documented
 in upstream LANGUAGEPACKS-CHINESE.md, which are GPL-3.0. The default barebones
 Chinese pack shipped in the upstream assets is Apache-2.0 and is retained.
