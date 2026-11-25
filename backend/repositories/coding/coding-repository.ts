@@ -88,6 +88,8 @@ export interface CodingAdminRepository {
   saveConnectAttempt(stateHash: string, userId: string, expiresAt: string): Promise<void>;
   claimConnectAttempt(stateHash: string): Promise<CodingConnectAttemptRow | null>;
   findInstallation(userId: string, installationId: number): Promise<CodingInstallationRow | null>;
+  /** A repeated callback is harmless when this member already has an installation. */
+  hasInstallationForUser(userId: string): Promise<boolean>;
   saveInstallation(
     userId: string,
     values: {
