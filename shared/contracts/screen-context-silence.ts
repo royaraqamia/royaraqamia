@@ -20,8 +20,7 @@ export const SCREEN_CONTEXT_SILENT_SURFACES: Readonly<Record<string, string>> = 
   admin: 'An operator screen publishes nothing at all (ADR-0181 decision 8).',
   auth: 'An auth screen is never observed: its fields are the credential itself.',
   chats: 'A thread is its body, and a message body is denied by policy; a turn asks instead.',
-  coding:
-    'Tasks and diffs are per-member reads behind RLS; نور reads them through its own status and diff tools instead of publishing screen state.',
+  coding: 'Per-member task state and diffs are exposed through نور tools, not screen context.',
   consultation: "A booking form is the member's own words, unsent until they send it.",
   downloader: 'One action with no state of its own: paste a link, get a file.',
   home: 'The hub is a launcher: it draws links to the nine apps, not state.',
