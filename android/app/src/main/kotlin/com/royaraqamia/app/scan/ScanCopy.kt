@@ -77,4 +77,42 @@ object ScanCopy {
     const val ACTION_SMS = "إرسال رسالة"
     const val ACTION_GEO = "فتح الموقع"
     const val LINK_ACTION = "فتح الرَّابط"
+
+    /**
+     * The Scanner's format names (#1789, ADR-0098): the detector's name and
+     * the contract's name both resolve to the one label in the source.
+     */
+    val FORMAT_LABELS: Map<String, String> =
+        mapOf(
+            "QR_CODE" to "QR",
+            "qr_code" to "QR",
+            "MICRO_QR_CODE" to "QR مصغَّر",
+            "micro_qr_code" to "QR مصغَّر",
+            "AZTEC" to "Aztec",
+            "aztec" to "Aztec",
+            "DATA_MATRIX" to "Data Matrix",
+            "data_matrix" to "Data Matrix",
+            "PDF_417" to "PDF417",
+            "pdf417" to "PDF417",
+            "CODE_128" to "Code 128",
+            "code_128" to "Code 128",
+            "CODE_39" to "Code 39",
+            "code_39" to "Code 39",
+            "CODE_93" to "Code 93",
+            "code_93" to "Code 93",
+            "CODABAR" to "Codabar",
+            "codabar" to "Codabar",
+            "ITF" to "ITF",
+            "itf" to "ITF",
+            "EAN_13" to "EAN-13",
+            "ean_13" to "EAN-13",
+            "EAN_8" to "EAN-8",
+            "ean_8" to "EAN-8",
+            "UPC_A" to "UPC-A",
+            "upc_a" to "UPC-A",
+            "UPC_E" to "UPC-E",
+            "upc_e" to "UPC-E",
+            "RSS_14" to "GS1 DataBar",
+            "databar" to "GS1 DataBar",
+        )
 }

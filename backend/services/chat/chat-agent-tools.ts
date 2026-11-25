@@ -22,7 +22,7 @@ import {
   searchQuran,
 } from '@/backend/services/quran/quran-read';
 import { ATHKAR_PERIODS } from '@/shared/contracts/athkar';
-import { SCAN_HISTORY_KIND_LABELS } from '@/shared/contracts/scan-history';
+import { SCAN_KIND_LABELS } from '@/shared/scan/labels';
 import { applyNewsCardLimit, resolveNewsCardCap } from '@/backend/services/news/card-limit';
 import { listAgencySkills, loadAgencySkill } from '@/backend/services/chat/agency-skills';
 import { screenContextAnswer } from '@/backend/services/chat/turn-screen';
@@ -1609,7 +1609,7 @@ const tools: ChatAgentTool[] = [
         count: entries.length,
         entries: entries.slice(0, limit).map((entry) => ({
           kind: entry.kind,
-          kind_label: SCAN_HISTORY_KIND_LABELS[entry.kind],
+          kind_label: SCAN_KIND_LABELS[entry.kind],
           label: entry.label,
           last_seen_date: entry.lastSeenDate,
           seen_count: entry.seenCount,

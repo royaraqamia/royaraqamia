@@ -90,25 +90,6 @@ object ScanClassifier {
             ScanResultKind.Text to ScanCopy.KIND_TEXT,
         )
 
-    private val FORMAT_LABELS =
-        mapOf(
-            "QR_CODE" to "QR",
-            "MICRO_QR_CODE" to "QR مصغَّر",
-            "AZTEC" to "Aztec",
-            "DATA_MATRIX" to "Data Matrix",
-            "PDF_417" to "PDF417",
-            "CODE_128" to "Code 128",
-            "CODE_39" to "Code 39",
-            "CODE_93" to "Code 93",
-            "CODABAR" to "Codabar",
-            "ITF" to "ITF",
-            "EAN_13" to "EAN-13",
-            "EAN_8" to "EAN-8",
-            "UPC_A" to "UPC-A",
-            "UPC_E" to "UPC-E",
-            "RSS_14" to "GS1 DataBar",
-        )
-
     /** The open actions the page hands to the platform, keyed by scheme. */
     private val OPENABLE_ACTIONS =
         mapOf(
@@ -120,8 +101,14 @@ object ScanClassifier {
 
     fun kindLabel(kind: ScanResultKind): String = KIND_LABELS[kind] ?: kind.name
 
-    /** The page's Arabic name for a ZXing format, or the format's own name. */
-    fun formatLabel(format: String): String = FORMAT_LABELS[format] ?: format
+    /**
+     * The page's name for a detector format, or the format's own name.
+     *
+     * The map is generated from `shared/copy/scan.json` (#1789, ADR-0098): one
+     * row carries the detector's name, the contract's name and the one label,
+     * so neither client retypes a format's word here.
+     */
+    fun formatLabel(format: String): String = ScanCopy.FORMAT_LABELS[format] ?: format
 
     /** Truncates for display only. The full [ScanClassification.value] stays intact. */
     fun truncateForDisplay(value: String): String =

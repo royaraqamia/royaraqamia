@@ -1,11 +1,6 @@
 import { z } from 'zod';
 
-import {
-  SCAN_RESULT_KIND_LABELS,
-  contactName,
-  type ScanClassification,
-  type ScanResultKind,
-} from './scan';
+import { contactName, type ScanClassification, type ScanResultKind } from './scan';
 
 /**
  * What a scan leaves behind, when the member is signed in (ADR-0205).
@@ -52,9 +47,6 @@ export const SCAN_HISTORY_KINDS = [
 export type ScanHistoryKind = (typeof SCAN_HISTORY_KINDS)[number];
 
 export const ScanHistoryKindSchema = z.enum(SCAN_HISTORY_KINDS);
-
-/** The shape a row shows beside the kind. `Record` is complete on purpose. */
-export const SCAN_HISTORY_KIND_LABELS: Record<ScanHistoryKind, string> = SCAN_RESULT_KIND_LABELS;
 
 /** How many distinct codes one member keeps (ADR-0205, decision 4). */
 export const SCAN_HISTORY_LIMIT = 200;

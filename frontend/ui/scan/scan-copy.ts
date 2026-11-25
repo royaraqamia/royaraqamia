@@ -82,3 +82,41 @@ export const SCAN_COPY = {
 } as const;
 
 export type ScanCopyStrings = typeof SCAN_COPY;
+
+/**
+ * The Scanner's format names (#1789, ADR-0098). One row in the source carries
+ * the detector's name, the contract's name and the one label both clients print;
+ * either spelling resolves to the same word.
+ */
+export const SCAN_FORMAT_LABELS: Readonly<Record<string, string>> = {
+  QR_CODE: 'QR',
+  qr_code: 'QR',
+  MICRO_QR_CODE: 'QR مصغَّر',
+  micro_qr_code: 'QR مصغَّر',
+  AZTEC: 'Aztec',
+  aztec: 'Aztec',
+  DATA_MATRIX: 'Data Matrix',
+  data_matrix: 'Data Matrix',
+  PDF_417: 'PDF417',
+  pdf417: 'PDF417',
+  CODE_128: 'Code 128',
+  code_128: 'Code 128',
+  CODE_39: 'Code 39',
+  code_39: 'Code 39',
+  CODE_93: 'Code 93',
+  code_93: 'Code 93',
+  CODABAR: 'Codabar',
+  codabar: 'Codabar',
+  ITF: 'ITF',
+  itf: 'ITF',
+  EAN_13: 'EAN-13',
+  ean_13: 'EAN-13',
+  EAN_8: 'EAN-8',
+  ean_8: 'EAN-8',
+  UPC_A: 'UPC-A',
+  upc_a: 'UPC-A',
+  UPC_E: 'UPC-E',
+  upc_e: 'UPC-E',
+  RSS_14: 'GS1 DataBar',
+  databar: 'GS1 DataBar',
+};

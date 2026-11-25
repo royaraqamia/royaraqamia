@@ -2,11 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  classifyScanPayload,
-  SCAN_RESULT_KIND_LABELS,
-  type ScanResultKind,
-} from '@/shared/contracts/scan';
+import { classifyScanPayload, type ScanResultKind } from '@/shared/contracts/scan';
 import {
   SCAN_HISTORY_KINDS,
   SCAN_HISTORY_LABEL_MAX,
@@ -29,9 +25,20 @@ function record(payload: string, format = 'qr_code') {
   return scanHistoryRecord(classifyScanPayload(payload), format);
 }
 
+/** `kindLink` -> `link`: the nine kinds the one copy source writes (#1789). */
+function copyKinds(): string[] {
+  const source = JSON.parse(
+    readFileSync(join(process.cwd(), 'shared', 'copy', 'scan.json'), 'utf8')
+  ) as { strings: Record<string, string> };
+  return Object.keys(source.strings)
+    .filter((key) => /^kind[A-Z]/.test(key))
+    .map((key) => key.charAt(4).toLowerCase() + key.slice(5))
+    .sort();
+}
+
 describe('scanHistoryRecord', () => {
-  it("speaks the Scanner's own vocabulary, one kind per label", () => {
-    expect([...SCAN_HISTORY_KINDS].sort()).toEqual(Object.keys(SCAN_RESULT_KIND_LABELS).sort());
+  it("speaks the Scanner's own vocabulary, one kind per copied label", () => {
+    expect([...SCAN_HISTORY_KINDS].sort()).toEqual(copyKinds());
   });
 
   it('keeps the host of a link and nothing else', () => {
