@@ -628,12 +628,12 @@ function git(args) {
   });
 }
 
-function checkpoint(label) {
-  git(['add', '-A']);
-  const status = git(['status', '--porcelain']).stdout.trim();
+async function checkpoint(label) {
+  await git(['add', '-A']);
+  const status = (await git(['status', '--porcelain'])).stdout.trim();
   if (!status) return false;
   const summary = `noor: ${label}`;
-  const result = git(['commit', '-m', summary]);
+  const result = await git(['commit', '-m', summary]);
   if (result.exitCode !== 0) throw new RunnerError('runner_failed', 'checkpoint commit failed');
   return true;
 }
@@ -718,7 +718,7 @@ async function createPullRequest(summaryText) {
 }
 
 async function handoff(summaryText) {
-  const committed = checkpoint('checkpoint');
+  const committed = await checkpoint('checkpoint');
   await postUpdate(
     'commit',
     'applied',
@@ -727,7 +727,7 @@ async function handoff(summaryText) {
     null
   );
 
-  const push = git(['push', 'origin', `HEAD:${spec.branch}`]);
+  const push = await git(['push', 'origin', `HEAD:${spec.branch}`]);
   if (push.exitCode !== 0) {
     throw new RunnerError('runner_failed', `git push failed: ${push.stderr.slice(0, 500)}`);
   }
