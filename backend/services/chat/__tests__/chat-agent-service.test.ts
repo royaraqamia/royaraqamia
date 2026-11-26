@@ -24,7 +24,16 @@ import { chatAgentTool, type ChatAgentTool } from '@/backend/services/chat/chat-
 import { routeSkills } from '@/backend/services/chat/skill-router';
 import { SKILL_ALREADY_LOADED } from '@/backend/shared/domain/agent-skills';
 import { logger } from '@/backend/shared/logger';
-import type { McpAppTool } from '@/backend/services/mcp/marketplace/app-tools-service';
+import type {
+  McpAppTool,
+  McpToolSimilarity,
+} from '@/backend/services/mcp/marketplace/app-tools-service';
+import {
+  nearestRowsOf,
+  productionCatalog,
+  productionRouting,
+  queryVectorOf,
+} from '@/backend/services/chat/__tests__/support/app-tool-fixtures';
 import { DOCUMENT_PAGES_MAX } from '@/backend/services/chat/document-text';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import { UsageLimitReachedError } from '@/backend/services/plans/usage-service';
@@ -1557,7 +1566,7 @@ describe('the assistant turn, with a connected app', () => {
     };
   }
 
-  function fakeApps(catalog: McpAppTool[]) {
+  function fakeApps(catalog: McpAppTool[], nearest: McpToolSimilarity[] = []) {
     return {
       catalog: vi.fn(async () => catalog),
       call: vi.fn(async (_input: { connectionId: string; [key: string]: unknown }) => ({
@@ -1567,6 +1576,14 @@ describe('the assistant turn, with a connected app', () => {
       })),
       connectedCount: vi.fn(async () => new Set(catalog.map((tool) => tool.connectionId)).size),
       fetchMedia: vi.fn(async () => ({ bytes: new Uint8Array(), mimeType: 'image/png' })),
+      // No vectors in these tests: the router answers on vocabulary, which is
+      // the path a deployment without an embedding provider takes (#1917).
+      nearest: vi.fn(
+        async (
+          _connectionIds: string[],
+          _embedding: readonly number[]
+        ): Promise<McpToolSimilarity[]> => nearest
+      ),
     };
   }
 
@@ -1739,6 +1756,39 @@ describe('the assistant turn, with a connected app', () => {
     expect(apps.call).toHaveBeenCalledTimes(1);
   });
 
+  it('reaches a connected app from an Arabic question and counts the call (#1917)', async () => {
+    // The production question, the production catalog, and the pinned vectors:
+    // nothing here shares a word with `list_deployments` except the capability
+    // the router expands «النشر» into.
+    const row = productionRouting().questions.find((question) => question.id === 'q9');
+    expect(row).toBeDefined();
+    if (!row) return;
+
+    const client = scriptedClient([
+      [toolCall('app_vercel_list_deployments', { project: 'site' })],
+      textStream('آخر عمليات النشر: واحدة ناجحة.'),
+    ]);
+    const apps = fakeApps(productionCatalog(), nearestRowsOf(row));
+    const { service, reserveAppCall } = makeService({
+      client,
+      apps,
+      queryVector: vi.fn(async () => queryVectorOf(row)),
+    });
+
+    await collect(service.turn('user-1', 'conversation-1', row.question, TURN_CONTEXT));
+
+    // The declaration reached the model without the member writing English…
+    const names = client.offered[0]?.map((tool) => tool.function.name) ?? [];
+    expect(names).toContain('app_vercel_list_deployments');
+    // …the model called it, the server answered, and the call was counted —
+    // the `mcp.call` usage event production had never recorded.
+    expect(apps.call).toHaveBeenCalledWith(
+      expect.objectContaining({ toolName: 'list_deployments', intent: 'turn' })
+    );
+    expect(reserveAppCall).toHaveBeenCalledWith('user-1');
+    expect(apps.nearest).toHaveBeenCalled();
+  });
+
   it('stops one app at two calls, so a single server cannot spend the turn’s whole allowance', async () => {
     const client = scriptedClient([
       [
@@ -1817,6 +1867,7 @@ describe('member-paid media through a connected app (ADR-0216)', () => {
         bytes: new Uint8Array([1, 2, 3, 4]),
         mimeType: 'video/mp4',
       })),
+      nearest: vi.fn(async (): Promise<McpToolSimilarity[]> => []),
     };
   }
 

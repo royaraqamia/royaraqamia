@@ -209,6 +209,10 @@ function fakeRepository(overrides: Partial<McpMarketplaceRepository> = {}) {
       );
     },
     listTools: async (id) => tools.get(id) ?? [],
+    listToolEmbeddingHashes: async () => [],
+    saveToolEmbeddings: async () => 0,
+    nearestTools: async () => [],
+    listAllConnections: async () => [],
     saveAttempt: async (input) => {
       attempts.set(input.stateHash, {
         state_hash: input.stateHash,

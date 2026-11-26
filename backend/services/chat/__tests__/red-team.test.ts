@@ -22,7 +22,10 @@ import {
   type ChatAgentTool,
 } from '@/backend/services/chat/chat-agent-tools';
 import { toolIsGrantable } from '@/backend/services/tools/registry';
-import type { McpAppTool } from '@/backend/services/mcp/marketplace/app-tools-service';
+import type {
+  McpAppTool,
+  McpToolSimilarity,
+} from '@/backend/services/mcp/marketplace/app-tools-service';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import type { ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
 import type { ChatAgentAllowance, ChatAgentEvent, ChatMessage } from '@/shared/contracts/chat';
@@ -256,6 +259,7 @@ function fakeApps(catalog: McpAppTool[]) {
     })),
     connectedCount: vi.fn(async () => new Set(catalog.map((tool) => tool.connectionId)).size),
     fetchMedia: vi.fn(async () => ({ bytes: new Uint8Array(), mimeType: 'image/png' })),
+    nearest: vi.fn(async (): Promise<McpToolSimilarity[]> => []),
   };
 }
 

@@ -8,7 +8,10 @@ import type {
   McpMarketplaceRepository,
 } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpAccessTokenService } from '@/backend/services/mcp/marketplace/access-token-service';
-import { createMcpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
+import {
+  appDisplayName,
+  createMcpAppToolsService,
+} from '@/backend/services/mcp/marketplace/app-tools-service';
 import { McpRemoteError } from '@/backend/shared/domain/mcp-remote';
 import { encryptSecret } from '@/backend/shared/mcp-token-crypto';
 
@@ -433,5 +436,46 @@ describe('the catalog a turn plans from', () => {
 
     const revoked = service({ repository: fakeRepository({ connection: { status: 'revoked' } }) });
     await expect(revoked.apps.connectedCount('user-1')).resolves.toBe(0);
+  });
+});
+
+describe('the name a member reads, and the vector store the router reads (#1917)', () => {
+  it('derives a name from a registry key instead of showing the key', () => {
+    expect(
+      appDisplayName({
+        display_name: 'com.vercel/vercel-mcp',
+        registry_name: 'com.vercel/vercel-mcp',
+      })
+    ).toBe('Vercel');
+    expect(appDisplayName({ display_name: null, registry_name: 'com.supabase/mcp' })).toBe(
+      'Supabase'
+    );
+    expect(appDisplayName({ display_name: null, registry_name: 'ac.inference.sh/mcp' })).toBe(
+      'Inference'
+    );
+  });
+
+  it('keeps the name the member chose for the app', () => {
+    expect(appDisplayName({ display_name: 'موقعي', registry_name: 'com.vercel/vercel-mcp' })).toBe(
+      'موقعي'
+    );
+    expect(appDisplayName({ display_name: 'Notion', registry_name: 'io.example/notion' })).toBe(
+      'Notion'
+    );
+  });
+
+  it('asks the database for the nearest tools, and asks nothing when there are none', async () => {
+    const nearestTools = vi.fn(async () => [
+      { connectionId: 'conn-1', toolName: 'search', similarity: 0.71 },
+    ]);
+    const fake = fakeRepository();
+    (fake.repository as unknown as Record<string, unknown>).nearestTools = nearestTools;
+    const { apps } = service({ repository: fake });
+
+    await expect(apps.nearest(['conn-1'], [0.1, 0.2], 32)).resolves.toEqual([
+      { connectionId: 'conn-1', toolName: 'search', similarity: 0.71 },
+    ]);
+    await expect(apps.nearest([], [0.1, 0.2])).resolves.toEqual([]);
+    expect(nearestTools).toHaveBeenCalledTimes(1);
   });
 });

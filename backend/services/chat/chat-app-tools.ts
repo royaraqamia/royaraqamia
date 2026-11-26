@@ -1,16 +1,35 @@
 import type { McpAppTool } from '@/backend/services/mcp/marketplace/app-tools-service';
 import type { McpPermissionLevel } from '@/shared/contracts/mcp-marketplace';
 import { appToolParts, type ChatAgentAction } from '@/shared/contracts/chat-agent-actions';
+import { capabilityWords } from '@/backend/services/chat/app-tool-vocabulary';
+import { normalize } from '@/backend/services/chat/skill-router';
 
 /**
  * The apps we do not own, as one turn sees them (#1225, ADR-0155 decision 7).
  *
  * A turn never declares every connected server's schema: a member with ten apps
  * would pay for all of them on every message, and the model would choose worse
- * for it. So each enabled tool is scored against the member's own words — a
- * lexical match, no model and no tokens — and at most sixteen ride along. The
- * miss is recoverable because `find_app_tools` searches the same catalog with a
- * query the model writes, and the next round declares what it found.
+ * for it. So each enabled tool is scored against the member's own message and at
+ * most sixteen ride along. The miss is recoverable because `find_app_tools`
+ * searches the same catalog with a query the model writes, and the next round
+ * declares what it found.
+ *
+ * **Words gate, meaning ranks (#1917).** The tools are named in English by
+ * servers we do not own, and the member writes Arabic; exact word equality
+ * between the two is zero, which is the failure this router had in production.
+ * Two signals answer together now:
+ *
+ * - the capability vocabulary (`app-tool-vocabulary`) expands an Arabic word
+ *   into the English words the tools use — «انشر» finds `create_deployment`;
+ * - the tool's vector, when the deployment has an embedding provider, says how
+ *   close its meaning is to the message, whatever language either is in.
+ *
+ * The vocabulary is the gate and meaning ranks, because the measurement says so:
+ * across the 321 production tools, an unrelated Arabic question can score as
+ * high as 0.51 by cosine while a relevant one reaches only 0.38, so a similarity
+ * floor alone cannot keep an unrelated turn quiet
+ * (`chat-app-tool-routing.test.ts`, ADR-0223). Meaning still decides the order,
+ * and a genuinely close tool still declares without a shared word.
  *
  * Names are the model's, and they are never stored: `app_<app>_<tool>`, ASCII,
  * at most 64 characters, unique for the member. The audit row keeps
@@ -23,6 +42,31 @@ export const CHAT_APP_TOOL_LIMIT = 16;
 
 /** The most a recovery search answers with, so one call cannot flood a round. */
 export const CHAT_APP_TOOL_SEARCH_LIMIT = 8;
+
+/**
+ * The cosine at which a tool declares itself without a shared word.
+ *
+ * Measured, not chosen: across the pinned production catalog the 20 unrelated
+ * Arabic questions reach at most 0.511, and a question close enough in meaning
+ * alone reaches 0.55 and up (`chat-app-tool-routing.test.ts`).
+ */
+export const CHAT_APP_TOOL_SEMANTIC_FLOOR = 0.55;
+
+/**
+ * How many of a tool's description words an unrelated-sounding message must
+ * reach before the description alone declares it.
+ *
+ * One description word is how every tool mentions its domain; two is a sentence
+ * about what this tool does. A name word or the app's name declares on its own.
+ */
+export const CHAT_APP_TOOL_DESCRIPTION_HITS = 2;
+
+/** A lexical score this high is a tool named outright. */
+export const CHAT_APP_TOOL_LEXICAL_FULL = 12;
+
+/** How the two signals are weighed when a tool clears both gates. */
+const SEMANTIC_WEIGHT = 0.4;
+const LEXICAL_WEIGHT = 0.6;
 
 /** One remote tool, as the provider's tool declaration and the turn's map. */
 export interface ChatAppToolDeclaration {
@@ -40,15 +84,16 @@ export interface ChatAppToolDeclaration {
   parameters: Record<string, unknown>;
 }
 
-/** A word of a message or a tool, lowercased and stripped of what is not one. */
-const WORD = /[a-z0-9\u0600-\u06FF]+/g;
-/** Arabic diacritics and the tatweel are decoration, not letters to match on. */
-const DECORATION = /[\p{M}\u0640]/gu;
+/** A word of a tool, lowercased and stripped of what is not one. */
+const WORD = /[\p{L}\p{N}]+/gu;
 
 function words(value: string): string[] {
-  return (value.toLowerCase().replace(DECORATION, '').match(WORD) ?? []).filter(
-    (word) => word.length >= 2
-  );
+  return (normalize(value).match(WORD) ?? []).filter((word) => word.length >= 2);
+}
+
+/** The key a semantic score is looked up by: one tool, one connection. */
+export function appToolKey(connectionId: string, toolName: string): string {
+  return `${connectionId}:${toolName}`;
 }
 
 /** A provider-safe fragment: `[a-z0-9_]`, no run of separators, no edges. */
@@ -135,59 +180,167 @@ export function appToolDeclarations(tools: McpAppTool[]): ChatAppToolDeclaration
     }));
 }
 
-/**
- * How well one declaration answers one message.
- *
- * The app's own name is the strongest signal — a member who names an app means
- * that app — then a word of the tool's own name, then a prefix of one (an
- * inflected word still matches), then a word of its description. Zero means the
- * message never mentioned this tool, which is what keeps an unrelated question
- * from carrying any remote declaration at all.
- */
-function scoreOf(declaration: ChatAppToolDeclaration, messageWords: string[]): number {
-  const nameWords = words(`${declaration.toolName} ${declaration.description}`);
-  const appWords = words(declaration.appName);
-
-  let score = 0;
-  for (const word of messageWords) {
-    if (appWords.includes(word)) score += 4;
-    if (nameWords.includes(word)) score += 3;
-    else if (word.length >= 3 && nameWords.some((candidate) => candidate.startsWith(word))) {
-      score += 2;
-    }
-  }
-  return score;
+/** One declaration's own words, and how rare each is across this catalog. */
+interface Prepared {
+  declaration: ChatAppToolDeclaration;
+  nameWords: string[];
+  descriptionWords: Set<string>;
+  appWords: string[];
 }
 
-/** The declarations that answer a message, best first, and no more than `limit`. */
+interface PreparedCatalog {
+  rows: Prepared[];
+  rarity: Map<string, number>;
+}
+
+const prepared = new WeakMap<ChatAppToolDeclaration[], PreparedCatalog>();
+
+/**
+ * The catalog as words, with each word's weight.
+ *
+ * `log(1 + tools / tools that carry it)` is what makes «project», which is in
+ * forty descriptions, worth less than «pageview», which is in four — without it
+ * a question about visitors scores as a question about projects.
+ */
+function prepare(declarations: ChatAppToolDeclaration[]): PreparedCatalog {
+  const known = prepared.get(declarations);
+  if (known) return known;
+
+  const rows = declarations.map((declaration) => ({
+    declaration,
+    nameWords: words(declaration.toolName.replace(/_/g, ' ')),
+    descriptionWords: new Set(words(declaration.description)),
+    appWords: words(declaration.appName),
+  }));
+
+  const carrying = new Map<string, number>();
+  for (const row of rows) {
+    for (const token of new Set([...row.nameWords, ...row.descriptionWords, ...row.appWords])) {
+      carrying.set(token, (carrying.get(token) ?? 0) + 1);
+    }
+  }
+  const rarity = new Map(
+    [...carrying].map(([token, count]) => [token, Math.log(1 + rows.length / count)])
+  );
+
+  const catalog = { rows, rarity };
+  prepared.set(declarations, catalog);
+  return catalog;
+}
+
+/**
+ * What the message answers in one tool: its score, whether the member named the
+ * tool's app, and how many of the tool's own words (name, description) the
+ * message reached.
+ *
+ * The gate is the count, not the score: a score weighted by how rare a word is
+ * depends on how many tools the member has, so an absolute floor would mean a
+ * different thing for two tools and for 321. "The message names something this
+ * tool is about" does not move with the catalog size.
+ */
+function lexicalScore(
+  row: Prepared,
+  tokens: readonly string[],
+  rarity: Map<string, number>
+): { score: number; namedApp: boolean; nameHits: number; descriptionHits: number } {
+  let score = 0;
+  let namedApp = false;
+  let nameHits = 0;
+  let descriptionHits = 0;
+
+  for (const token of tokens) {
+    const weight = rarity.get(token) ?? 1;
+    // The app is its own answer, not a fallback: a tool whose description
+    // happens to mention the app is still one of that app's tools.
+    if (row.appWords.includes(token)) {
+      score += 2 * weight;
+      namedApp = true;
+    }
+    if (row.nameWords.includes(token)) {
+      score += 3 * weight;
+      nameHits += 1;
+    } else if (token.length >= 4 && row.nameWords.some((word) => word.startsWith(token))) {
+      score += 2 * weight;
+      nameHits += 1;
+    } else if (row.descriptionWords.has(token)) {
+      score += 0.8 * weight;
+      descriptionHits += 1;
+    }
+  }
+
+  return { score, namedApp, nameHits, descriptionHits };
+}
+
+/**
+ * Where a turn can learn what each tool means.
+ *
+ * `similar` is a cosine per `appToolKey`, read from the tool vectors the connect
+ * flow wrote. Absent is a deployment with no embedding provider, no vectors yet,
+ * or a recovery query that could not be embedded: the router then answers on
+ * vocabulary alone, which is what it did before meaning existed.
+ */
+export interface ChatAppToolMeaning {
+  similar?: ReadonlyMap<string, number>;
+}
+
+/** The declarations that answer a query, best first, and no more than `limit`. */
 function ranked(
   declarations: ChatAppToolDeclaration[],
-  message: string,
-  limit: number
+  query: string,
+  limit: number,
+  meaning: ChatAppToolMeaning
 ): ChatAppToolDeclaration[] {
-  const messageWords = [...new Set(words(message))];
-  if (messageWords.length === 0) return [];
+  const tokens = [...new Set(capabilityWords(query))];
+  if (tokens.length === 0) return [];
 
-  return declarations
-    .map((declaration) => ({ declaration, score: scoreOf(declaration, messageWords) }))
-    .filter((entry) => entry.score > 0)
-    .sort(
-      (left, right) =>
-        right.score - left.score ||
-        left.declaration.appName.localeCompare(right.declaration.appName) ||
-        left.declaration.toolName.localeCompare(right.declaration.toolName)
-    )
-    .slice(0, limit)
-    .map((entry) => entry.declaration);
+  const catalog = prepare(declarations);
+  const similar = meaning.similar;
+
+  return (
+    catalog.rows
+      .map((row) => {
+        const lexical = lexicalScore(row, tokens, catalog.rarity);
+        const cosine = similar?.get(
+          appToolKey(row.declaration.connectionId, row.declaration.toolName)
+        );
+        const semantic = cosine === undefined ? null : Math.max(0, cosine);
+        return { row, lexical, semantic };
+      })
+      // A tool declares itself when the message names its app, names something it
+      // is called, says two things it does, or means something close enough that
+      // no word needed to be shared (#1917).
+      .filter(
+        (hit) =>
+          hit.lexical.namedApp ||
+          hit.lexical.nameHits > 0 ||
+          hit.lexical.descriptionHits >= CHAT_APP_TOOL_DESCRIPTION_HITS ||
+          (hit.semantic !== null && hit.semantic >= CHAT_APP_TOOL_SEMANTIC_FLOOR)
+      )
+      .map((hit) => ({
+        ...hit,
+        score:
+          SEMANTIC_WEIGHT * (hit.semantic ?? 0) +
+          LEXICAL_WEIGHT * Math.min(hit.lexical.score / CHAT_APP_TOOL_LEXICAL_FULL, 1),
+      }))
+      .sort(
+        (left, right) =>
+          right.score - left.score ||
+          left.row.declaration.appName.localeCompare(right.row.declaration.appName) ||
+          left.row.declaration.toolName.localeCompare(right.row.declaration.toolName)
+      )
+      .slice(0, limit)
+      .map((hit) => hit.row.declaration)
+  );
 }
 
 /** The remote declarations this turn carries. */
 export function planAppTools(
   tools: McpAppTool[],
   message: string,
-  limit = CHAT_APP_TOOL_LIMIT
+  limit = CHAT_APP_TOOL_LIMIT,
+  meaning: ChatAppToolMeaning = {}
 ): ChatAppToolDeclaration[] {
-  return ranked(appToolDeclarations(tools), message, limit);
+  return ranked(appToolDeclarations(tools), message, limit, meaning);
 }
 
 /**
@@ -198,9 +351,10 @@ export function planAppTools(
 export function searchAppTools(
   tools: McpAppTool[],
   query: string,
-  limit = CHAT_APP_TOOL_SEARCH_LIMIT
+  limit = CHAT_APP_TOOL_SEARCH_LIMIT,
+  meaning: ChatAppToolMeaning = {}
 ): ChatAppToolDeclaration[] {
-  return ranked(appToolDeclarations(tools), query, limit);
+  return ranked(appToolDeclarations(tools), query, limit, meaning);
 }
 
 /** One declaration as the provider reads it, with the app it belongs to named. */

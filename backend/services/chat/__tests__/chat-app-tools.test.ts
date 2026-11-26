@@ -104,12 +104,15 @@ describe('the router', () => {
 
 describe('the recovery search', () => {
   it('finds a tool the router missed, by the words the model wrote', () => {
-    const catalog = [tool({ toolName: 'create_page', description: 'Add a page', readOnly: false })];
+    const catalog = [
+      tool({ toolName: 'append_block', description: 'Append a block', readOnly: false }),
+    ];
 
-    // The member's Arabic sentence never matched; the model's query does.
+    // «أضف صفحة» names a capability this tool does not have, so the router stays
+    // quiet; the model's own query does not.
     expect(planAppTools(catalog, 'أضف صفحة')).toEqual([]);
-    expect(searchAppTools(catalog, 'notion create page').map((entry) => entry.name)).toEqual([
-      'app_notion_create_page',
+    expect(searchAppTools(catalog, 'notion append block').map((entry) => entry.name)).toEqual([
+      'app_notion_append_block',
     ]);
   });
 
@@ -124,6 +127,82 @@ describe('the recovery search', () => {
 
   it('answers nothing for a query that matches nothing', () => {
     expect(searchAppTools([tool()], 'weather')).toEqual([]);
+  });
+});
+
+describe('the router in Arabic, and the meaning it now reads (#1917)', () => {
+  const vercel = (toolName: string, description: string, readOnly = true): McpAppTool =>
+    tool({ appName: 'Vercel', toolName, description, readOnly, connectionId: 'conn-vercel' });
+
+  const catalog = [
+    vercel('create_deployment', 'Create a deployment from a project.'),
+    vercel('list_deployments', 'List deployment records for a project.'),
+    vercel('aggregate_pageviews', 'Counts pageviews on a project.'),
+    vercel('get_runtime_logs', 'Read application output and errors.'),
+  ];
+
+  it('expands an Arabic capability into the English word the tool uses', () => {
+    // No shared word with any tool name; the vocabulary is the bridge.
+    const planned = planAppTools(catalog, 'انشر الموقع على الإنترنت');
+
+    expect(planned.map((entry) => entry.toolName)).toContain('create_deployment');
+  });
+
+  it('reaches a tool the old router missed, because Arabic now says what it does', () => {
+    const planned = planAppTools(
+      [tool({ toolName: 'create_page', description: 'Add a page', readOnly: false })],
+      'أضف صفحة'
+    );
+
+    expect(planned.map((entry) => entry.toolName)).toEqual(['create_page']);
+  });
+
+  it('declares nothing for an Arabic question that names no capability', () => {
+    expect(planAppTools(catalog, 'اكتب لي قصيدة عن البحر')).toEqual([]);
+  });
+
+  it('declares the app itself when the member names it', () => {
+    const planned = planAppTools(catalog, 'Vercel');
+
+    expect(planned).toHaveLength(4);
+  });
+
+  it('lets meaning declare a tool no word reached, and rank it first', () => {
+    // The vector store says this message is close to the log tool and nothing
+    // else; no word in it is a capability the catalog uses.
+    const meaning = {
+      similar: new Map([['conn-vercel:get_runtime_logs', 0.71]]),
+    };
+
+    const planned = planAppTools(catalog, 'أرى أعطالاً في الإنتاج', 16, meaning);
+
+    expect(planned.map((entry) => entry.toolName)).toEqual(['get_runtime_logs']);
+  });
+
+  it('keeps an unrelated question quiet even when the best cosine is mediocre', () => {
+    const meaning = {
+      similar: new Map([
+        ['conn-vercel:create_deployment', 0.49],
+        ['conn-vercel:list_deployments', 0.41],
+      ]),
+    };
+
+    expect(planAppTools(catalog, 'كم صرفت هذا الشهر؟', 16, meaning)).toEqual([]);
+  });
+
+  it('ranks the same tool first for the router and for the recovery', () => {
+    const meaning = {
+      similar: new Map([
+        ['conn-vercel:aggregate_pageviews', 0.66],
+        ['conn-vercel:create_deployment', 0.31],
+      ]),
+    };
+
+    const planned = searchAppTools(catalog, 'كم عدد الزوار', 8, meaning);
+    const recovered = searchAppTools(catalog, 'كم عدد الزوار', 8, meaning);
+
+    expect(planned[0]?.name).toBe(recovered[0]?.name);
+    expect(planned[0]?.toolName).toBe('aggregate_pageviews');
   });
 });
 
