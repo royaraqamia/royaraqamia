@@ -80,6 +80,16 @@ export async function listCodingWorkspaces(_headers: Headers): Promise<HttpResul
   );
 }
 
+export async function listCodingRepos(_headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) =>
+      jsonResult(200, await createCodingServiceForUser(supabase).listAvailableRepos(userId), {
+        headers: NO_STORE,
+      }),
+    { mapError: mapCodingError }
+  );
+}
+
 export async function addCodingWorkspace(
   headers: Headers,
   input: CodingRepoInput

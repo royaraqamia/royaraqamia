@@ -981,21 +981,21 @@ describe('the remote choice', () => {
 });
 
 describe('a pre-registered client (issue #1229)', () => {
-  const GITHUB = 'com.github/mcp';
+  const VERCEL = 'com.vercel/vercel-mcp';
 
   function staticClient() {
     return new Map([
       [
-        GITHUB,
+        VERCEL,
         {
-          registryName: GITHUB,
+          registryName: VERCEL,
           clientId: 'client-id',
           clientSecret: 'client-secret',
-          authorizationServer: 'https://github.com/login/oauth',
-          authorizationEndpoint: 'https://github.com/login/oauth/authorize',
-          tokenEndpoint: 'https://github.com/login/oauth/access_token',
-          revocationEndpoint: null,
-          scopes: ['repo'],
+          authorizationServer: 'https://vercel.com',
+          authorizationEndpoint: 'https://vercel.com/oauth/authorize',
+          tokenEndpoint: 'https://api.vercel.com/login/oauth/token',
+          revocationEndpoint: 'https://api.vercel.com/login/oauth/token/revoke',
+          scopes: ['openid', 'email', 'profile'],
           tokenEndpointAuthMethod: 'client_secret_post' as const,
         },
       ],
@@ -1004,8 +1004,8 @@ describe('a pre-registered client (issue #1229)', () => {
 
   it('probes its row as pre-registered, so the missing endpoint is not a refusal', async () => {
     const address: McpCatalogAddressRecord = {
-      registry_name: GITHUB,
-      remote_url: 'https://api.githubcopilot.com/mcp/',
+      registry_name: VERCEL,
+      remote_url: 'https://mcp.vercel.com',
       remote_override: null,
       auth_mode: 'oauth',
       probed_at: null,
@@ -1016,25 +1016,26 @@ describe('a pre-registered client (issue #1229)', () => {
     const remote = fakeRemote();
     const service = build({ repository, pages: [], remote, staticClients: staticClient() });
 
-    await service.probe([GITHUB]);
+    await service.probe([VERCEL]);
 
-    expect(remote.probeConnectable).toHaveBeenCalledWith('https://api.githubcopilot.com/mcp/', {
+    expect(remote.probeConnectable).toHaveBeenCalledWith('https://mcp.vercel.com', {
       preRegistered: true,
       authMode: 'oauth',
     });
     expect(repository.probes[0]?.probe.connectable).toBe(true);
   });
 
-  it('writes the curated row the registry does not carry', async () => {
+  it('writes only the curated rows the registry does not carry', async () => {
     const repository = fakeRepository();
     const service = build({ repository, pages: [rows(120, null)] });
 
     await service.sync();
 
-    const curated = repository.upserts.find((row) => row.registryName === GITHUB);
+    expect(repository.upserts.some((row) => row.registryName === 'com.github/mcp')).toBe(false);
+    const curated = repository.upserts.find((row) => row.registryName === HIGGSFIELD_REGISTRY_NAME);
     expect(curated).toMatchObject({
-      title: 'GitHub',
-      remoteUrl: 'https://api.githubcopilot.com/mcp/',
+      title: 'Higgsfield',
+      remoteUrl: 'https://mcp.higgsfield.ai/mcp',
       status: 'active',
     });
     // Written before the sweep, so a pass never retires it as a vanished row.
@@ -1064,7 +1065,7 @@ describe('a pre-registered client (issue #1229)', () => {
       listCatalogServers: async () => ({
         rows: [
           {
-            registry_name: GITHUB,
+            registry_name: VERCEL,
             title: 'GitHub',
             title_override: 'GitHub',
             description: "GitHub's remote MCP server",
@@ -1102,7 +1103,7 @@ describe('a pre-registered client (issue #1229)', () => {
     await service.sync();
     const page = await service.adminList({ q: '', cursor: null });
 
-    expect(repository.seeded[0]).toContain(GITHUB);
+    expect(repository.seeded[0]).toContain(VERCEL);
     expect(page.servers[0]?.registrationKind).toBe('static');
   });
 });
@@ -1185,10 +1186,10 @@ describe('brand marks (the eleven letters)', () => {
 
     await service.sync();
 
-    const github = repository.marks.find((mark) => mark.registryName === 'com.github/mcp');
-    expect(github).toEqual({
-      registryName: 'com.github/mcp',
-      icon: '/brand/mcp/github.svg',
+    expect(repository.marks.some((mark) => mark.registryName === 'com.github/mcp')).toBe(false);
+    expect(repository.marks).toContainEqual({
+      registryName: 'com.vercel/vercel-mcp',
+      icon: '/brand/mcp/vercel.svg',
     });
   });
 

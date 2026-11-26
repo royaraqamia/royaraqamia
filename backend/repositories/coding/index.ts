@@ -222,6 +222,15 @@ export function createCodingAdminRepository(supabase: Client): CodingAdminReposi
       return (data as CodingInstallationRow | null) ?? null;
     },
 
+    async listInstallations(userId) {
+      const { data, error } = await supabase
+        .from('coding_installations')
+        .select('*')
+        .eq('user_id', userId);
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CodingInstallationRow[];
+    },
+
     async hasInstallationForUser(userId) {
       const { data, error } = await supabase
         .from('coding_installations')

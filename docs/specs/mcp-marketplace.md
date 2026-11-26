@@ -278,7 +278,7 @@ dynamic registration:
 | Vercel                                          | yes, DCR refused  | DCR endpoint is published but refuses our callback with `invalid_redirect_uri`; a reviewed console client with the approved callback is now in the table |
 | Atlassian                                       | yes               | root 404, but the `401` names the path-aware document; tenant AS publishes DCR                                                                           |
 | Stripe                                          | yes               | `mcp.stripe.com` publishes RFC 9728 + AS metadata + DCR (it did not on 2026-11-10); its catalogue row probe was still pending on 2026-11-11              |
-| GitHub                                          | pre-registered    | resource metadata exists; `github.com/login/oauth` publishes no `registration_endpoint`                                                                  |
+| GitHub                                          | retired           | the coding agent's GitHub App is the single door; the hosted MCP gateway refuses tokens from sanctioned-region accounts                                  |
 | Notion, Figma                                   | yes               | measured from the deployment's egress; both publish metadata and DCR — the earlier `403`/`451` were this network, not the provider                       |
 | Cloudflare docs (`docs.mcp.cloudflare.com/mcp`) | yes, as `none`    | `initialize` answers with no credential; every `/.well-known` path is `404` — measured 2026-11-12 (#1269)                                                |
 | Postman (`mcp.postman.com/mcp`)                 | yes, as `api_key` | `401` + `WWW-Authenticate: Bearer resource_metadata="…"`, body `API key required`; the key is documented as a bearer token — measured 2026-11-12 (#1269) |
@@ -301,10 +301,10 @@ asked, record the day, and let the row say nothing (and take the provider's defa
 
 ### Pre-registered clients (#1229)
 
-A provider that publishes everything except `registration_endpoint` — GitHub is the measured case —
-cannot be reached by the flow above. Guessing its endpoints is the refusal the client exists for, so
-the alternative is a **reviewed entry**: the endpoints a person measured, and a client a person
-created in that provider's console.
+A provider that publishes everything except `registration_endpoint` cannot be reached by the flow
+above. Guessing its endpoints is the refusal the client exists for, so the alternative is a
+**reviewed entry**: the endpoints a person measured, and a client a person created in that
+provider's console.
 
 - **The table is code, the secret is environment.** `backend/config/mcp-static-clients.ts` names,
   per catalogue row, the authorization server, both endpoints, the scopes and the token-endpoint
@@ -319,8 +319,8 @@ created in that provider's console.
   its metadata from our probe, because a person measured the flow; the document is still read for
   the brand mark, and the egress policy can still refuse the host. The Admin Console shows a
   «عميل مسجّل مسبقاً» badge, so verification is a decision about a known path.
-- **A provider the registry does not carry is a curated row.** GitHub has no entry in the
-  registry at all, so `catalog-service.ts` writes the row itself (`CURATED_SERVERS`) on every
+- **A provider the registry does not carry can be a curated row.** There is nothing for the
+  mirror to copy, so `catalog-service.ts` writes the row itself (`CURATED_SERVERS`) on every
   sync, before the sweep that retires rows the registry stopped serving. It is a publisher entry,
   not a vouch: the admin still verifies it, and the store still hides it until its verdict is true.
 - **Adding a provider** is: measure its resource and authorization metadata, create the app in its
@@ -329,14 +329,13 @@ created in that provider's console.
 
 Which path each provider takes today:
 
-| Provider                                    | Path                                                            | Client                                    | Scopes                                            |
-| ------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------- |
-| Linear, Supabase, Sentry, Canva, Cloudflare | DCR                                                             | none                                      | provider default                                  |
-| Vercel                                      | static once `MCP_STATIC_CLIENT_VERCEL_ID` / `_SECRET` are set   | `MCP_STATIC_CLIENT_VERCEL_ID` / `_SECRET` | `openid email profile`                            |
-| Atlassian                                   | DCR (path-aware resource document, tenant authorization server) | none                                      | provider default                                  |
-| Stripe                                      | DCR (`access.stripe.com/mcp`)                                   | none                                      | provider default                                  |
-| GitHub                                      | static                                                          | `MCP_STATIC_CLIENT_GITHUB_ID` / `_SECRET` | `repo read:org read:user user:email read:project` |
-| Notion, Figma                               | DCR                                                             | none                                      | provider default                                  |
+| Provider                                    | Path                                                            | Client                                    | Scopes                 |
+| ------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------- | ---------------------- |
+| Linear, Supabase, Sentry, Canva, Cloudflare | DCR                                                             | none                                      | provider default       |
+| Vercel                                      | static once `MCP_STATIC_CLIENT_VERCEL_ID` / `_SECRET` are set   | `MCP_STATIC_CLIENT_VERCEL_ID` / `_SECRET` | `openid email profile` |
+| Atlassian                                   | DCR (path-aware resource document, tenant authorization server) | none                                      | provider default       |
+| Stripe                                      | DCR (`access.stripe.com/mcp`)                                   | none                                      | provider default       |
+| Notion, Figma                               | DCR                                                             | none                                      | provider default       |
 
 ## The catalogue mirror (phase 2, #1223)
 

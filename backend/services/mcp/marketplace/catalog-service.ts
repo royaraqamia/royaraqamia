@@ -108,33 +108,20 @@ const LAUNCH_TITLES: Record<(typeof LAUNCH_SET)[number], string> = {
 
 /**
  * The rows the registry does not carry, written here because a reviewed client
- * needs a row to hang from (issue #1229).
+ * needs a row to hang from (issue #1229). They are written **before** the sweep
+ * that retires rows the registry stopped serving, so a curated row is never
+ * mistaken for one that vanished.
  *
- * GitHub publishes a remote MCP server and is not in the registry at all, so
- * there is nothing for the mirror to copy: the address, the name and the
- * description are ours, and the sync upserts them on every run. They are written
- * **before** the sweep that retires rows the registry stopped serving, so a
- * curated row is never mistaken for one that vanished.
+ * GitHub left this table when the coding agent's GitHub App became the one door
+ * to a member's repositories: the hosted MCP gateway refuses tokens from accounts
+ * in sanctioned regions, and a second GitHub identity in the store only
+ * advertised a connection we could not complete. The App's installation token
+ * serves the same repo/issue/PR work with a smaller, revocable grant.
  *
  * A curated row is a publisher entry, not a vouch: it still needs an admin to
- * verify it, and the store still hides it until the probe (or its
- * pre-registered client) says it can be connected.
+ * verify it, and the store still hides it until the probe says it can be connected.
  */
 const CURATED_SERVERS: readonly McpCatalogUpsertRow[] = [
-  {
-    registryName: 'com.github/mcp',
-    title: 'GitHub',
-    description:
-      "Repositories, issues, pull requests, code search and projects, through GitHub's remote MCP server.",
-    version: null,
-    remoteUrl: 'https://api.githubcopilot.com/mcp/',
-    iconUrl: null,
-    iconMime: null,
-    status: 'active',
-    publishedAt: null,
-    registryUpdatedAt: null,
-    raw: null,
-  },
   {
     // Not in the official registry, so the mirror would never offer it. The
     // member signs in with their own account and every generation spends their
@@ -176,7 +163,6 @@ const CURATED_TITLES: Record<string, string> = Object.fromEntries(
  * it, and a wrong logo is worse than a monogram.
  */
 const BRAND_MARKS: Record<string, string> = {
-  'com.github/mcp': '/brand/mcp/github.svg',
   'com.notion/mcp': '/brand/mcp/notion.svg',
   'com.figma.mcp/mcp': '/brand/mcp/figma.svg',
   'com.atlassian/atlassian-mcp-server': '/brand/mcp/atlassian.svg',

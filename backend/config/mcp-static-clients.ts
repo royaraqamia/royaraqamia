@@ -14,35 +14,11 @@ import type {
  * so the code stays reviewable and the secret never enters the repository.
  */
 interface McpStaticClientDefinition extends Omit<McpStaticClient, 'clientId' | 'clientSecret'> {
-  /** The environment key suffix: `GITHUB` reads `MCP_STATIC_CLIENT_GITHUB_ID`. */
+  /** The environment key suffix: `VERCEL` reads `MCP_STATIC_CLIENT_VERCEL_ID`. */
   envKey: string;
 }
 
 const DEFINITIONS: readonly McpStaticClientDefinition[] = [
-  {
-    registryName: 'com.github/mcp',
-    envKey: 'GITHUB',
-    /*
-      Measured 2026-11-11 against `https://api.githubcopilot.com/mcp/`:
-      the resource document names `https://github.com/login/oauth`, whose
-      metadata (`/.well-known/oauth-authorization-server/login/oauth`) publishes
-      an authorization and a token endpoint and **no** `registration_endpoint`.
-      That is the refusal this table exists for.
-
-      The scopes are the ones the resource document publishes and the tools
-      need: repositories, organizations, the signed-in user, and projects.
-      `gist`, `notifications` and `write:packages` are published too and left
-      out — a consent screen asks for what the agent can use, not for the widest
-      grant the provider offers.
-    */
-    authorizationServer: 'https://github.com/login/oauth',
-    authorizationEndpoint: 'https://github.com/login/oauth/authorize',
-    tokenEndpoint: 'https://github.com/login/oauth/access_token',
-    // OAuth Apps have no RFC 7009 endpoint; the local delete is the disconnect.
-    revocationEndpoint: null,
-    scopes: ['repo', 'read:org', 'read:user', 'user:email', 'read:project'],
-    tokenEndpointAuthMethod: 'client_secret_post',
-  },
   {
     registryName: 'com.vercel/vercel-mcp',
     envKey: 'VERCEL',
