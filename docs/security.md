@@ -73,10 +73,11 @@ To rotate a leaked secret key, replace the value everywhere it lives before
 retiring the old key:
 
 1. Create a new secret key in Supabase **Settings → API Keys**. Use a separate
-   key per blast radius — at minimum `production` (VPS), `ci` (Actions,
+   key per blast radius — at minimum `production` (VPS), `github_ci` (Actions,
    Dependabot and local E2E) and `telegram` (the Edge Function reads
-   `SUPABASE_SECRET_KEYS['telegram']`). Never paste a key into chat, an issue or
-   a log.
+   `SUPABASE_SECRET_KEYS['telegram']`). Names must be at least four characters
+   of lowercase letters, digits or underscores. Never paste a key into chat, an
+   issue or a log.
 2. Update the VPS `/opt/royaraqamia/.env` and recreate the container; update the
    GitHub Actions **and** Dependabot secrets; update the Render dashboard only
    while the rollback origin still exists.
