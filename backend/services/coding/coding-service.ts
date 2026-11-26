@@ -236,8 +236,9 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
     task: TaskRow,
     workspace: WorkspaceRow,
     rawToken: string,
-    caps: CodingPlanCaps
-  ): CodingRunnerTask & { callbackToken: string } {
+    caps: CodingPlanCaps,
+    handoffToken: string
+  ): CodingRunnerTask {
     return {
       taskId: task.id,
       repoOwner: workspace.repo_owner,
@@ -253,6 +254,7 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
       },
       callbackUrl: `${deps.origin}/api/coding/runner`,
       callbackToken: rawToken,
+      handoffToken,
       runnerUrl: `${deps.origin}/coding/runner-v1.mjs`,
     };
   }
@@ -340,10 +342,10 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         if (!installation) {
           throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
         }
-        const spec = specFor(row, workspace, rawToken, caps);
         // Installation tokens expire in about an hour; the one saved at connect
         // time is only a bootstrap credential. Mint a fresh one for this task.
         const { token } = await deps.github.getInstallationToken(installation.installation_id);
+        const spec = specFor(row, workspace, rawToken, caps, token);
         await deps.runner.start(spec, { installationToken: token });
       } catch (error) {
         await deps.repo.updateTask(userId, row.id, {
@@ -415,8 +417,9 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         .reverse()
         .find((step) => step.status === 'applied' || step.status === 'rejected');
       const caps = await capsFor(task.user_id);
+      const { token } = await deps.github.getInstallationToken(workspace.installation_id);
       return {
-        spec: specFor(task, workspace, rawToken, caps),
+        spec: specFor(task, workspace, rawToken, caps, token),
         status: task.status as CodingTaskStatus,
         decision: decided ? (decided.status === 'applied' ? 'approve' : 'reject') : null,
       };

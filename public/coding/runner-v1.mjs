@@ -43,6 +43,7 @@ function scrub(value) {
   let text = String(value ?? '');
   if (CALLBACK_TOKEN) text = text.split(CALLBACK_TOKEN).join('[redacted]');
   if (GITHUB_TOKEN) text = text.split(GITHUB_TOKEN).join('[redacted]');
+  if (HANDOFF_TOKEN) text = text.split(HANDOFF_TOKEN).join('[redacted]');
   return text;
 }
 
@@ -80,6 +81,9 @@ function loadSpec() {
 }
 
 const spec = loadSpec();
+// The workflow's GITHUB_TOKEN cannot create PRs in every repo configuration;
+// the control plane supplies a short-lived installation token for this one act.
+const HANDOFF_TOKEN = spec.handoffToken ?? '';
 const deadlineMs =
   Date.now() + Math.min(Math.max(Number(spec.caps.runnerMinutes) || 15, 1), 60) * 60_000;
 
@@ -687,7 +691,7 @@ async function createPullRequest(summaryText) {
     Accept: 'application/vnd.github+json',
     'Content-Type': 'application/json',
     'User-Agent': 'noor-coding-runner/1',
-    Authorization: `Bearer ${GITHUB_TOKEN}`,
+    Authorization: `Bearer ${HANDOFF_TOKEN || GITHUB_TOKEN}`,
   };
   const created = await fetch(`${base}/pulls`, {
     method: 'POST',
