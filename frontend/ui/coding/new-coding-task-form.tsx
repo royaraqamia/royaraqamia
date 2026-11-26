@@ -22,28 +22,38 @@ export function NewCodingTaskForm({
   workspaces: CodingWorkspaceDto[];
   plan?: CodingPlan;
 }) {
-  const [workspaceId, setWorkspaceId] = useState(workspaces[0]?.id ?? '');
+  const [workspaceId, setWorkspaceId] = useState('');
   const [title, setTitle] = useState('');
   const [instruction, setInstruction] = useState('');
   const [mode, setMode] = useState<CodingTaskMode>('plan');
-  const [baseBranch, setBaseBranch] = useState(workspaces[0]?.defaultBranch ?? 'main');
+  /**
+   * The branch the member typed, or `null` to follow the selected repository's
+   * default. The repositories arrive from the parent's own read, after this form
+   * has first rendered, so neither choice can be a `useState` initial value: the
+   * selection stayed empty and `submit` returned before sending anything, and the
+   * branch stayed `main` whatever the repository's default was (#1888).
+   */
+  const [typedBranch, setTypedBranch] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const workspace = workspaces.find((candidate) => candidate.id === workspaceId) ?? workspaces[0];
+  const activeWorkspaceId = workspace?.id ?? '';
+  const baseBranch = typedBranch ?? workspace?.defaultBranch ?? 'main';
+
   const chooseWorkspace = (id: string) => {
     setWorkspaceId(id);
-    const chosen = workspaces.find((workspace) => workspace.id === id);
-    if (chosen) setBaseBranch(chosen.defaultBranch);
+    setTypedBranch(null);
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (busy || !workspaceId) return;
+    if (busy || !workspace) return;
     setBusy(true);
     setError(null);
     try {
       const task = await createCodingTask({
-        workspaceId,
+        workspaceId: activeWorkspaceId,
         title: title.trim(),
         instruction: instruction.trim(),
         mode,
@@ -66,7 +76,7 @@ export function NewCodingTaskForm({
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-bold">المستودع</span>
             <select
-              value={workspaceId}
+              value={activeWorkspaceId}
               onChange={(event) => chooseWorkspace(event.target.value)}
               className="rounded-lg border border-border bg-background px-3 py-2"
             >
@@ -120,7 +130,7 @@ export function NewCodingTaskForm({
                 type="text"
                 required
                 value={baseBranch}
-                onChange={(event) => setBaseBranch(event.target.value)}
+                onChange={(event) => setTypedBranch(event.target.value)}
                 className="rounded-lg border border-border bg-background px-3 py-2"
               />
             </label>
