@@ -14,7 +14,8 @@ import { LOCAL_STORE_PRODUCTS, LOCAL_STORE_ROOTS } from '@/frontend/shared/local
  * records a snapshot. A product added to `LOCAL_STORE_PRODUCTS` without an entry
  * in `LOCAL_STORE_ROOTS` — or whose root reaches for the session directly, or
  * whose hook forgot the snapshot — is exactly the regression this fails on, so a
- * seventh product cannot ship a store and quietly re-introduce the skeleton.
+ * product cannot ship a store and quietly re-introduce the skeleton. That its
+ * products are the ones in the tree is `local-store-products.test.ts`.
  *
  * It reads source text rather than mounting the components: the roots import
  * next/navigation, the auth client and five product stores, so a render test

@@ -6,6 +6,12 @@
  * resolves its partition through `useLocalIdentity` and paints its last screen
  * in the first frame. A product added to the registry without both entries fails
  * that test rather than shipping a store with no paint path.
+ *
+ * The list is checked against the tree, not against a second hand-written list:
+ * `__tests__/local-store-products.test.ts` globs every
+ * `frontend/api/<product>/local-store.ts` and fails when a store has no row
+ * here, so the registry cannot silently fall behind the products that ship (the
+ * omission that let `notes` go unchecked, #1912).
  */
 export interface LocalStoreProduct {
   /** The Local Store's database prefix — `PRODUCT` in the product's store. */
@@ -22,6 +28,7 @@ export const LOCAL_STORE_PRODUCTS: readonly LocalStoreProduct[] = [
   { product: 'quran', label: 'القرآن الكريم' },
   { product: 'leads', label: 'طَلبات التَّواصل' },
   { product: 'chats', label: 'المحادثات' },
+  { product: 'notes', label: 'الملاحظات' },
 ];
 
 /** The surface a product resolves its boot identity in (#493), and its snapshot (#495). */
@@ -49,8 +56,8 @@ export interface LocalStoreRoot {
  * partition is resolved and where its first frame is recorded, so a product
  * cannot ship a Local Store without inheriting the paint path.
  *
- * The list is data rather than a test-local map on purpose — adding a seventh
- * product to `LOCAL_STORE_PRODUCTS` without naming its root here fails
+ * The list is data rather than a test-local map on purpose — adding a product
+ * to `LOCAL_STORE_PRODUCTS` without naming its root here fails
  * `local-store-roots.test.ts`, and that failure is the guard, not a lint.
  */
 export const LOCAL_STORE_ROOTS: readonly LocalStoreRoot[] = [
@@ -92,5 +99,12 @@ export const LOCAL_STORE_ROOTS: readonly LocalStoreRoot[] = [
     product: 'chats',
     root: 'frontend/ui/chats/chats-panel.tsx',
     snapshot: 'frontend/state/chats/use-chat-threads.ts',
+  },
+  {
+    // The hook plays both roles: it resolves the partition and records the
+    // first frame for the surface that paints the store, as `quran` does.
+    product: 'notes',
+    root: 'frontend/state/notes/use-notes.ts',
+    snapshot: 'frontend/state/notes/use-notes.ts',
   },
 ];
