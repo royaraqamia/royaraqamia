@@ -169,9 +169,13 @@ aws s3 ls s3://royaraqamia-vps/vps/ --endpoint-url "$R2_ENDPOINT" | tail -3
 aws s3 cp s3://royaraqamia-vps/vps/<newest>.tar.gz /tmp/ --endpoint-url "$R2_ENDPOINT"
 mv .env .env.before-drill
 tar -xzf /tmp/<newest>.tar.gz -C /opt/royaraqamia
+docker compose up -d --force-recreate app
 bash deploy.sh
 curl -fsS http://127.0.0.1:3000/manifest.json > /dev/null && echo restored
 ```
+
+`--force-recreate` is the point: with an identical env file Compose would leave the running
+container alone, and the drill would prove nothing about the restored copy.
 
 A `restored` line means the untarred `.env` is the one the app is running on. Record the date and the
 archive name in issue #1779, then remove `.env.before-drill`.
