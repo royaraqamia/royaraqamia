@@ -493,13 +493,34 @@ export function allowanceSpentSentence(resetsAt: string): string {
 }
 
 /**
+ * One opening action: the question drawn from a registry entry, and the entry's
+ * capability id (ADR-0183) so a test can resolve what the action advertises.
+ */
+export interface AssistantSuggestion {
+  toolId: string;
+  ask: string;
+}
+
+/** The assistant's first screen: the member's own line, and what they can do. */
+export interface AssistantOpening {
+  /** Null when the member has no data to lead with; the generic intro is used. */
+  lead: string | null;
+  suggestions: AssistantSuggestion[];
+}
+
+/**
  * What the thread needs before it draws a composer: whether a provider key is
  * configured at all, and the allowance that bounds the turn. An environment
  * without a key renders the assistant as unavailable, never as a broken send.
+ *
+ * `opening` is present only on the read a first screen makes; the meter's own
+ * refresh after a turn asks for the state alone, so it never re-projects the
+ * registry or re-reads the member's products.
  */
 export interface ChatAssistantState {
   available: boolean;
   allowance: ChatAgentAllowance;
+  opening?: AssistantOpening;
 }
 
 /** One assistant turn: the question, and nothing else (no tools, no files). */
@@ -627,6 +648,18 @@ export const ChatAgentTurnSchema = z
      * "this client is older than the eyes".
      */
     screen: ScreenContextInputSchema.optional(),
+    /**
+     * The first-screen action that produced this question, when there was one.
+     * It rides with the turn so the tap is recorded by the same request that
+     * spends it — an abandoned tap is not a first message and is not counted as
+     * one (#1859).
+     */
+    firstScreen: z
+      .object({
+        toolId: z.string().min(1).max(120),
+        eventId: z.string().min(1).max(80),
+      })
+      .optional(),
   })
   .refine((value) => Boolean(value.body) || (value.attachments?.length ?? 0) > 0, {
     message: 'اكتب سؤالك أو أرسل ملفاً',
@@ -880,10 +913,21 @@ export const ChatBlockedMembersResponseSchema = z.object({
   error: z.string().optional(),
 });
 
+export const AssistantSuggestionSchema = z.object({
+  toolId: z.string().min(1),
+  ask: z.string().min(1),
+});
+
+export const AssistantOpeningSchema = z.object({
+  lead: z.string().nullable(),
+  suggestions: z.array(AssistantSuggestionSchema),
+});
+
 export const ChatAssistantStateResponseSchema = z.object({
   success: z.boolean(),
   available: z.boolean().optional(),
   allowance: ChatAssistantAllowanceSchema.optional(),
+  opening: AssistantOpeningSchema.optional(),
   error: z.string().optional(),
 });
 

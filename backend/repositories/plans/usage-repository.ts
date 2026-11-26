@@ -9,6 +9,7 @@ import {
   UsageStatePayloadSchema,
   type ActivatePlanInput,
   type ActivationResult,
+  type AssistantEventKey,
   type AdminPlansQuery,
   type AdminUserUsagePage,
   type OwnedItemKey,
@@ -39,6 +40,13 @@ export interface RecordUsageInput {
   dedupeKey?: string | null;
 }
 
+/** A product event: a ledger row with no cap and no allowance to spend. */
+export interface RecordUsageEventInput {
+  actionKey: AssistantEventKey;
+  userId: string;
+  dedupeKey: string;
+}
+
 /**
  * Everything the app knows about plans and allowances. The count, the cap and
  * the insert live in Postgres (ADR-0093), so this port is a set of calls rather
@@ -58,6 +66,8 @@ export interface UsageRepository {
   listActivations(userId: string): Promise<PlanActivationRecord[]>;
   /** Count one action, or answer that the allowance is used up. */
   record(input: RecordUsageInput): Promise<UsageOutcome>;
+  /** Append a product event once. A replayed client key writes no second row. */
+  recordEvent(input: RecordUsageEventInput): Promise<void>;
   /** Delete an event a failed action wrote. Scoped to its subject. */
   release(userId: string | null, eventId: string): Promise<boolean>;
   /** How many of an owned item the account currently holds (tombstones excluded). */
@@ -249,6 +259,18 @@ export class SupabaseUsageRepository implements UsageRepository {
       eventId: payload.eventId,
       state: { ...payload.counter, key: payload.counter.key as UsageCounterKey },
     };
+  }
+
+  async recordEvent(input: RecordUsageEventInput): Promise<void> {
+    // The unique index on `(user_id, action_key, dedupe_key)` is partial, so
+    // PostgREST cannot name it in `onConflict`. A plain insert plus the index's
+    // own refusal makes a replayed client key one event, not two.
+    const { error } = await this.supabase.from('usage_events').insert({
+      action_key: input.actionKey,
+      user_id: input.userId,
+      dedupe_key: input.dedupeKey,
+    });
+    if (error && error.code !== '23505') throw error;
   }
 
   async release(userId: string | null, eventId: string): Promise<boolean> {

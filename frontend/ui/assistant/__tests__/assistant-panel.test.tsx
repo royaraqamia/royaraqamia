@@ -119,6 +119,7 @@ const api = vi.hoisted(() => ({
 
 vi.mock('@/frontend/api/chats', () => ({
   startAssistantChat: api.startAssistantChat,
+  getChatAssistant: api.getChatAssistant,
   getChatThread: api.getChatThread,
   getChatMessages: api.getChatMessages,
   markChatRead: api.markChatRead,
@@ -150,6 +151,17 @@ describe('AssistantPanel', () => {
       apps: { used: 0, cap: 0, connected: 0 },
     };
     api.startAssistantChat.mockReset().mockResolvedValue({ success: true, conversationId: 'a-1' });
+    api.getChatAssistant.mockReset().mockImplementation(async () => ({
+      available: assistant.available,
+      allowance: assistant.allowance,
+      opening: {
+        lead: null,
+        suggestions: [
+          { toolId: 'habitflow.get_habits_summary', ask: 'ماذا عندي اليوم؟' },
+          { toolId: 'spendtrack.get_expenses_summary', ask: 'كم صرفت هذا الشهر؟' },
+        ],
+      },
+    }));
     api.getChatThread.mockReset().mockResolvedValue(THREAD);
     api.getChatMessages
       .mockReset()
@@ -198,27 +210,35 @@ describe('AssistantPanel', () => {
     expect(
       await screen.findByText('أهلاً، أنا نور. اسألني عن أي شيء، وسيصلك الرد هنا.')
     ).toBeInTheDocument();
-    // The panel is the thread's short conversation (ADR-0143), so its empty
-    // state is the thread's own rather than a second introduction with its own
-    // suggestions.
-    expect(screen.queryByText('جرّب أن تسأل')).toBeNull();
-    expect(screen.queryByText('ما الخدمات التي تقدّمونها؟')).toBeNull();
+    // The questions are the projected registry entries, carried by `data-tool-id`
+    // so a test can resolve what each one advertises (#1859).
+    expect(screen.getByText('ماذا عندي اليوم؟').closest('button')).toHaveAttribute(
+      'data-tool-id',
+      'habitflow.get_habits_summary'
+    );
+    expect(screen.getByText('كم صرفت هذا الشهر؟')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'فتح المحادثة كاملة' })).not.toBeInTheDocument();
   });
 
-  it('reopening a held thread creates nothing new', async () => {
+  it('holds the pre-conversation state until the first message is sent', async () => {
+    conversation.thread = null;
+    render(<AssistantPanel open onDismiss={vi.fn()} />);
+
+    expect(await screen.findByText('ماذا عندي اليوم؟')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
+    // An abandoned open leaves no row: the thread is minted by the first send.
+    expect(api.startAssistantChat).not.toHaveBeenCalled();
+  });
+
+  it('reopening the panel never creates a conversation on its own', async () => {
     const { rerender } = render(<AssistantPanel open onDismiss={vi.fn()} />);
     await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
-    expect(api.startAssistantChat).toHaveBeenCalledTimes(1);
 
     rerender(<AssistantPanel open={false} onDismiss={vi.fn()} />);
     rerender(<AssistantPanel open onDismiss={vi.fn()} />);
 
     await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
-    // The thread the panel holds is read by `useChatThread`, which is the one
-    // owner of the revalidation now; the panel's job is to not open a second.
-    expect(api.startAssistantChat).toHaveBeenCalledTimes(1);
+    expect(api.startAssistantChat).not.toHaveBeenCalled();
   });
 
   it('draws the thread when the conversation answers', async () => {

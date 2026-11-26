@@ -1,6 +1,9 @@
 import { AppError } from '@/backend/shared/errors';
 import { logger } from '@/backend/shared/logger';
-import type { UsageRepository } from '@/backend/repositories/plans/usage-repository';
+import type {
+  RecordUsageEventInput,
+  UsageRepository,
+} from '@/backend/repositories/plans/usage-repository';
 import {
   type ActivatePlanInput,
   type ActivationResult,
@@ -168,6 +171,19 @@ export class UsageService {
     }
 
     return outcome.eventId;
+  }
+
+  /**
+   * Append a product event. It is a ledger row, not a spend: the first screen
+   * has no cap, so it never goes through `record_usage` (#1859). A telemetry
+   * failure must not break the screen the member came to use.
+   */
+  async recordEvent(input: RecordUsageEventInput): Promise<void> {
+    try {
+      await this.repository.recordEvent(input);
+    } catch (error) {
+      logger.warn('Failed to record a product event', { error: String(error) });
+    }
   }
 
   /** Give a count back. Never throws: the caller's real error is the one to show. */

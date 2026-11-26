@@ -278,19 +278,37 @@ export async function getBlockedChatMembers(): Promise<ChatPeer[]> {
 /**
  * The assistant (ADR-0113, #817).
  *
- * Opening it is idempotent: one thread per member, created on first open, so the
- * Chats tab can offer the assistant without knowing whether it already exists.
+ * One thread per member, created on the *first message*, not on open: an
+ * abandoned first screen leaves no empty row behind (#1859).
  */
 export async function startAssistantChat(): Promise<ChatStartResponse> {
   return request<ChatStartResponse>('/api/chats/assistant', { method: 'POST' });
 }
 
-/** Whether the assistant is configured, and how much of today is left. */
-export async function getChatAssistant(): Promise<ChatAssistantState> {
-  const result = await request<{ success: boolean } & ChatAssistantState>('/api/chats/assistant', {
-    cache: 'no-store',
-  });
-  return { available: result.available === true, allowance: result.allowance };
+/** A fresh id per screen, so a retried read cannot count as a second open. */
+function openingEventId(): string {
+  return (
+    globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
+}
+
+/**
+ * Whether the assistant is configured, how much of today is left, and — when a
+ * first screen asks for it — the questions projected from the tool registry.
+ */
+export async function getChatAssistant(
+  options: { opening?: boolean } = {}
+): Promise<ChatAssistantState> {
+  const query = options.opening ? `?opening=1&event=${encodeURIComponent(openingEventId())}` : '';
+  const result = await request<{ success: boolean } & ChatAssistantState>(
+    `/api/chats/assistant${query}`,
+    { cache: 'no-store' }
+  );
+  return {
+    available: result.available === true,
+    allowance: result.allowance,
+    ...(result.opening ? { opening: result.opening } : {}),
+  };
 }
 
 interface ChatAgentActionResponse {
@@ -350,7 +368,8 @@ export async function streamChatAgentTurn(
   onEvent: (event: ChatAgentEvent) => void,
   attachments?: ChatAttachmentInput[] | null,
   screen?: ScreenContextInput | null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  firstScreen?: { toolId: string; eventId: string }
 ): Promise<void> {
   let response: Response;
   try {
@@ -364,6 +383,9 @@ export async function streamChatAgentTurn(
         // Where the question was asked from (ADR-0181). Sent with the question,
         // so the model does not spend a round discovering the screen.
         ...(screen ? { screen } : {}),
+        // The first-screen action that produced this question, when there was
+        // one; the server records the tap on the same request (#1859).
+        ...(firstScreen ? { firstScreen } : {}),
       }),
     });
   } catch (cause) {
