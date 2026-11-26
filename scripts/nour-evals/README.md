@@ -46,5 +46,24 @@ fails with that sentence rather than a number moving for no visible reason.
 `recompute.mjs` re-runs the deterministic gates over stored replies without any
 model calls, for when the gate logic changes.
 
+## Comparing two models
+
+A model change is a pull request that carries the score before and after
+(ADR-0185 decision 2). Run the agent tier once per model under a label, then
+diff the two reports. A label writes `agent-transcript-<label>.json` and
+`eval-report-agent-<label>.json` beside the shipped files, so the committed
+baseline is never overwritten.
+
+```bash
+AI_CHAT_MODEL=deepseek-v4.1-flash node scripts/nour-evals/eval-agent.mjs --live --label current
+AI_CHAT_MODEL=<candidate>           node scripts/nour-evals/eval-agent.mjs --live --label candidate
+node scripts/nour-evals/compare-models.mjs --current current --candidate candidate
+```
+
+`compare-models.mjs` writes `docs/assistant/eval-model-comparison.md` with the
+four named scores, the judge axes, generation cost per turn (from the usage the
+gateway reports) and the failing fixtures on each side. Neither run changes the
+default model.
+
 Reports: `docs/assistant/eval-report-model.*`, `scripts/nour-evals/eval-report-agent.json`,
 and the combined `docs/assistant/eval-report.*`.

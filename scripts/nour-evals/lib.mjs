@@ -280,6 +280,26 @@ export async function judge(cfg, axisList, userMessage, reply, extraContext = ''
   };
 }
 
+/**
+ * Sum the provider usage a recorded turn carries across its rounds. The gateway
+ * reports list price on the streamed frame; the transcript stores it per round
+ * so a model comparison can price a turn without calling the provider again.
+ */
+export function usageTotals(rounds) {
+  const totals = { inputTokens: 0, outputTokens: 0, reasoningTokens: 0, listCostUsd: 0 };
+  let seen = false;
+  for (const round of rounds ?? []) {
+    const usage = round?.usage;
+    if (!usage) continue;
+    seen = true;
+    totals.inputTokens += usage.inputTokens ?? 0;
+    totals.outputTokens += usage.outputTokens ?? 0;
+    totals.reasoningTokens += usage.reasoningTokens ?? 0;
+    totals.listCostUsd += usage.listCostUsd ?? 0;
+  }
+  return seen ? totals : null;
+}
+
 export async function pooled(items, limit, worker) {
   const results = new Array(items.length);
   let cursor = 0;
@@ -293,9 +313,18 @@ export async function pooled(items, limit, worker) {
   return results;
 }
 
+/**
+ * The Prettier CLI applies `.prettierrc`; the programmatic API does not unless
+ * asked, so a generated artifact would otherwise fail the repo's format gate.
+ */
+async function formatFile(path, source, parser) {
+  const config = (await prettier.resolveConfig(path)) ?? {};
+  return prettier.format(source, { ...config, parser });
+}
+
 /** Reports are committed, so their JSON must come out in the repo's Prettier style. */
 export async function writeJson(path, value) {
-  let text = await prettier.format(JSON.stringify(value), { parser: 'json' });
+  let text = await formatFile(path, JSON.stringify(value), 'json');
   // A captured reply may itself contain Arabic-Indic digits — that is evidence
   // of a real failure. Escape them as JSON unicode so the repo's ASCII-digits
   // gate still passes while JSON.parse reads the exact reply back.
@@ -310,8 +339,9 @@ export async function writeReport(root, report, suffix = '') {
   const outDir = resolve(root, 'docs/assistant');
   mkdirSync(outDir, { recursive: true });
   await writeJson(resolve(outDir, `eval-report${suffix}.json`), report);
-  const prose = await prettier.format(markdown(report), { parser: 'markdown' });
-  writeFileSync(resolve(outDir, `eval-report${suffix}.md`), prose);
+  const mdPath = resolve(outDir, `eval-report${suffix}.md`);
+  const prose = await formatFile(mdPath, markdown(report), 'markdown');
+  writeFileSync(mdPath, prose);
   return outDir;
 }
 
