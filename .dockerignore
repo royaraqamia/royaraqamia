@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+.next
+.env
+.env.*
+*.log
+coverage
+e2e/__visual__
+e2e/test-results
+playwright-report
+.DS_Store

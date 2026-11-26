@@ -133,6 +133,8 @@ bandwidth allowance, after which a workspace with no payment method is suspended
 month. The deploy needs `RENDER_DEPLOY_HOOK_URL` as an Actions secret (Render → service → Settings →
 Deploy Hook); with it absent the workflow fails loudly rather than skipping silently.
 
+**Self-managed VPS origin (ADR-0221).** A 2 vCPU / 2 GB Ubuntu VPS runs the app in Docker behind Caddy, with Cloudflare still in front. The image is built by `.github/workflows/publish-image.yml` on manual dispatch and published to GHCR; the box only pulls and runs it, so no build happens on 2 GB of RAM. Render stays live until DNS is moved. The operator runbook — SSH, firewall, Docker, env file, temporary test hostname and cutover — is [docs/agents/vps-deploy.md](agents/vps-deploy.md).
+
 **Crons are GitHub Actions, not the platform.** `.github/workflows/scheduled-jobs.yml` calls the
 three routes on their old schedules; each route authorises itself from
 `Authorization: Bearer $CRON_SECRET`, so a manual run needs no CLI:

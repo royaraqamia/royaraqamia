@@ -1,0 +1,58 @@
+services:
+  app:
+    image: ghcr.io/royaraqamia/royaraqamia:latest
+    container_name: royaraqamia
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    # Only Caddy talks to the app; the origin is never exposed directly.
+    expose:
+      - '3000'
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/manifest.json').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: royaraqamia-caddy
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    depends_on:
+      - app
+    networks:
+      - web
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  web:

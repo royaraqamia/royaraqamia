@@ -1,0 +1,17 @@
+# Caddy terminates TLS and proxies to the Node origin. Cloudflare stays in
+# front of this; while its proxy is on, switch its SSL mode to "Full (strict)"
+# only after Caddy has a certificate for the name (see docs/agents/vps-deploy.md).
+
+royaraqamia.com, www.royaraqamia.com {
+	encode zstd gzip
+	header -Server
+	reverse_proxy app:3000
+}
+
+# Temporary origin for the pre-cutover check. Uncomment this block, point
+# vps.royaraqamia.com at the VPS with Cloudflare proxy OFF, reload Caddy, and
+# test. Comment it out again after the main record has moved.
+#
+# vps.royaraqamia.com {
+# 	reverse_proxy app:3000
+# }
