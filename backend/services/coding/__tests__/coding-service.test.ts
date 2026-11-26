@@ -32,10 +32,12 @@ const RAW_TOKEN = 'runner-token-abcdefghijklmnopqrstuvwxyz';
 const workspace: CodingWorkspaceRow = {
   id: WORKSPACE,
   user_id: USER,
+  kind: 'github',
   installation_id: 42,
   repo_owner: 'member',
   repo_name: 'repo',
   default_branch: 'main',
+  device_label: null,
   created_at: CREATED_AT,
 };
 
@@ -134,6 +136,18 @@ function harness(overrides: Partial<CodingServiceDeps> = {}, task = makeTask()):
     }),
     insertStepForRunner: vi.fn().mockResolvedValue(undefined),
     setStepDecision: vi.fn().mockResolvedValue(undefined),
+    findActiveGrantForWorkspace: vi.fn().mockResolvedValue(null),
+    createLocalWorkspace: vi.fn().mockResolvedValue(workspace),
+    deleteWorkspace: vi.fn().mockResolvedValue(true),
+    createLocalPair: vi.fn().mockResolvedValue(null),
+    findLocalPair: vi.fn().mockResolvedValue(null),
+    claimLocalPair: vi.fn().mockResolvedValue(null),
+    findLocalGrantByTokenHash: vi.fn().mockResolvedValue(null),
+    listLocalGrants: vi.fn().mockResolvedValue([]),
+    touchLocalGrant: vi.fn().mockResolvedValue(undefined),
+    revokeLocalGrant: vi.fn().mockResolvedValue(true),
+    claimNextLocalTask: vi.fn().mockResolvedValue(null),
+    failActiveTasksForWorkspace: vi.fn().mockResolvedValue(undefined),
   };
   const runner = { start: vi.fn().mockResolvedValue({ runId: TASK }) };
   const llm = {
@@ -449,6 +463,193 @@ describe('CodingService runner updates and budgets', () => {
     await expect(
       service.runnerLlm(RAW_TOKEN, { messages: [{ role: 'user', content: 'more' }] })
     ).rejects.toMatchObject({ code: 'budget_exhausted' });
+  });
+});
+
+describe('CodingService local companion (ADR-0222)', () => {
+  const LOCAL_WORKSPACE = '00000000-0000-4000-8000-000000000009';
+  const GRANT = '00000000-0000-4000-8000-00000000000a';
+  const localWorkspace: CodingWorkspaceRow = {
+    ...workspace,
+    id: LOCAL_WORKSPACE,
+    kind: 'local',
+    installation_id: null,
+    repo_owner: null,
+    repo_name: null,
+    default_branch: null,
+    device_label: 'laptop',
+  };
+  const localTask = makeTask({ workspace_id: LOCAL_WORKSPACE, branch: null });
+  const grantRow = {
+    id: GRANT,
+    user_id: USER,
+    device_label: 'laptop',
+    pair_code_hash: null,
+    pair_expires_at: null,
+    token_hash: hashToken('grant-token-abcdefghijklmnopqrstuvwxyz'),
+    workspace_id: LOCAL_WORKSPACE,
+    created_at: CREATED_AT,
+    claimed_at: CREATED_AT,
+    last_seen_at: null,
+    revoked_at: null,
+  };
+
+  it('stores only the digest of a pairing code', async () => {
+    const { deps, admin } = harness();
+    const service = createCodingService(deps);
+
+    const pair = await service.createLocalPair(USER, { deviceLabel: 'laptop' });
+
+    expect(pair.code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+    const call = (admin.createLocalPair as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      { codeHash: string; deviceLabel: string; expiresAt: string },
+    ];
+    expect(call[1].deviceLabel).toBe('laptop');
+    expect(call[1].codeHash).not.toBe(pair.code);
+    expect(call[1].codeHash).not.toContain(pair.code.replace('-', ''));
+    expect(Date.parse(call[1].expiresAt)).toBeGreaterThan(Date.parse('2026-11-15T12:00:00.000Z'));
+  });
+
+  it('refuses a code it cannot resolve', async () => {
+    const { deps } = harness();
+    const service = createCodingService(deps);
+
+    await expect(service.claimLocalPair({ code: 'AAAA-BBBB' })).rejects.toMatchObject({
+      code: 'invalid_code',
+      statusCode: 400,
+    });
+  });
+
+  it('pairs a device into a local workspace and returns the origin', async () => {
+    const { deps, admin } = harness();
+    (admin.findLocalPair as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...grantRow,
+      token_hash: null,
+      claimed_at: null,
+      workspace_id: null,
+      pair_code_hash: 'digest',
+      pair_expires_at: '2026-11-15T12:10:00.000Z',
+    });
+    (admin.createLocalWorkspace as ReturnType<typeof vi.fn>).mockResolvedValue(localWorkspace);
+    (admin.claimLocalPair as ReturnType<typeof vi.fn>).mockResolvedValue(grantRow);
+    const service = createCodingService(deps);
+
+    const result = await service.claimLocalPair({ code: 'abcd-2345', deviceLabel: 'workstation' });
+
+    expect(admin.createLocalWorkspace).toHaveBeenCalledWith(USER, { deviceLabel: 'workstation' });
+    expect(result.token.length).toBeGreaterThanOrEqual(20);
+    expect(result.apiUrl).toBe('https://noor.test');
+    expect(result.runnerUrl).toBe('https://noor.test/coding/runner-v1.mjs');
+    expect(result.grant.workspaceId).toBe(LOCAL_WORKSPACE);
+    const claim = (admin.claimLocalPair as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      { tokenHash: string; workspaceId: string },
+    ];
+    expect(claim[1].tokenHash).toBe(hashToken(result.token));
+    expect(claim[1].workspaceId).toBe(LOCAL_WORKSPACE);
+  });
+
+  it('queues a local task without dispatching anything', async () => {
+    const { deps, repo, runner, admin } = harness();
+    (repo.findWorkspace as ReturnType<typeof vi.fn>).mockResolvedValue(localWorkspace);
+    (repo.createTask as ReturnType<typeof vi.fn>).mockResolvedValue(localTask);
+    (admin.findActiveGrantForWorkspace as ReturnType<typeof vi.fn>).mockResolvedValue(grantRow);
+    const service = createCodingService(deps);
+
+    const created = await service.createTask(USER, {
+      ...createInput,
+      workspaceId: LOCAL_WORKSPACE,
+    });
+
+    expect(created.status).toBe('queued');
+    expect(created.branch).toBeNull();
+    expect(runner.start).not.toHaveBeenCalled();
+    expect(repo.updateTask).not.toHaveBeenCalled();
+  });
+
+  it('refuses a local task when the device was revoked', async () => {
+    const { deps, repo } = harness();
+    (repo.findWorkspace as ReturnType<typeof vi.fn>).mockResolvedValue(localWorkspace);
+    const service = createCodingService(deps);
+
+    await expect(
+      service.createTask(USER, { ...createInput, workspaceId: LOCAL_WORKSPACE })
+    ).rejects.toMatchObject({ code: 'device_not_paired', statusCode: 409 });
+  });
+
+  it('claims the next queued task for a paired device', async () => {
+    const { deps, admin, repo } = harness();
+    (admin.findLocalGrantByTokenHash as ReturnType<typeof vi.fn>).mockResolvedValue(grantRow);
+    (admin.claimNextLocalTask as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...localTask,
+      status: 'running',
+    });
+    (repo.findWorkspace as ReturnType<typeof vi.fn>).mockResolvedValue(localWorkspace);
+    const service = createCodingService(deps);
+
+    const claimed = await service.claimLocalTask('grant-token-abcdefghijklmnopqrstuvwxyz');
+
+    expect(claimed?.spec.kind).toBe('local');
+    expect(claimed?.spec.branch).toBeNull();
+    expect(claimed?.spec.handoffToken).toBeNull();
+    expect(claimed?.spec.callbackUrl).toBe('https://noor.test/api/coding/runner');
+    expect(admin.touchLocalGrant).toHaveBeenCalledWith(GRANT, expect.any(String));
+  });
+
+  it('answers null when no task is waiting and refuses a revoked grant', async () => {
+    const { deps, admin } = harness();
+    (admin.findLocalGrantByTokenHash as ReturnType<typeof vi.fn>).mockResolvedValue(grantRow);
+    const service = createCodingService(deps);
+
+    await expect(
+      service.claimLocalTask('grant-token-abcdefghijklmnopqrstuvwxyz')
+    ).resolves.toBeNull();
+
+    (admin.findLocalGrantByTokenHash as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...grantRow,
+      revoked_at: '2026-11-15T12:00:00.000Z',
+    });
+    await expect(
+      service.claimLocalTask('grant-token-abcdefghijklmnopqrstuvwxyz')
+    ).rejects.toMatchObject({ code: 'invalid_token', statusCode: 401 });
+  });
+
+  it('fails the work still in flight when a device is revoked', async () => {
+    const { deps, admin } = harness();
+    (admin.listLocalGrants as ReturnType<typeof vi.fn>).mockResolvedValue([grantRow]);
+    const service = createCodingService(deps);
+
+    await service.revokeLocalGrant(USER, GRANT);
+
+    expect(admin.revokeLocalGrant).toHaveBeenCalledWith(USER, GRANT, expect.any(String));
+    expect(admin.failActiveTasksForWorkspace).toHaveBeenCalledWith(
+      USER,
+      LOCAL_WORKSPACE,
+      'runner_failed'
+    );
+  });
+
+  it('completes a local task when the review diff is posted', async () => {
+    const { deps, admin } = harness();
+    (admin.findTaskByCallbackHash as ReturnType<typeof vi.fn>).mockResolvedValue(localTask);
+    const service = createCodingService(deps);
+
+    await service.runnerUpdate(RAW_TOKEN, {
+      kind: 'review',
+      status: 'applied',
+      summary: 'Changed one file.',
+      diff: 'diff --git a/a b/a',
+      failureCode: null,
+      inputTokens: 10,
+      outputTokens: 5,
+    });
+
+    expect(admin.updateTaskByCallbackHash).toHaveBeenLastCalledWith(hashToken(RAW_TOKEN), {
+      status: 'completed',
+      input_tokens: 10,
+      output_tokens: 5,
+    });
   });
 });
 

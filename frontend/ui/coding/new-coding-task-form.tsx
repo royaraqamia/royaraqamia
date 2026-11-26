@@ -82,7 +82,9 @@ export function NewCodingTaskForm({
             >
               {workspaces.map((workspace) => (
                 <option key={workspace.id} value={workspace.id}>
-                  {workspace.repoOwner}/{workspace.repoName}
+                  {workspace.kind === 'local'
+                    ? `مجلد محلي — ${workspace.deviceLabel ?? 'جهاز'}`
+                    : `${workspace.repoOwner ?? ''}/${workspace.repoName ?? ''}`}
                 </option>
               ))}
             </select>

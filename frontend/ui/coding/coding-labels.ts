@@ -42,6 +42,7 @@ export const CODING_STEP_KIND_LABELS: Record<CodingStepKind, string> = {
   commit: 'حفظ',
   push: 'نشر',
   pull_request: 'طلب دمج',
+  review: 'مراجعة الفرق',
 };
 
 export const CODING_FAILURE_LABELS: Record<CodingFailureCode, string> = {
@@ -74,6 +75,16 @@ export function formatCodingDate(value: string): string {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
+  }).format(date);
+}
+
+/** A pairing code expires within the hour, so the screen shows the clock. */
+export function formatCodingTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('ar-SA-u-nu-latn', {
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date);
 }
 

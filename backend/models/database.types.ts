@@ -803,6 +803,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      coding_local_grants: {
+        Row: {
+          claimed_at: string | null;
+          created_at: string;
+          device_label: string;
+          id: string;
+          last_seen_at: string | null;
+          pair_code_hash: string | null;
+          pair_expires_at: string | null;
+          revoked_at: string | null;
+          token_hash: string | null;
+          user_id: string;
+          workspace_id: string | null;
+        };
+        Insert: {
+          claimed_at?: string | null;
+          created_at?: string;
+          device_label: string;
+          id?: string;
+          last_seen_at?: string | null;
+          pair_code_hash?: string | null;
+          pair_expires_at?: string | null;
+          revoked_at?: string | null;
+          token_hash?: string | null;
+          user_id: string;
+          workspace_id?: string | null;
+        };
+        Update: {
+          claimed_at?: string | null;
+          created_at?: string;
+          device_label?: string;
+          id?: string;
+          last_seen_at?: string | null;
+          pair_code_hash?: string | null;
+          pair_expires_at?: string | null;
+          revoked_at?: string | null;
+          token_hash?: string | null;
+          user_id?: string;
+          workspace_id?: string | null;
+        };
+        Relationships: [];
+      };
       coding_steps: {
         Row: {
           created_at: string;
@@ -914,29 +956,35 @@ export type Database = {
       coding_workspaces: {
         Row: {
           created_at: string;
-          default_branch: string;
+          default_branch: string | null;
+          device_label: string | null;
           id: string;
-          installation_id: number;
-          repo_name: string;
-          repo_owner: string;
+          installation_id: number | null;
+          kind: string;
+          repo_name: string | null;
+          repo_owner: string | null;
           user_id: string;
         };
         Insert: {
           created_at?: string;
-          default_branch?: string;
+          default_branch?: string | null;
+          device_label?: string | null;
           id?: string;
-          installation_id: number;
-          repo_name: string;
-          repo_owner: string;
+          installation_id?: number | null;
+          kind?: string;
+          repo_name?: string | null;
+          repo_owner?: string | null;
           user_id: string;
         };
         Update: {
           created_at?: string;
-          default_branch?: string;
+          default_branch?: string | null;
+          device_label?: string | null;
           id?: string;
-          installation_id?: number;
-          repo_name?: string;
-          repo_owner?: string;
+          installation_id?: number | null;
+          kind?: string;
+          repo_name?: string | null;
+          repo_owner?: string | null;
           user_id?: string;
         };
         Relationships: [];

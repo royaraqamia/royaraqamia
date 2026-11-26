@@ -67,6 +67,13 @@ has that escalation granted by its mode. Every mode refuses to push to the base
 branch, `main`, `master` or `develop`. The model cannot call `git push` through
 `run_command`; the push is one deliberate act in the handoff.
 
+The same script runs in a local folder when the spec says `kind: "local"`
+([local-companion.md](local-companion.md)). That mode needs no `GITHUB_TOKEN`,
+`GITHUB_REPOSITORY` or installation token, refuses a dirty working tree before
+the first model call, blocks git commands that change the index, history or
+refs, and ends with a `review` step carrying the diff instead of a push and a
+pull request.
+
 `run_command` accepts only `npm`, `npx`, `node`, `git`, `pnpm` and `yarn`, with
 arguments as an array, a 5-minute cap and the callback and GitHub tokens removed
 from the child environment. File tools reject paths that escape the workspace.

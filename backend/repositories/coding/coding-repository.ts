@@ -15,6 +15,7 @@ export type CodingStepRow = Database['public']['Tables']['coding_steps']['Row'];
 export type CodingInstallationRow = Database['public']['Tables']['coding_installations']['Row'];
 export type CodingConnectAttemptRow =
   Database['public']['Tables']['coding_connect_attempts']['Row'];
+export type CodingLocalGrantRow = Database['public']['Tables']['coding_local_grants']['Row'];
 
 export type CodingTaskPatch = Partial<
   Pick<
@@ -120,4 +121,46 @@ export interface CodingAdminRepository {
   ): Promise<void>;
   /** The runner reads decisions with this client, so write them with it too. */
   setStepDecision(userId: string, stepId: string, status: 'applied' | 'rejected'): Promise<void>;
+
+  // ---- the local companion (ADR-0222) -------------------------------------
+
+  /** A folder grant creates its own workspace: the companion has no session. */
+  createLocalWorkspace(
+    userId: string,
+    values: { deviceLabel: string }
+  ): Promise<CodingWorkspaceRow>;
+  /** Compensating delete when a pairing claim lost a race. */
+  deleteWorkspace(userId: string, workspaceId: string): Promise<boolean>;
+  /** A pairing row: a device label and the digest of a one-time code. */
+  createLocalPair(
+    userId: string,
+    values: { deviceLabel: string; codeHash: string; expiresAt: string }
+  ): Promise<CodingLocalGrantRow>;
+  /** Only an unclaimed, unexpired code resolves; claiming clears it. */
+  findLocalPair(codeHash: string): Promise<CodingLocalGrantRow | null>;
+  /** Atomic: the update is refused when another device claimed the code first. */
+  claimLocalPair(
+    id: string,
+    values: { tokenHash: string; workspaceId: string }
+  ): Promise<CodingLocalGrantRow | null>;
+  findLocalGrantByTokenHash(hash: string): Promise<CodingLocalGrantRow | null>;
+  findActiveGrantForWorkspace(
+    userId: string,
+    workspaceId: string
+  ): Promise<CodingLocalGrantRow | null>;
+  listLocalGrants(userId: string): Promise<CodingLocalGrantRow[]>;
+  touchLocalGrant(id: string, at: string): Promise<void>;
+  revokeLocalGrant(userId: string, id: string, at: string): Promise<boolean>;
+  /** One queued task, moved to running for this device. Null when none is waiting. */
+  claimNextLocalTask(
+    userId: string,
+    workspaceId: string,
+    callbackTokenHash: string
+  ): Promise<CodingTaskRow | null>;
+  /** Revocation stops the work a device still has in flight. */
+  failActiveTasksForWorkspace(
+    userId: string,
+    workspaceId: string,
+    failureCode: string
+  ): Promise<void>;
 }

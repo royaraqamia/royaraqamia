@@ -99,7 +99,8 @@ conversational service.
 - Phase 1: GitHub-only, Actions runner, plan/edit approval, verify loop,
   checkpoints, budgets and the eval suite.
 - Phase 2: a local companion for folders on the member's device; the folder
-  grant and credentials stay on that device.
+  grant and credentials stay on that device
+  ([ADR-0222](0222-a-local-folder-companion-runs-on-the-members-device.md)).
 - Phase 3: multi-repository workspaces, reviewer agent and wider autonomy.
 
 ## Consequences

@@ -9,14 +9,16 @@ import {
   type CodingRunnerAuth,
 } from '@/backend/config/coding';
 import { env } from '@/backend/config/env';
-import { errorResultAt } from '@/backend/middleware/http';
+import { codingPairClaimRateLimitPolicy } from '@/backend/config/rate-limiter';
+import { checkRateLimitApi, errorResultAt } from '@/backend/middleware/http';
 import type { CodingService } from '@/backend/services/coding/coding-service';
 import { logger } from '@/backend/shared/logger';
 import { NO_STORE } from '@/backend/transport/cache-policy';
-import { isSameOrigin } from '@/backend/transport/http';
+import { clientAddress, isSameOrigin } from '@/backend/transport/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import type {
+  ClaimCodingLocalPairInput,
   CodingRepoInput,
   CodingRunnerLlmRequest,
   CodingRunnerUpdate,
@@ -226,6 +228,97 @@ export async function llmForRunner(
   return withRunner(headers, async ({ rawToken }, service) =>
     jsonResult(200, await service.runnerLlm(rawToken, request))
   );
+}
+
+/** The local companion's member surface: a code now, a grant row afterwards. */
+export async function createCodingLocalPair(
+  headers: Headers,
+  input: { deviceLabel: string }
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+      return jsonResult(
+        200,
+        await createCodingServiceForUser(supabase).createLocalPair(userId, input),
+        { headers: NO_STORE }
+      );
+    },
+    { mapError: mapCodingError }
+  );
+}
+
+export async function listCodingLocalGrants(_headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) =>
+      jsonResult(200, await createCodingServiceForUser(supabase).listLocalGrants(userId), {
+        headers: NO_STORE,
+      }),
+    { mapError: mapCodingError }
+  );
+}
+
+export async function revokeCodingLocalGrant(headers: Headers, id: string): Promise<HttpResult> {
+  if (!Id.safeParse(id).success) {
+    return jsonResult(400, { success: false, error: 'معرّف الجهاز غير صالح.' });
+  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+      await createCodingServiceForUser(supabase).revokeLocalGrant(userId, id);
+      return jsonResult(200, { success: true });
+    },
+    { mapError: mapCodingError }
+  );
+}
+
+/** A bearer on this route is a device grant, not a task callback. */
+function bearerToken(headers: Headers): string | null {
+  const match = /^Bearer\s+(.+)$/i.exec((headers.get('authorization') ?? '').trim());
+  const raw = match?.[1]?.trim() ?? '';
+  return raw.length >= 20 ? raw : null;
+}
+
+/**
+ * The companion's two unauthenticated doors. Neither takes a session: the
+ * one-time pairing code and the revocable grant token are the credentials, and
+ * both are hashed at rest.
+ */
+export async function claimCodingLocalPair(
+  headers: Headers,
+  input: ClaimCodingLocalPairInput
+): Promise<HttpResult> {
+  const limited = await checkRateLimitApi(codingPairClaimRateLimitPolicy(clientAddress(headers)));
+  if (limited) {
+    return 'redirect' in limited
+      ? limited
+      : { ...limited, headers: { ...limited.headers, ...NO_STORE } };
+  }
+  try {
+    const result = await createCodingRunnerService().claimLocalPair(input);
+    return { ...jsonResult(200, result), headers: { ...NO_STORE } };
+  } catch (error) {
+    const mapped = mapCodingError(error);
+    return { ...mapped, headers: { ...mapped.headers, ...NO_STORE } };
+  }
+}
+
+export async function claimCodingLocalTask(headers: Headers): Promise<HttpResult> {
+  const raw = bearerToken(headers);
+  if (!raw) return UNAUTHORIZED;
+  try {
+    const task = await createCodingRunnerService().claimLocalTask(raw);
+    return task
+      ? { ...jsonResult(200, task), headers: { ...NO_STORE } }
+      : { ...jsonResult(200, null), headers: { ...NO_STORE } };
+  } catch (error) {
+    const mapped = mapCodingError(error);
+    return { ...mapped, headers: { ...mapped.headers, ...NO_STORE } };
+  }
 }
 
 /** GitHub App connect: start and callback. No token ever enters a URL. */

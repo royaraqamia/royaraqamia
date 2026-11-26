@@ -58,8 +58,6 @@ function sleep(ms) {
 function loadSpec() {
   if (!API) throw new RunnerError('runner_failed', 'NOOR_API_URL is missing');
   if (!CALLBACK_TOKEN) throw new RunnerError('runner_failed', 'NOOR_CALLBACK_TOKEN is missing');
-  if (!GITHUB_TOKEN) throw new RunnerError('runner_failed', 'GITHUB_TOKEN is missing');
-  if (!REPOSITORY) throw new RunnerError('runner_failed', 'GITHUB_REPOSITORY is missing');
   if (!SPEC_JSON) throw new RunnerError('runner_failed', 'NOOR_TASK_JSON is missing');
 
   let spec;
@@ -71,7 +69,17 @@ function loadSpec() {
   if (!spec || typeof spec !== 'object') {
     throw new RunnerError('runner_failed', 'NOOR_TASK_JSON is not an object');
   }
-  if (!spec.taskId || !spec.branch || !spec.baseBranch || !spec.caps || !spec.instruction) {
+  if (!spec.taskId || !spec.instruction || !spec.caps) {
+    throw new RunnerError('runner_failed', 'NOOR_TASK_JSON is missing required task fields');
+  }
+  if (spec.kind === 'local') {
+    // A local task runs inside a folder the member granted on this device: no
+    // repository, no installation token and no remote to push to.
+    return spec;
+  }
+  if (!GITHUB_TOKEN) throw new RunnerError('runner_failed', 'GITHUB_TOKEN is missing');
+  if (!REPOSITORY) throw new RunnerError('runner_failed', 'GITHUB_REPOSITORY is missing');
+  if (!spec.branch || !spec.baseBranch) {
     throw new RunnerError('runner_failed', 'NOOR_TASK_JSON is missing required task fields');
   }
   if (spec.branch === spec.baseBranch || /^(main|master|develop)$/.test(spec.branch)) {
@@ -81,6 +89,7 @@ function loadSpec() {
 }
 
 const spec = loadSpec();
+const LOCAL = spec.kind === 'local';
 // The workflow's GITHUB_TOKEN cannot create PRs in every repo configuration;
 // the control plane supplies a short-lived installation token for this one act.
 const HANDOFF_TOKEN = spec.handoffToken ?? '';
@@ -346,6 +355,23 @@ function applyPatch(args) {
 }
 
 const ALLOWED_COMMANDS = new Set(['npm', 'npx', 'node', 'git', 'pnpm', 'yarn']);
+const LOCAL_BLOCKED_GIT = new Set([
+  'add',
+  'branch',
+  'checkout',
+  'cherry-pick',
+  'clean',
+  'commit',
+  'merge',
+  'push',
+  'rebase',
+  'reset',
+  'restore',
+  'revert',
+  'stash',
+  'switch',
+  'tag',
+]);
 
 function spawnCommand(command, args, { env = process.env, timeoutMs = COMMAND_TIMEOUT_MS } = {}) {
   return new Promise((resolvePromise, rejectPromise) => {
@@ -395,6 +421,11 @@ async function runCommand(args) {
   // Pushing is one deliberate act at handoff time, not a model tool call.
   if (command === 'git' && cmdArgs[0] === 'push') {
     throw new Error('git push is reserved for the final handoff');
+  }
+  // A local task's review surface and rollback both depend on the folder's
+  // history and index being untouched: the member's own commit is the decision.
+  if (LOCAL && command === 'git' && LOCAL_BLOCKED_GIT.has(String(cmdArgs[0] ?? ''))) {
+    throw new Error(`git ${cmdArgs[0]} is not available in a local folder task`);
   }
   return spawnCommand(command, cmdArgs, { env: restrictedEnv() });
 }
@@ -529,6 +560,19 @@ const SYSTEM_PROMPT = [
   'In plan mode, do not call write_file, apply_patch or run_command: answer with a short plan',
   'and a proposed unified diff in a fenced ```diff block. Wait for the member to approve it.',
   'After approval, implement the plan, then run the repository typecheck, lint and tests.',
+  'Finish with a concise summary of what changed and how it was verified.',
+].join(' ');
+
+const LOCAL_SYSTEM_PROMPT = [
+  'You are a careful senior engineer working in a folder the member granted on their own device.',
+  'The folder is a git working tree and it was clean when the task started.',
+  'Inspect before editing. Make the smallest change that satisfies the request.',
+  'Never ask a tool to print environment variables, credentials or tokens, and never create, read',
+  'or modify anything outside the folder.',
+  'In plan mode, do not call write_file, apply_patch or run_command: answer with a short plan',
+  'and a proposed unified diff in a fenced ```diff block. Wait for the member to approve it.',
+  'After approval, implement the plan, then run the repository typecheck, lint and tests.',
+  'Do not run git commit, git push or any command that changes history; the member reviews the diff.',
   'Finish with a concise summary of what changed and how it was verified.',
 ].join(' ');
 
@@ -683,8 +727,41 @@ async function verify() {
   console.log(`[noor] verification passed: ${names.join(', ')}`);
 }
 
-async function createPullRequest(summaryText) {
-  const [owner, name] = REPOSITORY.split('/');
+/**
+ * A local task edits the member's own working tree, so the tree has to be clean
+ * first: the diff the member reviews is then exactly the agent's work, and
+ * `git checkout .` is a complete rollback. Runs before the first model call.
+ */
+async function preflightLocal() {
+  const inside = await git(['rev-parse', '--is-inside-work-tree']);
+  if (inside.exitCode !== 0 || inside.stdout.trim() !== 'true') {
+    throw new RunnerError('runner_failed', 'the granted folder is not a git repository');
+  }
+  const dirty = (await git(['status', '--porcelain'])).stdout.trim();
+  if (dirty) {
+    throw new RunnerError(
+      'runner_failed',
+      'the granted folder has uncommitted changes; commit or stash them first'
+    );
+  }
+}
+
+/** Local work leaves an uncommitted diff in the folder; nothing is pushed. */
+async function handoffLocal(summaryText) {
+  const diff = (await git(['diff'])).stdout.trim();
+  const untracked = (await git(['status', '--porcelain'])).stdout.trim();
+  const body = diff || (untracked ? `Untracked files:\n${untracked}` : 'No file changes.');
+  await postUpdate(
+    'review',
+    'applied',
+    cap(summaryText || 'The changes are in your folder.', 20_000),
+    cap(body, 200_000),
+    null
+  );
+  console.log('[noor] local diff ready for review');
+}
+
+async function createPullRequest(summaryText) {  const [owner, name] = REPOSITORY.split('/');
   if (!owner || !name) throw new RunnerError('runner_failed', 'GITHUB_REPOSITORY is not owner/repo');
   const base = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`;
   const headers = {
@@ -750,6 +827,9 @@ async function handoff(summaryText) {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  // Refuse a dirty folder before spending a model call or touching a file.
+  if (LOCAL) await preflightLocal();
+
   const firstState = await taskState();
   if (!isActive(firstState.status)) {
     console.log(`[noor] task already ${firstState.status}; nothing to do`);
@@ -760,10 +840,12 @@ async function main() {
   }
 
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: LOCAL ? LOCAL_SYSTEM_PROMPT : SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `Task ${spec.taskId}: ${spec.instruction}\nBase branch: ${spec.baseBranch}\nTask branch: ${spec.branch}\nMode: ${spec.mode}`,
+      content: LOCAL
+        ? `Task ${spec.taskId}: ${spec.instruction}\nFolder: the granted folder on this device\nMode: ${spec.mode}`
+        : `Task ${spec.taskId}: ${spec.instruction}\nBase branch: ${spec.baseBranch}\nTask branch: ${spec.branch}\nMode: ${spec.mode}`,
     },
   ];
 
@@ -811,7 +893,7 @@ async function main() {
 
   // Local edit mode stops at the external-effect boundary. Full mode has that
   // escalation granted by its mode; plan mode has already been approved once.
-  if (spec.mode === 'edit') {
+  if (!LOCAL && spec.mode === 'edit') {
     await postUpdate('push', 'running', 'Requesting approval to push and open a PR.', null, null);
     const verdict = await waitForDecision();
     if (verdict !== 'approve') {
@@ -819,6 +901,12 @@ async function main() {
       await postUpdate('push', 'failed', `Push not approved (${verdict}).`, null, code);
       throw new RunnerError(code, `Push not approved (${verdict}).`);
     }
+  }
+
+  if (LOCAL) {
+    await handoffLocal(edit.finalText);
+    console.log('[noor] task complete');
+    return;
   }
 
   await handoff(edit.finalText);
