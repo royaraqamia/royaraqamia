@@ -2,11 +2,11 @@ import type {
   CodingAvailableRepoDto,
   CodingLocalGrantDto,
   CodingLocalPairDto,
-  CodingRepoInput,
   CodingStepDto,
   CodingTaskDto,
   CodingWorkspaceDto,
   CreateCodingTaskInput,
+  CreateCodingWorkspaceInput,
   DecideCodingStepInput,
 } from '@/shared/contracts/coding-agent';
 import { request } from '@/frontend/transport/http';
@@ -78,7 +78,9 @@ export async function getCodingAvailableRepos(): Promise<CodingAvailableRepoDto[
   return codingData<CodingAvailableRepoDto[]>(body) ?? [];
 }
 
-export async function createCodingWorkspace(input: CodingRepoInput): Promise<CodingWorkspaceDto> {
+export async function createCodingWorkspace(
+  input: CreateCodingWorkspaceInput
+): Promise<CodingWorkspaceDto> {
   const body = await request<unknown>('/api/coding/workspaces', {
     method: 'POST',
     credentials: 'same-origin',

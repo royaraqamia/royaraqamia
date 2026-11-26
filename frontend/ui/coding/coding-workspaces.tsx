@@ -27,6 +27,9 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
   const [connecting, setConnecting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [groupName, setGroupName] = useState('');
+  const [groupRepos, setGroupRepos] = useState<string[]>([]);
+  const [creatingGroup, setCreatingGroup] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -94,6 +97,42 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
     } finally {
       setAdding(false);
     }
+  };
+
+  const createGroup = async () => {
+    const chosen = repos.filter((repo) => groupRepos.includes(repo.fullName));
+    if (groupName.trim().length === 0) {
+      setActionError('اكتب اسمًا للمجموعة.');
+      return;
+    }
+    if (chosen.length < 2) {
+      setActionError('اختر مستودعين على الأقل.');
+      return;
+    }
+    setCreatingGroup(true);
+    setActionError(null);
+    try {
+      await createCodingWorkspace({
+        kind: 'group',
+        name: groupName.trim(),
+        repos: chosen.map((repo) => ({ owner: repo.owner, name: repo.name })),
+      });
+      setGroupName('');
+      setGroupRepos([]);
+      await load();
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'تعذّر إنشاء المجموعة.');
+    } finally {
+      setCreatingGroup(false);
+    }
+  };
+
+  const toggleGroupRepo = (fullName: string) => {
+    setGroupRepos((current) =>
+      current.includes(fullName)
+        ? current.filter((value) => value !== fullName)
+        : [...current, fullName]
+    );
   };
 
   const connect = async () => {
@@ -173,6 +212,50 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
         </div>
       )}
 
+      {repos.length >= 2 && (
+        <div className="flex flex-col gap-2 rounded-lg border border-border/60 p-3">
+          <p className="text-xs font-bold text-foreground">مجموعة مستودعات</p>
+          <p className="text-xs text-muted-foreground">
+            مهمة واحدة تعمل على عدة مستودعات وتفتح طلب دمج لكل مستودع. يجب أن تقع كلها تحت تثبيت
+            واحد للتطبيق.
+          </p>
+          <label className="flex flex-col gap-1 text-xs">
+            <span className="font-bold text-foreground">اسم المجموعة</span>
+            <input
+              type="text"
+              maxLength={80}
+              value={groupName}
+              onChange={(event) => setGroupName(event.target.value)}
+              placeholder="التطبيق ولوحة التحكم"
+              className="rounded-lg border border-border bg-background px-2 py-2 text-sm"
+            />
+          </label>
+          <fieldset className="flex flex-col gap-1">
+            <legend className="text-xs font-bold text-foreground">المستودعات</legend>
+            <div className="flex flex-wrap gap-3">
+              {repos.map((repo) => (
+                <label key={repo.fullName} className="flex items-center gap-1 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={groupRepos.includes(repo.fullName)}
+                    onChange={() => toggleGroupRepo(repo.fullName)}
+                  />
+                  {repo.fullName}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <button
+            type="button"
+            onClick={() => void createGroup()}
+            disabled={creatingGroup}
+            className="w-fit rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {creatingGroup ? 'جاري إنشاء المجموعة...' : 'إنشاء مجموعة'}
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-sm text-muted-foreground">جاري تحميل المستودعات...</p>
       ) : workspaces.length === 0 ? (
@@ -190,23 +273,29 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
                 <p className="font-bold text-foreground">
                   {workspace.kind === 'local'
                     ? `مجلد محلي — ${workspace.deviceLabel ?? 'جهاز'}`
-                    : `${workspace.repoOwner ?? ''}/${workspace.repoName ?? ''}`}
+                    : workspace.kind === 'group'
+                      ? `${workspace.name ?? 'مجموعة'} — ${workspace.repos.length} من المستودعات`
+                      : `${workspace.repoOwner ?? ''}/${workspace.repoName ?? ''}`}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {workspace.defaultBranch ? `الفرع الافتراضي: ${workspace.defaultBranch} · ` : ''}
-                  أُضيف في {formatCodingDate(workspace.createdAt)}
+                  {workspace.kind === 'group'
+                    ? workspace.repos.map((repo) => repo.fullName).join(' · ')
+                    : workspace.defaultBranch
+                      ? `الفرع الافتراضي: ${workspace.defaultBranch} · `
+                      : ''}
+                  {workspace.kind !== 'group' && `أُضيف في ${formatCodingDate(workspace.createdAt)}`}
                 </p>
-                {workspace.bootstrapPrUrl && (
+                {workspace.bootstrapPrUrls.length > 0 && (
                   <p className="mt-1 text-xs text-amber-600">
                     راجع وادمج{' '}
-                    <a
-                      href={workspace.bootstrapPrUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="underline"
-                    >
-                      طلب دمج تثبيت المهمات
-                    </a>{' '}
+                    {workspace.bootstrapPrUrls.map((url, index) => (
+                      <span key={url}>
+                        {index > 0 ? ' و' : ''}
+                        <a href={url} target="_blank" rel="noreferrer" className="underline">
+                          طلب دمج تثبيت المهام {index + 1}
+                        </a>
+                      </span>
+                    ))}{' '}
                     قبل تشغيل أول مهمة.
                   </p>
                 )}

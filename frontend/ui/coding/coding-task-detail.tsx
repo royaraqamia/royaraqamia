@@ -118,6 +118,44 @@ export function CodingTaskDetail({ taskId }: { taskId: string }) {
         </div>
       </dl>
 
+      {task.repos.length > 1 && (
+        <section className="rounded-xl border border-border/70 p-3">
+          <h3 className="text-sm font-bold">المستودعات</h3>
+          <ul className="mt-2 flex flex-col gap-2">
+            {task.repos.map((repo) => (
+              <li
+                key={repo.id}
+                className="flex flex-wrap items-center justify-between gap-2 text-sm"
+              >
+                <div>
+                  <p className="font-bold text-foreground">{repo.fullName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {repo.branch ?? '—'} ·{' '}
+                    {repo.status === 'completed'
+                      ? 'تم'
+                      : repo.status === 'failed'
+                        ? 'توقف'
+                        : 'جاري'}
+                  </p>
+                </div>
+                {repo.pullRequestUrl ? (
+                  <a
+                    href={repo.pullRequestUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    طلب الدمج
+                  </a>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {task.summary && <p className="text-sm leading-relaxed text-foreground">{task.summary}</p>}
       {(task.inputTokens != null || task.outputTokens != null) && (
         <p className="text-sm text-muted-foreground">
@@ -144,7 +182,8 @@ export function CodingTaskDetail({ taskId }: { taskId: string }) {
               <li key={step.id} className="rounded-xl border border-border/70 bg-card/70 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-bold text-foreground">
-                    {CODING_STEP_KIND_LABELS[step.kind]}: {step.summary}
+                    {CODING_STEP_KIND_LABELS[step.kind]}
+                    {step.repo ? ` · ${step.repo}` : ''}: {step.summary}
                   </p>
                   <span className="text-xs text-muted-foreground">
                     {CODING_STEP_STATUS_LABELS[step.status]}
@@ -156,36 +195,46 @@ export function CodingTaskDetail({ taskId }: { taskId: string }) {
                     {formatCodingCount(step.outputTokens)}
                   </p>
                 )}
-                {step.diff && (step.status === 'proposed' || step.kind === 'review') && (
-                  <>
-                    <pre
-                      className="mt-2 max-h-96 overflow-auto rounded-lg bg-muted p-3 text-start text-xs"
-                      dir="ltr"
-                    >
-                      {step.diff}
-                    </pre>
-                    {step.status === 'proposed' && (
-                      <div className="mt-2 flex gap-2">
-                        <button
-                          type="button"
-                          disabled={busyStepId === step.id}
-                          onClick={() => void decide(step.id, 'approve')}
-                          className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground disabled:opacity-60"
-                        >
-                          موافقة
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busyStepId === step.id}
-                          onClick={() => void decide(step.id, 'reject')}
-                          className="rounded-lg border border-border/70 px-3 py-1 text-xs font-bold text-muted-foreground disabled:opacity-60"
-                        >
-                          رفض
-                        </button>
-                      </div>
-                    )}
-                  </>
+                {step.model && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {step.model}
+                    {step.latencyMs != null ? ` · ${formatCodingCount(step.latencyMs)} ms` : ''}
+                    {step.costUsd != null ? ` · $${step.costUsd.toFixed(4)}` : ''}
+                  </p>
                 )}
+                {step.diff &&
+                  (step.status === 'proposed' ||
+                    step.kind === 'review' ||
+                    step.kind === 'reviewer') && (
+                    <>
+                      <pre
+                        className="mt-2 max-h-96 overflow-auto rounded-lg bg-muted p-3 text-start text-xs"
+                        dir="ltr"
+                      >
+                        {step.diff}
+                      </pre>
+                      {step.status === 'proposed' && (
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            type="button"
+                            disabled={busyStepId === step.id}
+                            onClick={() => void decide(step.id, 'approve')}
+                            className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground disabled:opacity-60"
+                          >
+                            موافقة
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busyStepId === step.id}
+                            onClick={() => void decide(step.id, 'reject')}
+                            className="rounded-lg border border-border/70 px-3 py-1 text-xs font-bold text-muted-foreground disabled:opacity-60"
+                          >
+                            رفض
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
               </li>
             ))}
           </ol>

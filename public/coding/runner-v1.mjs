@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* global process, console, setTimeout, clearTimeout, fetch, AbortSignal, Buffer */
 /**
- * Noor coding runner v1 (ADR-0219).
+ * Noor coding runner v1 (ADR-0219, ADR-0223).
  *
  * Executed by `assets/coding/noor-coding.yml` inside a GitHub-hosted Actions
  * job with the member's repository checked out. It has no npm dependencies and
@@ -9,9 +9,10 @@
  * progress frame, decision and token count travels through the task-scoped HTTP
  * callback API with a short-lived bearer token.
  *
- * The workspace is disposable. The only durable output is a branch, one or more
- * checkpoint commits, and a pull request the member reviews. Nothing here ever
- * pushes to the base branch.
+ * The workspace is disposable. The only durable output is one branch per
+ * repository in the task's set, a checkpoint commit per repository, and a pull
+ * request per repository that the member reviews. Nothing here ever pushes to a
+ * base branch.
  */
 
 import { spawn } from 'node:child_process';
@@ -28,8 +29,12 @@ const POLL_MS = 3_000;
 const COMMAND_TIMEOUT_MS = 5 * 60_000;
 const MAX_STEPS = 30;
 const MAX_MESSAGES = 140;
+const MAX_REVIEW_DIFF = 120_000;
 
 const usage = { inputTokens: 0, outputTokens: 0 };
+// Assigned from the spec below. Declared here so an early failure can still be
+// scrubbed and reported without touching a temporal-dead-zone binding.
+let HANDOFF_TOKEN = '';
 
 class RunnerError extends Error {
   constructor(code, message) {
@@ -78,23 +83,49 @@ function loadSpec() {
     return spec;
   }
   if (!GITHUB_TOKEN) throw new RunnerError('runner_failed', 'GITHUB_TOKEN is missing');
-  if (!REPOSITORY) throw new RunnerError('runner_failed', 'GITHUB_REPOSITORY is missing');
-  if (!spec.branch || !spec.baseBranch) {
-    throw new RunnerError('runner_failed', 'NOOR_TASK_JSON is missing required task fields');
+  const repos = Array.isArray(spec.repos) ? spec.repos : [];
+  if (repos.length === 0 && spec.repoOwner && spec.repoName && spec.baseBranch && spec.branch) {
+    // A task dispatched before per-repository rows existed carries the single
+    // repository in the old fields. Read it as a one-entry set rather than
+    // failing work that was already running when this runner was deployed.
+    spec.repos = [
+      {
+        owner: spec.repoOwner,
+        name: spec.repoName,
+        fullName: `${spec.repoOwner}/${spec.repoName}`,
+        baseBranch: spec.baseBranch,
+        branch: spec.branch,
+        dir: `repos/${spec.repoOwner}/${spec.repoName}`,
+      },
+    ];
   }
-  if (spec.branch === spec.baseBranch || /^(main|master|develop)$/.test(spec.branch)) {
-    throw new RunnerError('runner_failed', 'the task branch may not be the base branch');
+  if (!Array.isArray(spec.repos) || spec.repos.length === 0) {
+    throw new RunnerError('runner_failed', 'NOOR_TASK_JSON has no repository set');
+  }
+  for (const repo of spec.repos) {
+    if (!repo || !repo.owner || !repo.name || !repo.branch || !repo.baseBranch) {
+      throw new RunnerError('runner_failed', 'NOOR_TASK_JSON has an incomplete repository');
+    }
+    if (repo.branch === repo.baseBranch || /^(main|master|develop)$/.test(repo.branch)) {
+      throw new RunnerError('runner_failed', 'the task branch may not be the base branch');
+    }
   }
   return spec;
 }
 
 const spec = loadSpec();
 const LOCAL = spec.kind === 'local';
+const REPOS = LOCAL ? [] : Array.isArray(spec.repos) ? spec.repos : [];
 // The workflow's GITHUB_TOKEN cannot create PRs in every repo configuration;
 // the control plane supplies a short-lived installation token for this one act.
-const HANDOFF_TOKEN = spec.handoffToken ?? '';
+HANDOFF_TOKEN = spec.handoffToken ?? '';
+// One checkout stays cwd-relative; two or more are cloned under a workspace
+// root so repository paths never collide.
+const MULTI = !LOCAL && REPOS.length > 1;
 const deadlineMs =
   Date.now() + Math.min(Math.max(Number(spec.caps.runnerMinutes) || 15, 1), 60) * 60_000;
+
+let ASKPASS_PATH = '';
 
 function timeLeftMs() {
   return Math.max(0, deadlineMs - Date.now());
@@ -130,7 +161,7 @@ async function api(path, { method = 'GET', body } = {}) {
   }
 }
 
-async function postUpdate(kind, status, summary, diff = null, failureCode = null) {
+async function postUpdate(kind, status, summary, diff = null, failureCode = null, extra = {}) {
   await api('/api/coding/runner/update', {
     method: 'POST',
     body: {
@@ -138,9 +169,12 @@ async function postUpdate(kind, status, summary, diff = null, failureCode = null
       status,
       summary: cap(summary, 20_000),
       diff: diff === null ? null : cap(diff, 200_000),
+      repo: extra.repo ?? null,
       failureCode,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
+      model: extra.model ?? null,
+      latencyMs: extra.latencyMs ?? null,
     },
   });
 }
@@ -373,9 +407,13 @@ const LOCAL_BLOCKED_GIT = new Set([
   'tag',
 ]);
 
-function spawnCommand(command, args, { env = process.env, timeoutMs = COMMAND_TIMEOUT_MS } = {}) {
+function spawnCommand(
+  command,
+  args,
+  { env = process.env, timeoutMs = COMMAND_TIMEOUT_MS, cwd = process.cwd() } = {}
+) {
   return new Promise((resolvePromise, rejectPromise) => {
-    const child = spawn(command, args, { cwd: process.cwd(), env, shell: false });
+    const child = spawn(command, args, { cwd, env, shell: false });
     let stdout = '';
     let stderr = '';
     let settled = false;
@@ -406,7 +444,34 @@ function restrictedEnv() {
   delete childEnv.NOOR_CALLBACK_TOKEN;
   delete childEnv.GITHUB_TOKEN;
   delete childEnv.NOOR_TASK_JSON;
+  delete childEnv.HANDOFF_TOKEN;
+  delete childEnv.NOOR_GIT_TOKEN;
+  delete childEnv.GIT_ASKPASS;
   return childEnv;
+}
+
+/** The token reaches git through askpass, never through a command line or URL. */
+function gitEnv() {
+  return {
+    ...process.env,
+    GIT_ASKPASS: ASKPASS_PATH,
+    GIT_TERMINAL_PROMPT: '0',
+    NOOR_GIT_TOKEN: HANDOFF_TOKEN,
+  };
+}
+
+/** The git subcommand, skipping `-C <path>` and `-c key=value` options. */
+function gitSubcommand(args) {
+  for (let i = 0; i < args.length; i++) {
+    const value = String(args[i] ?? '');
+    if (value === '-C' || value === '-c' || value === '--git-dir' || value === '--work-tree') {
+      i++;
+      continue;
+    }
+    if (value.startsWith('-')) continue;
+    return value;
+  }
+  return '';
 }
 
 async function runCommand(args) {
@@ -418,14 +483,16 @@ async function runCommand(args) {
   if (!cmdArgs.every((value) => typeof value === 'string')) {
     throw new Error('args must be an array of strings');
   }
-  // Pushing is one deliberate act at handoff time, not a model tool call.
-  if (command === 'git' && cmdArgs[0] === 'push') {
+  // Pushing is one deliberate act at handoff time, not a model tool call. The
+  // subcommand is parsed, not read from position 0: `git -C repo push` is the
+  // same external effect as `git push`.
+  if (command === 'git' && gitSubcommand(cmdArgs) === 'push') {
     throw new Error('git push is reserved for the final handoff');
   }
   // A local task's review surface and rollback both depend on the folder's
   // history and index being untouched: the member's own commit is the decision.
-  if (LOCAL && command === 'git' && LOCAL_BLOCKED_GIT.has(String(cmdArgs[0] ?? ''))) {
-    throw new Error(`git ${cmdArgs[0]} is not available in a local folder task`);
+  if (LOCAL && command === 'git' && LOCAL_BLOCKED_GIT.has(gitSubcommand(cmdArgs))) {
+    throw new Error(`git ${gitSubcommand(cmdArgs)} is not available in a local folder task`);
   }
   return spawnCommand(command, cmdArgs, { env: restrictedEnv() });
 }
@@ -435,7 +502,7 @@ const TOOL_DEFINITIONS = [
     type: 'function',
     function: {
       name: 'list_files',
-      description: 'List files in the checked-out repository, excluding .git and dependencies.',
+      description: 'List files in the workspace, excluding .git and dependencies.',
       parameters: {
         type: 'object',
         properties: {
@@ -553,13 +620,24 @@ async function runTool(name, args, allowedTools) {
 // Model loop
 // ---------------------------------------------------------------------------
 
+function repoMap() {
+  if (LOCAL) return 'Folder: the granted folder on this device.';
+  if (!MULTI) return `Repository: ${REPOS[0]?.fullName ?? REPOSITORY}.`;
+  return [
+    'This task spans several repositories, checked out side by side:',
+    ...REPOS.map((repo) => `- ${repo.fullName} at ${repo.dir}`),
+    'Use those relative paths in every tool call. A change that belongs in one repository',
+    'must not be copied into another unless the task needs it in both.',
+  ].join('\n');
+}
+
 const SYSTEM_PROMPT = [
   'You are a careful senior engineer working in a checked-out repository.',
   'Inspect before editing. Make the smallest change that satisfies the request.',
   'Never ask a tool to print environment variables, credentials or tokens.',
   'In plan mode, do not call write_file, apply_patch or run_command: answer with a short plan',
   'and a proposed unified diff in a fenced ```diff block. Wait for the member to approve it.',
-  'After approval, implement the plan, then run the repository typecheck, lint and tests.',
+  'After approval, implement the plan, then run each repository typecheck, lint and tests.',
   'Finish with a concise summary of what changed and how it was verified.',
 ].join(' ');
 
@@ -666,65 +744,144 @@ function proposedDiff(text) {
 }
 
 // ---------------------------------------------------------------------------
-// Verification, checkpoints and handoff
+// Repository set, checkpoints and verification
 // ---------------------------------------------------------------------------
 
-function git(args) {
-  return spawnCommand('git', args, {
-    env: process.env,
-    timeoutMs: 120_000,
-  });
+const ASKPASS_SCRIPT = [
+  '#!/bin/sh',
+  'case "$1" in',
+  "  *Username*) printf '%s\\n' 'x-access-token' ;;",
+  '  *) printf \'%s\\n\' "$NOOR_GIT_TOKEN" ;;',
+  'esac',
+  '',
+].join('\n');
+
+/** Clone every repository into one workspace when the task has more than one. */
+async function prepareWorkspace() {
+  if (!MULTI) return;
+  if (!HANDOFF_TOKEN) {
+    throw new RunnerError('runner_failed', 'a multi-repository task needs an installation token');
+  }
+  for (const repo of REPOS) {
+    if (
+      !/^[A-Za-z0-9_.-]+$/.test(repo.owner) ||
+      !/^[A-Za-z0-9_.-]+$/.test(repo.name) ||
+      !repo.dir.startsWith('repos/')
+    ) {
+      throw new RunnerError('runner_failed', `invalid repository checkout: ${repo.fullName}`);
+    }
+  }
+  const root = join(process.cwd(), '.noor-work');
+  mkdirSync(root, { recursive: true });
+  ASKPASS_PATH = join(root, '.noor-askpass.sh');
+  writeFileSync(ASKPASS_PATH, ASKPASS_SCRIPT, { encoding: 'utf8', mode: 0o700 });
+
+  for (const repo of REPOS) {
+    const target = join(root, ...repo.dir.split('/'));
+    mkdirSync(dirname(target), { recursive: true });
+    const clone = await spawnCommand(
+      'git',
+      [
+        'clone',
+        '--branch',
+        repo.baseBranch,
+        '--single-branch',
+        '--depth',
+        '50',
+        `https://github.com/${repo.owner}/${repo.name}.git`,
+        target,
+      ],
+      { cwd: root, env: gitEnv(), timeoutMs: 180_000 }
+    );
+    if (clone.exitCode !== 0) {
+      throw new RunnerError(
+        'runner_failed',
+        `clone of ${repo.fullName} failed: ${clone.stderr.slice(0, 300)}`
+      );
+    }
+  }
+  process.chdir(root);
 }
 
-async function checkpoint(label) {
-  await git(['add', '-A']);
-  const status = (await git(['status', '--porcelain'])).stdout.trim();
+/** Local tasks have one root; a GitHub task has one per repository. */
+function workTargets() {
+  if (LOCAL) return [{ repo: null, cwd: process.cwd() }];
+  if (!MULTI) return REPOS.map((repo) => ({ repo, cwd: process.cwd() }));
+  return REPOS.map((repo) => ({ repo, cwd: safePath(repo.dir) }));
+}
+
+function git(args, cwd = process.cwd(), env = process.env) {
+  return spawnCommand('git', args, { env, cwd, timeoutMs: 120_000 });
+}
+
+async function checkpoint(target) {
+  await git(['add', '-A'], target.cwd);
+  const status = (await git(['status', '--porcelain'], target.cwd)).stdout.trim();
   if (!status) return false;
   // The ephemeral runner has no git identity; commits fail without one.
-  await git(['config', 'user.name', 'noor-coding-agent']);
-  await git(['config', 'user.email', 'noor@royaraqamia.com']);
-  const summary = `noor: ${label}`;
-  const result = await git(['commit', '-m', summary]);
+  await git(['config', 'user.name', 'noor-coding-agent'], target.cwd);
+  await git(['config', 'user.email', 'noor@royaraqamia.com'], target.cwd);
+  const summary = `noor: ${target.repo ? target.repo.fullName : 'local'} checkpoint`;
+  const result = await git(['commit', '-m', summary], target.cwd);
   if (result.exitCode !== 0) {
     throw new RunnerError('runner_failed', `checkpoint commit failed: ${result.stderr.slice(0, 200)}`);
   }
   return true;
 }
 
-async function verify() {
-  let scripts = {};
+function scriptsIn(cwd) {
   try {
-    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'));
-    scripts = pkg.scripts ?? {};
+    const pkg = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'));
+    return pkg.scripts ?? {};
   } catch {
     // No package manifest: there is no repository-defined gate to run.
+    return {};
   }
-  const names = ['typecheck', 'lint', 'test'].filter((name) => typeof scripts[name] === 'string');
-  if (names.length === 0) {
+}
+
+async function verify() {
+  let ranAny = false;
+  for (const target of workTargets()) {
+    const scripts = scriptsIn(target.cwd);
+    const names = ['typecheck', 'lint', 'test'].filter((name) => typeof scripts[name] === 'string');
+    if (names.length === 0) continue;
+    ranAny = true;
+    const evidence = [];
+    for (const name of names) {
+      budgetCheck();
+      const result = await spawnCommand('npm', ['run', name], {
+        env: restrictedEnv(),
+        cwd: target.cwd,
+        timeoutMs: COMMAND_TIMEOUT_MS,
+      });
+      evidence.push(`$ npm run ${name}\nexit=${result.exitCode}\n${result.stdout}${result.stderr}`);
+      if (result.exitCode !== 0) {
+        await postUpdate(
+          'test',
+          'failed',
+          cap(evidence.join('\n\n'), 20_000),
+          null,
+          'checks_failed',
+          { repo: target.repo?.fullName ?? null }
+        );
+        throw new RunnerError('checks_failed', `npm run ${name} failed`);
+      }
+    }
+    await postUpdate('test', 'applied', cap(evidence.join('\n\n'), 20_000), null, null, {
+      repo: target.repo?.fullName ?? null,
+    });
+  }
+  if (!ranAny) {
     await postUpdate(
       'test',
       'applied',
-      'No typecheck, lint or test scripts in this repository; nothing to run.',
+      'No typecheck, lint or test scripts in this workspace; nothing to run.',
       null,
       null
     );
-    return;
+  } else {
+    console.log('[noor] verification passed');
   }
-  const evidence = [];
-  for (const name of names) {
-    budgetCheck();
-    const result = await spawnCommand('npm', ['run', name], {
-      env: restrictedEnv(),
-      timeoutMs: COMMAND_TIMEOUT_MS,
-    });
-    evidence.push(`$ npm run ${name}\nexit=${result.exitCode}\n${result.stdout}${result.stderr}`);
-    if (result.exitCode !== 0) {
-      await postUpdate('test', 'failed', cap(evidence.join('\n\n'), 20_000), null, 'checks_failed');
-      throw new RunnerError('checks_failed', `npm run ${name} failed`);
-    }
-  }
-  await postUpdate('test', 'applied', cap(evidence.join('\n\n'), 20_000), null, null);
-  console.log(`[noor] verification passed: ${names.join(', ')}`);
 }
 
 /**
@@ -746,6 +903,187 @@ async function preflightLocal() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Reviewer (ADR-0223)
+// ---------------------------------------------------------------------------
+
+const REVIEWER_SYSTEM_PROMPT = [
+  'You review a change another engineer just made. You do not edit files.',
+  'Return JSON only, with this shape:',
+  '{"verdict":"pass"|"block","blocking":[{"file":"...","line":0,"issue":"..."}],"advisory":[...]}',
+  'A blocking finding is a correctness, security or data-loss defect that must be fixed',
+  'before a human reviews the diff. Style, naming and preferences are advisory at most.',
+  'Report only defects you can point at in the diff. An empty blocking list is normal.',
+].join(' ');
+
+/** The diff the reviewer reads: tracked changes plus untracked file names. */
+async function collectDiff() {
+  const parts = [];
+  const seenFiles = new Set();
+  let changedLines = 0;
+  for (const target of workTargets()) {
+    const label = target.repo?.fullName ?? '.';
+    const diff = await git(['diff', '--no-color', '--unified=3'], target.cwd);
+    const status = await git(['status', '--porcelain'], target.cwd);
+    const untracked = status.stdout
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith('?? '))
+      .map((line) => line.slice(3));
+    for (const line of status.stdout.split(/\r?\n/)) {
+      const path = line.slice(3).trim();
+      if (path) seenFiles.add(`${label}:${path}`);
+    }
+    for (const line of diff.stdout.split(/\r?\n/)) {
+      if (/^[+-]/.test(line) && !/^(\+\+\+|---)/.test(line)) changedLines++;
+      if (line.startsWith('diff --git ')) parts.push(`# ${label}`);
+    }
+    if (diff.stdout.trim()) parts.push(diff.stdout.trim());
+    if (untracked.length > 0) {
+      parts.push(`${label} untracked files:\n${untracked.map((path) => `- ${path}`).join('\n')}`);
+    }
+  }
+  return {
+    text: cap(parts.join('\n\n'), MAX_REVIEW_DIFF),
+    files: seenFiles.size,
+    changedLines,
+  };
+}
+
+function normalizeFindings(items) {
+  if (!Array.isArray(items)) return [];
+  return items.flatMap((item) => {
+    if (typeof item === 'string') return [{ file: null, line: null, issue: item.slice(0, 2000) }];
+    if (!item || typeof item !== 'object') return [];
+    const issue = typeof item.issue === 'string' ? item.issue : typeof item.message === 'string' ? item.message : '';
+    if (!issue) return [];
+    return [
+      {
+        file: typeof item.file === 'string' ? item.file : null,
+        line: Number.isInteger(item.line) ? item.line : null,
+        issue: issue.slice(0, 2000),
+      },
+    ];
+  });
+}
+
+function parseFindings(text) {
+  const raw = typeof text === 'string' ? text.trim() : '';
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start >= 0 && end > start) {
+    try {
+      const parsed = JSON.parse(raw.slice(start, end + 1));
+      return {
+        verdict: parsed.verdict === 'block' ? 'block' : 'pass',
+        blocking: normalizeFindings(parsed.blocking),
+        advisory: normalizeFindings(parsed.advisory),
+      };
+    } catch {
+      // Fall through: an answer that is not JSON becomes one advisory note.
+    }
+  }
+  return {
+    verdict: 'pass',
+    blocking: [],
+    advisory: raw ? [{ file: null, line: null, issue: raw.slice(0, 4000) }] : [],
+  };
+}
+
+function findingsSummary(findings) {
+  const blocking = findings.blocking.length;
+  const advisory = findings.advisory.length;
+  if (blocking === 0 && advisory === 0) return 'No findings.';
+  return `${blocking} blocking, ${advisory} advisory finding(s).`;
+}
+
+/**
+ * Ask the second model about a non-trivial diff. It can never fail the task:
+ * an unreachable reviewer is recorded as a step and the run continues.
+ */
+async function reviewDiff(summaryText) {
+  const limits = spec.reviewer;
+  if (!limits) return null;
+  const diff = await collectDiff();
+  if (diff.files === 0) return null;
+  if (diff.files < Number(limits.minFiles) && diff.changedLines < Number(limits.minChangedLines)) {
+    return null;
+  }
+
+  budgetCheck();
+  const started = Date.now();
+  let answer;
+  try {
+    answer = await api('/api/coding/runner/llm', {
+      method: 'POST',
+      body: {
+        purpose: 'reviewer',
+        messages: [
+          { role: 'system', content: REVIEWER_SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: [
+              `Task: ${spec.instruction}`,
+              `Engineer's summary: ${summaryText || '(none)'}`,
+              repoMap(),
+              `Diff (${diff.files} files, ${diff.changedLines} changed lines):`,
+              diff.text,
+            ].join('\n\n'),
+          },
+        ],
+      },
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await postUpdate(
+      'reviewer',
+      'applied',
+      cap(`Review unavailable: ${message}`, 20_000),
+      null,
+      null,
+      { model: limits.model, latencyMs: Date.now() - started }
+    );
+    return null;
+  }
+
+  usage.inputTokens += Number(answer.usage?.inputTokens ?? 0);
+  usage.outputTokens += Number(answer.usage?.outputTokens ?? 0);
+  const findings = parseFindings(answer.message?.content);
+  await postUpdate(
+    'reviewer',
+    'applied',
+    cap(findingsSummary(findings), 20_000),
+    JSON.stringify(findings, null, 2),
+    null,
+    { model: answer.model ?? limits.model, latencyMs: Date.now() - started }
+  );
+  console.log(`[noor] reviewer: ${findingsSummary(findings)}`);
+  return findings;
+}
+
+function findingsForBody(findings) {
+  if (!findings) return '';
+  const lines = [];
+  if (findings.blocking.length > 0) {
+    lines.push('## Reviewer — blocking', '');
+    for (const item of findings.blocking) {
+      lines.push(`- ${item.file ? `\`${item.file}\`${item.line ? `:${item.line}` : ''}: ` : ''}${item.issue}`);
+    }
+    lines.push('');
+  }
+  if (findings.advisory.length > 0) {
+    lines.push('## Reviewer — advisory', '');
+    for (const item of findings.advisory) {
+      lines.push(`- ${item.file ? `\`${item.file}\`${item.line ? `:${item.line}` : ''}: ` : ''}${item.issue}`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Handoff
+// ---------------------------------------------------------------------------
+
 /** Local work leaves an uncommitted diff in the folder; nothing is pushed. */
 async function handoffLocal(summaryText) {
   const diff = (await git(['diff'])).stdout.trim();
@@ -761,9 +1099,20 @@ async function handoffLocal(summaryText) {
   console.log('[noor] local diff ready for review');
 }
 
-async function createPullRequest(summaryText) {  const [owner, name] = REPOSITORY.split('/');
-  if (!owner || !name) throw new RunnerError('runner_failed', 'GITHUB_REPOSITORY is not owner/repo');
-  const base = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`;
+function prBody(summaryText, findings) {
+  return cap(
+    [
+      summaryText || 'Automated coding task.',
+      '',
+      findingsForBody(findings),
+      `Task: ${spec.taskId}`,
+    ].join('\n'),
+    20_000
+  );
+}
+
+async function createPullRequest(repo, summaryText, findings) {
+  const base = `https://api.github.com/repos/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.name)}`;
   const headers = {
     Accept: 'application/vnd.github+json',
     'Content-Type': 'application/json',
@@ -775,10 +1124,10 @@ async function createPullRequest(summaryText) {  const [owner, name] = REPOSITOR
     cache: 'no-store',
     headers,
     body: JSON.stringify({
-      title: (spec.taskId || 'Noor coding task').slice(0, 200),
-      head: spec.branch,
-      base: spec.baseBranch,
-      body: cap(summaryText || 'Automated coding task.', 20_000),
+      title: (spec.title || `Noor coding task ${spec.taskId}`).slice(0, 200),
+      head: repo.branch,
+      base: repo.baseBranch,
+      body: prBody(summaryText, findings),
       draft: false,
     }),
     signal: AbortSignal.timeout(20_000),
@@ -793,7 +1142,7 @@ async function createPullRequest(summaryText) {  const [owner, name] = REPOSITOR
   }
   // A retried dispatch may already have opened the pull request.
   const existing = await fetch(
-    `${base}/pulls?head=${encodeURIComponent(`${owner}:${spec.branch}`)}&state=open`,
+    `${base}/pulls?head=${encodeURIComponent(`${repo.owner}:${repo.branch}`)}&state=open`,
     { cache: 'no-store', headers, signal: AbortSignal.timeout(20_000) }
   );
   if (existing.ok) {
@@ -803,25 +1152,41 @@ async function createPullRequest(summaryText) {  const [owner, name] = REPOSITOR
   throw new RunnerError('runner_failed', `pull request creation answered ${created.status}`);
 }
 
-async function handoff(summaryText) {
-  const committed = await checkpoint('checkpoint');
-  await postUpdate(
-    'commit',
-    'applied',
-    committed ? 'Checkpoint commit created.' : 'No file changes to commit.',
-    null,
-    null
-  );
+async function handoff(summaryText, findings) {
+  for (const target of workTargets()) {
+    const repo = target.repo;
+    if (!repo) continue;
+    const committed = await checkpoint(target);
+    await postUpdate(
+      'commit',
+      'applied',
+      committed ? 'Checkpoint commit created.' : 'No file changes to commit.',
+      null,
+      null,
+      { repo: repo.fullName }
+    );
 
-  const push = await git(['push', 'origin', `HEAD:${spec.branch}`]);
-  if (push.exitCode !== 0) {
-    throw new RunnerError('runner_failed', `git push failed: ${push.stderr.slice(0, 500)}`);
+    const push = await git(
+      ['push', 'origin', `HEAD:${repo.branch}`],
+      target.cwd,
+      MULTI ? gitEnv() : process.env
+    );
+    if (push.exitCode !== 0) {
+      throw new RunnerError(
+        'runner_failed',
+        `git push to ${repo.fullName} failed: ${push.stderr.slice(0, 500)}`
+      );
+    }
+    await postUpdate('push', 'applied', `Pushed ${repo.branch} to ${repo.fullName}.`, null, null, {
+      repo: repo.fullName,
+    });
+
+    const url = await createPullRequest(repo, summaryText, findings);
+    await postUpdate('pull_request', 'applied', `Pull request: ${url}`, url, null, {
+      repo: repo.fullName,
+    });
+    console.log(`[noor] pull request ${repo.fullName} ${url}`);
   }
-  await postUpdate('push', 'applied', `Pushed ${spec.branch} to origin.`, null, null);
-
-  const url = await createPullRequest(summaryText);
-  await postUpdate('pull_request', 'applied', `Pull request: ${url}`, null, null);
-  console.log(`[noor] pull request ${url}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -829,6 +1194,7 @@ async function handoff(summaryText) {
 async function main() {
   // Refuse a dirty folder before spending a model call or touching a file.
   if (LOCAL) await preflightLocal();
+  await prepareWorkspace();
 
   const firstState = await taskState();
   if (!isActive(firstState.status)) {
@@ -843,9 +1209,11 @@ async function main() {
     { role: 'system', content: LOCAL ? LOCAL_SYSTEM_PROMPT : SYSTEM_PROMPT },
     {
       role: 'user',
-      content: LOCAL
-        ? `Task ${spec.taskId}: ${spec.instruction}\nFolder: the granted folder on this device\nMode: ${spec.mode}`
-        : `Task ${spec.taskId}: ${spec.instruction}\nBase branch: ${spec.baseBranch}\nTask branch: ${spec.branch}\nMode: ${spec.mode}`,
+      content: [
+        `Task ${spec.taskId}: ${spec.instruction}`,
+        repoMap(),
+        `Mode: ${spec.mode}`,
+      ].join('\n'),
     },
   ];
 
@@ -884,17 +1252,48 @@ async function main() {
   await postUpdate(
     'edit',
     'applied',
-    cap(edit.finalText || `Changes made in ${spec.branch}.`, 20_000),
+    cap(edit.finalText || 'Changes are ready.', 20_000),
     null,
     null
   );
 
   await verify();
 
+  // The second model sees the diff before the member does. Its blocking
+  // findings earn one repair pass, exactly as a judge earns one rewrite
+  // (ADR-0213); anything unresolved is attached to the diff for the human.
+  const findings = await reviewDiff(edit.finalText);
+  if (findings && findings.blocking.length > 0) {
+    messages.push({
+      role: 'user',
+      content: [
+        'An independent reviewer found these blocking issues in your change:',
+        JSON.stringify(findings.blocking),
+        'Fix only these issues, keep the rest of the change intact, then verify again.',
+      ].join('\n'),
+    });
+    const repair = await agentLoop(messages, TOOL_DEFINITIONS, 'repair');
+    if (!repair.stopped) {
+      await postUpdate('edit', 'applied', 'Reviewer findings addressed.', null, null);
+      await verify();
+    }
+  }
+
   // Local edit mode stops at the external-effect boundary. Full mode has that
   // escalation granted by its mode; plan mode has already been approved once.
   if (!LOCAL && spec.mode === 'edit') {
-    await postUpdate('push', 'running', 'Requesting approval to push and open a PR.', null, null);
+    const blocking = findings?.blocking.length ?? 0;
+    const hint =
+      blocking > 0
+        ? ` The reviewer still reports ${blocking} blocking issue(s); they are attached to the diff.`
+        : '';
+    await postUpdate(
+      'push',
+      'running',
+      `Requesting approval to push and open a pull request per repository.${hint}`,
+      null,
+      null
+    );
     const verdict = await waitForDecision();
     if (verdict !== 'approve') {
       const code = verdict === 'reject' ? 'push_rejected' : 'budget_exhausted';
@@ -909,7 +1308,7 @@ async function main() {
     return;
   }
 
-  await handoff(edit.finalText);
+  await handoff(edit.finalText, findings);
   console.log('[noor] task complete');
 }
 

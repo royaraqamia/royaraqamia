@@ -113,13 +113,49 @@ change to that file changes every task that starts afterwards.
 control plane persists `hashToken(callbackToken)` and never stores the raw value.
 `CodingRunnerLlmRequestSchema` accepts native `tool_calls` on assistant messages,
 so the provider sees real function calls and their results rather than a text
-serialisation.
+serialisation. The task also carries `repos` — one entry per checkout with its
+base branch, task branch and directory — and a nullable `reviewer` block that is
+present only when the committed evidence gate is open.
 
 `addWorkspace` calls the bootstrap once per repository. When the workflow file is
 absent it opens a branch, commits the template and returns a pull-request URL in
 `CodingWorkspaceDto.bootstrapPrUrl`, which the page shows before the first task.
 The workspace row is written either way, so a member can finish the review and
 start a task without reconnecting.
+
+## Multi-repository workspaces
+
+Phase 3 adds a `group` workspace kind (ADR-0223): a named set of two to eight
+repositories that share one GitHub App installation. A task inherits the set and
+may select a subset; the control plane records one `coding_task_repos` row per
+repository with its own branch, pull request and status.
+
+The Actions job is dispatched in the first selected repository. When the set has
+more than one entry, the runner clones every repository into one workspace under
+`repos/<owner>/<name>`, using an askpass helper so the installation token never
+appears in a command line, a URL or a child environment. One model loop works
+across the checkouts, verification runs per repository, and the handoff creates
+one checkpoint, one push and one pull request per repository. A task completes
+only after the last repository reports its pull request.
+
+The first repository's branch and pull request are mirrored on the task row, so
+a single-repository screen and an older client keep working. A partial handoff
+fails the task with `runner_failed`; the repositories that already opened a pull
+request keep it.
+
+## The reviewer
+
+The reviewer is a second model (ADR-0223). It is off unless the committed
+evidence file `evals/coding/reviewer-gate.json` says `on` and clears every
+threshold; `npm run check:coding-reviewer` is the gate. When it runs, it reads
+the diff after verification and before the push approval or the local review
+handoff. It returns blocking and advisory findings and never edits a file. One
+blocking finding earns one repair pass and a second verification; unresolved
+findings are attached to the step and to each pull request body.
+
+The reviewer step records the model, the measured latency and a USD estimate
+from the gate's list-price table; its tokens count against the task budget. A
+reviewer that is down is recorded as a step and does not fail the task.
 
 ## Eval gate
 

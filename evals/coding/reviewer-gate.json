@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "status": "off",
+  "model": "claude-haiku-5-5",
+  "pricing": {
+    "claude-haiku-5-5": { "inputPerMTok": 1, "outputPerMTok": 5 },
+    "deepseek-v4.1-flash": { "inputPerMTok": 0.15, "outputPerMTok": 0.6 }
+  },
+  "thresholds": {
+    "minRuns": 20,
+    "minCatchRate": 0.6,
+    "maxFalsePositiveRate": 0.2,
+    "maxMedianAddedLatencyMs": 45000,
+    "maxCostUsdPerReview": 0.02
+  },
+  "diff": { "minFiles": 2, "minChangedLines": 40 },
+  "evidence": null
+}

@@ -101,7 +101,10 @@ conversational service.
 - Phase 2: a local companion for folders on the member's device; the folder
   grant and credentials stay on that device
   ([ADR-0222](0222-a-local-folder-companion-runs-on-the-members-device.md)).
-- Phase 3: multi-repository workspaces, reviewer agent and wider autonomy.
+- Phase 3: multi-repository workspaces, reviewer agent and wider autonomy
+  ([ADR-0223](0223-a-multi-repo-workspace-lands-one-pr-per-repo.md) records the
+  decisions, the evidence gate that keeps the reviewer off until it is measured,
+  and the fact that wider autonomy is not granted by this phase).
 
 ## Consequences
 

@@ -263,6 +263,7 @@ describe('the coding agent’s control plane (ADR-0219)', () => {
     status: 'awaiting_plan',
     branch: 'noor/12345678',
     pullRequestUrl: null,
+    repos: [],
     summary: '',
     failureCode: null,
     steps: [
@@ -272,6 +273,10 @@ describe('the coding agent’s control plane (ADR-0219)', () => {
         status: 'proposed',
         summary: 'خطة التغيير',
         diff: '+ سطر واحد',
+        repo: null,
+        model: null,
+        latencyMs: null,
+        costUsd: null,
         createdAt: '2026-11-25T00:00:00.000Z',
       },
     ],

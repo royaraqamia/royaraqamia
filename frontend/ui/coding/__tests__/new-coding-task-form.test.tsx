@@ -18,7 +18,9 @@ const WORKSPACE: CodingWorkspaceDto = {
   repoName: 'royaraqamia',
   defaultBranch: 'develop',
   deviceLabel: null,
-  bootstrapPrUrl: null,
+  name: null,
+  repos: [],
+  bootstrapPrUrls: [],
   createdAt: '2026-11-20T08:00:00.000Z',
 };
 
@@ -78,5 +80,55 @@ describe('the new coding task form', () => {
     expect(await screen.findByText('تجاوزت حدّ المهام الشهرية في خطتك.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'بدء المهمة' })).toBeEnabled();
     expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('sends the explicit repository set of a group workspace', async () => {
+    const group: CodingWorkspaceDto = {
+      ...WORKSPACE,
+      kind: 'group',
+      repoOwner: null,
+      repoName: null,
+      defaultBranch: null,
+      name: 'app and api',
+      repos: [
+        {
+          id: '11111111-1111-4111-8111-111111111111',
+          owner: 'member',
+          name: 'web',
+          fullName: 'member/web',
+          defaultBranch: 'main',
+        },
+        {
+          id: '22222222-2222-4222-8222-222222222222',
+          owner: 'member',
+          name: 'api',
+          fullName: 'member/api',
+          defaultBranch: 'main',
+        },
+      ],
+    };
+    mocks.createCodingTask.mockResolvedValue({ id: 'task-10' });
+
+    render(<NewCodingTaskForm workspaces={[group]} />);
+    expect(screen.queryByLabelText('الفرع الأساسي')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('العنوان'), {
+      target: { value: 'ربط الواجهة بالخادم' },
+    });
+    fireEvent.change(screen.getByLabelText('ما تريد تنفيذه'), { target: { value: 'وحّد النوع.' } });
+    // Unchecking one repository narrows the set; the last one cannot be removed.
+    fireEvent.click(screen.getByLabelText('member/api'));
+    fireEvent.click(screen.getByRole('button', { name: 'بدء المهمة' }));
+
+    await waitFor(() =>
+      expect(mocks.createCodingTask).toHaveBeenCalledWith({
+        workspaceId: group.id,
+        title: 'ربط الواجهة بالخادم',
+        instruction: 'وحّد النوع.',
+        mode: 'plan',
+        baseBranch: 'main',
+        repoIds: ['11111111-1111-4111-8111-111111111111'],
+      })
+    );
   });
 });
