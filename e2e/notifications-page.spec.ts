@@ -71,56 +71,58 @@ test.describe('notification centre', () => {
 });
 
 /**
- * The signed-in door the audit measured (#1832): the Chats tab's «محادثة جديدة»
- * FAB is a disclosure, not just a button with a panel behind it. The guest cases
- * above cannot reach it — a guest gets the sign-in prompt instead of the list —
- * so the contract is gated here on the fixture account.
+ * The signed-in shape after #1860: the Chats tab keeps the assistant and the
+ * member's threads, and the one way into a conversation with a person is that
+ * person's profile. The picker the audit measured - four threads, five messages
+ * in 25 days - is gone, so the tab's accessible name no longer offers
+ * «محادثة جديدة» and no member search sits behind it. The guest cases above
+ * cannot reach this shape: a guest gets the sign-in prompt instead of the list,
+ * so both contracts here are gated on the fixture account.
  */
 test.describe('notification centre, signed in', () => {
   test.use({ viewport: { width: 393, height: 852 }, colorScheme: 'dark', locale: 'ar' });
 
-  test('the new-conversation launcher is a keyboard disclosure', async ({
-    page,
-    context,
-    baseURL,
-  }) => {
+  test.beforeEach(async ({ context, baseURL }) => {
     test.skip(
       !process.env.E2E_TEST_EMAIL || !process.env.E2E_TEST_PASSWORD,
       'E2E_TEST_EMAIL and E2E_TEST_PASSWORD are the fixture account'
     );
     await signIn(context, baseURL!);
+  });
+
+  test('the chats tab has no member search and no new-chat action', async ({ page }) => {
     await page.goto('/notifications?tab=chats');
 
-    const launcher = page.getByRole('button', { name: 'محادثة جديدة' });
-    const search = page.locator('input[name="chat-member-search"]');
-    await expect(launcher).toBeVisible();
+    await expect(page.getByRole('tabpanel')).toBeVisible();
+    // The whole tab, not just its panel: the FAB used to be a fixed button that
+    // sat outside the rows and named a search behind an aria-controls id.
+    await expect(page.getByRole('button', { name: 'محادثة جديدة' })).toHaveCount(0);
+    await expect(page.locator('input[name="chat-member-search"]')).toHaveCount(0);
+    await expect(page.locator('[id="chats-new-conversation-panel"]')).toHaveCount(0);
+  });
 
-    // Closed: the announcement says so, and the control it names is in the DOM
-    // even while the panel's contents are not.
-    await expect(launcher).toHaveAttribute('aria-expanded', 'false');
-    const controls = await launcher.getAttribute('aria-controls');
-    expect(controls).toBeTruthy();
-    await expect(page.locator(`[id="${controls}"]`)).toHaveCount(1);
-    await expect(search).toHaveCount(0);
+  test("a member profile offers «راسلني» and lands on that member's chat", async ({ page }) => {
+    await page.goto('/community');
+    const rail = page.getByRole('region', { name: 'أعضاء المجتمع' });
+    const other = rail
+      .getByRole('listitem')
+      .filter({ hasNotText: 'أنت' })
+      .getByRole('link')
+      .first();
+    const href = await other.getAttribute('href');
+    test.skip(!href?.startsWith('/u/'), 'no other member is listed (run e2e/setup-test-user.ts)');
 
-    await launcher.click();
-    await expect(launcher).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator(`[id="${controls}"]`)).toHaveCount(1);
-    await expect(search).toHaveCount(1);
-    // The press hands the keyboard to the field it revealed; it does not leave
-    // it on the launcher with the rest of the document to tab through.
-    await expect(search).toBeFocused();
+    // Click through rather than `goto`: the profile is a link the member can
+    // follow, and a dev-server reload would abort a full navigation here.
+    await other.click();
+    const cta = page.getByRole('link', { name: 'راسلني' });
+    await expect(cta).toBeVisible();
+    const handle = href!.slice('/u/'.length);
+    await expect(cta).toHaveAttribute('href', `/chats/new?to=${handle}`);
 
-    await page.keyboard.press('Escape');
-    await expect(search).toHaveCount(0);
-    await expect(launcher).toHaveAttribute('aria-expanded', 'false');
-    await expect(launcher).toBeFocused();
-
-    // While open, the panel is one Tab from the launcher: the button is fixed
-    // visually but precedes the panel in the tab order.
-    await launcher.click();
-    await launcher.focus();
-    await page.keyboard.press('Tab');
-    await expect(search).toBeFocused();
+    await cta.click();
+    await expect(page).toHaveURL(
+      (url) => url.pathname === '/chats/new' && url.searchParams.get('to') === handle
+    );
   });
 });

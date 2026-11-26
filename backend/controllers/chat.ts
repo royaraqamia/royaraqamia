@@ -6,8 +6,9 @@ import {
 } from '@/backend/config/chat';
 import * as Sentry from '@sentry/nextjs';
 
-import { createPlanGate } from '@/backend/config/plans';
+import { createPlanGate, createUsageService } from '@/backend/config/plans';
 import { isCronAuthorized } from '@/backend/shared/cron-auth';
+import { logger } from '@/backend/shared/logger';
 import { planRefusalResult } from '@/backend/middleware/http';
 import { NO_STORE } from '@/backend/transport/cache-policy';
 import {
@@ -18,7 +19,7 @@ import { isSameOrigin, clientAddress } from '@/backend/transport/http';
 import { jsonResult, toNextResponse, type HttpResult } from '@/backend/transport/http-result';
 import { ChatAgentError } from '@/backend/services/chat/chat-agent-service';
 import { ChatError } from '@/backend/services/chat/chat-service';
-import { OWNED_ITEMS } from '@/shared/contracts/plans';
+import { OWNED_ITEMS, USAGE_COUNTERS } from '@/shared/contracts/plans';
 import {
   ChatAddParticipantsSchema,
   ChatAgentTurnSchema,
@@ -208,6 +209,21 @@ export async function startChat(
         userId,
         parsed.data.userId
       );
+
+      // The `chats.dm.started` denominator (#1860). One row per conversation,
+      // with the origin in the dedupe key so the next review can tell a profile
+      // start from a picker start. Counting is best-effort: a ledger failure
+      // must never turn a request the member just made into a refusal.
+      try {
+        await createUsageService().consume({ userId }, USAGE_COUNTERS.chatsDmStarted, {
+          dedupeKey: `${parsed.data.origin}:${result.conversationId}`,
+        });
+      } catch (error) {
+        logger.warn('Failed to record a member-to-member chat start', {
+          error: String(error),
+        });
+      }
+
       return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
     },
     { mapError: chatFailure('تعذّر بدء المحادثة') }

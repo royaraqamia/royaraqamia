@@ -10,7 +10,7 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const PROFILE_CHAT_COPY = {
-  message: 'مراسلة',
+  message: 'راسلني',
 } as const;
 
 export type ProfileChatCopyStrings = typeof PROFILE_CHAT_COPY;

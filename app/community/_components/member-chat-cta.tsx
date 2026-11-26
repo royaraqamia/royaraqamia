@@ -11,7 +11,8 @@ const CTA_CLASSES =
   'inline-flex h-11 items-center justify-center gap-1.5 rounded-full px-2 text-sm font-bold text-muted-foreground transition-safe duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40';
 
 /**
- * The «مراسلة» button on a public profile.
+ * The «راسلني» link on a public profile: the single way into a
+ * member-to-member conversation now that the Chats tab has no picker (#1860).
  *
  * A member has nothing to say to themselves, so the button is absent on their
  * own page. The page knows: it resolves the viewer's standing with this member

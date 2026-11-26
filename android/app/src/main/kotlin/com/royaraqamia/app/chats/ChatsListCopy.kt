@@ -29,7 +29,6 @@ object ChatsListCopy {
     const val CANCEL = "إلغاء"
     const val EMPTY_TITLE = "لا توجد محادثات بعد"
     const val EMPTY_BODY = "ابدأ محادثة مع عضو، وستظهر هنا."
-    const val NEW_CHAT = "محادثة جديدة"
     const val DECLINED_LABEL = "رُفضت المحادثة"
     const val NO_MESSAGES = "لا رسائل بعد"
     const val TYPING_NOW = "يكتب الآن..."

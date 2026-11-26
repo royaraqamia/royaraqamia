@@ -50,12 +50,10 @@ vi.mock('@/frontend/state/chats/assistant-turn', () => ({
 }));
 
 const api = vi.hoisted(() => ({
-  searchChatMembers: vi.fn(),
   startAssistantChat: vi.fn(),
 }));
 
 vi.mock('@/frontend/api/chats', () => ({
-  searchChatMembers: api.searchChatMembers,
   startAssistantChat: api.startAssistantChat,
 }));
 
@@ -121,7 +119,6 @@ describe('ChatsPanel', () => {
     hooks.threads = [];
     hooks.start.mockReset().mockResolvedValue('c-1');
     hooks.respond.mockReset().mockResolvedValue(null);
-    api.searchChatMembers.mockReset().mockResolvedValue([PEER]);
     api.startAssistantChat.mockReset().mockResolvedValue({ success: true, conversationId: 'a-1' });
     navigation.push.mockReset();
     live.presence = {};
@@ -172,48 +169,18 @@ describe('ChatsPanel', () => {
     expect(screen.getByText('بانتظار موافقتك')).toBeInTheDocument();
   });
 
-  it('draws a searched member’s picture', async () => {
-    render(<ChatsPanel />);
-
-    fireEvent.click(screen.getByRole('button', { name: /محادثة جديدة/ }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'البحث عن عضو' }), {
-      target: { value: 'al' },
-    });
-
-    expect(await screen.findByText('@alber-tabsi')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: PEER.name! })).toHaveAttribute('src', PEER.avatarUrl);
-  });
-
   /**
-   * #1832: the launcher is a disclosure. The audit measured aria-expanded="true"
-   * with no panel in the DOM, no aria-controls, focus left on the button and an
-   * Escape that did nothing — four defects in one hand-written contract.
+   * #1860: the audit measured four threads and five messages in 25 days behind
+   * this picker, so the member search moved to the member's profile. The tab's
+   * first screen is the assistant and the threads the member already has: no
+   * «محادثة جديدة» control, no search field, no picker panel to announce.
    */
-  it('announces the picker, focuses it on open and returns focus on Escape', async () => {
+  it('offers no member search and no new-chat action', () => {
     render(<ChatsPanel />);
-    const launcher = screen.getByRole('button', { name: /محادثة جديدة/ });
-    expect(launcher).toHaveAttribute('aria-expanded', 'false');
-    const panelId = launcher.getAttribute('aria-controls');
-    expect(panelId).toBeTruthy();
-    expect(document.getElementById(panelId!)).not.toBeNull();
+
+    expect(screen.queryByRole('button', { name: /محادثة جديدة/ })).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'البحث عن عضو' })).toBeNull();
-
-    fireEvent.click(launcher);
-    const search = await screen.findByRole('textbox', { name: 'البحث عن عضو' });
-    expect(launcher).toHaveAttribute('aria-expanded', 'true');
-    await waitFor(() => expect(search).toHaveFocus());
-
-    // The launcher is fixed visually, so putting it first in the tab order costs
-    // no layout: the field is the next focusable after it.
-    launcher.focus();
-    expect(
-      search.compareDocumentPosition(launcher) & Node.DOCUMENT_POSITION_PRECEDING
-    ).toBeTruthy();
-
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.queryByRole('textbox', { name: 'البحث عن عضو' })).toBeNull();
-    expect(launcher).toHaveAttribute('aria-expanded', 'false');
-    expect(launcher).toHaveFocus();
+    expect(document.getElementById('chats-new-conversation-panel')).toBeNull();
   });
 
   /**

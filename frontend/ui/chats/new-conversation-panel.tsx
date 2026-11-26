@@ -28,6 +28,9 @@ export function NewConversationPanel({
 
   return (
     <div className="rounded-2xl border border-border/70 bg-card/60 p-3 shadow-xs">
+      {/* The app's panel still has a title; its word lives here, not in the
+          Chats tab's copy, since that tab no longer opens this panel (#1860). */}
+      <p className="mb-2 px-1 text-sm font-bold text-foreground">{CHAT_NEW_COPY.newChat}</p>
       <MemberPicker onPick={onPick} onClose={onClose} copy={pickerCopy} />
     </div>
   );

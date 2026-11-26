@@ -19,12 +19,12 @@ import { newChatInitialState, newChatReducer } from './new-chat-view.reducer';
 import type { ChatPreview } from '@/shared/contracts/chat';
 
 /**
- * `/chats/new?to=<handle>`: the empty chat screen a picker row opens.
+ * `/chats/new?to=<handle>`: the empty chat screen a profile's «راسلني» opens.
  *
  * It creates nothing. The member is read from the directory, the thread this
  * pair already has (if any) is resolved and entered, and the request itself is
- * the one button on the screen — so a click in the picker never sends a request
- * on the member's behalf.
+ * the one button on the screen — so opening a profile never sends a request on
+ * the member's behalf.
  *
  * Drawn in the accepted thread's own frame — the same full-height surface, back
  * control, header and pinned footer (`chat-thread-view.tsx`) — so the request is
@@ -35,6 +35,8 @@ export function NewChatView() {
   const router = useRouter();
   const params = useSearchParams();
   const handle = params.get('to') ?? '';
+  /** The origin of the start, carried to the `chats.dm.started` ledger (#1860). */
+  const origin = params.get('origin') === 'picker' ? 'picker' : 'profile';
   const { user, isLoading: isSessionLoading } = useSession();
   const [state, dispatch] = useReducer(newChatReducer, undefined, newChatInitialState);
   const { preview, error, isLoading, isRequesting } = state;
@@ -78,7 +80,7 @@ export function NewChatView() {
     if (!preview || isRequesting) return;
     dispatch({ type: 'requestStarted' });
     try {
-      const result = await startDirectChat(preview.peer.id);
+      const result = await startDirectChat(preview.peer.id, origin);
       if (result.conversationId) {
         router.push(`/chats/${result.conversationId}`);
         return;

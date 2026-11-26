@@ -44,6 +44,7 @@ const freeCaps: PlanCaps = {
     'mcp.call': { window: 'daily', cap: 5 },
     'web.search': { window: 'daily', cap: 0 },
     'keyboard.rewrite': { window: 'daily', cap: 5 },
+    'chats.dm.started': { window: 'lifetime', cap: 100000 },
   },
 };
 

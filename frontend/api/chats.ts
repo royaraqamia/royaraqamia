@@ -125,10 +125,13 @@ export async function getChatMessages(
   };
 }
 
-export async function startDirectChat(userId: string): Promise<ChatStartResponse> {
+export async function startDirectChat(
+  userId: string,
+  origin: 'profile' | 'picker' = 'profile'
+): Promise<ChatStartResponse> {
   return request<ChatStartResponse>('/api/chats', {
     method: 'POST',
-    body: JSON.stringify({ userId }),
+    body: JSON.stringify({ userId, origin }),
     headers: { 'Content-Type': 'application/json' },
   });
 }
