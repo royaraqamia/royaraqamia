@@ -8,6 +8,18 @@ monthly limit on Go, so its windows are **$20 per five hours** and **$50 per wee
 
 Decision and reasoning: [ADR-0133](../adr/0133-agent-spend-is-measured-per-run.md).
 
+## The only recurring bill
+
+Everything the product itself runs on is a free tier; the one recurring charge is the origin. Since
+2026-11-26 it is a **2 vCPU / 2 GB / 30 GB VPS from Illevante at $6.70 a month** (ADR-0221), and
+**$10 a month is the hard cap**: a month that would exceed it is a decision for the owner, not a
+charge that lands by itself. Nothing else is authorized. A second box, a managed registry, a
+provider snapshot plan, a paid monitor or a CDN plan is each a new decision with its own record,
+because the first exception to the no-cost rule is what makes the second one easy.
+
+Read the bill in the Illevante panel, not from this page: the figure here is the authorized amount,
+set at the purchase, and the panel is the measurement.
+
 ## Peak hours are the cheapest saving
 
 DeepSeek prices Flash at **$0.15/$0.60** per million input/output tokens off-peak

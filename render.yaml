@@ -1,3 +1,10 @@
+# RETIRED AS THE ORIGIN 2026-11-26 — KEPT AS THE ROLLBACK (ADR-0221).
+# The site runs on the self-managed VPS and its runtime contract is
+# `/opt/royaraqamia/.env`; this blueprint stays deployable so the DNS record can
+# be pointed back until the owner signs off on the cutover, and is then deleted.
+# Do not add a key here. A new runtime variable goes into the VPS env file and,
+# when the build needs it, into the publish workflow's build args.
+#
 # Render blueprint — the site's origin while the Vercel Hobby caps are paused
 # (ADR-0174). `sync: false` means "this key is required, but its value is set in
 # the Render dashboard and never committed" — the blueprint lists the contract,

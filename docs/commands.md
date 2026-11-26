@@ -121,7 +121,7 @@ reads the running build's `<7-char-sha>` from `sw-version.js` and stops before c
 dispatch also takes **`purge_only`**, which skips the build and re-runs the discovery check and the
 purge — the recovery for a purge that failed after a build had already landed.
 
-**Render is the origin** ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md)).
+**Render is still the serving origin** ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md)).
 `render.yaml` is the blueprint: a free native-Node service, built with `npm ci && npm run build:render`
 and started with `npm start`, health-checked on `/manifest.json`, with `autoDeployTrigger: 'off'` so
 only a dispatch deploys. `build:render` is `npm run build` without `tsc --noEmit` — the pull request
@@ -133,7 +133,7 @@ bandwidth allowance, after which a workspace with no payment method is suspended
 month. The deploy needs `RENDER_DEPLOY_HOOK_URL` as an Actions secret (Render → service → Settings →
 Deploy Hook); with it absent the workflow fails loudly rather than skipping silently.
 
-**Self-managed VPS origin (ADR-0221).** A 2 vCPU / 2 GB Ubuntu VPS runs the app in Docker behind Caddy, with Cloudflare still in front. The image is built by `.github/workflows/publish-image.yml` on manual dispatch and published to GHCR; the box only pulls and runs it, so no build happens on 2 GB of RAM. Render stays live until DNS is moved. The operator runbook — SSH, firewall, Docker, env file, temporary test hostname and cutover — is [docs/agents/vps-deploy.md](agents/vps-deploy.md).
+**The destination origin is a self-managed VPS (ADR-0221).** A 2 vCPU / 2 GB / 30 GB Ubuntu VPS from Illevante — the only recurring bill, $6.70 a month against a $10 cap ([docs/agents/cost.md](agents/cost.md)) — runs the app in Docker behind Caddy, with Cloudflare still in front. It is bought and built; this becomes the primary path when the DNS record moves. The image is built by `.github/workflows/publish-image.yml` on manual dispatch and published to GHCR; the box only pulls and runs it, so no build happens on 2 GB of RAM. Render stays live until DNS is moved, and its blueprint is marked retired rather than deleted, so the rollback is a DNS record and a purge. The box's configuration is copied nightly to a dedicated R2 bucket and the restore is rehearsed before the record moves. The operator runbook — SSH, firewall, Docker, env file, temporary test hostname and cutover — is [docs/agents/vps-deploy.md](agents/vps-deploy.md).
 
 **Crons are GitHub Actions, not the platform.** `.github/workflows/scheduled-jobs.yml` calls the
 three routes on their old schedules; each route authorises itself from
