@@ -6,6 +6,7 @@ import type {
   CodingAdminRepository,
   CodingRepository,
   CodingTaskPatch,
+  CodingTaskRepoPatch,
 } from '@/backend/repositories/coding/coding-repository';
 import { AppError } from '@/backend/shared/errors';
 import { logger } from '@/backend/shared/logger';
@@ -21,6 +22,7 @@ import {
   type CodingRepoInput,
   type CodingRunnerLlmRequest,
   type CodingRunnerLlmResponse,
+  type CodingRunnerRepo,
   type CodingRunnerTask,
   type CodingRunnerTaskResponse,
   type CodingRunnerUpdate,
@@ -28,21 +30,28 @@ import {
   type CodingTaskDto,
   type CodingTaskListQuery,
   type CodingTaskPage,
+  type CodingTaskRepoDto,
   type CodingTaskStatus,
   type CodingWorkspaceDto,
   type CreateCodingTaskInput,
+  type CreateCodingWorkspaceInput,
   type DecideCodingStepInput,
 } from '@/shared/contracts/coding-agent';
+import { codingModelCostUsd, codingReviewerLimits } from '@/shared/contracts/coding-reviewer';
 
 import type { SandboxRunner } from './sandbox-runner';
 
 /**
- * Control plane for the coding agent (ADR-0219).
+ * Control plane for the coding agent (ADR-0219, ADR-0223).
  *
  * All enforcement lives here: monthly caps, an origin-built callback URL, a
  * task-scoped bearer token whose digest is the only thing persisted, plan-first
  * approvals and per-task token budgets. The runner adapter is a port; the
  * repositories and clients are interfaces the composition root supplies.
+ *
+ * A group workspace is an explicit repository set that shares one installation.
+ * Its task carries one row per repository, and the runner gets every checkout
+ * in one specification so a coordinated change stays one task.
  */
 
 type PlanId = keyof typeof CODING_PLAN_CAPS;
@@ -58,6 +67,8 @@ export interface CodingLlmResult {
 
 /** The model key stays in the wiring; the runner only ever sees this interface. */
 export interface CodingLlmClient {
+  /** The model this client is bound to, recorded on the step it produces. */
+  readonly model: string;
   reply(
     request: { messages: LlmMessage[]; tools?: LlmTool[] },
     signal: AbortSignal
@@ -72,6 +83,11 @@ export interface CodingServiceDeps {
   github: GitHubAppClient;
   runner: SandboxRunner;
   llm: CodingLlmClient;
+  /**
+   * The second model (ADR-0223). Present only when the composition root could
+   * build it; the gate file still decides whether a task may ask for it.
+   */
+  reviewerLlm?: CodingLlmClient | null;
   origin: string;
   /**
    * Seam for the account's plan. Defaults to free; the composition root can
@@ -101,7 +117,7 @@ export interface CodingService {
   listWorkspaces(userId: string): Promise<CodingWorkspaceDto[]>;
   /** Repos the member's GitHub App can reach, for the picker that creates workspaces. */
   listAvailableRepos(userId: string): Promise<CodingAvailableRepoDto[]>;
-  addWorkspace(userId: string, input: CodingRepoInput): Promise<CodingWorkspaceDto>;
+  addWorkspace(userId: string, input: CreateCodingWorkspaceInput): Promise<CodingWorkspaceDto>;
   removeWorkspace(userId: string, workspaceId: string): Promise<void>;
   createTask(userId: string, input: CreateCodingTaskInput): Promise<CodingTaskDto>;
   getTask(userId: string, taskId: string): Promise<CodingTaskDto>;
@@ -131,8 +147,10 @@ export interface CodingService {
 
 /** The workspace columns the control plane reads, kept local for readability. */
 type WorkspaceRow = Database['public']['Tables']['coding_workspaces']['Row'];
+type WorkspaceRepoRow = Database['public']['Tables']['coding_workspace_repos']['Row'];
 type StepRow = Database['public']['Tables']['coding_steps']['Row'];
 type TaskRow = Database['public']['Tables']['coding_tasks']['Row'];
+type TaskRepoRow = Database['public']['Tables']['coding_task_repos']['Row'];
 
 /** A refusal with a code the UI can map without matching Arabic copy. */
 export class CodingError extends AppError {
@@ -149,6 +167,9 @@ const ACTIVE_STATUSES: readonly CodingTaskStatus[] = [
   'awaiting_push',
 ];
 
+/** One group holds at most this many repositories; a task may narrow it. */
+const MAX_REPOS = 8;
+
 function isActive(status: string): status is CodingTaskStatus {
   return (ACTIVE_STATUSES as readonly string[]).includes(status);
 }
@@ -162,18 +183,36 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-function toWorkspaceDto(
-  row: WorkspaceRow,
-  bootstrapPrUrl: string | null = null
-): CodingWorkspaceDto {
+function fullName(owner: string, name: string): string {
+  return `${owner}/${name}`;
+}
+
+function toWorkspaceRepoDto(row: WorkspaceRepoRow) {
   return {
     id: row.id,
-    kind: row.kind === 'local' ? 'local' : 'github',
+    owner: row.repo_owner,
+    name: row.repo_name,
+    fullName: fullName(row.repo_owner, row.repo_name),
+    defaultBranch: row.default_branch,
+  };
+}
+
+function toWorkspaceDto(
+  row: WorkspaceRow,
+  repos: WorkspaceRepoRow[] = [],
+  bootstrapPrUrls: string[] = []
+): CodingWorkspaceDto {
+  const kind = row.kind === 'local' || row.kind === 'group' ? row.kind : 'github';
+  return {
+    id: row.id,
+    kind,
     repoOwner: row.repo_owner,
     repoName: row.repo_name,
     defaultBranch: row.default_branch,
     deviceLabel: row.device_label,
-    bootstrapPrUrl,
+    name: row.group_name,
+    repos: repos.map(toWorkspaceRepoDto),
+    bootstrapPrUrls,
     createdAt: row.created_at,
   };
 }
@@ -216,18 +255,40 @@ function hashPairCode(raw: string): string {
   return hashToken(`coding-pair:${raw}`);
 }
 
-function toStepDto(row: StepRow): CodingStepDto {
+function toStepDto(row: StepRow, repo: string | null): CodingStepDto {
   return {
     id: row.id,
     kind: row.kind as CodingStepDto['kind'],
     status: row.status as CodingStepDto['status'],
     summary: row.summary,
     diff: row.diff,
+    repo,
+    model: row.model,
+    latencyMs: row.latency_ms,
+    costUsd: row.cost_usd === null ? null : Number(row.cost_usd),
     createdAt: row.created_at,
   };
 }
 
-function toTaskDto(row: TaskRow, steps: StepRow[]): CodingTaskDto {
+function toTaskRepoDto(row: TaskRepoRow): CodingTaskRepoDto {
+  return {
+    id: row.id,
+    owner: row.repo_owner,
+    name: row.repo_name,
+    fullName: fullName(row.repo_owner, row.repo_name),
+    baseBranch: row.base_branch,
+    branch: row.branch,
+    pullRequestUrl: row.pull_request_url,
+    status: row.status as CodingTaskRepoDto['status'],
+    failureCode: row.failure_code,
+  };
+}
+
+function toTaskDto(row: TaskRow, steps: StepRow[], repos: TaskRepoRow[]): CodingTaskDto {
+  const repoNameById = new Map(
+    repos.map((repo) => [repo.id, fullName(repo.repo_owner, repo.repo_name)])
+  );
+  const first = repos[0] ?? null;
   return {
     id: row.id,
     workspaceId: row.workspace_id,
@@ -235,11 +296,14 @@ function toTaskDto(row: TaskRow, steps: StepRow[]): CodingTaskDto {
     instruction: row.instruction,
     mode: row.mode as CodingTaskDto['mode'],
     status: row.status as CodingTaskStatus,
-    branch: row.branch,
-    pullRequestUrl: row.pull_request_url,
+    branch: first?.branch ?? row.branch,
+    pullRequestUrl: first?.pull_request_url ?? row.pull_request_url,
+    repos: repos.map(toTaskRepoDto),
     summary: row.summary,
     failureCode: row.failure_code,
-    steps: steps.map(toStepDto),
+    steps: steps.map((step) =>
+      toStepDto(step, step.task_repo_id ? (repoNameById.get(step.task_repo_id) ?? null) : null)
+    ),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -259,10 +323,28 @@ function httpUrl(value: string | null): string | null {
 /** The picker's own ceiling: a repo list changes rarely, and a token mint costs a call. */
 const REPO_CACHE_TTL_MS = 60_000;
 
+/** The runner's checkout directory: owner and name are GitHub-safe segments. */
+function repoDir(owner: string, name: string): string {
+  return `repos/${owner}/${name}`;
+}
+
+function uniqueRepos(repos: CodingRepoInput[]): CodingRepoInput[] {
+  const seen = new Set<string>();
+  const out: CodingRepoInput[] = [];
+  for (const repo of repos) {
+    const key = fullName(repo.owner, repo.name).toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(repo);
+  }
+  return out;
+}
+
 export function createCodingService(deps: CodingServiceDeps): CodingService {
   const repoCache = new Map<string, { at: number; repos: CodingAvailableRepoDto[] }>();
   const runnerRepo = deps.runnerRepo ?? deps.repo;
   const now = deps.now ?? (() => new Date());
+  const reviewer = codingReviewerLimits();
 
   async function capsFor(userId: string): Promise<CodingPlanCaps> {
     let plan: PlanId = 'free';
@@ -278,7 +360,11 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
   }
 
   async function dtoFor(userId: string, row: TaskRow): Promise<CodingTaskDto> {
-    return toTaskDto(row, await deps.repo.listSteps(userId, row.id));
+    const [steps, repos] = await Promise.all([
+      deps.repo.listSteps(userId, row.id),
+      deps.repo.listTaskRepos(userId, row.id),
+    ]);
+    return toTaskDto(row, steps, repos);
   }
 
   async function requireTaskByToken(rawToken: string): Promise<{ task: TaskRow; hash: string }> {
@@ -297,21 +383,71 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
     return task;
   }
 
+  /**
+   * The checkouts a task works in. A single repository workspace has one; a
+   * group has its selected rows and never more than eight.
+   */
+  function runnerReposFor(taskRepos: TaskRepoRow[]): CodingRunnerRepo[] {
+    return taskRepos.map((repo) => ({
+      owner: repo.repo_owner,
+      name: repo.repo_name,
+      fullName: fullName(repo.repo_owner, repo.repo_name),
+      baseBranch: repo.base_branch,
+      branch: repo.branch ?? `noor/${repo.id.slice(0, 8)}`,
+      dir: repoDir(repo.repo_owner, repo.repo_name),
+    }));
+  }
+
+  /** A task-level failure stops every repository that has not already finished. */
+  async function failTaskRepos(userId: string, taskId: string, code: string): Promise<void> {
+    const repos = await deps.admin.listTaskRepos(userId, taskId);
+    await Promise.all(
+      repos
+        .filter((repo) => repo.status !== 'completed')
+        .map((repo) =>
+          deps.admin.updateTaskRepo(userId, repo.id, {
+            status: 'failed',
+            failure_code: code,
+          })
+        )
+    );
+  }
+
   function specFor(
     task: TaskRow,
     workspace: WorkspaceRow,
+    taskRepos: TaskRepoRow[],
     rawToken: string,
     caps: CodingPlanCaps,
     handoffToken: string | null
   ): CodingRunnerTask {
     const local = workspace.kind === 'local';
+    // A task created before per-repository rows existed still runs: its single
+    // workspace is its repository set, and no row is needed to attribute it.
+    const legacyRepos: CodingRunnerRepo[] =
+      !local && taskRepos.length === 0 && workspace.repo_owner && workspace.repo_name
+        ? [
+            {
+              owner: workspace.repo_owner,
+              name: workspace.repo_name,
+              fullName: fullName(workspace.repo_owner, workspace.repo_name),
+              baseBranch: task.base_branch,
+              branch: task.branch ?? `noor/${task.id.slice(0, 8)}`,
+              dir: repoDir(workspace.repo_owner, workspace.repo_name),
+            },
+          ]
+        : [];
+    const repos = local ? [] : taskRepos.length > 0 ? runnerReposFor(taskRepos) : legacyRepos;
+    const first = repos[0] ?? null;
     return {
       taskId: task.id,
+      title: task.title,
       kind: local ? 'local' : 'github',
-      repoOwner: local ? null : workspace.repo_owner,
-      repoName: local ? null : workspace.repo_name,
-      baseBranch: local ? null : task.base_branch,
-      branch: local ? null : (task.branch ?? `noor/${task.id.slice(0, 8)}`),
+      repoOwner: local ? null : (first?.owner ?? workspace.repo_owner),
+      repoName: local ? null : (first?.name ?? workspace.repo_name),
+      baseBranch: local ? null : (first?.baseBranch ?? task.base_branch),
+      branch: local ? null : (first?.branch ?? task.branch),
+      repos,
       instruction: task.instruction,
       mode: task.mode as CodingRunnerTask['mode'],
       caps: {
@@ -319,6 +455,7 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         maxInputTokens: caps.maxInputTokens,
         maxOutputTokens: caps.maxOutputTokens,
       },
+      reviewer: deps.reviewerLlm && reviewer ? reviewer : null,
       callbackUrl: `${deps.origin}/api/coding/runner`,
       callbackToken: rawToken,
       handoffToken,
@@ -326,10 +463,123 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
     };
   }
 
+  /** Every group repository must share one installation, so one token covers the set. */
+  async function resolveGroupRepos(
+    userId: string,
+    input: CodingRepoInput[]
+  ): Promise<
+    Array<{ installationId: number; owner: string; name: string; defaultBranch: string }>
+  > {
+    const unique = uniqueRepos(input);
+    if (unique.length < 2 || unique.length > MAX_REPOS) {
+      throw new CodingError(
+        'repo_set_invalid',
+        `تتطلب مجموعة المستودعات بين 2 و${MAX_REPOS} مستودعات.`,
+        400
+      );
+    }
+
+    const resolved: Array<{
+      installationId: number;
+      owner: string;
+      name: string;
+      defaultBranch: string;
+    }> = [];
+    for (const repo of unique) {
+      const installationId = await deps.installationIdForRepo?.(userId, repo.owner);
+      if (!installationId) {
+        throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
+      }
+      const installation = await deps.admin.findInstallation(userId, installationId);
+      if (!installation) {
+        throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
+      }
+      const { token } = await deps.github.getInstallationToken(installationId);
+      const available = await deps.github.listRepos({ token });
+      const match = available.find(
+        (candidate) =>
+          candidate.owner.toLowerCase() === repo.owner.toLowerCase() &&
+          candidate.name.toLowerCase() === repo.name.toLowerCase()
+      );
+      if (!match) {
+        throw new CodingError('repo_unavailable', 'المستودع غير متاح لهذا التثبيت.', 404);
+      }
+      resolved.push({
+        installationId,
+        owner: repo.owner,
+        name: repo.name,
+        defaultBranch: match.default_branch || 'main',
+      });
+    }
+
+    const installationIds = new Set(resolved.map((repo) => repo.installationId));
+    if (installationIds.size !== 1) {
+      throw new CodingError(
+        'repo_set_invalid',
+        'يجب أن تقع مستودعات المجموعة تحت تثبيت واحد للتطبيق.',
+        400
+      );
+    }
+    return resolved;
+  }
+
+  async function addSingleWorkspace(
+    userId: string,
+    input: CodingRepoInput
+  ): Promise<CodingWorkspaceDto> {
+    const installationId = await deps.installationIdForRepo?.(userId, input.owner);
+    if (!installationId) {
+      throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
+    }
+    const installation = await deps.admin.findInstallation(userId, installationId);
+    if (!installation) {
+      throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
+    }
+
+    const { token } = await deps.github.getInstallationToken(installationId);
+    const repos = await deps.github.listRepos({ token });
+    const match = repos.find(
+      (repo) =>
+        repo.owner.toLowerCase() === input.owner.toLowerCase() &&
+        repo.name.toLowerCase() === input.name.toLowerCase()
+    );
+    if (!match) {
+      throw new CodingError('repo_unavailable', 'المستودع غير متاح لهذا التثبيت.', 404);
+    }
+
+    const defaultBranch = match.default_branch || 'main';
+    const bootstrapPrUrl = deps.bootstrapWorkflow
+      ? await deps.bootstrapWorkflow({
+          installationId,
+          owner: input.owner,
+          name: input.name,
+          defaultBranch,
+        })
+      : null;
+    const workspace = await deps.repo.createWorkspace(userId, {
+      installationId,
+      repoOwner: input.owner,
+      repoName: input.name,
+      defaultBranch,
+    });
+    logger.info('Coding agent: repository added', {
+      userId,
+      installationId,
+      repo: fullName(input.owner, input.name),
+    });
+    return toWorkspaceDto(workspace, [], bootstrapPrUrl ? [bootstrapPrUrl] : []);
+  }
+
   return {
     async listWorkspaces(userId) {
       const rows = await deps.repo.listWorkspaces(userId);
-      return rows.map((row) => toWorkspaceDto(row));
+      return Promise.all(
+        rows.map(async (row) => {
+          if (row.kind !== 'group') return toWorkspaceDto(row);
+          const repos = await deps.repo.listWorkspaceRepos(userId, row.id);
+          return toWorkspaceDto(row, repos);
+        })
+      );
     },
 
     async listAvailableRepos(userId) {
@@ -347,15 +597,15 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
       const available: CodingAvailableRepoDto[] = repos
         .flat()
         .filter((repo) => {
-          const fullName = `${repo.owner}/${repo.name}`.toLowerCase();
-          if (seen.has(fullName)) return false;
-          seen.add(fullName);
+          const full = fullName(repo.owner, repo.name).toLowerCase();
+          if (seen.has(full)) return false;
+          seen.add(full);
           return true;
         })
         .map((repo) => ({
           owner: repo.owner,
           name: repo.name,
-          fullName: `${repo.owner}/${repo.name}`,
+          fullName: fullName(repo.owner, repo.name),
           defaultBranch: repo.default_branch || 'main',
         }));
       repoCache.set(userId, { at: now().getTime(), repos: available });
@@ -363,47 +613,37 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
     },
 
     async addWorkspace(userId, input) {
-      const installationId = await deps.installationIdForRepo?.(userId, input.owner);
-      if (!installationId) {
-        throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
-      }
-      const installation = await deps.admin.findInstallation(userId, installationId);
-      if (!installation) {
-        throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
-      }
+      if (!('kind' in input)) return addSingleWorkspace(userId, input);
 
-      const { token } = await deps.github.getInstallationToken(installationId);
-      const repos = await deps.github.listRepos({ token });
-      const match = repos.find(
-        (repo) =>
-          repo.owner.toLowerCase() === input.owner.toLowerCase() &&
-          repo.name.toLowerCase() === input.name.toLowerCase()
-      );
-      if (!match) {
-        throw new CodingError('repo_unavailable', 'المستودع غير متاح لهذا التثبيت.', 404);
+      const resolved = await resolveGroupRepos(userId, input.repos);
+      const bootstrapPrUrls: string[] = [];
+      if (deps.bootstrapWorkflow) {
+        for (const repo of resolved) {
+          const url = await deps.bootstrapWorkflow({
+            installationId: repo.installationId,
+            owner: repo.owner,
+            name: repo.name,
+            defaultBranch: repo.defaultBranch,
+          });
+          if (url) bootstrapPrUrls.push(url);
+        }
       }
-
-      const defaultBranch = match.default_branch || 'main';
-      const bootstrapPrUrl = deps.bootstrapWorkflow
-        ? await deps.bootstrapWorkflow({
-            installationId,
-            owner: input.owner,
-            name: input.name,
-            defaultBranch,
-          })
-        : null;
-      const workspace = await deps.repo.createWorkspace(userId, {
-        installationId,
-        repoOwner: input.owner,
-        repoName: input.name,
-        defaultBranch,
+      const workspace = await deps.repo.createWorkspaceGroup(userId, {
+        name: input.name,
+        repos: resolved.map((repo) => ({
+          installationId: repo.installationId,
+          repoOwner: repo.owner,
+          repoName: repo.name,
+          defaultBranch: repo.defaultBranch,
+        })),
       });
-      logger.info('Coding agent: repository added', {
+      const rows = await deps.repo.listWorkspaceRepos(userId, workspace.id);
+      logger.info('Coding agent: repository group added', {
         userId,
-        installationId,
-        repo: `${input.owner}/${input.name}`,
+        workspaceId: workspace.id,
+        repos: resolved.length,
       });
-      return toWorkspaceDto(workspace, bootstrapPrUrl);
+      return toWorkspaceDto(workspace, rows, bootstrapPrUrls);
     },
 
     async removeWorkspace(userId, workspaceId) {
@@ -435,6 +675,14 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
       }
 
       const local = workspace.kind === 'local';
+      const group = workspace.kind === 'group';
+      if (input.repoIds && input.repoIds.length > 0 && !group) {
+        throw new CodingError(
+          'repo_set_invalid',
+          'اختيار المستودعات متاح لمجموعة المستودعات فقط.',
+          400
+        );
+      }
       if (local) {
         const grant = await deps.admin.findActiveGrantForWorkspace(userId, workspace.id);
         if (!grant) {
@@ -446,13 +694,42 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         }
       }
 
+      // Resolve the explicit repo set before any row is written: a bad subset
+      // must not leave a task with nothing to run.
+      let selected: WorkspaceRepoRow[] = [];
+      if (group) {
+        const all = await deps.repo.listWorkspaceRepos(userId, workspace.id);
+        if (all.length === 0) {
+          throw new CodingError('repo_set_invalid', 'مجموعة المستودعات فارغة.', 400);
+        }
+        if (input.repoIds && input.repoIds.length > 0) {
+          const wanted = new Set(input.repoIds);
+          selected = all.filter((repo) => wanted.has(repo.id));
+          if (selected.length !== wanted.size) {
+            throw new CodingError(
+              'repo_set_invalid',
+              'مستودع مختار لا ينتمي إلى هذه المجموعة.',
+              400
+            );
+          }
+        } else {
+          selected = all;
+        }
+        if (selected.length > MAX_REPOS) {
+          throw new CodingError('repo_set_invalid', `تتجاوز المهمة ${MAX_REPOS} مستودعات.`, 400);
+        }
+      }
+
       const rawToken = generateOpaqueToken();
+      const baseBranch = group
+        ? (selected[0]?.default_branch ?? input.baseBranch)
+        : input.baseBranch;
       const created = await deps.repo.createTask(userId, {
         workspaceId: workspace.id,
         title: input.title,
         instruction: input.instruction,
         mode: input.mode,
-        baseBranch: input.baseBranch,
+        baseBranch,
         runnerMinutes: caps.runnerMinutes,
         callbackTokenHash: hashToken(rawToken),
       });
@@ -473,18 +750,78 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
       await deps.repo.updateTask(userId, created.id, { branch });
       const row: TaskRow = { ...created, branch };
 
+      // A single repository workspace has no child rows, so its one checkout is
+      // its own row: every task then reads the same per-repository shape.
+      const repoRows: Array<{
+        workspaceRepoId: string | null;
+        owner: string;
+        name: string;
+        baseBranch: string;
+      }> =
+        selected.length > 0
+          ? selected.map((repo) => ({
+              workspaceRepoId: repo.id,
+              owner: repo.repo_owner,
+              name: repo.repo_name,
+              baseBranch: repo.default_branch,
+            }))
+          : workspace.repo_owner && workspace.repo_name
+            ? [
+                {
+                  workspaceRepoId: null,
+                  owner: workspace.repo_owner,
+                  name: workspace.repo_name,
+                  baseBranch: input.baseBranch,
+                },
+              ]
+            : [];
+
+      if (repoRows.length === 0) {
+        await deps.repo.updateTask(userId, row.id, {
+          status: 'failed',
+          failure_code: 'repo_set_invalid',
+        });
+        throw new CodingError('repo_set_invalid', 'لا يوجد مستودع لهذه المهمة.', 400);
+      }
+
+      const taskRepos: TaskRepoRow[] = [];
       try {
-        if (!workspace.installation_id) {
+        for (const repo of repoRows) {
+          taskRepos.push(
+            await deps.repo.createTaskRepo(userId, {
+              taskId: row.id,
+              workspaceRepoId: repo.workspaceRepoId,
+              repoOwner: repo.owner,
+              repoName: repo.name,
+              baseBranch: repo.baseBranch,
+              branch,
+            })
+          );
+        }
+      } catch (error) {
+        await deps.repo.updateTask(userId, row.id, {
+          status: 'failed',
+          failure_code: 'runner_failed',
+          summary: error instanceof Error ? error.message.slice(0, 200) : 'runner_failed',
+        });
+        throw new CodingError('runner_failed', 'تعذّر تسجيل مستودعات المهمة.', 500);
+      }
+
+      try {
+        const installationId = group
+          ? (selected[0]?.installation_id ?? null)
+          : workspace.installation_id;
+        if (!installationId) {
           throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
         }
-        const installation = await deps.admin.findInstallation(userId, workspace.installation_id);
+        const installation = await deps.admin.findInstallation(userId, installationId);
         if (!installation) {
           throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
         }
         // Installation tokens expire in about an hour; the one saved at connect
         // time is only a bootstrap credential. Mint a fresh one for this task.
         const { token } = await deps.github.getInstallationToken(installation.installation_id);
-        const spec = specFor(row, workspace, rawToken, caps, token);
+        const spec = specFor(row, workspace, taskRepos, rawToken, caps, token);
         await deps.runner.start(spec, { installationToken: token });
       } catch (error) {
         await deps.repo.updateTask(userId, row.id, {
@@ -492,6 +829,12 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
           failure_code: 'runner_failed',
           summary: error instanceof Error ? error.message.slice(0, 200) : 'runner_failed',
         });
+        for (const repo of taskRepos) {
+          await deps.admin.updateTaskRepo(userId, repo.id, {
+            status: 'failed',
+            failure_code: 'runner_failed',
+          });
+        }
         if (error instanceof CodingError) throw error;
         throw new CodingError('runner_failed', 'تعذّر بدء التنفيذ.', 502);
       }
@@ -501,6 +844,7 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         taskId: created.id,
         mode: input.mode,
         workspaceId: workspace.id,
+        repos: taskRepos.length,
       });
       return dtoFor(userId, row);
     },
@@ -557,7 +901,10 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
       const workspace = await runnerRepo.findWorkspace(task.user_id, task.workspace_id);
       if (!workspace) throw new CodingError('repo_unavailable', 'مساحة العمل غير موجودة.', 404);
 
-      const steps = await runnerRepo.listSteps(task.user_id, task.id);
+      const [steps, taskRepos] = await Promise.all([
+        runnerRepo.listSteps(task.user_id, task.id),
+        runnerRepo.listTaskRepos(task.user_id, task.id),
+      ]);
       const decided = [...steps]
         .reverse()
         .find((step) => step.status === 'applied' || step.status === 'rejected');
@@ -566,13 +913,17 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
       // the branch and the credential, and the control plane mints neither.
       let handoffToken: string | null = null;
       if (workspace.kind !== 'local') {
-        if (!workspace.installation_id) {
+        const installationId =
+          workspace.kind === 'group'
+            ? (await deps.admin.listWorkspaceRepos(task.user_id, workspace.id))[0]?.installation_id
+            : workspace.installation_id;
+        if (!installationId) {
           throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
         }
-        handoffToken = (await deps.github.getInstallationToken(workspace.installation_id)).token;
+        handoffToken = (await deps.github.getInstallationToken(installationId)).token;
       }
       return {
-        spec: specFor(task, workspace, rawToken, caps, handoffToken),
+        spec: specFor(task, workspace, taskRepos, rawToken, caps, handoffToken),
         status: task.status as CodingTaskStatus,
         decision: decided ? (decided.status === 'applied' ? 'approve' : 'reject') : null,
       };
@@ -581,14 +932,38 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
     async runnerUpdate(rawToken, update) {
       const { task, hash } = await requireTaskByToken(rawToken);
       const caps = await capsFor(task.user_id);
-      const inputTokens = task.input_tokens + (update.inputTokens ?? 0);
-      const outputTokens = task.output_tokens + (update.outputTokens ?? 0);
+      // The frame carries the runner's cumulative spend. The control plane has
+      // already counted every model call in `runnerLlm`, so a frame can only
+      // raise the task's total, never add to it a second time.
+      const inputTokens = Math.max(task.input_tokens, update.inputTokens ?? 0);
+      const outputTokens = Math.max(task.output_tokens, update.outputTokens ?? 0);
       if (inputTokens > caps.maxInputTokens || outputTokens > caps.maxOutputTokens) {
         await deps.admin.updateTaskByCallbackHash(hash, {
           status: 'failed',
           failure_code: 'budget_exhausted',
         });
+        await failTaskRepos(task.user_id, task.id, 'budget_exhausted');
         throw new CodingError('budget_exhausted', 'انتهت ميزانية الرمز لهذه المهمة.', 402);
+      }
+
+      // A step records only its own share: the difference between this frame's
+      // cumulative total and the shares already written on earlier steps.
+      const priorSteps = await deps.repo.listSteps(task.user_id, task.id);
+      const priorInput = priorSteps.reduce((total, step) => total + step.input_tokens, 0);
+      const priorOutput = priorSteps.reduce((total, step) => total + step.output_tokens, 0);
+      const stepInput = Math.max(0, (update.inputTokens ?? 0) - priorInput);
+      const stepOutput = Math.max(0, (update.outputTokens ?? 0) - priorOutput);
+      const costUsd =
+        update.model && (stepInput > 0 || stepOutput > 0)
+          ? codingModelCostUsd(update.model, stepInput, stepOutput)
+          : null;
+
+      let taskRepo: TaskRepoRow | null = null;
+      if (update.repo) {
+        // A legacy task has no per-repository row; its frame is still accepted,
+        // it simply carries no attribution. A group task's row is required to
+        // exist because the set was stored when the task was created.
+        taskRepo = await deps.admin.findTaskRepoByFullName(task.user_id, task.id, update.repo);
       }
 
       // A gate request is stored as a proposal so `decideStep` can find the
@@ -602,9 +977,32 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         summary: update.summary,
         diff: update.diff,
         failureCode: update.failureCode,
-        inputTokens: update.inputTokens ?? 0,
-        outputTokens: update.outputTokens ?? 0,
+        inputTokens: stepInput,
+        outputTokens: stepOutput,
+        taskRepoId: taskRepo?.id ?? null,
+        model: update.model ?? null,
+        latencyMs: update.latencyMs ?? null,
+        costUsd,
       });
+
+      if (taskRepo) {
+        const repoPatch: CodingTaskRepoPatch = {};
+        if (update.failureCode) {
+          repoPatch.status = 'failed';
+          repoPatch.failure_code = update.failureCode;
+        } else if (update.kind === 'pull_request' && update.status === 'applied') {
+          repoPatch.status = 'completed';
+          const url = httpUrl(update.diff);
+          if (url) repoPatch.pull_request_url = url;
+        } else if (update.kind === 'review' && update.status === 'applied') {
+          repoPatch.status = 'completed';
+        }
+        if (Object.keys(repoPatch).length > 0) {
+          await deps.admin.updateTaskRepo(task.user_id, taskRepo.id, repoPatch);
+        }
+      } else if (update.failureCode) {
+        await failTaskRepos(task.user_id, task.id, update.failureCode);
+      }
 
       const patch: CodingTaskPatch = { input_tokens: inputTokens, output_tokens: outputTokens };
       if (update.failureCode) {
@@ -614,15 +1012,21 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         patch.status = 'awaiting_plan';
       } else if (update.kind === 'push' && update.status === 'running') {
         patch.status = 'awaiting_push';
-      } else if (
-        update.kind === 'pull_request' ||
-        (update.kind === 'review' && update.status === 'applied')
-      ) {
-        // `review` is the local handoff: the diff stays in the member's folder,
-        // so there is no URL to store and the task is done when it is posted.
+      } else if (update.kind === 'review' && update.status === 'applied') {
+        // The local handoff: the diff stays in the member's folder, so there is
+        // no URL to store and the task is done when the review is posted.
         patch.status = 'completed';
-        const url = update.kind === 'pull_request' ? httpUrl(update.diff) : null;
+      } else if (update.kind === 'pull_request' && update.status === 'applied') {
+        // A task is done only when every repository in its set has a pull
+        // request. The last frame to arrive closes it.
+        const repos = await deps.admin.listTaskRepos(task.user_id, task.id);
+        const url = httpUrl(update.diff);
         if (url) patch.pull_request_url = url;
+        // Every repository in the set must have opened its pull request. A
+        // failed repository never reaches this path: its failure frame has
+        // already moved the task to `failed`.
+        const allDone = repos.length === 0 || repos.every((repo) => repo.pull_request_url !== null);
+        if (allDone) patch.status = 'completed';
       }
       await deps.admin.updateTaskByCallbackHash(hash, patch);
     },
@@ -630,6 +1034,11 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
     async runnerLlm(rawToken, request) {
       const { task, hash } = await requireTaskByToken(rawToken);
       const caps = await capsFor(task.user_id);
+      const reviewRequest = request.purpose === 'reviewer';
+      if (reviewRequest && (!reviewer || !deps.reviewerLlm)) {
+        throw new CodingError('review_unavailable', 'المراجع الثاني غير مفعّل لهذه المهمة.', 400);
+      }
+      const client = reviewRequest ? (deps.reviewerLlm ?? deps.llm) : deps.llm;
       const requestTokens =
         estimateTokens(JSON.stringify(request.messages)) +
         estimateTokens(JSON.stringify(request.tools ?? []));
@@ -645,7 +1054,7 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         throw new CodingError('budget_exhausted', 'انتهت ميزانية الرمز لهذه المهمة.', 402);
       }
 
-      const result = await deps.llm.reply(
+      const result = await client.reply(
         { messages: request.messages, tools: request.tools },
         AbortSignal.timeout(60_000)
       );
@@ -674,7 +1083,7 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         input_tokens: inputTokens,
         output_tokens: outputTokens,
       });
-      return { message: result.message, usage };
+      return { message: result.message, usage, model: client.model };
     },
 
     async cancelTask(userId, taskId) {
@@ -783,7 +1192,7 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         workspaceId: task.workspace_id,
       });
       return {
-        spec: specFor(task, workspace, rawCallbackToken, caps, null),
+        spec: specFor(task, workspace, [], rawCallbackToken, caps, null),
         status: 'running',
         decision: null,
       };

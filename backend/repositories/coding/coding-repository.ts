@@ -10,12 +10,19 @@
 import type { Database } from '@/backend/models/database.types';
 
 export type CodingWorkspaceRow = Database['public']['Tables']['coding_workspaces']['Row'];
+export type CodingWorkspaceRepoRow = Database['public']['Tables']['coding_workspace_repos']['Row'];
 export type CodingTaskRow = Database['public']['Tables']['coding_tasks']['Row'];
+export type CodingTaskRepoRow = Database['public']['Tables']['coding_task_repos']['Row'];
 export type CodingStepRow = Database['public']['Tables']['coding_steps']['Row'];
 export type CodingInstallationRow = Database['public']['Tables']['coding_installations']['Row'];
 export type CodingConnectAttemptRow =
   Database['public']['Tables']['coding_connect_attempts']['Row'];
 export type CodingLocalGrantRow = Database['public']['Tables']['coding_local_grants']['Row'];
+
+export type CodingTaskRepoPatch = Partial<
+  Pick<TaskRepoPatchFields, 'branch' | 'pull_request_url' | 'status' | 'failure_code'>
+>;
+type TaskRepoPatchFields = Database['public']['Tables']['coding_task_repos']['Update'];
 
 export type CodingTaskPatch = Partial<
   Pick<
@@ -50,6 +57,21 @@ export interface CodingRepository {
       defaultBranch: string;
     }
   ): Promise<CodingWorkspaceRow>;
+  /** A named set of repositories that share one installation (ADR-0223). */
+  createWorkspaceGroup(
+    userId: string,
+    values: {
+      name: string;
+      repos: Array<{
+        installationId: number;
+        repoOwner: string;
+        repoName: string;
+        defaultBranch: string;
+      }>;
+    }
+  ): Promise<CodingWorkspaceRow>;
+  listWorkspaceRepos(userId: string, workspaceId: string): Promise<CodingWorkspaceRepoRow[]>;
+  findWorkspaceRepo(userId: string, repoId: string): Promise<CodingWorkspaceRepoRow | null>;
   deleteWorkspace(userId: string, workspaceId: string): Promise<boolean>;
   countTasksSince(userId: string, sinceIso: string): Promise<number>;
   createTask(
@@ -65,6 +87,19 @@ export interface CodingRepository {
     }
   ): Promise<CodingTaskRow>;
   findTask(userId: string, taskId: string): Promise<CodingTaskRow | null>;
+  listTaskRepos(userId: string, taskId: string): Promise<CodingTaskRepoRow[]>;
+  createTaskRepo(
+    userId: string,
+    values: {
+      taskId: string;
+      workspaceRepoId: string | null;
+      repoOwner: string;
+      repoName: string;
+      baseBranch: string;
+      branch: string;
+    }
+  ): Promise<CodingTaskRepoRow>;
+  updateTaskRepo(userId: string, taskRepoId: string, patch: CodingTaskRepoPatch): Promise<void>;
   listTasks(
     userId: string,
     page: { limit: number; before: string | null; beforeId: string | null }
@@ -106,6 +141,15 @@ export interface CodingAdminRepository {
   ): Promise<void>;
   findTaskByCallbackHash(hash: string): Promise<CodingTaskRow | null>;
   updateTaskByCallbackHash(hash: string, patch: CodingTaskPatch): Promise<void>;
+  /** The runner sees the whole repo set; it has no session and no user filter. */
+  listWorkspaceRepos(userId: string, workspaceId: string): Promise<CodingWorkspaceRepoRow[]>;
+  listTaskRepos(userId: string, taskId: string): Promise<CodingTaskRepoRow[]>;
+  findTaskRepoByFullName(
+    userId: string,
+    taskId: string,
+    fullName: string
+  ): Promise<CodingTaskRepoRow | null>;
+  updateTaskRepo(userId: string, taskRepoId: string, patch: CodingTaskRepoPatch): Promise<void>;
   insertStepForRunner(
     userId: string,
     values: {
@@ -117,6 +161,10 @@ export interface CodingAdminRepository {
       failureCode?: string | null;
       inputTokens?: number;
       outputTokens?: number;
+      taskRepoId?: string | null;
+      model?: string | null;
+      latencyMs?: number | null;
+      costUsd?: number | null;
     }
   ): Promise<void>;
   /** The runner reads decisions with this client, so write them with it too. */

@@ -19,11 +19,11 @@ import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import type {
   ClaimCodingLocalPairInput,
-  CodingRepoInput,
   CodingRunnerLlmRequest,
   CodingRunnerUpdate,
   CodingTaskListQuery,
   CreateCodingTaskInput,
+  CreateCodingWorkspaceInput,
   DecideCodingStepInput,
 } from '@/shared/contracts/coding-agent';
 
@@ -94,7 +94,7 @@ export async function listCodingRepos(_headers: Headers): Promise<HttpResult> {
 
 export async function addCodingWorkspace(
   headers: Headers,
-  input: CodingRepoInput
+  input: CreateCodingWorkspaceInput
 ): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {

@@ -10,7 +10,9 @@ import type {
   CodingStepPatch,
   CodingStepRow,
   CodingTaskPatch,
+  CodingTaskRepoRow,
   CodingTaskRow,
+  CodingWorkspaceRepoRow,
   CodingWorkspaceRow,
 } from '@/backend/repositories/coding/coding-repository';
 import { guardRepositoryMethods } from '@/backend/shared/repository-error';
@@ -66,6 +68,64 @@ export function createCodingRepository(supabase: Client): CodingRepository {
         .select('id');
       if (error) throw new Error(error.message);
       return (data ?? []).length > 0;
+    },
+
+    async createWorkspaceGroup(userId, values) {
+      const { data, error } = await supabase
+        .from('coding_workspaces')
+        .insert({ user_id: userId, kind: 'group', group_name: values.name })
+        .select('*')
+        .single();
+      if (error) throw new Error(error.message);
+      const workspace = data as CodingWorkspaceRow;
+
+      const { error: repoError } = await supabase.from('coding_workspace_repos').insert(
+        values.repos.map((repo) => ({
+          user_id: userId,
+          workspace_id: workspace.id,
+          installation_id: repo.installationId,
+          repo_owner: repo.repoOwner,
+          repo_name: repo.repoName,
+          default_branch: repo.defaultBranch,
+        }))
+      );
+      if (repoError) {
+        // No transaction spans these two inserts, so a half-created group is
+        // removed rather than left as a workspace with no repositories.
+        await supabase
+          .from('coding_workspaces')
+          .delete()
+          .eq('user_id', userId)
+          .eq('id', workspace.id)
+          .then(
+            () => undefined,
+            () => undefined
+          );
+        throw new Error(repoError.message);
+      }
+      return workspace;
+    },
+
+    async listWorkspaceRepos(userId, workspaceId) {
+      const { data, error } = await supabase
+        .from('coding_workspace_repos')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CodingWorkspaceRepoRow[];
+    },
+
+    async findWorkspaceRepo(userId, repoId) {
+      const { data, error } = await supabase
+        .from('coding_workspace_repos')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('id', repoId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as CodingWorkspaceRepoRow | null) ?? null;
     },
 
     async countTasksSince(userId, sinceIso) {
@@ -126,6 +186,44 @@ export function createCodingRepository(supabase: Client): CodingRepository {
       const { data, error } = await query;
       if (error) throw new Error(error.message);
       return (data ?? []) as CodingTaskRow[];
+    },
+
+    async listTaskRepos(userId, taskId) {
+      const { data, error } = await supabase
+        .from('coding_task_repos')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('task_id', taskId)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CodingTaskRepoRow[];
+    },
+
+    async createTaskRepo(userId, values) {
+      const { data, error } = await supabase
+        .from('coding_task_repos')
+        .insert({
+          user_id: userId,
+          task_id: values.taskId,
+          workspace_repo_id: values.workspaceRepoId,
+          repo_owner: values.repoOwner,
+          repo_name: values.repoName,
+          base_branch: values.baseBranch,
+          branch: values.branch,
+        })
+        .select('*')
+        .single();
+      if (error) throw new Error(error.message);
+      return data as CodingTaskRepoRow;
+    },
+
+    async updateTaskRepo(userId, taskRepoId, patch) {
+      const { error } = await supabase
+        .from('coding_task_repos')
+        .update({ ...patch, updated_at: nowIso() })
+        .eq('user_id', userId)
+        .eq('id', taskRepoId);
+      if (error) throw new Error(error.message);
     },
 
     async listSteps(userId, taskId) {
@@ -277,6 +375,53 @@ export function createCodingAdminRepository(supabase: Client): CodingAdminReposi
       if (error) throw new Error(error.message);
     },
 
+    async listWorkspaceRepos(userId, workspaceId) {
+      const { data, error } = await supabase
+        .from('coding_workspace_repos')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CodingWorkspaceRepoRow[];
+    },
+
+    async listTaskRepos(userId, taskId) {
+      const { data, error } = await supabase
+        .from('coding_task_repos')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('task_id', taskId)
+        .order('created_at', { ascending: true });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CodingTaskRepoRow[];
+    },
+
+    async findTaskRepoByFullName(userId, taskId, fullName) {
+      const [owner, ...rest] = fullName.split('/');
+      const name = rest.join('/');
+      if (!owner || !name) return null;
+      const { data, error } = await supabase
+        .from('coding_task_repos')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('task_id', taskId)
+        .ilike('repo_owner', owner)
+        .ilike('repo_name', name)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as CodingTaskRepoRow | null) ?? null;
+    },
+
+    async updateTaskRepo(userId, taskRepoId, patch) {
+      const { error } = await supabase
+        .from('coding_task_repos')
+        .update({ ...patch, updated_at: nowIso() })
+        .eq('user_id', userId)
+        .eq('id', taskRepoId);
+      if (error) throw new Error(error.message);
+    },
+
     async insertStepForRunner(userId, values) {
       const { error } = await supabase.from('coding_steps').insert({
         user_id: userId,
@@ -288,6 +433,10 @@ export function createCodingAdminRepository(supabase: Client): CodingAdminReposi
         failure_code: values.failureCode ?? null,
         input_tokens: values.inputTokens ?? 0,
         output_tokens: values.outputTokens ?? 0,
+        task_repo_id: values.taskRepoId ?? null,
+        model: values.model ?? null,
+        latency_ms: values.latencyMs ?? null,
+        cost_usd: values.costUsd ?? null,
       });
       if (error) throw new Error(error.message);
     },

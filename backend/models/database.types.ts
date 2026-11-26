@@ -847,43 +847,103 @@ export type Database = {
       };
       coding_steps: {
         Row: {
+          cost_usd: number | null;
           created_at: string;
           diff: string | null;
           failure_code: string | null;
           id: string;
           input_tokens: number;
           kind: string;
+          latency_ms: number | null;
+          model: string | null;
           output_tokens: number;
           status: string;
           summary: string;
           task_id: string;
+          task_repo_id: string | null;
           user_id: string;
         };
         Insert: {
+          cost_usd?: number | null;
           created_at?: string;
           diff?: string | null;
           failure_code?: string | null;
           id?: string;
           input_tokens?: number;
           kind: string;
+          latency_ms?: number | null;
+          model?: string | null;
           output_tokens?: number;
           status: string;
           summary?: string;
           task_id: string;
+          task_repo_id?: string | null;
           user_id: string;
         };
         Update: {
+          cost_usd?: number | null;
           created_at?: string;
           diff?: string | null;
           failure_code?: string | null;
           id?: string;
           input_tokens?: number;
           kind?: string;
+          latency_ms?: number | null;
+          model?: string | null;
           output_tokens?: number;
           status?: string;
           summary?: string;
           task_id?: string;
+          task_repo_id?: string | null;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      coding_task_repos: {
+        Row: {
+          base_branch: string;
+          branch: string | null;
+          created_at: string;
+          failure_code: string | null;
+          id: string;
+          pull_request_url: string | null;
+          repo_name: string;
+          repo_owner: string;
+          status: string;
+          task_id: string;
+          updated_at: string;
+          user_id: string;
+          workspace_repo_id: string | null;
+        };
+        Insert: {
+          base_branch: string;
+          branch?: string | null;
+          created_at?: string;
+          failure_code?: string | null;
+          id?: string;
+          pull_request_url?: string | null;
+          repo_name: string;
+          repo_owner: string;
+          status?: string;
+          task_id: string;
+          updated_at?: string;
+          user_id: string;
+          workspace_repo_id?: string | null;
+        };
+        Update: {
+          base_branch?: string;
+          branch?: string | null;
+          created_at?: string;
+          failure_code?: string | null;
+          id?: string;
+          pull_request_url?: string | null;
+          repo_name?: string;
+          repo_owner?: string;
+          status?: string;
+          task_id?: string;
+          updated_at?: string;
+          user_id?: string;
+          workspace_repo_id?: string | null;
         };
         Relationships: [];
       };
@@ -953,11 +1013,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      coding_workspace_repos: {
+        Row: {
+          created_at: string;
+          default_branch: string;
+          id: string;
+          installation_id: number;
+          repo_name: string;
+          repo_owner: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          default_branch?: string;
+          id?: string;
+          installation_id: number;
+          repo_name: string;
+          repo_owner: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          created_at?: string;
+          default_branch?: string;
+          id?: string;
+          installation_id?: number;
+          repo_name?: string;
+          repo_owner?: string;
+          user_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [];
+      };
       coding_workspaces: {
         Row: {
           created_at: string;
           default_branch: string | null;
           device_label: string | null;
+          group_name: string | null;
           id: string;
           installation_id: number | null;
           kind: string;
@@ -969,6 +1063,7 @@ export type Database = {
           created_at?: string;
           default_branch?: string | null;
           device_label?: string | null;
+          group_name?: string | null;
           id?: string;
           installation_id?: number | null;
           kind?: string;
@@ -980,6 +1075,7 @@ export type Database = {
           created_at?: string;
           default_branch?: string | null;
           device_label?: string | null;
+          group_name?: string | null;
           id?: string;
           installation_id?: number | null;
           kind?: string;

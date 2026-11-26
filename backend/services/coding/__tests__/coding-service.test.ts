@@ -5,7 +5,9 @@ import type {
   CodingAdminRepository,
   CodingRepository,
   CodingStepRow,
+  CodingTaskRepoRow,
   CodingTaskRow,
+  CodingWorkspaceRepoRow,
   CodingWorkspaceRow,
 } from '@/backend/repositories/coding/coding-repository';
 import {
@@ -26,6 +28,8 @@ const USER = '00000000-0000-4000-8000-000000000001';
 const WORKSPACE = '00000000-0000-4000-8000-000000000002';
 const TASK = '00000000-0000-4000-8000-000000000003';
 const STEP = '00000000-0000-4000-8000-000000000004';
+const WORKSPACE_REPO = '00000000-0000-4000-8000-000000000005';
+const TASK_REPO = '00000000-0000-4000-8000-000000000006';
 const CREATED_AT = '2026-11-05T10:00:00.000Z';
 const RAW_TOKEN = 'runner-token-abcdefghijklmnopqrstuvwxyz';
 
@@ -38,8 +42,39 @@ const workspace: CodingWorkspaceRow = {
   repo_name: 'repo',
   default_branch: 'main',
   device_label: null,
+  group_name: null,
   created_at: CREATED_AT,
 };
+
+const workspaceRepo: CodingWorkspaceRepoRow = {
+  id: WORKSPACE_REPO,
+  user_id: USER,
+  workspace_id: WORKSPACE,
+  installation_id: 42,
+  repo_owner: 'member',
+  repo_name: 'repo',
+  default_branch: 'main',
+  created_at: CREATED_AT,
+};
+
+function makeTaskRepo(overrides: Partial<CodingTaskRepoRow> = {}): CodingTaskRepoRow {
+  return {
+    id: TASK_REPO,
+    user_id: USER,
+    task_id: TASK,
+    workspace_repo_id: null,
+    repo_owner: 'member',
+    repo_name: 'repo',
+    base_branch: 'main',
+    branch: `noor/${TASK.slice(0, 8)}`,
+    pull_request_url: null,
+    status: 'running',
+    failure_code: null,
+    created_at: CREATED_AT,
+    updated_at: CREATED_AT,
+    ...overrides,
+  };
+}
 
 function makeTask(overrides: Partial<CodingTaskRow> = {}): CodingTaskRow {
   return {
@@ -78,6 +113,10 @@ function makeStep(overrides: Partial<CodingStepRow> = {}): CodingStepRow {
     failure_code: null,
     input_tokens: 0,
     output_tokens: 0,
+    task_repo_id: null,
+    model: null,
+    latency_ms: null,
+    cost_usd: null,
     created_at: CREATED_AT,
     ...overrides,
   };
@@ -109,6 +148,30 @@ function harness(overrides: Partial<CodingServiceDeps> = {}, task = makeTask()):
     })),
     findTask: vi.fn().mockResolvedValue(task),
     listTasks: vi.fn().mockResolvedValue([]),
+    listWorkspaceRepos: vi.fn().mockResolvedValue([workspaceRepo]),
+    findWorkspaceRepo: vi.fn().mockResolvedValue(workspaceRepo),
+    createWorkspaceGroup: vi.fn().mockResolvedValue(workspace),
+    listTaskRepos: vi.fn().mockResolvedValue([]),
+    createTaskRepo: vi.fn().mockImplementation(
+      async (
+        _userId: string,
+        values: {
+          workspaceRepoId: string | null;
+          repoOwner: string;
+          repoName: string;
+          baseBranch: string;
+          branch: string;
+        }
+      ) =>
+        makeTaskRepo({
+          id: values.workspaceRepoId ?? TASK_REPO,
+          repo_owner: values.repoOwner,
+          repo_name: values.repoName,
+          base_branch: values.baseBranch,
+          branch: values.branch,
+        })
+    ),
+    updateTaskRepo: vi.fn().mockResolvedValue(undefined),
     listSteps: vi.fn().mockResolvedValue([]),
     updateTask: vi.fn().mockResolvedValue(undefined),
     insertStep: vi.fn().mockResolvedValue(undefined),
@@ -134,6 +197,10 @@ function harness(overrides: Partial<CodingServiceDeps> = {}, task = makeTask()):
     updateTaskByCallbackHash: vi.fn().mockImplementation(async (_hash: string, patch: object) => {
       Object.assign(task, patch);
     }),
+    listWorkspaceRepos: vi.fn().mockResolvedValue([workspaceRepo]),
+    listTaskRepos: vi.fn().mockResolvedValue([]),
+    findTaskRepoByFullName: vi.fn().mockResolvedValue(null),
+    updateTaskRepo: vi.fn().mockResolvedValue(undefined),
     insertStepForRunner: vi.fn().mockResolvedValue(undefined),
     setStepDecision: vi.fn().mockResolvedValue(undefined),
     findActiveGrantForWorkspace: vi.fn().mockResolvedValue(null),
@@ -151,6 +218,7 @@ function harness(overrides: Partial<CodingServiceDeps> = {}, task = makeTask()):
   };
   const runner = { start: vi.fn().mockResolvedValue({ runId: TASK }) };
   const llm = {
+    model: 'deepseek-v4.1-flash',
     reply: vi.fn().mockResolvedValue({
       message: { role: 'assistant', content: 'done' },
       usage: { inputTokens: 10, outputTokens: 5 },
@@ -373,6 +441,10 @@ describe('CodingService runner updates and budgets', () => {
       failureCode: null,
       inputTokens: 100,
       outputTokens: 20,
+      taskRepoId: null,
+      model: null,
+      latencyMs: null,
+      costUsd: null,
     });
     expect(admin.updateTaskByCallbackHash).toHaveBeenCalledWith(hashToken(RAW_TOKEN), {
       input_tokens: 100,
@@ -406,8 +478,8 @@ describe('CodingService runner updates and budgets', () => {
     expect(admin.updateTaskByCallbackHash).toHaveBeenLastCalledWith(hashToken(RAW_TOKEN), {
       status: 'completed',
       pull_request_url: 'https://github.com/member/repo/pull/7',
-      input_tokens: 2,
-      output_tokens: 2,
+      input_tokens: 1,
+      output_tokens: 1,
     });
   });
 
@@ -416,7 +488,7 @@ describe('CodingService runner updates and budgets', () => {
     const service = createCodingService(deps);
 
     await expect(
-      service.runnerUpdate(RAW_TOKEN, update({ inputTokens: 100 }))
+      service.runnerUpdate(RAW_TOKEN, update({ inputTokens: 200_001 }))
     ).rejects.toMatchObject({ code: 'budget_exhausted', statusCode: 402 });
     expect(admin.updateTaskByCallbackHash).toHaveBeenCalledWith(hashToken(RAW_TOKEN), {
       status: 'failed',
@@ -454,6 +526,7 @@ describe('CodingService runner updates and budgets', () => {
     expect(answer).toEqual({
       message: { role: 'assistant', content: 'done' },
       usage: { inputTokens: 10, outputTokens: 5 },
+      model: 'deepseek-v4.1-flash',
     });
 
     llm.reply.mockResolvedValueOnce({
@@ -653,6 +726,221 @@ describe('CodingService local companion (ADR-0222)', () => {
   });
 });
 
+describe('CodingService multi-repository workspaces (ADR-0223)', () => {
+  const GROUP = '00000000-0000-4000-8000-00000000000b';
+  const REPO_A = '00000000-0000-4000-8000-00000000000c';
+  const REPO_B = '00000000-0000-4000-8000-00000000000d';
+  const groupWorkspace: CodingWorkspaceRow = {
+    ...workspace,
+    id: GROUP,
+    kind: 'group',
+    installation_id: null,
+    repo_owner: null,
+    repo_name: null,
+    default_branch: null,
+    group_name: 'app and api',
+  };
+  const repoA: CodingWorkspaceRepoRow = {
+    ...workspaceRepo,
+    id: REPO_A,
+    workspace_id: GROUP,
+    repo_owner: 'member',
+    repo_name: 'web',
+  };
+  const repoB: CodingWorkspaceRepoRow = {
+    ...workspaceRepo,
+    id: REPO_B,
+    workspace_id: GROUP,
+    repo_owner: 'member',
+    repo_name: 'api',
+  };
+
+  it('refuses a set whose repositories do not share one installation', async () => {
+    const { deps } = harness({
+      installationIdForRepo: async (_userId, owner) => (owner === 'member' ? 42 : 43),
+    });
+    (deps.admin.findInstallation as ReturnType<typeof vi.fn>).mockImplementation(
+      async (_userId: string, id: number) => ({ installation_id: id })
+    );
+    deps.github.listRepos = vi.fn().mockResolvedValue([
+      { owner: 'member', name: 'web', default_branch: 'main' },
+      { owner: 'other', name: 'api', default_branch: 'main' },
+    ]);
+    const service = createCodingService(deps);
+
+    await expect(
+      service.addWorkspace(USER, {
+        kind: 'group',
+        name: 'two owners',
+        repos: [
+          { owner: 'member', name: 'web' },
+          { owner: 'other', name: 'api' },
+        ],
+      })
+    ).rejects.toMatchObject({ code: 'repo_set_invalid' });
+  });
+
+  it('creates a group and bootstraps every repository', async () => {
+    const bootstrapWorkflow = vi.fn().mockResolvedValue('https://github.com/member/pr/1');
+    const { deps } = harness({ bootstrapWorkflow });
+    deps.github.listRepos = vi.fn().mockResolvedValue([
+      { owner: 'member', name: 'web', default_branch: 'main' },
+      { owner: 'member', name: 'api', default_branch: 'main' },
+    ]);
+    (deps.repo.createWorkspaceGroup as ReturnType<typeof vi.fn>).mockResolvedValue(groupWorkspace);
+    (deps.repo.listWorkspaceRepos as ReturnType<typeof vi.fn>).mockResolvedValue([repoA, repoB]);
+    const service = createCodingService(deps);
+
+    const result = await service.addWorkspace(USER, {
+      kind: 'group',
+      name: 'app and api',
+      repos: [
+        { owner: 'member', name: 'web' },
+        { owner: 'member', name: 'api' },
+      ],
+    });
+
+    expect(deps.repo.createWorkspaceGroup).toHaveBeenCalledWith(USER, {
+      name: 'app and api',
+      repos: [
+        { installationId: 42, repoOwner: 'member', repoName: 'web', defaultBranch: 'main' },
+        { installationId: 42, repoOwner: 'member', repoName: 'api', defaultBranch: 'main' },
+      ],
+    });
+    expect(bootstrapWorkflow).toHaveBeenCalledTimes(2);
+    expect(result.kind).toBe('group');
+    expect(result.name).toBe('app and api');
+    expect(result.repos.map((repo) => repo.fullName)).toEqual(['member/web', 'member/api']);
+    expect(result.bootstrapPrUrls).toHaveLength(2);
+  });
+
+  it('creates one task row and one branch per selected repository', async () => {
+    const { deps, repo, runner } = harness();
+    (repo.findWorkspace as ReturnType<typeof vi.fn>).mockResolvedValue(groupWorkspace);
+    (repo.listWorkspaceRepos as ReturnType<typeof vi.fn>).mockResolvedValue([repoA, repoB]);
+    const service = createCodingService(deps);
+
+    await service.createTask(USER, {
+      ...createInput,
+      workspaceId: GROUP,
+      repoIds: [REPO_A, REPO_B],
+    });
+
+    expect(repo.createTaskRepo).toHaveBeenCalledTimes(2);
+    expect(repo.createTaskRepo).toHaveBeenNthCalledWith(1, USER, {
+      taskId: TASK,
+      workspaceRepoId: REPO_A,
+      repoOwner: 'member',
+      repoName: 'web',
+      baseBranch: 'main',
+      branch: `noor/${TASK.slice(0, 8)}`,
+    });
+    const [spec] = runner.start.mock.calls[0] as [CodingRunnerTask];
+    expect(spec.repos.map((entry) => entry.fullName)).toEqual(['member/web', 'member/api']);
+    expect(spec.repos.every((entry) => entry.branch === `noor/${TASK.slice(0, 8)}`)).toBe(true);
+    expect(spec.reviewer).toBeNull();
+  });
+
+  it('completes only when every repository has a pull request', async () => {
+    const { deps, admin } = harness();
+    (admin.listTaskRepos as ReturnType<typeof vi.fn>).mockResolvedValue([
+      makeTaskRepo({ id: REPO_A, pull_request_url: 'https://github.com/member/web/pull/1' }),
+      makeTaskRepo({ id: REPO_B, repo_name: 'api' }),
+    ]);
+    (admin.findTaskRepoByFullName as ReturnType<typeof vi.fn>).mockResolvedValue(
+      makeTaskRepo({ id: REPO_B, repo_name: 'api' })
+    );
+    const service = createCodingService(deps);
+
+    await service.runnerUpdate(RAW_TOKEN, {
+      kind: 'pull_request',
+      status: 'applied',
+      summary: 'Pull request: https://github.com/member/api/pull/2',
+      diff: 'https://github.com/member/api/pull/2',
+      repo: 'member/api',
+      failureCode: null,
+      inputTokens: 1,
+      outputTokens: 1,
+    });
+
+    expect(admin.updateTaskRepo).toHaveBeenCalledWith(USER, REPO_B, {
+      status: 'completed',
+      pull_request_url: 'https://github.com/member/api/pull/2',
+    });
+    expect(admin.updateTaskByCallbackHash).not.toHaveBeenCalledWith(
+      hashToken(RAW_TOKEN),
+      expect.objectContaining({ status: 'completed' })
+    );
+
+    (admin.listTaskRepos as ReturnType<typeof vi.fn>).mockResolvedValue([
+      makeTaskRepo({ id: REPO_A, pull_request_url: 'https://github.com/member/web/pull/1' }),
+      makeTaskRepo({
+        id: REPO_B,
+        repo_name: 'api',
+        pull_request_url: 'https://github.com/member/api/pull/2',
+      }),
+    ]);
+    await service.runnerUpdate(RAW_TOKEN, {
+      kind: 'pull_request',
+      status: 'applied',
+      summary: 'All pull requests are open.',
+      diff: 'https://github.com/member/api/pull/2',
+      repo: 'member/api',
+      failureCode: null,
+      inputTokens: 0,
+      outputTokens: 0,
+    });
+    expect(admin.updateTaskByCallbackHash).toHaveBeenLastCalledWith(
+      hashToken(RAW_TOKEN),
+      expect.objectContaining({ status: 'completed' })
+    );
+  });
+
+  it('records the reviewer model, latency and list-price cost on its step', async () => {
+    const { deps, admin } = harness();
+    const service = createCodingService(deps);
+
+    await service.runnerUpdate(RAW_TOKEN, {
+      kind: 'reviewer',
+      status: 'applied',
+      summary: 'No blocking findings.',
+      diff: '{"blocking":[]}',
+      failureCode: null,
+      inputTokens: 1000,
+      outputTokens: 1000,
+      model: 'claude-haiku-5-5',
+      latencyMs: 1200,
+    });
+
+    expect(admin.insertStepForRunner).toHaveBeenCalledWith(
+      USER,
+      expect.objectContaining({
+        kind: 'reviewer',
+        model: 'claude-haiku-5-5',
+        latencyMs: 1200,
+        costUsd: 0.006,
+      })
+    );
+  });
+
+  it('refuses a reviewer request while the committed gate is off', async () => {
+    const reviewerLlm = {
+      model: 'claude-haiku-5-5',
+      reply: vi.fn(),
+    };
+    const { deps } = harness({ reviewerLlm });
+    const service = createCodingService(deps);
+
+    await expect(
+      service.runnerLlm(RAW_TOKEN, {
+        purpose: 'reviewer',
+        messages: [{ role: 'user', content: 'review this' }],
+      })
+    ).rejects.toMatchObject({ code: 'review_unavailable' });
+    expect(reviewerLlm.reply).not.toHaveBeenCalled();
+  });
+});
+
 describe('CodingService approval gates and bootstrap', () => {
   it('opens a bootstrap PR once when a workspace is connected', async () => {
     const bootstrapWorkflow = vi.fn().mockResolvedValue('https://github.com/member/repo/pull/1');
@@ -666,7 +954,7 @@ describe('CodingService approval gates and bootstrap', () => {
       name: 'repo',
       defaultBranch: 'main',
     });
-    expect(result.bootstrapPrUrl).toBe('https://github.com/member/repo/pull/1');
+    expect(result.bootstrapPrUrls).toEqual(['https://github.com/member/repo/pull/1']);
   });
 
   it('stores a push request as a proposal and waits for approval', async () => {

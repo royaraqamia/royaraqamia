@@ -71,9 +71,17 @@
       "anon": [],
       "authenticated": ["INSERT", "SELECT", "UPDATE"]
     },
+    "coding_task_repos": {
+      "anon": [],
+      "authenticated": ["INSERT", "SELECT"]
+    },
     "coding_tasks": {
       "anon": [],
       "authenticated": ["INSERT", "SELECT", "UPDATE"]
+    },
+    "coding_workspace_repos": {
+      "anon": [],
+      "authenticated": ["DELETE", "INSERT", "SELECT"]
     },
     "coding_workspaces": {
       "anon": [],

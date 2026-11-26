@@ -1,7 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
+  AI_CHAT_DEFAULT_MODEL,
+  AI_CHAT_JUDGE_DEFAULT_MODEL,
   createAiChatClient,
+  createJudgeAiChatClient,
   type AiChatClient,
   type AiChatMessage,
   type AiChatTool,
@@ -16,6 +19,7 @@ import { createCodingAdminRepository, createCodingRepository } from '@/backend/r
 import { logger } from '@/backend/shared/logger';
 import { encryptSecret, generateOpaqueToken, hashToken } from '@/backend/shared/mcp-token-crypto';
 import type { CodingRepoInput } from '@/shared/contracts/coding-agent';
+import { codingReviewerEnabled } from '@/shared/contracts/coding-reviewer';
 
 import {
   createCodingService,
@@ -179,10 +183,14 @@ function asWireMessages(messages: LlmMessage[], tools: AiChatTool[]): AiChatWire
  * crosses the control-plane boundary either way. A client that grows a
  * non-stream tool method is picked up here without touching the service.
  */
-function createCodingLlmClient(): CodingLlmClient {
+function createCodingLlmClient(
+  model: string,
+  makeClient: () => AiChatClient | null = createAiChatClient
+): CodingLlmClient {
   return {
+    model,
     async reply(request, signal) {
-      const client: AiChatClient | null = createAiChatClient();
+      const client: AiChatClient | null = makeClient();
       if (!client) throw new Error('Assistant provider is not configured');
 
       const tools = asTools(request.tools);
@@ -263,6 +271,20 @@ function createCodingLlmClient(): CodingLlmClient {
   };
 }
 
+/**
+ * The reviewer is a second model on the same key (ADR-0213, ADR-0223). It is
+ * absent unless the committed evidence gate is on *and* a judge client exists,
+ * so a deployment cannot switch it on with an environment variable alone.
+ */
+function createCodingReviewerClient(): CodingLlmClient | null {
+  if (!codingReviewerEnabled()) return null;
+  const client = createJudgeAiChatClient();
+  if (!client) return null;
+  const configured = env.aiChatJudgeModel?.trim();
+  const model = configured && configured !== 'off' ? configured : AI_CHAT_JUDGE_DEFAULT_MODEL;
+  return createCodingLlmClient(model, () => client);
+}
+
 function sharedDeps(overrides: Partial<CodingServiceDeps>): Omit<CodingServiceDeps, 'repo'> {
   const admin = getAdminSupabase();
   const github = createGitHubAppClient();
@@ -271,7 +293,8 @@ function sharedDeps(overrides: Partial<CodingServiceDeps>): Omit<CodingServiceDe
     runnerRepo: createCodingRepository(admin),
     github,
     runner: new GitHubActionsRunner(github),
-    llm: createCodingLlmClient(),
+    llm: createCodingLlmClient(env.aiChatModel?.trim() || AI_CHAT_DEFAULT_MODEL),
+    reviewerLlm: createCodingReviewerClient(),
     origin: env.origin,
     planFor: (userId) =>
       createUsageService()

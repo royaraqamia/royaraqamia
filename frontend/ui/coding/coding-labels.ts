@@ -43,6 +43,7 @@ export const CODING_STEP_KIND_LABELS: Record<CodingStepKind, string> = {
   push: 'نشر',
   pull_request: 'طلب دمج',
   review: 'مراجعة الفرق',
+  reviewer: 'مراجعة مستقلة',
 };
 
 export const CODING_FAILURE_LABELS: Record<CodingFailureCode, string> = {
@@ -53,6 +54,7 @@ export const CODING_FAILURE_LABELS: Record<CodingFailureCode, string> = {
   runner_failed: 'تعذّر تشغيل المهام',
   checks_failed: 'أخفقت الفحوصات',
   repo_unavailable: 'المستودع غير متاح',
+  repo_set_invalid: 'مجموعة المستودعات غير صالحة',
 };
 
 /** The four states a task can still move in; those are the ones worth polling. */

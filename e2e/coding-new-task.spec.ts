@@ -19,10 +19,14 @@ const TASK_ID = '0b9c8d7e-1f2a-4b3c-9d8e-7f6a5b4c3d2e';
 
 const WORKSPACE = {
   id: WORKSPACE_ID,
+  kind: 'github',
   repoOwner: 'royaraqamia',
   repoName: 'royaraqamia',
   defaultBranch: 'develop',
-  bootstrapPrUrl: null,
+  deviceLabel: null,
+  name: null,
+  repos: [],
+  bootstrapPrUrls: [],
   createdAt: '2026-11-20T08:00:00.000Z',
 };
 
@@ -38,6 +42,7 @@ const TASK = {
   status: 'queued',
   branch: null,
   pullRequestUrl: null,
+  repos: [],
   summary: '',
   failureCode: null,
   steps: [],

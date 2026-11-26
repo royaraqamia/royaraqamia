@@ -26,6 +26,7 @@ export function NewCodingTaskForm({
   const [title, setTitle] = useState('');
   const [instruction, setInstruction] = useState('');
   const [mode, setMode] = useState<CodingTaskMode>('plan');
+  const [repoIds, setRepoIds] = useState<string[]>([]);
   /**
    * The branch the member typed, or `null` to follow the selected repository's
    * default. The repositories arrive from the parent's own read, after this form
@@ -39,11 +40,33 @@ export function NewCodingTaskForm({
 
   const workspace = workspaces.find((candidate) => candidate.id === workspaceId) ?? workspaces[0];
   const activeWorkspaceId = workspace?.id ?? '';
-  const baseBranch = typedBranch ?? workspace?.defaultBranch ?? 'main';
+  const group = workspace?.kind === 'group';
+  const baseBranch = group
+    ? (workspace?.repos[0]?.defaultBranch ?? 'main')
+    : (typedBranch ?? workspace?.defaultBranch ?? 'main');
+  /** A group task may narrow its workspace's set; the default is every repo. */
+  const selectedRepoIds =
+    group && workspace
+      ? repoIds.length === 0
+        ? workspace.repos.map((repo) => repo.id)
+        : repoIds.filter((id) => workspace.repos.some((repo) => repo.id === id))
+      : [];
 
   const chooseWorkspace = (id: string) => {
     setWorkspaceId(id);
     setTypedBranch(null);
+    setRepoIds([]);
+  };
+
+  const toggleRepo = (id: string) => {
+    setRepoIds((current) => {
+      const all = workspace?.repos.map((repo) => repo.id) ?? [];
+      const next = current.length === 0 ? all : current;
+      if (!next.includes(id)) return [...next, id];
+      // A task needs at least one repository; the last one cannot be removed.
+      if (next.length <= 1) return next;
+      return next.filter((value) => value !== id);
+    });
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -58,6 +81,7 @@ export function NewCodingTaskForm({
         instruction: instruction.trim(),
         mode,
         baseBranch: baseBranch.trim(),
+        ...(group ? { repoIds: selectedRepoIds } : {}),
       });
       window.location.assign(`/coding/${encodeURIComponent(task.id)}`);
     } catch (cause) {
@@ -126,17 +150,39 @@ export function NewCodingTaskForm({
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-bold">الفرع الأساسي</span>
-              <input
-                type="text"
-                required
-                value={baseBranch}
-                onChange={(event) => setTypedBranch(event.target.value)}
-                className="rounded-lg border border-border bg-background px-3 py-2"
-              />
-            </label>
+            {!group && (
+              <label className="flex flex-col gap-1 text-sm">
+                <span className="font-bold">الفرع الأساسي</span>
+                <input
+                  type="text"
+                  required
+                  value={baseBranch}
+                  onChange={(event) => setTypedBranch(event.target.value)}
+                  className="rounded-lg border border-border bg-background px-3 py-2"
+                />
+              </label>
+            )}
           </div>
+          {group && workspace && (
+            <fieldset className="flex flex-col gap-1 text-sm">
+              <legend className="font-bold">المستودعات في هذه المهمة</legend>
+              <div className="flex flex-wrap gap-3">
+                {workspace.repos.map((repo) => (
+                  <label key={repo.id} className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedRepoIds.includes(repo.id)}
+                      onChange={() => toggleRepo(repo.id)}
+                    />
+                    {repo.fullName}
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                كل مستودع مختار يحصل على فرع وطلب دمج خاص به.
+              </p>
+            </fieldset>
+          )}
           <CodingCapBanner plan={plan} />
           {error && <p className="text-sm text-destructive">{error}</p>}
           <button

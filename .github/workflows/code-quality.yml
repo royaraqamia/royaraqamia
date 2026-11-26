@@ -71,6 +71,11 @@ jobs:
       - name: Assistant Eval Evidence Is Reproducible
         run: npm run check:agent-evals
 
+      # A reviewer is switched on by a recorded eval run, not an opinion
+      # (ADR-0223): an edited status or a weaker record fails here.
+      - name: Coding Reviewer Gate
+        run: npm run check:coding-reviewer
+
       # A headless run has nobody to answer a permission prompt, so every surface
       # must resolve to allow or deny (ADR-0142): the config is checked against the
       # CLI's own defaults, and one probe that resolves to `ask` fails the job.

@@ -41,6 +41,29 @@ fresh fixture, so both the approval pause and the unattended path are scored.
 The runner must finish inside `expectedTokenBudget` and pass every `checks`
 entry on both runs.
 
+## The reviewer gate
+
+`reviewer-gate.json` is the evidence that decides whether the second reviewer
+model may run (ADR-0223). It is off in this tree. `npm run check:coding-reviewer`
+recomputes the gate from the numbers in the file, so setting `"status": "on"`
+without clearing `thresholds` fails CI.
+
+To switch it on, run the suite with the reviewer enabled on a fixed runner
+version (the harness is issue #1897), and record in `evidence`:
+
+- `recordedAt` — when the run happened;
+- `suite` — exactly `evals/coding/tasks.json`;
+- `runs` — how many scored tasks the reviewer saw;
+- `catchRate` — the share where it flagged a defect the deterministic checks or
+  the recorded human label already identified;
+- `falsePositiveRate` — the share where it blocked a task that passed;
+- `medianAddedLatencyMs` — the median extra wall-clock time per reviewed task;
+- `costUsdPerReview` — the mean provider cost of one review, from the same
+  `pricing` table the control plane uses.
+
+The model named in `model` must have a `pricing` entry. A price the table does
+not name costs `null`, and the gate stays closed.
+
 ## Adding a task
 
 Add one entry with a new `id`, keep the fixture under a handful of files, and
