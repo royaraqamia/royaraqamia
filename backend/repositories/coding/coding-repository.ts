@@ -116,4 +116,6 @@ export interface CodingAdminRepository {
       outputTokens?: number;
     }
   ): Promise<void>;
+  /** The runner reads decisions with this client, so write them with it too. */
+  setStepDecision(userId: string, stepId: string, status: 'applied' | 'rejected'): Promise<void>;
 }

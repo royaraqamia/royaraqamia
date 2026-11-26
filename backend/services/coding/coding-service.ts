@@ -392,9 +392,9 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
       }
 
       const approved = decision.decision === 'approve';
-      await deps.repo.updateStep(userId, stepId, {
-        status: approved ? 'applied' : 'rejected',
-      });
+      // The runner reads decisions through the service-role repository, so the
+      // decision is written there too: both sides then see the same row.
+      await deps.admin.setStepDecision(userId, stepId, approved ? 'applied' : 'rejected');
       const patch: CodingTaskPatch = approved
         ? { status: 'running', failure_code: null }
         : {
