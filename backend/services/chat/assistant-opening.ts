@@ -91,7 +91,8 @@ function suggestionWeight(tool: ChatAgentTool, state: AssistantSuggestionState):
 
 /**
  * The member facts the projection reads: one count per condition-bearing
- * capability, each from the product's own service rather than a second query.
+ * capability, each from the product's own service so the condition cannot
+ * disagree with what the advertised tool would answer.
  *
  * Every probe is best effort. A product the member has never opened is a zero,
  * and a read that fails is a zero too: the first screen falls back to the
