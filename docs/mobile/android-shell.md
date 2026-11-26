@@ -1228,7 +1228,7 @@ node scripts/android-release.mjs --apply           # write the version, the note
 npm run android:publish                             # add --dry-run to see everything and touch nothing
 # the bytes first: the bucket is what the site serves (ADR-0047)
 curl -X POST "$env:SUPABASE_URL/storage/v1/object/android/royaraqamia-1.1.0.apk" `
-  -H "Authorization: Bearer $env:SUPABASE_SERVICE_ROLE_KEY" `
+  -H "apikey: $env:SUPABASE_SERVICE_ROLE_KEY" `
   -H "Content-Type: application/vnd.android.package-archive" `
   -H "x-upsert: false" --data-binary "@<staged>\royaraqamia-1.1.0.apk"
 # and the release, which is the archive

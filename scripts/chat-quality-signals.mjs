@@ -68,7 +68,7 @@ async function readTable(table, select, windowed = true) {
     url.searchParams.set('limit', String(PAGE));
     url.searchParams.set('offset', String(offset));
     const response = await fetch(url, {
-      headers: { apikey: key, authorization: `Bearer ${key}`, 'content-type': 'application/json' },
+      headers: { apikey: key, 'content-type': 'application/json' },
       signal: AbortSignal.timeout(60_000),
     });
     if (!response.ok)

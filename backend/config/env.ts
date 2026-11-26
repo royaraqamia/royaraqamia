@@ -18,6 +18,14 @@ export const env = {
   get supabaseServiceRoleKey(): string | undefined {
     return read('SUPABASE_SERVICE_ROLE_KEY');
   },
+  /**
+   * The scheduled allowlist sync's own credential. It is deliberately not the
+   * Supabase key: that key must never travel to our own HTTP endpoint, and the
+   * sync must survive a database-key rotation (`docs/security.md`).
+   */
+  get adminSyncSecret(): string | undefined {
+    return read('ADMIN_SYNC_SECRET');
+  },
   get turnstileSecret(): string | undefined {
     return read('TURNSTILE_SECRET_KEY');
   },

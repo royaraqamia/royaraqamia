@@ -104,7 +104,12 @@ Every `KEY=` must have its real value on the right. The blank ones may stay blan
 documents an empty value as "feature off" (for example `TAVILY_API_KEY`). The important ones are the
 Supabase URL and keys, `NEXT_PUBLIC_SITE_URL=https://royaraqamia.com`,
 `PUBLIC_ORIGIN=https://royaraqamia.com`, `NEXT_PUBLIC_WHATSAPP_PHONE`, the Resend keys, Turnstile,
-VAPID, `CRON_SECRET`, `MCP_TOKEN_ENCRYPTION_KEY`, and the assistant provider keys.
+VAPID, `CRON_SECRET`, `ADMIN_SYNC_SECRET`, `MCP_TOKEN_ENCRYPTION_KEY`, and the assistant provider
+keys.
+
+Never print this file — not with `cat`, `env`, `docker inspect` or `docker compose config` — in a
+session whose transcript is stored. The 2026-11 VPS migration printed a Supabase key exactly that
+way (#1909), and that key had to be retired.
 
 ## 6. Back up the configuration
 
@@ -191,6 +196,7 @@ workflow accepts either, except the service-role key which must be a secret):
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `ADMIN_SYNC_SECRET` (the allowlist sync's own bearer token; not the Supabase key)
 - optional: `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
 
 The first six are required; the publish workflow fails loudly if any is empty. These are build-time

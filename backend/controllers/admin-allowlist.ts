@@ -4,12 +4,14 @@ import { createAdminAllowlistService } from '@/backend/config/admin-allowlist';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
 /**
- * The caller may supply the service role key. It is already how the scheduled workflow
- * reaches the database, so reusing it here adds no credential to rotate and keeps the
- * allowlist itself in exactly one place - the app's own ADMIN_EMAILS.
+ * The scheduled workflow carries its own `ADMIN_SYNC_SECRET`, not the Supabase
+ * service-role key. The database key is the master credential and has no reason
+ * to travel to this endpoint; keeping the two separate means either one can be
+ * rotated without breaking the other. The allowlist itself stays in exactly one
+ * place - the app's own ADMIN_EMAILS.
  */
 function hasValidSyncToken(authorization: string | null): boolean {
-  const expected = env.supabaseServiceRoleKey;
+  const expected = env.adminSyncSecret;
   if (!expected || !authorization) return false;
 
   const provided = authorization.replace(/^Bearer\s+/i, '').trim();

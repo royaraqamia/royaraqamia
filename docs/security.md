@@ -8,7 +8,11 @@
 
 ## Secret vars (never log or leak)
 
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (a Supabase **secret key**, `sb_secret_...`; the
+  variable keeps its historical name so the many workflows that pass it through
+  do not all change. A secret key is not a JWT: send it on `apikey` only.)
+- `ADMIN_SYNC_SECRET` (the scheduled allowlist trigger's own bearer token, not
+  the Supabase key)
 - `RESEND_API_KEY`
 - `SENTRY_AUTH_TOKEN`
 - `UPSTASH_REDIS_REST_TOKEN`
@@ -41,13 +45,49 @@ keystore secrets below.
   (`list`, `mark`, `copy`, `verify`, `withdraw`, `skip`). Rotating it is one secret and one
   redeploy; the run fails loudly when it is missing (#1293).
 
-- `SUPABASE_SERVICE_ROLE_KEY` — a copy of the deployment's, because `code-quality.yml`'s `build` job and
-  `bundle-size.yml` both run `npm run build`, and that build prerenders routes which read through the
-  admin client (`backend/loaders/spendtrack.ts`, `backend/loaders/rates.ts`). It exists in **two scopes**,
-  and rotating one does not move the other: **Actions** (pushes, manual runs) and **Dependabot**. A
-  Dependabot pull request is handed no Actions secrets at all, so without the Dependabot copy both
-  workflows die at `Missing env var: SUPABASE_SERVICE_ROLE_KEY` — which is what every Dependabot pull
+- `ADMIN_SYNC_SECRET` — the scheduled allowlist trigger's bearer token. It is
+  deliberately not the Supabase key: that endpoint is our own, and the master
+  database key has no reason to travel to it. Rotating it means changing this
+  secret and the VPS `.env` together; nothing else depends on it.
+
+- `SUPABASE_SERVICE_ROLE_KEY` — a copy of the deployment's Supabase **secret
+  key** (`sb_secret_...`), because `code-quality.yml`'s `build` job and
+  `bundle-size.yml` both run `npm run build`, and that build prerenders routes
+  which read through the admin client (`backend/loaders/spendtrack.ts`,
+  `backend/loaders/rates.ts`). It exists in **two scopes**, and rotating one
+  does not move the other: **Actions** (pushes, manual runs) and **Dependabot**.
+  A Dependabot pull request is handed no Actions secrets at all, so without the
+  Dependabot copy both workflows die at the missing
+  `SUPABASE_SERVICE_ROLE_KEY` variable — which is what every Dependabot pull
   request did until 2026-10-19 (Settings → Secrets and variables → Dependabot).
+
+## Supabase key rotation
+
+The project uses publishable (`sb_publishable_...`) and secret (`sb_secret_...`)
+keys. Secret keys are not JWTs, so raw HTTP callers send them in the `apikey`
+header; an `Authorization: Bearer` copy is rejected as an invalid JWT.
+`supabase-js` handles this itself, so code that goes through `createClient`
+needs no header change.
+
+To rotate a leaked secret key, replace the value everywhere it lives before
+retiring the old key:
+
+1. Create a new secret key in Supabase **Settings → API Keys**. Use a separate
+   key per blast radius — at minimum `production` (VPS), `ci` (Actions,
+   Dependabot and local E2E) and `telegram` (the Edge Function reads
+   `SUPABASE_SECRET_KEYS['telegram']`). Never paste a key into chat, an issue or
+   a log.
+2. Update the VPS `/opt/royaraqamia/.env` and recreate the container; update the
+   GitHub Actions **and** Dependabot secrets; update the Render dashboard only
+   while the rollback origin still exists.
+3. Deploy the app and the Telegram function, then verify the new key answers and
+   the old one is refused, using status codes only.
+4. Disable the legacy `anon` and `service_role` keys in **Settings → API Keys**,
+   and revoke the legacy JWT secret. Both steps are separate from creating the
+   new keys.
+5. Remove the old value from local `.env.local` files and from any agent or
+   session environment. Never run `cat .env`, `env` or `docker inspect` in a
+   session whose transcript is stored.
 
 ## Security baseline
 

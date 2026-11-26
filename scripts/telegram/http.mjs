@@ -46,7 +46,6 @@ export function supabaseHeaders() {
   const key = supabaseKey();
   return {
     apikey: key,
-    authorization: `Bearer ${key}`,
     'content-type': 'application/json',
   };
 }

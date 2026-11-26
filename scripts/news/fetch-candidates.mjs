@@ -135,7 +135,7 @@ async function loadRecentlyPublishedUrls(env = process.env) {
 
   try {
     const response = await fetch(endpoint, {
-      headers: { apikey: key, authorization: `Bearer ${key}` },
+      headers: { apikey: key },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!response.ok) return new Set();
@@ -171,7 +171,7 @@ async function loadPrivateSources(env = process.env) {
 
   try {
     const response = await fetch(endpoint, {
-      headers: { apikey: key, authorization: `Bearer ${key}` },
+      headers: { apikey: key },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!response.ok) return [];
@@ -315,7 +315,6 @@ export async function reportPrivateSourceHealth(
           method: 'PATCH',
           headers: {
             apikey: key,
-            authorization: `Bearer ${key}`,
             'content-type': 'application/json',
             prefer: 'return=minimal',
           },
@@ -348,7 +347,7 @@ async function loadApprovedSources(env = process.env) {
 
   try {
     const response = await fetch(endpoint, {
-      headers: { apikey: key, authorization: `Bearer ${key}` },
+      headers: { apikey: key },
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (!response.ok) return [];
