@@ -29,8 +29,25 @@
  * Secrets (Dashboard > Edge Functions > Secrets, or `supabase secrets set`):
  *   TELEGRAM_WEBHOOK_SECRET  the value passed to setWebhook's secret_token
  *   TELEGRAM_CHAT_ID         the only chat allowed to use the bot
- * SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are injected by the platform.
+ * SUPABASE_URL and SUPABASE_SECRET_KEYS are injected by the platform. The
+ * function reads the secret key named `telegram`; the legacy
+ * SUPABASE_SERVICE_ROLE_KEY is deliberately unused, because it keeps carrying
+ * the legacy key after the project moves to publishable and secret keys.
  */
+
+/**
+ * The platform injects secret keys as a JSON object keyed by name. A missing
+ * key is a misconfiguration, not a reason to fall back to the legacy variable
+ * that is about to be disabled.
+ */
+function telegramSecretKey(): string {
+  try {
+    const keys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}') as Record<string, string>;
+    return keys['telegram'] ?? '';
+  } catch {
+    return '';
+  }
+}
 
 const reply = (body: string, status = 200) =>
   new Response(body, { status, headers: { 'content-type': 'text/plain' } });
@@ -76,13 +93,14 @@ Deno.serve(async (request: Request) => {
   if (!expected || presented !== expected) return reply('forbidden', 401);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  const serviceKey = telegramSecretKey();
   const chatId = Deno.env.get('TELEGRAM_CHAT_ID');
   if (!supabaseUrl || !serviceKey) return reply('misconfigured', 500);
 
+  // Secret keys are not JWTs: they travel on `apikey` only. A Bearer copy makes
+  // the platform try to verify it as a JWT and reject the request.
   const headers = {
     apikey: serviceKey,
-    authorization: `Bearer ${serviceKey}`,
     'content-type': 'application/json',
   };
 

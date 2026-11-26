@@ -46,7 +46,6 @@ function readConfig(env = process.env) {
 function headers(key, extra = {}) {
   return {
     apikey: key,
-    authorization: `Bearer ${key}`,
     'content-type': 'application/json',
     ...extra,
   };

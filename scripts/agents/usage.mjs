@@ -249,7 +249,6 @@ function supabase() {
 function headers(key) {
   return {
     apikey: key,
-    authorization: `Bearer ${key}`,
     'content-type': 'application/json',
   };
 }

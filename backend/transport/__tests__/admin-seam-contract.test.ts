@@ -25,9 +25,9 @@ const IMPORT_SPECIFIER = /from\s+['"]([^'"]+)['"]/g;
 /**
  * Controller modules that genuinely do not need the Admin adapter.
  *
- * `admin-allowlist.ts` authenticates with the service-role bearer token; the
- * mirror mechanism is frozen by ADR-0003. `admin-list.ts` is a helper shared
- * by controllers, not an Admin surface.
+ * `admin-allowlist.ts` authenticates with its own `ADMIN_SYNC_SECRET` bearer
+ * token; the mirror mechanism is frozen by ADR-0003. `admin-list.ts` is a helper
+ * shared by controllers, not an Admin surface.
  */
 const ADMIN_CONTROLLER_EXEMPTIONS = new Set([
   'backend/controllers/admin-allowlist.ts',

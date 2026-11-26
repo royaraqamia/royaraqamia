@@ -9,8 +9,10 @@ name: 'Sync Admin Allowlist'
 # sync, so the allowlist exists in exactly one place - the app's own ADMIN_EMAILS, which
 # /admin already trusts - instead of being mirrored into a second copy of the value here.
 #
-# Authentication reuses the service role key, which this job needs anyway, so there is no
-# additional credential to rotate.
+# Authentication is its own secret. The endpoint used to compare the Supabase
+# service-role key, which put the master database key on an HTTP request to our
+# own origin and coupled two unrelated rotations; `ADMIN_SYNC_SECRET` is scoped
+# to this one trigger and can be rotated on its own.
 
 on:
   schedule:
@@ -40,7 +42,7 @@ jobs:
         env:
           SYNC_URL: 'https://royaraqamia.com/api/admin/sync-allowlist'
           DRY_RUN: ${{ inputs.dry_run }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ADMIN_SYNC_SECRET: ${{ secrets.ADMIN_SYNC_SECRET }}
         run: |
           set -euo pipefail
 
@@ -50,7 +52,7 @@ jobs:
           fi
 
           status=$(curl -sS -o body.json -w '%{http_code}' -X POST \
-            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" "${url}")
+            -H "Authorization: Bearer ${ADMIN_SYNC_SECRET}" "${url}")
 
           cat body.json
           echo "HTTP ${status}"

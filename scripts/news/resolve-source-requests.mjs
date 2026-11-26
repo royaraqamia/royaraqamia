@@ -53,7 +53,6 @@ export function readConfig(env = process.env) {
 function headers(config, extra = {}) {
   return {
     apikey: config.key,
-    authorization: `Bearer ${config.key}`,
     'content-type': 'application/json',
     ...extra,
   };

@@ -117,6 +117,12 @@ describe('the Android release train', () => {
     expect(workflow).toContain('--dry-run');
     expect(workflow).toContain("inputs.dry_run != true && github.ref_name == 'main'");
   });
+
+  it('sends the Supabase secret key on apikey, never as a bearer JWT', () => {
+    // A secret key is not a JWT; the platform rejects a Bearer copy as Invalid JWT.
+    expect(workflow).toContain('-H "apikey: $SUPABASE_SERVICE_ROLE_KEY"');
+    expect(workflow).not.toContain('Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY');
+  });
 });
 
 describe('the pull-request checks a shell change has to pass', () => {

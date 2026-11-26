@@ -608,7 +608,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   log(`Publish the bytes first — the manifest names the hash of whatever a device`);
   log(`will fetch, and that URL serves the bucket, not this machine:`);
   log(`  curl -sS -X POST "$SUPABASE_URL/storage/v1/object/${STORAGE_BUCKET}/${asset}" \\`);
-  log('    -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \\');
+  log('    -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \\');
   log('    -H "Content-Type: application/vnd.android.package-archive" \\');
   log('    -H "cache-control: max-age=31536000" -H "x-upsert: false" \\');
   log(`    --data-binary @"${staged}"`);

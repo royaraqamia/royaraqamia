@@ -87,7 +87,7 @@ export async function loadReaders(config, limit) {
   const endpoint = `${config.url}/rest/v1/news_source_preferences?select=user_id,source_ids,updated_at,${SERVED_MARKER}&personal_enabled=is.true&order=${SERVED_MARKER}.asc.nullsfirst,updated_at.asc&limit=${limit}`;
 
   const response = await fetch(endpoint, {
-    headers: { apikey: config.key, authorization: `Bearer ${config.key}` },
+    headers: { apikey: config.key },
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!response.ok) {
@@ -114,7 +114,6 @@ export async function markServed(config, userId, now = new Date()) {
       method: 'PATCH',
       headers: {
         apikey: config.key,
-        authorization: `Bearer ${config.key}`,
         'content-type': 'application/json',
         prefer: 'return=minimal',
       },
