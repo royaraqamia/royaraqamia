@@ -109,7 +109,7 @@ internal fun ChatNewScreen(
         verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
     ) {
         Text(
-            text = ChatsListCopy.NEW_CHAT,
+            text = ChatNewCopy.NEW_CHAT,
             style = type.h3.copy(fontWeight = FontWeight.Bold),
             color = RoyColors.foreground,
         )

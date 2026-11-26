@@ -453,7 +453,7 @@ private fun ChatsList(
             },
             text = {
                 Text(
-                    text = ChatsListCopy.NEW_CHAT,
+                    text = ChatNewCopy.NEW_CHAT,
                     style = type.small.copy(fontWeight = FontWeight.Bold),
                 )
             },

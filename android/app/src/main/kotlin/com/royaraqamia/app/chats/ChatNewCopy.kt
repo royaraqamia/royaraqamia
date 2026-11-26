@@ -12,6 +12,7 @@ package com.royaraqamia.app.chats
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object ChatNewCopy {
+    const val NEW_CHAT = "محادثة جديدة"
     const val SEARCH_PLACEHOLDER = "ابحث باسم العضو أو معرِّفه"
     const val SEARCH_LABEL = "البحث عن عضو"
     const val CLOSE_SEARCH = "إغلاق البحث"

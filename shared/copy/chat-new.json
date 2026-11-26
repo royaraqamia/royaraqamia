@@ -10,11 +10,12 @@
     "object": "ChatNewCopy"
   },
   "notes": {
-    "source": "The new-conversation panel, in both clients (#934): the member directory's search with its answers. The site renders them in `frontend/ui/chats/new-conversation-panel.tsx`, which is the app's reference.",
+    "source": "The new-conversation panel, in both clients (#934): its title and the member directory's search with its answers. The title moved here from `chats-list.json` when the Chats tab's picker was removed (#1860) - the app still draws the panel, so its copy must not be stranded in a surface that no longer names it. The site renders them in `frontend/ui/chats/new-conversation-panel.tsx`, which is the app's reference.",
     "placeholders": "None: every string is a label or a status line.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
   },
   "strings": {
+    "newChat": "محادثة جديدة",
     "searchPlaceholder": "ابحث باسم العضو أو معرِّفه",
     "searchLabel": "البحث عن عضو",
     "closeSearch": "إغلاق البحث",

@@ -10,6 +10,7 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const CHAT_NEW_COPY = {
+  newChat: 'محادثة جديدة',
   searchPlaceholder: 'ابحث باسم العضو أو معرِّفه',
   searchLabel: 'البحث عن عضو',
   closeSearch: 'إغلاق البحث',
