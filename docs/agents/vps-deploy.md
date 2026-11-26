@@ -142,13 +142,15 @@ credential on the VPS must not be able to read them (`docs/supabase.md`).
    /opt/royaraqamia/backup.sh
    ```
 
-4. Schedule it at 03:00 UTC, an hour clear of the database dump, and keep the log rotated. `crontab -`
-   replaces the whole table, so if this box already has entries use `crontab -e` and add the line
-   instead of piping:
+4. Schedule it at 03:00 UTC, an hour clear of the database dump, and keep the log rotated. Two traps
+   live here: cron's own `PATH` is `/usr/bin:/bin` while the AWS CLI v2 installs into `/usr/local/bin`,
+   so the job dies nightly with `aws: command not found` unless the table sets it; and `crontab -`
+   replaces the whole table, so append to what is already there:
 
    ```bash
-   echo '0 3 * * * /opt/royaraqamia/backup.sh >> /var/log/royaraqamia-backup.log 2>&1' \
-     | crontab -
+   ( crontab -l 2>/dev/null; echo 'PATH=/usr/local/bin:/usr/bin:/bin'; \
+     echo '0 3 * * * /opt/royaraqamia/backup.sh >> /var/log/royaraqamia-backup.log 2>&1' ) | crontab -
+   crontab -l
    cat > /etc/logrotate.d/royaraqamia-backup <<'EOF'
    /var/log/royaraqamia-backup.log {
      weekly
@@ -160,9 +162,17 @@ credential on the VPS must not be able to read them (`docs/supabase.md`).
    EOF
    ```
 
-5. Retain about 30 daily copies with an R2 **lifecycle rule** on the `vps/` prefix, and check the
-   panel still sells snapshots: if it does, enable a daily one as the second line of defence. The tar
-   is the contract either way, because it is the one restore that has been rehearsed.
+   Prove the cron environment can run it before waiting a day. A clean environment with only that
+   `PATH` is exactly what cron hands the script:
+
+   ```bash
+   env -i PATH=/usr/local/bin:/usr/bin:/bin /opt/royaraqamia/backup.sh
+   ```
+
+5. Retain about 30 daily copies with an R2 **lifecycle rule** on the `vps/` prefix. The Illevante panel
+   sells snapshots but no schedule, so take one by hand before the DNS record moves
+   (`pre-cutover-<date>`) and know that it is a second line of defence, not the automated one: the tar
+   is the contract, because it is the restore that has been rehearsed.
 
 **The restore is rehearsed before the DNS record moves**, not after. This is the drill, and it is the
 whole of it:
@@ -170,20 +180,35 @@ whole of it:
 ```bash
 cd /opt/royaraqamia
 set -a; . ./backup.env; set +a
+export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" AWS_DEFAULT_REGION=auto
 aws s3 ls s3://royaraqamia-vps/vps/ --endpoint-url "$R2_ENDPOINT" | tail -3
 aws s3 cp s3://royaraqamia-vps/vps/<newest>.tar.gz /tmp/ --endpoint-url "$R2_ENDPOINT"
+sha256sum .env > /tmp/env.sha
 mv .env .env.before-drill
 tar -xzf /tmp/<newest>.tar.gz -C /opt/royaraqamia
+sha256sum -c /tmp/env.sha
 docker compose up -d --force-recreate app
 bash deploy.sh
-curl -fsS http://127.0.0.1:3000/manifest.json > /dev/null && echo restored
+docker inspect -f '{{.State.StartedAt}} {{.State.Health.Status}}' royaraqamia
+docker compose exec -T app node -e \
+  "fetch('http://127.0.0.1:3000/manifest.json').then(r => process.exit(r.ok ? 0 : 1))" && echo restored
+rm -f .env.before-drill /tmp/<newest>.tar.gz /tmp/env.sha
 ```
 
-`--force-recreate` is the point: with an identical env file Compose would leave the running
-container alone, and the drill would prove nothing about the restored copy.
+Four details are the difference between a drill and a ritual:
 
-A `restored` line means the untarred `.env` is the one the app is running on. Record the date and the
-archive name in issue #1779, then remove `.env.before-drill`.
+- `backup.env` holds `R2_*` names; the CLI reads `AWS_*`, hence the `export` line. Without it every
+  `aws` call answers `Unable to locate credentials`, which is not a key problem.
+- `sha256sum -c` proves the restored file is byte-identical to the one that was live, so the drill
+  cannot pass on a stale `.env` that was never replaced.
+- `--force-recreate` is the point: with an identical env file Compose would leave the running
+  container alone, and the drill would prove nothing about the restored copy. A `StartedAt` that is
+  the current time is the evidence that it did recreate.
+- The app port is `expose`d to the Compose network, not published on the host, so a host-side
+  `curl 127.0.0.1:3000` can never answer; the check runs inside the container.
+
+A `restored` line means the untarred `.env` is the one the app is running on. Record the date, the
+archive name and that output in issue #1779.
 
 ## 7. Set GitHub Actions values
 
