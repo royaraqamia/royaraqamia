@@ -27,6 +27,7 @@ import type { createAgentMemoryFor } from '@/backend/config/agent-memory';
 import type { createNewsPreferencesServiceFor, createNewsServiceFor } from '@/backend/config/news';
 import type { createRatesService } from '@/backend/config/rates';
 import type { createScanHistoryService } from '@/backend/config/scan-history';
+import type { createQuranSyncService } from '@/backend/config/quran';
 import type { resolveOrigin } from '@/backend/config/origin';
 import type {
   CodingTaskDto,
@@ -126,6 +127,14 @@ export interface ChatAgentToolsDeps {
   };
   scanHistory: {
     createService: typeof createScanHistoryService;
+  };
+  /**
+   * The Quran's server-side records (#1918). The reader's own position and
+   * bookmarks are the fact the opening reads before it offers the reader; the
+   * assistant's Quran tools call the page's own engine instead.
+   */
+  quran: {
+    createService: typeof createQuranSyncService;
   };
   /** The public address this server answers on, for a short link's card. */
   origin: typeof resolveOrigin;

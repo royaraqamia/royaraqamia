@@ -171,6 +171,16 @@ export interface ChatAgentToolContext {
   deps?: ChatAgentToolsDeps;
 }
 
+/**
+ * The member fact a first-screen question needs before it is honest (#1918).
+ *
+ * `habits` is a member with a habit, `quran-reading` one with a bookmark or a
+ * reading position, `connected-app` one with an app connected. The registry
+ * entry names the fact; the opening reads it and drops the question while it is
+ * false, so a member who has never opened a product is never asked about it.
+ */
+export type AssistantSuggestionCondition = 'habits' | 'quran-reading' | 'connected-app';
+
 export interface ChatAgentTool {
   name: ChatAgentToolName;
   kind: ChatAgentToolKind;
@@ -194,6 +204,14 @@ export interface ChatAgentTool {
    * is not an opening question.
    */
   suggestedAsk?: string;
+  /**
+   * The member state the question needs (#1918). Absent means the question is
+   * honest for every member — its answer is a real one either way (the month's
+   * spend, the day's digest). Present means the projection drops it unless the
+   * member holds at least one row of that capability, so the question is about
+   * something they actually have.
+   */
+  suggestedAskWhen?: AssistantSuggestionCondition;
   /** Strict: an unknown key is a refusal, not something quietly dropped. */
   schema: z.ZodTypeAny;
   /** Runs as the member, with the member's own client. */
@@ -1166,6 +1184,7 @@ const tools: ChatAgentTool[] = [
     tier: 0,
     description: 'ملخّص عادات العضو وتذكيراتها وإنجاز آخر سبعة أيام.',
     suggestedAsk: 'ماذا عندي اليوم؟',
+    suggestedAskWhen: 'habits',
     schema: NoArgs,
     async run(_args, context) {
       const { service } = depsOf(context).habits.createService(context.userId, context.supabase);
@@ -1519,6 +1538,8 @@ const tools: ChatAgentTool[] = [
     tier: 0,
     description:
       'قائمة سور القرآن الـ114 كما تعرضها صفحة القرآن: رقم السورة واسمها وعدد آياتها ومكّية أو مدنية. اقرئي منها لتختاري سورة يطلبها العضو، ولا تعيدي القائمة كاملة إلا إن طلبها.',
+    suggestedAsk: 'اقترح لي سورة أقرأها اليوم',
+    suggestedAskWhen: 'quran-reading',
     schema: NoArgs,
     maxResultChars: 12_000,
     async run() {
@@ -2640,6 +2661,8 @@ const tools: ChatAgentTool[] = [
     tier: 0,
     description:
       'التطبيقات المرتبطة بحساب العضو، باسم كل تطبيق وعدد أدواته. استخدمها حين يسأل ما التطبيقات المتصلة أو كم أداة لكل تطبيق. تُعيد الأسماء والأعداد فقط، بلا رموز أو بيانات اعتماد.',
+    suggestedAsk: 'ما التطبيقات المرتبطة بحسابي؟',
+    suggestedAskWhen: 'connected-app',
     schema: NoArgs,
     async run(_args, context) {
       const connections = await depsOf(context).mcp.createConnectionService().list(context.userId);
