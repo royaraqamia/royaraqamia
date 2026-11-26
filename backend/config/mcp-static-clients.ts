@@ -43,6 +43,31 @@ const DEFINITIONS: readonly McpStaticClientDefinition[] = [
     scopes: ['repo', 'read:org', 'read:user', 'user:email', 'read:project'],
     tokenEndpointAuthMethod: 'client_secret_post',
   },
+  {
+    registryName: 'com.vercel/vercel-mcp',
+    envKey: 'VERCEL',
+    /*
+      Measured 2026-11-26 against `https://mcp.vercel.com`: the resource
+      document names `https://vercel.com`, whose metadata
+      (`https://vercel.com/.well-known/oauth-authorization-server`) publishes
+      an authorization and a token endpoint, revocation, PKCE S256 and
+      `client_secret_post`, plus a `registration_endpoint`.
+
+      The endpoint is published but unusable for us: registering with
+      `redirect_uris: ["https://royaraqamia.com/mcp/callback"]` answers
+      `400 invalid_redirect_uri` ("The provided redirect URIs are not approved
+      for use by this authorization server"), while the same registration with
+      an approved URI answers `201`. This entry exists so the flow uses the app
+      created in the Vercel console with that callback instead of DCR; until
+      `MCP_STATIC_CLIENT_VERCEL_ID` is set, the row keeps its DCR behaviour.
+    */
+    authorizationServer: 'https://vercel.com',
+    authorizationEndpoint: 'https://vercel.com/oauth/authorize',
+    tokenEndpoint: 'https://api.vercel.com/login/oauth/token',
+    revocationEndpoint: 'https://api.vercel.com/login/oauth/token/revoke',
+    scopes: ['openid', 'email', 'profile'],
+    tokenEndpointAuthMethod: 'client_secret_post',
+  },
 ];
 
 /**
