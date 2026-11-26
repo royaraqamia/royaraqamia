@@ -37,6 +37,25 @@ describe('readMcpStaticClients', () => {
     expect(github?.scopes).toContain('repo');
   });
 
+  it('reads the Vercel pair from the reviewed endpoints, not from discovery', () => {
+    const clients = readMcpStaticClients({
+      MCP_STATIC_CLIENT_VERCEL_ID: 'vercel-client-id',
+      MCP_STATIC_CLIENT_VERCEL_SECRET: 'vercel-client-secret',
+    });
+
+    const vercel = clients.get('com.vercel/vercel-mcp');
+    expect(vercel).toMatchObject({
+      clientId: 'vercel-client-id',
+      clientSecret: 'vercel-client-secret',
+      authorizationServer: 'https://vercel.com',
+      authorizationEndpoint: 'https://vercel.com/oauth/authorize',
+      tokenEndpoint: 'https://api.vercel.com/login/oauth/token',
+      revocationEndpoint: 'https://api.vercel.com/login/oauth/token/revoke',
+      tokenEndpointAuthMethod: 'client_secret_post',
+    });
+    expect(vercel?.scopes).toEqual(['openid', 'email', 'profile']);
+  });
+
   it('treats a blank id as absent', () => {
     expect(readMcpStaticClients({ MCP_STATIC_CLIENT_GITHUB_ID: '   ' }).size).toBe(0);
   });

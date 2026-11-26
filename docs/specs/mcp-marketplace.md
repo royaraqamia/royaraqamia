@@ -272,15 +272,16 @@ app was created for, and they are sent at authorization.
 Eleven popular remote servers, probed for RFC 9728 resource metadata, an authorization server and
 dynamic registration:
 
-| Server                                              | Connectable       | Why not                                                                                                                                                  |
-| --------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linear, Sentry, Vercel, Supabase, Canva, Cloudflare | yes               | DCR + PKCE S256 published                                                                                                                                |
-| Atlassian                                           | yes               | root 404, but the `401` names the path-aware document; tenant AS publishes DCR                                                                           |
-| Stripe                                              | yes               | `mcp.stripe.com` publishes RFC 9728 + AS metadata + DCR (it did not on 2026-11-10); its catalogue row probe was still pending on 2026-11-11              |
-| GitHub                                              | pre-registered    | resource metadata exists; `github.com/login/oauth` publishes no `registration_endpoint`                                                                  |
-| Notion, Figma                                       | yes               | measured from the deployment's egress; both publish metadata and DCR — the earlier `403`/`451` were this network, not the provider                       |
-| Cloudflare docs (`docs.mcp.cloudflare.com/mcp`)     | yes, as `none`    | `initialize` answers with no credential; every `/.well-known` path is `404` — measured 2026-11-12 (#1269)                                                |
-| Postman (`mcp.postman.com/mcp`)                     | yes, as `api_key` | `401` + `WWW-Authenticate: Bearer resource_metadata="…"`, body `API key required`; the key is documented as a bearer token — measured 2026-11-12 (#1269) |
+| Server                                          | Connectable       | Why not                                                                                                                                                  |
+| ----------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linear, Sentry, Supabase, Canva, Cloudflare     | yes               | DCR + PKCE S256 published                                                                                                                                |
+| Vercel                                          | yes, DCR refused  | DCR endpoint is published but refuses our callback with `invalid_redirect_uri`; a reviewed console client with the approved callback is now in the table |
+| Atlassian                                       | yes               | root 404, but the `401` names the path-aware document; tenant AS publishes DCR                                                                           |
+| Stripe                                          | yes               | `mcp.stripe.com` publishes RFC 9728 + AS metadata + DCR (it did not on 2026-11-10); its catalogue row probe was still pending on 2026-11-11              |
+| GitHub                                          | pre-registered    | resource metadata exists; `github.com/login/oauth` publishes no `registration_endpoint`                                                                  |
+| Notion, Figma                                   | yes               | measured from the deployment's egress; both publish metadata and DCR — the earlier `403`/`451` were this network, not the provider                       |
+| Cloudflare docs (`docs.mcp.cloudflare.com/mcp`) | yes, as `none`    | `initialize` answers with no credential; every `/.well-known` path is `404` — measured 2026-11-12 (#1269)                                                |
+| Postman (`mcp.postman.com/mcp`)                 | yes, as `api_key` | `401` + `WWW-Authenticate: Bearer resource_metadata="…"`, body `API key required`; the key is documented as a bearer token — measured 2026-11-12 (#1269) |
 
 The 2026-11-10 table read as "four of the most requested apps cannot be connected". Measured again
 from the deployment on 2026-11-11, that was true of **one**: GitHub. Atlassian and Stripe publish
@@ -328,13 +329,14 @@ created in that provider's console.
 
 Which path each provider takes today:
 
-| Provider                                            | Path                                                            | Client                                    | Scopes                                            |
-| --------------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------- |
-| Vercel, Linear, Supabase, Sentry, Canva, Cloudflare | DCR                                                             | none                                      | provider default                                  |
-| Atlassian                                           | DCR (path-aware resource document, tenant authorization server) | none                                      | provider default                                  |
-| Stripe                                              | DCR (`access.stripe.com/mcp`)                                   | none                                      | provider default                                  |
-| GitHub                                              | static                                                          | `MCP_STATIC_CLIENT_GITHUB_ID` / `_SECRET` | `repo read:org read:user user:email read:project` |
-| Notion, Figma                                       | DCR                                                             | none                                      | provider default                                  |
+| Provider                                    | Path                                                            | Client                                    | Scopes                                            |
+| ------------------------------------------- | --------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------- |
+| Linear, Supabase, Sentry, Canva, Cloudflare | DCR                                                             | none                                      | provider default                                  |
+| Vercel                                      | static once `MCP_STATIC_CLIENT_VERCEL_ID` / `_SECRET` are set   | `MCP_STATIC_CLIENT_VERCEL_ID` / `_SECRET` | `openid email profile`                            |
+| Atlassian                                   | DCR (path-aware resource document, tenant authorization server) | none                                      | provider default                                  |
+| Stripe                                      | DCR (`access.stripe.com/mcp`)                                   | none                                      | provider default                                  |
+| GitHub                                      | static                                                          | `MCP_STATIC_CLIENT_GITHUB_ID` / `_SECRET` | `repo read:org read:user user:email read:project` |
+| Notion, Figma                               | DCR                                                             | none                                      | provider default                                  |
 
 ## The catalogue mirror (phase 2, #1223)
 
