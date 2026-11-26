@@ -59,8 +59,18 @@ export interface ChatAssistantState {
   /** The thread drew the stored row: the local copy has done its job. */
   dismissPending: () => void;
   error: string | null;
-  /** Ask a question. Files are uploaded before the turn starts. */
-  ask: (body: string, files: File[]) => Promise<boolean>;
+  /**
+   * Ask a question. Files are uploaded before the turn starts.
+   *
+   * `conversationId` is overridden by the floating panel's first message: that
+   * screen has no thread yet, and the thread is created by the same press. The
+   * first-screen action travels with the turn so its tap can be measured.
+   */
+  ask: (
+    body: string,
+    files: File[],
+    options?: { conversationId?: string; firstScreen?: { toolId: string; eventId: string } }
+  ) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -143,9 +153,17 @@ export function useChatAssistant(
   }, [enabled, refresh]);
 
   const ask = useCallback(
-    async (body: string, files: File[]) => {
+    async (
+      body: string,
+      files: File[],
+      options: {
+        conversationId?: string;
+        firstScreen?: { toolId: string; eventId: string };
+      } = {}
+    ) => {
       const question = body.trim();
       if (!question && files.length === 0) return false;
+      const target = options.conversationId ?? conversationId;
 
       // A follow-up sent while an answer is running stops that answer first —
       // the way ChatGPT, Claude and Gemini behave — then starts its own turn.
@@ -157,7 +175,7 @@ export function useChatAssistant(
       // A retry replaces the failed bubble, so its bytes go with it.
       releasePreviews();
 
-      const pending = createPendingTurn(conversationId, question, files);
+      const pending = createPendingTurn(target, question, files);
       const previews: Record<string, string> = {};
       if (typeof URL.createObjectURL === 'function') {
         pending.message.attachments.forEach((attachment, index) => {
@@ -168,7 +186,7 @@ export function useChatAssistant(
       stagedRef.current = { body: question, files, previews };
 
       dispatch({ type: 'turnStarted', pending });
-      beginAssistantTurn(conversationId);
+      beginAssistantTurn(target);
 
       let failure: string | null = null;
       let stopped = false;
@@ -179,12 +197,10 @@ export function useChatAssistant(
         // Files go up before the turn so the thread can show them and the server
         // can read their bytes back — a recording to transcribe, an image or a
         // text file to hand the model (ADR-0126, ADR-0127).
-        uploaded = await Promise.all(
-          files.map((file) => uploadChatAttachment(conversationId, file))
-        );
+        uploaded = await Promise.all(files.map((file) => uploadChatAttachment(target, file)));
 
         await streamChatAgentTurn(
-          conversationId,
+          target,
           question,
           (event: ChatAgentEvent) => {
             if (event.type === 'question') {
@@ -192,13 +208,13 @@ export function useChatAssistant(
               dispatch({ type: 'questionStored', message: event.message });
             } else if (event.type === 'delta') {
               dispatch({ type: 'delta', text: event.text });
-              if (event.text) setAssistantPhase(conversationId, { kind: 'writing' });
+              if (event.text) setAssistantPhase(target, { kind: 'writing' });
             } else if (event.type === 'error') failure = event.error;
             else if (event.type === 'sources') {
               dispatch({ type: 'sourcesSeen', sources: event.sources });
             } else if (event.type === 'tool_start') {
               dispatch({ type: 'toolStarted', activity: event.activity });
-              setAssistantPhase(conversationId, { kind: 'tool', label: event.activity });
+              setAssistantPhase(target, { kind: 'tool', label: event.activity });
             } else if (event.type === 'tool') {
               dispatch({ type: 'toolFinished' });
               // The row's provenance is what the answer used; a failed read
@@ -206,14 +222,15 @@ export function useChatAssistant(
               if (event.ok) dispatch({ type: 'toolUsed', label: event.label });
             } else if (event.type === 'proposal') {
               dispatch({ type: 'proposalSeen' });
-              setAssistantPhase(conversationId, { kind: 'proposal' });
+              setAssistantPhase(target, { kind: 'proposal' });
             }
           },
           uploaded,
           // Read at send time rather than at render time: the page may have
           // settled after the composer was drawn (ADR-0181).
           publishedScreen(),
-          controller.signal
+          controller.signal,
+          options.firstScreen
         );
       } catch (caught) {
         if (controller.signal.aborted) {
@@ -231,7 +248,7 @@ export function useChatAssistant(
         if (turnSeqRef.current === turn) {
           if (abortRef.current === controller) abortRef.current = null;
           dispatch({ type: 'turnSettled', failure, stopped });
-          endAssistantTurn(conversationId);
+          endAssistantTurn(target);
         }
       }
 

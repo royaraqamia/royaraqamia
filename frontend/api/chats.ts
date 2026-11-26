@@ -278,19 +278,37 @@ export async function getBlockedChatMembers(): Promise<ChatPeer[]> {
 /**
  * The assistant (ADR-0113, #817).
  *
- * Opening it is idempotent: one thread per member, created on first open, so the
- * Chats tab can offer the assistant without knowing whether it already exists.
+ * One thread per member, created on the *first message*, not on open: an
+ * abandoned first screen leaves no empty row behind (#1859).
  */
 export async function startAssistantChat(): Promise<ChatStartResponse> {
   return request<ChatStartResponse>('/api/chats/assistant', { method: 'POST' });
 }
 
-/** Whether the assistant is configured, and how much of today is left. */
-export async function getChatAssistant(): Promise<ChatAssistantState> {
-  const result = await request<{ success: boolean } & ChatAssistantState>('/api/chats/assistant', {
-    cache: 'no-store',
-  });
-  return { available: result.available === true, allowance: result.allowance };
+/** A fresh id per screen, so a retried read cannot count as a second open. */
+function openingEventId(): string {
+  return (
+    globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
+}
+
+/**
+ * Whether the assistant is configured, how much of today is left, and — when a
+ * first screen asks for it — the questions projected from the tool registry.
+ */
+export async function getChatAssistant(
+  options: { opening?: boolean } = {}
+): Promise<ChatAssistantState> {
+  const query = options.opening ? `?opening=1&event=${encodeURIComponent(openingEventId())}` : '';
+  const result = await request<{ success: boolean } & ChatAssistantState>(
+    `/api/chats/assistant${query}`,
+    { cache: 'no-store' }
+  );
+  return {
+    available: result.available === true,
+    allowance: result.allowance,
+    ...(result.opening ? { opening: result.opening } : {}),
+  };
 }
 
 interface ChatAgentActionResponse {
@@ -350,11 +368,19 @@ export async function streamChatAgentTurn(
   onEvent: (event: ChatAgentEvent) => void,
   attachments?: ChatAttachmentInput[] | null,
   screen?: ScreenContextInput | null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  firstScreen?: { toolId: string; eventId: string }
 ): Promise<void> {
+  // The first-screen action rides in the URL, not the JSON body: it is request
+  // metadata for the ledger, and keeping it out of `ChatAgentTurnSchema` keeps a
+  // meter's schema out of every route's client bundle (#1859).
+  const action = firstScreen
+    ? `?action=${encodeURIComponent(firstScreen.toolId)}&event=${encodeURIComponent(firstScreen.eventId)}`
+    : '';
+
   let response: Response;
   try {
-    response = await fetch(`/api/chats/${id}/assistant`, {
+    response = await fetch(`/api/chats/${id}/assistant${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       ...(signal ? { signal } : {}),

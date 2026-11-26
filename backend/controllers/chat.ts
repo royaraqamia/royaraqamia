@@ -1,5 +1,6 @@
 import {
   createChatAgentResumeService,
+  createChatAgentToolsDeps,
   createSupabaseChatAgentActionService,
   createSupabaseChatAgentService,
   createSupabaseChatService,
@@ -17,9 +18,11 @@ import {
 } from '@/backend/transport/session-handler';
 import { isSameOrigin, clientAddress } from '@/backend/transport/http';
 import { jsonResult, toNextResponse, type HttpResult } from '@/backend/transport/http-result';
+import { assistantOpening } from '@/backend/services/chat/assistant-opening';
 import { ChatAgentError } from '@/backend/services/chat/chat-agent-service';
 import { ChatError } from '@/backend/services/chat/chat-service';
 import { OWNED_ITEMS, USAGE_COUNTERS } from '@/shared/contracts/plans';
+import { ASSISTANT_EVENTS } from '@/shared/contracts/plans.constants';
 import {
   ChatAddParticipantsSchema,
   ChatAgentTurnSchema,
@@ -679,14 +682,39 @@ export async function startChatAssistant(headers: Headers): Promise<HttpResult> 
   );
 }
 
-/** What the assistant's composer needs before it draws: availability and meters. */
-export async function getChatAssistant(): Promise<HttpResult> {
+/**
+ * What the assistant's composer needs before it draws: availability and meters.
+ *
+ * `opening` is asked for by a first screen, not by the meter's refresh after a
+ * turn: it projects the tool registry and reads the member's own products, so
+ * paying for it on every turn would be a second tax on the question. The same
+ * read records `first_screen.shown` once, keyed by the client's event id.
+ */
+export async function getChatAssistant(
+  options: { opening?: boolean; eventId?: string } = {}
+): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const state = await createSupabaseChatAgentService(supabase).state(userId);
+      const opening = options.opening
+        ? await assistantOpening(userId, supabase, createChatAgentToolsDeps(supabase))
+        : undefined;
+
+      if (options.opening && options.eventId) {
+        await createUsageService().recordEvent({
+          actionKey: ASSISTANT_EVENTS.firstScreenShown,
+          userId,
+          dedupeKey: options.eventId,
+        });
+      }
+
       return jsonResult(
         200,
-        { success: true, ...state } satisfies { success: true } & ChatAssistantState,
+        {
+          success: true,
+          ...state,
+          ...(opening ? { opening } : {}),
+        } satisfies { success: true } & ChatAssistantState,
         { headers: NO_STORE }
       );
     },
@@ -707,7 +735,8 @@ export async function getChatAssistant(): Promise<HttpResult> {
 export async function streamChatAgentTurn(
   id: string,
   body: Record<string, unknown>,
-  headers: Headers
+  headers: Headers,
+  origin?: { toolId: string; eventId: string }
 ): Promise<Response> {
   return withAuthenticatedStream(async ({ userId, supabase }) => {
     if (!isSameOrigin(headers)) {
@@ -721,6 +750,18 @@ export async function streamChatAgentTurn(
       return toNextResponse(
         jsonResult(400, { success: false, error: firstIssue(parsed.error) }, { headers: NO_STORE })
       );
+    }
+
+    // A tap is counted on the turn it actually produced. The tool id travels in
+    // the dedupe key so the ledger says which advertised action was taken, and
+    // a retried tap writes no second row (#1859).
+    if (origin) {
+      const { toolId, eventId } = origin;
+      await createUsageService().recordEvent({
+        actionKey: ASSISTANT_EVENTS.firstScreenTap,
+        userId,
+        dedupeKey: `${eventId}:${toolId}`,
+      });
     }
 
     const service = createSupabaseChatAgentService(supabase);

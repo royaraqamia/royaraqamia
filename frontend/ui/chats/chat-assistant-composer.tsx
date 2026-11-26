@@ -38,6 +38,13 @@ const FIELD_LABELS = {
   linkPrompt: CHAT_THREAD_COPY.formatLinkPrompt,
 };
 
+/** The slice of the assistant's state the field reads; the pre-conversation
+ * panel has no thread yet, so it supplies this shape without a full hook. */
+export type AssistantComposerState = Pick<
+  ChatAssistantState,
+  'available' | 'allowance' | 'error' | 'isStreaming' | 'stop'
+>;
+
 /**
  * When the turn count is worth a line.
  *
@@ -72,7 +79,7 @@ export function AssistantComposer({
   sendLabel = ASSISTANT_COPY.send,
   stopLabel = ASSISTANT_PANEL_COPY.stop,
 }: {
-  assistant: ChatAssistantState;
+  assistant: AssistantComposerState;
   quota: ChatAttachmentQuota;
   draft: string;
   onDraft: (value: string) => void;

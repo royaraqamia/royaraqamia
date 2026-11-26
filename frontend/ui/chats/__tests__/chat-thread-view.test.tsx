@@ -64,7 +64,16 @@ const api = vi.hoisted(() => ({
   leaveChat: vi.fn(),
   reportChat: vi.fn(),
   searchChatMembers: vi.fn(),
-  getChatAssistant: vi.fn(),
+  getChatAssistant: vi.fn(async () => ({
+    available: true,
+    allowance: {
+      plan: 'pro',
+      member: { used: 0, cap: 40 },
+      project: { used: 0, limit: 200 },
+      resetsAt: '2026-11-10T00:00:00.000Z',
+      apps: { used: 0, cap: 5, connected: 0 },
+    },
+  })),
   streamChatAgentTurn: vi.fn(),
   startAssistantChat: vi.fn(),
 }));
@@ -727,7 +736,8 @@ describe('ChatThreadView assistant', () => {
         expect.any(Function),
         [],
         null,
-        expect.any(AbortSignal)
+        expect.any(AbortSignal),
+        undefined
       )
     );
     await waitFor(() => expect(box).toHaveValue(''));

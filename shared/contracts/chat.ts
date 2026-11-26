@@ -493,13 +493,34 @@ export function allowanceSpentSentence(resetsAt: string): string {
 }
 
 /**
+ * One opening action: the question drawn from a registry entry, and the entry's
+ * capability id (ADR-0183) so a test can resolve what the action advertises.
+ */
+export interface AssistantSuggestion {
+  toolId: string;
+  ask: string;
+}
+
+/** The assistant's first screen: the member's own line, and what they can do. */
+export interface AssistantOpening {
+  /** Null when the member has no data to lead with; the generic intro is used. */
+  lead: string | null;
+  suggestions: AssistantSuggestion[];
+}
+
+/**
  * What the thread needs before it draws a composer: whether a provider key is
  * configured at all, and the allowance that bounds the turn. An environment
  * without a key renders the assistant as unavailable, never as a broken send.
+ *
+ * `opening` is present only on the read a first screen makes; the meter's own
+ * refresh after a turn asks for the state alone, so it never re-projects the
+ * registry or re-reads the member's products.
  */
 export interface ChatAssistantState {
   available: boolean;
   allowance: ChatAgentAllowance;
+  opening?: AssistantOpening;
 }
 
 /** One assistant turn: the question, and nothing else (no tools, no files). */

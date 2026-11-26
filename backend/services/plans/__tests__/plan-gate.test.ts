@@ -23,6 +23,7 @@ const freeState: UsageState = {
 function makeRepository(overrides: Partial<UsageRepository> = {}): UsageRepository {
   return {
     getSettings: vi.fn(),
+    recordEvent: vi.fn(),
     listLimits: vi.fn(async () => [
       { key: 'habits', label: 'العادات', visitorCap: 1, freeCap: 5, proCap: 50, sortOrder: 10 },
     ]),

@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { CircleAlert } from 'lucide-react';
 
-import { startAssistantChat } from '@/frontend/api/chats';
+import { getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
 import {
   forgetAssistantThread,
   readAssistantSnapshot,
@@ -25,15 +25,34 @@ import { ChatMessageList } from '@/frontend/ui/chats/chat-message-list';
 import { CHAT_THREAD_COPY } from '@/frontend/ui/chats/chat-thread-copy';
 import { LastSeenLine } from '@/frontend/ui/chats/last-seen';
 import { LAST_SEEN_LABELS } from '@/frontend/ui/chats/last-seen-labels';
-import { ThreadIntro, stateOf } from '@/frontend/ui/chats/chat-thread-view';
-import type { ChatAttachment } from '@/shared/contracts/chat';
+import {
+  CHAT_ATTACHMENT_QUOTA_BYTES,
+  type AssistantOpening,
+  type AssistantSuggestion,
+  type ChatAssistantState,
+  type ChatAttachment,
+  type ChatAttachmentQuota,
+} from '@/shared/contracts/chat';
+import { AssistantFirstScreen } from './assistant-first-screen';
 import { AssistantOrb } from './assistant-orb';
 import { ASSISTANT_PANEL_COPY } from './assistant-panel-copy';
 import { ScreenContextPublisher } from '@/frontend/ui/ScreenContextPublisher';
 import './assistant.css';
 
 /** The faces the panel can wear before a single word is sent. */
-type PanelState = 'loading' | 'guest' | 'unavailable' | 'failed' | 'ready';
+type PanelState = 'loading' | 'guest' | 'unavailable' | 'failed' | 'pre' | 'ready';
+
+/**
+ * The first screen's field checks files locally; the server still enforces the
+ * member's real quota on the message itself. No thread exists to read a quota
+ * from yet, so the field uses the deployment's ceiling before the first send.
+ */
+const FIRST_SCREEN_QUOTA: ChatAttachmentQuota = {
+  fileBytes: CHAT_ATTACHMENT_QUOTA_BYTES,
+  today: { usedBytes: 0, limitBytes: CHAT_ATTACHMENT_QUOTA_BYTES },
+  total: { usedBytes: 0, limitBytes: CHAT_ATTACHMENT_QUOTA_BYTES },
+  project: { usedBytes: 0, limitBytes: CHAT_ATTACHMENT_QUOTA_BYTES },
+};
 
 /**
  * نور in the corner, opened over whatever the member was reading (ADR-0143).
@@ -41,9 +60,9 @@ type PanelState = 'loading' | 'guest' | 'unavailable' | 'failed' | 'ready';
  * The panel is the assistant's *short conversation*, not a second version of it:
  * the same thread the site's `/chats/<id>` screen draws, read through the same
  * state, written through the same composer, and drawn by the same message list
- * (#1562). It creates that thread on open — `POST /api/chats/assistant` is
- * idempotent — so a visitor who never opens the panel never gets a row, and a
- * member who opens it twice gets one thread.
+ * (#1562). It does not create that thread on open: the first screen holds the
+ * composer and the questions the tool registry advertises, and the thread is
+ * minted by the first message (#1859). An open that goes nowhere leaves no row.
  *
  * Two things the panel owns and the thread does not: the conversation is opened
  * lazily, and it is *only connected while it is on screen* — `useChatThread`'s
@@ -78,10 +97,18 @@ export function AssistantPanel({
   const [retryKey, setRetryKey] = useState(0);
   const [draft, setDraft] = useState('');
   const [remembered, setRemembered] = useState<AssistantSnapshot | null>(null);
+  /** The first screen's member line and questions, read once per open. */
+  const [opening, setOpening] = useState<AssistantOpening | null>(null);
+  /** The state read while there is no thread to own a hook's meter. */
+  const [preState, setPreState] = useState<ChatAssistantState | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   /** The thread the bootstrap has settled on, readable without re-running it. */
   const threadIdRef = useRef<string | null>(null);
+  /** One `shown` event per open, even when an effect re-runs. */
+  const shownRef = useRef<string | null>(null);
+  /** Concurrent first sends share one thread rather than racing two POSTs. */
+  const startingRef = useRef<Promise<string | null> | null>(null);
 
   const rememberThread = useCallback((id: string | null) => {
     threadIdRef.current = id;
@@ -105,8 +132,13 @@ export function AssistantPanel({
     refresh,
   } = useChatThread(threadId ?? '', { active: open && Boolean(threadId) });
 
+  // The first message creates the thread mid-turn; the callback the hook holds
+  // must reach the refresh bound to the *new* id, not the empty one it started
+  // with, or the finished turn would look like a failed read (#1859).
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
   const assistant = useChatAssistant(threadId ?? '', Boolean(userId && threadId), () => {
-    void refresh();
+    void refreshRef.current();
   });
 
   // A different member is a different conversation. The panel is mounted at the
@@ -118,48 +150,47 @@ export function AssistantPanel({
     setFailure(null);
     setNotice(null);
     setRemembered(null);
+    setOpening(null);
   }, [identity, rememberThread]);
 
-  // Opening is idempotent, so the effect can re-run on a retry without inventing
-  // a second thread. A guest ends here too, with no request made.
+  // A first screen is read once per open: the questions come from the tool
+  // registry and the lead from the member's own products. No conversation is
+  // minted here — the first message does that (#1859). A remembered thread is
+  // still handed to the hook, so a return visit opens the conversation they had.
   useEffect(() => {
-    if (!open || sessionLoading) return;
-    if (!userId) return;
+    if (!open || sessionLoading || !userId) return;
+    const key = `${userId}:${identity}:${retryKey}`;
+    if (shownRef.current === key) return;
+    shownRef.current = key;
 
     const snapshot = readAssistantSnapshot(identity);
     if (snapshot) setRemembered(snapshot);
-
-    // A thread this component already holds is revalidated by the hook, not
-    // re-created; a remembered id is handed to the hook, which paints the
-    // device's page first and asks the server behind it (ADR-0150).
-    if (threadIdRef.current) return;
-    const rememberedId = snapshot?.threadId ?? null;
-    if (rememberedId) {
-      rememberThread(rememberedId);
-      return;
+    if (!threadIdRef.current) {
+      const rememberedId = snapshot?.threadId ?? null;
+      if (rememberedId) rememberThread(rememberedId);
     }
 
-    let alive = true;
     setFailure(null);
-
-    void startAssistantChat()
-      .then((result) => {
-        if (!alive) return;
-        if (!result.conversationId) {
-          setFailure(result.error ?? ASSISTANT_PANEL_COPY.failed);
-          return;
-        }
-        rememberThread(result.conversationId);
-        rememberAssistantOpened();
+    // The panel is mounted for the life of the app, not of this effect. A
+    // re-render can clean the effect up mid-read; cancelling the answer then
+    // would leave the first screen loading forever while the dedupe key below
+    // refuses to ask again. Keep the answer instead.
+    void getChatAssistant({ opening: true })
+      .then((state) => {
+        setPreState({ available: state.available, allowance: state.allowance });
+        setOpening(state.opening ?? null);
       })
       .catch(() => {
-        if (alive) setFailure(ASSISTANT_PANEL_COPY.failed);
+        setFailure(ASSISTANT_PANEL_COPY.failed);
+        setOpening(null);
       });
-
-    return () => {
-      alive = false;
-    };
   }, [open, userId, identity, sessionLoading, retryKey, rememberThread]);
+
+  // Closing the sheet starts a new first screen: the next open records its own
+  // `shown` event instead of inheriting the one this open spent.
+  useEffect(() => {
+    if (!open) shownRef.current = null;
+  }, [open]);
 
   // A remembered thread the device cannot paint and the server will not answer
   // is not a thread any more: forget it, and let the retry create the one the
@@ -190,22 +221,69 @@ export function AssistantPanel({
   const measured = assistant.allowance !== null;
   const available = measured ? assistant.available : (remembered?.available ?? true);
 
+  // While there is no thread, the read that projected the first screen is the
+  // meter: the hook has no conversation to measure yet.
+  const openingMeasured = preState !== null;
+  const openingAvailable = openingMeasured ? (preState?.available ?? true) : false;
+
   const state: PanelState = sessionLoading
     ? 'loading'
     : !userId
       ? 'guest'
-      : thread
-        ? available
-          ? 'ready'
-          : 'unavailable'
-        : failure || readFailed
-          ? 'failed'
-          : 'loading';
+      : failure || readFailed
+        ? 'failed'
+        : thread
+          ? available
+            ? 'ready'
+            : 'unavailable'
+          : openingMeasured
+            ? openingAvailable
+              ? 'pre'
+              : 'unavailable'
+            : 'loading';
 
-  async function ask(body: string, files: File[]) {
+  /** The thread is minted by the first message, never by opening the sheet. */
+  async function ensureThread(): Promise<string | null> {
+    if (threadIdRef.current) return threadIdRef.current;
+    if (!startingRef.current) {
+      startingRef.current = startAssistantChat()
+        .then((result) => {
+          if (!result.conversationId) {
+            setFailure(result.error ?? ASSISTANT_PANEL_COPY.failed);
+            return null;
+          }
+          rememberThread(result.conversationId);
+          rememberAssistantOpened();
+          return result.conversationId;
+        })
+        .catch(() => {
+          setFailure(ASSISTANT_PANEL_COPY.failed);
+          return null;
+        })
+        .finally(() => {
+          startingRef.current = null;
+        });
+    }
+    return startingRef.current;
+  }
+
+  async function ask(
+    body: string,
+    files: File[],
+    firstScreen?: { toolId: string; eventId: string }
+  ) {
     // The field empties on the press, not on the answer (#1541).
     setDraft('');
-    await assistant.ask(body, files);
+    const id = await ensureThread();
+    if (!id) return;
+    await assistant.ask(body, files, { conversationId: id, firstScreen });
+  }
+
+  /** A suggestion is a question, not a second composer: the tap sends it. */
+  function tapSuggestion(suggestion: AssistantSuggestion) {
+    const eventId =
+      globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    void ask(suggestion.ask, [], { toolId: suggestion.toolId, eventId });
   }
 
   const download = useCallback(
@@ -325,17 +403,27 @@ export function AssistantPanel({
             attachmentOnlyLabel={ASSISTANT_PANEL_COPY.attachmentOnly}
             intro={
               messages.length === 0 ? (
-                // The same first screen the full thread opens on: one mark, the
-                // name and the sentence, centred in the list (ADR-0143).
-                <ThreadIntro
-                  thread={thread}
-                  counterpart={null}
-                  state={stateOf(thread)}
-                  note={ASSISTANT_PANEL_COPY.intro}
+                // The same first screen the full-page thread opens on: the mark,
+                // the member's own line, and the questions the registry allows
+                // (#1859). The generic sentence is the fallback when there is no
+                // data to lead with, and keeps the copy key bound to this file.
+                <AssistantFirstScreen
+                  lead={opening?.lead ?? ASSISTANT_PANEL_COPY.intro}
+                  suggestions={opening?.suggestions ?? []}
+                  onSuggestion={tapSuggestion}
+                  title={thread.title}
                 />
               ) : null
             }
           />
+        ) : state === 'pre' ? (
+          <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto dialog-scrollbar px-4 py-4">
+            <AssistantFirstScreen
+              lead={opening?.lead ?? ASSISTANT_PANEL_COPY.intro}
+              suggestions={opening?.suggestions ?? []}
+              onSuggestion={tapSuggestion}
+            />
+          </div>
         ) : (
           <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto dialog-scrollbar px-4 py-4">
             {state === 'loading' ? (
@@ -363,6 +451,23 @@ export function AssistantPanel({
           <AssistantComposer
             assistant={assistant}
             quota={thread.attachmentQuota}
+            draft={draft}
+            onDraft={setDraft}
+            onAsk={(body, files) => void ask(body, files)}
+            placeholder={ASSISTANT_PANEL_COPY.placeholder}
+            sendLabel={ASSISTANT_PANEL_COPY.send}
+            stopLabel={ASSISTANT_PANEL_COPY.stop}
+          />
+        ) : state === 'pre' ? (
+          <AssistantComposer
+            assistant={{
+              available: preState?.available ?? true,
+              allowance: preState?.allowance ?? null,
+              error: null,
+              isStreaming: assistant.isStreaming,
+              stop: assistant.stop,
+            }}
+            quota={FIRST_SCREEN_QUOTA}
             draft={draft}
             onDraft={setDraft}
             onAsk={(body, files) => void ask(body, files)}

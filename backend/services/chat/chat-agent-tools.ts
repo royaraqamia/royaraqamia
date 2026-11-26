@@ -186,6 +186,14 @@ export interface ChatAgentTool {
   tier: ToolTier;
   /** What the model is told the tool is for. Arabic, one line. */
   description: string;
+  /**
+   * The question a member may tap on the assistant's first screen. It belongs to
+   * the tool rather than to a copy file: a capability removed here stops being
+   * advertised here, and one added here can be advertised the day it ships
+   * (#1859). Only tier 0 entries are projected — a tool the member must confirm
+   * is not an opening question.
+   */
+  suggestedAsk?: string;
   /** Strict: an unknown key is a refusal, not something quietly dropped. */
   schema: z.ZodTypeAny;
   /** Runs as the member, with the member's own client. */
@@ -1157,6 +1165,7 @@ const tools: ChatAgentTool[] = [
     product: 'habitflow',
     tier: 0,
     description: 'ملخّص عادات العضو وتذكيراتها وإنجاز آخر سبعة أيام.',
+    suggestedAsk: 'ماذا عندي اليوم؟',
     schema: NoArgs,
     async run(_args, context) {
       const { service } = depsOf(context).habits.createService(context.userId, context.supabase);
@@ -1191,6 +1200,7 @@ const tools: ChatAgentTool[] = [
     product: 'spendtrack',
     tier: 0,
     description: 'مصروفات العضو هذا الشهر، وأحدث العمليات لاختيار واحدة لتعديلها.',
+    suggestedAsk: 'كم صرفت هذا الشهر؟',
     schema: NoArgs,
     async run(_args, context) {
       const service = depsOf(context).spendtrack.createService(context.supabase);
@@ -1350,6 +1360,7 @@ const tools: ChatAgentTool[] = [
     tier: 0,
     description:
       'ملخّص أخبار اليوم من صفحة الأخبار: تاريخ الملخّص وعنوانه ومقدّمته وأخباره كما تظهر للعضو، وبوسيط category أخبار تصنيف واحد فقط. عدد الأخبار يتبع خطة العضو، فما حُجب عنها لا يظهر هنا.',
+    suggestedAsk: 'لخّص لي آخر الأخبار',
     schema: LatestNewsArgs,
     // A digest is at most twelve stories of a 420-character summary plus their
     // headline and the one line of why it matters; this bound carries the widest

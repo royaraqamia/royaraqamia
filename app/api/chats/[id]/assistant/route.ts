@@ -17,5 +17,8 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  return streamChatAgentTurn(id, body, req.headers);
+  const action = req.nextUrl.searchParams.get('action');
+  const event = req.nextUrl.searchParams.get('event');
+  const origin = action && event ? { toolId: action, eventId: event } : undefined;
+  return streamChatAgentTurn(id, body, req.headers, origin);
 }

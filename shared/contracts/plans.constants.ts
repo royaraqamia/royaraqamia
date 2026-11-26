@@ -79,6 +79,18 @@ export const USAGE_COUNTERS = {
 
 export type UsageCounterKey = (typeof USAGE_COUNTERS)[keyof typeof USAGE_COUNTERS];
 
+/**
+ * Product events written to `usage_events` without spending an allowance. They
+ * are deliberately not in `USAGE_COUNTERS`: a first screen and a tap have no cap
+ * and no `usage_limits` row, so `record_usage` would refuse them (ADR-0093).
+ */
+export const ASSISTANT_EVENTS = {
+  firstScreenShown: 'assistant.first_screen.shown',
+  firstScreenTap: 'assistant.first_screen.tap',
+} as const;
+
+export type AssistantEventKey = (typeof ASSISTANT_EVENTS)[keyof typeof ASSISTANT_EVENTS];
+
 /** A lifetime count never refills; a daily count resets at Damascus midnight. */
 export type UsageWindow = 'lifetime' | 'daily';
 

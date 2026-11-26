@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, EllipsisVertical, Send } from 'lucide-react';
 
@@ -13,7 +13,7 @@ import { useChatPresence } from '@/frontend/state/chats/use-chat-presence';
 import { usePeerLastSeen } from '@/frontend/state/chats/use-peer-last-seen';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
-import { blockChatUser, reportChat } from '@/frontend/api/chats';
+import { blockChatUser, getChatAssistant, reportChat } from '@/frontend/api/chats';
 import { forgetConversationMemory } from '@/frontend/api/account-memory';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
@@ -31,6 +31,7 @@ import { useKeyboardInset } from '@/frontend/ui/shared/keyboard-inset';
 import { ReportChatDialog } from './report-chat-dialog';
 import { AssistantMark } from './assistant-mark';
 import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
+import { AssistantFirstScreen } from '@/frontend/ui/assistant/assistant-first-screen';
 import { assistantPhaseText } from './assistant-phase';
 import { PresenceIndicator } from './presence-indicator';
 import { LastSeenLine } from './last-seen';
@@ -43,6 +44,8 @@ import { CHAT_THREAD_COPY } from './chat-thread-copy';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
 import {
   chatVoiceNoteMaxMs,
+  type AssistantOpening,
+  type AssistantSuggestion,
   type ChatAttachment,
   type ChatPresenceState,
   type ChatThread,
@@ -141,6 +144,26 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
   const assistant = useChatAssistant(conversationId, Boolean(isAssistant), () => {
     void refresh();
   });
+  const [opening, setOpening] = useState<AssistantOpening | null>(null);
+  const firstScreen = isAssistant && messages.length === 0;
+
+  // The full-page twin of the floating sheet draws the same opening: the same
+  // registry projection and the same member line, read once for an empty thread
+  // (#1859). A thread with messages never asks for it again.
+  useEffect(() => {
+    if (!firstScreen) return;
+    let alive = true;
+    void getChatAssistant({ opening: true })
+      .then((state) => {
+        if (alive) setOpening(state.opening ?? null);
+      })
+      .catch(() => {
+        if (alive) setOpening(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [firstScreen, conversationId]);
 
   // A composer that meets the on-screen keyboard is the whole point of the fixed
   // footer: Chrome and the Android shell shrink `100dvh` themselves
@@ -229,6 +252,16 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
 
   async function handleSend() {
     await sendWith(files);
+  }
+
+  /** A first-screen question is a turn, and its tap is recorded with it. */
+  function tapSuggestion(suggestion: AssistantSuggestion) {
+    setDraft('');
+    const eventId =
+      globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    void assistant.ask(suggestion.ask, [], {
+      firstScreen: { toolId: suggestion.toolId, eventId },
+    });
   }
 
   /** A finished clip joins the staged files, and the message goes at once. */
@@ -375,7 +408,16 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         className="dialog-scrollbar-touch-none"
         intro={
           messages.length === 0 ? (
-            <ThreadIntro thread={thread} counterpart={counterpart} state={state} />
+            isAssistant && opening ? (
+              <AssistantFirstScreen
+                lead={opening.lead ?? ASSISTANT_PANEL_COPY.intro}
+                suggestions={opening.suggestions}
+                onSuggestion={tapSuggestion}
+                title={thread.title}
+              />
+            ) : (
+              <ThreadIntro thread={thread} counterpart={counterpart} state={state} />
+            )
           ) : null
         }
       />
