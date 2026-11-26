@@ -1,0 +1,102 @@
+# Builds the origin image on a GitHub runner and publishes it to GHCR.
+#
+# The self-managed VPS has 2 GB of RAM, which cannot hold this repo's
+# `next build` (the Render build machine needed a 6 GB heap). Building here
+# keeps the VPS a pure runtime: it only pulls the image and runs Compose.
+# The image contains no secrets — every runtime secret is a VPS env var, and
+# the one build-time secret is a BuildKit secret, not a build arg.
+#
+# Secrets (Actions):
+#   SUPABASE_SERVICE_ROLE_KEY  - needed by prerendered routes at build time
+#   NEXT_PUBLIC_*              - public values, may be set as vars instead
+# Variables (Actions), each may also be set as a secret with the same name:
+#   NEXT_PUBLIC_SITE_URL, PUBLIC_ORIGIN, NEXT_PUBLIC_WHATSAPP_PHONE,
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+#   NEXT_PUBLIC_SENTRY_DSN, NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+#   NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
+name: 'Publish origin image'
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why this image is being published now'
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-origin-image
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and push to GHCR
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Only main is published
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::the origin image is built from main only; dispatch this workflow on main."
+            exit 1
+          fi
+
+      - name: Required build values are present
+        env:
+          SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || secrets.NEXT_PUBLIC_SITE_URL }}
+          ORIGIN: ${{ vars.PUBLIC_ORIGIN || secrets.PUBLIC_ORIGIN }}
+          PHONE: ${{ vars.NEXT_PUBLIC_WHATSAPP_PHONE || secrets.NEXT_PUBLIC_WHATSAPP_PHONE }}
+          SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          for name in SITE_URL ORIGIN PHONE SUPABASE_URL SUPABASE_KEY SERVICE_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty; set it as an Actions variable or secret before publishing."
+              exit 1
+            fi
+          done
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || secrets.NEXT_PUBLIC_SITE_URL }}
+            PUBLIC_ORIGIN=${{ vars.PUBLIC_ORIGIN || secrets.PUBLIC_ORIGIN }}
+            NEXT_PUBLIC_WHATSAPP_PHONE=${{ vars.NEXT_PUBLIC_WHATSAPP_PHONE || secrets.NEXT_PUBLIC_WHATSAPP_PHONE }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ vars.NEXT_PUBLIC_SENTRY_DSN || secrets.NEXT_PUBLIC_SENTRY_DSN }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+            NEXT_PUBLIC_VAPID_PUBLIC_KEY=${{ vars.NEXT_PUBLIC_VAPID_PUBLIC_KEY || secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+          secrets: |
+            supabase_service_role_key=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
