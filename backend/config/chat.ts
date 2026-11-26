@@ -37,6 +37,7 @@ import {
   createServerUserProfileRepository,
 } from '@/backend/config/users';
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
+import { createQuranSyncService } from '@/backend/config/quran';
 import {
   createDefaultMcpAppToolsService,
   createDefaultMcpCatalogService,
@@ -223,6 +224,7 @@ export function createChatAgentToolsDeps(supabase?: SupabaseClient<Database>): C
     },
     rates: { createService: createRatesService },
     scanHistory: { createService: createScanHistoryService },
+    quran: { createService: createQuranSyncService },
     origin: resolveOrigin,
     ...(coding ? { coding } : {}),
   };

@@ -114,3 +114,30 @@ touches it.
   Certificates the moment the refactor lands, without a second implementation.
 - Tests: the MCP contract test pins all 37 names and their schemas; the agent projection test
   pins all 22 declarations.
+
+## Amendment (2026-11-26)
+
+Decision 1's entry gains two optional fields, both about the assistant's first screen:
+
+```ts
+suggestedAsk?: string; // the question a first screen may offer (#1859)
+suggestedAskWhen?: 'habits' | 'quran-reading' | 'connected-app';
+```
+
+#1859 put the question on the entry so a removed capability stops being advertised in the same
+change. #1918 measured what that rule did not say: **the capability existing is not the capability
+applying to this member.** The opening led with HabitFlow's question for every account, and
+HabitFlow held no habits for any account but the harness; meanwhile the Quran reader — the
+widest-used app — and the connected apps (321 tools) had no question at all. The most prominent
+question in the product was one the product answered with an empty list.
+
+So the entry carries the condition under which its question is honest. The projection
+(`projectAssistantSuggestions` in `backend/services/chat/assistant-opening.ts`) drops a question
+whose condition the member does not satisfy, ranks what remains by how much of that capability the
+member holds, and cuts to three. A question with no condition is one whose answer is real for every
+member — the month's spend, the day's digest — and it fills whatever the member's own products leave
+empty. Adding a product with rows to advertise is therefore a declaration plus one probe, in the
+same change, and a member who has never opened a product is never asked about it.
+
+The review trigger is a measurement, not a wording: after 30 days, if suggestion tap-through is
+below 5% the suggestions are decoration and belong to the member's recent threads instead.

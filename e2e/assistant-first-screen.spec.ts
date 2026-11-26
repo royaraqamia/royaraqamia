@@ -102,6 +102,26 @@ test('the assistant opens with registry actions and no conversation row', async 
       nodes.map((node) => (node as HTMLElement).dataset.toolId ?? '')
     );
     expect(advertised.length).toBeGreaterThanOrEqual(2);
+    // At most three, and none of them about a product this fresh account has
+    // never used: the opening is the member's state, not a fixed trio (#1918).
+    expect(advertised.length).toBeLessThanOrEqual(3);
+    expect(advertised).not.toContain('habitflow.get_habits_summary');
+
+    // The row the questions share stays inside the 393 px panel: a question the
+    // member cannot read in the sheet is not an opening.
+    const panelBox = await sheet.boundingBox();
+    expect(panelBox).not.toBeNull();
+    const chipBoxes = await suggestions.evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const box = node.getBoundingClientRect();
+        return { left: box.left, right: box.right, width: box.width };
+      })
+    );
+    for (const box of chipBoxes) {
+      expect(box.width).toBeGreaterThan(0);
+      expect(box.left).toBeGreaterThanOrEqual(panelBox!.x - 0.5);
+      expect(box.right).toBeLessThanOrEqual(panelBox!.x + panelBox!.width + 0.5);
+    }
 
     // The endpoint's projection is the registry's own answer: an id on screen
     // that is absent here is a slogan nobody declared, which is the drift this

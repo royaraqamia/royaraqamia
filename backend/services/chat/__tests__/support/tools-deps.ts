@@ -38,6 +38,7 @@ export function toolsDepsFor(overrides: GroupOverrides = {}): ChatAgentToolsDeps
     news: { createServiceFor: unwired, createPreferencesServiceFor: unwired },
     rates: { createService: unwired },
     scanHistory: { createService: unwired },
+    quran: { createService: unwired },
     origin: unwired,
   };
   for (const [group, value] of Object.entries(overrides)) {

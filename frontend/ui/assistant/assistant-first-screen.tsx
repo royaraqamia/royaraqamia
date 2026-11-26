@@ -8,6 +8,10 @@ import { AssistantMark } from '@/frontend/ui/chats/assistant-mark';
  * The assistant's first screen (#1859): one mark, the member's own state when
  * there is one, and the questions the registry says this member can ask.
  *
+ * The questions are what the member's own rows make honest (#1918): the server
+ * drops a capability they hold none of, so this component only draws the list it
+ * is handed — it decides neither the question nor whether it applies.
+ *
  * Every action carries its capability id in the DOM. The id comes from the
  * registry projection, not from this component, so a test can prove an action
  * advertises a tool that actually exists rather than a hand-written slogan.
@@ -21,7 +25,7 @@ export function AssistantFirstScreen({
 }: {
   /** The sentence to lead with, already resolved by the caller. */
   lead: string;
-  /** Projected from tier-0 registry entries; at least two when the registry has them. */
+  /** Projected from tier-0 registry entries the member's state makes honest; never more than three. */
   suggestions: readonly AssistantSuggestion[];
   onSuggestion: (suggestion: AssistantSuggestion) => void;
   /** The full-page thread names its conversation; the floating sheet has a header. */
