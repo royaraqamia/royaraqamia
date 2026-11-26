@@ -124,6 +124,7 @@ function harness(overrides: Partial<CodingServiceDeps> = {}, task = makeTask()):
       Object.assign(task, patch);
     }),
     insertStepForRunner: vi.fn().mockResolvedValue(undefined),
+    setStepDecision: vi.fn().mockResolvedValue(undefined),
   };
   const runner = { start: vi.fn().mockResolvedValue({ runId: TASK }) };
   const llm = {
@@ -237,13 +238,13 @@ describe('CodingService monthly caps and dispatch', () => {
 
 describe('CodingService approvals', () => {
   it('approves a proposed plan and resumes the task', async () => {
-    const { deps, repo } = harness({}, makeTask({ status: 'awaiting_plan' }));
+    const { deps, repo, admin } = harness({}, makeTask({ status: 'awaiting_plan' }));
     (repo.findProposedStep as ReturnType<typeof vi.fn>).mockResolvedValue(makeStep());
     const service = createCodingService(deps);
 
     const result = await service.decideStep(USER, TASK, STEP, { decision: 'approve' });
 
-    expect(repo.updateStep).toHaveBeenCalledWith(USER, STEP, { status: 'applied' });
+    expect(admin.setStepDecision).toHaveBeenCalledWith(USER, STEP, 'applied');
     expect(repo.updateTask).toHaveBeenCalledWith(USER, TASK, {
       status: 'running',
       failure_code: null,
@@ -252,13 +253,13 @@ describe('CodingService approvals', () => {
   });
 
   it('rejects a proposed plan with plan_rejected', async () => {
-    const { deps, repo } = harness({}, makeTask({ status: 'awaiting_plan' }));
+    const { deps, repo, admin } = harness({}, makeTask({ status: 'awaiting_plan' }));
     (repo.findProposedStep as ReturnType<typeof vi.fn>).mockResolvedValue(makeStep());
     const service = createCodingService(deps);
 
     const result = await service.decideStep(USER, TASK, STEP, { decision: 'reject' });
 
-    expect(repo.updateStep).toHaveBeenCalledWith(USER, STEP, { status: 'rejected' });
+    expect(admin.setStepDecision).toHaveBeenCalledWith(USER, STEP, 'rejected');
     expect(result.status).toBe('failed');
     expect(result.failureCode).toBe('plan_rejected');
   });

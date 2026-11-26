@@ -281,5 +281,14 @@ export function createCodingAdminRepository(supabase: Client): CodingAdminReposi
       });
       if (error) throw new Error(error.message);
     },
+
+    async setStepDecision(userId, stepId, status) {
+      const { error } = await supabase
+        .from('coding_steps')
+        .update({ status })
+        .eq('user_id', userId)
+        .eq('id', stepId);
+      if (error) throw new Error(error.message);
+    },
   });
 }
