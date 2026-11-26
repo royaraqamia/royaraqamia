@@ -163,6 +163,8 @@ export const CodingRunnerTaskSchema = z.strictObject({
   callbackUrl: z.string().url(),
   /** Raw short-lived bearer token. The control plane stores only its hash. */
   callbackToken: z.string().min(20),
+  /** Short-lived installation token used only for the final PR handoff. */
+  handoffToken: z.string().min(20),
   runnerUrl: z.string().url(),
 });
 export type CodingRunnerTask = z.infer<typeof CodingRunnerTaskSchema>;
