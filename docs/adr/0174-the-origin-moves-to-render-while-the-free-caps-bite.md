@@ -8,6 +8,14 @@ ordinary server-rendered page costs. This was the second pause in two months, an
 for 60 s per client, 2,779 times. That fix is in place and the cap was still reached, so what
 remains is the steady price of rendering pages.
 
+> **Amended 2026-11-26 — see ADR-0221.** Render is no longer the destination. The origin moves to a
+> self-managed VPS (2 vCPU / 2 GB, Illevante, $6.70 a month) running the app in Docker behind Caddy,
+> with the image built in GitHub Actions and published to GHCR, and Cloudflare still in front. What
+> this record established is what the move inherits: the free caps of a managed platform are the
+> binding constraint, and a container keeps every native dependency — `sharp`, `web-push`, the
+> `node:dns` egress guard and the roster read from disk — running unchanged. Render stays the serving
+> origin and the rollback until the DNS cutover is verified and the owner signs off.
+
 Four hours a month is not a budget a server-rendered site can live inside, and there is no budget to
 raise it: the site has no revenue yet, so `Pro` ($20/month) is not available and the site is simply
 down until the pause lifts.

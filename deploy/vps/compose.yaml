@@ -8,6 +8,11 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: 0.0.0.0
+    # An OOM kills this container and `restart: unless-stopped` brings it back;
+    # without a ceiling the kernel picks a victim and can pick the box instead.
+    # 1.5 GB leaves the heap budget in docs/memory-budget.md headroom on top of
+    # the 384 MB the free Render instance had, and keeps ~300 MB for the OS.
+    mem_limit: 1536m
     # Only Caddy talks to the app; the origin is never exposed directly.
     expose:
       - '3000'
@@ -33,6 +38,7 @@ services:
     image: caddy:2-alpine
     container_name: royaraqamia-caddy
     restart: unless-stopped
+    mem_limit: 192m
     ports:
       - '80:80'
       - '443:443'

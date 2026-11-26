@@ -15,6 +15,15 @@ native dependencies this app already relies on -- `sharp`, `web-push`, the
 unchanged, and long-lived SSE streams are ordinary connections rather than a
 platform limit. Supabase stays managed; only the Next.js origin moves.
 
+> **Amended 2026-11-26 — the box is bought, and it is Illevante.** The plan priced here — 2 vCPU,
+> 2 GB, 30 GB, **$6.70 a month** — is the one the owner bought, from Illevante rather than Hetzner:
+> the same price for the same shape, from a provider the account was already open with. The
+> comparison below stays as the record of how the choice was made, not as the plan in force. The hard
+> cap is **$10 a month**, and both the bill and the cap are published in
+> [docs/agents/cost.md](../agents/cost.md). The recovery story these consequences left open is settled
+> too: a nightly copy of the box's configuration to a dedicated R2 bucket with a rehearsed restore, and
+> a provider snapshot as well where the panel sells one.
+
 ## The decision
 
 1. **Build the image in GitHub Actions, publish to GHCR, run it on the VPS.**
@@ -57,9 +66,11 @@ platform limit. Supabase stays managed; only the Next.js origin moves.
   workflow: a merge does not ship. Pulling on the VPS is one script.
 - Runtime secrets move from the Render dashboard to `/opt/royaraqamia/.env` on
   the VPS; that file is outside the repository and is never baked into an image.
-- The VPS has no platform backups. The database still has the daily verified
-  R2 dumps and restore drill in `docs/supabase.md`; the box itself needs
-  provider snapshots or a documented rebuild from the image and env file.
+- The VPS is not covered by the database's dumps. Its only unrecoverable artefact is
+  `/opt/royaraqamia/.env`: the images are public and every other file on the box is in git, so the
+  recovery contract is a nightly tar of the configuration directory to a dedicated R2 bucket plus a
+  rehearsed restore, and a provider snapshot where the panel sells one (the steps are in
+  `docs/agents/vps-deploy.md`).
 - `scripts/memory-watch.mjs` keeps watching Render, which becomes idle after
   cutover; its issue closes when that origin is calm again. The 512 MB budget
   page stays as the record of why the move happened, not as a live constraint.

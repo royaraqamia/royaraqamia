@@ -8,10 +8,10 @@ that takes every open stream with it.
 The Next server and Sentry are the floor. Everything here is what a request may add **on top** of
 that floor; the numbers are ceilings, not reservations.
 
-> **The origin moved to a self-managed VPS on 2026-11-26** ([ADR-0221](adr/0221-the-origin-runs-on-a-self-managed-vps.md)).
-> The 512 MB budget and the warning below are kept as the record of why the move happened; the
-> running service now has 2 GB and no spin-down. Render stays live as an instant rollback until the
-> DNS cutover is verified. The operator steps are in
+> **The origin is moving to a self-managed VPS** ([ADR-0221](adr/0221-the-origin-runs-on-a-self-managed-vps.md)):
+> bought and built on 2026-11-26, with the DNS cutover still pending. The 512 MB budget and the warning
+> below are kept as the record of why the move happened; the destination has 2 GB and no spin-down.
+> Render stays live as an instant rollback until the cutover is verified. The operator steps are in
 > [docs/agents/vps-deploy.md](agents/vps-deploy.md).
 
 ## What a request may hold

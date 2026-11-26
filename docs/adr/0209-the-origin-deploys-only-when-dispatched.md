@@ -4,6 +4,11 @@
 
 Accepted (2026-11-19). Supersedes the clock decision of ADR-0186.
 
+> **Amended 2026-11-26 — see ADR-0221.** The dispatch rule now has a second door: a manual dispatch of
+> `Publish origin image` builds and pushes the image, and the VPS pulls it with `deploy/vps/deploy.sh`.
+> The product of the rule is unchanged — a merge ships nothing, a person decides — and the Render hook
+> path described here stays the rollback until the cutover is signed off.
+
 ## Context
 
 ADR-0186 stopped the origin building on every push. Render's Hobby workspace includes
