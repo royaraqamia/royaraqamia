@@ -7,15 +7,14 @@ import type {
   RecurringExpenseInput,
   SpendtrackSyncSnapshot,
 } from '@/shared/contracts/spendtrack';
-import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalStoreMigration } from '@/frontend/shared/local-store/idb';
+import type { LocalStoreLease } from '@/frontend/shared/local-store/connection';
 import {
-  promisifyRequest,
-  transactionDone,
-  type LocalStoreMigration,
-} from '@/frontend/shared/local-store/idb';
-import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
-import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
-import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+  openProductStore,
+  type ProductStoreScope,
+} from '@/frontend/shared/local-store/open-product-store';
+import type { RecordAccess } from '@/frontend/shared/local-store/records';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import { assertOwnedItemSlot } from '@/frontend/shared/plans/plan-limits';
@@ -31,13 +30,6 @@ const EXPENSES_STORE = 'expenses';
 const BUDGETS_STORE = 'budgets';
 const RECURRING_STORE = 'recurring';
 const META_STORE = 'meta';
-
-/** A durable write-intent paired with the mutation that produced it. */
-interface OutboxIntent {
-  entity: string;
-  type: string;
-  payload: unknown;
-}
 
 export interface ExpenseWriteInput {
   amount: number;
@@ -101,46 +93,39 @@ export function budgetKey(month: string, categoryId: string | null): string {
  */
 export class SpendtrackLocalStore {
   private readonly connection: LocalStoreLease;
+  private readonly records: RecordAccess;
   private readonly outbox: OutboxStore;
-  private readonly mirror: LocalStoreMirror;
-  private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    connection: LocalStoreLease,
+    scope: ProductStoreScope,
     readonly identity: LocalIdentity
   ) {
-    this.connection = connection;
-    this.mirror = connection.mirror;
-    this.mirror.declare({
-      [CATEGORIES_STORE]: 'id',
-      [EXPENSES_STORE]: 'id',
-      [BUDGETS_STORE]: 'id',
-      [RECURRING_STORE]: 'id',
-    });
-    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
+    this.connection = scope.connection;
+    this.records = scope.records;
+    this.outbox = scope.outbox;
   }
 
   subscribeWrites(listener: () => void): () => void {
-    this.writeListeners.add(listener);
-    return () => {
-      this.writeListeners.delete(listener);
-    };
-  }
-
-  private notifyWrites(): void {
-    for (const listener of this.writeListeners) listener();
+    return this.records.subscribeWrites(listener);
   }
 
   static async open(
     identity: LocalIdentity,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<SpendtrackLocalStore> {
-    const connection = await acquireLocalStore(
-      localStoreName(PRODUCT, identity),
-      spendtrackStoreMigrations,
-      factory
-    );
-    return new SpendtrackLocalStore(connection, identity);
+    const scope = await openProductStore({
+      product: PRODUCT,
+      identity,
+      migrations: spendtrackStoreMigrations,
+      stores: {
+        [CATEGORIES_STORE]: 'id',
+        [EXPENSES_STORE]: 'id',
+        [BUDGETS_STORE]: 'id',
+        [RECURRING_STORE]: 'id',
+      },
+      factory,
+    });
+    return new SpendtrackLocalStore(scope, identity);
   }
 
   /**
@@ -152,83 +137,10 @@ export class SpendtrackLocalStore {
     this.connection.close();
   }
 
-  private async readAll<T>(store: string): Promise<T[]> {
-    if (this.connection.isClosed) return [];
-
-    // A copy: the mirror's array belongs to every holder, and a caller that
-    // sorts its list in place must not reorder the next one.
-    const mirrored = this.mirror.read<T>(store);
-    if (mirrored) return [...mirrored];
-
-    const rows = await this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
-    }, []);
-    if (!this.connection.isClosed) this.mirror.fill(store, rows);
-    return rows;
-  }
-
-  private async getOne<T>(store: string, key: IDBValidKey): Promise<T | null> {
-    return this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      const value = await promisifyRequest(
-        transaction.objectStore(store).get(key) as IDBRequest<T | undefined>
-      );
-      return value ?? null;
-    }, null);
-  }
-
-  /**
-   * Commits record writes and, when present, the Outbox intent atomically.
-   *
-   * Returns false when the store is closing and nothing was written (#204), so a
-   * caller that must not run a follow-up it cannot undo can check first.
-   */
-  private async commit(
-    writes: ReadonlyArray<[store: string, value: unknown]>,
-    intent?: OutboxIntent
-  ): Promise<boolean> {
-    if (writes.length === 0 && !intent) return true;
-
-    const stores = writes.map(([store]) => store);
-    if (intent) stores.push(OUTBOX_STORE);
-
-    const committed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const [store, value] of writes) {
-        transaction.objectStore(store).put(value);
-      }
-      if (intent) {
-        transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (committed) {
-      for (const [store, value] of writes) this.mirror.put(store, value);
-      this.notifyWrites();
-    }
-    return committed;
-  }
-
-  private entry(intent: OutboxIntent): NewOutboxEntry {
-    return {
-      id: uuidv7(),
-      entity: intent.entity,
-      type: intent.type,
-      payload: intent.payload,
-      createdAt: Date.now(),
-      attempts: 0,
-      status: 'pending',
-      lastError: null,
-      nextAttemptAt: 0,
-    };
-  }
-
   // --- Categories -----------------------------------------------------------
 
   async getCategories(): Promise<Category[]> {
-    const rows = await this.readAll<Category>(CATEGORIES_STORE);
+    const rows = await this.records.readAll<Category>(CATEGORIES_STORE);
     return rows.filter((row) => !row.deletedAt).sort((a, b) => a.name.localeCompare(b.name));
   }
 
@@ -250,7 +162,7 @@ export class SpendtrackLocalStore {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.commit([[CATEGORIES_STORE, record]], {
+    await this.records.commit([[CATEGORIES_STORE, record]], {
       entity: 'category',
       type: 'category.create',
       payload: {
@@ -264,7 +176,7 @@ export class SpendtrackLocalStore {
   }
 
   async updateCategory(id: string, input: CategoryWriteInput): Promise<Category> {
-    const existing = await this.getOne<Category>(CATEGORIES_STORE, id);
+    const existing = await this.records.getOne<Category>(CATEGORIES_STORE, id);
     if (!existing) throw new Error(`Category with id ${id} not found`);
     const now = new Date().toISOString();
     const updated: Category = {
@@ -273,7 +185,7 @@ export class SpendtrackLocalStore {
       colorHex: input.colorHex,
       updatedAt: now,
     };
-    await this.commit([[CATEGORIES_STORE, updated]], {
+    await this.records.commit([[CATEGORIES_STORE, updated]], {
       entity: 'category',
       type: 'category.update',
       payload: {
@@ -287,21 +199,24 @@ export class SpendtrackLocalStore {
   }
 
   async deleteCategory(id: string): Promise<boolean> {
-    const existing = await this.getOne<Category>(CATEGORIES_STORE, id);
+    const existing = await this.records.getOne<Category>(CATEGORIES_STORE, id);
     if (!existing) return false;
     const now = new Date().toISOString();
-    await this.commit([[CATEGORIES_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
-      entity: 'category',
-      type: 'category.delete',
-      payload: { id, updatedAt: now },
-    });
+    await this.records.commit(
+      [[CATEGORIES_STORE, { ...existing, deletedAt: now, updatedAt: now }]],
+      {
+        entity: 'category',
+        type: 'category.delete',
+        payload: { id, updatedAt: now },
+      }
+    );
     return true;
   }
 
   // --- Expenses -------------------------------------------------------------
 
   async getExpenses(): Promise<Expense[]> {
-    const rows = await this.readAll<Expense>(EXPENSES_STORE);
+    const rows = await this.records.readAll<Expense>(EXPENSES_STORE);
     return rows.filter((row) => !row.deletedAt).sort((a, b) => b.date.localeCompare(a.date));
   }
 
@@ -333,7 +248,7 @@ export class SpendtrackLocalStore {
       deletedAt: null,
       ...(splits.length > 0 ? { splits } : {}),
     };
-    await this.commit([[EXPENSES_STORE, record]], {
+    await this.records.commit([[EXPENSES_STORE, record]], {
       entity: 'expense',
       type: 'expense.create',
       payload: this.expensePayload(record),
@@ -342,7 +257,7 @@ export class SpendtrackLocalStore {
   }
 
   async updateExpense(id: string, input: ExpenseWriteInput): Promise<Expense> {
-    const existing = await this.getOne<Expense>(EXPENSES_STORE, id);
+    const existing = await this.records.getOne<Expense>(EXPENSES_STORE, id);
     if (!existing) throw new Error(`Expense with id ${id} not found`);
     const now = new Date().toISOString();
     const splits = (input.splits ?? []).map<ExpenseSplit>((split) => ({
@@ -366,7 +281,7 @@ export class SpendtrackLocalStore {
       deletedAt: null,
       splits: splits.length > 0 ? splits : undefined,
     };
-    await this.commit([[EXPENSES_STORE, updated]], {
+    await this.records.commit([[EXPENSES_STORE, updated]], {
       entity: 'expense',
       type: 'expense.update',
       // `deletedAt: null` makes the replay a resurrect, so an edit of a
@@ -377,10 +292,10 @@ export class SpendtrackLocalStore {
   }
 
   async deleteExpense(id: string): Promise<boolean> {
-    const existing = await this.getOne<Expense>(EXPENSES_STORE, id);
+    const existing = await this.records.getOne<Expense>(EXPENSES_STORE, id);
     if (!existing) return false;
     const now = new Date().toISOString();
-    await this.commit([[EXPENSES_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
+    await this.records.commit([[EXPENSES_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
       entity: 'expense',
       type: 'expense.delete',
       payload: { id, updatedAt: now },
@@ -408,17 +323,17 @@ export class SpendtrackLocalStore {
   // --- Budgets --------------------------------------------------------------
 
   async getBudgets(month: string): Promise<Budget[]> {
-    const rows = await this.readAll<Budget>(BUDGETS_STORE);
+    const rows = await this.records.readAll<Budget>(BUDGETS_STORE);
     return rows.filter((row) => row.month === month && !row.deletedAt);
   }
 
   async setBudget(month: string, amount: number, categoryId: string | null): Promise<Budget> {
     const id = budgetKey(month, categoryId);
-    const existing = await this.getOne<Budget>(BUDGETS_STORE, id);
+    const existing = await this.records.getOne<Budget>(BUDGETS_STORE, id);
     // Only a new month/category is a new slot; an update to an existing one
     // must keep working at the cap.
     if (!existing || existing.deletedAt) {
-      const budgets = await this.readAll<Budget>(BUDGETS_STORE);
+      const budgets = await this.records.readAll<Budget>(BUDGETS_STORE);
       assertOwnedItemSlot(
         this.identity,
         'budgets',
@@ -435,7 +350,7 @@ export class SpendtrackLocalStore {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.commit([[BUDGETS_STORE, record]], {
+    await this.records.commit([[BUDGETS_STORE, record]], {
       entity: 'budget',
       type: 'budget.set',
       // No `clientId`: the server dedupes budgets on (user_id, month,
@@ -454,10 +369,10 @@ export class SpendtrackLocalStore {
 
   async deleteBudget(month: string, categoryId: string | null): Promise<boolean> {
     const id = budgetKey(month, categoryId);
-    const existing = await this.getOne<Budget>(BUDGETS_STORE, id);
+    const existing = await this.records.getOne<Budget>(BUDGETS_STORE, id);
     if (!existing) return false;
     const now = new Date().toISOString();
-    await this.commit([[BUDGETS_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
+    await this.records.commit([[BUDGETS_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
       entity: 'budget',
       type: 'budget.delete',
       payload: { month, categoryId: categoryId ?? null, updatedAt: now },
@@ -468,7 +383,7 @@ export class SpendtrackLocalStore {
   // --- Recurring ------------------------------------------------------------
 
   async getRecurring(): Promise<RecurringExpense[]> {
-    const rows = await this.readAll<RecurringExpense>(RECURRING_STORE);
+    const rows = await this.records.readAll<RecurringExpense>(RECURRING_STORE);
     return rows.filter((row) => !row.deletedAt).sort((a, b) => a.day_of_month - b.day_of_month);
   }
 
@@ -487,7 +402,7 @@ export class SpendtrackLocalStore {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.commit([[RECURRING_STORE, record]], {
+    await this.records.commit([[RECURRING_STORE, record]], {
       entity: 'recurring',
       type: 'recurring.create',
       payload: { ...this.recurringPayload(record), clientId: record.clientId },
@@ -496,7 +411,7 @@ export class SpendtrackLocalStore {
   }
 
   async updateRecurring(id: string, input: RecurringWriteInput): Promise<RecurringExpense> {
-    const existing = await this.getOne<RecurringExpense>(RECURRING_STORE, id);
+    const existing = await this.records.getOne<RecurringExpense>(RECURRING_STORE, id);
     if (!existing) throw new Error(`Recurring expense with id ${id} not found`);
     const now = new Date().toISOString();
     const updated: RecurringExpense = {
@@ -508,7 +423,7 @@ export class SpendtrackLocalStore {
       start_month: input.start_month,
       updatedAt: now,
     };
-    await this.commit([[RECURRING_STORE, updated]], {
+    await this.records.commit([[RECURRING_STORE, updated]], {
       entity: 'recurring',
       type: 'recurring.update',
       payload: { ...this.recurringPayload(updated), id },
@@ -517,14 +432,17 @@ export class SpendtrackLocalStore {
   }
 
   async deleteRecurring(id: string): Promise<boolean> {
-    const existing = await this.getOne<RecurringExpense>(RECURRING_STORE, id);
+    const existing = await this.records.getOne<RecurringExpense>(RECURRING_STORE, id);
     if (!existing) return false;
     const now = new Date().toISOString();
-    await this.commit([[RECURRING_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
-      entity: 'recurring',
-      type: 'recurring.delete',
-      payload: { id, updatedAt: now },
-    });
+    await this.records.commit(
+      [[RECURRING_STORE, { ...existing, deletedAt: now, updatedAt: now }]],
+      {
+        entity: 'recurring',
+        type: 'recurring.delete',
+        payload: { id, updatedAt: now },
+      }
+    );
     return true;
   }
 
@@ -548,10 +466,10 @@ export class SpendtrackLocalStore {
     recurring: RecurringExpense[];
   }> {
     const [categories, expenses, budgets, recurring] = await Promise.all([
-      this.readAll<Category>(CATEGORIES_STORE),
-      this.readAll<Expense>(EXPENSES_STORE),
-      this.readAll<Budget>(BUDGETS_STORE),
-      this.readAll<RecurringExpense>(RECURRING_STORE),
+      this.records.readAll<Category>(CATEGORIES_STORE),
+      this.records.readAll<Expense>(EXPENSES_STORE),
+      this.records.readAll<Budget>(BUDGETS_STORE),
+      this.records.readAll<RecurringExpense>(RECURRING_STORE),
     ]);
     return { categories, expenses, budgets, recurring };
   }
@@ -590,7 +508,7 @@ export class SpendtrackLocalStore {
         stamp(row, row.id),
       ]),
     ];
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) await this.records.commit(writes);
   }
 
   // --- Server merge & guest claim -------------------------------------------
@@ -652,7 +570,7 @@ export class SpendtrackLocalStore {
         budgetKey(r.month, r.category_id)
       );
 
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) await this.records.commit(writes);
     return skipped;
   }
 
@@ -684,7 +602,7 @@ export class SpendtrackLocalStore {
     }
 
     if (writes.length > 0) {
-      const claimed = await this.commit(writes);
+      const claimed = await this.records.commit(writes);
       // Absorb the guest only once its rows are actually here: a commit that
       // no-ops because this store is closing (#204) must not wipe data it never
       // copied.
@@ -717,45 +635,33 @@ export class SpendtrackLocalStore {
 
   /** The `server_updated_at` cursor the last sync advanced to, or null. */
   async getSyncCursor(): Promise<string | null> {
-    const row = await this.getOne<{ key: string; value: string }>(META_STORE, 'syncCursor');
+    const row = await this.records.getOne<{ key: string; value: string }>(META_STORE, 'syncCursor');
     return row?.value ?? null;
   }
 
   async setSyncCursor(value: string): Promise<void> {
-    await this.commit([[META_STORE, { key: 'syncCursor', value }]]);
+    await this.records.commit([[META_STORE, { key: 'syncCursor', value }]]);
   }
 
   /** Empties every owned store. */
   async clear(): Promise<void> {
-    const stores = [
+    await this.records.clear([
       CATEGORIES_STORE,
       EXPENSES_STORE,
       BUDGETS_STORE,
       RECURRING_STORE,
       OUTBOX_STORE,
       META_STORE,
-    ];
-    const cleared = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const store of stores) {
-        transaction.objectStore(store).clear();
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (cleared) {
-      for (const store of stores) this.mirror.drop(store);
-      this.notifyWrites();
-    }
+    ]);
   }
 
   /** True when the store has received no writes yet (safe to seed). */
   async isEmpty(): Promise<boolean> {
     const [categories, expenses, budgets, recurring] = await Promise.all([
-      this.readAll<Category>(CATEGORIES_STORE),
-      this.readAll<Expense>(EXPENSES_STORE),
-      this.readAll<Budget>(BUDGETS_STORE),
-      this.readAll<RecurringExpense>(RECURRING_STORE),
+      this.records.readAll<Category>(CATEGORIES_STORE),
+      this.records.readAll<Expense>(EXPENSES_STORE),
+      this.records.readAll<Budget>(BUDGETS_STORE),
+      this.records.readAll<RecurringExpense>(RECURRING_STORE),
     ]);
     return (
       categories.length === 0 &&

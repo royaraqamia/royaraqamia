@@ -7,16 +7,19 @@ import type {
   HabitSyncSnapshot,
   HabitTargetPeriod,
 } from '@/shared/contracts/habitflow';
-import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
 import { assertOwnedItemSlot } from '@/frontend/shared/plans/plan-limits';
 import {
   promisifyRequest,
   transactionDone,
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
-import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
-import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
-import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+import type { LocalStoreLease } from '@/frontend/shared/local-store/connection';
+import {
+  openProductStore,
+  type ProductStoreScope,
+} from '@/frontend/shared/local-store/open-product-store';
+import type { RecordAccess } from '@/frontend/shared/local-store/records';
 import { conflictWinner } from '@/frontend/shared/local-store/conflict';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
@@ -32,13 +35,6 @@ const LOGS_STORE = 'logs';
 const META_STORE = 'meta';
 
 const SYNC_CURSOR_KEY = 'syncCursor';
-
-/** A durable write-intent paired with the mutation that produced it. */
-interface OutboxIntent {
-  entity: string;
-  type: string;
-  payload: unknown;
-}
 
 /**
  * Forward-only schema. v1 is the rendered data (`habits`, `logs`); v2 adds the
@@ -93,21 +89,16 @@ function logKind(value: string | null | undefined): HabitLogKind | undefined {
  */
 export class HabitLocalStore implements HabitRepository {
   private readonly connection: LocalStoreLease;
+  private readonly records: RecordAccess;
   private readonly outbox: OutboxStore;
-  private readonly mirror: LocalStoreMirror;
-  private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    connection: LocalStoreLease,
+    scope: ProductStoreScope,
     readonly identity: LocalIdentity
   ) {
-    this.connection = connection;
-    this.mirror = connection.mirror;
-    this.mirror.declare({
-      [HABITS_STORE]: 'id',
-      [LOGS_STORE]: 'id',
-    });
-    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
+    this.connection = scope.connection;
+    this.records = scope.records;
+    this.outbox = scope.outbox;
   }
 
   /**
@@ -116,26 +107,24 @@ export class HabitLocalStore implements HabitRepository {
    * for mutations, so one subscription observes them all.
    */
   subscribeWrites(listener: () => void): () => void {
-    this.writeListeners.add(listener);
-    return () => {
-      this.writeListeners.delete(listener);
-    };
-  }
-
-  private notifyWrites(): void {
-    for (const listener of this.writeListeners) listener();
+    return this.records.subscribeWrites(listener);
   }
 
   static async open(
     identity: LocalIdentity,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<HabitLocalStore> {
-    const connection = await acquireLocalStore(
-      localStoreName(PRODUCT, identity),
-      habitStoreMigrations,
-      factory
-    );
-    return new HabitLocalStore(connection, identity);
+    const scope = await openProductStore({
+      product: PRODUCT,
+      identity,
+      migrations: habitStoreMigrations,
+      stores: {
+        [HABITS_STORE]: 'id',
+        [LOGS_STORE]: 'id',
+      },
+      factory,
+    });
+    return new HabitLocalStore(scope, identity);
   }
 
   /**
@@ -145,83 +134,6 @@ export class HabitLocalStore implements HabitRepository {
    */
   close(): void {
     this.connection.close();
-  }
-
-  private async readAll<T>(store: string): Promise<T[]> {
-    if (this.connection.isClosed) return [];
-
-    // A copy: the mirror's array belongs to every holder, and a caller that
-    // sorts its list in place must not reorder the next one.
-    const mirrored = this.mirror.read<T>(store);
-    if (mirrored) return [...mirrored];
-
-    const rows = await this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
-    }, []);
-    if (!this.connection.isClosed) this.mirror.fill(store, rows);
-    return rows;
-  }
-
-  private async getOne<T>(store: string, key: IDBValidKey): Promise<T | null> {
-    return this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      const value = await promisifyRequest(
-        transaction.objectStore(store).get(key) as IDBRequest<T | undefined>
-      );
-      return value ?? null;
-    }, null);
-  }
-
-  /**
-   * Commits one or more record writes and, when present, the matching Outbox
-   * intent in a single transaction. The intent can therefore never diverge from
-   * the local write it describes: either both persist or neither does.
-   *
-   * Returns false when the store is closing and nothing was written (#204), so a
-   * caller that must not run a follow-up it cannot undo can check first.
-   */
-  private async commit(
-    writes: ReadonlyArray<[store: string, value: unknown]>,
-    intent?: OutboxIntent
-  ): Promise<boolean> {
-    if (writes.length === 0 && !intent) return true;
-
-    const stores = writes.map(([store]) => store);
-    if (intent) stores.push(OUTBOX_STORE);
-
-    const committed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const [store, value] of writes) {
-        transaction.objectStore(store).put(value);
-      }
-      if (intent) {
-        transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (committed) {
-      // The mirror is updated in the same tick the write commits, so a
-      // subscriber that reads on `notifyWrites` sees the new rows (#494).
-      for (const [store, value] of writes) this.mirror.put(store, value);
-      this.notifyWrites();
-    }
-    return committed;
-  }
-
-  private entry(intent: OutboxIntent): NewOutboxEntry {
-    return {
-      id: uuidv7(),
-      entity: intent.entity,
-      type: intent.type,
-      payload: intent.payload,
-      createdAt: Date.now(),
-      attempts: 0,
-      status: 'pending',
-      lastError: null,
-      nextAttemptAt: 0,
-    };
   }
 
   private async getLog(habitId: string, date: string): Promise<HabitLog | null> {
@@ -236,14 +148,14 @@ export class HabitLocalStore implements HabitRepository {
   }
 
   async getHabits(): Promise<Habit[]> {
-    const habits = await this.readAll<Habit>(HABITS_STORE);
+    const habits = await this.records.readAll<Habit>(HABITS_STORE);
     return habits
       .filter((habit) => !habit.archived && !habit.deletedAt)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   async findHabitByClientId(clientId: string): Promise<Habit | null> {
-    const habits = await this.readAll<Habit>(HABITS_STORE);
+    const habits = await this.records.readAll<Habit>(HABITS_STORE);
     return habits.find((habit) => habit.clientId === clientId) ?? null;
   }
 
@@ -264,7 +176,7 @@ export class HabitLocalStore implements HabitRepository {
       reminderTime: habit.reminderTime ?? null,
       deletedAt: null,
     };
-    await this.commit([[HABITS_STORE, record]], {
+    await this.records.commit([[HABITS_STORE, record]], {
       entity: 'habit',
       type: 'habit.create',
       payload: {
@@ -281,7 +193,7 @@ export class HabitLocalStore implements HabitRepository {
   }
 
   async updateHabit(id: string, updates: Partial<Habit>): Promise<Habit> {
-    const existing = await this.getOne<Habit>(HABITS_STORE, id);
+    const existing = await this.records.getOne<Habit>(HABITS_STORE, id);
     if (!existing) {
       throw new Error(`Habit with id ${id} not found`);
     }
@@ -291,7 +203,7 @@ export class HabitLocalStore implements HabitRepository {
       id: existing.id,
       updatedAt: new Date().toISOString(),
     };
-    await this.commit([[HABITS_STORE, updated]], {
+    await this.records.commit([[HABITS_STORE, updated]], {
       entity: 'habit',
       type: 'habit.update',
       payload: { ...updates, id: existing.id, updatedAt: updated.updatedAt },
@@ -300,12 +212,12 @@ export class HabitLocalStore implements HabitRepository {
   }
 
   async deleteHabit(id: string): Promise<boolean> {
-    const existing = await this.getOne<Habit>(HABITS_STORE, id);
+    const existing = await this.records.getOne<Habit>(HABITS_STORE, id);
     if (!existing) return false;
     // Tombstone, not a hard delete: a removal syncs without losing row identity
     // and an undo is simply a newer write that clears it again (ADR-0029).
     const now = new Date().toISOString();
-    await this.commit([[HABITS_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
+    await this.records.commit([[HABITS_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
       entity: 'habit',
       type: 'habit.delete',
       payload: { id, updatedAt: now },
@@ -342,7 +254,7 @@ export class HabitLocalStore implements HabitRepository {
         updatedAt: now,
         ...(clientId && !existing.clientId ? { clientId } : {}),
       };
-      await this.commit([[LOGS_STORE, updated]], {
+      await this.records.commit([[LOGS_STORE, updated]], {
         entity: 'habit_log',
         type: 'log.toggle',
         payload: { habitId, date, completed, clientId: updated.clientId, updatedAt: now },
@@ -363,7 +275,7 @@ export class HabitLocalStore implements HabitRepository {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.commit([[LOGS_STORE, record]], {
+    await this.records.commit([[LOGS_STORE, record]], {
       entity: 'habit_log',
       type: 'log.toggle',
       payload: { habitId, date, completed, clientId: record.clientId, updatedAt: now },
@@ -390,7 +302,7 @@ export class HabitLocalStore implements HabitRepository {
         updatedAt: now,
         ...(clientId && !existing.clientId ? { clientId } : {}),
       };
-      await this.commit([[LOGS_STORE, updated]], {
+      await this.records.commit([[LOGS_STORE, updated]], {
         entity: 'habit_log',
         type: 'log.kind',
         payload: { habitId, date, kind, clientId: updated.clientId, updatedAt: now },
@@ -410,7 +322,7 @@ export class HabitLocalStore implements HabitRepository {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.commit([[LOGS_STORE, record]], {
+    await this.records.commit([[LOGS_STORE, record]], {
       entity: 'habit_log',
       type: 'log.kind',
       payload: { habitId, date, kind, clientId: record.clientId, updatedAt: now },
@@ -434,7 +346,7 @@ export class HabitLocalStore implements HabitRepository {
         updatedAt: now,
         ...(clientId && !existing.clientId ? { clientId } : {}),
       };
-      await this.commit([[LOGS_STORE, updated]], {
+      await this.records.commit([[LOGS_STORE, updated]], {
         entity: 'habit_log',
         type: 'log.note',
         payload: { habitId, date, note, clientId: updated.clientId, updatedAt: now },
@@ -454,7 +366,7 @@ export class HabitLocalStore implements HabitRepository {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.commit([[LOGS_STORE, record]], {
+    await this.records.commit([[LOGS_STORE, record]], {
       entity: 'habit_log',
       type: 'log.note',
       payload: { habitId, date, note, clientId: record.clientId, updatedAt: now },
@@ -464,8 +376,8 @@ export class HabitLocalStore implements HabitRepository {
 
   async getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
     const [habits, logs] = await Promise.all([
-      this.readAll<Habit>(HABITS_STORE),
-      this.readAll<HabitLog>(LOGS_STORE),
+      this.records.readAll<Habit>(HABITS_STORE),
+      this.records.readAll<HabitLog>(LOGS_STORE),
     ]);
     return { habits, logs };
   }
@@ -516,27 +428,27 @@ export class HabitLocalStore implements HabitRepository {
       for (const log of logs) logStore.put(log);
       transaction
         .objectStore(OUTBOX_STORE)
-        .put(this.entry({ entity: 'backup', type: 'backup.restore', payload: input }));
+        .put(this.records.entry({ entity: 'backup', type: 'backup.restore', payload: input }));
       await transactionDone(transaction);
       return true;
     }, false);
     if (restored) {
-      this.mirror.fill(HABITS_STORE, habits);
-      this.mirror.fill(LOGS_STORE, logs);
-      this.notifyWrites();
+      this.connection.mirror.fill(HABITS_STORE, habits);
+      this.connection.mirror.fill(LOGS_STORE, logs);
+      this.records.notifyWrites();
     }
   }
 
   /** Seeds the server loader's data once, then the store is authoritative. */
   async seedIfEmpty(habits: readonly Habit[], logs: readonly HabitLog[]): Promise<void> {
     const [existingHabits, existingLogs] = await Promise.all([
-      this.readAll<Habit>(HABITS_STORE),
-      this.readAll<HabitLog>(LOGS_STORE),
+      this.records.readAll<Habit>(HABITS_STORE),
+      this.records.readAll<HabitLog>(LOGS_STORE),
     ]);
     if (existingHabits.length > 0 || existingLogs.length > 0) return;
 
     const now = new Date().toISOString();
-    await this.commit(
+    await this.records.commit(
       habits.map<[string, Habit]>((habit) => [
         HABITS_STORE,
         {
@@ -547,7 +459,7 @@ export class HabitLocalStore implements HabitRepository {
         },
       ])
     );
-    await this.commit(
+    await this.records.commit(
       logs.map<[string, HabitLog]>((log) => [
         LOGS_STORE,
         {
@@ -591,8 +503,8 @@ export class HabitLocalStore implements HabitRepository {
    */
   async mergeServerData(habits: readonly Habit[], logs: readonly HabitLog[]): Promise<number> {
     const [localHabits, localLogs, outbox] = await Promise.all([
-      this.readAll<Habit>(HABITS_STORE),
-      this.readAll<HabitLog>(LOGS_STORE),
+      this.records.readAll<Habit>(HABITS_STORE),
+      this.records.readAll<HabitLog>(LOGS_STORE),
       this.getOutbox(),
     ]);
 
@@ -645,7 +557,7 @@ export class HabitLocalStore implements HabitRepository {
       ]);
     }
 
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) await this.records.commit(writes);
     return skipped;
   }
 
@@ -658,12 +570,15 @@ export class HabitLocalStore implements HabitRepository {
 
   /** The stamp to send as `?since=` on the next pull, or null on a fresh store. */
   async getSyncCursor(): Promise<string | null> {
-    const row = await this.getOne<{ key: string; value: string }>(META_STORE, SYNC_CURSOR_KEY);
+    const row = await this.records.getOne<{ key: string; value: string }>(
+      META_STORE,
+      SYNC_CURSOR_KEY
+    );
     return row?.value ?? null;
   }
 
   private async setSyncCursor(value: string): Promise<void> {
-    await this.commit([[META_STORE, { key: SYNC_CURSOR_KEY, value }]]);
+    await this.records.commit([[META_STORE, { key: SYNC_CURSOR_KEY, value }]]);
   }
 
   /**
@@ -673,11 +588,11 @@ export class HabitLocalStore implements HabitRepository {
    */
   async claimFrom(guest: HabitLocalStore): Promise<void> {
     const [guestHabits, guestLogs, guestOutbox, localHabits, localLogs] = await Promise.all([
-      guest.readAll<Habit>(HABITS_STORE),
-      guest.readAll<HabitLog>(LOGS_STORE),
+      guest.records.readAll<Habit>(HABITS_STORE),
+      guest.records.readAll<HabitLog>(LOGS_STORE),
       guest.getOutbox(),
-      this.readAll<Habit>(HABITS_STORE),
-      this.readAll<HabitLog>(LOGS_STORE),
+      this.records.readAll<Habit>(HABITS_STORE),
+      this.records.readAll<HabitLog>(LOGS_STORE),
     ]);
 
     const localHabitById = new Map(localHabits.map((h) => [h.id, h]));
@@ -708,7 +623,7 @@ export class HabitLocalStore implements HabitRepository {
     }
 
     if (writes.length > 0) {
-      const claimed = await this.commit(writes);
+      const claimed = await this.records.commit(writes);
       // Absorb the guest only once its rows are actually here: a commit that
       // no-ops because this store is closing (#204) must not wipe data it never
       // copied.
@@ -721,30 +636,14 @@ export class HabitLocalStore implements HabitRepository {
 
   /** Empties every owned store (used after a successful claim). */
   async clear(): Promise<void> {
-    const cleared = await this.connection.run(async (db) => {
-      const transaction = db.transaction(
-        [HABITS_STORE, LOGS_STORE, OUTBOX_STORE, META_STORE],
-        'readwrite'
-      );
-      transaction.objectStore(HABITS_STORE).clear();
-      transaction.objectStore(LOGS_STORE).clear();
-      transaction.objectStore(OUTBOX_STORE).clear();
-      transaction.objectStore(META_STORE).clear();
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (cleared) {
-      this.mirror.drop(HABITS_STORE);
-      this.mirror.drop(LOGS_STORE);
-      this.notifyWrites();
-    }
+    await this.records.clear([HABITS_STORE, LOGS_STORE, OUTBOX_STORE, META_STORE]);
   }
 
   /** True when the store has received no writes yet (safe to seed). */
   async isEmpty(): Promise<boolean> {
     const [habits, logs] = await Promise.all([
-      this.readAll<Habit>(HABITS_STORE),
-      this.readAll<HabitLog>(LOGS_STORE),
+      this.records.readAll<Habit>(HABITS_STORE),
+      this.records.readAll<HabitLog>(LOGS_STORE),
     ]);
     return habits.length === 0 && logs.length === 0;
   }
