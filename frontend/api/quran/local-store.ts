@@ -1,15 +1,15 @@
-import {
-  GUEST_IDENTITY,
-  localStoreName,
-  type LocalIdentity,
-} from '@/frontend/shared/local-store/identity';
+import { GUEST_IDENTITY, type LocalIdentity } from '@/frontend/shared/local-store/identity';
 import {
   promisifyRequest,
   transactionDone,
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
-import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
-import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+import type { LocalStoreLease } from '@/frontend/shared/local-store/connection';
+import {
+  openProductStore,
+  type ProductStoreScope,
+} from '@/frontend/shared/local-store/open-product-store';
+import type { RecordAccess, RecordChange } from '@/frontend/shared/local-store/records';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import {
   OUTBOX_STORE,
@@ -98,10 +98,7 @@ interface OutboxIntent {
   payload: unknown;
 }
 
-/** One write in a commit: a `put`, or a `delete` by primary key. */
-type StoreWrite = { store: string; put: unknown } | { store: string; delete: IDBValidKey };
-
-type Writes = StoreWrite[];
+type Writes = RecordChange[];
 
 /** True when the pair names an ayah that exists. */
 export function isAyahRef(surah: number, ayah: number): boolean {
@@ -131,38 +128,38 @@ export function isAyahRef(surah: number, ayah: number): boolean {
  */
 export class QuranLocalStore {
   private readonly connection: LocalStoreLease;
+  private readonly records: RecordAccess;
   private readonly outbox: OutboxStore;
-  private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    connection: LocalStoreLease,
+    scope: ProductStoreScope,
     readonly identity: LocalIdentity
   ) {
-    this.connection = connection;
-    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
+    this.connection = scope.connection;
+    this.records = scope.records;
+    this.outbox = scope.outbox;
   }
 
   subscribeWrites(listener: () => void): () => void {
-    this.writeListeners.add(listener);
-    return () => {
-      this.writeListeners.delete(listener);
-    };
-  }
-
-  private notifyWrites(): void {
-    for (const listener of this.writeListeners) listener();
+    return this.records.subscribeWrites(listener);
   }
 
   static async open(
     identity: LocalIdentity = GUEST_IDENTITY,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<QuranLocalStore> {
-    const connection = await acquireLocalStore(
-      localStoreName(PRODUCT, identity),
-      quranStoreMigrations,
-      factory
-    );
-    return new QuranLocalStore(connection, identity);
+    const scope = await openProductStore({
+      product: PRODUCT,
+      identity,
+      migrations: quranStoreMigrations,
+      stores: {
+        [READING_POSITION_STORE]: 'key',
+        [BOOKMARKS_STORE]: 'clientId',
+      },
+      stampClientId: true,
+      factory,
+    });
+    return new QuranLocalStore(scope, identity);
   }
 
   /**
@@ -174,67 +171,6 @@ export class QuranLocalStore {
     this.connection.close();
   }
 
-  /**
-   * Commits record writes and, when present, the Outbox intent atomically.
-   *
-   * Returns false when the store is closing and nothing was written (#204), so a
-   * caller that must not run a follow-up it cannot undo can check first.
-   */
-  private async commit(writes: readonly StoreWrite[], intent?: OutboxIntent): Promise<boolean> {
-    if (writes.length === 0 && !intent) return true;
-
-    const stores = [...new Set(writes.map((write) => write.store))];
-    if (intent) stores.push(OUTBOX_STORE);
-
-    const committed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const write of writes) {
-        if ('put' in write) transaction.objectStore(write.store).put(write.put);
-        else transaction.objectStore(write.store).delete(write.delete);
-      }
-      if (intent) {
-        transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (committed) this.notifyWrites();
-    return committed;
-  }
-
-  /**
-   * The queued intent for a write: one entry, with fresh `seq` and `id`.
-   *
-   * The payload's `clientId` is the entry's own id. The reader's rows have
-   * natural keys — there is no row id to carry — so what the server's `client_id`
-   * can usefully record is *which write* landed last; minting it here is also
-   * what keeps every replay of this intent carrying the id it was queued with.
-   */
-  private entry(intent: OutboxIntent): NewOutboxEntry {
-    const id = uuidv7();
-    return {
-      id,
-      entity: intent.entity,
-      type: intent.type,
-      payload: { ...(intent.payload as Record<string, unknown>), clientId: id },
-      createdAt: Date.now(),
-      attempts: 0,
-      status: 'pending',
-      lastError: null,
-      nextAttemptAt: 0,
-    };
-  }
-
-  private async getOne<T>(store: string, key: IDBValidKey): Promise<T | null> {
-    return this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      const value = await promisifyRequest(
-        transaction.objectStore(store).get(key) as IDBRequest<T | undefined>
-      );
-      return value ?? null;
-    }, null);
-  }
-
   // --- Reading position ------------------------------------------------------
 
   /** Where the reader stopped, or null if they have not started. */
@@ -244,15 +180,7 @@ export class QuranLocalStore {
   }
 
   private readPosition(): Promise<ReadingPositionRow | null> {
-    return this.connection.run(async (db) => {
-      const transaction = db.transaction(READING_POSITION_STORE, 'readonly');
-      const value = await promisifyRequest(
-        transaction.objectStore(READING_POSITION_STORE).get(POSITION_KEY) as IDBRequest<
-          ReadingPositionRow | undefined
-        >
-      );
-      return value ?? null;
-    }, null);
+    return this.records.getOne<ReadingPositionRow>(READING_POSITION_STORE, POSITION_KEY);
   }
 
   /**
@@ -284,7 +212,7 @@ export class QuranLocalStore {
         if (entry.type === POSITION_INTENT) outbox.delete(entry.seq);
       }
       outbox.put(
-        this.entry({
+        this.records.entry({
           entity: 'position',
           type: POSITION_INTENT,
           payload: { surah, ayah, updatedAt },
@@ -294,7 +222,7 @@ export class QuranLocalStore {
       await transactionDone(transaction);
       return true;
     }, false);
-    if (committed) this.notifyWrites();
+    if (committed) this.records.notifyWrites();
   }
 
   // --- Bookmarks -------------------------------------------------------------
@@ -307,12 +235,7 @@ export class QuranLocalStore {
 
   /** Every mark, tombstones included, as a merge and a claim need to see them. */
   private readBookmarks(): Promise<Bookmark[]> {
-    return this.connection.run(async (db) => {
-      const transaction = db.transaction(BOOKMARKS_STORE, 'readonly');
-      return promisifyRequest(
-        transaction.objectStore(BOOKMARKS_STORE).getAll() as IDBRequest<Bookmark[]>
-      );
-    }, []);
+    return this.records.readAll<Bookmark>(BOOKMARKS_STORE);
   }
 
   /**
@@ -338,7 +261,10 @@ export class QuranLocalStore {
         deletedAt: existing.deletedAt ? null : now,
         updatedAt: now,
       };
-      await this.commit([{ store: BOOKMARKS_STORE, put: row }], this.bookmarkIntent(row));
+      await this.records.commitChanges(
+        [{ store: BOOKMARKS_STORE, put: row }],
+        this.bookmarkIntent(row)
+      );
       return;
     }
 
@@ -355,17 +281,23 @@ export class QuranLocalStore {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.commit([{ store: BOOKMARKS_STORE, put: bookmark }], this.bookmarkIntent(bookmark));
+    await this.records.commitChanges(
+      [{ store: BOOKMARKS_STORE, put: bookmark }],
+      this.bookmarkIntent(bookmark)
+    );
   }
 
   /** Removes a mark by its id, as the bookmarks list does. */
   async removeBookmark(clientId: string): Promise<void> {
-    const existing = await this.getOne<Bookmark>(BOOKMARKS_STORE, clientId);
+    const existing = await this.records.getOne<Bookmark>(BOOKMARKS_STORE, clientId);
     if (!existing || existing.deletedAt) return;
 
     const now = new Date().toISOString();
     const row: Bookmark = { ...existing, deletedAt: now, updatedAt: now };
-    await this.commit([{ store: BOOKMARKS_STORE, put: row }], this.bookmarkIntent(row));
+    await this.records.commitChanges(
+      [{ store: BOOKMARKS_STORE, put: row }],
+      this.bookmarkIntent(row)
+    );
   }
 
   /** The row for an ayah, tombstoned or not, so a toggle can reuse it. */
@@ -455,7 +387,7 @@ export class QuranLocalStore {
       writes.push({ store: BOOKMARKS_STORE, put: server });
     }
 
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) await this.records.commitChanges(writes);
     return skipped;
   }
 
@@ -501,7 +433,7 @@ export class QuranLocalStore {
       writes.push({ store: OUTBOX_STORE, put: intent });
     }
 
-    if (writes.length > 0 && !(await this.commit(writes))) return;
+    if (writes.length > 0 && !(await this.records.commitChanges(writes))) return;
     await guest.clear();
   }
 
@@ -529,26 +461,20 @@ export class QuranLocalStore {
 
   /** The `server_updated_at` cursor the last sync advanced to, or null. */
   async getSyncCursor(): Promise<string | null> {
-    const row = await this.getOne<{ key: string; value: string }>(META_STORE, SYNC_CURSOR_KEY);
+    const row = await this.records.getOne<{ key: string; value: string }>(
+      META_STORE,
+      SYNC_CURSOR_KEY
+    );
     return row?.value ?? null;
   }
 
   async setSyncCursor(value: string): Promise<void> {
-    await this.commit([{ store: META_STORE, put: { key: SYNC_CURSOR_KEY, value } }]);
+    await this.records.commitChanges([{ store: META_STORE, put: { key: SYNC_CURSOR_KEY, value } }]);
   }
 
   /** Empties every owned store — what a claim does to the guest it took them from. */
   async clear(): Promise<void> {
-    const stores = [READING_POSITION_STORE, BOOKMARKS_STORE, OUTBOX_STORE, META_STORE];
-    const cleared = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const store of stores) {
-        transaction.objectStore(store).clear();
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (cleared) this.notifyWrites();
+    await this.records.clear([READING_POSITION_STORE, BOOKMARKS_STORE, OUTBOX_STORE, META_STORE]);
   }
 }
 

@@ -1,13 +1,12 @@
 import { normalizeNoteBody, type Note, type NotesSyncSnapshot } from '@/shared/contracts/notes';
-import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalStoreMigration } from '@/frontend/shared/local-store/idb';
+import type { LocalStoreLease } from '@/frontend/shared/local-store/connection';
 import {
-  promisifyRequest,
-  transactionDone,
-  type LocalStoreMigration,
-} from '@/frontend/shared/local-store/idb';
-import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
-import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
-import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+  openProductStore,
+  type ProductStoreScope,
+} from '@/frontend/shared/local-store/open-product-store';
+import type { RecordAccess } from '@/frontend/shared/local-store/records';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import { assertOwnedItemSlot } from '@/frontend/shared/plans/plan-limits';
@@ -22,13 +21,6 @@ const NOTES_STORE = 'notes';
 const META_STORE = 'meta';
 
 const SYNC_CURSOR_KEY = 'syncCursor';
-
-/** A durable write-intent paired with the mutation that produced it. */
-interface OutboxIntent {
-  entity: string;
-  type: string;
-  payload: unknown;
-}
 
 export interface NoteWriteInput {
   body?: string;
@@ -67,41 +59,34 @@ export const notesStoreMigrations: readonly LocalStoreMigration[] = [
  */
 export class NotesLocalStore {
   private readonly connection: LocalStoreLease;
+  private readonly records: RecordAccess;
   private readonly outbox: OutboxStore;
-  private readonly mirror: LocalStoreMirror;
-  private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    connection: LocalStoreLease,
+    scope: ProductStoreScope,
     readonly identity: LocalIdentity
   ) {
-    this.connection = connection;
-    this.mirror = connection.mirror;
-    this.mirror.declare({ [NOTES_STORE]: 'clientId' });
-    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
+    this.connection = scope.connection;
+    this.records = scope.records;
+    this.outbox = scope.outbox;
   }
 
   subscribeWrites(listener: () => void): () => void {
-    this.writeListeners.add(listener);
-    return () => {
-      this.writeListeners.delete(listener);
-    };
-  }
-
-  private notifyWrites(): void {
-    for (const listener of this.writeListeners) listener();
+    return this.records.subscribeWrites(listener);
   }
 
   static async open(
     identity: LocalIdentity,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<NotesLocalStore> {
-    const connection = await acquireLocalStore(
-      localStoreName(PRODUCT, identity),
-      notesStoreMigrations,
-      factory
-    );
-    return new NotesLocalStore(connection, identity);
+    const scope = await openProductStore({
+      product: PRODUCT,
+      identity,
+      migrations: notesStoreMigrations,
+      stores: { [NOTES_STORE]: 'clientId' },
+      factory,
+    });
+    return new NotesLocalStore(scope, identity);
   }
 
   /**
@@ -113,89 +98,18 @@ export class NotesLocalStore {
     this.connection.close();
   }
 
-  private async readAll<T>(store: string): Promise<T[]> {
-    if (this.connection.isClosed) return [];
-
-    // A copy: the mirror's array belongs to every holder, and a caller that
-    // sorts its list in place must not reorder the next one.
-    const mirrored = this.mirror.read<T>(store);
-    if (mirrored) return [...mirrored];
-
-    const rows = await this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
-    }, []);
-    if (!this.connection.isClosed) this.mirror.fill(store, rows);
-    return rows;
-  }
-
-  private async getOne<T>(store: string, key: IDBValidKey): Promise<T | null> {
-    return this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      const value = await promisifyRequest(
-        transaction.objectStore(store).get(key) as IDBRequest<T | undefined>
-      );
-      return value ?? null;
-    }, null);
-  }
-
-  /**
-   * Commits record writes and, when present, the Outbox intent atomically.
-   * Returns false when the store is closing and nothing was written (#204).
-   */
-  private async commit(
-    writes: ReadonlyArray<[store: string, value: unknown]>,
-    intent?: OutboxIntent
-  ): Promise<boolean> {
-    if (writes.length === 0 && !intent) return true;
-
-    const stores = writes.map(([store]) => store);
-    if (intent) stores.push(OUTBOX_STORE);
-
-    const committed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const [store, value] of writes) {
-        transaction.objectStore(store).put(value);
-      }
-      if (intent) {
-        transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (committed) {
-      for (const [store, value] of writes) this.mirror.put(store, value);
-      this.notifyWrites();
-    }
-    return committed;
-  }
-
-  private entry(intent: OutboxIntent): NewOutboxEntry {
-    return {
-      id: uuidv7(),
-      entity: intent.entity,
-      type: intent.type,
-      payload: intent.payload,
-      createdAt: Date.now(),
-      attempts: 0,
-      status: 'pending',
-      lastError: null,
-      nextAttemptAt: 0,
-    };
-  }
-
   // --- Reads ----------------------------------------------------------------
 
   /** The live notes, newest edit first — the list's order. */
   async getNotes(): Promise<Note[]> {
-    const rows = await this.readAll<Note>(NOTES_STORE);
+    const rows = await this.records.readAll<Note>(NOTES_STORE);
     return rows
       .filter((row) => !row.deletedAt)
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
 
   async getNote(id: string): Promise<Note | null> {
-    return this.getOne<Note>(NOTES_STORE, id);
+    return this.records.getOne<Note>(NOTES_STORE, id);
   }
 
   // --- Writes ---------------------------------------------------------------
@@ -214,7 +128,7 @@ export class NotesLocalStore {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.commit([[NOTES_STORE, record]], {
+    await this.records.commit([[NOTES_STORE, record]], {
       entity: 'note',
       type: 'note.create',
       payload: {
@@ -239,7 +153,7 @@ export class NotesLocalStore {
       // An edit of a tombstoned row (the undo path) also clears the tombstone.
       deletedAt: null,
     };
-    await this.commit([[NOTES_STORE, updated]], {
+    await this.records.commit([[NOTES_STORE, updated]], {
       entity: 'note',
       type: 'note.update',
       payload: {
@@ -257,7 +171,7 @@ export class NotesLocalStore {
     if (!existing) return false;
 
     const now = new Date().toISOString();
-    await this.commit([[NOTES_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
+    await this.records.commit([[NOTES_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
       entity: 'note',
       type: 'note.delete',
       payload: { clientId: existing.clientId, updatedAt: now },
@@ -275,7 +189,7 @@ export class NotesLocalStore {
   // --- Bulk / lifecycle -----------------------------------------------------
 
   async getLocalData(): Promise<Note[]> {
-    return this.readAll<Note>(NOTES_STORE);
+    return this.records.readAll<Note>(NOTES_STORE);
   }
 
   // --- Server merge & guest claim -------------------------------------------
@@ -309,7 +223,7 @@ export class NotesLocalStore {
       }
     }
 
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) await this.records.commit(writes);
     return skipped;
   }
 
@@ -344,7 +258,7 @@ export class NotesLocalStore {
     }
 
     if (writes.length > 0) {
-      const claimed = await this.commit(writes);
+      const claimed = await this.records.commit(writes);
       // Absorb the guest only once its rows are actually here: a commit that
       // no-ops because this store is closing (#204) must not wipe data it never
       // copied.
@@ -376,29 +290,20 @@ export class NotesLocalStore {
   // --- Sync cursor ----------------------------------------------------------
 
   async getSyncCursor(): Promise<string | null> {
-    const row = await this.getOne<{ key: string; value: string }>(META_STORE, SYNC_CURSOR_KEY);
+    const row = await this.records.getOne<{ key: string; value: string }>(
+      META_STORE,
+      SYNC_CURSOR_KEY
+    );
     return row?.value ?? null;
   }
 
   async setSyncCursor(value: string): Promise<void> {
-    await this.commit([[META_STORE, { key: SYNC_CURSOR_KEY, value }]]);
+    await this.records.commit([[META_STORE, { key: SYNC_CURSOR_KEY, value }]]);
   }
 
   /** Empties every owned store. */
   async clear(): Promise<void> {
-    const stores = [NOTES_STORE, OUTBOX_STORE, META_STORE];
-    const cleared = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const store of stores) {
-        transaction.objectStore(store).clear();
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (cleared) {
-      for (const store of stores) this.mirror.drop(store);
-      this.notifyWrites();
-    }
+    await this.records.clear([NOTES_STORE, OUTBOX_STORE, META_STORE]);
   }
 }
 

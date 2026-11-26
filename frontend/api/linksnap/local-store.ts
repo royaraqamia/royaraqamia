@@ -1,12 +1,11 @@
-import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalStoreMigration } from '@/frontend/shared/local-store/idb';
+import type { LocalStoreLease } from '@/frontend/shared/local-store/connection';
 import {
-  promisifyRequest,
-  transactionDone,
-  type LocalStoreMigration,
-} from '@/frontend/shared/local-store/idb';
-import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
-import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
-import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+  openProductStore,
+  type ProductStoreScope,
+} from '@/frontend/shared/local-store/open-product-store';
+import type { RecordAccess } from '@/frontend/shared/local-store/records';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import {
@@ -20,13 +19,6 @@ const LINKS_STORE = 'links';
 const CODE_CHARS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const CODE_LENGTH = 6;
 const MAX_CODE_ATTEMPTS = 8;
-
-/** A durable write-intent paired with the mutation that produced it. */
-interface OutboxIntent {
-  entity: string;
-  type: string;
-  payload: unknown;
-}
 
 /**
  * The local shape of a LinkSnap short link. Keyed by the client-minted
@@ -116,41 +108,34 @@ export function linkStatus(
  */
 export class LinksnapLocalStore {
   private readonly connection: LocalStoreLease;
+  private readonly records: RecordAccess;
   private readonly outbox: OutboxStore;
-  private readonly mirror: LocalStoreMirror;
-  private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    connection: LocalStoreLease,
+    scope: ProductStoreScope,
     readonly identity: LocalIdentity
   ) {
-    this.connection = connection;
-    this.mirror = connection.mirror;
-    this.mirror.declare({ [LINKS_STORE]: 'clientId' });
-    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
+    this.connection = scope.connection;
+    this.records = scope.records;
+    this.outbox = scope.outbox;
   }
 
   subscribeWrites(listener: () => void): () => void {
-    this.writeListeners.add(listener);
-    return () => {
-      this.writeListeners.delete(listener);
-    };
-  }
-
-  private notifyWrites(): void {
-    for (const listener of this.writeListeners) listener();
+    return this.records.subscribeWrites(listener);
   }
 
   static async open(
     identity: LocalIdentity,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<LinksnapLocalStore> {
-    const connection = await acquireLocalStore(
-      localStoreName(PRODUCT, identity),
-      linksnapStoreMigrations,
-      factory
-    );
-    return new LinksnapLocalStore(connection, identity);
+    const scope = await openProductStore({
+      product: PRODUCT,
+      identity,
+      migrations: linksnapStoreMigrations,
+      stores: { [LINKS_STORE]: 'clientId' },
+      factory,
+    });
+    return new LinksnapLocalStore(scope, identity);
   }
 
   /**
@@ -162,100 +147,29 @@ export class LinksnapLocalStore {
     this.connection.close();
   }
 
-  private async readAll<T>(store: string): Promise<T[]> {
-    if (this.connection.isClosed) return [];
-
-    // A copy: the mirror's array belongs to every holder, and a caller that
-    // sorts its list in place must not reorder the next one.
-    const mirrored = this.mirror.read<T>(store);
-    if (mirrored) return [...mirrored];
-
-    const rows = await this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
-    }, []);
-    if (!this.connection.isClosed) this.mirror.fill(store, rows);
-    return rows;
-  }
-
-  private async getOne<T>(store: string, key: IDBValidKey): Promise<T | null> {
-    return this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      const value = await promisifyRequest(
-        transaction.objectStore(store).get(key) as IDBRequest<T | undefined>
-      );
-      return value ?? null;
-    }, null);
-  }
-
-  /**
-   * Commits record writes and, when present, the Outbox intent atomically.
-   *
-   * Returns false when the store is closing and nothing was written (#204), so a
-   * caller that must not run a follow-up it cannot undo can check first.
-   */
-  private async commit(
-    writes: ReadonlyArray<[store: string, value: unknown]>,
-    intent?: OutboxIntent
-  ): Promise<boolean> {
-    if (writes.length === 0 && !intent) return true;
-
-    const stores = writes.map(([store]) => store);
-    if (intent) stores.push(OUTBOX_STORE);
-
-    const committed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const [store, value] of writes) {
-        transaction.objectStore(store).put(value);
-      }
-      if (intent) {
-        transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (committed) {
-      for (const [store, value] of writes) this.mirror.put(store, value);
-      this.notifyWrites();
-    }
-    return committed;
-  }
-
-  private entry(intent: OutboxIntent): NewOutboxEntry {
-    return {
-      id: uuidv7(),
-      entity: intent.entity,
-      type: intent.type,
-      payload: intent.payload,
-      createdAt: Date.now(),
-      attempts: 0,
-      status: 'pending',
-      lastError: null,
-      nextAttemptAt: 0,
-    };
-  }
-
   // --- Links ----------------------------------------------------------------
 
   async getLinks(): Promise<LinkRecord[]> {
-    const rows = await this.readAll<LinkRecord>(LINKS_STORE);
+    const rows = await this.records.readAll<LinkRecord>(LINKS_STORE);
     return rows
       .filter((row) => !row.deletedAt)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
   async getAllLinks(): Promise<LinkRecord[]> {
-    return this.readAll<LinkRecord>(LINKS_STORE);
+    return this.records.readAll<LinkRecord>(LINKS_STORE);
   }
 
   private async ensureUniqueCode(candidate: string | undefined): Promise<string> {
     if (candidate) {
-      const exists = (await this.readAll<LinkRecord>(LINKS_STORE)).some(
+      const exists = (await this.records.readAll<LinkRecord>(LINKS_STORE)).some(
         (row) => row.code === candidate
       );
       if (!exists) return candidate;
     }
-    const used = new Set((await this.readAll<LinkRecord>(LINKS_STORE)).map((row) => row.code));
+    const used = new Set(
+      (await this.records.readAll<LinkRecord>(LINKS_STORE)).map((row) => row.code)
+    );
     for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt += 1) {
       const code = randomCode();
       if (!used.has(code)) return code;
@@ -280,7 +194,7 @@ export class LinksnapLocalStore {
       passwordProtected: Boolean(input.password),
       deletedAt: null,
     };
-    await this.commit([[LINKS_STORE, record]], {
+    await this.records.commit([[LINKS_STORE, record]], {
       entity: 'link',
       type: 'link.create',
       payload: {
@@ -296,7 +210,7 @@ export class LinksnapLocalStore {
   }
 
   async updateLink(clientId: string, input: LinkUpdateInput): Promise<LinkRecord> {
-    const existing = await this.getOne<LinkRecord>(LINKS_STORE, clientId);
+    const existing = await this.records.getOne<LinkRecord>(LINKS_STORE, clientId);
     if (!existing) throw new Error(`Link with clientId ${clientId} not found`);
     const now = new Date().toISOString();
     const nextCode = input.newCode ? sanitizeCode(input.newCode) : existing.code;
@@ -311,7 +225,7 @@ export class LinksnapLocalStore {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.commit([[LINKS_STORE, updated]], {
+    await this.records.commit([[LINKS_STORE, updated]], {
       entity: 'link',
       type: 'link.update',
       // `deletedAt: null` makes the replay a resurrect, so an edit of a
@@ -331,10 +245,10 @@ export class LinksnapLocalStore {
   }
 
   async deleteLink(clientId: string): Promise<boolean> {
-    const existing = await this.getOne<LinkRecord>(LINKS_STORE, clientId);
+    const existing = await this.records.getOne<LinkRecord>(LINKS_STORE, clientId);
     if (!existing) return false;
     const now = new Date().toISOString();
-    await this.commit([[LINKS_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
+    await this.records.commit([[LINKS_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
       entity: 'link',
       type: 'link.delete',
       payload: { clientId, code: existing.code, updatedAt: now },
@@ -344,11 +258,11 @@ export class LinksnapLocalStore {
 
   /** Undo of a delete: clears the tombstone locally and on the server (resurrect). */
   async restoreLink(clientId: string): Promise<LinkRecord> {
-    const existing = await this.getOne<LinkRecord>(LINKS_STORE, clientId);
+    const existing = await this.records.getOne<LinkRecord>(LINKS_STORE, clientId);
     if (!existing) throw new Error(`Link with clientId ${clientId} not found`);
     const now = new Date().toISOString();
     const restored: LinkRecord = { ...existing, deletedAt: null, updatedAt: now };
-    await this.commit([[LINKS_STORE, restored]], {
+    await this.records.commit([[LINKS_STORE, restored]], {
       entity: 'link',
       type: 'link.update',
       // `originalUrl` is always sent so the replay is a genuine change the
@@ -380,7 +294,7 @@ export class LinksnapLocalStore {
         deletedAt: row.deletedAt ?? null,
       },
     ]);
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) await this.records.commit(writes);
   }
 
   // --- Server merge & guest claim -------------------------------------------
@@ -408,7 +322,7 @@ export class LinksnapLocalStore {
         ]);
       }
     }
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) await this.records.commit(writes);
   }
 
   /**
@@ -440,7 +354,7 @@ export class LinksnapLocalStore {
     }
 
     if (writes.length > 0) {
-      const claimed = await this.commit(writes);
+      const claimed = await this.records.commit(writes);
       // Absorb the guest only once its rows are actually here: a commit that
       // no-ops because this store is closing (#204) must not wipe data it never
       // copied.
@@ -471,23 +385,12 @@ export class LinksnapLocalStore {
 
   /** Empties every owned store. */
   async clear(): Promise<void> {
-    const cleared = await this.connection.run(async (db) => {
-      const transaction = db.transaction([LINKS_STORE, OUTBOX_STORE], 'readwrite');
-      for (const store of [LINKS_STORE, OUTBOX_STORE]) {
-        transaction.objectStore(store).clear();
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (cleared) {
-      for (const store of [LINKS_STORE, OUTBOX_STORE]) this.mirror.drop(store);
-      this.notifyWrites();
-    }
+    await this.records.clear([LINKS_STORE, OUTBOX_STORE]);
   }
 
   /** True when the store has received no writes yet (safe to seed). */
   async isEmpty(): Promise<boolean> {
-    const links = await this.readAll<LinkRecord>(LINKS_STORE);
+    const links = await this.records.readAll<LinkRecord>(LINKS_STORE);
     return links.length === 0;
   }
 }

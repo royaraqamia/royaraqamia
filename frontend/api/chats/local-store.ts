@@ -5,21 +5,24 @@ import type {
   ChatMessage,
   ChatThread,
 } from '@/shared/contracts/chat';
-import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
 import {
   promisifyRequest,
   transactionDone,
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
-import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
-import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
-import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
-import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
+import type { LocalStoreLease } from '@/frontend/shared/local-store/connection';
 import {
-  OUTBOX_STORE,
-  type NewOutboxEntry,
-  type OutboxEntry,
-} from '@/frontend/shared/local-store/outbox';
+  openProductStore,
+  type ProductStoreScope,
+} from '@/frontend/shared/local-store/open-product-store';
+import type {
+  RecordAccess,
+  RecordIntent,
+  RecordWrites,
+} from '@/frontend/shared/local-store/records';
+import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
+import { OUTBOX_STORE, type OutboxEntry } from '@/frontend/shared/local-store/outbox';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 
 const PRODUCT = 'chats';
@@ -206,41 +209,34 @@ export function localAttachmentMediaKey(attachmentId: string): string | null {
  */
 export class ChatsLocalStore {
   private readonly connection: LocalStoreLease;
+  private readonly records: RecordAccess;
   private readonly outbox: OutboxStore;
-  private readonly mirror: LocalStoreMirror;
-  private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    connection: LocalStoreLease,
+    scope: ProductStoreScope,
     readonly identity: LocalIdentity
   ) {
-    this.connection = connection;
-    this.mirror = connection.mirror;
-    this.mirror.declare({ [THREADS_STORE]: 'id' });
-    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
+    this.connection = scope.connection;
+    this.records = scope.records;
+    this.outbox = scope.outbox;
   }
 
   subscribeWrites(listener: () => void): () => void {
-    this.writeListeners.add(listener);
-    return () => {
-      this.writeListeners.delete(listener);
-    };
-  }
-
-  private notifyWrites(): void {
-    for (const listener of this.writeListeners) listener();
+    return this.records.subscribeWrites(listener);
   }
 
   static async open(
     identity: LocalIdentity,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<ChatsLocalStore> {
-    const connection = await acquireLocalStore(
-      localStoreName(PRODUCT, identity),
-      chatsStoreMigrations,
-      factory
-    );
-    return new ChatsLocalStore(connection, identity);
+    const scope = await openProductStore({
+      product: PRODUCT,
+      identity,
+      migrations: chatsStoreMigrations,
+      stores: { [THREADS_STORE]: 'id' },
+      factory,
+    });
+    return new ChatsLocalStore(scope, identity);
   }
 
   /** Closes this holder's lease; the shared connection stays open (#494). */
@@ -248,103 +244,25 @@ export class ChatsLocalStore {
     this.connection.close();
   }
 
-  private async readAll<T>(store: string): Promise<T[]> {
-    if (this.connection.isClosed) return [];
-
-    // A copy: the mirror's array belongs to every holder, and a caller that
-    // sorts its list in place must not reorder the next one.
-    const mirrored = this.mirror.read<T>(store);
-    if (mirrored) return [...mirrored];
-
-    const rows = await this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
-    }, []);
-    if (!this.connection.isClosed) this.mirror.fill(store, rows);
-    return rows;
-  }
-
-  private async commit(writes: ReadonlyArray<[store: string, value: unknown]>): Promise<boolean> {
-    if (writes.length === 0) return true;
-
-    const stores = [...new Set(writes.map(([store]) => store))];
-    const committed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const [store, value] of writes) transaction.objectStore(store).put(value);
-      await transactionDone(transaction);
-      return true;
-    }, false);
-
-    if (committed) {
-      for (const [store, value] of writes) this.mirror.put(store, value);
-      this.notifyWrites();
-    }
-    return committed;
+  /** The store's unchanged call shape: a write with no intent (#1033). */
+  private commit(writes: RecordWrites): Promise<boolean> {
+    return this.records.commit(writes);
   }
 
   /**
-   * Commits a write and the intent that replays it atomically (#1033): a crash
-   * between the two would either lose the line or send it twice.
+   * The store's unchanged call shape: a write and the intent that replays it,
+   * atomically (#1033) — a crash between the two would either lose the line or
+   * send it twice.
    */
-  private async commitWithIntent(
-    writes: ReadonlyArray<[store: string, value: unknown]>,
-    intent: { entity: string; type: string; payload: unknown }
-  ): Promise<boolean> {
-    const stores = [...new Set([...writes.map(([store]) => store), OUTBOX_STORE])];
-
-    const committed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const [store, value] of writes) transaction.objectStore(store).put(value);
-      transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
-      await transactionDone(transaction);
-      return true;
-    }, false);
-
-    if (committed) {
-      for (const [store, value] of writes) this.mirror.put(store, value);
-      this.notifyWrites();
-    }
-    return committed;
-  }
-
-  private entry(intent: { entity: string; type: string; payload: unknown }): NewOutboxEntry {
-    return {
-      id: uuidv7(),
-      entity: intent.entity,
-      type: intent.type,
-      payload: intent.payload,
-      createdAt: Date.now(),
-      attempts: 0,
-      status: 'pending',
-      lastError: null,
-      nextAttemptAt: 0,
-    };
-  }
-
-  private async remove(store: string, keys: readonly IDBValidKey[]): Promise<void> {
-    if (keys.length === 0) return;
-
-    const removed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readwrite');
-      for (const key of keys) transaction.objectStore(store).delete(key);
-      await transactionDone(transaction);
-      return true;
-    }, false);
-
-    if (removed) {
-      // The mirror caches whole stores and has no per-row delete: dropping it
-      // costs the next read a re-hydration, which is cheaper than serving a
-      // list the sweep already removed a row from.
-      this.mirror.drop(store);
-      this.notifyWrites();
-    }
+  private commitWithIntent(writes: RecordWrites, intent: RecordIntent): Promise<boolean> {
+    return this.records.commit(writes, intent);
   }
 
   // --- Reads ----------------------------------------------------------------
 
   /** The list's rows, newest activity first. */
   async getThreads(): Promise<StoredThread[]> {
-    const rows = await this.readAll<StoredThread>(THREADS_STORE);
+    const rows = await this.records.readAll<StoredThread>(THREADS_STORE);
     return rows.sort(byActivityDesc).slice(0, CHAT_THREAD_WINDOW);
   }
 
@@ -392,10 +310,10 @@ export class ChatsLocalStore {
         .slice(0, CHAT_THREAD_WINDOW)
         .map((thread) => thread.id)
     );
-    const all = await this.readAll<StoredThread>(THREADS_STORE);
+    const all = await this.records.readAll<StoredThread>(THREADS_STORE);
     const dropped = all.filter((thread) => !kept.has(thread.id)).map((thread) => thread.id);
     if (dropped.length > 0) {
-      await this.remove(THREADS_STORE, dropped);
+      await this.records.delete(THREADS_STORE, dropped);
       for (const id of dropped) await this.removeConversationMessages(id);
     }
   }
@@ -425,7 +343,7 @@ export class ChatsLocalStore {
     const window = await this.getMessages(conversationId, Number.POSITIVE_INFINITY);
     const excess = window.slice(0, Math.max(0, window.length - CHAT_MESSAGE_WINDOW));
     if (excess.length > 0)
-      await this.remove(
+      await this.records.delete(
         MESSAGES_STORE,
         excess.map((row) => row.id)
       );
@@ -593,7 +511,7 @@ export class ChatsLocalStore {
     const owned = rows
       .filter((row) => row.clientId === clientId && row.kind === 'outbox')
       .map((row) => row.key);
-    await this.remove(MEDIA_STORE, owned);
+    await this.records.delete(MEDIA_STORE, owned);
   }
 
   /**
@@ -619,7 +537,7 @@ export class ChatsLocalStore {
       dropped.push(candidate.key);
       usage -= candidate.bytes;
     }
-    if (dropped.length > 0) await this.remove(MEDIA_STORE, dropped);
+    if (dropped.length > 0) await this.records.delete(MEDIA_STORE, dropped);
     return dropped.length;
   }
 
@@ -699,7 +617,7 @@ export class ChatsLocalStore {
         (row) => row.id !== message.id && row.clientId === message.clientId
       );
       if (shadows.length > 0)
-        await this.remove(
+        await this.records.delete(
           MESSAGES_STORE,
           shadows.map((row) => row.id)
         );
@@ -759,7 +677,7 @@ export class ChatsLocalStore {
     }, []);
 
     const keys = rows.filter((key) => !kept.has(String(key)));
-    if (keys.length > 0) await this.remove(MESSAGES_STORE, keys);
+    if (keys.length > 0) await this.records.delete(MESSAGES_STORE, keys);
   }
 
   /**
@@ -793,13 +711,13 @@ export class ChatsLocalStore {
       return keys;
     }, []);
 
-    const threads = await this.readAll<StoredThread>(THREADS_STORE);
+    const threads = await this.records.readAll<StoredThread>(THREADS_STORE);
     const stale = threads
       .filter((thread) => activityOf(thread) < cutoff)
       .map((thread) => thread.id);
     if (stale.length > 0) {
-      await this.remove(THREADS_STORE, stale);
-      await this.remove(HEADERS_STORE, stale);
+      await this.records.delete(THREADS_STORE, stale);
+      await this.records.delete(HEADERS_STORE, stale);
       for (const id of stale) await this.removeConversationMessages(id);
     }
 
@@ -811,31 +729,21 @@ export class ChatsLocalStore {
     const staleMedia = media
       .filter((row) => row.storedAt < now - CHAT_RETENTION_MS && !pending.has(row.key))
       .map((row) => row.key);
-    if (staleMedia.length > 0) await this.remove(MEDIA_STORE, staleMedia);
+    if (staleMedia.length > 0) await this.records.delete(MEDIA_STORE, staleMedia);
     await this.enforceMediaBudget();
 
-    if (expired.length > 0) this.notifyWrites();
+    if (expired.length > 0) this.records.notifyWrites();
   }
 
   /** Empties every owned store — the sign-out purge (#1033). */
   async clear(): Promise<void> {
-    const stores = [
+    await this.records.clear([
       THREADS_STORE,
       HEADERS_STORE,
       MESSAGES_STORE,
       MEDIA_STORE,
       OUTBOX_STORE,
       META_STORE,
-    ];
-    const cleared = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const store of stores) transaction.objectStore(store).clear();
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (cleared) {
-      for (const store of stores) this.mirror.drop(store);
-      this.notifyWrites();
-    }
+    ]);
   }
 }

@@ -1,13 +1,12 @@
 import type { Post, PostStatus } from '@/shared/contracts/blogpress';
-import { localStoreName, type LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalIdentity } from '@/frontend/shared/local-store/identity';
+import type { LocalStoreMigration } from '@/frontend/shared/local-store/idb';
+import type { LocalStoreLease } from '@/frontend/shared/local-store/connection';
 import {
-  promisifyRequest,
-  transactionDone,
-  type LocalStoreMigration,
-} from '@/frontend/shared/local-store/idb';
-import { acquireLocalStore, type LocalStoreLease } from '@/frontend/shared/local-store/connection';
-import type { LocalStoreMirror } from '@/frontend/shared/local-store/mirror';
-import { createOutboxAccess } from '@/frontend/shared/local-store/outbox-access';
+  openProductStore,
+  type ProductStoreScope,
+} from '@/frontend/shared/local-store/open-product-store';
+import type { RecordAccess } from '@/frontend/shared/local-store/records';
 import type { OutboxStore } from '@/frontend/shared/local-store/sync-engine';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
 import {
@@ -19,13 +18,6 @@ import {
 const PRODUCT = 'blogpress';
 const DRAFTS_STORE = 'drafts';
 const MEDIA_STORE = 'media';
-
-/** A durable write-intent paired with the mutation that produced it. */
-interface OutboxIntent {
-  entity: string;
-  type: string;
-  payload: unknown;
-}
 
 /**
  * A draft attachment whose bytes live in the Local Store before they ever reach
@@ -138,44 +130,37 @@ export const blogpressStoreMigrations: readonly LocalStoreMigration[] = [
  */
 export class BlogpressLocalStore {
   private readonly connection: LocalStoreLease;
+  private readonly records: RecordAccess;
   private readonly outbox: OutboxStore;
-  private readonly mirror: LocalStoreMirror;
-  private readonly writeListeners = new Set<() => void>();
 
   private constructor(
-    connection: LocalStoreLease,
+    scope: ProductStoreScope,
     readonly identity: LocalIdentity
   ) {
-    this.connection = connection;
-    this.mirror = connection.mirror;
-    this.mirror.declare({
-      [DRAFTS_STORE]: 'id',
-      [MEDIA_STORE]: 'id',
-    });
-    this.outbox = createOutboxAccess(this.connection, () => this.notifyWrites());
+    this.connection = scope.connection;
+    this.records = scope.records;
+    this.outbox = scope.outbox;
   }
 
   subscribeWrites(listener: () => void): () => void {
-    this.writeListeners.add(listener);
-    return () => {
-      this.writeListeners.delete(listener);
-    };
-  }
-
-  private notifyWrites(): void {
-    for (const listener of this.writeListeners) listener();
+    return this.records.subscribeWrites(listener);
   }
 
   static async open(
     identity: LocalIdentity,
     factory: IDBFactory = globalThis.indexedDB
   ): Promise<BlogpressLocalStore> {
-    const connection = await acquireLocalStore(
-      localStoreName(PRODUCT, identity),
-      blogpressStoreMigrations,
-      factory
-    );
-    return new BlogpressLocalStore(connection, identity);
+    const scope = await openProductStore({
+      product: PRODUCT,
+      identity,
+      migrations: blogpressStoreMigrations,
+      stores: {
+        [DRAFTS_STORE]: 'id',
+        [MEDIA_STORE]: 'id',
+      },
+      factory,
+    });
+    return new BlogpressLocalStore(scope, identity);
   }
 
   /**
@@ -187,87 +172,14 @@ export class BlogpressLocalStore {
     this.connection.close();
   }
 
-  private async readAll<T>(store: string): Promise<T[]> {
-    if (this.connection.isClosed) return [];
-
-    // A copy: the mirror's array belongs to every holder, and a caller that
-    // sorts its list in place must not reorder the next one.
-    const mirrored = this.mirror.read<T>(store);
-    if (mirrored) return [...mirrored];
-
-    const rows = await this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      return promisifyRequest(transaction.objectStore(store).getAll() as IDBRequest<T[]>);
-    }, []);
-    if (!this.connection.isClosed) this.mirror.fill(store, rows);
-    return rows;
-  }
-
-  private async getOne<T>(store: string, key: IDBValidKey): Promise<T | null> {
-    return this.connection.run(async (db) => {
-      const transaction = db.transaction(store, 'readonly');
-      const value = await promisifyRequest(
-        transaction.objectStore(store).get(key) as IDBRequest<T | undefined>
-      );
-      return value ?? null;
-    }, null);
-  }
-
-  /**
-   * Commits record writes and, when present, the Outbox intent atomically.
-   *
-   * Returns false when the store is closing and nothing was written (#204), so a
-   * caller that must not run a follow-up it cannot undo can check first.
-   */
-  private async commit(
-    writes: ReadonlyArray<[store: string, value: unknown]>,
-    intent?: OutboxIntent
-  ): Promise<boolean> {
-    if (writes.length === 0 && !intent) return true;
-
-    const stores = writes.map(([store]) => store);
-    if (intent) stores.push(OUTBOX_STORE);
-
-    const committed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(stores, 'readwrite');
-      for (const [store, value] of writes) {
-        transaction.objectStore(store).put(value);
-      }
-      if (intent) {
-        transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (committed) {
-      for (const [store, value] of writes) this.mirror.put(store, value);
-      this.notifyWrites();
-    }
-    return committed;
-  }
-
-  private entry(intent: OutboxIntent): NewOutboxEntry {
-    return {
-      id: uuidv7(),
-      entity: intent.entity,
-      type: intent.type,
-      payload: intent.payload,
-      createdAt: Date.now(),
-      attempts: 0,
-      status: 'pending',
-      lastError: null,
-      nextAttemptAt: 0,
-    };
-  }
-
   // --- Drafts ---------------------------------------------------------------
 
   async getDraft(id: string): Promise<BlogpressDraft | null> {
-    return this.getOne<BlogpressDraft>(DRAFTS_STORE, id);
+    return this.records.getOne<BlogpressDraft>(DRAFTS_STORE, id);
   }
 
   async getDrafts(): Promise<BlogpressDraft[]> {
-    const rows = await this.readAll<BlogpressDraft>(DRAFTS_STORE);
+    const rows = await this.records.readAll<BlogpressDraft>(DRAFTS_STORE);
     return rows
       .filter((row) => !row.deletedAt)
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -301,7 +213,7 @@ export class BlogpressLocalStore {
       isNew: input.isNew ?? existing?.isNew ?? true,
       deletedAt: null,
     };
-    await this.commit([[DRAFTS_STORE, draft]], {
+    await this.records.commit([[DRAFTS_STORE, draft]], {
       entity: 'post',
       type: 'post.save',
       payload: {
@@ -325,21 +237,21 @@ export class BlogpressLocalStore {
   async confirmDraft(id: string): Promise<void> {
     const existing = await this.getDraft(id);
     if (!existing || !existing.isNew) return;
-    await this.commit([[DRAFTS_STORE, { ...existing, isNew: false }]]);
+    await this.records.commit([[DRAFTS_STORE, { ...existing, isNew: false }]]);
   }
 
   /** Applies a transport-resolved body (media URLs swapped in) without a new intent. */
   async applyResolvedContent(id: string, content: string): Promise<void> {
     const existing = await this.getDraft(id);
     if (!existing || existing.content === content) return;
-    await this.commit([[DRAFTS_STORE, { ...existing, content }]]);
+    await this.records.commit([[DRAFTS_STORE, { ...existing, content }]]);
   }
 
   async deleteDraft(id: string): Promise<boolean> {
     const existing = await this.getDraft(id);
     if (!existing) return false;
     const now = new Date().toISOString();
-    await this.commit([[DRAFTS_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
+    await this.records.commit([[DRAFTS_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
       entity: 'post',
       type: 'post.delete',
       payload: { id, updatedAt: now },
@@ -364,36 +276,27 @@ export class BlogpressLocalStore {
       status: 'pending',
       url: null,
     };
-    await this.commit([[MEDIA_STORE, record]]);
+    await this.records.commit([[MEDIA_STORE, record]]);
     return record;
   }
 
   async getMedia(id: string): Promise<BlogpressMedia | null> {
-    return this.getOne<BlogpressMedia>(MEDIA_STORE, id);
+    return this.records.getOne<BlogpressMedia>(MEDIA_STORE, id);
   }
 
   async getPendingMedia(): Promise<BlogpressMedia[]> {
-    const rows = await this.readAll<BlogpressMedia>(MEDIA_STORE);
+    const rows = await this.records.readAll<BlogpressMedia>(MEDIA_STORE);
     return rows.filter((row) => row.status === 'pending');
   }
 
   async markMediaUploaded(id: string, url: string): Promise<void> {
     const existing = await this.getMedia(id);
     if (!existing) return;
-    await this.commit([[MEDIA_STORE, { ...existing, status: 'uploaded', url }]]);
+    await this.records.commit([[MEDIA_STORE, { ...existing, status: 'uploaded', url }]]);
   }
 
   async removeMedia(id: string): Promise<void> {
-    const removed = await this.connection.run(async (db) => {
-      const transaction = db.transaction(MEDIA_STORE, 'readwrite');
-      transaction.objectStore(MEDIA_STORE).delete(id);
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (removed) {
-      this.mirror.drop(MEDIA_STORE);
-      this.notifyWrites();
-    }
+    await this.records.delete(MEDIA_STORE, [id]);
   }
 
   // --- Seed / merge / claim -------------------------------------------------
@@ -406,7 +309,7 @@ export class BlogpressLocalStore {
       DRAFTS_STORE,
       draftFromPost(post, now),
     ]);
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) await this.records.commit(writes);
   }
 
   /**
@@ -416,7 +319,7 @@ export class BlogpressLocalStore {
    */
   async mergeServerData(posts: readonly Post[]): Promise<void> {
     const [local, outbox] = await Promise.all([
-      this.readAll<BlogpressDraft>(DRAFTS_STORE),
+      this.records.readAll<BlogpressDraft>(DRAFTS_STORE),
       this.getOutbox(),
     ]);
     const pending = pendingDraftIds(outbox);
@@ -432,7 +335,7 @@ export class BlogpressLocalStore {
         writes.push([DRAFTS_STORE, { ...existing, ...merged, id: existing?.id ?? merged.id }]);
       }
     }
-    if (writes.length > 0) await this.commit(writes);
+    if (writes.length > 0) await this.records.commit(writes);
   }
 
   /**
@@ -442,10 +345,10 @@ export class BlogpressLocalStore {
    */
   async claimFrom(guest: BlogpressLocalStore): Promise<void> {
     const [guestDrafts, guestMedia, guestOutbox, local] = await Promise.all([
-      guest.readAll<BlogpressDraft>(DRAFTS_STORE),
-      guest.readAll<BlogpressMedia>(MEDIA_STORE),
+      guest.records.readAll<BlogpressDraft>(DRAFTS_STORE),
+      guest.records.readAll<BlogpressMedia>(MEDIA_STORE),
       guest.getOutbox(),
-      this.readAll<BlogpressDraft>(DRAFTS_STORE),
+      this.records.readAll<BlogpressDraft>(DRAFTS_STORE),
     ]);
 
     const localById = new Map(local.map((row) => [row.id, row]));
@@ -468,7 +371,7 @@ export class BlogpressLocalStore {
     }
 
     if (writes.length > 0) {
-      const claimed = await this.commit(writes);
+      const claimed = await this.records.commit(writes);
       // Absorb the guest only once its rows are actually here: a commit that
       // no-ops because this store is closing (#204) must not wipe data it never
       // copied.
@@ -499,23 +402,12 @@ export class BlogpressLocalStore {
 
   /** Empties every owned store (used after a successful claim). */
   async clear(): Promise<void> {
-    const cleared = await this.connection.run(async (db) => {
-      const transaction = db.transaction([DRAFTS_STORE, MEDIA_STORE, OUTBOX_STORE], 'readwrite');
-      for (const store of [DRAFTS_STORE, MEDIA_STORE, OUTBOX_STORE]) {
-        transaction.objectStore(store).clear();
-      }
-      await transactionDone(transaction);
-      return true;
-    }, false);
-    if (cleared) {
-      for (const store of [DRAFTS_STORE, MEDIA_STORE, OUTBOX_STORE]) this.mirror.drop(store);
-      this.notifyWrites();
-    }
+    await this.records.clear([DRAFTS_STORE, MEDIA_STORE, OUTBOX_STORE]);
   }
 
   /** True when the store has received no writes yet (safe to seed). */
   async isEmpty(): Promise<boolean> {
-    const drafts = await this.readAll<BlogpressDraft>(DRAFTS_STORE);
+    const drafts = await this.records.readAll<BlogpressDraft>(DRAFTS_STORE);
     return drafts.length === 0;
   }
 }
