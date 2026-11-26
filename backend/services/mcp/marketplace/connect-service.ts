@@ -4,6 +4,8 @@ import type {
   McpMarketplaceRepository,
 } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpRemoteClient } from '@/backend/clients/mcp-remote';
+import { appDisplayName } from '@/backend/services/mcp/marketplace/app-tools-service';
+import type { McpToolEmbeddingService } from '@/backend/services/mcp/marketplace/tool-embeddings-service';
 import {
   McpRemoteError,
   type McpAuthMode,
@@ -134,6 +136,11 @@ interface ConnectServiceDependencies {
   staticClients?: McpStaticClientMap;
   /** The name we register with a third party. */
   clientName?: string;
+  /**
+   * The router's vectors (#1917). Absent is a deployment with no embedding
+   * provider: the tools are stored and the router answers on vocabulary.
+   */
+  embeddings?: McpToolEmbeddingService;
   now?: () => Date;
   /** The cap, replaced in tests. */
   assertConnectionSlot?: (userId: string) => Promise<void>;
@@ -146,6 +153,7 @@ export function createMcpConnectService({
   remote,
   staticClients = new Map(),
   clientName = DEFAULT_CLIENT_NAME,
+  embeddings,
   now = () => new Date(),
   assertConnectionSlot,
 }: ConnectServiceDependencies): McpConnectService {
@@ -236,6 +244,15 @@ export function createMcpConnectService({
         last_synced_at: now().toISOString(),
         last_error: null,
       });
+      // After the connection is usable, never before: a provider that is slow or
+      // absent costs the router meaning, not the member's connection (#1917).
+      if (embeddings) {
+        await embeddings.embedConnection({
+          connectionId: connection.id,
+          appName: appDisplayName(connection),
+          tools,
+        });
+      }
     } catch (error) {
       logger.warn('MCP marketplace: tool list failed after connecting', {
         connectionId: connection.id,

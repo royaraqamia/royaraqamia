@@ -1,5 +1,6 @@
 import { getAdminSupabase } from '@/backend/config/supabase';
 import type { Database, Json } from '@/backend/models/database.types';
+import { APP_TOOL_EMBEDDING } from '@/backend/shared/domain/app-tool-embeddings';
 import type { McpAuthMode } from '@/backend/shared/domain/mcp-remote';
 import { catalogSearchPattern, decodeCatalogCursor, encodeCatalogCursor } from './catalog-cursor';
 
@@ -284,6 +285,29 @@ export interface McpToolInput {
   description: string | null;
   inputSchema: Record<string, unknown>;
   readOnly: boolean;
+}
+
+/** What the vector store already holds for one tool (#1917). */
+export interface McpToolEmbeddingHeld {
+  tool_name: string;
+  model: string;
+  source_hash: string;
+}
+
+/** One tool's vector to store, replacing whatever the same key held. */
+export interface McpToolEmbeddingWrite {
+  connectionId: string;
+  toolName: string;
+  model: string;
+  sourceHash: string;
+  embedding: number[];
+}
+
+/** One tool's closeness to a query, as the database ranked it. */
+export interface McpToolSimilarity {
+  connectionId: string;
+  toolName: string;
+  similarity: number;
 }
 
 export interface McpConnectAttemptRecord {
@@ -572,6 +596,25 @@ export interface McpMarketplaceRepository {
    */
   saveTools(connectionId: string, tools: McpToolInput[]): Promise<void>;
   listTools(connectionId: string): Promise<McpConnectionToolRecord[]>;
+
+  /**
+   * What the vector store already holds for a connection, by tool (#1917).
+   *
+   * The hash is what the connect flow and the backfill compare against to embed
+   * only the tools whose text moved.
+   */
+  listToolEmbeddingHashes(connectionId: string): Promise<McpToolEmbeddingHeld[]>;
+  /** Upserts one tool's vector by `(connection_id, tool_name)`. */
+  saveToolEmbeddings(rows: McpToolEmbeddingWrite[]): Promise<number>;
+  /** The member's nearest tools for one query vector, best first. */
+  nearestTools(
+    connectionIds: string[],
+    embedding: number[],
+    limit: number
+  ): Promise<McpToolSimilarity[]>;
+
+  /** Every connection, for the backfill: the one reader that is not one member's. */
+  listAllConnections(): Promise<McpConnectionRecord[]>;
 
   /**
    * Every tool of every connection the member could use right now: the
@@ -1276,6 +1319,66 @@ export function createMcpMarketplaceRepository(
         .order('tool_name', { ascending: true });
       if (error) throw error;
       return (data ?? []) as McpConnectionToolRecord[];
+    },
+
+    async listToolEmbeddingHashes(connectionId) {
+      const { data, error } = await supabase
+        .from(APP_TOOL_EMBEDDING.table)
+        .select('tool_name, model, source_hash')
+        .eq('connection_id', connectionId);
+      if (error) throw error;
+      return (data ?? []) as McpToolEmbeddingHeld[];
+    },
+
+    async saveToolEmbeddings(rows) {
+      if (rows.length === 0) return 0;
+
+      const { error } = await supabase.from(APP_TOOL_EMBEDDING.table).upsert(
+        rows.map((row) => ({
+          connection_id: row.connectionId,
+          tool_name: row.toolName,
+          model: row.model,
+          source_hash: row.sourceHash,
+          // PostgREST carries a vector as `[0.1,0.2,…]`, which is exactly
+          // `JSON.stringify` of the array a provider returned.
+          embedding: JSON.stringify(row.embedding),
+        })),
+        { onConflict: 'connection_id,tool_name' }
+      );
+      if (error) throw error;
+      return rows.length;
+    },
+
+    async nearestTools(connectionIds, embedding, limit) {
+      if (connectionIds.length === 0) return [];
+
+      const { data, error } = await supabase.rpc(APP_TOOL_EMBEDDING.nearestFunction, {
+        p_connection_ids: connectionIds,
+        p_query: JSON.stringify(embedding),
+        p_limit: limit,
+      });
+      if (error) throw error;
+
+      return (
+        (data ?? []) as Array<{
+          connection_id: string;
+          tool_name: string;
+          similarity: number;
+        }>
+      ).map((row) => ({
+        connectionId: row.connection_id,
+        toolName: row.tool_name,
+        similarity: Number(row.similarity),
+      }));
+    },
+
+    async listAllConnections() {
+      const { data, error } = await supabase
+        .from(CONNECTIONS_TABLE)
+        .select('*')
+        .order('id', { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as McpConnectionRecord[];
     },
 
     async listUsableTools(userId) {

@@ -20,7 +20,7 @@ Verified against this checkout, not estimated.
 | Turn              | `ChatAgentService.turn` streams over SSE, bounded rounds, one clean retry, a turn row, a resumable runner                             |
 | Tools             | 46 first-party declarations (28 read, 18 write); 43 on a turn with no app, screen or web search                                       |
 | Writes            | proposed as a card, executed only by the member's confirm on their own session                                                        |
-| External apps     | router + `find_app_tools`; `readOnlyHint` runs, the rest cards; 3 calls per turn, 2 per connection                                    |
+| External apps     | capability vocabulary + meaning rank + `find_app_tools`; `readOnlyHint` runs, the rest cards; 3 calls per turn, 2 per connection      |
 | Own MCP server    | 37 tools over 7 products, OAuth, scopes, plan caps, user-scoped client                                                                |
 | Skills            | 283 vendored specialists: a semantic shortlist per turn, then `load_specialist` for one body; a row per turn for the operator (#1449) |
 | Attachments       | image, PDF, document, text, voice — read inside the turn                                                                              |

@@ -4,6 +4,7 @@ import type {
   McpMarketplaceRepository,
 } from '@/backend/repositories/mcp/marketplace-repository';
 import type { McpAccessTokenService } from '@/backend/services/mcp/marketplace/access-token-service';
+import { APP_TOOL_EMBEDDING } from '@/backend/shared/domain/app-tool-embeddings';
 import { McpRemoteError, type McpRequestAuth } from '@/backend/shared/domain/mcp-remote';
 import { decryptSecret } from '@/backend/shared/mcp-token-crypto';
 import { logger } from '@/backend/shared/logger';
@@ -49,9 +50,29 @@ export interface McpAppTool {
   permissionLevel: McpPermissionLevel;
 }
 
+/** A tool's closeness to one query, as the stored vectors rank it (#1917). */
+export interface McpToolSimilarity {
+  connectionId: string;
+  toolName: string;
+  similarity: number;
+}
+
 export interface McpAppToolsService {
   /** Every usable tool of every usable connection the member holds. */
   catalog(userId: string): Promise<McpAppTool[]>;
+  /**
+   * The member's tools nearest to a query vector, best first (ADR-0223).
+   *
+   * The ranking runs in Postgres over `mcp_connection_tool_embeddings_1024`, so
+   * a turn reads a few similarities instead of every tool's 1024 floats. No
+   * vectors (a deployment without a provider, a connection the backfill has not
+   * reached) answers `[]`, and the router stays on vocabulary.
+   */
+  nearest(
+    connectionIds: string[],
+    embedding: readonly number[],
+    limit?: number
+  ): Promise<McpToolSimilarity[]>;
   /**
    * One call, as the member, with a token that is refreshed when it is spent.
    * The answer is the server's own; nothing here interprets it.
@@ -107,8 +128,28 @@ const NO_AUTH_REFUSED =
   'هذا التطبيق صار يطلب بيانات اعتماد، ولم يكن يطلبها عند الربط. أعد ربطه من «تطبيقاتنا».';
 
 /** The name a member reads for a connection. */
-function appNameOf(connection: McpConnectionRecord): string {
-  return connection.display_name?.trim() || connection.registry_name;
+export function appDisplayName(
+  connection: Pick<McpConnectionRecord, 'display_name' | 'registry_name'>
+): string {
+  const named = connection.display_name?.trim();
+  // A member's own name wins. A registry key is not a name — `com.vercel/…` is
+  // what the row was created with when the catalogue had no title, and reading
+  // it back also hands the router the word «mcp», which matched all 285 tools
+  // of that connection (#1917).
+  if (named && !REGISTRY_KEY.test(named)) return named;
+  return prettyRegistry(named || connection.registry_name);
+}
+
+/** `com.vercel/vercel-mcp` and `ac.inference.sh/mcp` are registry keys, not names. */
+const REGISTRY_KEY = /^[a-z0-9][a-z0-9.-]*\/[a-z0-9._-]+$/i;
+
+/** The brand at the front of a registry key: the label after the reverse-domain one. */
+function prettyRegistry(registry: string): string {
+  const host = registry.split('/')[0]?.trim() || registry;
+  const labels = host.split('.').filter(Boolean);
+  const brand = (labels.length >= 2 ? labels[1] : labels[0]) ?? registry;
+  if (!brand) return registry;
+  return brand.charAt(0).toUpperCase() + brand.slice(1);
 }
 
 /**
@@ -190,7 +231,7 @@ export function createMcpAppToolsService({
       return rows.map(({ connection, tool }) => ({
         connectionId: connection.id,
         registryName: connection.registry_name,
-        appName: appNameOf(connection),
+        appName: appDisplayName(connection),
         toolName: tool.tool_name,
         description: tool.description,
         inputSchema:
@@ -200,6 +241,11 @@ export function createMcpAppToolsService({
         readOnly: tool.read_only,
         permissionLevel: connection.permission_level,
       }));
+    },
+
+    async nearest(connectionIds, embedding, limit = APP_TOOL_EMBEDDING.candidates) {
+      if (connectionIds.length === 0) return [];
+      return repository.nearestTools(connectionIds, [...embedding], limit);
     },
 
     async call({ userId, connectionId, toolName, args, intent = 'turn', signal }) {
@@ -330,7 +376,7 @@ export function createMcpAppToolsService({
       return new Map(
         connections
           .filter((connection) => wanted.has(connection.id))
-          .map((connection) => [connection.id, appNameOf(connection)] as const)
+          .map((connection) => [connection.id, appDisplayName(connection)] as const)
       );
     },
 

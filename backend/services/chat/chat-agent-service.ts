@@ -22,11 +22,18 @@ import {
 import type { ChatAgentToolsDeps } from '@/backend/services/chat/chat-agent-tools-deps';
 import {
   appToolDefinition,
+  appToolKey,
+  CHAT_APP_TOOL_LIMIT,
+  CHAT_APP_TOOL_SEARCH_LIMIT,
   planAppTools,
   searchAppTools,
   type ChatAppToolDeclaration,
+  type ChatAppToolMeaning,
 } from '@/backend/services/chat/chat-app-tools';
-import type { McpAppToolsService } from '@/backend/services/mcp/marketplace/app-tools-service';
+import type {
+  McpAppTool,
+  McpAppToolsService,
+} from '@/backend/services/mcp/marketplace/app-tools-service';
 import type { ChatService } from '@/backend/services/chat/chat-service';
 import type { AgentRecallService } from '@/backend/services/agent/agent-recall-service';
 import { routeSkills } from '@/backend/services/chat/skill-router';
@@ -444,7 +451,7 @@ export interface ChatAgentServiceDeps {
    * deployment without the marketplace, and the turn then carries the 21 tools
    * we own and nothing else.
    */
-  apps?: Pick<McpAppToolsService, 'catalog' | 'call' | 'connectedCount' | 'fetchMedia'>;
+  apps?: Pick<McpAppToolsService, 'catalog' | 'call' | 'connectedCount' | 'fetchMedia' | 'nearest'>;
 }
 
 /** What a turn's tools need from the request: the caller's session and address. */
@@ -580,6 +587,36 @@ export class ChatAgentService {
     } catch (error) {
       logger.warn('The turn carried no query vector', { error: String(error) });
       return null;
+    }
+  }
+
+  /**
+   * How close each remote tool is to what the turn is about (#1917).
+   *
+   * The vectors are the connect flow's (`tool-embeddings-service`), and the
+   * ranking runs in Postgres, so a turn reads similarities rather than vectors.
+   * An absent provider, a connection the backfill has not reached, a refused
+   * query: `{}`, and the router answers on vocabulary, which is what it always
+   * did before meaning existed.
+   */
+  private async appToolMeaning(
+    catalog: McpAppTool[],
+    vector: readonly number[] | null
+  ): Promise<ChatAppToolMeaning> {
+    const apps = this.deps.apps;
+    if (!apps || !vector || vector.length === 0 || catalog.length === 0) return {};
+
+    try {
+      const connectionIds = [...new Set(catalog.map((tool) => tool.connectionId))];
+      const nearest = await apps.nearest(connectionIds, vector);
+      return {
+        similar: new Map(
+          nearest.map((row) => [appToolKey(row.connectionId, row.toolName), row.similarity])
+        ),
+      };
+    } catch (error) {
+      logger.warn('The app tools could not be ranked by meaning', { error: String(error) });
+      return {};
     }
   }
 
@@ -832,6 +869,7 @@ export class ChatAgentService {
         context,
         screen,
         skills,
+        vector,
         messages: [
           ...turnContextMessages(identity, screen, recalled, summary, skills),
           { role: 'system', content: SYSTEM_PROMPT },
@@ -1021,6 +1059,7 @@ export class ChatAgentService {
         question: turn.question ?? '',
         context,
         skills,
+        vector,
         messages: [
           ...turnContextMessages(identity, undefined, recalled, summary, skills),
           { role: 'system', content: SYSTEM_PROMPT },
@@ -1062,6 +1101,7 @@ export class ChatAgentService {
     context,
     screen,
     skills,
+    vector,
   }: {
     userId: string;
     conversationId: string;
@@ -1074,6 +1114,8 @@ export class ChatAgentService {
     screen?: ScreenContextInput;
     /** The specialists this question cleared the floor for (#1449). */
     skills: readonly SkillHit[];
+    /** The turn's one query vector, when this deployment can make one (#1448). */
+    vector: readonly number[] | null;
   }): AsyncGenerator<ChatAgentEvent, void, void> {
     const client = this.deps.client;
     if (!client) throw new ChatAgentError(503, UNAVAILABLE);
@@ -1101,7 +1143,16 @@ export class ChatAgentService {
       : [];
 
     const remote = new Map<string, ChatAppToolDeclaration>();
-    for (const declaration of planAppTools(catalog, lastUserWords(messages))) {
+    // Words gate and meaning ranks (#1917): the catalog is read once, and when
+    // the turn has a query vector the nearest tools come back as similarities —
+    // a few bytes a tool, not every vector.
+    const appMeaning = await this.appToolMeaning(catalog, vector);
+    for (const declaration of planAppTools(
+      catalog,
+      lastUserWords(messages),
+      CHAT_APP_TOOL_LIMIT,
+      appMeaning
+    )) {
       remote.set(declaration.name, declaration);
     }
 
@@ -1565,7 +1616,19 @@ export class ChatAgentService {
                 ? {
                     findAppTools: async (query: string) => {
                       const catalog = await apps.catalog(userId);
-                      const found = searchAppTools(catalog, query);
+                      // The model's query is embedded here, not the member's
+                      // message: a recovery is asked in the words the tool
+                      // understands, and the same similarity ranks it (#1917).
+                      const meaning = await this.appToolMeaning(
+                        catalog,
+                        await this.queryVector(query)
+                      );
+                      const found = searchAppTools(
+                        catalog,
+                        query,
+                        CHAT_APP_TOOL_SEARCH_LIMIT,
+                        meaning
+                      );
                       for (const match of found) remote.set(match.name, match);
                       return found.map((match) => ({
                         name: match.name,

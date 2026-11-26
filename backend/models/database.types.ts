@@ -1953,6 +1953,44 @@ export type Database = {
         };
         Relationships: [];
       };
+      mcp_connection_tool_embeddings_1024: {
+        Row: {
+          connection_id: string;
+          created_at: string;
+          embedding: string;
+          model: string;
+          source_hash: string;
+          tool_name: string;
+          updated_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          created_at?: string;
+          embedding: string;
+          model: string;
+          source_hash: string;
+          tool_name: string;
+          updated_at?: string;
+        };
+        Update: {
+          connection_id?: string;
+          created_at?: string;
+          embedding?: string;
+          model?: string;
+          source_hash?: string;
+          tool_name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mcp_connection_tool_embeddings_1024_tool';
+            columns: ['connection_id', 'tool_name'];
+            isOneToOne: false;
+            referencedRelation: 'mcp_connection_tools';
+            referencedColumns: ['connection_id', 'tool_name'];
+          },
+        ];
+      };
       mcp_connection_tools: {
         Row: {
           connection_id: string;
@@ -3928,6 +3966,18 @@ export type Database = {
       agent_turns_due: {
         Args: { p_limit?: number };
         Returns: { id: string }[];
+      };
+      mcp_tool_nearest_1024: {
+        Args: {
+          p_connection_ids: string[];
+          p_limit?: number;
+          p_query: string;
+        };
+        Returns: {
+          connection_id: string;
+          similarity: number;
+          tool_name: string;
+        }[];
       };
       record_scan_history: {
         Args: { p_format: string; p_kind: string; p_label: string | null };

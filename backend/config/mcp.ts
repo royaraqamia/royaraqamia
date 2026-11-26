@@ -29,6 +29,10 @@ import {
   type McpAppToolsService,
 } from '@/backend/services/mcp/marketplace/app-tools-service';
 import {
+  createMcpToolEmbeddingService,
+  type McpToolEmbeddingService,
+} from '@/backend/services/mcp/marketplace/tool-embeddings-service';
+import {
   createMcpConnectedAppService,
   type McpConnectedAppService,
 } from '@/backend/services/mcp/connected-apps';
@@ -40,6 +44,8 @@ import {
   createMcpCatalogAgentService,
   type McpCatalogAgentService,
 } from '@/backend/services/mcp/marketplace/catalog-agent';
+import { createAiEmbeddingsClient } from '@/backend/clients/ai-embeddings';
+import { APP_TOOL_EMBEDDING } from '@/backend/shared/domain/app-tool-embeddings';
 import { env } from '@/backend/config/env';
 
 /**
@@ -93,6 +99,23 @@ export function createDefaultMcpConnectService(): McpConnectService {
     repository: createMcpMarketplaceRepository(),
     remote: createMcpRemoteClient(),
     staticClients: readMcpStaticClients(),
+    // What the router ranks by (#1917). A deployment with no provider builds no
+    // client, and the connect flow simply writes no vectors.
+    embeddings: createDefaultMcpToolEmbeddingService(),
+  });
+}
+
+/**
+ * The tool vectors the router reads (#1917, ADR-0223).
+ *
+ * It shares the embedding client with the assistant and is wired only here, so
+ * the connect flow, the backfill and the turn's query vector all come from one
+ * model — two models' vectors are not comparable.
+ */
+export function createDefaultMcpToolEmbeddingService(): McpToolEmbeddingService {
+  return createMcpToolEmbeddingService({
+    repository: createMcpMarketplaceRepository(),
+    embeddings: createAiEmbeddingsClient({ dimensions: APP_TOOL_EMBEDDING.dimensions }),
   });
 }
 
