@@ -1,5 +1,7 @@
 import type {
   CodingAvailableRepoDto,
+  CodingLocalGrantDto,
+  CodingLocalPairDto,
   CodingRepoInput,
   CodingStepDto,
   CodingTaskDto,
@@ -90,6 +92,28 @@ export async function createCodingWorkspace(input: CodingRepoInput): Promise<Cod
 
 export function deleteCodingWorkspace(id: string): Promise<CodingOkResponse> {
   return write(`/api/coding/workspaces/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** A pairing code is shown once; the server keeps only its digest. */
+export async function createCodingLocalPair(deviceLabel: string): Promise<CodingLocalPairDto> {
+  const body = await request<unknown>('/api/coding/local/pairs', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ deviceLabel }),
+  });
+  const pair = codingData<CodingLocalPairDto>(body);
+  if (!pair?.code) throw new Error('تعذّر إنشاء رمز الربط.');
+  return pair;
+}
+
+export async function getCodingLocalGrants(): Promise<CodingLocalGrantDto[]> {
+  const body = await request<unknown>('/api/coding/local/grants', READ);
+  return codingData<CodingLocalGrantDto[]>(body) ?? [];
+}
+
+export function revokeCodingLocalGrant(id: string): Promise<CodingOkResponse> {
+  return write(`/api/coding/local/grants/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
 export async function getCodingTasks(cursor: string | null = null): Promise<CodingTaskListResult> {

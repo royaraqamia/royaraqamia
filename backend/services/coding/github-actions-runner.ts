@@ -33,6 +33,12 @@ export class GitHubActionsRunner implements SandboxRunner {
         'Coding runner task has no callbackToken: pass the one-time token, not callbackTokenHash.'
       );
     }
+    // This adapter is the GitHub execution plane: a local folder is claimed by
+    // the companion and never reaches a workflow dispatch (ADR-0222).
+    const { repoOwner, repoName, baseBranch } = spec;
+    if (spec.kind !== 'github' || !repoOwner || !repoName || !baseBranch) {
+      throw new Error('GitHubActionsRunner needs a GitHub repository task');
+    }
 
     // The workflow downloads the runner script from the same origin that serves
     // the callback endpoints; both are public, static URLs.
@@ -46,9 +52,9 @@ export class GitHubActionsRunner implements SandboxRunner {
 
     await this.client.dispatchWorkflow({
       token: credential.installationToken,
-      owner: spec.repoOwner,
-      repo: spec.repoName,
-      ref: spec.baseBranch,
+      owner: repoOwner,
+      repo: repoName,
+      ref: baseBranch,
       inputs: {
         task_id: spec.taskId,
         callback_url: spec.callbackUrl,

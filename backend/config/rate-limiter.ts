@@ -444,3 +444,14 @@ export function appFailureRateLimitPolicy(ip: string): RateLimitPolicy {
     message: 'تم تجاوز حدّ الطلب: تقارير الأعطال محدودة بـ 30 طلبًا في الدقيقة.',
   };
 }
+
+/** An unauthenticated pairing code is a guessing target: ten tries per ten minutes. */
+export function codingPairClaimRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `coding-pair-claim:${ip}`,
+    failClosed: true,
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+    message: 'محاولات ربط كثيرة من هذا العنوان. انتظر عشر دقائق ثم أعد المحاولة.',
+  };
+}

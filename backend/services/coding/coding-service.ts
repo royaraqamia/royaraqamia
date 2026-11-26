@@ -1,3 +1,5 @@
+import { randomInt } from 'node:crypto';
+
 import type { GitHubAppClient } from '@/backend/clients/github-app';
 import type { Database } from '@/backend/models/database.types';
 import type {
@@ -10,7 +12,11 @@ import { logger } from '@/backend/shared/logger';
 import { generateOpaqueToken, hashToken } from '@/backend/shared/mcp-token-crypto';
 import {
   CODING_PLAN_CAPS,
+  type ClaimCodingLocalPairInput,
   type CodingAvailableRepoDto,
+  type CodingLocalClaimResponse,
+  type CodingLocalGrantDto,
+  type CodingLocalPairDto,
   type CodingPlanCaps,
   type CodingRepoInput,
   type CodingRunnerLlmRequest,
@@ -110,6 +116,17 @@ export interface CodingService {
   runnerUpdate(rawToken: string, update: CodingRunnerUpdate): Promise<void>;
   runnerLlm(rawToken: string, request: CodingRunnerLlmRequest): Promise<CodingRunnerLlmResponse>;
   cancelTask(userId: string, taskId: string): Promise<CodingTaskDto>;
+
+  // ---- the local companion (ADR-0222) -------------------------------------
+
+  /** A code shown once to the member, hashed at rest, valid for ten minutes. */
+  createLocalPair(userId: string, input: { deviceLabel: string }): Promise<CodingLocalPairDto>;
+  /** The companion trades a code for a revocable grant; no session is involved. */
+  claimLocalPair(input: ClaimCodingLocalPairInput): Promise<CodingLocalClaimResponse>;
+  listLocalGrants(userId: string): Promise<CodingLocalGrantDto[]>;
+  revokeLocalGrant(userId: string, grantId: string): Promise<void>;
+  /** The device asks for its next queued task; null when nothing is waiting. */
+  claimLocalTask(rawGrantToken: string): Promise<CodingRunnerTaskResponse | null>;
 }
 
 /** The workspace columns the control plane reads, kept local for readability. */
@@ -151,12 +168,52 @@ function toWorkspaceDto(
 ): CodingWorkspaceDto {
   return {
     id: row.id,
+    kind: row.kind === 'local' ? 'local' : 'github',
     repoOwner: row.repo_owner,
     repoName: row.repo_name,
     defaultBranch: row.default_branch,
+    deviceLabel: row.device_label,
     bootstrapPrUrl,
     createdAt: row.created_at,
   };
+}
+
+type GrantRow = Database['public']['Tables']['coding_local_grants']['Row'];
+
+function toGrantDto(row: GrantRow): CodingLocalGrantDto {
+  return {
+    id: row.id,
+    deviceLabel: row.device_label,
+    workspaceId: row.workspace_id,
+    createdAt: row.created_at,
+    lastSeenAt: row.last_seen_at,
+    revokedAt: row.revoked_at,
+  };
+}
+
+/** Human-typed codes: no 0/O/1/I, grouped as XXXX-XXXX. */
+const PAIR_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const PAIR_CODE_LENGTH = 8;
+const PAIR_TTL_MS = 10 * 60 * 1000;
+
+function newPairCode(): string {
+  let code = '';
+  // randomInt draws uniformly from [0, 32): no modulo, no bias.
+  for (let i = 0; i < PAIR_CODE_LENGTH; i++) {
+    code += PAIR_ALPHABET[randomInt(PAIR_ALPHABET.length)];
+  }
+  return `${code.slice(0, 4)}-${code.slice(4)}`;
+}
+
+/** Case, dashes and spaces are not part of the secret. */
+function normalizePairCode(value: string): string | null {
+  const clean = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return clean.length === PAIR_CODE_LENGTH ? clean : null;
+}
+
+/** The pairing digest is domain-separated from a task or grant digest. */
+function hashPairCode(raw: string): string {
+  return hashToken(`coding-pair:${raw}`);
 }
 
 function toStepDto(row: StepRow): CodingStepDto {
@@ -245,14 +302,16 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
     workspace: WorkspaceRow,
     rawToken: string,
     caps: CodingPlanCaps,
-    handoffToken: string
+    handoffToken: string | null
   ): CodingRunnerTask {
+    const local = workspace.kind === 'local';
     return {
       taskId: task.id,
-      repoOwner: workspace.repo_owner,
-      repoName: workspace.repo_name,
-      baseBranch: task.base_branch,
-      branch: task.branch ?? `noor/${task.id.slice(0, 8)}`,
+      kind: local ? 'local' : 'github',
+      repoOwner: local ? null : workspace.repo_owner,
+      repoName: local ? null : workspace.repo_name,
+      baseBranch: local ? null : task.base_branch,
+      branch: local ? null : (task.branch ?? `noor/${task.id.slice(0, 8)}`),
       instruction: task.instruction,
       mode: task.mode as CodingRunnerTask['mode'],
       caps: {
@@ -348,6 +407,17 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
     },
 
     async removeWorkspace(userId, workspaceId) {
+      const workspace = await deps.repo.findWorkspace(userId, workspaceId);
+      if (workspace?.kind === 'local') {
+        // Revoke before the delete: the grant's foreign key is `on delete set
+        // null`, so after the row is gone there is nothing left to match.
+        const grants = await deps.admin.listLocalGrants(userId);
+        for (const grant of grants) {
+          if (grant.workspace_id === workspaceId && !grant.revoked_at) {
+            await deps.admin.revokeLocalGrant(userId, grant.id, now().toISOString());
+          }
+        }
+      }
       const removed = await deps.repo.deleteWorkspace(userId, workspaceId);
       if (!removed) throw new CodingError('workspace_not_found', 'مساحة العمل غير موجودة.', 404);
     },
@@ -364,6 +434,18 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         throw new CodingError('workspace_not_found', 'مساحة العمل غير موجودة.', 404);
       }
 
+      const local = workspace.kind === 'local';
+      if (local) {
+        const grant = await deps.admin.findActiveGrantForWorkspace(userId, workspace.id);
+        if (!grant) {
+          throw new CodingError(
+            'device_not_paired',
+            'الجهاز غير مرتبط بهذه المساحة. أعد ربط المجلد من صفحة المساعد.',
+            409
+          );
+        }
+      }
+
       const rawToken = generateOpaqueToken();
       const created = await deps.repo.createTask(userId, {
         workspaceId: workspace.id,
@@ -374,11 +456,27 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         runnerMinutes: caps.runnerMinutes,
         callbackTokenHash: hashToken(rawToken),
       });
+
+      if (local) {
+        // The device claims the queued task with its own grant token and mints
+        // the task callback there; nothing is dispatched and no installation
+        // token exists to mint.
+        logger.info('Coding agent: local task queued', {
+          userId,
+          taskId: created.id,
+          workspaceId: workspace.id,
+        });
+        return dtoFor(userId, created);
+      }
+
       const branch = `noor/${created.id.slice(0, 8)}`;
       await deps.repo.updateTask(userId, created.id, { branch });
       const row: TaskRow = { ...created, branch };
 
       try {
+        if (!workspace.installation_id) {
+          throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
+        }
         const installation = await deps.admin.findInstallation(userId, workspace.installation_id);
         if (!installation) {
           throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
@@ -464,9 +562,17 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         .reverse()
         .find((step) => step.status === 'applied' || step.status === 'rejected');
       const caps = await capsFor(task.user_id);
-      const { token } = await deps.github.getInstallationToken(workspace.installation_id);
+      // A local folder has no installation and no remote: the companion owns
+      // the branch and the credential, and the control plane mints neither.
+      let handoffToken: string | null = null;
+      if (workspace.kind !== 'local') {
+        if (!workspace.installation_id) {
+          throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
+        }
+        handoffToken = (await deps.github.getInstallationToken(workspace.installation_id)).token;
+      }
       return {
-        spec: specFor(task, workspace, rawToken, caps, token),
+        spec: specFor(task, workspace, rawToken, caps, handoffToken),
         status: task.status as CodingTaskStatus,
         decision: decided ? (decided.status === 'applied' ? 'approve' : 'reject') : null,
       };
@@ -508,9 +614,14 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         patch.status = 'awaiting_plan';
       } else if (update.kind === 'push' && update.status === 'running') {
         patch.status = 'awaiting_push';
-      } else if (update.kind === 'pull_request') {
+      } else if (
+        update.kind === 'pull_request' ||
+        (update.kind === 'review' && update.status === 'applied')
+      ) {
+        // `review` is the local handoff: the diff stays in the member's folder,
+        // so there is no URL to store and the task is done when it is posted.
         patch.status = 'completed';
-        const url = httpUrl(update.diff);
+        const url = update.kind === 'pull_request' ? httpUrl(update.diff) : null;
         if (url) patch.pull_request_url = url;
       }
       await deps.admin.updateTaskByCallbackHash(hash, patch);
@@ -571,6 +682,111 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
       const patch: CodingTaskPatch = { status: 'cancelled', failure_code: null };
       await deps.repo.updateTask(userId, taskId, patch);
       return dtoFor(userId, { ...task, ...patch });
+    },
+
+    async createLocalPair(userId, input) {
+      const code = newPairCode();
+      const expiresAt = new Date(now().getTime() + PAIR_TTL_MS).toISOString();
+      await deps.admin.createLocalPair(userId, {
+        deviceLabel: input.deviceLabel,
+        codeHash: hashPairCode(normalizePairCode(code) ?? code),
+        expiresAt,
+      });
+      logger.info('Coding agent: local pairing code created', { userId });
+      return { code, deviceLabel: input.deviceLabel, expiresAt };
+    },
+
+    async claimLocalPair(input) {
+      const normalized = normalizePairCode(input.code);
+      if (!normalized) {
+        throw new CodingError('invalid_code', 'رمز الربط غير صالح أو انتهت صلاحيته.', 400);
+      }
+      const pair = await deps.admin.findLocalPair(hashPairCode(normalized));
+      if (!pair) {
+        throw new CodingError('invalid_code', 'رمز الربط غير صالح أو انتهت صلاحيته.', 400);
+      }
+
+      const deviceLabel = (input.deviceLabel ?? pair.device_label).slice(0, 80);
+      const workspace = await deps.admin.createLocalWorkspace(pair.user_id, { deviceLabel });
+      const token = generateOpaqueToken();
+      const grant = await deps.admin.claimLocalPair(pair.id, {
+        tokenHash: hashToken(token),
+        workspaceId: workspace.id,
+      });
+      if (!grant) {
+        // Another device spent the code between the read and the update.
+        await deps.admin.deleteWorkspace(pair.user_id, workspace.id).catch(() => undefined);
+        throw new CodingError('code_already_claimed', 'استُخدم رمز الربط بالفعل.', 409);
+      }
+
+      logger.info('Coding agent: local folder paired', {
+        userId: pair.user_id,
+        workspaceId: workspace.id,
+      });
+      return {
+        token,
+        grant: toGrantDto(grant),
+        apiUrl: deps.origin,
+        runnerUrl: `${deps.origin}/coding/runner-v1.mjs`,
+      };
+    },
+
+    async listLocalGrants(userId) {
+      const rows = await deps.admin.listLocalGrants(userId);
+      return rows.map(toGrantDto);
+    },
+
+    async revokeLocalGrant(userId, grantId) {
+      const rows = await deps.admin.listLocalGrants(userId);
+      const grant = rows.find((row) => row.id === grantId);
+      if (!grant) throw new CodingError('grant_not_found', 'الجهاز غير موجود.', 404);
+      const revoked = await deps.admin.revokeLocalGrant(userId, grantId, now().toISOString());
+      if (!revoked) throw new CodingError('grant_not_found', 'الجهاز غير موجود.', 404);
+      if (grant.workspace_id) {
+        await deps.admin.failActiveTasksForWorkspace(userId, grant.workspace_id, 'runner_failed');
+      }
+      logger.info('Coding agent: local folder revoked', { userId, grantId });
+    },
+
+    async claimLocalTask(rawGrantToken) {
+      const grant = await deps.admin.findLocalGrantByTokenHash(hashToken(rawGrantToken));
+      if (!grant || grant.revoked_at || !grant.workspace_id) {
+        throw new CodingError('invalid_token', 'رمز الجهاز غير صالح أو أُلغي.', 401);
+      }
+      // A poll every ten seconds must not become a write every ten seconds: the
+      // "last seen" column is a five-minute heartbeat, not a presence log.
+      const lastSeen = grant.last_seen_at ? Date.parse(grant.last_seen_at) : 0;
+      if (now().getTime() - lastSeen > 5 * 60_000) {
+        await deps.admin.touchLocalGrant(grant.id, now().toISOString());
+      }
+
+      const rawCallbackToken = generateOpaqueToken();
+      const task = await deps.admin.claimNextLocalTask(
+        grant.user_id,
+        grant.workspace_id,
+        hashToken(rawCallbackToken)
+      );
+      if (!task) return null;
+
+      const workspace = await runnerRepo.findWorkspace(task.user_id, task.workspace_id);
+      if (!workspace) {
+        await deps.admin.updateTaskByCallbackHash(hashToken(rawCallbackToken), {
+          status: 'failed',
+          failure_code: 'repo_unavailable',
+        });
+        throw new CodingError('repo_unavailable', 'مساحة العمل غير موجودة.', 404);
+      }
+      const caps = await capsFor(task.user_id);
+      logger.info('Coding agent: local task claimed', {
+        userId: task.user_id,
+        taskId: task.id,
+        workspaceId: task.workspace_id,
+      });
+      return {
+        spec: specFor(task, workspace, rawCallbackToken, caps, null),
+        status: 'running',
+        decision: null,
+      };
     },
   };
 }

@@ -9,6 +9,14 @@
 
 import { z } from 'zod';
 
+/**
+ * Where an execution plane lives. `github` is phase 1's Actions job; `local` is
+ * a folder on the member's own device, driven by the companion (ADR-0222). The
+ * control plane never learns the folder's path, only the device's label.
+ */
+export const CODING_WORKSPACE_KINDS = ['github', 'local'] as const;
+export type CodingWorkspaceKind = (typeof CODING_WORKSPACE_KINDS)[number];
+
 export const CODING_TASK_MODES = ['plan', 'edit', 'full'] as const;
 export type CodingTaskMode = (typeof CODING_TASK_MODES)[number];
 
@@ -30,6 +38,7 @@ export const CODING_STEP_KINDS = [
   'commit',
   'push',
   'pull_request',
+  'review',
 ] as const;
 export type CodingStepKind = (typeof CODING_STEP_KINDS)[number];
 
@@ -95,14 +104,63 @@ export type CodingTaskListQuery = z.infer<typeof CodingTaskListQuerySchema>;
 
 export const CodingWorkspaceDtoSchema = z.strictObject({
   id: z.string().uuid(),
-  repoOwner: z.string(),
-  repoName: z.string(),
-  defaultBranch: z.string(),
+  /** `github` runs in the member's Actions minutes; `local` runs on their device. */
+  kind: z.enum(CODING_WORKSPACE_KINDS),
+  /** Null for a local folder, which has no repository on the server side. */
+  repoOwner: z.string().nullable(),
+  repoName: z.string().nullable(),
+  /** Null for a local folder: the companion, not the server, knows its branch. */
+  defaultBranch: z.string().nullable(),
+  /** The device a local workspace belongs to; null for a GitHub repository. */
+  deviceLabel: z.string().nullable(),
   /** One-time PR that installs the workflow file; null when already installed. */
   bootstrapPrUrl: z.string().nullable(),
   createdAt: z.string(),
 });
 export type CodingWorkspaceDto = z.infer<typeof CodingWorkspaceDtoSchema>;
+
+/**
+ * A pairing code is shown once when the member creates it; only its digest is
+ * stored, and it expires in ten minutes. The companion trades it for one
+ * long-lived, revocable grant token that never leaves the device.
+ */
+export const CreateCodingLocalPairSchema = z.strictObject({
+  deviceLabel: z.string().trim().min(1).max(80),
+});
+export type CreateCodingLocalPairInput = z.infer<typeof CreateCodingLocalPairSchema>;
+
+export const CodingLocalPairDtoSchema = z.strictObject({
+  code: z.string().min(4).max(32),
+  deviceLabel: z.string(),
+  expiresAt: z.string(),
+});
+export type CodingLocalPairDto = z.infer<typeof CodingLocalPairDtoSchema>;
+
+/** The companion sends no path: only the folder's basename stays on the device. */
+export const ClaimCodingLocalPairSchema = z.strictObject({
+  code: z.string().trim().min(4).max(32),
+  deviceLabel: z.string().trim().min(1).max(80).optional(),
+});
+export type ClaimCodingLocalPairInput = z.infer<typeof ClaimCodingLocalPairSchema>;
+
+export const CodingLocalGrantDtoSchema = z.strictObject({
+  id: z.string().uuid(),
+  deviceLabel: z.string(),
+  workspaceId: z.string().uuid().nullable(),
+  createdAt: z.string(),
+  lastSeenAt: z.string().nullable(),
+  revokedAt: z.string().nullable(),
+});
+export type CodingLocalGrantDto = z.infer<typeof CodingLocalGrantDtoSchema>;
+
+/** What the companion keeps in its own config file, never on the server. */
+export const CodingLocalClaimResponseSchema = z.strictObject({
+  token: z.string().min(20),
+  grant: CodingLocalGrantDtoSchema,
+  apiUrl: z.string().url(),
+  runnerUrl: z.string().url(),
+});
+export type CodingLocalClaimResponse = z.infer<typeof CodingLocalClaimResponseSchema>;
 
 /** A repository the member's GitHub App installation can reach, not yet a workspace. */
 export const CodingAvailableRepoDtoSchema = z.strictObject({
@@ -149,10 +207,12 @@ export type CodingTaskPage = z.infer<typeof CodingTaskPageSchema>;
 /** What the runner needs to start. No member credential crosses this boundary. */
 export const CodingRunnerTaskSchema = z.strictObject({
   taskId: z.string().uuid(),
-  repoOwner: z.string(),
-  repoName: z.string(),
-  baseBranch: z.string(),
-  branch: z.string().min(1),
+  /** `github` pushes a branch; `local` leaves the diff in the member's folder. */
+  kind: z.enum(CODING_WORKSPACE_KINDS),
+  repoOwner: z.string().nullable(),
+  repoName: z.string().nullable(),
+  baseBranch: z.string().nullable(),
+  branch: z.string().nullable(),
   instruction: z.string(),
   mode: z.enum(CODING_TASK_MODES),
   caps: z.strictObject({
@@ -164,7 +224,7 @@ export const CodingRunnerTaskSchema = z.strictObject({
   /** Raw short-lived bearer token. The control plane stores only its hash. */
   callbackToken: z.string().min(20),
   /** Short-lived installation token used only for the final PR handoff. */
-  handoffToken: z.string().min(20),
+  handoffToken: z.string().min(20).nullable(),
   runnerUrl: z.string().url(),
 });
 export type CodingRunnerTask = z.infer<typeof CodingRunnerTaskSchema>;

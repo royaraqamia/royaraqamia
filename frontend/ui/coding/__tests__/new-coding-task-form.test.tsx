@@ -13,9 +13,11 @@ import { NewCodingTaskForm } from '../new-coding-task-form';
 
 const WORKSPACE: CodingWorkspaceDto = {
   id: '5f0a3c1e-6a2b-4c7d-8e9f-0a1b2c3d4e5f',
+  kind: 'github',
   repoOwner: 'royaraqamia',
   repoName: 'royaraqamia',
   defaultBranch: 'develop',
+  deviceLabel: null,
   bootstrapPrUrl: null,
   createdAt: '2026-11-20T08:00:00.000Z',
 };

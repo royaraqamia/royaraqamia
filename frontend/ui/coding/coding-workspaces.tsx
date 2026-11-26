@@ -12,6 +12,7 @@ import {
 import type { CodingAvailableRepoDto, CodingWorkspaceDto } from '@/shared/contracts/coding-agent';
 import { formatCodingDate } from './coding-labels';
 import type { CodingPlan } from './coding-cap-banner';
+import { CodingLocalCompanion } from './coding-local-companion';
 import { NewCodingTaskForm } from './new-coding-task-form';
 
 /** Connected repositories and the door to the member's own GitHub App flow. */
@@ -61,7 +62,9 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
   }, [load, loadRepos]);
 
   const connected = new Set(
-    workspaces.map((workspace) => `${workspace.repoOwner}/${workspace.repoName}`.toLowerCase())
+    workspaces
+      .filter((workspace) => workspace.repoOwner && workspace.repoName)
+      .map((workspace) => `${workspace.repoOwner}/${workspace.repoName}`.toLowerCase())
   );
   const addable = repos.filter((repo) => !connected.has(repo.fullName.toLowerCase()));
   const selected = addable.some((repo) => repo.fullName === selectedRepo)
@@ -185,11 +188,13 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
             >
               <div>
                 <p className="font-bold text-foreground">
-                  {workspace.repoOwner}/{workspace.repoName}
+                  {workspace.kind === 'local'
+                    ? `مجلد محلي — ${workspace.deviceLabel ?? 'جهاز'}`
+                    : `${workspace.repoOwner ?? ''}/${workspace.repoName ?? ''}`}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  الفرع الافتراضي: {workspace.defaultBranch} · أُضيف في{' '}
-                  {formatCodingDate(workspace.createdAt)}
+                  {workspace.defaultBranch ? `الفرع الافتراضي: ${workspace.defaultBranch} · ` : ''}
+                  أُضيف في {formatCodingDate(workspace.createdAt)}
                 </p>
                 {workspace.bootstrapPrUrl && (
                   <p className="mt-1 text-xs text-amber-600">
@@ -237,6 +242,8 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
           ))}
         </ul>
       )}
+
+      <CodingLocalCompanion onPaired={load} />
 
       <NewCodingTaskForm workspaces={workspaces} plan={plan} />
     </section>

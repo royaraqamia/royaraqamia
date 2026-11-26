@@ -156,7 +156,7 @@ export function CodingTaskDetail({ taskId }: { taskId: string }) {
                     {formatCodingCount(step.outputTokens)}
                   </p>
                 )}
-                {step.status === 'proposed' && step.diff && (
+                {step.diff && (step.status === 'proposed' || step.kind === 'review') && (
                   <>
                     <pre
                       className="mt-2 max-h-96 overflow-auto rounded-lg bg-muted p-3 text-start text-xs"
@@ -164,24 +164,26 @@ export function CodingTaskDetail({ taskId }: { taskId: string }) {
                     >
                       {step.diff}
                     </pre>
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        type="button"
-                        disabled={busyStepId === step.id}
-                        onClick={() => void decide(step.id, 'approve')}
-                        className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground disabled:opacity-60"
-                      >
-                        موافقة
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busyStepId === step.id}
-                        onClick={() => void decide(step.id, 'reject')}
-                        className="rounded-lg border border-border/70 px-3 py-1 text-xs font-bold text-muted-foreground disabled:opacity-60"
-                      >
-                        رفض
-                      </button>
-                    </div>
+                    {step.status === 'proposed' && (
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          disabled={busyStepId === step.id}
+                          onClick={() => void decide(step.id, 'approve')}
+                          className="rounded-lg bg-primary px-3 py-1 text-xs font-bold text-primary-foreground disabled:opacity-60"
+                        >
+                          موافقة
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busyStepId === step.id}
+                          onClick={() => void decide(step.id, 'reject')}
+                          className="rounded-lg border border-border/70 px-3 py-1 text-xs font-bold text-muted-foreground disabled:opacity-60"
+                        >
+                          رفض
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </li>

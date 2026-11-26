@@ -5,6 +5,7 @@ import type {
   CodingAdminRepository,
   CodingConnectAttemptRow,
   CodingInstallationRow,
+  CodingLocalGrantRow,
   CodingRepository,
   CodingStepPatch,
   CodingStepRow,
@@ -297,6 +298,183 @@ export function createCodingAdminRepository(supabase: Client): CodingAdminReposi
         .update({ status })
         .eq('user_id', userId)
         .eq('id', stepId);
+      if (error) throw new Error(error.message);
+    },
+
+    async createLocalWorkspace(userId, values) {
+      const { data, error } = await supabase
+        .from('coding_workspaces')
+        .insert({
+          user_id: userId,
+          kind: 'local',
+          device_label: values.deviceLabel,
+          installation_id: null,
+          repo_owner: null,
+          repo_name: null,
+          default_branch: null,
+        })
+        .select('*')
+        .single();
+      if (error) throw new Error(error.message);
+      return data as CodingWorkspaceRow;
+    },
+
+    async deleteWorkspace(userId, workspaceId) {
+      const { data, error } = await supabase
+        .from('coding_workspaces')
+        .delete()
+        .eq('user_id', userId)
+        .eq('id', workspaceId)
+        .select('id');
+      if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
+    },
+
+    async createLocalPair(userId, values) {
+      const { data, error } = await supabase
+        .from('coding_local_grants')
+        .insert({
+          user_id: userId,
+          device_label: values.deviceLabel,
+          pair_code_hash: values.codeHash,
+          pair_expires_at: values.expiresAt,
+        })
+        .select('*')
+        .single();
+      if (error) throw new Error(error.message);
+      return data as CodingLocalGrantRow;
+    },
+
+    async findLocalPair(codeHash) {
+      const { data, error } = await supabase
+        .from('coding_local_grants')
+        .select('*')
+        .eq('pair_code_hash', codeHash)
+        .is('token_hash', null)
+        .is('revoked_at', null)
+        .gt('pair_expires_at', nowIso())
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as CodingLocalGrantRow | null) ?? null;
+    },
+
+    async claimLocalPair(id, values) {
+      // The `token_hash is null` guard is the race: two companions presenting the
+      // same code can both read the row, but only one update matches.
+      const { data, error } = await supabase
+        .from('coding_local_grants')
+        .update({
+          token_hash: values.tokenHash,
+          workspace_id: values.workspaceId,
+          claimed_at: nowIso(),
+          pair_code_hash: null,
+          pair_expires_at: null,
+        })
+        .eq('id', id)
+        .is('token_hash', null)
+        .gt('pair_expires_at', nowIso())
+        .select('*')
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as CodingLocalGrantRow | null) ?? null;
+    },
+
+    async findLocalGrantByTokenHash(hash) {
+      const { data, error } = await supabase
+        .from('coding_local_grants')
+        .select('*')
+        .eq('token_hash', hash)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as CodingLocalGrantRow | null) ?? null;
+    },
+
+    async findActiveGrantForWorkspace(userId, workspaceId) {
+      const { data, error } = await supabase
+        .from('coding_local_grants')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('workspace_id', workspaceId)
+        .is('revoked_at', null)
+        .not('token_hash', 'is', null)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return (data as CodingLocalGrantRow | null) ?? null;
+    },
+
+    async listLocalGrants(userId) {
+      const { data, error } = await supabase
+        .from('coding_local_grants')
+        .select('*')
+        .eq('user_id', userId)
+        .not('token_hash', 'is', null)
+        .order('created_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CodingLocalGrantRow[];
+    },
+
+    async touchLocalGrant(id, at) {
+      const { error } = await supabase
+        .from('coding_local_grants')
+        .update({ last_seen_at: at })
+        .eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+
+    async revokeLocalGrant(userId, id, at) {
+      const { data, error } = await supabase
+        .from('coding_local_grants')
+        .update({ revoked_at: at })
+        .eq('user_id', userId)
+        .eq('id', id)
+        .is('revoked_at', null)
+        .select('id');
+      if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
+    },
+
+    async claimNextLocalTask(userId, workspaceId, callbackTokenHash) {
+      // Read the oldest queued task, then claim it with `status = 'queued'` in
+      // the update: the second writer's update matches nothing and retries on
+      // the next task instead of running one twice.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { data: next, error: readError } = await supabase
+          .from('coding_tasks')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('workspace_id', workspaceId)
+          .eq('status', 'queued')
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (readError) throw new Error(readError.message);
+        if (!next) return null;
+
+        const { data: claimed, error: updateError } = await supabase
+          .from('coding_tasks')
+          .update({
+            status: 'running',
+            callback_token_hash: callbackTokenHash,
+            updated_at: nowIso(),
+          })
+          .eq('id', (next as { id: string }).id)
+          .eq('status', 'queued')
+          .select('*')
+          .maybeSingle();
+        if (updateError) throw new Error(updateError.message);
+        if (claimed) return claimed as CodingTaskRow;
+      }
+      return null;
+    },
+
+    async failActiveTasksForWorkspace(userId, workspaceId, failureCode) {
+      const { error } = await supabase
+        .from('coding_tasks')
+        .update({ status: 'failed', failure_code: failureCode, updated_at: nowIso() })
+        .eq('user_id', userId)
+        .eq('workspace_id', workspaceId)
+        .in('status', ['queued', 'running', 'awaiting_plan', 'awaiting_push']);
       if (error) throw new Error(error.message);
     },
   });
