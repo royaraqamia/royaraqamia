@@ -632,9 +632,14 @@ async function checkpoint(label) {
   await git(['add', '-A']);
   const status = (await git(['status', '--porcelain'])).stdout.trim();
   if (!status) return false;
+  // The ephemeral runner has no git identity; commits fail without one.
+  await git(['config', 'user.name', 'noor-coding-agent']);
+  await git(['config', 'user.email', 'noor@royaraqamia.com']);
   const summary = `noor: ${label}`;
   const result = await git(['commit', '-m', summary]);
-  if (result.exitCode !== 0) throw new RunnerError('runner_failed', 'checkpoint commit failed');
+  if (result.exitCode !== 0) {
+    throw new RunnerError('runner_failed', `checkpoint commit failed: ${result.stderr.slice(0, 200)}`);
+  }
   return true;
 }
 
