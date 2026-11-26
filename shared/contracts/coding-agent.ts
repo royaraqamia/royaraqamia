@@ -104,6 +104,15 @@ export const CodingWorkspaceDtoSchema = z.strictObject({
 });
 export type CodingWorkspaceDto = z.infer<typeof CodingWorkspaceDtoSchema>;
 
+/** A repository the member's GitHub App installation can reach, not yet a workspace. */
+export const CodingAvailableRepoDtoSchema = z.strictObject({
+  owner: z.string(),
+  name: z.string(),
+  fullName: z.string(),
+  defaultBranch: z.string(),
+});
+export type CodingAvailableRepoDto = z.infer<typeof CodingAvailableRepoDtoSchema>;
+
 export const CodingStepDtoSchema = z.strictObject({
   id: z.string().uuid(),
   kind: z.enum(CODING_STEP_KINDS),

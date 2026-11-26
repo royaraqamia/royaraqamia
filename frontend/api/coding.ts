@@ -1,4 +1,5 @@
 import type {
+  CodingAvailableRepoDto,
   CodingRepoInput,
   CodingStepDto,
   CodingTaskDto,
@@ -68,6 +69,11 @@ async function write(url: string, options: RequestInit): Promise<CodingOkRespons
 export async function getCodingWorkspaces(): Promise<CodingWorkspaceDto[]> {
   const body = await request<unknown>('/api/coding/workspaces', READ);
   return codingData<CodingWorkspaceDto[]>(body) ?? [];
+}
+
+export async function getCodingAvailableRepos(): Promise<CodingAvailableRepoDto[]> {
+  const body = await request<unknown>('/api/coding/repos', READ);
+  return codingData<CodingAvailableRepoDto[]>(body) ?? [];
 }
 
 export async function createCodingWorkspace(input: CodingRepoInput): Promise<CodingWorkspaceDto> {

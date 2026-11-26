@@ -7,7 +7,8 @@ import { staticClientDiscovery } from '@/backend/shared/domain/mcp-static-client
  * The reviewed table is the one place a secret is read, so what these tests pin
  * is the switch: a definition with no `client_id` must leave the row exactly as
  * the dynamic flow found it, and a configured one must carry the endpoints a
- * person measured rather than a guess.
+ * person measured rather than a guess. GitHub has no entry: the coding agent's
+ * GitHub App is the only door to a member's repositories.
  */
 describe('readMcpStaticClients', () => {
   it('is empty when no client is configured', () => {
@@ -15,26 +16,8 @@ describe('readMcpStaticClients', () => {
   });
 
   it('switches a definition on only when its client id exists', () => {
-    const clients = readMcpStaticClients({ MCP_STATIC_CLIENT_GITHUB_SECRET: 'secret' });
+    const clients = readMcpStaticClients({ MCP_STATIC_CLIENT_VERCEL_SECRET: 'secret' });
     expect(clients.size).toBe(0);
-  });
-
-  it('reads the pair for the row the definition names', () => {
-    const clients = readMcpStaticClients({
-      MCP_STATIC_CLIENT_GITHUB_ID: 'client-id',
-      MCP_STATIC_CLIENT_GITHUB_SECRET: 'client-secret',
-    });
-
-    const github = clients.get('com.github/mcp');
-    expect(github).toMatchObject({
-      clientId: 'client-id',
-      clientSecret: 'client-secret',
-      authorizationServer: 'https://github.com/login/oauth',
-      authorizationEndpoint: 'https://github.com/login/oauth/authorize',
-      tokenEndpoint: 'https://github.com/login/oauth/access_token',
-      tokenEndpointAuthMethod: 'client_secret_post',
-    });
-    expect(github?.scopes).toContain('repo');
   });
 
   it('reads the Vercel pair from the reviewed endpoints, not from discovery', () => {
@@ -56,30 +39,38 @@ describe('readMcpStaticClients', () => {
     expect(vercel?.scopes).toEqual(['openid', 'email', 'profile']);
   });
 
+  it('has no static client for GitHub, whose App is the single door', () => {
+    const clients = readMcpStaticClients({
+      MCP_STATIC_CLIENT_GITHUB_ID: 'client-id',
+      MCP_STATIC_CLIENT_GITHUB_SECRET: 'client-secret',
+    });
+    expect(clients.has('com.github/mcp')).toBe(false);
+  });
+
   it('treats a blank id as absent', () => {
-    expect(readMcpStaticClients({ MCP_STATIC_CLIENT_GITHUB_ID: '   ' }).size).toBe(0);
+    expect(readMcpStaticClients({ MCP_STATIC_CLIENT_VERCEL_ID: '   ' }).size).toBe(0);
   });
 });
 
 describe('staticClientDiscovery', () => {
   it('builds the same shape discovery returns, with nothing left to register', () => {
     const [client] = readMcpStaticClients({
-      MCP_STATIC_CLIENT_GITHUB_ID: 'client-id',
-      MCP_STATIC_CLIENT_GITHUB_SECRET: 'client-secret',
+      MCP_STATIC_CLIENT_VERCEL_ID: 'client-id',
+      MCP_STATIC_CLIENT_VERCEL_SECRET: 'client-secret',
     }).values();
 
-    const discovery = staticClientDiscovery(client!, 'https://api.githubcopilot.com/mcp/');
+    const discovery = staticClientDiscovery(client!, 'https://mcp.vercel.com');
 
     expect(discovery).toMatchObject({
-      resource: 'https://api.githubcopilot.com/mcp/',
-      authorizationServer: 'https://github.com/login/oauth',
-      authorizationEndpoint: 'https://github.com/login/oauth/authorize',
-      tokenEndpoint: 'https://github.com/login/oauth/access_token',
+      resource: 'https://mcp.vercel.com',
+      authorizationServer: 'https://vercel.com',
+      authorizationEndpoint: 'https://vercel.com/oauth/authorize',
+      tokenEndpoint: 'https://api.vercel.com/login/oauth/token',
       registrationEndpoint: null,
       scopes: client!.scopes,
     });
     expect(discovery.metadata).toMatchObject({
-      issuer: 'https://github.com/login/oauth',
+      issuer: 'https://vercel.com',
       token_endpoint_auth_methods_supported: ['client_secret_post'],
       code_challenge_methods_supported: ['S256'],
     });

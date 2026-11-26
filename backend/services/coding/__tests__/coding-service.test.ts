@@ -87,6 +87,7 @@ interface Harness {
   admin: Record<string, ReturnType<typeof vi.fn>>;
   runner: { start: ReturnType<typeof vi.fn> };
   llm: { reply: ReturnType<typeof vi.fn> };
+  github: { getInstallationToken: ReturnType<typeof vi.fn>; listRepos: ReturnType<typeof vi.fn> };
 }
 
 function harness(overrides: Partial<CodingServiceDeps> = {}, task = makeTask()): Harness {
@@ -119,6 +120,14 @@ function harness(overrides: Partial<CodingServiceDeps> = {}, task = makeTask()):
       token_enc: encryptSecret('ghs_installation_token'),
       token_expires_at: '2026-11-05T11:00:00.000Z',
     }),
+    listInstallations: vi.fn().mockResolvedValue([
+      {
+        user_id: USER,
+        installation_id: 42,
+        token_enc: encryptSecret('ghs_installation_token'),
+        token_expires_at: '2026-11-05T11:00:00.000Z',
+      },
+    ]),
     findTaskByCallbackHash: vi.fn().mockResolvedValue(task),
     updateTaskByCallbackHash: vi.fn().mockImplementation(async (_hash: string, patch: object) => {
       Object.assign(task, patch);
@@ -156,7 +165,7 @@ function harness(overrides: Partial<CodingServiceDeps> = {}, task = makeTask()):
     now: () => new Date('2026-11-15T12:00:00.000Z'),
     ...overrides,
   };
-  return { deps, repo, admin, runner, llm };
+  return { deps, repo, admin, runner, llm, github };
 }
 
 const createInput = {
@@ -166,6 +175,28 @@ const createInput = {
   mode: 'plan' as const,
   baseBranch: 'main',
 };
+
+describe('CodingService repo picker', () => {
+  it('lists the repositories behind the member installations once each', async () => {
+    const { deps, admin, github } = harness();
+    const service = createCodingService(deps);
+
+    await expect(service.listAvailableRepos(USER)).resolves.toEqual([
+      {
+        owner: 'member',
+        name: 'repo',
+        fullName: 'member/repo',
+        defaultBranch: 'main',
+      },
+    ]);
+    expect(admin.listInstallations).toHaveBeenCalledWith(USER);
+    expect(github.getInstallationToken).toHaveBeenCalledWith(42);
+    expect(github.listRepos).toHaveBeenCalledWith({
+      token: 'ghs_installation_token',
+      perPage: 100,
+    });
+  });
+});
 
 describe('CodingService monthly caps and dispatch', () => {
   it('refuses a fourth free task before dispatching anything', async () => {

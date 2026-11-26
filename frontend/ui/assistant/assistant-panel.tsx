@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import Link from 'next/link';
 import { CircleAlert } from 'lucide-react';
 
 import { getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
@@ -366,6 +367,13 @@ export function AssistantPanel({
       >
         <header className="flex shrink-0 items-center gap-3 border-b border-border/40 bg-card/40 px-4 py-3 pe-12">
           <AssistantOrb className="size-10" online onlineLabel={LAST_SEEN_LABELS.assistantOnline} />
+          <Link
+            href="/coding"
+            title="اربط مستودع GitHub واطلب من نور تنفيذ مهمة"
+            className="shrink-0 rounded-lg border border-border/70 px-2 py-1 text-xs font-bold text-primary transition-safe hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            المساعد المبرمج
+          </Link>
           <div className="min-w-0 flex-1">
             <DialogTitle className="text-xl leading-none text-foreground">
               {ASSISTANT_PANEL_COPY.title}

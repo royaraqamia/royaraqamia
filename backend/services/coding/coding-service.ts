@@ -6,9 +6,11 @@ import type {
   CodingTaskPatch,
 } from '@/backend/repositories/coding/coding-repository';
 import { AppError } from '@/backend/shared/errors';
+import { logger } from '@/backend/shared/logger';
 import { generateOpaqueToken, hashToken } from '@/backend/shared/mcp-token-crypto';
 import {
   CODING_PLAN_CAPS,
+  type CodingAvailableRepoDto,
   type CodingPlanCaps,
   type CodingRepoInput,
   type CodingRunnerLlmRequest,
@@ -91,6 +93,8 @@ export interface CodingServiceDeps {
 
 export interface CodingService {
   listWorkspaces(userId: string): Promise<CodingWorkspaceDto[]>;
+  /** Repos the member's GitHub App can reach, for the picker that creates workspaces. */
+  listAvailableRepos(userId: string): Promise<CodingAvailableRepoDto[]>;
   addWorkspace(userId: string, input: CodingRepoInput): Promise<CodingWorkspaceDto>;
   removeWorkspace(userId: string, workspaceId: string): Promise<void>;
   createTask(userId: string, input: CreateCodingTaskInput): Promise<CodingTaskDto>;
@@ -195,7 +199,11 @@ function httpUrl(value: string | null): string | null {
   }
 }
 
+/** The picker's own ceiling: a repo list changes rarely, and a token mint costs a call. */
+const REPO_CACHE_TTL_MS = 60_000;
+
 export function createCodingService(deps: CodingServiceDeps): CodingService {
+  const repoCache = new Map<string, { at: number; repos: CodingAvailableRepoDto[] }>();
   const runnerRepo = deps.runnerRepo ?? deps.repo;
   const now = deps.now ?? (() => new Date());
 
@@ -263,6 +271,36 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
       return rows.map((row) => toWorkspaceDto(row));
     },
 
+    async listAvailableRepos(userId) {
+      const cached = repoCache.get(userId);
+      if (cached && now().getTime() - cached.at < REPO_CACHE_TTL_MS) return cached.repos;
+
+      const installations = await deps.admin.listInstallations(userId);
+      const repos = await Promise.all(
+        installations.map(async (installation) => {
+          const { token } = await deps.github.getInstallationToken(installation.installation_id);
+          return deps.github.listRepos({ token, perPage: 100 });
+        })
+      );
+      const seen = new Set<string>();
+      const available: CodingAvailableRepoDto[] = repos
+        .flat()
+        .filter((repo) => {
+          const fullName = `${repo.owner}/${repo.name}`.toLowerCase();
+          if (seen.has(fullName)) return false;
+          seen.add(fullName);
+          return true;
+        })
+        .map((repo) => ({
+          owner: repo.owner,
+          name: repo.name,
+          fullName: `${repo.owner}/${repo.name}`,
+          defaultBranch: repo.default_branch || 'main',
+        }));
+      repoCache.set(userId, { at: now().getTime(), repos: available });
+      return available;
+    },
+
     async addWorkspace(userId, input) {
       const installationId = await deps.installationIdForRepo?.(userId, input.owner);
       if (!installationId) {
@@ -293,15 +331,18 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
             defaultBranch,
           })
         : null;
-      return toWorkspaceDto(
-        await deps.repo.createWorkspace(userId, {
-          installationId,
-          repoOwner: input.owner,
-          repoName: input.name,
-          defaultBranch,
-        }),
-        bootstrapPrUrl
-      );
+      const workspace = await deps.repo.createWorkspace(userId, {
+        installationId,
+        repoOwner: input.owner,
+        repoName: input.name,
+        defaultBranch,
+      });
+      logger.info('Coding agent: repository added', {
+        userId,
+        installationId,
+        repo: `${input.owner}/${input.name}`,
+      });
+      return toWorkspaceDto(workspace, bootstrapPrUrl);
     },
 
     async removeWorkspace(userId, workspaceId) {
@@ -355,6 +396,12 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
         throw new CodingError('runner_failed', 'تعذّر بدء التنفيذ.', 502);
       }
 
+      logger.info('Coding agent: task started', {
+        userId,
+        taskId: created.id,
+        mode: input.mode,
+        workspaceId: workspace.id,
+      });
       return dtoFor(userId, row);
     },
 

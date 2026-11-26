@@ -3,11 +3,13 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
+  createCodingWorkspace,
   deleteCodingWorkspace,
+  getCodingAvailableRepos,
   getCodingWorkspaces,
   startCodingConnect,
 } from '@/frontend/api/coding';
-import type { CodingWorkspaceDto } from '@/shared/contracts/coding-agent';
+import type { CodingAvailableRepoDto, CodingWorkspaceDto } from '@/shared/contracts/coding-agent';
 import { formatCodingDate } from './coding-labels';
 import type { CodingPlan } from './coding-cap-banner';
 import { NewCodingTaskForm } from './new-coding-task-form';
@@ -15,6 +17,9 @@ import { NewCodingTaskForm } from './new-coding-task-form';
 /** Connected repositories and the door to the member's own GitHub App flow. */
 export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
   const [workspaces, setWorkspaces] = useState<CodingWorkspaceDto[]>([]);
+  const [repos, setRepos] = useState<CodingAvailableRepoDto[]>([]);
+  const [selectedRepo, setSelectedRepo] = useState('');
+  const [adding, setAdding] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -34,9 +39,59 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
     }
   }, []);
 
+  const loadRepos = useCallback(async () => {
+    try {
+      const available = await getCodingAvailableRepos();
+      setRepos(available);
+      setSelectedRepo((current) =>
+        available.some((repo) => repo.fullName === current)
+          ? current
+          : (available[0]?.fullName ?? '')
+      );
+    } catch {
+      // A missing or expired App installation is not a page failure: the connect
+      // button below is the repair, and the repo picker simply stays empty.
+      setRepos([]);
+    }
+  }, []);
+
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadRepos();
+  }, [load, loadRepos]);
+
+  const connected = new Set(
+    workspaces.map((workspace) => `${workspace.repoOwner}/${workspace.repoName}`.toLowerCase())
+  );
+  const addable = repos.filter((repo) => !connected.has(repo.fullName.toLowerCase()));
+  const selected = addable.some((repo) => repo.fullName === selectedRepo)
+    ? selectedRepo
+    : (addable[0]?.fullName ?? '');
+
+  const add = async () => {
+    const repo = repos.find((candidate) => candidate.fullName === selected);
+    if (!repo) return;
+    if (
+      workspaces.some(
+        (workspace) =>
+          `${workspace.repoOwner}/${workspace.repoName}`.toLowerCase() ===
+          repo.fullName.toLowerCase()
+      )
+    ) {
+      setActionError('هذا المستودع مرتبط بالفعل.');
+      return;
+    }
+    setAdding(true);
+    setActionError(null);
+    try {
+      await createCodingWorkspace({ owner: repo.owner, name: repo.name });
+      await load();
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'تعذّر ربط المستودع.');
+    } finally {
+      setAdding(false);
+    }
+  };
 
   const connect = async () => {
     setConnecting(true);
@@ -88,10 +143,39 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
       {error && <p className="text-sm text-destructive">{error}</p>}
       {actionError && <p className="text-sm text-destructive">{actionError}</p>}
 
+      {addable.length > 0 && (
+        <div className="flex flex-wrap items-end gap-2 rounded-lg border border-border/60 p-3">
+          <label className="flex min-w-52 flex-1 flex-col gap-1 text-xs">
+            <span className="font-bold text-foreground">مستودعات GitHub المتاحة</span>
+            <select
+              value={selected}
+              onChange={(event) => setSelectedRepo(event.target.value)}
+              className="rounded-lg border border-border bg-background px-2 py-2 text-sm"
+            >
+              {addable.map((repo) => (
+                <option key={repo.fullName} value={repo.fullName}>
+                  {repo.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() => void add()}
+            disabled={adding || !selected}
+            className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {adding ? 'جاري الإضافة...' : 'إضافة مستودع'}
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-sm text-muted-foreground">جاري تحميل المستودعات...</p>
       ) : workspaces.length === 0 ? (
-        <p className="text-sm text-muted-foreground">لا توجد مستودعات مرتبطة بعد.</p>
+        <p className="text-sm text-muted-foreground">
+          لا توجد مستودعات مرتبطة بعد. اربط GitHub أو اختر مستودعًا من القائمة أعلاه.
+        </p>
       ) : (
         <ul className="flex flex-col gap-2">
           {workspaces.map((workspace) => (

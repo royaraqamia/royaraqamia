@@ -13,6 +13,7 @@ import { createUsageService } from '@/backend/config/plans';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import type { Database } from '@/backend/models/database.types';
 import { createCodingAdminRepository, createCodingRepository } from '@/backend/repositories/coding';
+import { logger } from '@/backend/shared/logger';
 import { encryptSecret, generateOpaqueToken, hashToken } from '@/backend/shared/mcp-token-crypto';
 import type { CodingRepoInput } from '@/shared/contracts/coding-agent';
 
@@ -347,6 +348,10 @@ export async function completeCodingConnect(
   const github = createGitHubAppClient();
   const { accessToken } = await github.exchangeUserCode(code);
   const installations = await github.listInstallations(accessToken);
+  logger.info('Coding agent: GitHub App connected', {
+    userId,
+    installations: installations.length,
+  });
   for (const installation of installations) {
     const { token, expiresAt } = await github.getInstallationToken(installation.id);
     await admin.saveInstallation(userId, {
