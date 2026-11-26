@@ -6,7 +6,7 @@ import type {
   CodingTaskPatch,
 } from '@/backend/repositories/coding/coding-repository';
 import { AppError } from '@/backend/shared/errors';
-import { decryptSecret, generateOpaqueToken, hashToken } from '@/backend/shared/mcp-token-crypto';
+import { generateOpaqueToken, hashToken } from '@/backend/shared/mcp-token-crypto';
 import {
   CODING_PLAN_CAPS,
   type CodingPlanCaps,
@@ -341,7 +341,10 @@ export function createCodingService(deps: CodingServiceDeps): CodingService {
           throw new CodingError('repo_unavailable', 'لا يوجد تثبيت لهذا المستودع.', 404);
         }
         const spec = specFor(row, workspace, rawToken, caps);
-        await deps.runner.start(spec, { installationToken: decryptSecret(installation.token_enc) });
+        // Installation tokens expire in about an hour; the one saved at connect
+        // time is only a bootstrap credential. Mint a fresh one for this task.
+        const { token } = await deps.github.getInstallationToken(installation.installation_id);
+        await deps.runner.start(spec, { installationToken: token });
       } catch (error) {
         await deps.repo.updateTask(userId, row.id, {
           status: 'failed',
