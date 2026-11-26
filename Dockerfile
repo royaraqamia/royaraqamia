@@ -10,8 +10,10 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
     RENDER=1 \
     NODE_OPTIONS=--max-old-space-size=6144
 
+# The version script calls `git rev-parse` at build time, so the build image
+# needs git even though the runtime image does not.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates python3 make g++ \
+    && apt-get install -y --no-install-recommends ca-certificates python3 make g++ git \
     && rm -rf /var/lib/apt/lists/*
 
 COPY .npmrc package.json package-lock.json ./
