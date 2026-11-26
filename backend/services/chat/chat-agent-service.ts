@@ -45,6 +45,7 @@ import { SKILL_ALREADY_LOADED, type SkillHit } from '@/backend/shared/domain/age
 import type { ConversationSummaryService } from '@/backend/services/agent/conversation-summary-service';
 import type { MemoryExtractionService } from '@/backend/services/agent/memory-extraction-service';
 import { turnContextMessages, type TurnIdentity } from '@/backend/services/chat/turn-identity';
+import { approximateTokens, historyTokenBudget } from '@/backend/services/chat/turn-budget';
 import type { RecalledMemory } from '@/backend/shared/domain/agent-memory';
 import type { ConversationSummary } from '@/backend/shared/domain/conversation-summary';
 import { settledTurn } from '@/backend/shared/domain/memory-extraction';
@@ -297,11 +298,6 @@ function isProjectAllowanceRefusal(error: unknown): boolean {
     typeof message === 'string' &&
     message.includes('chat agent project daily allowance')
   );
-}
-
-/** Roughly four characters a token, which is the estimate the budget is stated in. */
-function approximateTokens(text: string): number {
-  return Math.ceil(text.length / 4);
 }
 
 /**
@@ -861,6 +857,12 @@ export class ChatAgentService {
           ? [...(typed ? [{ type: 'text' as const, text: typed }] : []), ...read.parts]
           : question;
 
+      // The layers this turn opens with, built once so the history is trimmed
+      // against what they actually cost. The budget is a subtraction, not a wish
+      // (#1455): the standing prompt is sent apart, but every block below it is
+      // paid for out of the same six thousand tokens the window used to own.
+      const contextMessages = turnContextMessages(identity, screen, recalled, summary, skills);
+
       yield* this.answer({
         userId,
         conversationId,
@@ -871,7 +873,7 @@ export class ChatAgentService {
         skills,
         vector,
         messages: [
-          ...turnContextMessages(identity, screen, recalled, summary, skills),
+          ...contextMessages,
           { role: 'system', content: SYSTEM_PROMPT },
           ...(read.spoken ? [{ role: 'system' as const, content: SPOKEN_NOTE }] : []),
           // The line just stored is replaced by its own reading, so an image or a
@@ -879,7 +881,7 @@ export class ChatAgentService {
           ...trimHistory(
             page.messages.filter((message) => message.id !== sent.id),
             CHAT_AGENT_HISTORY_MAX,
-            this.historyBudget()
+            historyTokenBudget(contextMessages, { reserve: this.webReserve() })
           ),
           { role: 'user', content },
         ],
@@ -1051,6 +1053,7 @@ export class ChatAgentService {
     // answer as if the conversation had just started — the exact failure the
     // summary exists to end.
     const summary = await this.summarised(turn.conversationId);
+    const contextMessages = turnContextMessages(identity, undefined, recalled, summary, skills);
     try {
       yield* this.answer({
         userId: turn.memberId,
@@ -1061,9 +1064,13 @@ export class ChatAgentService {
         skills,
         vector,
         messages: [
-          ...turnContextMessages(identity, undefined, recalled, summary, skills),
+          ...contextMessages,
           { role: 'system', content: SYSTEM_PROMPT },
-          ...trimHistory(page.messages, CHAT_AGENT_HISTORY_MAX, this.historyBudget()),
+          ...trimHistory(
+            page.messages,
+            CHAT_AGENT_HISTORY_MAX,
+            historyTokenBudget(contextMessages, { reserve: this.webReserve() })
+          ),
         ],
       });
     } catch (error) {
@@ -1078,14 +1085,12 @@ export class ChatAgentService {
   }
 
   /**
-   * What the history may spend: the turn's budget, less the reserve a declared
-   * search takes (ADR-0206). The budget does not rise; the window shrinks to
-   * pay for the evidence, which is the rule the roadmap already states.
+   * What a declared web search reserves out of the history: the evidence is the
+   * only thing that grows, and it is paid for by the window (ADR-0206). The
+   * context layers themselves are subtracted in `historyTokenBudget` (#1455).
    */
-  private historyBudget(): number {
-    return this.deps.search || this.deps.urlExtract
-      ? CHAT_AGENT_TOKEN_BUDGET - WEB_SEARCH_TOKEN_RESERVE
-      : CHAT_AGENT_TOKEN_BUDGET;
+  private webReserve(): number {
+    return this.deps.search || this.deps.urlExtract ? WEB_SEARCH_TOKEN_RESERVE : 0;
   }
 
   /**

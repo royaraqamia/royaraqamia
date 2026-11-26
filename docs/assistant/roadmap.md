@@ -24,8 +24,8 @@ Verified against this checkout, not estimated.
 | Own MCP server    | 37 tools over 7 products, OAuth, scopes, plan caps, user-scoped client                                                                |
 | Skills            | 283 vendored specialists: a semantic shortlist per turn, then `load_specialist` for one body; a row per turn for the operator (#1449) |
 | Attachments       | image, PDF, document, text, voice — read inside the turn                                                                              |
-| Memory            | the last 20 messages, trimmed to a token budget. Nothing else                                                                         |
-| Page awareness    | none. The panel is on every screen (ADR-0143) and knows nothing about it                                                              |
+| Memory            | identity block, cited recall (at most six items) and a rolling thread summary; the last 20 messages hold whatever the budget leaves   |
+| Page awareness    | the surface's own snapshot as a system block, capped at 2,400 chars; a resumed turn answers without it (ADR-0181)                     |
 | Scheduling        | none on the agent. Cron exists only for sweeps                                                                                        |
 | Account awareness | identity block every turn (name, handle, plan, apps). No profile read tool                                                            |
 | Plans             | free 10 turns a day, Pro 40, member and project counters, per-day reset at Damascus midnight                                          |
@@ -233,16 +233,60 @@ the destructive migration (ADR-0200 decision 5).
 
 The budget the work has to fit inside:
 
-- **Per turn:** +600 tokens of screen, +400 of identity, +800 of memory, against today's
-  `CHAT_AGENT_TOKEN_BUDGET`. The turn's ceiling does not rise; the history window shrinks to
-  pay for it, and the summary carries what the window drops.
+- **Per turn:** `CHAT_AGENT_TOKEN_BUDGET` is the whole context, not the window. Every injected
+  layer is subtracted from it, so identity + screen + recall + skills + summary + history stays
+  at 6,000 and the history is the remainder. The ceiling does not rise; the window shrinks by
+  exactly what the layers cost, and the rolling summary carries what the window drops (#1455).
 - **Web evidence:** +1,250 tokens when `search_web` is declared, paid by a 1,300 reserve from
-  `CHAT_AGENT_TOKEN_BUDGET` (ADR-0206). The turn's ceiling does not rise; the history window shrinks.
+  the same remainder (ADR-0206). The turn's ceiling does not rise; the history window shrinks.
 - **Recall:** one embedding call per stored item, batched; six items per turn.
 - **Scheduled runs:** one run per member per task, budgeted, and a run that spends its budget
   stops rather than retries.
 - **The Hobby deployment** ([vercel-usage.md](../vercel-usage.md)): cron is daily, so scheduled
   runs are dispatched by one daily call that drains due rows, not by a per-minute cron.
+
+### The measurement (#1455)
+
+`backend/services/chat/__tests__/fixtures/turn-cost.json` is one representative turn: an identity
+row, a `spendtrack` expense form with a dialog open, three recalled facts, a thread summary, two
+specialist candidates, and the thread itself. `turn-budget.test.ts` prices each block with the
+same four-characters-a-token estimate `trimHistory` uses, so the numbers below reproduce from that
+file.
+
+| Layer       | Measured | Ceiling                                       |
+| ----------- | -------: | --------------------------------------------- |
+| identity    |       85 | 1,600 chars (~400 tokens)                     |
+| screen      |      124 | 2,400 chars (~600 tokens)                     |
+| recall      |       76 | six items, each fact at most 500 chars (~800) |
+| summary     |      103 | 1,200 chars (~300 tokens)                     |
+| skills      |      121 | 900 chars (~225 tokens)                       |
+| **context** |  **509** | worst case about 2,325                        |
+| history     |    5,491 | the remainder of 6,000                        |
+
+A declared search reserves 1,300 out of the same remainder (ADR-0206), so the window is 4,191 on a
+turn that may search.
+
+These are the layer-and-window tokens, the number the code trims against. The standing system
+prompt and the tool declarations are sent apart from it, so the provider's reported input tokens
+(about 14,700 on the eval transcript's first round) are larger by those two blocks and are not
+what `CHAT_AGENT_TOKEN_BUDGET` bounds.
+
+Before this issue the window was trimmed to the full 6,000 and the layers were added on top. On
+the fixture's over-window thread — twenty long messages — the old arithmetic measured 5,920 window
+tokens plus 509 of layers = **6,429**, 429 past the budget. Now the window is the remainder: 5,180
+plus 509 = **5,689**, inside the budget. The smaller window drops two more of the twenty messages
+than the old one did, and the rolling summary above it is what carries them (#1426): its refresher
+reads every unseen message from its cursor, oldest first, so a message the token window drops is
+in the next chunk rather than skipped (ADR-0182, decision 4). The summary is written behind the
+answer, so the turn that first drops a message sees the previous summary and the next turn sees it
+covered — never a provider call in front of the stream.
+
+Wall clock: the layers add no provider round trip. The identity block is two parallel reads, the
+summary is one read beside them, the query embedding is the one call the turn already spends
+(#1448), and the screen is supplied by the client. Building all five blocks and trimming the
+twenty-message thread measured about **34 µs per turn** over 2,000 runs in `turn-budget.test.ts`
+(`performance.now()` on one machine — an order of magnitude, not a promise). The only other cost
+is the provider's prefill of 509 more input tokens, which is linear in the input.
 
 ## Risks
 
