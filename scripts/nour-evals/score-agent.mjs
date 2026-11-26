@@ -18,7 +18,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as prettier from 'prettier';
-import { arg, deterministic, realSystemPrompt, summarize, writeJson } from './lib.mjs';
+import { arg, deterministic, realSystemPrompt, summarize, usageTotals, writeJson } from './lib.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(arg('repo', resolve(here, '../..')));
@@ -140,6 +140,7 @@ export function buildAgentReport(transcript, suite) {
   const expectations = new Map(suite.agent.map((testCase) => [testCase.id, testCase.expect]));
   const cases = transcript.cases.map((entry) => {
     const scored = scoreAgentCase(entry, expectations.get(entry.id) ?? {});
+    const usage = usageTotals(entry.rounds);
     return {
       id: entry.id,
       slice: entry.slice,
@@ -148,6 +149,8 @@ export function buildAgentReport(transcript, suite) {
       reply: entry.reply,
       error: entry.error ?? '',
       events: entry.events ?? [],
+      usage,
+      costUsd: usage ? Number(usage.listCostUsd.toFixed(6)) : null,
       deterministic: scored.deterministic,
       judge: entry.judge ?? { ok: false, scores: {}, reason: 'no recorded judge' },
       scores: Object.fromEntries(SCORE_NAMES.map((name) => [name, scored[name]])),
@@ -174,6 +177,22 @@ export function buildAgentReport(transcript, suite) {
     ])
   );
   report.summary.cases = cases.length;
+
+  // Cost per turn is generation cost only: the judge is a fixed, separate model
+  // for every run, so it cannot explain a difference between two candidates.
+  const priced = cases.filter((entry) => entry.usage);
+  if (priced.length) {
+    const totalUsd = priced.reduce((sum, entry) => sum + entry.usage.listCostUsd, 0);
+    report.summary.cost = {
+      turns: priced.length,
+      totalUsd: Number(totalUsd.toFixed(6)),
+      perTurnUsd: Number((totalUsd / priced.length).toFixed(6)),
+      inputTokens: priced.reduce((sum, entry) => sum + entry.usage.inputTokens, 0),
+      outputTokens: priced.reduce((sum, entry) => sum + entry.usage.outputTokens, 0),
+    };
+  } else {
+    report.summary.cost = null;
+  }
   return report;
 }
 
@@ -227,6 +246,20 @@ function agentMarkdown(report) {
   for (const name of SCORE_NAMES) {
     lines.push(`| ${name} | ${report.summary.scores[name] ?? 'n/a'} |`);
   }
+  const cost = report.summary.cost;
+  if (cost) {
+    lines.push(
+      '',
+      'Generation cost per turn (list price, judge excluded):',
+      '',
+      '| Metric | Value |',
+      '| --- | ---: |',
+      `| Mean per turn (USD) | ${cost.perTurnUsd} |`,
+      `| Total (USD) | ${cost.totalUsd} |`,
+      `| Input tokens | ${cost.inputTokens} |`,
+      `| Output tokens | ${cost.outputTokens} |`
+    );
+  }
   lines.push(
     '',
     '| Case | Tool choice | Arguments | Confirmation | Arabic |',
@@ -255,7 +288,11 @@ function agentMarkdown(report) {
 }
 
 async function main() {
-  const transcriptPath = resolve(here, 'agent-transcript.json');
+  const label = arg('label', '')
+    .trim()
+    .replace(/[^a-z0-9-]/gi, '');
+  const suffix = label ? `-${label}` : '';
+  const transcriptPath = resolve(here, `agent-transcript${suffix}.json`);
   const suite = JSON.parse(readFileSync(resolve(here, 'suite.json'), 'utf8'));
   const transcript = JSON.parse(readFileSync(transcriptPath, 'utf8'));
   const problem = transcriptProblem(transcript);
@@ -265,43 +302,57 @@ async function main() {
   }
 
   const report = buildAgentReport(transcript, suite);
-  await writeJson(resolve(here, 'eval-report-agent.json'), report);
-  const markdown = await prettier.format(agentMarkdown(report), { parser: 'markdown' });
-  writeFileSync(resolve(root, 'docs/assistant/eval-report-agent.md'), markdown);
+  await writeJson(resolve(here, `eval-report-agent${suffix}.json`), report);
+  const docPath = resolve(root, `docs/assistant/eval-report-agent${suffix}.md`);
+  const markdown = await prettier.format(agentMarkdown(report), {
+    ...(await prettier.resolveConfig(docPath)),
+    parser: 'markdown',
+  });
+  writeFileSync(docPath, markdown);
 
-  const baselinePath = resolve(here, 'agent-baseline.json');
-  if (process.argv.includes('--update-baseline') || !existsSync(baselinePath)) {
-    await writeJson(baselinePath, {
-      generatedAt: report.generatedAt,
-      model: report.meta.model,
-      promptHash: report.meta.promptHash,
-      summary: { scores: report.summary.scores },
-      tiers: [
-        {
-          name: 'agent',
-          cases: report.tiers[0].cases.map((entry) => ({
-            id: entry.id,
-            scores: entry.scores,
-          })),
-        },
-      ],
-    });
-    console.log(`baseline written: ${baselinePath}`);
-  } else {
-    const baseline = JSON.parse(readFileSync(baselinePath, 'utf8'));
-    const failures = baselineFailures(report, baseline);
-    if (failures.length) {
-      console.error('agent eval regressed:');
-      for (const failure of failures) console.error(`  - ${failure}`);
-      process.exit(1);
+  // A labelled run is evidence for a model comparison: it must never move the
+  // shipped baseline, and a candidate scoring lower than the shipped model is
+  // the measurement, not a CI regression to fail on.
+  if (!label) {
+    const baselinePath = resolve(here, 'agent-baseline.json');
+    if (process.argv.includes('--update-baseline') || !existsSync(baselinePath)) {
+      await writeJson(baselinePath, {
+        generatedAt: report.generatedAt,
+        model: report.meta.model,
+        promptHash: report.meta.promptHash,
+        summary: { scores: report.summary.scores },
+        tiers: [
+          {
+            name: 'agent',
+            cases: report.tiers[0].cases.map((entry) => ({
+              id: entry.id,
+              scores: entry.scores,
+            })),
+          },
+        ],
+      });
+      console.log(`baseline written: ${baselinePath}`);
+    } else {
+      const baseline = JSON.parse(readFileSync(baselinePath, 'utf8'));
+      const failures = baselineFailures(report, baseline);
+      if (failures.length) {
+        console.error('agent eval regressed:');
+        for (const failure of failures) console.error(`  - ${failure}`);
+        process.exit(1);
+      }
     }
   }
 
-  console.log(`agent eval: ${report.summary.cases} cases`);
+  console.log(`agent eval${label ? ` (${label})` : ''}: ${report.summary.cases} cases`);
   for (const name of SCORE_NAMES) {
     console.log(`  ${name.padEnd(24)} ${report.summary.scores[name] ?? 'n/a'}`);
   }
-  console.log(`report: ${resolve(root, 'docs/assistant/eval-report-agent.md')}`);
+  if (report.summary.cost) {
+    console.log(
+      `  ${'cost_per_turn_usd'.padEnd(24)} ${report.summary.cost.perTurnUsd} (total ${report.summary.cost.totalUsd})`
+    );
+  }
+  console.log(`report: ${resolve(root, `docs/assistant/eval-report-agent${suffix}.md`)}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

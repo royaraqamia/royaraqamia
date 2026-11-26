@@ -34,6 +34,14 @@ const suite = JSON.parse(readFileSync(resolve(here, 'suite.json'), 'utf8')) as {
   }>;
 };
 
+/**
+ * A labelled run writes `*-<label>.json` beside the shipped transcript/report,
+ * so comparing a candidate model never overwrites the committed baseline the
+ * CI integrity check reads.
+ */
+const label = (process.env.NOUR_EVAL_ARTIFACT_LABEL ?? '').trim().replace(/[^a-z0-9-]/gi, '');
+const artifactSuffix = label ? `-${label}` : '';
+
 const results: Array<Record<string, unknown>> = [];
 let cfg: { key: string; base: string; model: string; judge: string };
 
@@ -51,7 +59,35 @@ beforeAll(() => {
   };
 });
 
-type RecordedRound = { text: string; toolCalls: Array<{ name: string; arguments: string }> };
+type RoundUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+  listCostUsd: number;
+};
+type RecordedRound = {
+  text: string;
+  toolCalls: Array<{ name: string; arguments: string }>;
+  usage: RoundUsage | null;
+};
+
+/** The gateway reports usage (and list price) on the last streamed frame. */
+function normalizeUsage(usage: unknown): RoundUsage | null {
+  if (!usage || typeof usage !== 'object') return null;
+  const raw = usage as {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    completion_tokens_details?: { reasoning_tokens?: number };
+    cost?: number;
+    opencode?: { list_cost?: number };
+  };
+  return {
+    inputTokens: raw.prompt_tokens ?? 0,
+    outputTokens: raw.completion_tokens ?? 0,
+    reasoningTokens: raw.completion_tokens_details?.reasoning_tokens ?? 0,
+    listCostUsd: raw.opencode?.list_cost ?? raw.cost ?? 0,
+  };
+}
 
 /** The exact production gateway, wrapped in the client interface the turn expects. */
 function realClient(): { client: AiChatClient; rounds: RecordedRound[] } {
@@ -59,7 +95,7 @@ function realClient(): { client: AiChatClient; rounds: RecordedRound[] } {
   const rounds: RecordedRound[] = [];
   async function* stream(messages: AiChatWireMessage[], tools: AiChatTool[], signal: AbortSignal) {
     sequence += 1;
-    const round: RecordedRound = { text: '', toolCalls: [] };
+    const round: RecordedRound = { text: '', toolCalls: [], usage: null };
     rounds.push(round);
     const body: Record<string, unknown> = {
       model: cfg.model,
@@ -87,6 +123,7 @@ function realClient(): { client: AiChatClient; rounds: RecordedRound[] } {
       const data = line.slice(5).trim();
       if (!data || data === '[DONE]') continue;
       let payload: {
+        usage?: unknown;
         choices?: Array<{
           delta?: {
             content?: string;
@@ -103,6 +140,8 @@ function realClient(): { client: AiChatClient; rounds: RecordedRound[] } {
       } catch {
         continue;
       }
+      const usage = normalizeUsage(payload?.usage);
+      if (usage) round.usage = usage;
       const delta = payload?.choices?.[0]?.delta;
       if (typeof delta?.content === 'string' && delta.content) {
         round.text += delta.content;
@@ -412,13 +451,13 @@ describe('نور agent-layer evals (real gateway, real turn assembly)', () => {
 });
 
 afterAll(async () => {
-  await writeJson(resolve(here, 'eval-report-agent.json'), {
+  await writeJson(resolve(here, `eval-report-agent${artifactSuffix}.json`), {
     generatedAt: new Date().toISOString(),
     meta: { tiers: ['agent'], model: cfg?.model, judge: cfg?.judge },
     tiers: [{ name: 'agent', cases: results }],
   });
   if (process.env.NOUR_EVAL_RECORD) {
-    await writeJson(resolve(here, 'agent-transcript.json'), {
+    await writeJson(resolve(here, `agent-transcript${artifactSuffix}.json`), {
       version: 1,
       recordedAt: new Date().toISOString(),
       model: cfg?.model,
