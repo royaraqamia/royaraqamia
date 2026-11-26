@@ -90,6 +90,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
+            BUILD_SHA=${{ github.sha }}
             NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || secrets.NEXT_PUBLIC_SITE_URL }}
             PUBLIC_ORIGIN=${{ vars.PUBLIC_ORIGIN || secrets.PUBLIC_ORIGIN }}
             NEXT_PUBLIC_WHATSAPP_PHONE=${{ vars.NEXT_PUBLIC_WHATSAPP_PHONE || secrets.NEXT_PUBLIC_WHATSAPP_PHONE }}
