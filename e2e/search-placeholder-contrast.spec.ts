@@ -24,7 +24,6 @@ interface Surface {
   paint: 'placeholder' | 'text';
   signedIn?: boolean;
   thread?: boolean;
-  picker?: boolean;
 }
 
 const SURFACES: Surface[] = [
@@ -68,14 +67,9 @@ const SURFACES: Surface[] = [
     signedIn: true,
     thread: true,
   },
-  {
-    name: 'chat picker hint',
-    url: '/notifications?tab=chats',
-    selector: 'input[name="chat-member-search"]',
-    paint: 'placeholder',
-    signedIn: true,
-    picker: true,
-  },
+  // The chat member picker this used to measure is gone with the Chats tab's
+  // new-chat FAB (#1860); a conversation now starts on a member's profile, and
+  // the community search above is the product's one member-search field.
 ];
 
 type Channels = [number, number, number, number];
@@ -183,10 +177,6 @@ for (const surface of SURFACES) {
         return;
       }
       await page.goto(href);
-    }
-
-    if (surface.picker) {
-      await page.getByRole('button', { name: 'محادثة جديدة' }).click();
     }
 
     const target = page.locator(surface.selector).first();

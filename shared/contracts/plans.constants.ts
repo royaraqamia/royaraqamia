@@ -67,6 +67,14 @@ export const USAGE_COUNTERS = {
    * session, and a failed or timed-out call releases the count.
    */
   keyboardRewrites: 'keyboard.rewrite',
+  /**
+   * A member asks to start a thread with another member (#1860). This is a
+   * denominator, not an allowance: the seed gives it a cap no member reaches
+   * and the verdict on the profile entry point is read from these rows. The
+   * origin (`profile` | `picker`) travels in the dedupe key, so one conversation
+   * is one event and the ledger needs no second property column.
+   */
+  chatsDmStarted: 'chats.dm.started',
 } as const;
 
 export type UsageCounterKey = (typeof USAGE_COUNTERS)[keyof typeof USAGE_COUNTERS];
@@ -95,6 +103,8 @@ export const VISITOR_COUNTER_CAPS: Record<UsageCounterKey, number> = {
   'web.search': 0,
   // A rewrite needs the scoped credential minted from a signed-in web session.
   'keyboard.rewrite': 0,
+  // A DM is a signed-in action: the request is written against the member's id.
+  'chats.dm.started': 0,
 };
 
 /**

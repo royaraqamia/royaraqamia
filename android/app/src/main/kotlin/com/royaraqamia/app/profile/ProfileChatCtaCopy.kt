@@ -12,5 +12,5 @@ package com.royaraqamia.app.profile
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object ProfileChatCtaCopy {
-    const val MESSAGE = "مراسلة"
+    const val MESSAGE = "راسلني"
 }

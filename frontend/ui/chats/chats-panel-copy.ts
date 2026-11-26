@@ -27,7 +27,6 @@ export const CHATS_LIST_COPY = {
   cancel: 'إلغاء',
   emptyTitle: 'لا توجد محادثات بعد',
   emptyBody: 'ابدأ محادثة مع عضو، وستظهر هنا.',
-  newChat: 'محادثة جديدة',
   declinedLabel: 'رُفضت المحادثة',
   noMessages: 'لا رسائل بعد',
   typingNow: 'يكتب الآن...',

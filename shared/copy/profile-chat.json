@@ -10,10 +10,10 @@
     "object": "ProfileChatCtaCopy"
   },
   "notes": {
-    "source": "The second door on a member's profile: the quiet «مراسلة» beside the follow button. It used to be typed into the component; the app draws the same door now, so the word is generated for both. The site draws it in `app/community/_components/member-chat-cta.tsx`.",
+    "source": "The one door into a member-to-member conversation: «راسلني» beside the follow button on the member's profile (#1860). It used to be typed into the component; the app draws the same door now, so the word is generated for both. The site draws it in `app/community/_components/member-chat-cta.tsx`.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key `member-chat-cta.tsx` does not render."
   },
   "strings": {
-    "message": "مراسلة"
+    "message": "راسلني"
   }
 }

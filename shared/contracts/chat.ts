@@ -557,6 +557,12 @@ export type ChatAgentPhase =
 /** A direct thread starts as a request; acceptance happens in the list. */
 export const StartDirectChatSchema = z.object({
   userId: z.string().uuid('معرِّف العضو غير صالح'),
+  /**
+   * Where the request came from, for the `chats.dm.started` denominator (#1860).
+   * The profile is the web's only door now; `picker` stays in the vocabulary so
+   * another client can still label a start made from a member search.
+   */
+  origin: z.enum(['profile', 'picker']).default('profile'),
 });
 
 export const CreateGroupChatSchema = z.object({

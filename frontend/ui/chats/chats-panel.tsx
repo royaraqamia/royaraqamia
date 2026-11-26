@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, MessagesSquare, Plus, X } from 'lucide-react';
+import { Check, MessagesSquare, X } from 'lucide-react';
 
 import { useChatThreads, type ChatThreadsState } from '@/frontend/state/chats/use-chat-threads';
 import { useChatPresenceList } from '@/frontend/state/chats/use-chat-presence-list';
@@ -16,7 +16,6 @@ import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
 import { PresenceAvatar } from '@/frontend/ui/shared/presence-avatar';
 import { LoadingList } from '@/frontend/ui/shared/loading-skeletons';
-import { FabDisclosure } from '@/frontend/ui/shared/fab-button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { ReadFailureNotice, toReadFailure } from '@/frontend/ui/shared/read-failure';
 import { AssistantMark } from './assistant-mark';
@@ -24,9 +23,8 @@ import { LAST_SEEN_LABELS } from './last-seen-labels';
 import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
 import { assistantPhaseText } from './assistant-phase';
 import { PresenceIndicator } from './presence-indicator';
-import { NewConversationPanel } from './new-conversation-panel';
 import { CHATS_LIST_COPY } from './chats-panel-copy';
-import type { ChatConversationSummary, ChatPeer, ChatPresenceState } from '@/shared/contracts/chat';
+import type { ChatConversationSummary, ChatPresenceState } from '@/shared/contracts/chat';
 
 /**
  * What a past instant is, in the chats surface's words (#819).
@@ -56,8 +54,10 @@ export function chatTimeAgo(iso: string): string {
 }
 
 /**
- * The notifications page's Chats tab: the caller's threads, the requests that
- * wait on them, and the one action that starts a new one.
+ * The notifications page's Chats tab: the caller's threads and the requests
+ * that wait on them. A conversation with a person starts on that person's
+ * profile (#1860), so this tab no longer leads with a member search; it leads
+ * with the assistant and the threads the member already has.
  *
  * It renders inside the page's tabpanel, so it owns no heading of its own and
  * never draws `<main>`.
@@ -147,14 +147,6 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
     setAnswering(null);
   }
 
-  /**
-   * The picker opens the member's empty chat screen; nothing is created here,
-   * so browsing the directory never sends a request on the member's behalf.
-   */
-  function openWith(peer: ChatPeer) {
-    router.push(`/chats/new?to=${encodeURIComponent(peer.username)}`);
-  }
-
   /** One page step, bounded by the cursor the server handed back. */
   async function more() {
     setLoadingMore(true);
@@ -197,26 +189,6 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
           {failure}
         </p>
       )}
-
-      {/* The primary action floats, like the community composer: the list owns
-          the screen, and starting a chat is never a row inside it. The disclosure
-          owns the announcement, the focus move and the Escape return (#1832). */}
-      <FabDisclosure
-        label={CHATS_LIST_COPY.newChat}
-        panelId="chats-new-conversation-panel"
-        initialFocus='input[name="chat-member-search"]'
-        panel={(close) => (
-          <NewConversationPanel
-            onPick={(peer) => {
-              close();
-              openWith(peer);
-            }}
-            onClose={close}
-          />
-        )}
-      >
-        <Plus className="size-6" />
-      </FabDisclosure>
 
       {!hasAssistant && (
         <button
