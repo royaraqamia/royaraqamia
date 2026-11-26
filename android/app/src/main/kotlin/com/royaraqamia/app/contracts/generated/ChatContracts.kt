@@ -547,7 +547,6 @@ data class ChatAssistantStateResponse(
     val success: Boolean,
     val available: Boolean? = null,
     val allowance: ChatAssistantStateResponseAllowance? = null,
-    val opening: ChatAssistantStateResponseOpening? = null,
     val error: String? = null,
 )
 
@@ -577,18 +576,6 @@ data class ChatAssistantStateResponseAllowanceApps(
     val used: Double,
     val cap: Double,
     val connected: Double,
-)
-
-@Serializable
-data class ChatAssistantStateResponseOpening(
-    val lead: String?,
-    val suggestions: List<ChatAssistantStateResponseOpeningSuggestionsItem>,
-)
-
-@Serializable
-data class ChatAssistantStateResponseOpeningSuggestionsItem(
-    val toolId: String,
-    val ask: String,
 )
 
 @Serializable

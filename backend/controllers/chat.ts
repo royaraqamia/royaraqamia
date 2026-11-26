@@ -735,7 +735,8 @@ export async function getChatAssistant(
 export async function streamChatAgentTurn(
   id: string,
   body: Record<string, unknown>,
-  headers: Headers
+  headers: Headers,
+  origin?: { toolId: string; eventId: string }
 ): Promise<Response> {
   return withAuthenticatedStream(async ({ userId, supabase }) => {
     if (!isSameOrigin(headers)) {
@@ -754,8 +755,8 @@ export async function streamChatAgentTurn(
     // A tap is counted on the turn it actually produced. The tool id travels in
     // the dedupe key so the ledger says which advertised action was taken, and
     // a retried tap writes no second row (#1859).
-    if (parsed.data.firstScreen) {
-      const { toolId, eventId } = parsed.data.firstScreen;
+    if (origin) {
+      const { toolId, eventId } = origin;
       await createUsageService().recordEvent({
         actionKey: ASSISTANT_EVENTS.firstScreenTap,
         userId,

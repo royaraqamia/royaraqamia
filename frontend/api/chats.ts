@@ -371,9 +371,16 @@ export async function streamChatAgentTurn(
   signal?: AbortSignal,
   firstScreen?: { toolId: string; eventId: string }
 ): Promise<void> {
+  // The first-screen action rides in the URL, not the JSON body: it is request
+  // metadata for the ledger, and keeping it out of `ChatAgentTurnSchema` keeps a
+  // meter's schema out of every route's client bundle (#1859).
+  const action = firstScreen
+    ? `?action=${encodeURIComponent(firstScreen.toolId)}&event=${encodeURIComponent(firstScreen.eventId)}`
+    : '';
+
   let response: Response;
   try {
-    response = await fetch(`/api/chats/${id}/assistant`, {
+    response = await fetch(`/api/chats/${id}/assistant${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       ...(signal ? { signal } : {}),
@@ -383,9 +390,6 @@ export async function streamChatAgentTurn(
         // Where the question was asked from (ADR-0181). Sent with the question,
         // so the model does not spend a round discovering the screen.
         ...(screen ? { screen } : {}),
-        // The first-screen action that produced this question, when there was
-        // one; the server records the tap on the same request (#1859).
-        ...(firstScreen ? { firstScreen } : {}),
       }),
     });
   } catch (cause) {

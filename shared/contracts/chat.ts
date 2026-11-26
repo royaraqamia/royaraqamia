@@ -648,18 +648,6 @@ export const ChatAgentTurnSchema = z
      * "this client is older than the eyes".
      */
     screen: ScreenContextInputSchema.optional(),
-    /**
-     * The first-screen action that produced this question, when there was one.
-     * It rides with the turn so the tap is recorded by the same request that
-     * spends it — an abandoned tap is not a first message and is not counted as
-     * one (#1859).
-     */
-    firstScreen: z
-      .object({
-        toolId: z.string().min(1).max(120),
-        eventId: z.string().min(1).max(80),
-      })
-      .optional(),
   })
   .refine((value) => Boolean(value.body) || (value.attachments?.length ?? 0) > 0, {
     message: 'اكتب سؤالك أو أرسل ملفاً',
@@ -913,21 +901,10 @@ export const ChatBlockedMembersResponseSchema = z.object({
   error: z.string().optional(),
 });
 
-export const AssistantSuggestionSchema = z.object({
-  toolId: z.string().min(1),
-  ask: z.string().min(1),
-});
-
-export const AssistantOpeningSchema = z.object({
-  lead: z.string().nullable(),
-  suggestions: z.array(AssistantSuggestionSchema),
-});
-
 export const ChatAssistantStateResponseSchema = z.object({
   success: z.boolean(),
   available: z.boolean().optional(),
   allowance: ChatAssistantAllowanceSchema.optional(),
-  opening: AssistantOpeningSchema.optional(),
   error: z.string().optional(),
 });
 

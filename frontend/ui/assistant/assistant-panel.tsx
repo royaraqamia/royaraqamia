@@ -170,24 +170,20 @@ export function AssistantPanel({
       if (rememberedId) rememberThread(rememberedId);
     }
 
-    let alive = true;
     setFailure(null);
-
+    // The panel is mounted for the life of the app, not of this effect. A
+    // re-render can clean the effect up mid-read; cancelling the answer then
+    // would leave the first screen loading forever while the dedupe key below
+    // refuses to ask again. Keep the answer instead.
     void getChatAssistant({ opening: true })
       .then((state) => {
-        if (!alive) return;
         setPreState({ available: state.available, allowance: state.allowance });
         setOpening(state.opening ?? null);
       })
       .catch(() => {
-        if (!alive) return;
         setFailure(ASSISTANT_PANEL_COPY.failed);
         setOpening(null);
       });
-
-    return () => {
-      alive = false;
-    };
   }, [open, userId, identity, sessionLoading, retryKey, rememberThread]);
 
   // Closing the sheet starts a new first screen: the next open records its own

@@ -83,6 +83,12 @@ test('the assistant opens with registry actions and no conversation row', async 
     expect(await agentThreadCount()).toBe(0);
 
     await page.goto('/');
+    // The panel's first-screen read is the first signed-in fetch the page makes;
+    // let the session settle before opening so a cold dev server cannot answer
+    // it with the guest's 401 while the cookie is still being applied.
+    await expect
+      .poll(async () => (await page.request.get(`${baseURL}/auth/api/session`)).ok())
+      .toBe(true);
     await page.locator('[data-assistant-launcher]').click();
 
     const sheet = page.locator('[data-assistant-panel]');
@@ -114,8 +120,16 @@ test('the assistant opens with registry actions and no conversation row', async 
     expect(await usageCount('assistant.first_screen.shown')).toBeGreaterThanOrEqual(1);
 
     // A suggestion is the first message: its tap sends the question and mints
-    // the thread, which is the honest unit for every later turn metric.
+    // the thread, which is the honest unit for every later turn metric. Wait for
+    // the stream to finish before tearing the fixture down, or cleanup races
+    // the turn's own writes.
+    const turn = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        /\/api\/chats\/[^/]+\/assistant/.test(response.url())
+    );
     await suggestions.first().click();
+    await (await turn).finished();
     await expect.poll(agentThreadCount, { timeout: 30_000 }).toBe(1);
     await expect
       .poll(() => usageCount('assistant.first_screen.tap'), { timeout: 30_000 })
