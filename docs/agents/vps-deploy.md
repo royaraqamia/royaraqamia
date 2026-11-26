@@ -278,9 +278,15 @@ points at Render. The temporary hostname is the one that must work.
 7. Comment the temporary `vps.royaraqamia.com` block out again and restart Caddy.
 
 Leave the Render service running for a few days. Rollback is the reverse of step 2: restore the saved
-DNS records and run the same purge workflow. Rehearse it once while both origins are live, pointing a
-throwaway hostname at Render to confirm it still answers — the rollback is a DNS record, and only
-worth having if it is known to work.
+DNS records and run the same purge workflow. Rehearse the check once while both origins are live —
+the service behind the rollback answers at its own name, no DNS change needed:
+
+```powershell
+curl.exe -sI https://royaraqamia.onrender.com/manifest.json | Select-String "HTTP/|x-render-origin-server"
+```
+
+`200` and `x-render-origin-server: Render` is the rollback being real. A DNS record is only a rollback
+if the thing it points at is known to answer.
 
 ## 12. Routine operations
 
