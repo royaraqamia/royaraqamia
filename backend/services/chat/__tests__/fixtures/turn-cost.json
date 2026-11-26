@@ -1,0 +1,126 @@
+{
+  "note": "A representative assistant turn (#1455): the identity, screen, recall, summary and specialist blocks a turn opens with, then the thread the window holds. The token numbers are produced from this file by backend/services/chat/__tests__/turn-budget.test.ts; a block that grows must be re-measured here and in docs/assistant/roadmap.md.",
+  "identity": {
+    "displayName": "ريم",
+    "username": "reem",
+    "avatarUrl": "https://cdn.royaraqamia.test/avatars/reem.png",
+    "hasEmail": true,
+    "plan": "pro",
+    "connectedApps": 3
+  },
+  "screen": {
+    "route": "/spendtrack/expenses",
+    "product": "spendtrack",
+    "screenId": "spendtrack",
+    "title": "المصروفات",
+    "overlays": [
+      {
+        "id": "spendtrack.expense.edit",
+        "kind": "dialog"
+      }
+    ],
+    "focus": {
+      "kind": "expense",
+      "id": "row-42"
+    },
+    "tab": null,
+    "fields": {
+      "amount": "120",
+      "currency": "USD",
+      "category_id": "طعام",
+      "date": "2026-11-20",
+      "description": "غداء عمل مع فريق التصميم"
+    },
+    "text": "",
+    "updatedAt": "2026-11-20T11:30:00.000Z"
+  },
+  "recalled": [
+    {
+      "memoryId": "memory-1",
+      "text": "أفضّل القهوة السادة بلا سكر.",
+      "similarity": 0.82,
+      "updatedAt": "2026-10-03T09:00:00.000Z"
+    },
+    {
+      "memoryId": "memory-2",
+      "text": "ميزانية المصروف الشهرية 1,200 دولار.",
+      "similarity": 0.74,
+      "updatedAt": "2026-11-01T08:15:00.000Z"
+    },
+    {
+      "memoryId": "memory-3",
+      "text": "أعمل في تصميم واجهات المستخدم.",
+      "similarity": 0.61,
+      "updatedAt": "2026-09-12T14:40:00.000Z"
+    }
+  ],
+  "summary": {
+    "text": "اتفقتا على أن تبدأ ميزانية الشهر في 15 منه، وأن يقسّم الغذاء والعمل على بندين منفصلين. سأل العضو عن مصروف الغداء الأخير، وطلبتا أن يُسجَّل في بند الطعام لا بند العمل. بقيت مسألة ضبط سقف شهري منفصل للمواصلات مفتوحة.",
+    "throughMessageId": "message-42",
+    "updatedAt": "2026-11-20T11:00:00.000Z"
+  },
+  "skills": [
+    {
+      "id": "finance-financial-analyst",
+      "name": "Financial Analyst",
+      "description": "Expert financial analyst specializing in financial modeling and forecasts.",
+      "score": 0.71
+    },
+    {
+      "id": "engineering-frontend-developer",
+      "name": "Frontend Developer",
+      "description": "Expert frontend developer specializing in React and UI implementation.",
+      "score": 0.53
+    }
+  ],
+  "thread": [
+    {
+      "id": "message-43",
+      "senderKind": "user",
+      "body": "سجّل لي غداء العمل بـ 120 دولاراً في بند الطعام."
+    },
+    {
+      "id": "message-44",
+      "senderKind": "agent",
+      "body": "حاضر، سأجهّز اقتراح مصروف بمبلغ 120 دولاراً في بند الطعام، وتؤكّده أنت قبل أن يُحفظ."
+    },
+    {
+      "id": "message-45",
+      "senderKind": "user",
+      "body": "وكم بقي من ميزانية الطعام هذا الشهر؟"
+    },
+    {
+      "id": "message-46",
+      "senderKind": "agent",
+      "body": "بعد هذا المصروف يبقى من بند الطعام 380 دولاراً حتى بداية الشهر القادم."
+    },
+    {
+      "id": "message-47",
+      "senderKind": "user",
+      "body": "هل أستطيع ضبط سقف منفصل للمواصلات؟"
+    },
+    {
+      "id": "message-48",
+      "senderKind": "agent",
+      "body": "نعم، يمكنك ضبط سقف شهري منفصل للمواصلات من إعدادات الميزانية، وأستطيع فتح النموذج لك."
+    }
+  ],
+  "longThread": {
+    "note": "The over-window stress case: twenty long messages from a working thread, enough that the full window alone reaches the old six-thousand-token ceiling. It proves the history is what shrinks when the layers are paid for.",
+    "count": 20,
+    "repeat": 4,
+    "senderPattern": ["user", "agent"],
+    "body": "راجعتُ كشف المصروفات لهذا الشهر بنداً بنداً: الغذاء 620 دولاراً، المواصلات 180 دولاراً، العمل 240 دولاراً، والاشتراكات 95 دولاراً. سجّلتُ كل مصروف في بنده الصحيح وتأكّدتُ من التواريخ، وبقي بند واحد لم أتبيّن له تصنيفاً واضحاً وهو مشتريات المكتب الصغيرة، وأحتاج رأيك في جعله بنداً مستقلاً أم جزءاً من بند العمل، لأن ذلك سيغيّر مجموع كل بند ويؤثّر على مقارنة الشهر القادم."
+  },
+  "expected": {
+    "identity": 85,
+    "screen": 124,
+    "recall": 76,
+    "summary": 103,
+    "skills": 121,
+    "context": 509,
+    "historyBudget": 5491,
+    "historyBudgetWithSearch": 4191,
+    "longThreadDropped": 2
+  }
+}

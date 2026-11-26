@@ -19,10 +19,12 @@ export {
 export const CHAT_BODY_MAX = 4_000;
 
 /**
- * What the assistant is sent, and what it answers. The window is the last
- * twenty messages trimmed to roughly six thousand tokens (four characters is
- * the usual estimate), because the system prompt is sent apart from it and the
- * provider's own limit is the hard ceiling (#817).
+ * What the assistant is sent, and what it answers. The context the server
+ * assembles — identity, screen, recall, the specialist shortlist, the rolling
+ * summary and the last twenty messages — is trimmed to roughly six thousand
+ * tokens together (#1455), because the standing system prompt is sent apart from
+ * it and the provider's own limit is the hard ceiling (#817). The window is the
+ * remainder after the injected layers are paid for; it is not the whole budget.
  */
 export const CHAT_AGENT_HISTORY_MAX = 20;
 export const CHAT_AGENT_TOKEN_BUDGET = 6_000;

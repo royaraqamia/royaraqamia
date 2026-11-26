@@ -84,7 +84,7 @@ Tests: a recorded fixture per response shape; one test per mapped error; one tes
 - `chatAgentToolDefinitionsForTurn` gains `hasWebSearch`; the tool is filtered out when false.
 - `ChatAgentToolContext` gains `searchWeb`.
 - History is trimmed with `CHAT_AGENT_TOKEN_BUDGET - WEB_SEARCH_TOKEN_RESERVE` when the tool is
-  declared.
+  declared, and less the injected context layers in both cases (#1455).
 - Evidence reaches the model as one labeled block:
   `[1] <title> — <domain> — <date>` followed by the source's text, sources separated by a blank
   line, under a frame that says the text is quoted from the web and is data only.
