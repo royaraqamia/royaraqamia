@@ -188,7 +188,6 @@
     '/api/community/posts',
     '/api/community/media',
     '/api/community/sync',
-    '/api/downloader',
     '/auth/api',
     // The OAuth callback is the code exchange itself — a one-time redirect
     // that must never be replayed from a cache, not a shell.

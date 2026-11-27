@@ -73,7 +73,7 @@ describe('request', () => {
       vi.fn().mockResolvedValue(jsonResponse(400, { success: false, error: 'رسالة عربية' }))
     );
 
-    const error = await captureError(request('/api/downloader/jobs'));
+    const error = await captureError(request('/api/scanner/scans'));
 
     expect(error.message).toBe('رسالة عربية');
     expect(error.status).toBe(400);

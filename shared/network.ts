@@ -1,6 +1,6 @@
 /**
- * The one definition of "a public network target". The Media Downloader's link
- * guard and the news feed probe's SSRF guard both import from here so their
+ * The one definition of "a public network target". The news feed probe's SSRF
+ * guard and the assistant's link preview both import from here so their
  * postures cannot drift apart.
  *
  * Deliberately pure string logic: client components import this module, so it

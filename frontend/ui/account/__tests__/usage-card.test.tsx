@@ -31,7 +31,7 @@ const freeState: UsageState = {
   expiresAt: null,
   counters: [
     {
-      key: 'downloader.job.create',
+      key: 'scanner.scan',
       label: 'تنزيل وسائط',
       window: 'lifetime',
       cap: 5,
@@ -92,7 +92,7 @@ describe('UsageCard', () => {
       plan: 'pro',
       counters: [
         {
-          key: 'downloader.job.create',
+          key: 'scanner.scan',
           label: 'تنزيل وسائط',
           window: 'lifetime',
           cap: 50,

@@ -83,7 +83,7 @@ describe('dailyCounters', () => {
       counter('web.search', 'بحث', 0, 5),
       counter('chat.agent.turn', 'سؤال', 7, 10),
       counter('quran.surah.read', 'سورة', 3, 5),
-      counter('downloader.job.create', 'تنزيل', 9, 10, 'lifetime'),
+      counter('scanner.scan', 'تنزيل', 9, 10, 'lifetime'),
     ]).map((entry) => entry.key);
 
     expect(keys).toEqual(['chat.agent.turn', 'quran.surah.read', 'web.search']);
@@ -96,7 +96,7 @@ describe('dailyCounters', () => {
       counter('scanner.scan', 'مسح', 1, 5),
       counter('mcp.call', 'استدعاء', 0, 5),
       counter('web.search', 'بحث', 0, 5),
-      counter('downloader.job.create', 'تنزيل', 0, 0),
+      counter('scanner.scan', 'تنزيل', 0, 0),
     ];
 
     expect(dailyCounters(six)).toHaveLength(4);
@@ -138,7 +138,7 @@ describe('PlanView counters', () => {
     const six = [
       ...daily,
       counter('mcp.call', 'استدعاء تطبيق خارجي', 0, 5),
-      counter('downloader.job.create', 'تنزيل وسائط', 0, 5),
+      counter('scanner.scan', 'تنزيل وسائط', 0, 5),
     ];
     mocks.page.usage = state(six);
 

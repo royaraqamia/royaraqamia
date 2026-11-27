@@ -63,7 +63,7 @@ const CASES: Array<[pathname: string, runs: boolean]> = [
   ['/_next/image?url=%2Flogo.webp&w=96&q=75', false],
   ['/icons/apple-touch-icon-180x180.png', false],
   ['/logo.webp', false],
-  ['/downloader-sample.mp4', false],
+  ['/robots.txt', false],
 ];
 
 describe('proxy.ts middleware matcher', () => {

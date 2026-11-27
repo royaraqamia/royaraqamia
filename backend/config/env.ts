@@ -163,15 +163,6 @@ export const env = {
       'royaraqamia-anonymous-local'
     ).trim();
   },
-  get downloaderProviderUrl(): string | undefined {
-    return read('DOWNLOADER_PROVIDER_URL');
-  },
-  get downloaderProviderToken(): string | undefined {
-    return read('DOWNLOADER_PROVIDER_TOKEN');
-  },
-  get downloaderCallbackSecret(): string | undefined {
-    return read('DOWNLOADER_CALLBACK_SECRET');
-  },
   /**
    * The HMAC key behind the keyboard's rewrite-only credential (ADR-0220). The
    * token is stateless, so this is the only server-side secret it needs; it is

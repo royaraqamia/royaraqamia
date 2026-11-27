@@ -4,8 +4,8 @@ import { UsageService } from '@/backend/services/plans/usage-service';
 import type { UsageRepository } from '@/backend/repositories/plans/usage-repository';
 import type { UsageCounterState, UsageState } from '@/shared/contracts/plans';
 
-const downloadCounter: UsageCounterState = {
-  key: 'downloader.job.create',
+const scanCounter: UsageCounterState = {
+  key: 'scanner.scan',
   label: 'تنزيل وسائط',
   window: 'lifetime',
   cap: 5,
@@ -17,7 +17,7 @@ const freeState: UsageState = {
   plan: 'free',
   unlimited: false,
   expiresAt: null,
-  counters: [downloadCounter],
+  counters: [scanCounter],
 };
 
 function makeRepository(overrides: Partial<UsageRepository> = {}): UsageRepository {
@@ -37,7 +37,7 @@ function makeRepository(overrides: Partial<UsageRepository> = {}): UsageReposito
       allowed: true,
       duplicate: false,
       eventId: 'event-1',
-      state: downloadCounter,
+      state: scanCounter,
     })),
     release: vi.fn(async () => true),
     countOwned: vi.fn(async () => 0),
@@ -58,12 +58,12 @@ describe('PlanGate', () => {
     const { repository, gate } = makeGate();
 
     await expect(
-      gate.count({ userId: 'user-1', ip: '1.1.1.1' }, 'downloader.job.create', async () => 'ok')
+      gate.count({ userId: 'user-1', ip: '1.1.1.1' }, 'scanner.scan', async () => 'ok')
     ).resolves.toBe('ok');
 
     expect(repository.record).toHaveBeenCalledWith(
       expect.objectContaining({
-        actionKey: 'downloader.job.create',
+        actionKey: 'scanner.scan',
         userId: 'user-1',
         visitorKey: null,
       })
@@ -76,7 +76,7 @@ describe('PlanGate', () => {
 
     await gate.count(
       { userId: null, visitorKey: 'visitor-1', ip: '203.0.113.7' },
-      'downloader.job.create',
+      'scanner.scan',
       async () => 'ok'
     );
 
@@ -99,7 +99,7 @@ describe('PlanGate', () => {
 
     await gate.count(
       { userId: null, visitorKey: null, ip: '203.0.113.7' },
-      'downloader.job.create',
+      'scanner.scan',
       async () => 'ok'
     );
 
@@ -115,13 +115,13 @@ describe('PlanGate', () => {
         allowed: false,
         duplicate: false,
         eventId: null,
-        state: { ...downloadCounter, cap: 1, used: 1, remaining: 0 },
+        state: { ...scanCounter, cap: 1, used: 1, remaining: 0 },
       })),
     });
     const run = vi.fn(async () => 'never');
 
     await expect(
-      gate.count({ userId: null, ip: '203.0.113.7' }, 'downloader.job.create', run)
+      gate.count({ userId: null, ip: '203.0.113.7' }, 'scanner.scan', run)
     ).rejects.toMatchObject({ statusCode: 402, code: 'visitor_limit' });
     expect(run).not.toHaveBeenCalled();
   });
@@ -131,7 +131,7 @@ describe('PlanGate', () => {
     const failure = new Error('busy');
 
     await expect(
-      gate.count({ userId: 'user-1', ip: '1.1.1.1' }, 'downloader.job.create', async () => {
+      gate.count({ userId: 'user-1', ip: '1.1.1.1' }, 'scanner.scan', async () => {
         throw failure;
       })
     ).rejects.toBe(failure);
@@ -160,7 +160,7 @@ describe('PlanGate', () => {
 
     const reservation = await gate.reserve(
       { userId: null, visitorKey: 'visitor-1', ip: '203.0.113.7' },
-      'downloader.job.create'
+      'scanner.scan'
     );
     await reservation.release();
 

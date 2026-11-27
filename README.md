@@ -284,10 +284,6 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 
 | `CRON_SECRET` | **Secret.** Bearer token the scheduled jobs send to `/api/rates/refresh` | `change-me` (random 32 bytes) | for the rates cron |
 
-| `DOWNLOADER_PROVIDER_URL` | Job endpoint of the self-hosted Cobalt Media Provider host (empty = built-in stub) | `https://downloader.example.com/job` | Media Downloader only |
-| `DOWNLOADER_PROVIDER_TOKEN` | **Secret.** Bearer token the app sends to the provider host | `change-me` | Media Downloader only |
-| `DOWNLOADER_CALLBACK_SECRET` | **Secret.** Shared secret the provider sends to `/api/downloader/callback` | `change-me` (random 32 bytes) | Media Downloader only |
-
 | `AI_CHAT_BASE_URL` | OpenAI-compatible base URL of the assistant's provider (empty = the OpenCode gateway) | `https://opencode.ai/inference/go/openai/v1` | Chats assistant only |
 | `AI_CHAT_MODEL` | The model id the assistant asks for (empty = `deepseek-v4.1-flash`) | `deepseek-v4.1-flash` | Chats assistant only |
 | `AI_CHAT_API_KEY` | **Secret.** Provider key for the assistant's turns; empty falls back to `OPENCODE_API_KEY`, and neither means the assistant is off, not broken | `change-me` | Chats assistant only |

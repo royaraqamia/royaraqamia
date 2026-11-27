@@ -53,7 +53,7 @@ const SETTINGS = {
 const LIMITS = [{ key: 'notes', label: 'الملاحظات', freeCap: 5, proCap: 50, sortOrder: 115 }];
 const COUNTERS = [
   {
-    key: 'downloader.job.create',
+    key: 'scanner.scan',
     label: 'تنزيل وسائط',
     window: 'lifetime' as const,
     visitorCap: 1,

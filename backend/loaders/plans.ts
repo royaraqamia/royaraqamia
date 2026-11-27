@@ -131,15 +131,6 @@ const CATALOG_FALLBACK: PlanCatalog = {
   limits: FALLBACK_LIMITS,
   counters: [
     {
-      key: 'downloader.job.create',
-      label: 'تنزيل وسائط',
-      window: 'lifetime',
-      visitorCap: 1,
-      freeCap: 5,
-      proCap: 50,
-      sortOrder: 10,
-    },
-    {
       key: 'scanner.scan',
       label: 'مسح رمز',
       window: 'daily',

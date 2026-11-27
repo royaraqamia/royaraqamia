@@ -39,7 +39,6 @@ const freeCaps: PlanCaps = {
   counters: {
     'scanner.scan': { window: 'daily', cap: 5 },
     'quran.surah.read': { window: 'daily', cap: 5 },
-    'downloader.job.create': { window: 'lifetime', cap: 5 },
     'chat.agent.turn': { window: 'daily', cap: 0 },
     'mcp.call': { window: 'daily', cap: 5 },
     'web.search': { window: 'daily', cap: 0 },
@@ -129,7 +128,6 @@ describe('local plan limits', () => {
 
   it('mirrors the seeded visitor caps', () => {
     expect(VISITOR_COUNTER_CAPS['scanner.scan']).toBe(1);
-    expect(VISITOR_COUNTER_CAPS['downloader.job.create']).toBe(1);
   });
 
   it('stops the guest at the visitor cap without touching an account', () => {

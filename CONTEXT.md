@@ -212,56 +212,6 @@ _Avoid_: التوظيف, Employment, employee, salary, subscription, maintenance
 A published sample of royaraqamia's work, shown on the site as a showcase.
 _Avoid_: Project, case study, work sample
 
-### Media Downloader
-
-**Media Downloader**:
-The public tool that turns a link to a Platform-hosted media item into a single audio
-or video file a visitor can save. Free and anonymous; it is a traffic utility, not a paid
-offering. Distinct from the act of saving a file on a device.
-_Sold as_: مُنزِّل الوسائط
-_Avoid_: Downloader, download tool, saver, grabber, ripper
-
-**Download**:
-One request to turn one media link into one saved file — the unit of work in the Media
-Downloader. It carries a content choice (audio or video) and produces at most one file.
-_Avoid_: Save, grab, rip, export, conversion
-
-**Download Job**:
-The short-lived record of a Download, tracked from acceptance to delivery. It is rate-limited,
-observable and reviewable by an Admin, but stores no media.
-_Avoid_: Task, request, transfer, conversion job
-
-**Download Status**:
-Where a Download Job sits in its short life: `queued` (accepted, not yet started),
-`running` (the Media Provider is working), `ready` (a signed file link exists) and the
-terminals `failed` and `expired`.
-_Avoid_: State, stage, phase
-
-**Platform**:
-An external site whose hosted media a Download can target. Each Platform can be enabled or
-disabled independently of the others.
-_Avoid_: Source, host, site, service, provider
-
-**Circuit breaker**:
-Per-Platform safety that opens when a Platform's extractor keeps failing, refusing new
-Downloads for that Platform until a cooldown passes.
-_Avoid_: Rate limiter, throttle, backoff
-
-**Blocklist**:
-The domains and exact links an Admin has refused; a Download targeting one is rejected
-before any provider work.
-_Avoid_: Ban list, denylist, blacklist
-
-**Download Limits**:
-The tunable caps — max duration, audio/video size, concurrent jobs and signed-link
-lifetime — an Admin can change without a deploy.
-_Avoid_: Quotas, thresholds, config
-
-**Media Provider**:
-The external backend that turns a media link into a downloadable file. The site does not
-extract or convert media itself.
-_Avoid_: Extractor, downloader service, ripper
-
 ### Scanner
 
 **Scanner**:
