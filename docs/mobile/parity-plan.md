@@ -50,6 +50,7 @@ _The account area, notifications and chats: the screens a member opens daily._
 - [x] **account-connected-apps** `/account/connected-apps` — native · #900
 - [x] **account-blocked** `/account/blocked` — native · #1346
 - [ ] **account-memory** `/account/memory` — todo · #1428
+- [-] **assistant** `/assistant` — document, by design · A settings form the app opens in the document (ADR-0224): the copy is the web's, the writes are the member's own, and the three rows under it are links to pages the app already opens. The sheet's header is the app's door, so a native copy would be a second form to keep in step with a page whose job is one field.
 - [x] **account-faq** `/account/faq` — native
 - [x] **account-news** `/account/news` — native · #1347
 - [x] **notifications** `/notifications` — native · #1391
@@ -200,4 +201,4 @@ A component is finished when the surface that draws it is native, or when it bel
 
 ## Where this stands
 
-26 native · 3 to do · 5 document · 5 blocked of 39 surfaces. 3 of 10 release items done.
+26 native · 3 to do · 6 document · 5 blocked of 40 surfaces. 3 of 10 release items done.

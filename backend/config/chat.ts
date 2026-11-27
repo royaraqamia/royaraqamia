@@ -6,6 +6,8 @@ import { createSupabaseChatAgentRepository } from '@/backend/repositories/chat/c
 import { createSupabaseSkillTelemetryRepository } from '@/backend/repositories/chat/skill-telemetry-repository';
 import { createSupabaseChatAgentActionRepository } from '@/backend/repositories/chat/chat-agent-action-repository';
 import { createSupabaseAgentToolGrantRepository } from '@/backend/repositories/agent/agent-tool-grant-repository';
+import { createSupabaseAssistantIdentityRepository } from '@/backend/repositories/agent/assistant-identity-repository';
+import { AssistantIdentityService } from '@/backend/services/agent/assistant-identity-service';
 import {
   AgentToolGrantService,
   type AgentToolGrantServiceDeps,
@@ -432,6 +434,23 @@ export function createSupabaseAgentToolGrantService(
   return new AgentToolGrantService({
     grants: createSupabaseAgentToolGrantRepository(supabase, getAdminSupabase()),
     tools: () => chatAgentTools(toolsDeps),
+    ...deps,
+  });
+}
+
+/**
+ * The member's own assistant identity (ADR-0224).
+ *
+ * One row, read and written on the member's own session: RLS is the boundary, so
+ * this factory never reaches for the admin client. A member with no row reads the
+ * deployment's default, which is why the page needs no special case for them.
+ */
+export function createSupabaseAssistantIdentityService(
+  supabase: SupabaseClient<Database>,
+  deps: Partial<{ now: () => Date }> = {}
+): AssistantIdentityService {
+  return new AssistantIdentityService({
+    identities: createSupabaseAssistantIdentityRepository(supabase),
     ...deps,
   });
 }

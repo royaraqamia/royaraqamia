@@ -23,6 +23,10 @@
       "anon": ["SELECT"],
       "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
     },
+    "assistant_identities": {
+      "anon": [],
+      "authenticated": ["DELETE", "INSERT", "SELECT", "UPDATE"]
+    },
     "availability_slots": {
       "anon": ["SELECT"],
       "authenticated": ["SELECT"]

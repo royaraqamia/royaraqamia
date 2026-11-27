@@ -10,6 +10,14 @@ The decision is [ADR-0224](../adr/0224-the-assistant-has-a-home-and-a-name-the-m
 This file is the work order: what exists, what changes, in which order, and the
 evidence that says a phase is done.
 
+## Status
+
+Landed (2026-11-27, #1935): phase 0 in full, and phase 1 except the three
+changes that need a Kotlin pair — the sheet's header link, the account row, and
+the in-chat «اسمح دائماً». The grants list moved to the page with them (phase 2's
+UI half). Still open: the tone picker, the note and the prompt block (phase 3),
+the orb variants (phase 4), and the Android half of the door.
+
 ## What already exists
 
 | Piece                | Where                                                                                                      | Reused how                                                      |
@@ -29,19 +37,19 @@ evidence that says a phase is done.
 
 ## What is added
 
-| Piece                | Where                                                                                      | Note                                                     |
-| -------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
-| Identity contract    | `shared/contracts/assistant-identity.ts`                                                   | Name, variant, tone, note — one source of caps and words |
-| Table                | `supabase/migrations/*_assistant_identity.sql`                                             | Owner-only RLS, cascade on delete, no backfill           |
-| Repository           | `backend/repositories/agent/assistant-identity-repository.ts`                              | The only code that knows the table                       |
-| Service              | `backend/services/agent/assistant-identity-service.ts`                                     | Resolve, validate, write, reset                          |
-| Controller and route | `backend/controllers/assistant-identity.ts`, `app/api/account/assistant/identity/route.ts` | `GET`/`PUT`/`DELETE`, `no-store`                         |
-| The page             | `app/assistant/page.tsx` + `frontend/ui/assistant/assistant-home.tsx`                      | The index; identity and permissions; links to the rest   |
-| Copy                 | `shared/copy/assistant-home.json`                                                          | Generated pair; `check:copy` and `check:parity` gate it  |
-| Panel identity       | `frontend/api/chats/assistant-cache.ts`                                                    | Snapshot carries the name and variant                    |
-| Prompt block         | `backend/services/chat/chat-agent-service.ts`                                              | The name and the tone line, assembled once               |
-| The app              | `AssistantSheet.kt`, `AssistantHomeCopy.kt`                                                | The header gains the door; the page stays the document   |
-| Plan rows            | `perf/surfaces.json`, `docs/mobile/screens.json`, `docs/mobile/parity-plan.json`           | Land with the route, together                            |
+| Piece                | Where                                                                                      | Note                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Identity contract    | `shared/contracts/assistant-identity.ts`                                                   | Name, variant, tone, note — one source of caps and words                       |
+| Table                | `supabase/migrations/*_assistant_identity.sql`                                             | Owner-only RLS, cascade on delete, no backfill                                 |
+| Repository           | `backend/repositories/agent/assistant-identity-repository.ts`                              | The only code that knows the table                                             |
+| Service              | `backend/services/agent/assistant-identity-service.ts`                                     | Resolve, validate, write, reset                                                |
+| Controller and route | `backend/controllers/assistant-identity.ts`, `app/api/account/assistant/identity/route.ts` | `GET`/`PUT`/`DELETE`, `no-store`                                               |
+| The page             | `app/assistant/page.tsx` + `frontend/ui/assistant/assistant-home.tsx`                      | The index; identity and permissions; links to the rest                         |
+| Copy                 | `frontend/ui/assistant/assistant-home-copy.ts`                                             | Beside the view: the page is a document surface, so there is no generated pair |
+| Panel identity       | `frontend/api/chats/assistant-cache.ts`                                                    | Snapshot carries the name and variant                                          |
+| Prompt block         | `backend/services/chat/chat-agent-service.ts`                                              | The name and the tone line, assembled once                                     |
+| The app              | `AssistantSheet.kt`, `AssistantHomeCopy.kt`                                                | The header gains the door; the page stays the document                         |
+| Plan rows            | `perf/surfaces.json`, `docs/mobile/screens.json`, `docs/mobile/parity-plan.json`           | Land with the route, together                                                  |
 
 ## Phase 0 — the row and the contract
 

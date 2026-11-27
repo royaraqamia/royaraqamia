@@ -1,5 +1,4 @@
 import { cn } from '@/frontend/shared/cn';
-import { AssistantPresenceDot } from '@/frontend/ui/assistant/assistant-presence-dot';
 
 /**
  * The assistant's own mark: a lit orb.
@@ -17,15 +16,10 @@ import { AssistantPresenceDot } from '@/frontend/ui/assistant/assistant-presence
 export function AssistantMark({
   className,
   glyphClassName,
-  online = false,
-  onlineLabel,
 }: {
   className?: string;
   /** Sizing for the glyph inside the tile; defaults to a little over half. */
   glyphClassName?: string;
-  /** The availability dot, where a member's `PresenceAvatar` draws theirs. */
-  online?: boolean;
-  onlineLabel?: string;
 }) {
   return (
     <span className={cn('relative inline-flex shrink-0 size-9', className)}>
@@ -44,7 +38,6 @@ export function AssistantMark({
           <path d="M12 4a8 8 0 1 0 0 16 10 10 0 0 1 0-16Z" fill="currentColor" />
         </svg>
       </span>
-      {online ? <AssistantPresenceDot label={onlineLabel} /> : null}
     </span>
   );
 }

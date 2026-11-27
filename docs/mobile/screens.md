@@ -30,6 +30,7 @@ Every surface the site serves, and which client draws it. A screen that exists i
 | `account-news` | `/account/news` | `NewsScreen.kt` |  |
 | `account-blocked` | `/account/blocked` | `BlockedMembersScreen.kt` |  |
 | `account-memory` | `/account/memory` | `MemoryScreen.kt` (off) | Ported (#1428) and switched off until it is the page pixel for pixel: the shell hands the route to the document in the meantime (#872, ADR-0117, ADR-0118). |
+| `assistant` | `/assistant` | _web only_ | The assistant's own page is the document (ADR-0224): a name field, the permissions list and three links, whose words and writes belong to the site. The app's door is the floating sheet's header, so a native copy would be a second form to keep in step for a page that is one field. |
 | `notifications` | `/notifications` | `NotificationsScreen.kt` |  |
 | `community` | `/community`<br>`/community/explore` | `CommunityFeedScreen.kt` |  |
 | `community-post` | `/community/[slug]` | `CommunityPostScreen.kt` |  |

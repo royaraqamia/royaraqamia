@@ -29,6 +29,12 @@ export interface AssistantSnapshot {
   available: boolean;
   /** The last known meters; the live read replaces it. */
   allowance: ChatAgentAllowance | null;
+  /**
+   * The name the member gave their assistant, once they have set one (ADR-0224).
+   * The panel draws it in its header before it asks anything, so a rename paints
+   * on the next open rather than a moment later.
+   */
+  name: string | null;
 }
 
 function browserStorage(): Storage | null {
@@ -83,6 +89,7 @@ export function readAssistantSnapshot(identity: LocalIdentity): AssistantSnapsho
       threadId,
       available: parsed.available !== false,
       allowance: isAllowance(parsed.allowance) ? parsed.allowance : null,
+      name: typeof parsed.name === 'string' && parsed.name.length > 0 ? parsed.name : null,
     };
   } catch {
     return null;
@@ -90,12 +97,25 @@ export function readAssistantSnapshot(identity: LocalIdentity): AssistantSnapsho
 }
 
 /** Records the face the server just answered, for the next open. */
-export function writeAssistantSnapshot(identity: LocalIdentity, snapshot: AssistantSnapshot): void {
+export function writeAssistantSnapshot(
+  identity: LocalIdentity,
+  snapshot: Partial<AssistantSnapshot>
+): void {
   const storage = browserStorage();
   if (!storage) return;
 
   try {
-    storage.setItem(snapshotKey(identity), JSON.stringify(snapshot));
+    const current = readAssistantSnapshot(identity);
+    // `in` rather than `??`: an explicit null clears a field (a forgotten thread,
+    // a name reset to the default) and must not fall back to the old answer.
+    const next: AssistantSnapshot = {
+      threadId: 'threadId' in snapshot ? (snapshot.threadId ?? null) : (current?.threadId ?? null),
+      available: snapshot.available ?? current?.available ?? true,
+      allowance:
+        'allowance' in snapshot ? (snapshot.allowance ?? null) : (current?.allowance ?? null),
+      name: 'name' in snapshot ? (snapshot.name ?? null) : (current?.name ?? null),
+    };
+    storage.setItem(snapshotKey(identity), JSON.stringify(next));
   } catch {
     // A full or unavailable store only costs the next open its head start.
   }

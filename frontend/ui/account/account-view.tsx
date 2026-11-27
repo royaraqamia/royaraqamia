@@ -10,7 +10,6 @@ import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 import { InstallSection } from '@/frontend/ui/account/install-section';
 import { KeyboardSection } from '@/frontend/ui/account/keyboard-section';
 import { AccountRows } from '@/frontend/ui/account/account-rows';
-import { AssistantGrantsView } from '@/frontend/ui/account/assistant-grants-view';
 
 function AccountSkeleton() {
   return (
@@ -70,15 +69,6 @@ export function AccountView() {
       {/* The allowance is the account's own data, so the card draws nothing at
           all for a visitor — `/pricing` is where a guest learns what it offers. */}
       <UsageCard />
-
-      {/* The assistant's per-tool trust (ADR-0180, #1438). The same component is
-          the inbound tab's list, so the account settings and the apps sheet draw
-          one source rather than two that can drift. */}
-      {user && (
-        <div className="rounded-2xl border border-border/50 bg-card/40 p-4">
-          <AssistantGrantsView />
-        </div>
-      )}
 
       {/* Account actions — every row is public; the ones behind a session open the
           sign-in prompt instead of navigating. */}

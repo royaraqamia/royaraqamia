@@ -15,7 +15,6 @@ import {
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
-import { AssistantGrantsView } from './assistant-grants-view';
 import { LockedCard } from '@/frontend/ui/shared/locked-card';
 import { NeedsConnection } from '@/frontend/ui/shared/needs-connection';
 import { ApiError } from '@/frontend/transport/http';
@@ -304,12 +303,9 @@ function ConnectedAppsBody({ query }: { query: string }) {
         <span>{MCP_CONNECTED_APPS_COPY.connectNew}</span>
       </Link>
 
-      {/* The assistant's per-tool trust (ADR-0180, #1438). It is rendered here
-          rather than on a page of its own because this view is the settings
-          surface on both hosts: the account page and the apps sheet draw it. */}
-      <div className="rounded-2xl border border-border/50 bg-card/40 p-4">
-        <AssistantGrantsView />
-      </div>
+      {/* The assistant's per-tool trust left this view (ADR-0224): trust is
+          granted in the conversation and revoked on `/assistant`, so this list
+          stays about apps that may call the member. */}
 
       <ConfirmDialog
         open={target !== null}
