@@ -58,10 +58,23 @@ HEARTBEAT_HOUR=${HEARTBEAT_HOUR:-9}
 REPEAT_HOURS=${REPEAT_HOURS:-6}
 APP=royaraqamia
 CADDY=royaraqamia-caddy
-STATE=${STATE:-/var/tmp/royaraqamia-monitor.state}
+# Not /var/tmp: it is sticky and world-writable, and fs.protected_regular=2 refuses
+# even root a truncating write to a file another user owns there. A run as
+# `deploy` once left the file behind, and every later root run could not write it.
+# /run is root's, is emptied at boot, and a rebooted box re-sending one alert is
+# the right trade.
+STATE=${STATE:-/run/royaraqamia-monitor.state}
 
 problems=()
 notes=()
+
+# The state is a convenience (it dedupes a persisting problem): never let it fail
+# the run, but never hide that it failed either.
+remember() {
+  if ! printf '%s\n' "$1" >"$STATE" 2>/dev/null; then
+    logger -t royaraqamia-monitor "cannot write ${STATE}; a persisting problem will repeat every run"
+  fi
+}
 
 send() {
   local text="$1"
@@ -149,13 +162,13 @@ if [ ${#problems[@]} -gt 0 ]; then
   last_sent=$(grep -o 'sent=[0-9]*' "$STATE" 2>/dev/null | cut -d= -f2 || echo 0)
   if [ "$hash" != "${last_hash:-}" ] || [ $((now - ${last_sent:-0})) -ge $((REPEAT_HOURS * 3600)) ]; then
     send "$(hostname) ${since}"$'\n'"${body}"
-    printf 'hash=%s sent=%s\n' "$hash" "$now" >"$STATE" 2>/dev/null || true
+    remember "hash=$hash sent=$now"
   fi
   exit 0
 fi
 
 # Healthy: forget the reminder so the next problem speaks at once.
-printf 'hash=none sent=0\n' >"$STATE" 2>/dev/null || true
+remember 'hash=none sent=0'
 
 if [ "$(date +%H)" = "$(printf '%02d' "$HEARTBEAT_HOUR")" ]; then
   extra=''
