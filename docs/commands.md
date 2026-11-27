@@ -151,6 +151,14 @@ steps are in [agents/vps-deploy.md](agents/vps-deploy.md). The Render blueprint 
 were deleted on 2026-11-27 with the cutover signed off (ADR-0221); neither host has a deployment path
 in this repository any more.
 
+**The box reports its own health.** `deploy/vps/monitor.sh` runs hourly from root's crontab on the VPS
+and sends one Telegram message per problem — disk, memory, a container down, an unhealthy app, recent
+restarts — then evicts the image cache by a gauge rather than by an image's age: dangling layers over
+70% of the disk, every unused image over 85% ([ADR-0225](adr/0225-the-origin-reports-its-own-health.md)).
+Silence means healthy, with one heartbeat line a day; the thresholds and the bot credentials are in
+`/opt/royaraqamia/monitor.env`. It is not part of the deploy, so a cleanup that fails can never fail a
+good one.
+
 **Crons are GitHub Actions, not the platform.** `.github/workflows/scheduled-jobs.yml` calls the
 three routes on their old schedules; each route authorises itself from
 `Authorization: Bearer $CRON_SECRET`, so a manual run needs no CLI:
