@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import {
@@ -381,7 +380,7 @@ async function mapWithLimit(items, limit, worker) {
     while (cursor < items.length) {
       const index = cursor;
       cursor += 1;
-      results[index] = await worker(items[index], index);
+      results[index] = await worker(items[index]);
     }
   });
   await Promise.all(runners);

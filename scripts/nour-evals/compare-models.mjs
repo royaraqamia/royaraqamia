@@ -130,9 +130,9 @@ costRow('Input tokens', 'inputTokens');
 costRow('Output tokens', 'outputTokens');
 
 lines.push('', '## Failing fixtures', '');
-for (const [label, report, map] of [
-  ['Current', current, currentCases],
-  ['Candidate', candidate, candidateCases],
+for (const [label, map] of [
+  ['Current', currentCases],
+  ['Candidate', candidateCases],
 ]) {
   const hits = [...map.values()].filter((entry) => failing(entry).length);
   lines.push(`### ${label} — ${hits.length ? `${hits.length} fixture(s)` : 'none'}`, '');
