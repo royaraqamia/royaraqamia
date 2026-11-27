@@ -19,7 +19,7 @@ useDefault = true
     # and kills the app. What protects the key is its Android-app restriction
     # (package name + signing SHA-1) in the Google Cloud console, not its
     # publication; the FCM service-account JSON, which can send to every device,
-    # is a different file and stays in Vercel's environment variables.
+    # is a different file and stays in the origin's environment variables.
     '''android/app/google-services\.json''',
   ]
   regexes = [

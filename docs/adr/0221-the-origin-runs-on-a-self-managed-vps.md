@@ -84,3 +84,10 @@ platform limit. Supabase stays managed; only the Next.js origin moves.
 - `scripts/memory-watch.mjs` keeps watching Render, which becomes idle after
   cutover; its issue closes when that origin is calm again. The 512 MB budget
   page stays as the record of why the move happened, not as a live constraint.
+
+## Third amendment, 2026-11-27
+
+The rollback is no longer Render. `render.yaml`, `vercel.json` and the Render deploy workflow
+were deleted the day the cutover was signed off, and the Render service is deleted in its
+dashboard. A bad deploy is answered with the previous image tag in `compose.yaml` and
+`deploy.sh`; the steps are in `docs/agents/vps-deploy.md`.

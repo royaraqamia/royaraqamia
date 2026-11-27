@@ -1,8 +1,8 @@
-# The three daily jobs that used to be Vercel Cron entries (`vercel.json`).
+# The three daily jobs that used to be Vercel Cron entries (ADR-0174).
 #
 # The routes did not change: each one authorises itself from
 # `Authorization: Bearer <CRON_SECRET>`, which is exactly the header Vercel Cron
-# sent. What changed is only the clock — Render's free plan has no cron service,
+# sent. What changed is only the clock: the origin runs no cron service,
 # and this repository already runs scheduled work here (`mcp-catalog-agent.yml`,
 # `news-source-requests.yml`), so the trigger joins them instead of adding a
 # third-party scheduler (ADR-0174).
@@ -20,7 +20,7 @@
 # (#1744). All four routes authorise themselves the same way.
 #
 # Secrets:
-#   CRON_SECRET - the same value the Render service holds; without it every call
+#   CRON_SECRET - the same value the origin holds; without it every call
 #                 is refused by the route itself.
 #
 # Variables:

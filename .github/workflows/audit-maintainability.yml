@@ -4,7 +4,7 @@
 # The punctual trigger is Supabase pg_cron calling the Actions dispatch API; GitHub's
 # `schedule` is the no-config backstop and `issue-automation-health.yml` re-dispatches a
 # missed or partial day. The guard counts issues actually filed with this label today.
-# ADR 0174 puts the origin on Render, so no Vercel credential or CLI is present.
+# The origin is the self-managed VPS (ADR-0221), so no hosting credential or CLI is present.
 
 # Launch scope: only the six areas in .github/work-priorities.json are in scope.
 # Marketing pages, Android-native UI and real-device/adb/emulator work are excluded.
@@ -39,7 +39,6 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ievboaylytxgtijconak.supabase.co' }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
       E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
       E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
       E2E_VISUAL_EMAIL: ${{ secrets.E2E_VISUAL_EMAIL }}

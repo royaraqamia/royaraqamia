@@ -166,22 +166,20 @@ authenticated pages there needs two temporary changes, both reverted afterwards 
 and `NEXT_PUBLIC_SITE_URL` set to the test origin in `.env`, and the test origin added to Supabase →
 Authentication → URL Configuration → Redirect URLs.
 
-## Rollback to Render
+## Rollback to the previous image
 
-Render is retired as the origin but still runs, so the rollback is DNS and a purge:
+The rollback is a tag, not a second host. GHCR keeps one tag per commit, so pin the previous
+one and re-run the deploy:
 
-1. Set the apex back to a **CNAME `royaraqamia.onrender.com`, proxied**, and `www` the same.
-2. `gh workflow run deploy.yml -f purge_only=true`.
-
-Check the target is alive before relying on it — it answers at its own name:
-
-```powershell
-curl.exe -sI https://royaraqamia.onrender.com/manifest.json | Select-String "HTTP/|x-render-origin-server"
+```bash
+cd /opt/royaraqamia
+sudo sed -i 's|royaraqamia:latest|royaraqamia:<previous-sha>|' compose.yaml
+sudo bash deploy.sh
 ```
 
-`200` and `x-render-origin-server: Render` means it is real. It is not healthy, though: the free
-instance was OOM-restarting roughly every 40 minutes before the move (#1867), so a rollback buys
-time, not service.
+Then dispatch `Purge the edge`, revert the pin on the next good publish, and note the sha in
+the incident. The Render service and `render.yaml` were deleted on 2026-11-27; there is no DNS
+rollback any more, which is why the image tag is the one that has to be right.
 
 ## Rebuilding the box
 
@@ -198,7 +196,6 @@ Ubuntu 24.04 image, then
 
 ## Still open
 
-- Delete `render.yaml` once the box has served a week without incident; until then it is the
-  documented rollback and it says so at the top.
-- `#1779` closes when this document matches the box, which it now does.
+- `#1885` — nothing measures the box's request rate, latency or memory yet. Until it lands, the
+  audit prompts say so instead of inventing a number.
 - `#1776` (server-side MP4) and the realtime-voice transport were blocked on this move and can start.

@@ -3,7 +3,7 @@ description: >-
   Runs one unattended domain audit: an idempotent daily guard measured on the issues
   actually filed, the web evidence toolchain, a pinned OpenCode CLI,
   and publication of three evidence-backed issues from /tmp/issues.json. Nothing in
-  this action commits, pushes, opens a pull request or touches Vercel.
+  this action commits, pushes, opens a pull request or deploys.
 
 inputs:
   domain:
@@ -105,12 +105,10 @@ runs:
 
     - name: OpenCode Runner Setup
       if: steps.guard.outputs.run == 'true'
-      # Supabase MCP, compaction pruning and the headless permission block. Vercel is
-      # deliberately not installed: this repository deploys on Render (ADR-0174).
+      # Supabase MCP, compaction pruning and the headless permission block.
       uses: ./.github/actions/opencode-runner
       with:
         supabase-project-ref: ${{ inputs.supabase-project-ref }}
-        install-vercel: 'false'
 
     - name: Install OpenCode 2.3.2
       if: steps.guard.outputs.run == 'true'

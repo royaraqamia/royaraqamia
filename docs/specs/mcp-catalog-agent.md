@@ -91,7 +91,7 @@ the ladder, and the five publishes each carry `agent:mcp-catalog`, the mark
 source and the copy source.
 
 Step 4 is this change: the schedule is `45 4 * * *`, three quarters of an hour
-after the catalogue sync at `0 4 * * *` (`vercel.json`), with the caps in
+after the catalogue sync at `0 4 * * *` (`scheduled-jobs.yml`), with the caps in
 repository variables. The workflow now defaults `dry_run` to `false` for a
 scheduled run: the runner's own fallback is `true`, so without that a cron would
 have measured and written nothing while reporting success.

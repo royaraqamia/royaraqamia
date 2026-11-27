@@ -359,11 +359,9 @@ const nextConfig = {
       },
       // The service worker and the three files it imports must never be served
       // stale: a browser holding an old `/sw.js` keeps running the old worker
-      // until every tab closes. These lived in `vercel.json` while Vercel was
-      // the only host; they are here now because a header has to be declared
-      // where the server that sends it reads it, and this file is what every
-      // host we run on reads (ADR-0174). One definition, never two: a duplicate
-      // in `vercel.json` produced conflicting `Cache-Control` values.
+      // until every tab closes. The header is declared here, in the file the
+      // server that sends it reads (ADR-0174, ADR-0221); a second definition in a
+      // host config produced conflicting `Cache-Control` values once already.
       {
         source: '/sw.js',
         headers: [
@@ -482,11 +480,12 @@ const sentryWebpackPluginOptions = {
   },
 };
 
-// The plugin is not Vercel-specific: it builds the `/monitoring` tunnel and
-// uploads the source maps, and Render runs the result on `next start` where the
+// The plugin is not host-specific: it builds the `/monitoring` tunnel and
+// uploads the source maps, and the image runs the result on `next start` where the
 // tunnel rewrite is served like any other. Skipping it there left the client SDK
 // posting to `ingest.sentry.io`, which `connect-src` blocks (#1373).
-const sentryBuildHost = process.env.VERCEL === '1' || Boolean(process.env.RENDER);
+/** `RENDER=1` is set by the Dockerfile, not by a host: it means "a production build". */
+const sentryBuildHost = Boolean(process.env.RENDER);
 module.exports = sentryBuildHost
   ? withSentryConfig(withBundleAnalyzer(nextConfig), sentryWebpackPluginOptions)
   : withBundleAnalyzer(nextConfig);

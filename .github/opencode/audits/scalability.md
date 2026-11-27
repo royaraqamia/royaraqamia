@@ -10,7 +10,7 @@ Load these skills only: `engineering-backend-architect`,
 ## Ground the claim in numbers that exist
 
 Read `docs/performance.md`, `perf/budget.json`, `docs/vercel-usage.md` (for the historical
-budget only — the host is Render now, ADR-0174) and the scheduled jobs in `supabase/migrations`.
+budget only — the host is a self-managed VPS now, ADR-0221) and the scheduled jobs
 A finding about growth needs the current row count or request rate and the arithmetic that
 projects it. "This table could get big" is not a finding; "at the measured 12k rows/day and
 current index, the nightly sweep will pass its 90-day window in N days" is.
@@ -19,9 +19,9 @@ Use these sources and quote their output:
 
 - Supabase MCP `get_advisors`, `list_migrations`, and read-only `query` where exposed
   (`SELECT ... FROM pg_stat_user_tables`, table counts with a `LIMIT`). Never write.
-- Render API for instance size, concurrency, autoscale settings, deploy history and
-  response times. Discover the services with `GET /v1/services`; do not assume a plan or
-  an instance size.
+- The origin's request rate, latency and memory are not exposed to this runner; issue
+  #1885 is the task that adds them. Say so in a finding rather than inferring an instance
+  size.
 - `graphify path "A" "B"` to trace a request from route to query. A per-request fan-out
   claim must list the callers you found, not just the loop you read.
 

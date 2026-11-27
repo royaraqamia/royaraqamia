@@ -1,7 +1,7 @@
 # Builds the origin image on a GitHub runner and publishes it to GHCR.
 #
 # The self-managed VPS has 2 GB of RAM, which cannot hold this repo's
-# `next build` (the Render build machine needed a 6 GB heap). Building here
+# `next build` (page-data collection needs several GB of heap). Building here
 # keeps the VPS a pure runtime: it only pulls the image and runs Compose.
 # The image contains no secrets — every runtime secret is a VPS env var, and
 # the one build-time secret is a BuildKit secret, not a build arg.

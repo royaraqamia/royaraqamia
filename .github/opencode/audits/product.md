@@ -19,7 +19,7 @@ when grounded in something you actually read and can quantify:
 
 - a Supabase production aggregate (read-only `SELECT count(*) ... LIMIT` through the MCP,
   redacted and with the time window named),
-- a Render metric or deploy history showing real use,
+- an origin deploy history showing real use,
 - a live capture of the surface at `https://royaraqamia.com` showing measurable friction,
 - the current backlog and `.github/work-priorities.json` showing what is already planned,
 - a cited external fact for a claim about the market or the product category.

@@ -6,7 +6,7 @@
 # feed". Each `resolving` row becomes `ready` (with the feed the digest will
 # fetch) or `needs_review` (with the reason, for the Admin queue).
 #
-# Why a workflow and not the request path: the app is on Vercel's Hobby plan, and
+# Why a workflow and not the request path: the app is one origin behind Caddy, and
 # a public form that fetches an arbitrary host is exactly the thing that should
 # not run inside a request. Here it is a deterministic script with a byte cap, a
 # timeout and an SSRF guard, on a repository whose Actions minutes are free

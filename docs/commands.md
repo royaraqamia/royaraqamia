@@ -111,15 +111,18 @@ Ten `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash): six audit
 the VPS with `sudo bash deploy.sh` (ADR-0221). There is no release workflow, tag or GitHub Release for
 the web (ADR-0090); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
 
-**Why a hand dispatch.** The Render free plan included 500 build-pipeline minutes a month, and at the
-recorded cadence (~22 deploy-triggering merges a day, ~2m45 a build) a deploy on every push would be
-~1,800 minutes; the four-a-day train of ADR-0186 spent ~330 of the 500. That arithmetic is what moved
-the decision to a dispatch, and it still holds for the rollback path: a dispatch spends a build only
-when a deploy is wanted, and leaves what goes live to the person who runs it. A dispatch of
-`deploy.yml` whose commit is already serving costs nothing — the workflow reads the running build's
-`<7-char-sha>` from `sw-version.js` and stops before calling the hook — and it also takes
-**`purge_only`**, which skips the build and re-runs the discovery check and the purge: the recovery
-for a purge that failed after a build had already landed, and the step the cutover ran.
+**Why a hand dispatch.** A merge ships nothing on purpose: a build is the scarce resource and
+the person who decides to serve a commit is the person who dispatches it (ADR-0209). The
+recipes are:
+
+```bash
+gh workflow run 'Publish origin image'    # build this commit, push it to GHCR
+# on the box: cd /opt/royaraqamia && sudo bash deploy.sh
+gh workflow run 'Purge the edge'          # after the deploy lands
+```
+
+The purge is its own dispatch now that the deploy runs on the box; it is also the recovery for
+a purge that failed after a build had already landed, and the step the cutover ran.
 
 **The origin is a self-managed VPS** (ADR-0221), serving since 2026-11-27: a 2 vCPU / 2 GB / 30 GB
 Ubuntu VPS from Illevante — the only recurring bill, $6.70 a month against a $10 cap
@@ -131,13 +134,11 @@ A deploy is `ssh -p 2222 deploy@91.98.55.148` then `cd /opt/royaraqamia && sudo 
 dedicated R2 bucket and the restore has been drilled. The operator runbook — SSH, certificates, env
 file, backup and drill, rollback and rebuild — is [docs/agents/vps-deploy.md](agents/vps-deploy.md).
 
-**Render is the rollback** (ADR-0174, amended by ADR-0221). `render.yaml` still describes the free
-native-Node service, built with `npm ci && npm run build:render` and started with `npm start`,
-health-checked on `/manifest.json`, with `autoDeployTrigger: 'off'` so only a dispatch deploys. It is
-marked retired at the top of the file and is deleted once the box has served a week without incident;
-until then, rolling back is the apex CNAME back to `royaraqamia.onrender.com` (proxied) plus a purge.
-That path needs `RENDER_DEPLOY_HOOK_URL` as an Actions secret (Render → service → Settings → Deploy
-Hook); with it absent the workflow fails loudly rather than skipping silently.
+**The rollback is the previous image.** GHCR keeps `:latest` plus a tag per commit, so a bad
+deploy is answered by pinning the previous tag in `compose.yaml`, re-running `deploy.sh` and
+purging — the exact steps are in [agents/vps-deploy.md](agents/vps-deploy.md). The Render
+blueprint and `vercel.json` were deleted on 2026-11-27 with the cutover signed off (ADR-0221);
+neither host has a deployment path in this repository any more.
 
 **Crons are GitHub Actions, not the platform.** `.github/workflows/scheduled-jobs.yml` calls the
 three routes on their old schedules; each route authorises itself from
@@ -147,10 +148,9 @@ three routes on their old schedules; each route authorises itself from
 curl -H "Authorization: Bearer $CRON_SECRET" https://royaraqamia.com/api/rates/refresh
 ```
 
-**Vercel is configured but paused** — Fluid Active CPU, 5h 06m against a 4h allowance, until
-2026-12-12. `vercel.json` still carries the project's region and `_next/static` header so the
-deployment can be resumed without a revert, but it no longer owns the crons: running both would
-double every job. Manual override if resumed: `vercel deploy --prod`.
+**Vercel is not part of the deployment path.** `vercel.json` and the Vercel CLI wiring in
+the agent workflows were removed on 2026-11-27. The Hobby caps that paused the project are kept
+in [vercel-usage.md](vercel-usage.md) as history, not as an option.
 
 **The Android cut is manual, and unwatched:** nothing opens an issue about releases. The owner
 dispatches `Android Release` when the batch should ship; a dispatch with no native change publishes
@@ -172,19 +172,15 @@ step of the deploy the workflow runs by hand
 public API reads are `HIT` and the member surfaces are not
 ([ADR-0187](adr/0187-the-edge-caches-the-public-document-and-a-cron-keeps-the-origin-awake.md)).
 
-**The free instance has a 512 MB memory budget.** The upload and document caps are in
-[memory-budget.md](memory-budget.md); an OOM restart or a memory graph above roughly 350 MB is the
-trigger for the `1c-2g` ($25) compute plan
-([ADR-0189](adr/0189-the-free-instance-has-a-memory-budget.md)). `render.yaml` declares a 384 MB
-runtime heap and the build keeps its own 6 GB, but the live service has no `NODE_OPTIONS` and every
-boot reports a 259 MiB V8 limit — do not "apply" the cap on Free
-([ADR-0210](adr/0210-a-request-spike-is-bounded-before-the-plan-is-bought.md)). Every start and
-every five minutes the process writes a `[boot]` or `[memory]` line to the service log
+**The 512 MB budget is history.** It priced the free Render instance the VPS replaced; the
+upload and document caps it derived still hold because they are the app's own, and the box has
+2 GB. The reasoning and the measurements are in [memory-budget.md](memory-budget.md). Every boot
+still writes a `[boot]` line and every five minutes a `[memory]` line to the container log
 ([ADR-0199](adr/0199-the-heap-cap-belongs-to-the-build-and-a-restart-leaves-a-line.md)).
 
-**Retained deployments:** Render keeps them for rollback and does not meter deployment
-storage, so nothing prunes them — the Vercel-only `prune-deployments.yml` and its script were
-deleted with the migration. `docs/vercel-usage.md` is a historical record now.
+**Retained images:** GHCR keeps `:latest` plus one tag per commit and does not meter them by
+count or storage; the only pruning is none yet. `docs/vercel-usage.md` is a historical record
+now.
 
 **Workflow runs are pruned by a clock.** The repository's retention setting expires logs, artifacts
 and check data but never the run itself, so `.github/workflows/prune-runs.yml` deletes completed runs

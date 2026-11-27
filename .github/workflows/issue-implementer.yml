@@ -47,9 +47,6 @@
 #   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
 #   SUPABASE_ACCESS_TOKEN - https://supabase.com/dashboard/account/tokens
 #   SUPABASE_PROJECT_REF  - target Supabase project reference
-#   VERCEL_TOKEN          - https://vercel.com/account/tokens
-#   VERCEL_ORG_ID         - Vercel team/org id, so the CLI never needs `vercel link`
-#   VERCEL_PROJECT_ID     - Vercel project id
 #
 # Checkout must NOT persist credentials — opencode injects its own app token
 # (persisted credentials cause a duplicate-Authorization failure on push). The consequence
@@ -498,9 +495,6 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
@@ -570,7 +564,7 @@ jobs:
             builds on is `codebase-design`, which is above.
 
             Connected tooling (installed for this run, authenticated by environment):
-            - The Vercel CLI is installed and reads VERCEL_TOKEN from the environment itself — never pass it as a `--token` flag. VERCEL_ORG_ID and VERCEL_PROJECT_ID are set, so never run `vercel link`. Use it read-only to inspect deployments, logs and env: `vercel ls --format json`, `vercel inspect <url> --logs`, `vercel logs <url>`, `vercel env ls`. Do not deploy — pull-request branches create no preview deployment — and never deploy to production.
+            - The origin is the self-managed VPS (ADR-0221); no hosting CLI is installed here. The deploy is described in `docs/agents/vps-deploy.md`; do not deploy.
             - The Supabase MCP server is the only database surface: read with `list_tables`, `list_migrations` and `get_advisors`, and apply schema changes only through `apply_migration` exactly as described in step 3.
             - Playwright is installed with a Chromium build, and `playwright.config.ts` starts the app itself. Run the specs your change reaches: `npx playwright test <spec>`. `E2E_TEST_EMAIL` and `E2E_TEST_PASSWORD` are set when the repository has them; a spec that needs a session and finds them empty is skipped, and the pull request body says so.
             - There is no Android toolchain in this run and no `check:visual`: the APK shows the WebView only, so no native surface is ported or measured here.

@@ -40,7 +40,7 @@ the response. To show a policy is missing, quote its absence from `list_policies
 Check auth callbacks and redirect allowlists, proxy gates, Turnstile enforcement, upload
 paths, server actions, API route validation, response headers and TLS on the live origin,
 and what is actually exposed in the client bundle. The APK loads those same routes in a
-WebView, so a web finding is the app finding too. Read Render logs through the API; do not
+WebView, so a web finding is the app finding too. Read the origin through the page; do not
 paste raw log lines containing member data into an issue. Use the `launch-scope` block to
 pick a route inside the six areas; Android manifest and port findings are out of scope.
 

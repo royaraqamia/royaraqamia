@@ -59,3 +59,10 @@ and the max at 425 MB, while the live V8 heap limit is 259 MiB (the blueprint's
 - The watch needs `RENDER_API_KEY` in Actions secrets; it is a read-only Render
   caller and writes only a GitHub issue.
 - The upgrade remains a product decision with a written trigger, not a guess.
+
+## Amendment 2026-11-27
+
+The early-warning watch is gone with the host. `scripts/memory-watch.mjs` and
+`.github/workflows/memory-watch.yml` were deleted with `render.yaml`; nothing measures the box
+automatically until #1885 lands, and the thresholds in this decision stay as the reasoning that
+produced the caps.

@@ -1,4 +1,4 @@
-# The 512 MB budget
+# The 512 MB budget (historical)
 
 The free Render instance is **0.1 CPU / 512 MB**. The CPU is the budget the edge work protects
 (`docs/edge-cache.md`); this page is the other one. A single request that holds a large body has no
@@ -68,7 +68,7 @@ A refused archive answers the existing "the document could not be read" sentence
 
 ## What the process reports about itself
 
-`render.yaml` gives the **runtime** a 384 MB old-generation heap and the **build** its own 6 GB. That
+The deleted Render blueprint gave the **runtime** a 384 MB old-generation heap and the **build** its own 6 GB. That
 split is the difference between a collection and a kill: a service-wide
 `--max-old-space-size=6144` reached `next start`, and V8 — which collects against the limit it is
 given — reported a 6,336 MB heap limit on a 512 MB container, so RSS crossed the wall long before
@@ -109,23 +109,21 @@ moving to a larger instance.
 
 ## Early warning
 
-`.github/workflows/memory-watch.yml` reads the memory graph and the restart events from the Render
-API every six hours (`scripts/memory-watch.mjs`), and keeps one issue labelled `origin-memory`: it
-opens on the first OOM restart, a p95 at or above 400 MiB, or one `[memory]` sample above 400 MiB,
-edits the issue on each later warning, and comments and closes it when the origin is calm again. The
-per-sample test matters because the 11-20 kill followed a 257 MB reading by 39 seconds — an averaged
-graph would have missed the spike. `RENDER_API_KEY` is an Actions secret. The
-script is read-only against Render and has no dependencies beyond Node's own `fetch`.
+The watch that read Render's API every six hours (`scripts/memory-watch.mjs`) was deleted with
+the blueprint on 2026-11-27. Nothing measures the box's memory automatically yet: `#1885` is that
+work. Until it lands, the evidence is the `[memory]` lines in the container log and Sentry.
+The per-sample judgement still holds: a single 257 MB reading preceded an OOM kill by 39 seconds,
+so an average over a window would have missed it.
 
 ## When to buy the 2 GB plan
 
 The `1c-2g` compute plan ($25) is the memory wall, not the CPU one. The trigger is evidence, not a
-feeling: an OOM restart in Render's events, or a memory graph that sits above roughly 350–400 MB
+feeling: an OOM restart visible in the container log, or a reading that sits above roughly 350
 through an ordinary day. In the seven days to 2026-11-21 there were three OOM kills (11-15, 11-16
 and 11-20) and the app's own RSS samples reached 425 MB, so that trigger is met. The caps above are
 the attempt to stay on Free; if a warning comes back after they land, buy the plan rather than
 lowering the caps further. The $7 `0.5c-512mb` plan does not change this table — it only doubles CPU.
 
-Watch **Render → service → Metrics → Memory**, the `origin-memory` issue, and Sentry for the
+Watch the container in `docker stats`, the `[memory]` lines in the log, and Sentry for the
 restart-shaped gaps. The edge verifier (`npm run check:edge`) does not cover this budget; it covers
 the cache.

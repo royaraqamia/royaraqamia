@@ -49,7 +49,6 @@ describe('the specialised audits file only what they reproduced', () => {
     expect(runner).not.toContain('setup-java');
     expect(base).not.toContain('npm run check:visual');
     expect(runner).toContain('.github/work-priorities.json');
-    expect(runner).toContain("install-vercel: 'false'");
     expect(runner).toContain('--version 2.3.2');
     expect(runner).toContain('opencode run --model');
     for (const domain of DOMAINS) {
@@ -59,17 +58,15 @@ describe('the specialised audits file only what they reproduced', () => {
     }
   });
 
-  it('gives the agent Render, Supabase and E2E access', () => {
+  it('gives the agent Supabase and E2E access', () => {
     for (const domain of DOMAINS) {
       const workflow = read(`.github/workflows/audit-${domain}.yml`);
-      expect(workflow, domain).toContain('RENDER_API_KEY');
       expect(workflow, domain).toContain('SUPABASE_ACCESS_TOKEN');
       expect(workflow, domain).toContain('SUPABASE_SERVICE_ROLE_KEY');
       expect(workflow, domain).toContain('E2E_TEST_EMAIL');
       expect(workflow, domain).toContain('E2E_VISUAL_EMAIL');
       expect(workflow, domain).toContain('issues: write');
     }
-    expect(base).toContain('https://api.render.com/v1');
     expect(base).toContain('read-only');
   });
 

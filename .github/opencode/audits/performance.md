@@ -4,8 +4,8 @@ Read `.github/opencode/audits/_base.md` in full first. It defines the output for
 evidence rules, coverage rotation, redaction and hard rules. This section is your domain.
 
 Load these skills only: `testing-performance-benchmarker`,
-`vercel-react-best-practices` (React/Next.js patterns only — do **not** use Vercel CLI or
-Vercel docs for deployment claims; this origin is on Render, ADR-0174),
+`vercel-react-best-practices` (React/Next.js patterns only - do **not** use Vercel CLI or
+Vercel docs for deployment claims; this origin is a self-managed VPS, ADR-0221),
 `engineering-database-optimizer`, `testing-evidence-collector`,
 `testing-reality-checker`, `research`.
 
@@ -28,8 +28,7 @@ Use the tools the repository already has, and quote their output:
   output.
 - For the live origin, take five or more samples with
   `curl -sS -o /dev/null -w '%{http_code} %{time_total}\n' https://royaraqamia.com/<route>`
-  and report the median and p95. Read the Render API for server-side metrics and deploys;
-  never call a deploy hook.
+  and report the median and p95. No origin metrics API is reachable (ADR-0221);
 - For the database, use Supabase MCP `get_advisors` and read-only queries on `pg_indexes`
   or `pg_stat_user_tables` when `query` is exposed. An index claim needs the table's row
   count and the query that would use it, not just the absence of an index.

@@ -1,11 +1,11 @@
-# Vercel Usage Budget (Hobby)
+# Vercel Usage Budget (Hobby, historical)
 
-> **Historical, since 2026-11-13.** The origin moved to Render
-> ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md)) and the Vercel
-> Git connection was removed. Nothing on this page is an operating instruction any more — the
-> prune workflow and its `npm run prune:deployments` script were deleted with the migration.
-> It is kept because the measurements are why the migration happened, and because a return to
-> Vercel would start from exactly these caps.
+> **Historical, and out of the deployment path since 2026-11-27.** Vercel paused the project on
+> 2026-11-12; the origin moved to Render ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md))
+> and then to a self-managed VPS ([ADR-0221](adr/0221-the-origin-runs-on-a-self-managed-vps.md)).
+> `vercel.json` and the Vercel CLI wiring were deleted with the VPS sweep. Nothing on this page is
+> an operating instruction any more: it is kept because the measurements are why the migration
+> happened, and because a return to Vercel would start from exactly these caps.
 
 On 2026-10-12 the project hit **Exceeded free resources** on Vercel Hobby:
 `Fluid Active CPU 5h 6m / 4h`. Everything else was inside its cap but climbing

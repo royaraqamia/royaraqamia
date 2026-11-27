@@ -1,36 +1,18 @@
 name: 'OpenCode Runner Setup'
 description: >-
-  Prepares a runner for an OpenCode agent job: installs the pinned Vercel CLI and
-  writes the runner-only OpenCode config from `.github/opencode/runner.json`
-  (Supabase MCP server, compaction pruning and the headless permission block).
-  Shared by the autonomous agent workflows so the setup cannot drift between them.
+  Prepares a runner for an OpenCode agent job: writes the runner-only OpenCode
+  config from `.github/opencode/runner.json` (Supabase MCP server, compaction
+  pruning and the headless permission block). Shared by the autonomous agent
+  workflows so the setup cannot drift between them.
 
 inputs:
   supabase-project-ref:
     description: 'Supabase project reference, baked into the MCP server URL'
     required: true
-  vercel-version:
-    description: 'Pinned Vercel CLI version'
-    required: false
-    default: '63.1.0'
-  install-vercel:
-    description: >-
-      Whether to install the Vercel CLI. The audit workflows set this to false:
-      this repository deploys on Render (ADR-0174) and they need no Vercel access.
-    required: false
-    default: 'true'
 
 runs:
   using: 'composite'
   steps:
-    - name: Install Vercel CLI
-      # Pinned, global so the agent can call it directly. Skipped for the audits.
-      if: inputs.install-vercel == 'true'
-      shell: bash
-      run: |
-        npm install --global vercel@${{ inputs.vercel-version }}
-        vercel --version
-
     - name: Configure OpenCode (runner-only)
       # The settings an autonomous run needs live in `.github/opencode/runner.json`
       # rather than in a heredoc here, so a pull request can diff them and

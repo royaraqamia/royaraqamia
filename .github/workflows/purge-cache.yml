@@ -1,0 +1,78 @@
+# Purges Cloudflare's zone and re-reads the discovery documents, by hand.
+#
+# This is what is left of the old `deploy.yml`: the origin deploys on the VPS
+# (`deploy/vps/deploy.sh`, ADR-0221) so Actions no longer triggers a build, but
+# the edge still has to be purged after one, and the discovery documents still
+# have to name the public origin (ADR-0177, ADR-0178). A prerendered page
+# carries a year of `s-maxage`, so without this a deploy leaves the old HTML in
+# place.
+#
+# Order: `gh workflow run 'Publish origin image'`, then on the box
+# `sudo bash deploy.sh`, then this.
+#
+# Secrets:
+#   CLOUDFLARE_API_TOKEN   - Zone.Cache Purge only
+# Variables:
+#   CLOUDFLARE_ZONE_ID     - royaraqamia.com
+#   SITE_BASE_URL          - optional, defaults to https://royaraqamia.com
+
+name: 'Purge the edge'
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why the purge is being run now'
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: purge-cache
+  cancel-in-progress: false
+
+env:
+  BASE_URL: ${{ vars.SITE_BASE_URL || 'https://royaraqamia.com' }}
+
+jobs:
+  purge:
+    name: Re-read the discovery documents, then purge
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Only main purges
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::the zone is purged from main only; dispatch this workflow on main."
+            exit 1
+          fi
+
+      - name: Discovery documents name the public origin
+        run: |
+          base="${BASE_URL%/}"
+          issuer="$(curl -fsS --max-time 15 "$base/.well-known/oauth-authorization-server" | jq -r .issuer)"
+          resource="$(curl -fsS --max-time 15 "$base/.well-known/oauth-protected-resource" | jq -r .resource)"
+          echo "issuer=$issuer resource=$resource"
+          test "$issuer" = "$base"
+          test "$resource" = "$base/mcp"
+
+      - name: Purge the edge
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ vars.CLOUDFLARE_ZONE_ID }}
+        run: |
+          response="$(curl -fsS -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            --data '{"purge_everything":true}')"
+          echo "$response"
+          printf '%s' "$response" | grep -q '"success":true'
+
+      - name: Summary
+        run: |
+          echo "### Zone purged" >> "$GITHUB_STEP_SUMMARY"
+          echo "Trigger: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Reason: ${{ github.event.inputs.reason || 'no reason given' }}" >> "$GITHUB_STEP_SUMMARY"

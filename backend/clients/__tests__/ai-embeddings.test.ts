@@ -121,7 +121,7 @@ describe('the embedding client', () => {
   });
 
   it('builds a client when the deployment configures the generation’s own width (#1550)', () => {
-    // What `render.yaml` carries: the provider's width is the table's width, so
+    // The origin's env carries it: the provider's width is the table's width, so
     // there is nothing to report and recall has a vector to rank with.
     configure({ AI_EMBEDDING_DIMENSIONS: String(EMBEDDING_GENERATION.dimensions) });
 
