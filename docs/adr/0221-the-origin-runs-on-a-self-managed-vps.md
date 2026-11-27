@@ -91,3 +91,14 @@ The rollback is no longer Render. `render.yaml`, `vercel.json` and the Render de
 were deleted the day the cutover was signed off, and the Render service is deleted in its
 dashboard. A bad deploy is answered with the previous image tag in `compose.yaml` and
 `deploy.sh`; the steps are in `docs/agents/vps-deploy.md`.
+
+## Fourth amendment, 2026-11-27
+
+Pulling the image stopped being a shell step. A deploy-only key (`ORIGIN_SSH_KEY`) — whose
+`authorized_keys` entry forces `sudo -n /usr/bin/bash /opt/royaraqamia/deploy.sh`, with one sudoers
+drop-in for that command and no PTY — lets `Publish origin image` pull the image it just built, wait
+for the container's `/manifest.json`, and prove `/api/version` names that commit before the edge is
+purged. A second credential now exists, and it is scoped to redeploying and nothing else: it cannot
+open a shell, read `.env` or run docker directly. The box still only pulls and never builds, and a
+rollback is still the previous tag run by hand from the owner's key, because a dispatch re-tags
+`:latest` and would fail its own verification against the pinned image.

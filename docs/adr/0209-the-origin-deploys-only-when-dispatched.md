@@ -70,3 +70,18 @@ served dispatches `Publish origin image` and then runs `deploy.sh` on the box. `
 the Render hook and the wait for its build — is deleted; what is left of it is
 `.github/workflows/purge-cache.yml`, the zone purge and the discovery-document check, which is
 still a hand dispatch.
+
+## Second amendment 2026-11-27
+
+The dispatch carries the whole deploy again, so the rule costs one click instead of three steps.
+`Publish origin image` gained a `deploy` job and a `purge` job: it pulls the image it just built
+through `deploy/vps/deploy.sh`, refuses to go green unless `/api/version` answers with the commit it
+built, then calls `purge-cache.yml` as a reusable workflow. `-f deploy=false` keeps the publish-only
+door, and `Purge the edge` stays dispatchable alone.
+
+The decision is unchanged: a merge ships nothing, and the person who wants a commit served is the
+person who dispatches it. What did change is that a credential can restart production with no human on
+the box, so the key is narrower than a login — a forced command, no PTY, and one sudoers entry for
+`deploy.sh` — and the workflow never gets a shell. Rollback stays manual for the same reason it stays
+a tag: a dispatch re-tags `:latest` with the commit it built, so a pinned older image is not something
+the job can verify.
