@@ -4,14 +4,14 @@
 
 **royaraqamia** is a private, production-grade monorepo that powers the company's marketing site and a suite of first-party SaaS products — a public community and a certificate-verification service — all unified under a single Next.js application, a shared clean-architecture backend, and one Supabase database.
 
-|                    |                                                                 |
-| ------------------ | --------------------------------------------------------------- |
-| **Stack**          | Next.js 16 · React 19 · TypeScript 7 · Tailwind CSS 4           |
-| **Backend**        | Hexagonal architecture (ports & adapters) over Supabase         |
-| **Database**       | Supabase (PostgreSQL 17, Auth, Storage, RLS)                    |
-| **Infrastructure** | Vercel · Upstash Redis · Resend · Sentry · Cloudflare Turnstile |
-| **Testing**        | Vitest (unit/integration) · Playwright (E2E)                    |
-| **Language**       | Arabic (primary, RTL)                                           |
+|                    |                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| **Stack**          | Next.js 16 · React 19 · TypeScript 7 · Tailwind CSS 4                                      |
+| **Backend**        | Hexagonal architecture (ports & adapters) over Supabase                                    |
+| **Database**       | Supabase (PostgreSQL 17, Auth, Storage, RLS)                                               |
+| **Infrastructure** | Illevante VPS (next start in Docker, Caddy) · Upstash Redis · Resend · Sentry · Cloudflare |
+| **Testing**        | Vitest (unit/integration) · Playwright (E2E)                                               |
+| **Language**       | Arabic (primary, RTL)                                                                      |
 
 ---
 
@@ -115,7 +115,6 @@ royaraqamia/
 │
 ├── package.json                  # Scripts, dependencies, engines
 ├── next.config.js                # Security headers, CSP, Sentry & bundle-analyzer wiring
-├── vercel.json                   # Edge cache-control headers for /, static, and service worker
 ├── vitest.config.mts             # Unit/integration test runner config
 ├── playwright.config.ts          # E2E config (5 device projects, auto web server)
 ├── example.env                   # Environment template (safe to commit)
@@ -153,7 +152,7 @@ royaraqamia/
 | **Resend**               | Transactional & OTP emails                                               | `resend`                                 |
 | **Sentry**               | Error monitoring & performance                                           | `@sentry/nextjs`                         |
 | **Cloudflare Turnstile** | Bot protection on auth forms                                             | server-side `siteverify` call            |
-| **Vercel**               | Hosting, edge caching, deployment                                        | `vercel.json`, `next.config.js`          |
+| **Illevante VPS**        | Origin (Docker + Caddy behind Cloudflare), deploy                        | `deploy/vps/`, `Dockerfile`              |
 
 ### UI & Utilities
 
@@ -283,7 +282,7 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `VAPID_PRIVATE_KEY`                    | **Secret.** Server-only Web Push VAPID private key                                                     | `f7Qz...`                                      | Web Push only                    |
 | `VAPID_SUBJECT`                        | Web Push contact (must be `mailto:` or `https:` URL)                                                   | `mailto:admin@royaraqamia.com`                 | Web Push only                    |
 
-| `CRON_SECRET` | **Secret.** Bearer token Vercel Cron sends to `/api/rates/refresh` | `change-me` (random 32 bytes) | for the rates cron |
+| `CRON_SECRET` | **Secret.** Bearer token the scheduled jobs send to `/api/rates/refresh` | `change-me` (random 32 bytes) | for the rates cron |
 
 | `DOWNLOADER_PROVIDER_URL` | Job endpoint of the self-hosted Cobalt Media Provider host (empty = built-in stub) | `https://downloader.example.com/job` | Media Downloader only |
 | `DOWNLOADER_PROVIDER_TOKEN` | **Secret.** Bearer token the app sends to the provider host | `change-me` | Media Downloader only |
@@ -354,7 +353,7 @@ The visual gate records against its own account, not that shared one: set `E2E_V
 
 ## Deployment
 
-The production build is compiled by Next.js and deployed to **Vercel**.
+The production build is compiled by Next.js into a container image and served by the VPS origin.
 
 ### Build
 
@@ -365,16 +364,20 @@ npm run build
 
 This produces the optimized production bundle in `.next/` ready for `next start` or a serverless platform.
 
-### Deploy to Vercel
+### Deploy the origin
 
-1. **Connect the repository** in the Vercel dashboard and set the Framework preset to **Next.js**.
-2. **Add every environment variable** from the [Environment Variables](#environment-variables) table in the Vercel project settings (Production and Development; preview deployments are off, so there is no preview environment to fill).
-3. **Deploy** — every push to the production branch triggers an automatic build. `vercel.json` disables every other branch (`git.deploymentEnabled`: `main` true, `"**"` false; `"*"` would miss `type/name` branches): Hobby caps deployment creation at ~100/day and the daily prune caps retention, so pull requests are reviewed from the diff, not a preview URL.
+1. **Build and publish the image** — `gh workflow run 'Publish origin image'` on `main`. It builds
+   in Actions because the 2 GB box cannot hold the build, and pushes `:latest` plus the commit tag
+   to GHCR.
+2. **Pull it on the box** — `ssh -p 2222 deploy@91.98.55.148`, then
+   `cd /opt/royaraqamia && sudo bash deploy.sh`. The script pulls, recreates the container and
+   refuses to call the deploy done until the container answers `/manifest.json`.
+3. **Purge the edge** — `gh workflow run 'Purge the edge'`. A prerendered page carries a year of
+   `s-maxage`, so without the purge the old HTML stays in Cloudflare.
 
 ### Platform configuration
 
-- `next.config.js` — enforces a strict **Content-Security-Policy**, security headers (HSTS, X-Frame-Options, Permissions-Policy, etc.), remote-image allowlists, and wires the **Sentry** webpack plugin (enabled only on Vercel/CI, with sourcemaps tunnelled through `/monitoring`).
-- `vercel.json` — sets `no-cache` on routes and the service worker (`/sw.js`) and immutable caching for `/_next/static/*`.
+- `next.config.js` — enforces a strict **Content-Security-Policy**, security headers (HSTS, X-Frame-Options, Permissions-Policy, etc.), remote-image allowlists, and wires the **Sentry** webpack plugin (enabled on the production image build, with sourcemaps tunnelled through `/monitoring`).
 - `.github/workflows/code-quality.yml` — gates merges with lint, type-check, tests, and a production build.
 
 ### Post-deploy
@@ -391,11 +394,11 @@ Every deploy has a unique, monotonic identity: `<X.Y.Z>+build.<N>.<7-char-sha>` 
 
 - **`X.Y.Z`** � the product version, from the committed `package.json#version`. It is bumped by hand at a milestone, not by a merge (an `APP_VERSION` env override pins a manual deploy).
 - **`N`** � every commit on the deployed branch (`git rev-list --count HEAD`).
-- **`<sha>`** � 7-char commit hash (from `VERCEL_GIT_COMMIT_SHA` on Vercel, `git rev-parse --short HEAD` locally, `unknown` as last resort).
+- **`<sha>`** — 7-char commit hash (from the image build, `git rev-parse --short HEAD` locally, `unknown` as last resort).
 
 ### The web has no releases
 
-There is no `Release` workflow, no `web-X.Y.Z` tag, no GitHub Release and no `CHANGELOG.md` for the site (ADR-0090). Continuous deployment means nobody installs a version: the deploy identity above � the commit, not a number � is what `/api/version`, Sentry and a support conversation need. Vercel deploys every push to `main`, and the build metadata it bakes is what tells two deploys apart.
+There is no `Release` workflow, no `web-X.Y.Z` tag, no GitHub Release and no `CHANGELOG.md` for the site (ADR-0090). Continuous deployment means nobody installs a version: the deploy identity above — the commit, not a number — is what `/api/version`, Sentry and a support conversation need. A merge ships nothing: the image build bakes its own commit, and that is what tells two deploys apart.
 
 The `android-*` tag line, its releases and its changelog belong to the Android shell, which is a thing people install; it has its own clock and its own version (below).
 
@@ -428,7 +431,7 @@ A device does not use that URL. It downloads the same bytes from our own origin,
   looping (ADR-0055). A swapped worker still replaces the document once (ADR-0039), and a swap waits
   for the previous worker's clients to go away - so a deploy lands on a load: a refresh, or the next
   launch (inside the Android shell, its next cold start).
-- Sentry releases are tagged with `releaseVersion` (server, edge, and client), and the sourcemaps Vercel
+- Sentry releases are tagged with `releaseVersion` (server, edge, and client), and the sourcemaps the image
   uploads are named the same generated string (`next.config.js`), so an event and its map always agree.
 
 ### Commands

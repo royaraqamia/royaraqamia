@@ -34,7 +34,7 @@
 # Setup (repo secrets), shared with the other OpenCode workflows:
 #   OPENCODE_API_KEY      - the agent that repairs a red landing
 #   AGENT_PUSH_TOKEN      - pushes a repair commit that CI will actually run on
-#   SUPABASE_* / VERCEL_* - the same tools the implementer gives its agent
+#   SUPABASE_*           - the same tools the implementer gives its agent
 #   E2E_TEST_*            - the specs that need a session
 
 name: 'PR Landing'

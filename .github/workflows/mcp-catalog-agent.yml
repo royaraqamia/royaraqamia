@@ -26,8 +26,8 @@
 name: 'MCP Catalogue Agent'
 
 on:
-  # Three quarters of an hour after the catalogue sync (`vercel.json`:
-  # 0 4 * * *), so a run works on the mirror that was just refreshed.
+  # Three quarters of an hour after the catalogue sync at 04:00
+  # (`scheduled-jobs.yml`), so a run works on the mirror that was just refreshed.
   schedule:
     - cron: '45 4 * * *'
   workflow_dispatch:

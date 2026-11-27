@@ -9,7 +9,7 @@
 | **Owner**            | م. أيْهَم العَلي (project owner)          |
 | **Approved by**      | Project owner                          |
 
-This document defines the security posture of the **royaraqamia** application — a Next.js (App Router) platform backed by Supabase, Sentry, Resend, Upstash Redis, and Cloudflare Turnstile, deployed on Vercel.
+This document defines the security posture of the **royaraqamia** application — a Next.js (App Router) platform backed by Supabase, Sentry, Resend, Upstash Redis, and Cloudflare Turnstile, served from a self-managed VPS behind Cloudflare.
 
 It is a **private, confidential codebase**. All code, configuration, data, and documentation contained in this repository are confidential and proprietary. Treat every rule below as **mandatory**; exceptions require explicit sign-off from the project owner and a recorded risk acceptance.
 
@@ -85,7 +85,7 @@ Senior review requires an explicit threat model. Trust boundaries, assets, and a
 - **User data** — PII submitted via forms, contact inquiries, training enrollment data.
 - **Media** — user-uploaded files stored in Supabase Storage.
 - **Credentials** — Supabase (service role, publishable keys), Resend, Upstash, Sentry auth token, Turnstile secret.
-- **Service continuity** — Vercel deployments, database, email and analytics pipelines.
+- **Service continuity** — the origin (Docker + Caddy on the VPS), database, email and analytics pipelines.
 
 ### Trust boundaries
 

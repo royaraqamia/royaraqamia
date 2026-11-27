@@ -36,9 +36,10 @@ export function resolveReleaseVersion({ appVersionOverride, packageVersion, comm
 /**
  * Decides whether regenerating app-version.ts may touch the working tree.
  * Build hosts always write so the deploy carries its own identity: GitHub
- * Actions sets CI=true, Vercel sets CI/VERCEL=1, and Render sets RENDER=true
- * (the same flag `next.config.js` reads). Local dev/build skips the write,
- * keeping the committed default (and `git status`) pristine.
+ * Actions sets CI=true and the origin image sets RENDER=true (the same flag
+ * `next.config.js` reads). Local dev/build skips the write, keeping the
+ * committed default (and `git status`) pristine.
+ * APP_VERSION_WRITE=force|skip overrides either way.
  * APP_VERSION_WRITE=force|skip overrides either way.
  */
 export function shouldWriteAppVersion(env = process.env) {
@@ -58,12 +59,13 @@ export function shouldWriteAppVersion(env = process.env) {
 }
 
 /**
- * The build identity a deploy advertises: the host's own metadata first, the
- * checkout's git second. Render sets RENDER_GIT_COMMIT/RENDER_GIT_BRANCH for a
- * service built from a repo, Vercel sets its equivalents, and a local forced
- * write has neither so it reads the working tree. `env` is `production` on a
- * Render build — the free service is the origin (ADR-0174), and a deploy that
- * answered `development` made every Sentry event look like a local run.
+ * The build identity a deploy advertises: the image's own metadata first, the
+ * checkout's git second. The Dockerfile sets RENDER_GIT_COMMIT/VERCEL_GIT_COMMIT_SHA
+ * from the published build arg (the names outlived their hosts and the scripts
+ * still read them), and a local forced write has neither, so it reads the working
+ * tree. `env` is `production` when RENDER is set — the image is the origin
+ * (ADR-0221), and a deploy that answered `development` made every Sentry event
+ * look like a local run.
  */
 export function resolveBuildIdentity({ env = process.env, commitFromGit, refFromGit }) {
   return {

@@ -62,3 +62,11 @@ deploy. The owner wants deploys to happen only when a person asks for one.
   workflow.
 - ADR-0186's minute arithmetic, the build filter and the wait-then-purge mechanics stand; only
   its four-a-day train and the six-hour bound are replaced.
+
+## Amendment 2026-11-27
+
+The dispatch rule survives the host: a merge ships nothing, and the person who wants a commit
+served dispatches `Publish origin image` and then runs `deploy.sh` on the box. `deploy.yml` —
+the Render hook and the wait for its build — is deleted; what is left of it is
+`.github/workflows/purge-cache.yml`, the zone purge and the discovery-document check, which is
+still a hand dispatch.

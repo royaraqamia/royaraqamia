@@ -90,3 +90,10 @@ down until the pause lifts.
   application code changed. What it buys is a site that answers requests while the product finds
   users; when it earns, the question becomes a paid plan on a platform that does not meter a page
   render into a monthly allowance.
+
+## Amendment 2026-11-27
+
+Render and Vercel are both out of the deployment path. `render.yaml`, `vercel.json`, the Render
+deploy workflow and the memory watch that read Render's API were deleted; the deploy is
+`deploy/vps/deploy.sh` on the box, and the purge is its own dispatch. This page stays as the
+record of why the origin left Vercel; ADR-0221 is where it lives now.

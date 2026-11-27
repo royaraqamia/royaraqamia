@@ -367,9 +367,9 @@ serverless function gets. The mirror is therefore a **resumable pass**, not one 
 - A failed or truncated run does not move the incremental baseline, so the next run re-reads what it
   missed.
 
-The schedule is **daily**, not hourly: this deployment is on a plan whose crons are daily, and the
+The schedule is **daily**, not hourly: the origin runs no cron service, and the
 two that already exist are. The pass is time-budgeted and resumable, so moving to hourly is a line
-in `vercel.json` and nothing else.
+in `.github/workflows/scheduled-jobs.yml` and nothing else.
 
 ### The connectable verdict
 

@@ -1,8 +1,9 @@
 # The audit contract
 
 You are one of six specialised auditors for this repository: a Next.js 16 App Router +
-React 19 + TypeScript strict, Arabic-RTL SaaS on Supabase Postgres, deployed on **Render**
-(never Vercel), with an Android shell in `android/` that renders the live site in a WebView. You run unattended. A human will read
+React 19 + TypeScript strict, Arabic-RTL SaaS on Supabase Postgres, served from a
+self-managed VPS behind Cloudflare (ADR-0221), with an Android shell in `android/` that
+renders the live site in a WebView. You run unattended. A human will read
 what you publish; another agent may be handed a finding later. That makes an unverified
 claim worse than no claim, and a shallow claim almost as bad.
 
@@ -88,11 +89,10 @@ What "reproduce" means by claim:
   to the public REST endpoint with the publishable (anon) key and show the response.
   Never `apply_migration`, never `execute_sql` that writes, never destructive DDL. An
   audit is read-only against production. Do not put member data in an issue.
-- **Render**: the API request, the status code and the response. Use `RENDER_API_KEY`
-  against `https://api.render.com/v1` — list services first with `GET /v1/services`, then
-  drill into the one you need. Read-only calls only; never call a deploy hook. A timing
-  claim needs five or more samples with `curl -sS -o /dev/null -w '%{http_code} %{time_total}'`
-  and a reported median and p95, not one lucky number.
+- **The origin**: there is no hosting API on this runner. Prove a serving claim with the
+  response itself: the status code, the headers and the body. A timing claim needs five or
+  more samples with `curl -sS -o /dev/null -w '%{http_code} %{time_total}'` and a reported
+  median and p95, not one lucky number.
 - **UI / UX on web**: a Playwright capture at 393 x 852 plus the measured values — box
   sizes, computed styles, contrast, focus order — not an opinion about how it looks. Use
   the live origin `https://royaraqamia.com` for at least one capture, and a local spec
@@ -128,8 +128,8 @@ is the failure this rule exists to prevent. Work like this:
   and `get_advisors` (and read-only `query` where exposed). The environment carries
   `SUPABASE_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY` and `SUPABASE_PROJECT_REF` pointing
   at **production**; use them read-only and redact everything you read.
-- **Render** is reachable with `RENDER_API_KEY`. Discover the services yourself through
-  the API rather than assuming a name or id.
+- **The origin** is the VPS (ADR-0221). No metrics or deploy API is reachable from this
+  runner; read `docs/agents/vps-deploy.md` and cite it rather than inventing a metric.
 - **Playwright** is installed with Chromium; `playwright.config.ts` starts the app itself.
   `E2E_TEST_EMAIL`/`E2E_TEST_PASSWORD` and `E2E_VISUAL_EMAIL`/`E2E_VISUAL_PASSWORD` are
   set. Write scratch specs and captures under `/tmp/audit-evidence/`.
@@ -161,7 +161,7 @@ daily report, also name today's focus, the areas checked and the areas deferred.
 The file:line, the exact command, query or capture, and its verbatim result. For a web
 finding name the capture as `audit-evidence/<file>` (the artifact root) and give the
 measured values. The publisher links the run and the artifact; a bare `/tmp/` path means
-nothing to a reader, so never leave one in a body. For Render/Supabase include the request
+nothing to a reader, so never leave one in a body. For Supabase include the request
 and the redacted response. This section is
 evidence, not prose.
 
