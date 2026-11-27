@@ -32,6 +32,12 @@ const DOCK_POST: VisualPostFixture = {
 const DOCK = '[data-visual="community-comment-dock"]';
 /** The comment field is a Tiptap editor, not a `textarea` element. */
 const FIELD = `${DOCK} [role="textbox"]`;
+/**
+ * The row now holds two buttons — the field's own emoji sheet and the send slot
+ * — so the selector names the send rather than taking the first button the dock
+ * happens to draw.
+ */
+const SEND = `${DOCK} [data-visual="community-comment-send"]`;
 const LAUNCHER = '[data-assistant-launcher]';
 
 interface Box {
@@ -58,7 +64,7 @@ interface Geometry {
 
 async function geometry(page: Page): Promise<Geometry> {
   return page.evaluate(
-    ({ dockSelector, fieldSelector, launcherSelector }) => {
+    ({ dockSelector, fieldSelector, sendSelector, launcherSelector }) => {
       const box = (node: Element | null): Box | null => {
         if (!node) return null;
         const rect = node.getBoundingClientRect();
@@ -67,7 +73,7 @@ async function geometry(page: Page): Promise<Geometry> {
       const launcher = document.querySelector(launcherSelector);
       const dock = document.querySelector(dockSelector);
       const field = dock?.querySelector(fieldSelector) ?? null;
-      const send = dock?.querySelector('button') ?? null;
+      const send = dock?.querySelector(sendSelector) ?? null;
       const launcherBox = box(launcher);
       const fieldBox = box(field);
       const hit = (node: Element | null, x: number, y: number) => {
@@ -101,7 +107,15 @@ async function geometry(page: Page): Promise<Geometry> {
         bottomGap: launcherBox ? window.innerHeight - (launcherBox.y + launcherBox.height) : null,
         hasTabBar: !!document.querySelector('[data-bottom-tabbar]'),
         fieldPoints: fieldBox
-          ? [4, fieldBox.width / 2, fieldBox.width - 4].map((dx) => ({
+          ? [
+              // The field's own emoji control sits inside its start edge — the
+              // same corner the launcher used to steal — so the start sample
+              // lands clear of it and the three points still prove the editor
+              // answers across the row.
+              4,
+              fieldBox.width / 2,
+              fieldBox.width - 44,
+            ].map((dx) => ({
               dx,
               ...hit(field, fieldBox.x + dx, fieldBox.y + fieldBox.height / 2),
             }))
@@ -111,7 +125,7 @@ async function geometry(page: Page): Promise<Geometry> {
           : null,
       };
     },
-    { dockSelector: DOCK, fieldSelector: FIELD, launcherSelector: LAUNCHER }
+    { dockSelector: DOCK, fieldSelector: FIELD, sendSelector: SEND, launcherSelector: LAUNCHER }
   );
 }
 

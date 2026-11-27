@@ -18,6 +18,23 @@ export const COMMENT_FIELD_LABELS: ChatFieldLabels = {
   code: COMMUNITY_POST_COPY.formatCode,
   link: COMMUNITY_POST_COPY.formatLink,
   linkPrompt: COMMUNITY_POST_COPY.formatLinkPrompt,
+  emoji: {
+    open: COMMUNITY_POST_COPY.emojiPicker,
+    search: COMMUNITY_POST_COPY.emojiSearch,
+    noResults: COMMUNITY_POST_COPY.emojiNoResults,
+    recent: COMMUNITY_POST_COPY.emojiRecent,
+    categories: {
+      smileys: COMMUNITY_POST_COPY.emojiCategorySmileys,
+      gestures: COMMUNITY_POST_COPY.emojiCategoryGestures,
+      hearts: COMMUNITY_POST_COPY.emojiCategoryHearts,
+      animals: COMMUNITY_POST_COPY.emojiCategoryAnimals,
+      food: COMMUNITY_POST_COPY.emojiCategoryFood,
+      activity: COMMUNITY_POST_COPY.emojiCategoryActivity,
+      travel: COMMUNITY_POST_COPY.emojiCategoryTravel,
+      objects: COMMUNITY_POST_COPY.emojiCategoryObjects,
+      symbols: COMMUNITY_POST_COPY.emojiCategorySymbols,
+    },
+  },
 };
 
 /** A count is worth showing only when it can still stop a refused send. */
@@ -68,6 +85,7 @@ export function PostCommentField({
           variant="hero"
           size="icon-sm"
           aria-label={sendLabel}
+          data-visual="community-comment-send"
           disabled={disabled || sending || value.trim().length === 0}
           className="size-11"
           onClick={onSend}

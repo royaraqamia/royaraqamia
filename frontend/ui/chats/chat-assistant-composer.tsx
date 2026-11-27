@@ -36,6 +36,23 @@ const FIELD_LABELS = {
   code: CHAT_THREAD_COPY.formatCode,
   link: CHAT_THREAD_COPY.formatLink,
   linkPrompt: CHAT_THREAD_COPY.formatLinkPrompt,
+  emoji: {
+    open: CHAT_THREAD_COPY.emojiPicker,
+    search: CHAT_THREAD_COPY.emojiSearch,
+    noResults: CHAT_THREAD_COPY.emojiNoResults,
+    recent: CHAT_THREAD_COPY.emojiRecent,
+    categories: {
+      smileys: CHAT_THREAD_COPY.emojiCategorySmileys,
+      gestures: CHAT_THREAD_COPY.emojiCategoryGestures,
+      hearts: CHAT_THREAD_COPY.emojiCategoryHearts,
+      animals: CHAT_THREAD_COPY.emojiCategoryAnimals,
+      food: CHAT_THREAD_COPY.emojiCategoryFood,
+      activity: CHAT_THREAD_COPY.emojiCategoryActivity,
+      travel: CHAT_THREAD_COPY.emojiCategoryTravel,
+      objects: CHAT_THREAD_COPY.emojiCategoryObjects,
+      symbols: CHAT_THREAD_COPY.emojiCategorySymbols,
+    },
+  },
 };
 
 /** The slice of the assistant's state the field reads; the pre-conversation
