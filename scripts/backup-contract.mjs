@@ -112,27 +112,24 @@ export function countMismatches(actual, expected) {
 }
 
 /**
- * Schemas a restore must never touch. Anything else the dump creates is owned
- * by the archive and has to be empty before the replay, or the drill lands on
- * rows a previous pass left behind (#1954).
+ * Schemas a restore must never touch. The platform owns `auth`, `storage` and
+ * its siblings, so the drill cannot drop them — a first attempt did exactly
+ * that and died on `must be owner of schema auth` (#1954). Only schemas the
+ * artifact creates are ours to drop.
  */
 export const SYSTEM_SCHEMAS = Object.freeze(['pg_catalog', 'information_schema', 'pg_toast']);
 
 /**
- * Every schema the artifact creates or writes rows into.
+ * Schemas the artifact creates, so the drill can own and replace them.
  *
- * Read from the dump rather than hard-coded: the first version of the drill
- * reset `public` only while the archive also restores `auth`, so the second
- * replay died on `flow_state_pkey`. The set has to follow the artifact.
+ * Read from `CREATE SCHEMA` rather than from every schema it writes rows into:
+ * `auth` and `storage` exist in the scratch project already and belong to
+ * Supabase's admin roles. `public` is always included because a dump may rely
+ * on the default schema existing.
  *
- * @param {{ schemaSql?: string, historySchemaSql?: string, dataSql?: string, historyDataSql?: string }} files
+ * @param {{ schemaSql?: string, historySchemaSql?: string }} files
  */
-export function schemasInDump({
-  schemaSql = '',
-  historySchemaSql = '',
-  dataSql = '',
-  historyDataSql = '',
-} = {}) {
+export function schemasToReset({ schemaSql = '', historySchemaSql = '' } = {}) {
   const names = new Set(['public']);
 
   for (const sql of [schemaSql, historySchemaSql]) {
@@ -144,14 +141,43 @@ export function schemasInDump({
     }
   }
 
+  return [...names].sort();
+}
+
+/** Every table the artifact replays rows into, as `schema.table`. */
+export function tablesInDump({ dataSql = '', historyDataSql = '' } = {}) {
+  const tables = new Set();
   for (const sql of [dataSql, historyDataSql]) {
     for (const match of sql.matchAll(/^COPY\s+(\S+)\s+\([^\n]*\)\s+FROM\s+stdin;\s*$/gm)) {
-      const schema = unquoteIdentifier(match[1]).split('.')[0];
-      if (schema && !SYSTEM_SCHEMAS.includes(schema)) names.add(schema);
+      const table = unquoteIdentifier(match[1]);
+      if (!table.includes('.')) continue;
+      if (SYSTEM_SCHEMAS.includes(table.split('.')[0])) continue;
+      tables.add(table);
     }
   }
+  return [...tables].sort();
+}
 
-  return [...names].sort();
+/**
+ * Empty the platform-owned tables the replay is about to fill.
+ *
+ * They cannot be dropped — the schemas belong to Supabase's admin roles — so
+ * they are truncated instead, after `schema.sql` has run (the tables have to
+ * exist) and before `data.sql` copies into them. `CASCADE` is deliberate: a
+ * dependent table outside the dump has no rows worth keeping in a scratch
+ * project that is about to be a copy of production.
+ */
+export function truncateTablesSql(tables) {
+  if (!tables.length) return '';
+  const list = tables
+    .map((table) =>
+      table
+        .split('.')
+        .map((part) => `"${part.replace(/"/g, '""')}"`)
+        .join('.')
+    )
+    .join(', ');
+  return `SET session_replication_role = replica;\nTRUNCATE TABLE ${list} CASCADE;`;
 }
 
 /**
