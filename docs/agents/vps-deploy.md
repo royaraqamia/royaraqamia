@@ -15,12 +15,14 @@ and the app port is never published on the host.
 - `sshd` listens on **2222 via `ssh.socket`** (not on 22), key-only: `PermitRootLogin no`,
   `PasswordAuthentication no`.
 - The login is **`deploy`**, a sudo user. Root exists only through the Illevante console.
-- `/opt/royaraqamia/` holds `compose.yaml`, `Caddyfile`, `deploy.sh`, `backup.sh`, `.env` and
-  `backup.env`; both env files are `600` and root-owned, so operating them needs `sudo`.
+- `/opt/royaraqamia/` holds `compose.yaml`, `Caddyfile`, `deploy.sh`, `backup.sh`, `monitor.sh`, `.env`,
+  `backup.env` and `monitor.env`; the three env files are `600` and root-owned, so operating them needs
+  `sudo`.
 - Caddy serves TLS for `royaraqamia.com` and `www.royaraqamia.com`; Cloudflare proxies both with
   SSL mode **Full (strict)**.
 - `cron` copies the configuration to a dedicated R2 bucket at 03:00 UTC; the Illevante panel sells
-  snapshots, but only by hand.
+  snapshots, but only by hand. A second cron entry runs `monitor.sh` hourly — the box's own health line
+  and its only image-cache eviction (see _The box reports its own health_).
 - The app port is `expose`d to the Compose network and never published, so health checks run inside
   the container, not with a host `curl`.
 - `Publish origin image` holds its own ed25519 key, constrained to `deploy.sh` by a forced command and
@@ -130,6 +132,53 @@ after editing it (`tail -1 ~/.ssh/authorized_keys`).
 **Nothing about this changes the rollback.** It is still the previous tag, run by hand — a dispatch
 tags `:latest` with the commit it just built and its verification would fail against the pinned older
 image.
+
+## The box reports its own health
+
+Nothing measured the box before this (#1885): a full disk surfaced as a failed deploy, and a restart
+loop surfaced as a customer's `500`. `monitor.sh` runs hourly from root's crontab and sends one
+Telegram message per problem to the bot the repository already uses. Silence means healthy, apart from
+one line a day at `HEARTBEAT_HOUR` — a cron that died is otherwise as quiet as a box that is fine.
+
+It checks disk, memory, both containers running, the app's own Compose healthcheck and recent restarts,
+then evicts the image cache **by a gauge, never by an image's age**: a build date says nothing about
+whether the box still needs the image. Over `DISK_SOFT_PCT` (70) the dangling layers go, over
+`DISK_HARD_PCT` (85) every unused image goes. The rollback is a GHCR tag, so an evicted image costs a
+re-pull, never the rollback itself. A problem that persists is re-sent every `REPEAT_HOURS` (6), not on
+every run; a recovered box forgets the reminder so the next problem speaks at once.
+
+```bash
+crontab -l                      # 17 * * * * /opt/royaraqamia/monitor.sh
+grep royaraqamia-monitor /var/log/syslog   # a send that failed, and anything it would have sent
+```
+
+Prove it on the box, without waiting for a threshold — this sends for real, which is the point:
+
+```bash
+sudo DISK_SOFT_PCT=1 /opt/royaraqamia/monitor.sh
+```
+
+Thresholds and the bot credentials live in `/opt/royaraqamia/monitor.env` (`600`, root-owned, never in
+the repository). Editing it is enough; nothing restarts.
+
+**Installing it on a live box** is one root session (the same block the rebuild uses, with the bot token
+from BotFather — the token the repository's own Telegram workflow already uses):
+
+```bash
+sudo -i
+cd /opt/royaraqamia
+cat > monitor.env <<'EOF'
+TELEGRAM_BOT_TOKEN=<token>
+TELEGRAM_CHAT_ID=<chat id>
+EOF
+chmod 600 monitor.env
+install -o root -g root -m 755 /tmp/monitor.sh /opt/royaraqamia/monitor.sh
+(crontab -l 2>/dev/null | grep -v 'royaraqamia/monitor.sh';
+ crontab -l 2>/dev/null | grep -q '^PATH=' || echo 'PATH=/usr/local/bin:/usr/bin:/bin';
+ echo '17 * * * * /opt/royaraqamia/monitor.sh') | crontab -
+crontab -l
+/opt/royaraqamia/monitor.sh; echo "ran: $?"
+```
 
 ## Runtime configuration
 
@@ -243,15 +292,19 @@ If the machine is lost, nothing here needs to be invented: provision the same 2 
 Ubuntu 24.04 image, then
 
 1. install Docker (`curl -fsSL https://get.docker.com | sh`) and enable it;
-2. copy `deploy/vps/*` over and restore `backup.env` and `.env` from the newest archive in
-   `royaraqamia-vps/vps/` — that file is the only irreplaceable input;
+2. copy `deploy/vps/*` over and restore `.env` from the newest archive in `royaraqamia-vps/vps/` —
+   `backup.env` and `monitor.env` are deliberately kept out of the archive and are re-created from the
+   R2 and bot credentials;
 3. move `sshd` to 2222 through `ssh.socket`, create `deploy` with your key, then disable root and
    password login;
 4. `ufw allow 22/tcp 80/tcp 2222/tcp 443/tcp` (22 is harmless and useful on another network);
-5. `sudo bash deploy.sh`, then point DNS at the new IP and purge.
+5. `sudo bash deploy.sh`, then point DNS at the new IP and purge;
+6. install the hourly health cron from _The box reports its own health_, and run it once — a rebuilt box
+   that is silent because nobody remembered the cron is the failure this is meant to catch.
 
 ## Still open
 
-- `#1885` — nothing measures the box's request rate, latency or memory yet. Until it lands, the
-  audit prompts say so instead of inventing a number.
+- `#1885` — the box reports disk, memory, container health and recent restarts hourly
+  (_The box reports its own health_), but nothing measures its request rate or latency yet. Until that
+  lands, the audit prompts say so instead of inventing a number.
 - `#1776` (server-side MP4) and the realtime-voice transport were blocked on this move and can start.
