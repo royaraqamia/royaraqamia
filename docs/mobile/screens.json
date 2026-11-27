@@ -172,11 +172,6 @@
       "reason": "No port, and none owed: the site links `consultation/book` nowhere (ADR-0148), so there is no page to compare a screen against and the row is `blocked` in `parity-plan.json`. The screen was deleted with its store and tests (ADR-0178)."
     },
     {
-      "surface": "downloader",
-      "native": null,
-      "reason": "The app opens the web surface in the shell; native screens land in phase 4 (#646)."
-    },
-    {
       "surface": "auth",
       "native": null,
       "reason": "Sign-in moves to the app with the cutover, not before: once the WebView leaves, a Custom Tab cannot set the app's session, so the native flow is what makes the cutover possible (ADR-0178). The plan row is `blocked` on it."

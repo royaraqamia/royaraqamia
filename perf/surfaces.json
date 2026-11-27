@@ -353,15 +353,6 @@
       "specs": ["e2e/lead-offline.spec.ts"]
     },
     {
-      "id": "downloader",
-      "routes": ["/downloader"],
-      "owner": "server",
-      "read": "needs-connection",
-      "write": "none",
-      "shell": "precached",
-      "specs": ["e2e/downloader.spec.ts"]
-    },
-    {
       "id": "auth",
       "routes": [
         "/auth/login",

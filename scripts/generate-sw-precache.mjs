@@ -47,9 +47,9 @@ const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 export const MAX_PRECACHE_ROUTES = 35;
 
 // Ceiling for the route shells, documented in ADR-0071. HTML shells are the
-// only thing fetched here (no RSC variants). The 29 shells the #450 build
+// only thing fetched here (no RSC variants). The shells the #450 build
 // produces — auth, account, the public pages, the four product dashboards,
-// `/consultation/book`, `/downloader` and `/mcp/guide` — measure 1,705,315 bytes
+// `/consultation/book` and `/mcp/guide` — measure 1,705,315 bytes
 // (1.63 MB) from the build's own files. The cache budget still wins: the worker
 // will not spend bytes it does not have, and since #489 it spends them over idle
 // windows after activation rather than during install.

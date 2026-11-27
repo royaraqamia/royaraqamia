@@ -84,7 +84,6 @@ export const SCREEN_ROUTES: readonly ScreenRouteRow[] = [
   { pattern: '/hire', surface: 'leads', product: 'leads', tab: null },
   { pattern: '/pricing/subscribe', surface: 'leads', product: 'leads', tab: null },
   { pattern: '/consultation/book', surface: 'consultation', product: 'consultation', tab: null },
-  { pattern: '/downloader', surface: 'downloader', product: 'downloader', tab: null },
   { pattern: '/auth/login', surface: 'auth', product: 'auth', tab: null },
   { pattern: '/auth/signup', surface: 'auth', product: 'auth', tab: null },
   { pattern: '/auth/verify-otp', surface: 'auth', product: 'auth', tab: null },

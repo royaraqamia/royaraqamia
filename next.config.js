@@ -254,6 +254,16 @@ const nextConfig = {
         destination: '/community',
         permanent: true,
       },
+      // The Downloader product is retired: nothing is sold and no surface draws
+      // it, so `/downloader` stops being a page. Its document was a data-free
+      // client shell that pulled the whole feature in after load, and the
+      // runtime weight gate priced it at ~280 KB for a route nobody could reach
+      // (#1948). A permanent redirect keeps an old bookmark off a 404.
+      {
+        source: '/downloader',
+        destination: '/',
+        permanent: true,
+      },
       ...productAppRedirects,
     ];
   },

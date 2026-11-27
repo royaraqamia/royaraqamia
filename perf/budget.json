@@ -59,10 +59,6 @@
       "comment": "Live weight gate (#1662): 292.7 KB gzip JS on 2026-11-22.",
       "jsGzipKb": 294
     },
-    "/downloader": {
-      "comment": "Live weight gate (#1662): 275.5 KB gzip JS on 2026-11-22.",
-      "jsGzipKb": 277
-    },
     "/hire": {
       "comment": "Live weight gate (#1662): 334.8 KB gzip JS on 2026-11-22.",
       "jsGzipKb": 336

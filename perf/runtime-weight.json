@@ -313,15 +313,6 @@
       "reporterOnErrorGzipKb": 0,
       "measuredAt": "2026-11-24T14:49:56.399Z"
     },
-    "/downloader": {
-      "documentJsGzipKb": 0,
-      "afterLoadGzipKb": 209.6,
-      "totalJsGzipKb": 209.6,
-      "reporterGzipKb": 0,
-      "reporterUrls": [],
-      "reporterOnErrorGzipKb": 0,
-      "measuredAt": "2026-11-24T14:49:56.399Z"
-    },
     "/hire": {
       "documentJsGzipKb": 0,
       "afterLoadGzipKb": 214.8,

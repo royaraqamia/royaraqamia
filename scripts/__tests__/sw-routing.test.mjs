@@ -223,12 +223,13 @@ describe('sw-routing predicates', () => {
   });
 
   it('caches the Phase 3 shells and keeps their actions online-only (#450)', () => {
-    // `/downloader` and `/consultation/book` are data-free documents since #450:
-    // their reads are on the never-cache `/api/downloader` and
-    // `/api/consultation` prefixes, and the submitting action stays a live
-    // server call. `/mcp/guide` is instructions alone, so it left the `/mcp`
-    // prefix that the protocol endpoint and the consent document still hold.
-    for (const path of ['/downloader', '/consultation/book', '/mcp/guide']) {
+    // `/consultation/book` is a data-free document since #450: its reads are on
+    // the never-cache `/api/consultation` prefix, and the submitting action
+    // stays a live server call. `/mcp/guide` is instructions alone, so it left
+    // the `/mcp` prefix that the protocol endpoint and the consent document
+    // still hold. `/downloader` was the third shell here until the product
+    // retired and the route became a redirect (#1948).
+    for (const path of ['/consultation/book', '/mcp/guide']) {
       expect(routing.isNeverCache(u(path))).toBe(false);
     }
   });
