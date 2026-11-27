@@ -24,6 +24,16 @@ platform limit. Supabase stays managed; only the Next.js origin moves.
 > too: a nightly copy of the box's configuration to a dedicated R2 bucket with a rehearsed restore, and
 > a provider snapshot as well where the panel sells one.
 
+> **Second amendment, 2026-11-27 — the cutover is done.** Cloudflare's apex CNAME to
+> `royaraqamia.onrender.com` became an A record to `91.98.55.148`, `www` likewise, and both names were
+> proven over direct TLS before the proxy went back on at Full (strict). Three things the first run of
+> the runbook got wrong are corrected there: the origin's `sshd` listens on 2222 because the owner's
+> network drops outbound 22 and socket activation ignores `Port` in `sshd_config`; the runtime
+> `NEXT_PUBLIC_SITE_URL` must name production or every absolute URL throws (ADR-0178), which is how
+> the first Google sign-in on the new origin failed; and the app port is never published on the host,
+> so health checks run inside the container. Render stays alive as the rollback until the owner signs
+> off, and `render.yaml` is then deleted.
+
 ## The decision
 
 1. **Build the image in GitHub Actions, publish to GHCR, run it on the VPS.**

@@ -1,351 +1,204 @@
-# Moving the origin to the self-managed VPS
+# The self-managed VPS origin
 
-This is the operator's runbook for the origin (ADR-0221): a **2 vCPU / 2 GB / 30 GB Ubuntu 24.04
-VPS from Illevante at $6.70 a month**, the only recurring bill, against a **$10 a month** cap
-([docs/agents/cost.md](cost.md)). The image is built in GitHub Actions and published to GHCR; this
-machine only pulls and runs it. Render stays live until the last step.
+The site has been served from this box since **2026-11-27**: a 2 vCPU / 2 GB / 30 GB Ubuntu 24.04
+VPS from Illevante at **$6.70 a month**, the only recurring bill, against a **$10 a month** cap
+([docs/agents/cost.md](cost.md)). Cloudflare is in front; the app runs in Docker behind Caddy; the
+image is built in GitHub Actions and published to GHCR. Render is retired as the origin and kept as
+the rollback (ADR-0221).
 
-Do not paste passwords or API keys into chat, a pull request or a terminal recording. Everything
-secret goes into `/opt/royaraqamia/.env` on the VPS or into GitHub Actions secrets.
+Every command below has been run on this machine. Several differ from the first version of this page
+because the box disagreed with it: the network drops port 22, `.env` shipped a `localhost` origin,
+and the app port is never published on the host.
 
-## 1. Connect to the machine
+## What the box is
 
-From PowerShell on your Windows machine:
+- `sshd` listens on **2222 via `ssh.socket`** (not on 22), key-only: `PermitRootLogin no`,
+  `PasswordAuthentication no`.
+- The login is **`deploy`**, a sudo user. Root exists only through the Illevante console.
+- `/opt/royaraqamia/` holds `compose.yaml`, `Caddyfile`, `deploy.sh`, `backup.sh`, `.env` and
+  `backup.env`; both env files are `600` and root-owned, so operating them needs `sudo`.
+- Caddy serves TLS for `royaraqamia.com` and `www.royaraqamia.com`; Cloudflare proxies both with
+  SSL mode **Full (strict)**.
+- `cron` copies the configuration to a dedicated R2 bucket at 03:00 UTC; the Illevante panel sells
+  snapshots, but only by hand.
+- The app port is `expose`d to the Compose network and never published, so health checks run inside
+  the container, not with a host `curl`.
 
-```powershell
-ssh root@91.98.55.148
-```
-
-Accept the host fingerprint once, then paste the root password from the Illevante panel or email. If
-root login is refused, use the server user the panel gave you and run `sudo -i` after logging in.
-
-If SSH is blocked, open the **VMx Console** from the same panel and work there. Confirm the panel's
-own firewall allows **22** as well as 80 and 443: a connection that times out before the banner is
-the panel, not `sshd`.
-
-## 2. Base system
-
-Run these once, as root:
-
-```bash
-apt update && apt upgrade -y
-apt install -y curl ufw
-hostnamectl set-hostname royaraqamia
-timedatectl set-timezone UTC
-```
-
-Add a small swap file. The app runs in a 1 GB heap budget and the build no longer happens here, but
-swap absorbs a short spike without killing the process:
+## Getting in, and out of trouble
 
 ```bash
-fallocate -l 1G /swapfile
-chmod 600 /swapfile
-mkswap /swapfile
-swapon /swapfile
-echo '/swapfile none swap sw 0 0' >> /etc/fstab
+ssh -p 2222 deploy@91.98.55.148
+sudo -i            # when a root shell is genuinely needed
 ```
 
-Open only the ports you need. **Allow SSH first**, or you will lock yourself out:
+Port 22 is not merely closed, it is unreachable from the owner's network — the house connection
+drops outbound SSH on 22 while allowing 2222. That is why the listener moved, and why it lives on
+`ssh.socket`:
 
 ```bash
-ufw allow 22/tcp
-ufw allow 80/tcp
-ufw allow 443/tcp
-ufw enable
-ufw status
+cat /etc/systemd/system/ssh.socket.d/10-alt-port.conf   # [Socket] ListenStream= / ListenStream=2222
+ss -lntp | grep 2222
 ```
 
-If your provider also has a firewall in its panel, allow the same three ports there.
+Touching `Port` in `/etc/ssh/sshd_config` corrects nothing while socket activation owns the listener;
+`sshd -T` will happily report a port that nothing listens on.
 
-## 3. Install Docker
+If SSH is lost, the Illevante console is the way back: delete
+`/etc/ssh/sshd_config.d/20-hardening.conf` (or the socket drop-in), `systemctl restart ssh`, and fix
+the cause with a second session open.
 
-```bash
-curl -fsSL https://get.docker.com | sh
-systemctl enable --now docker
-docker --version
-docker compose version
-```
+## Deploy the current image
 
-## 4. Put the deployment files on the VPS
-
-From the repository root on Windows, copy only the VPS files; the Dockerfile is used by GitHub, not
-here:
-
-```powershell
-scp -r deploy/vps/* root@91.98.55.148:/opt/royaraqamia/
-```
-
-If `/opt/royaraqamia` does not exist yet, create it first on the VPS:
-
-```bash
-mkdir -p /opt/royaraqamia
-```
-
-You should now have `compose.yaml`, `Caddyfile`, `deploy.sh` and `backup.sh` in that directory.
-
-## 5. Create the runtime environment file
-
-The template is the repository's own `example.env`, the file `npm run check:env-docs` keeps equal to
-what the code reads. There is no second copy to drift: send this one straight to the name the app
-loads.
-
-```powershell
-scp example.env root@91.98.55.148:/opt/royaraqamia/.env
-```
-
-Then, on the VPS, fill it from the values currently in the Render dashboard:
-
-```bash
-nano /opt/royaraqamia/.env
-chmod 600 /opt/royaraqamia/.env
-```
-
-Every `KEY=` must have its real value on the right. The blank ones may stay blank only where the code
-documents an empty value as "feature off" (for example `TAVILY_API_KEY`). The important ones are the
-Supabase URL and keys, `NEXT_PUBLIC_SITE_URL=https://royaraqamia.com`,
-`PUBLIC_ORIGIN=https://royaraqamia.com`, `NEXT_PUBLIC_WHATSAPP_PHONE`, the Resend keys, Turnstile,
-VAPID, `CRON_SECRET`, `ADMIN_SYNC_SECRET`, `MCP_TOKEN_ENCRYPTION_KEY`, and the assistant provider
-keys.
-
-Never print this file — not with `cat`, `env`, `docker inspect` or `docker compose config` — in a
-session whose transcript is stored. The 2026-11 VPS migration printed a Supabase key exactly that
-way (#1909), and that key had to be retired.
-
-## 6. Back up the configuration
-
-The box has nothing to lose except `.env`. The images are public and every other file is in git, so
-the recovery contract is this directory, copied nightly to an R2 bucket of its own, and a restore that
-has actually been run. A separate bucket matters: the database's dumps live in their own bucket, and a
-credential on the VPS must not be able to read them (`docs/supabase.md`).
-
-1. In the Cloudflare dashboard, create a bucket named `royaraqamia-vps` and an R2 API token scoped to
-   **that bucket only**. Note the endpoint (`https://<account>.r2.cloudflarestorage.com`), the key id
-   and the secret.
-2. Install the CLI and write the credential file, so the secret is never in a shell history:
-
-   ```bash
-   apt install -y awscli
-   cat > /opt/royaraqamia/backup.env <<'EOF'
-   R2_ENDPOINT=
-   R2_ACCESS_KEY_ID=
-   R2_SECRET_ACCESS_KEY=
-   R2_BACKUP_BUCKET=royaraqamia-vps
-   EOF
-   chmod 600 /opt/royaraqamia/backup.env
-   nano /opt/royaraqamia/backup.env
-   ```
-
-3. Run it once by hand and read the answer:
-
-   ```bash
-   chmod +x /opt/royaraqamia/backup.sh
-   /opt/royaraqamia/backup.sh
-   ```
-
-4. Schedule it at 03:00 UTC, an hour clear of the database dump, and keep the log rotated. Two traps
-   live here: cron's own `PATH` is `/usr/bin:/bin` while the AWS CLI v2 installs into `/usr/local/bin`,
-   so the job dies nightly with `aws: command not found` unless the table sets it; and `crontab -`
-   replaces the whole table, so append to what is already there:
-
-   ```bash
-   ( crontab -l 2>/dev/null; echo 'PATH=/usr/local/bin:/usr/bin:/bin'; \
-     echo '0 3 * * * /opt/royaraqamia/backup.sh >> /var/log/royaraqamia-backup.log 2>&1' ) | crontab -
-   crontab -l
-   cat > /etc/logrotate.d/royaraqamia-backup <<'EOF'
-   /var/log/royaraqamia-backup.log {
-     weekly
-     rotate 8
-     compress
-     missingok
-     notifempty
-   }
-   EOF
-   ```
-
-   Prove the cron environment can run it before waiting a day. A clean environment with only that
-   `PATH` is exactly what cron hands the script:
-
-   ```bash
-   env -i PATH=/usr/local/bin:/usr/bin:/bin /opt/royaraqamia/backup.sh
-   ```
-
-5. Retain about 30 daily copies with an R2 **lifecycle rule** on the `vps/` prefix. The Illevante panel
-   sells snapshots but no schedule, so take one by hand before the DNS record moves
-   (`pre-cutover-<date>`) and know that it is a second line of defence, not the automated one: the tar
-   is the contract, because it is the restore that has been rehearsed.
-
-**The restore is rehearsed before the DNS record moves**, not after. This is the drill, and it is the
-whole of it:
-
-```bash
-cd /opt/royaraqamia
-set -a; . ./backup.env; set +a
-export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" AWS_DEFAULT_REGION=auto
-aws s3 ls s3://royaraqamia-vps/vps/ --endpoint-url "$R2_ENDPOINT" | tail -3
-aws s3 cp s3://royaraqamia-vps/vps/<newest>.tar.gz /tmp/ --endpoint-url "$R2_ENDPOINT"
-sha256sum .env > /tmp/env.sha
-mv .env .env.before-drill
-tar -xzf /tmp/<newest>.tar.gz -C /opt/royaraqamia
-sha256sum -c /tmp/env.sha
-docker compose up -d --force-recreate app
-bash deploy.sh
-docker inspect -f '{{.State.StartedAt}} {{.State.Health.Status}}' royaraqamia
-docker compose exec -T app node -e \
-  "fetch('http://127.0.0.1:3000/manifest.json').then(r => process.exit(r.ok ? 0 : 1))" && echo restored
-rm -f .env.before-drill /tmp/<newest>.tar.gz /tmp/env.sha
-```
-
-Four details are the difference between a drill and a ritual:
-
-- `backup.env` holds `R2_*` names; the CLI reads `AWS_*`, hence the `export` line. Without it every
-  `aws` call answers `Unable to locate credentials`, which is not a key problem.
-- `sha256sum -c` proves the restored file is byte-identical to the one that was live, so the drill
-  cannot pass on a stale `.env` that was never replaced.
-- `--force-recreate` is the point: with an identical env file Compose would leave the running
-  container alone, and the drill would prove nothing about the restored copy. A `StartedAt` that is
-  the current time is the evidence that it did recreate.
-- The app port is `expose`d to the Compose network, not published on the host, so a host-side
-  `curl 127.0.0.1:3000` can never answer; the check runs inside the container.
-
-A `restored` line means the untarred `.env` is the one the app is running on. Record the date, the
-archive name and that output in issue #1779.
-
-## 7. Set GitHub Actions values
-
-In GitHub: Settings -> Secrets and variables -> Actions. Add these as secrets (or variables; the
-workflow accepts either, except the service-role key which must be a secret):
-
-- `NEXT_PUBLIC_SITE_URL`
-- `PUBLIC_ORIGIN`
-- `NEXT_PUBLIC_WHATSAPP_PHONE`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `ADMIN_SYNC_SECRET` (the allowlist sync's own bearer token; not the Supabase key)
-- optional: `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
-
-The first six are required; the publish workflow fails loudly if any is empty. These are build-time
-values only. The VPS `.env` is the runtime copy.
-
-## 8. Publish the image
-
-After the migration change is merged into `main`:
+Publishing is manual and always from `main`:
 
 ```powershell
 gh workflow run 'Publish origin image'
 gh run watch
 ```
 
-The first push creates a GHCR package. Set that package to **public** in GitHub (Packages ->
-royaraqamia -> Package settings -> Change visibility -> Public) so the VPS can pull it without
-another credential. The image contains no secrets, so public is safe.
-
-## 9. Start the origin
-
-On the VPS:
+Then, on the box:
 
 ```bash
 cd /opt/royaraqamia
-bash deploy.sh
-docker compose ps
-docker stats --no-stream
+sudo bash deploy.sh
+sudo docker compose exec -T app node -e \
+  "fetch('http://127.0.0.1:3000/api/version').then(r=>r.json()).then(j=>console.log(j.commit))"
 ```
 
-`deploy.sh` pulls the image, starts both containers and waits for `/manifest.json` to answer. Read
-logs with:
+Compare that commit with `git rev-parse --short HEAD`. `deploy.sh` pulls `:latest`, starts both
+containers and waits for `/manifest.json` inside the app container. It does not touch `docker
+inspect`-visible build metadata: the build SHA lives in `/api/version` and `public/sw-version.js`,
+because the Dockerfile sets it in the build stage only.
+
+Disk is the recurring risk: each pull keeps the previous image. Keep the box near a third full.
 
 ```bash
-docker compose logs -f app
-docker compose logs -f caddy
+sudo docker image prune -af
+df -h /
 ```
 
-The app container is capped at 1536 MB and Caddy at 192 MB, so an out-of-memory kill takes one
-container and `restart: unless-stopped` brings it back, rather than the kernel choosing a victim on a
-2 GB box.
+## Runtime configuration
 
-## 10. Test before moving DNS
+`.env` is root-owned and `600`, so it is edited with `sudo`, never copied into the repository.
 
-Add a temporary DNS record in Cloudflare:
+**The one key that breaks everything quietly** is `NEXT_PUBLIC_SITE_URL`. It must name the same
+origin as `PUBLIC_ORIGIN` — `https://royaraqamia.com`, never `http://localhost:3000`. The app treats
+a disagreement as fatal (ADR-0178): every route that builds an absolute URL throws, while pages that
+were prerendered at build time keep rendering, so the first symptom is a `500` from a single
+endpoint such as Google sign-in.
 
-- Type `A`, name `vps`, value `91.98.55.148`
-- Proxy status **DNS only** (grey cloud)
-
-On the VPS, uncomment the `vps.royaraqamia.com` block at the bottom of `/opt/royaraqamia/Caddyfile`,
-then reload Caddy:
+After editing, recreate the app — a config change is not picked up by a running container:
 
 ```bash
-nano /opt/royaraqamia/Caddyfile
-docker compose restart caddy
+sudo docker compose up -d --force-recreate app
+sudo docker compose exec -T app printenv PUBLIC_ORIGIN NEXT_PUBLIC_SITE_URL
 ```
 
-Open `https://vps.royaraqamia.com` and check:
+## Backups
 
-- the home page and a public post render
-- sign-in works
-- a chat turn with نور streams and finishes
-- `/manifest.json` and `/api/version` answer
-- the Android update manifest answers at `/android/latest.json`
+The box has nothing to lose except `.env`: the image is public and every other file is in git. The
+recovery contract is `/opt/royaraqamia` copied nightly to an R2 bucket of its own
+(`royaraqamia-vps`), with a credential scoped to that bucket so a compromised VPS cannot read the
+database dumps (`docs/supabase.md`).
 
-Any certificate error from Caddy for the _main_ domain at this stage is expected: DNS for it still
-points at Render. The temporary hostname is the one that must work.
+`backup.sh` archives `compose.yaml`, `Caddyfile`, `deploy.sh` and `.env`, uploads it under `vps/`,
+and re-lists the object so a backup that was never stored fails loudly. `backup.env` carries the
+credentials and is not inside the archive.
 
-## 11. Cut over
+Schedule and retention, as configured:
 
-1. Save a screenshot of the current Cloudflare DNS records so you can restore them exactly.
-2. Set the `royaraqamia.com` A record to `91.98.55.148` and `www` the same, both with proxy **off**
-   and TTL 300 seconds.
-3. Restart Caddy so it obtains certificates for the main names:
-   `docker compose restart caddy`. Watch `docker compose logs -f caddy` until the certificates are
-   issued.
-4. Verify the site works with the proxy off, then turn the orange cloud back on for both records.
-5. In Cloudflare -> SSL/TLS, set encryption mode to **Full (strict)** now that Caddy has a valid
-   certificate.
-6. Purge the edge cache so cached HTML does not still point at the old origin:
+```bash
+crontab -l        # PATH=/usr/local/bin:/usr/bin:/bin, then 0 3 * * * /opt/royaraqamia/backup.sh
+cat /etc/logrotate.d/royaraqamia-backup
+```
 
-   ```powershell
-   gh workflow run deploy.yml -f purge_only=true
-   ```
+The `PATH` line is load-bearing: cron's own is `/usr/bin:/bin` and the AWS CLI v2 installs into
+`/usr/local/bin`, so without it the job fails nightly with `aws: command not found`. Prove the cron
+environment any time with:
 
-7. Comment the temporary `vps.royaraqamia.com` block out again and restart Caddy.
+```bash
+env -i PATH=/usr/local/bin:/usr/bin:/bin /opt/royaraqamia/backup.sh
+```
 
-Leave the Render service running for a few days. Rollback is the reverse of step 2: restore the saved
-DNS records and run the same purge workflow. Rehearse the check once while both origins are live —
-the service behind the rollback answers at its own name, no DNS change needed:
+An R2 lifecycle rule on the `vps/` prefix expires objects after 30 days. The panel's snapshots are
+manual: take one before anything risky (`pre-cutover-<date>`), and know that the tar is the layer
+that has actually been restored.
+
+**The drill**, run once already and worth repeating after any change to the file set. It proves the
+restored file is the one the app boots from, not merely that an archive exists:
+
+```bash
+cd /opt/royaraqamia
+sudo -i
+set -a; . ./backup.env; set +a
+export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" AWS_DEFAULT_REGION=auto
+aws s3 cp s3://royaraqamia-vps/vps/<newest>.tar.gz /tmp/ --endpoint-url "$R2_ENDPOINT"
+sha256sum .env > /tmp/env.sha
+mv .env .env.before-drill
+tar -xzf /tmp/<newest>.tar.gz -C /opt/royaraqamia
+sha256sum -c /tmp/env.sha
+docker compose up -d --force-recreate app
+docker inspect -f '{{.State.StartedAt}}' royaraqamia
+docker compose exec -T app node -e \
+  "fetch('http://127.0.0.1:3000/manifest.json').then(r => process.exit(r.ok ? 0 : 1))" && echo restored
+rm -f .env.before-drill /tmp/<newest>.tar.gz /tmp/env.sha
+```
+
+`R2_*` names are not what the CLI reads, hence the `export`; `--force-recreate` is what makes the
+new `.env` the one the container reads; `StartedAt` is the evidence it happened.
+
+## Certificates, and testing a new origin before cutover
+
+Caddy obtains Let's Encrypt certificates itself. The order matters, and it is the order that was
+used here: a name must resolve **directly** at the box (Cloudflare proxy off) before Caddy can get a
+certificate for it, and only then does the proxy go back on. Doing it the other way gives
+`Full (strict)` an origin it cannot verify.
+
+In the zone: the apex is now an **A record to `91.98.55.148`**; it used to be a CNAME to
+`royaraqamia.onrender.com`, and a CNAME and an A record cannot share the apex, so a future move is a
+delete-then-add, not an edit. Two proxied `*.royaraqamia.com` wildcards belong to other hosts;
+explicit records always win over them.
+
+A temporary hostname (`vps.royaraqamia.com`) was used for the pre-cutover checks and then removed,
+together with its Caddy block. If it is ever repeated, know that **Google sign-in on a temporary
+hostname lands on production**: the OAuth callback is built from `PUBLIC_ORIGIN`. Testing the
+authenticated pages there needs two temporary changes, both reverted afterwards — `PUBLIC_ORIGIN`
+and `NEXT_PUBLIC_SITE_URL` set to the test origin in `.env`, and the test origin added to Supabase →
+Authentication → URL Configuration → Redirect URLs.
+
+## Rollback to Render
+
+Render is retired as the origin but still runs, so the rollback is DNS and a purge:
+
+1. Set the apex back to a **CNAME `royaraqamia.onrender.com`, proxied**, and `www` the same.
+2. `gh workflow run deploy.yml -f purge_only=true`.
+
+Check the target is alive before relying on it — it answers at its own name:
 
 ```powershell
 curl.exe -sI https://royaraqamia.onrender.com/manifest.json | Select-String "HTTP/|x-render-origin-server"
 ```
 
-`200` and `x-render-origin-server: Render` is the rollback being real. A DNS record is only a rollback
-if the thing it points at is known to answer.
+`200` and `x-render-origin-server: Render` means it is real. It is not healthy, though: the free
+instance was OOM-restarting roughly every 40 minutes before the move (#1867), so a rollback buys
+time, not service.
 
-## 12. Routine operations
+## Rebuilding the box
 
-New image published: on the VPS run
+If the machine is lost, nothing here needs to be invented: provision the same 2 vCPU / 2 GB / 30 GB
+Ubuntu 24.04 image, then
 
-```bash
-cd /opt/royaraqamia
-bash deploy.sh
-docker image prune -f
-```
+1. install Docker (`curl -fsSL https://get.docker.com | sh`) and enable it;
+2. copy `deploy/vps/*` over and restore `backup.env` and `.env` from the newest archive in
+   `royaraqamia-vps/vps/` — that file is the only irreplaceable input;
+3. move `sshd` to 2222 through `ssh.socket`, create `deploy` with your key, then disable root and
+   password login;
+4. `ufw allow 22/tcp 80/tcp 2222/tcp 443/tcp` (22 is harmless and useful on another network);
+5. `sudo bash deploy.sh`, then point DNS at the new IP and purge.
 
-Watch resources:
+## Still open
 
-```bash
-free -h
-df -h
-docker stats --no-stream
-```
-
-Backups: the nightly tar from step 6 is the box's recovery; the database keeps its own verified dumps
-in R2 with a restore drill (`docs/supabase.md`). Keep a copy of `backup.env` somewhere safe outside
-the VPS too — the credential is not inside the archive.
-
-## 13. Hardening, after everything works
-
-- Create a non-root `deploy` user, add your SSH public key to it and to the `docker` group, then
-  disable password and root SSH login in `/etc/ssh/sshd_config` and restart `ssh`. From then on the
-  commands above run as `deploy@91.98.55.148`, and `bash deploy.sh` needs `sudo` unless the user is
-  in the `docker` group.
-- Keep `ufw` on with only 22, 80 and 443 allowed.
-- Do not add Coolify, a database or any second workload to this 2 GB box.
+- Delete `render.yaml` once the box has served a week without incident; until then it is the
+  documented rollback and it says so at the top.
+- `#1779` closes when this document matches the box, which it now does.
+- `#1776` (server-side MP4) and the realtime-voice transport were blocked on this move and can start.

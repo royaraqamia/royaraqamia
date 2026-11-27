@@ -106,34 +106,38 @@ Ten `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash): six audit
 
 ## Deployment
 
-**Primary path:** A push to `main` runs CI. The origin does not deploy on that push:
-`.github/workflows/deploy.yml` calls Render's deploy hook only when someone dispatches it by hand on
-`main` (ADR-0209). There is no release workflow, tag or GitHub Release for the web (ADR-0090); the
-deploy identity is the generated `<semver>+build.<N>.<sha>`.
+**Primary path:** A push to `main` runs CI and ships nothing. To serve a commit, dispatch
+`Publish origin image` — which builds and pushes `ghcr.io/royaraqamia/royaraqamia` — then pull it on
+the VPS with `sudo bash deploy.sh` (ADR-0221). There is no release workflow, tag or GitHub Release for
+the web (ADR-0090); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
 
-**Why a hand dispatch.** Hobby includes 500 build-pipeline minutes a month. At the recorded cadence
-(~22 deploy-triggering merges a day, ~2m45 a build) a deploy on every push would be ~1,800 minutes,
-and the four-a-day train of ADR-0186 spent ~330 of the 500 at that cadence, shipping whatever was on
-`main` at four fixed hours. A dispatch spends a build only when a deploy is wanted, and leaves what
-goes live to the person who runs it. Time-to-production is no longer bounded by a clock: a merge stays undeployed until someone
-dispatches the workflow. A dispatch whose commit is already serving costs nothing: the workflow
-reads the running build's `<7-char-sha>` from `sw-version.js` and stops before calling the hook. A
-dispatch also takes **`purge_only`**, which skips the build and re-runs the discovery check and the
-purge — the recovery for a purge that failed after a build had already landed.
+**Why a hand dispatch.** The Render free plan included 500 build-pipeline minutes a month, and at the
+recorded cadence (~22 deploy-triggering merges a day, ~2m45 a build) a deploy on every push would be
+~1,800 minutes; the four-a-day train of ADR-0186 spent ~330 of the 500. That arithmetic is what moved
+the decision to a dispatch, and it still holds for the rollback path: a dispatch spends a build only
+when a deploy is wanted, and leaves what goes live to the person who runs it. A dispatch of
+`deploy.yml` whose commit is already serving costs nothing — the workflow reads the running build's
+`<7-char-sha>` from `sw-version.js` and stops before calling the hook — and it also takes
+**`purge_only`**, which skips the build and re-runs the discovery check and the purge: the recovery
+for a purge that failed after a build had already landed, and the step the cutover ran.
 
-**Render is still the serving origin** ([ADR-0174](adr/0174-the-origin-moves-to-render-while-the-free-caps-bite.md)).
-`render.yaml` is the blueprint: a free native-Node service, built with `npm ci && npm run build:render`
-and started with `npm start`, health-checked on `/manifest.json`, with `autoDeployTrigger: 'off'` so
-only a dispatch deploys. `build:render` is `npm run build` without `tsc --noEmit` — the pull request
-already gates types — so the build machine spends its minutes on the artifact, not a second type
-check. Native rather than Docker because the assistant's roster is read from
-`.opencode/skills/agency/` at request time. Cloudflare proxies the custom domain and caches
-`/_next/static/*`, fonts and images: that caching is what keeps the origin inside the 5 GB monthly
-bandwidth allowance, after which a workspace with no payment method is suspended for the rest of the
-month. The deploy needs `RENDER_DEPLOY_HOOK_URL` as an Actions secret (Render → service → Settings →
-Deploy Hook); with it absent the workflow fails loudly rather than skipping silently.
+**The origin is a self-managed VPS** (ADR-0221), serving since 2026-11-27: a 2 vCPU / 2 GB / 30 GB
+Ubuntu VPS from Illevante — the only recurring bill, $6.70 a month against a $10 cap
+([docs/agents/cost.md](agents/cost.md)) — runs the app in Docker behind Caddy, with Cloudflare in
+front at **Full (strict)**. The image is built by `.github/workflows/publish-image.yml` on manual
+dispatch and published to GHCR; the box only pulls and runs it, so no build happens on 2 GB of RAM.
+A deploy is `ssh -p 2222 deploy@91.98.55.148` then `cd /opt/royaraqamia && sudo bash deploy.sh`, and
+`/api/version` is the proof of which commit is serving. The box's configuration is copied nightly to a
+dedicated R2 bucket and the restore has been drilled. The operator runbook — SSH, certificates, env
+file, backup and drill, rollback and rebuild — is [docs/agents/vps-deploy.md](agents/vps-deploy.md).
 
-**The destination origin is a self-managed VPS (ADR-0221).** A 2 vCPU / 2 GB / 30 GB Ubuntu VPS from Illevante — the only recurring bill, $6.70 a month against a $10 cap ([docs/agents/cost.md](agents/cost.md)) — runs the app in Docker behind Caddy, with Cloudflare still in front. It is bought and built; this becomes the primary path when the DNS record moves. The image is built by `.github/workflows/publish-image.yml` on manual dispatch and published to GHCR; the box only pulls and runs it, so no build happens on 2 GB of RAM. Render stays live until DNS is moved, and its blueprint is marked retired rather than deleted, so the rollback is a DNS record and a purge. The box's configuration is copied nightly to a dedicated R2 bucket and the restore is rehearsed before the record moves. The operator runbook — SSH, firewall, Docker, env file, temporary test hostname and cutover — is [docs/agents/vps-deploy.md](agents/vps-deploy.md).
+**Render is the rollback** (ADR-0174, amended by ADR-0221). `render.yaml` still describes the free
+native-Node service, built with `npm ci && npm run build:render` and started with `npm start`,
+health-checked on `/manifest.json`, with `autoDeployTrigger: 'off'` so only a dispatch deploys. It is
+marked retired at the top of the file and is deleted once the box has served a week without incident;
+until then, rolling back is the apex CNAME back to `royaraqamia.onrender.com` (proxied) plus a purge.
+That path needs `RENDER_DEPLOY_HOOK_URL` as an Actions secret (Render → service → Settings → Deploy
+Hook); with it absent the workflow fails loudly rather than skipping silently.
 
 **Crons are GitHub Actions, not the platform.** `.github/workflows/scheduled-jobs.yml` calls the
 three routes on their old schedules; each route authorises itself from
