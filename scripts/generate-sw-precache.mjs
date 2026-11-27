@@ -116,6 +116,15 @@ export const DYNAMIC_BY_DESIGN = [
     reason:
       'the plan, the price, the account (guest, already subscribed, or an open request) and the phone picker default from the geo header are all decided per request',
   },
+  // The member's own assistant page (ADR-0224). It is declared dynamic on
+  // purpose, and the declaration is the page's: the read and the guard live in
+  // the client view, and the document carries no member data, so the worker
+  // caches the frame after the first live visit instead of precaching one.
+  {
+    route: '/assistant',
+    reason:
+      '`force-dynamic` per member (ADR-0224); the read and the guard are client-side, so the document is data-free but per-request and the worker caches it after the first live visit',
+  },
   // The member's own feed (ADR-0173). Its answer depends on who is asking, so
   // there is no document to precache: a guest would receive the empty state and
   // a member the feed, and the shell would be wrong for one of them by design.
