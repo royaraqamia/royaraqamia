@@ -80,9 +80,9 @@ export function AccountRows({ onSignOut, children }: AccountRowsProps) {
         />
 
         <AccountRow
-          href="/account/memory"
+          href="/assistant"
           icon={Brain}
-          label={ACCOUNT_ROWS_COPY.memory}
+          label={ACCOUNT_ROWS_COPY.assistant}
           onRequireAuth={setPromptHref}
         />
 
