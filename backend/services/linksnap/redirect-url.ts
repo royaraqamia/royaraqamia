@@ -17,6 +17,7 @@ export const APP_ROUTE_SEGMENTS: readonly string[] = [
   'admin',
   'api',
   'app-info',
+  'assistant',
   'athkar',
   'auth',
   'chats',
