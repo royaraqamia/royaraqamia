@@ -493,7 +493,7 @@ blocked, so no event is posted) and records the reporter's gzip bytes as
 
 The gate keeps its three-at-a-time pace because the committed ceilings were
 recorded with it: serial visits load more lazy chunks inside the settle window
-and price `/downloader` 73 KB higher without the origin getting heavier. Under
+and price a surface higher without the origin getting heavier. Under
 that burst the production edge can answer 503/502 with script-less error pages,
 which the coverage check used to report as an unpriced route even though the
 build was fine (`/hire` on the 2026-11-24 `main` push). A 5xx document is now

@@ -42,9 +42,9 @@ const DEFAULT_VIEWPORT = { width: 393, height: 852 };
 const NETWORK_ATTEMPTS = 7;
 const RETRY_BASE_MS = 1000;
 // Keep the three-at-a-time pace: the committed ceilings were recorded with it.
-// Serial visits load more lazy chunks inside the settle window and price
-// `/downloader` 73 KB higher, which trips a budget the live origin does not
-// exceed. A transient 5xx is handled by the retry loop instead.
+// A serial visit loads more lazy chunks inside the settle window and prices a
+// surface higher than the live origin does. A transient 5xx is handled by the
+// retry loop instead.
 const DEFAULT_CONCURRENCY = 3;
 
 /** A status is diagnostic only: fake browsers in tests need not implement it. */

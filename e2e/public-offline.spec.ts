@@ -165,13 +165,7 @@ test('a never-visited public route deep-links offline from the background precac
   // opened in this context before the offline pass.
   await gotoUnderWorkerControl(page, `${baseURL}/rates`);
   await expect(page.getByRole('heading', { name: /أسعار الصَّرف/ })).toBeVisible();
-  await waitForCachedRoutes(page, [
-    '/privacy',
-    '/auth/login',
-    '/account',
-    '/downloader',
-    '/security',
-  ]);
+  await waitForCachedRoutes(page, ['/privacy', '/auth/login', '/account', '/security']);
 
   await context.setOffline(true);
   await page.goto(`${baseURL}/privacy`, { waitUntil: 'domcontentloaded' });
@@ -197,15 +191,12 @@ test('a never-visited public route deep-links offline from the background precac
   await page.goto(`${baseURL}/account`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/account$/);
 
-  // The two Phase 3 shells (#450) are data-free documents too: a deep link to a
-  // never-opened `/downloader` or `/security` paints its own chrome, and the
-  // reads underneath it answer with their own needs-connection states. The
-  // booking form is absent from this list on purpose: it reads the platform's
-  // country so its document is per-request, not a shell (ADR-0176).
-  await page.goto(`${baseURL}/downloader`, { waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(/\/downloader$/);
-  await expect(page.getByRole('heading', { name: 'مُنزِّل الوسائط' })).toBeVisible();
-
+  // `/security` is a data-free document too (#450): a deep link to a shell this
+  // context never opened paints its own chrome, and the reads underneath it
+  // answer with their own needs-connection states. The booking form is absent
+  // from this list on purpose: it reads the platform's country so its document
+  // is per-request, not a shell (ADR-0176). `/downloader` was the other shell
+  // here until the product retired and the route became a redirect (#1948).
   await page.goto(`${baseURL}/security`, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(/\/security$/);
   await expect(page.getByRole('heading', { name: 'سياسة الأمان' })).toBeVisible();

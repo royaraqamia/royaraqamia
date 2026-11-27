@@ -23,7 +23,6 @@ export const SCREEN_CONTEXT_SILENT_SURFACES: Readonly<Record<string, string>> = 
   chats: 'A thread is its body, and a message body is denied by policy; a turn asks instead.',
   coding: 'Per-member task state and diffs are exposed through نور tools, not screen context.',
   consultation: "A booking form is the member's own words, unsent until they send it.",
-  downloader: 'One action with no state of its own: paste a link, get a file.',
   home: 'The hub is a launcher: it draws links to the nine apps, not state.',
   leads: "A lead form is a message to the owner, and its body is the member's words.",
   marketing: 'Five static pages whose words are the deliverable (ADR-0178).',

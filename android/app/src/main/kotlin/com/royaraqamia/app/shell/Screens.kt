@@ -91,7 +91,6 @@ object Screens {
             ScreenRouteRow("/hire", "leads", "leads", null),
             ScreenRouteRow("/pricing/subscribe", "leads", "leads", null),
             ScreenRouteRow("/consultation/book", "consultation", "consultation", null),
-            ScreenRouteRow("/downloader", "downloader", "downloader", null),
             ScreenRouteRow("/auth/login", "auth", "auth", null),
             ScreenRouteRow("/auth/signup", "auth", "auth", null),
             ScreenRouteRow("/auth/verify-otp", "auth", "auth", null),

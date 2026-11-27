@@ -429,7 +429,7 @@ WebView went early, with #651: a queued write is delivered natively now.)
 ## Phase 4 — the remote and server-guarded surfaces
 
 Community (feed, post, editor), News, rates, verify, `/u/<username>`, leads, consultation,
-downloader, scan, the marketing pages, auth screens, MCP, `/admin`.
+scan, the marketing pages, auth screens, MCP, `/admin`.
 
 These are the screens where "native" costs the most and buys the least: their content is
 server-owned, so their release cadence becomes the APK's. Two things make that tolerable, and both

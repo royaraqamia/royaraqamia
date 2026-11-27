@@ -47,9 +47,9 @@ const ROUTING = resolve(ROOT, 'public', 'sw-routing.js');
 export const MAX_PRECACHE_ROUTES = 35;
 
 // Ceiling for the route shells, documented in ADR-0071. HTML shells are the
-// only thing fetched here (no RSC variants). The 29 shells the #450 build
+// only thing fetched here (no RSC variants). The shells the #450 build
 // produces — auth, account, the public pages, the four product dashboards,
-// `/consultation/book`, `/downloader` and `/mcp/guide` — measure 1,705,315 bytes
+// `/consultation/book` and `/mcp/guide` — measure 1,705,315 bytes
 // (1.63 MB) from the build's own files. The cache budget still wins: the worker
 // will not spend bytes it does not have, and since #489 it spends them over idle
 // windows after activation rather than during install.
@@ -115,6 +115,15 @@ export const DYNAMIC_BY_DESIGN = [
     route: '/pricing/subscribe',
     reason:
       'the plan, the price, the account (guest, already subscribed, or an open request) and the phone picker default from the geo header are all decided per request',
+  },
+  // The member's own assistant page (ADR-0224). It is declared dynamic on
+  // purpose, and the declaration is the page's: the read and the guard live in
+  // the client view, and the document carries no member data, so the worker
+  // caches the frame after the first live visit instead of precaching one.
+  {
+    route: '/assistant',
+    reason:
+      '`force-dynamic` per member (ADR-0224); the read and the guard are client-side, so the document is data-free but per-request and the worker caches it after the first live visit',
   },
   // The member's own feed (ADR-0173). Its answer depends on who is asking, so
   // there is no document to precache: a guest would receive the empty state and

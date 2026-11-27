@@ -66,12 +66,6 @@
       "why": "Five static pages (`/pricing`, `/privacy`, `/security`, `/terms`, `/app-info`): words the site owns and changes without an APK. The document is the page, so a policy edit costs a deploy and no release."
     },
     {
-      "surface": "downloader",
-      "phase": "public-content",
-      "state": "blocked",
-      "blockedBy": "hidden from the UI; the page stays reachable by direct URL but is not a port target"
-    },
-    {
       "surface": "community",
       "phase": "public-content",
       "state": "native"

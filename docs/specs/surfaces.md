@@ -42,7 +42,6 @@ Every user-facing route, what owns its data, and what it owes the user with the 
 | `scan` | `/?tab=/scan`<br>`/scan` | device | store | none | none | `scan.spec.ts` |  |  |
 | `leads` | `/training/apply`<br>`/request-project`<br>`/hire`<br>`/pricing/subscribe` | server | needs-connection | outbox | swr | `lead-offline.spec.ts` |  |  |
 | `consultation` | `/consultation/book` | server | needs-connection | none | precached | `lead-offline.spec.ts` |  |  |
-| `downloader` | `/downloader` | server | needs-connection | none | precached | `downloader.spec.ts` |  |  |
 | `auth` | `/auth/login`<br>`/auth/signup`<br>`/auth/verify-otp`<br>`/auth/reset-password`<br>`/auth/update-password`<br>`/auth/error` | static | needs-connection | none | precached | _ungated_ |  | #501 |
 | `mcp-guide` | `/mcp/guide` | static | swr | none | precached | _ungated_ |  |  |
 | `mcp-connect` | `/mcp/connect` | server | needs-connection | none | none | `public-offline.spec.ts` |  |  |

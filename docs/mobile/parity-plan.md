@@ -20,7 +20,6 @@ _The three surfaces that already have a Kotlin screen. Recording both sides here
 _Read with no session, so the page can be recorded without the fixture account and a failure is about the screen rather than about data._
 
 - [-] **marketing** `/pricing` `/privacy` `/security` `/terms` `/app-info` — document, by design · Five static pages (`/pricing`, `/privacy`, `/security`, `/terms`, `/app-info`): words the site owns and changes without an APK. The document is the page, so a policy edit costs a deploy and no release.
-- [ ] **downloader** `/downloader` — blocked · blocked by hidden from the UI; the page stays reachable by direct URL but is not a port target
 - [x] **community** `/community` `/community/explore` — native
 - [x] **community-post** `/community/[slug]` — native · #1351
 - [x] **profile** `/u/[username]` `/u/[username]/followers` `/u/[username]/following` — native
@@ -201,4 +200,4 @@ A component is finished when the surface that draws it is native, or when it bel
 
 ## Where this stands
 
-26 native · 3 to do · 6 document · 5 blocked of 40 surfaces. 3 of 10 release items done.
+26 native · 3 to do · 6 document · 4 blocked of 39 surfaces. 3 of 10 release items done.
