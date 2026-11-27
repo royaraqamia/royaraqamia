@@ -4,6 +4,10 @@
 #   /opt/royaraqamia/monitor.sh    root, hourly from cron
 #   /opt/royaraqamia/monitor.env   600 root: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 #
+# The first two lines are checked, not assumed: a run as `deploy` cannot read the
+# env file or the docker socket, and would report every container down into a
+# syslog nobody reads.
+#
 # Silence means healthy, except one line a day at HEARTBEAT_HOUR: a cron that
 # died is otherwise as quiet as a box that is fine. A problem that persists is
 # re-sent every REPEAT_HOURS rather than on every run, so the first message is
@@ -21,12 +25,30 @@
 set -uo pipefail
 
 cd "$(dirname "$0")" || exit 1
-if [ -f ./monitor.env ]; then
-  set -a
-  # shellcheck disable=SC1091
-  . ./monitor.env
-  set +a
+
+# A wrong-user run half-works: no docker socket means every container reads as
+# down, and a 600 monitor.env cannot be read, so the alerts go to syslog and the
+# prune silently does nothing. Fail before any of that instead.
+if [ "$(id -u)" -ne 0 ]; then
+  echo "monitor.sh must run as root: cron does; \`sudo deploy\` does not. Use sudo." >&2
+  exit 1
 fi
+if [ ! -r ./monitor.env ]; then
+  echo "monitor.env is missing or unreadable; it carries TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID." >&2
+  exit 1
+fi
+
+set -a
+# shellcheck disable=SC1091
+. ./monitor.env
+set +a
+
+for key in TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
+  if [ -z "${!key:-}" ]; then
+    echo "monitor.env has no $key; nothing would be sent." >&2
+    exit 1
+  fi
+done
 
 DISK_SOFT_PCT=${DISK_SOFT_PCT:-70}
 DISK_HARD_PCT=${DISK_HARD_PCT:-85}
@@ -44,7 +66,7 @@ notes=()
 send() {
   local text="$1"
   if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
-    logger -t royaraqamia-monitor "no monitor.env; would send: $text"
+    logger -t royaraqamia-monitor "TELEGRAM_* emptied at runtime; not sent: $text"
     return 0
   fi
   curl -fsS --max-time 10 -o /dev/null \
