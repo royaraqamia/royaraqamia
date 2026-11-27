@@ -106,39 +106,50 @@ Ten `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash): six audit
 
 ## Deployment
 
-**Primary path:** A push to `main` runs CI and ships nothing. To serve a commit, dispatch
-`Publish origin image` — which builds and pushes `ghcr.io/royaraqamia/royaraqamia` — then pull it on
-the VPS with `sudo bash deploy.sh` (ADR-0221). There is no release workflow, tag or GitHub Release for
-the web (ADR-0090); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
-
-**Why a hand dispatch.** A merge ships nothing on purpose: a build is the scarce resource and
-the person who decides to serve a commit is the person who dispatches it (ADR-0209). The
-recipes are:
+**One dispatch ships a commit.** A push to `main` runs CI and ships nothing. To serve a commit,
+dispatch `Publish origin image`: it builds and pushes `ghcr.io/royaraqamia/royaraqamia`, pulls it on
+the VPS through `deploy/vps/deploy.sh`, fails unless `/api/version` answers with the commit it built,
+and then purges the edge (ADR-0209 amendment, ADR-0221). There is no release workflow, tag or GitHub
+Release for the web (ADR-0090); the deploy identity is the generated `<semver>+build.<N>.<sha>`.
 
 ```bash
-gh workflow run 'Publish origin image'    # build this commit, push it to GHCR
-# on the box: cd /opt/royaraqamia && sudo bash deploy.sh
-gh workflow run 'Purge the edge'          # after the deploy lands
+gh workflow run 'Publish origin image' -f reason='what this serves'
+gh run watch                              # build → deploy → verify → purge
 ```
 
-The purge is its own dispatch now that the deploy runs on the box; it is also the recovery for
-a purge that failed after a build had already landed, and the step the cutover ran.
+`-f deploy=false` stops after the push, for an image that should be published without being served.
+`Purge the edge` stays dispatchable on its own, as the recovery for a purge that failed after a build
+had already landed.
+
+**Why a hand dispatch.** A merge ships nothing on purpose: a build is the scarce resource and
+the person who decides to serve a commit is the person who dispatches it (ADR-0209). The dispatch is
+the whole decision now — the steps behind it are one job chain, not three commands.
+
+**The deploy key redeploys and nothing else.** `ORIGIN_SSH_KEY` is an ed25519 private key whose
+`authorized_keys` entry on the box forces `sudo -n /usr/bin/bash /opt/royaraqamia/deploy.sh`, and the
+sudoers drop-in allows that one command and no shell; `ORIGIN_KNOWN_HOSTS` pins the box's host keys;
+`VPS_HOST`, `VPS_PORT` and `VPS_USER` are variables. Installing the pair, and rolling the key, is in
+[agents/vps-deploy.md](agents/vps-deploy.md).
 
 **The origin is a self-managed VPS** (ADR-0221), serving since 2026-11-27: a 2 vCPU / 2 GB / 30 GB
 Ubuntu VPS from Illevante — the only recurring bill, $6.70 a month against a $10 cap
 ([docs/agents/cost.md](agents/cost.md)) — runs the app in Docker behind Caddy, with Cloudflare in
 front at **Full (strict)**. The image is built by `.github/workflows/publish-image.yml` on manual
 dispatch and published to GHCR; the box only pulls and runs it, so no build happens on 2 GB of RAM.
-A deploy is `ssh -p 2222 deploy@91.98.55.148` then `cd /opt/royaraqamia && sudo bash deploy.sh`, and
-`/api/version` is the proof of which commit is serving. The box's configuration is copied nightly to a
-dedicated R2 bucket and the restore has been drilled. The operator runbook — SSH, certificates, env
-file, backup and drill, rollback and rebuild — is [docs/agents/vps-deploy.md](agents/vps-deploy.md).
+The workflow's `deploy` job runs `sudo bash deploy.sh` through the forced-command key, so a deploy
+does not need a shell: `/api/version` is the proof of which commit is serving. When the box itself
+needs work, `ssh -p 2222 deploy@91.98.55.148` and the owner's own key still open it. The box's
+configuration is copied nightly to a dedicated R2 bucket and the restore has been drilled. The
+operator runbook — SSH, certificates, env file, backup and drill, rollback and rebuild — is
+[docs/agents/vps-deploy.md](agents/vps-deploy.md).
 
-**The rollback is the previous image.** GHCR keeps `:latest` plus a tag per commit, so a bad
-deploy is answered by pinning the previous tag in `compose.yaml`, re-running `deploy.sh` and
-purging — the exact steps are in [agents/vps-deploy.md](agents/vps-deploy.md). The Render
-blueprint and `vercel.json` were deleted on 2026-11-27 with the cutover signed off (ADR-0221);
-neither host has a deployment path in this repository any more.
+**The rollback is the previous image, and it stays manual.** GHCR keeps `:latest` plus a tag per
+commit, so a bad deploy is answered by pinning the previous tag in `compose.yaml`, re-running
+`deploy.sh` and purging. Do not answer a rollback with a dispatch: the job tags the image it builds
+`:latest`, and its verification fails when the serving commit is not the one it built. The exact
+steps are in [agents/vps-deploy.md](agents/vps-deploy.md). The Render blueprint and `vercel.json`
+were deleted on 2026-11-27 with the cutover signed off (ADR-0221); neither host has a deployment path
+in this repository any more.
 
 **Crons are GitHub Actions, not the platform.** `.github/workflows/scheduled-jobs.yml` calls the
 three routes on their old schedules; each route authorises itself from
@@ -158,13 +169,14 @@ nothing, and a failed run is re-runnable from the Actions page (ADR-0090 amendme
 
 **The edge cache is purged when a deploy lands.** Cloudflare honours the origin's `s-maxage`, and a
 prerendered page carries a year of it, so a deploy would otherwise leave the old HTML in place until
-someone purged by hand. The deploy job waits for the new build to answer (`sw-version.js` carries
-`<semver>-<7-char-sha>`) and then purges the zone
+someone purged by hand. The deploy job proves the origin answers with the commit it built
+(`/api/version`, read through a cache-busting query string), and the `purge` job that follows re-reads
+the discovery documents and purges the zone
 ([ADR-0177](adr/0177-the-edge-is-purged-when-a-deploy-lands.md)). It needs `CLOUDFLARE_API_TOKEN`
 (Zone → Cache Purge) as a secret and `CLOUDFLARE_ZONE_ID` as a variable; with the token absent the
-job fails loudly rather than skipping silently. `purge-cache.yml` no longer exists: the purge is a
-step of the deploy the workflow runs by hand
-([ADR-0186](adr/0186-the-origin-deploys-on-a-clock-not-on-every-merge.md),
+job fails loudly rather than skipping silently. `purge-cache.yml` is called as a reusable workflow by
+`Publish origin image`, and stays dispatchable alone for a purge that failed after a build had already
+landed ([ADR-0186](adr/0186-the-origin-deploys-on-a-clock-not-on-every-merge.md),
 [ADR-0209](adr/0209-the-origin-deploys-only-when-dispatched.md)).
 
 **The edge caches the public document.** The four Cache Rules and the warm Worker are in

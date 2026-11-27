@@ -1,14 +1,16 @@
-# Purges Cloudflare's zone and re-reads the discovery documents, by hand.
+# Re-reads the discovery documents, then purges Cloudflare's zone.
 #
-# This is what is left of the old `deploy.yml`: the origin deploys on the VPS
-# (`deploy/vps/deploy.sh`, ADR-0221) so Actions no longer triggers a build, but
-# the edge still has to be purged after one, and the discovery documents still
-# have to name the public origin (ADR-0177, ADR-0178). A prerendered page
-# carries a year of `s-maxage`, so without this a deploy leaves the old HTML in
-# place.
+# This is the last step of `Publish origin image` (called as a reusable
+# workflow, ADR-0209 amendment) and stays dispatchable on its own, which is the
+# recovery for a purge that failed after a build had already landed. The origin
+# deploys on the VPS (`deploy/vps/deploy.sh`, ADR-0221), but the edge still has
+# to be purged after one, and the discovery documents still have to name the
+# public origin (ADR-0177, ADR-0178). A prerendered page carries a year of
+# `s-maxage`, so without this a deploy leaves the old HTML in place.
 #
-# Order: `gh workflow run 'Publish origin image'`, then on the box
-# `sudo bash deploy.sh`, then this.
+# Order when run by hand: `gh workflow run 'Publish origin image'` does the
+# build, the deploy and this. Dispatch this alone only to recover a failed
+# purge.
 #
 # Secrets:
 #   CLOUDFLARE_API_TOKEN   - Zone.Cache Purge only
@@ -19,6 +21,12 @@
 name: 'Purge the edge'
 
 on:
+  workflow_call:
+    inputs:
+      reason:
+        description: 'Why the purge is being run now'
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       reason:
@@ -76,5 +84,5 @@ jobs:
           {
             echo "### Zone purged"
             echo "Trigger: ${{ github.event_name }}"
-            echo "Reason: ${{ github.event.inputs.reason || 'no reason given' }}"
+            echo "Reason: ${{ inputs.reason || github.event.inputs.reason || 'no reason given' }}"
           } >> "$GITHUB_STEP_SUMMARY"

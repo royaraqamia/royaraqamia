@@ -1,4 +1,5 @@
-# Builds the origin image on a GitHub runner and publishes it to GHCR.
+# Builds the origin image on a GitHub runner, publishes it to GHCR, pulls it on
+# the VPS and purges the edge — one dispatch, no shell on the box.
 #
 # The self-managed VPS has 2 GB of RAM, which cannot hold this repo's
 # `next build` (page-data collection needs several GB of heap). Building here
@@ -6,14 +7,22 @@
 # The image contains no secrets — every runtime secret is a VPS env var, and
 # the one build-time secret is a BuildKit secret, not a build arg.
 #
+# The deploy key is restricted on the box (ADR-0209 amendment, ADR-0221 fourth
+# amendment): its `authorized_keys` entry forces `sudo -n /usr/bin/bash
+# /opt/royaraqamia/deploy.sh`, and sudoers allows that one command, so this
+# workflow can redeploy the origin and nothing else. It never gets a shell.
+#
 # Secrets (Actions):
 #   SUPABASE_SERVICE_ROLE_KEY  - needed by prerendered routes at build time
 #   NEXT_PUBLIC_*              - public values, may be set as vars instead
+#   ORIGIN_SSH_KEY             - ed25519 private key, forced-command only
+#   ORIGIN_KNOWN_HOSTS         - the box's pinned host keys, [91.98.55.148]:2222
 # Variables (Actions), each may also be set as a secret with the same name:
 #   NEXT_PUBLIC_SITE_URL, PUBLIC_ORIGIN, NEXT_PUBLIC_WHATSAPP_PHONE,
 #   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 #   NEXT_PUBLIC_SENTRY_DSN, NEXT_PUBLIC_TURNSTILE_SITE_KEY,
 #   NEXT_PUBLIC_VAPID_PUBLIC_KEY
+#   VPS_HOST, VPS_PORT, VPS_USER, SITE_BASE_URL (optional)
 
 name: 'Publish origin image'
 
@@ -23,6 +32,10 @@ on:
       reason:
         description: 'Why this image is being published now'
         required: false
+      deploy:
+        description: 'Pull it on the origin and purge the edge after publishing'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -101,3 +114,87 @@ jobs:
             NEXT_PUBLIC_VAPID_PUBLIC_KEY=${{ vars.NEXT_PUBLIC_VAPID_PUBLIC_KEY || secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
           secrets: |
             supabase_service_role_key=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+  deploy:
+    name: Pull it on the origin
+    needs: publish
+    if: github.event.inputs.deploy != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: The deploy target is configured
+        env:
+          HOST: ${{ vars.VPS_HOST }}
+          PORT: ${{ vars.VPS_PORT }}
+          USER: ${{ vars.VPS_USER }}
+          KEY: ${{ secrets.ORIGIN_SSH_KEY }}
+          HOST_KEYS: ${{ secrets.ORIGIN_KNOWN_HOSTS }}
+        run: |
+          for name in HOST PORT USER KEY HOST_KEYS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty; set VPS_HOST, VPS_PORT and VPS_USER as variables and ORIGIN_SSH_KEY, ORIGIN_KNOWN_HOSTS as secrets."
+              exit 1
+            fi
+          done
+
+      - name: Install the deploy key and the pinned host keys
+        env:
+          KEY: ${{ secrets.ORIGIN_SSH_KEY }}
+          HOST_KEYS: ${{ secrets.ORIGIN_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/origin_deploy
+          chmod 600 ~/.ssh/origin_deploy
+          printf '%s\n' "$HOST_KEYS" > ~/.ssh/origin_known_hosts
+          chmod 600 ~/.ssh/origin_known_hosts
+
+      # The key's forced command is `sudo -n /usr/bin/bash /opt/royaraqamia/deploy.sh`;
+      # ssh returns its exit status, so a box that cannot come back healthy fails
+      # the job instead of leaving a stale container behind a green run.
+      - name: Run deploy.sh on the box
+        env:
+          HOST: ${{ vars.VPS_HOST }}
+          PORT: ${{ vars.VPS_PORT }}
+          USER: ${{ vars.VPS_USER }}
+        run: |
+          ssh -T -p "$PORT" \
+            -i ~/.ssh/origin_deploy \
+            -o IdentitiesOnly=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/origin_known_hosts" \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
+            -o ServerAliveInterval=15 \
+            "$USER@$HOST"
+
+      # A unique query string is a cache-buster: the edge keys `/api/version` by
+      # the full URL, so this reads the origin rather than the purge's leftovers.
+      # The attempt number is in the key too, or a stale first miss would be
+      # served back for the rest of its 60s at the edge.
+      - name: The origin answers with this commit
+        env:
+          BASE_URL: ${{ vars.SITE_BASE_URL || 'https://royaraqamia.com' }}
+          SHA: ${{ github.sha }}
+        run: |
+          base="${BASE_URL%/}"
+          for attempt in $(seq 1 20); do
+            commit="$(curl -fsS --max-time 10 -H 'Cache-Control: no-cache' \
+              "$base/api/version?deploy=$SHA&try=$attempt" | jq -r .commit || true)"
+            if [ "$commit" = "$SHA" ]; then
+              echo "origin serves $commit"
+              exit 0
+            fi
+            echo "attempt $attempt: origin serves ${commit:-nothing}"
+            sleep 5
+          done
+          echo "::error::the origin never answered with $SHA within 100s"
+          exit 1
+
+  purge:
+    name: Purge the edge
+    needs: deploy
+    if: github.event.inputs.deploy != 'false'
+    uses: ./.github/workflows/purge-cache.yml
+    with:
+      reason: ${{ github.event.inputs.reason || 'deploy' }}
+    secrets: inherit

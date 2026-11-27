@@ -23,6 +23,8 @@ and the app port is never published on the host.
   snapshots, but only by hand.
 - The app port is `expose`d to the Compose network and never published, so health checks run inside
   the container, not with a host `curl`.
+- `Publish origin image` holds its own ed25519 key, constrained to `deploy.sh` by a forced command and
+  a sudoers rule; the owner's key is separate and still opens a shell (see _The deploy key_).
 
 ## Getting in, and out of trouble
 
@@ -49,16 +51,27 @@ the cause with a second session open.
 
 ## Deploy the current image
 
-Publishing is manual and always from `main`:
+Publishing is manual and always from `main`, and one dispatch is the whole deploy:
 
 ```powershell
-gh workflow run 'Publish origin image'
+gh workflow run 'Publish origin image' -f reason='what this serves'
 gh run watch
 ```
 
-Then, on the box:
+It is a chain of three jobs (ADR-0209 amendment, ADR-0221 fourth amendment):
+
+1. `publish` builds and pushes `ghcr.io/royaraqamia/royaraqamia:latest` and `:<sha>`.
+2. `deploy` connects with the workflow's own key, whose `authorized_keys` entry forces
+   `sudo -n /usr/bin/bash /opt/royaraqamia/deploy.sh` — the only command sudoers allows it — and fails
+   unless `https://royaraqamia.com/api/version?deploy=<sha>` answers with that commit.
+3. `purge` calls `purge-cache.yml` to re-read the discovery documents and purge the zone.
+
+`-f deploy=false` stops after the push. A failed run is re-runnable from the Actions page.
+
+The manual path stays for the box's own operations — a pinned rollback, a `.env` change, a drill:
 
 ```bash
+ssh -p 2222 deploy@91.98.55.148
 cd /opt/royaraqamia
 sudo bash deploy.sh
 sudo docker compose exec -T app node -e \
@@ -76,6 +89,47 @@ Disk is the recurring risk: each pull keeps the previous image. Keep the box nea
 sudo docker image prune -af
 df -h /
 ```
+
+## The deploy key
+
+`Publish origin image` authenticates with its own ed25519 key, never the owner's. It has three halves,
+and all three are what make the key harmless to hold in Actions:
+
+- `ORIGIN_SSH_KEY` (Actions secret) — the private half.
+- `deploy`'s `~/.ssh/authorized_keys` — one line, with a forced command and no PTY:
+
+  ```
+  command="sudo -n /usr/bin/bash /opt/royaraqamia/deploy.sh",no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding ssh-ed25519 AAAA... gh-actions@royaraqamia
+  ```
+
+- `/etc/sudoers.d/royaraqamia-deploy` — the one command it may run as root:
+
+  ```
+  deploy ALL=(root) NOPASSWD: /usr/bin/bash /opt/royaraqamia/deploy.sh
+  ```
+
+`no-pty` plus the forced command is load-bearing: the key cannot open a shell, so the workflow's
+verification runs over HTTPS from the runner rather than on the box. `sudo -n true` still fails
+afterwards — that is the proof the scope is one command, not sudo. `deploy` stays in the `sudo` group
+for interactive work, which is password-gated and irrelevant to a headless run.
+
+`ORIGIN_KNOWN_HOSTS` pins the box's host keys as `[91.98.55.148]:2222`; `VPS_HOST`, `VPS_PORT` and
+`VPS_USER` are Actions variables. `ssh-keyscan` does not work from the owner's network (the client's
+first key exchange is unsupported against this server), so read the keys from the box instead and
+check the fingerprint:
+
+```bash
+cat /etc/ssh/ssh_host_ed25519_key.pub /etc/ssh/ssh_host_rsa_key.pub   # ed25519 is SHA256:FDmP5Bo+7vzF6ty93jJR4RPHaSjg3tWh/nLAdaaF0b0
+```
+
+**Rotating.** Generate a new pair, append its constrained line to `authorized_keys`, set
+`ORIGIN_SSH_KEY` to the new private key, prove one dispatch, then delete the old line. A line whose
+`command=` option loses its quotes is rejected by `sshd` exactly like a wrong key, so check the file
+after editing it (`tail -1 ~/.ssh/authorized_keys`).
+
+**Nothing about this changes the rollback.** It is still the previous tag, run by hand — a dispatch
+tags `:latest` with the commit it just built and its verification would fail against the pinned older
+image.
 
 ## Runtime configuration
 
@@ -177,8 +231,10 @@ sudo sed -i 's|royaraqamia:latest|royaraqamia:<previous-sha>|' compose.yaml
 sudo bash deploy.sh
 ```
 
-Then dispatch `Purge the edge`, revert the pin on the next good publish, and note the sha in
-the incident. The Render service and `render.yaml` were deleted on 2026-11-27; there is no DNS
+Then dispatch `Purge the edge` (or purge from the Cloudflare dashboard), revert the pin on the next
+good publish, and note the sha in the incident. Do not roll back by dispatching `Publish origin
+image`: it tags the image it builds `:latest`, and its deploy job fails when the serving commit is not
+the one it built. The Render service and `render.yaml` were deleted on 2026-11-27; there is no DNS
 rollback any more, which is why the image tag is the one that has to be right.
 
 ## Rebuilding the box
