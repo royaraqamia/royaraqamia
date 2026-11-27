@@ -158,6 +158,10 @@ Prove it on the box, without waiting for a threshold — this sends for real, wh
 sudo DISK_SOFT_PCT=1 /opt/royaraqamia/monitor.sh
 ```
 
+It refuses to run as `deploy` and refuses a `monitor.env` it cannot read or that lacks either credential:
+as the wrong user it cannot read the `600` env file or the docker socket, and the run would report every
+container down into a syslog nobody reads.
+
 Thresholds and the bot credentials live in `/opt/royaraqamia/monitor.env` (`600`, root-owned, never in
 the repository). Editing it is enough; nothing restarts.
 
