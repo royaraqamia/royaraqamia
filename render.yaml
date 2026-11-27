@@ -1,4 +1,4 @@
-# RETIRED AS THE ORIGIN 2026-11-26 — KEPT AS THE ROLLBACK (ADR-0221).
+# RETIRED AS THE ORIGIN - CUT OVER 2026-11-27; KEPT AS THE ROLLBACK (ADR-0221).
 # The site runs on the self-managed VPS and its runtime contract is
 # `/opt/royaraqamia/.env`; this blueprint stays deployable so the DNS record can
 # be pointed back until the owner signs off on the cutover, and is then deleted.
