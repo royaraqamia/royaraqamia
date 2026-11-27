@@ -38,3 +38,23 @@ updates:
       # action installs the v1 CLI these prompts use; audits install v2 itself
       # (ADR 0208). Do not move the pin without migrating all four callers.
       - dependency-name: 'anomalyco/opencode/github'
+
+  # The keyboard's vendored FlorisBoard crate is never compiled (no Rust toolchain
+  # here or in CI — docs/mobile/keyboard-plan.md), but its lockfile still resolves
+  # crates, and nothing else watches them: `bytes` 1.7.1 sat vulnerable for two days
+  # before Dependabot's alert. This tracker keeps that lockfile patched.
+  - package-ecosystem: 'cargo'
+    directory: '/android/keyboard/src/main/rust'
+    schedule:
+      interval: 'weekly'
+      day: 'sunday'
+    open-pull-requests-limit: 5
+    labels:
+      - 'dependencies'
+    groups:
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+    commit-message:
+      prefix: 'chore'
