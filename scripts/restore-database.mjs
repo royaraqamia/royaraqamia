@@ -18,10 +18,11 @@ import {
   floorViolations,
   parseCopyRowCounts,
   remainingTablesSql,
-  resetRolesSql,
   resetScratchSql,
   rolesInDump,
-  schemasInDump,
+  schemasToReset,
+  tablesInDump,
+  truncateTablesSql,
 } from './backup-contract.mjs';
 
 function options(argv) {
@@ -88,17 +89,16 @@ export function restoredCounts(dbUrl, tables) {
 /**
  * Empties the scratch project of everything the artifact owns.
  *
- * The set comes from the dump, not from a hard-coded `public`: the archive also
- * restores `auth`, so resetting one schema left `auth.flow_state` behind and the
- * replay died on a duplicate key (#1954). The emptiness check is the point — a
- * dirty scratch project fails here, by name, instead of deep inside `data.sql`.
+ * Only the schemas the artifact creates are dropped, because `auth`, `storage`
+ * and their siblings belong to Supabase's admin roles and cannot be dropped
+ * from the role the drill connects as (`must be owner of schema auth`, #1954).
+ * Their tables are truncated during the replay instead, once `schema.sql` has
+ * created the ones that were missing.
  */
 export function resetScratch(dir, dbUrl) {
-  const schemas = schemasInDump({
+  const schemas = schemasToReset({
     schemaSql: readFileSync(join(dir, 'schema.sql'), 'utf8'),
     historySchemaSql: readFileSync(join(dir, 'history_schema.sql'), 'utf8'),
-    dataSql: readFileSync(join(dir, 'data.sql'), 'utf8'),
-    historyDataSql: readFileSync(join(dir, 'history_data.sql'), 'utf8'),
   });
   const roles = rolesInDump(readFileSync(join(dir, 'roles.sql'), 'utf8'));
 
@@ -123,9 +123,26 @@ export function resetScratch(dir, dbUrl) {
   return schemas;
 }
 
+/** Platform-owned tables the replay fills: truncated, never dropped. */
+export function tablesToEmpty(dir, ownedSchemas) {
+  return tablesInDump({
+    dataSql: readFileSync(join(dir, 'data.sql'), 'utf8'),
+    historyDataSql: readFileSync(join(dir, 'history_data.sql'), 'utf8'),
+  }).filter((table) => !ownedSchemas.includes(table.split('.')[0]));
+}
+
 export function restoreDump(dir, dbUrl) {
   const expected = expectedCounts(dir);
   const startedAt = Date.now();
+  const truncate = truncateTablesSql(
+    tablesToEmpty(
+      dir,
+      schemasToReset({
+        schemaSql: readFileSync(join(dir, 'schema.sql'), 'utf8'),
+        historySchemaSql: readFileSync(join(dir, 'history_schema.sql'), 'utf8'),
+      })
+    )
+  );
 
   psql(dbUrl, [
     '--single-transaction',
@@ -135,6 +152,7 @@ export function restoreDump(dir, dbUrl) {
     join(dir, 'roles.sql'),
     '--file',
     join(dir, 'schema.sql'),
+    ...(truncate ? ['--command', truncate] : []),
     '--command',
     'SET session_replication_role = replica',
     '--file',

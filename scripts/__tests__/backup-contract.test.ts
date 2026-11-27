@@ -9,8 +9,10 @@ import {
   resetRolesSql,
   resetScratchSql,
   rolesInDump,
-  schemasInDump,
+  schemasToReset,
   sizeViolations,
+  tablesInDump,
+  truncateTablesSql,
 } from '../backup-contract.mjs';
 
 const dump = `--
@@ -87,37 +89,45 @@ describe('database backup contract (#1700)', () => {
 });
 
 describe('restore drill reset (#1954)', () => {
-  const schemaSql = `CREATE SCHEMA auth;
-CREATE SCHEMA "storage";
-CREATE SCHEMA extensions;
+  const schemaSql = `CREATE SCHEMA "app";
 CREATE SCHEMA pg_catalog;
+`;
+  const historySql = `CREATE SCHEMA supabase_migrations;
 `;
   const dataSql = `COPY auth.flow_state (id) FROM stdin;
 
 COPY public.users (id) FROM stdin;
-`;
-  const historySql = `CREATE SCHEMA supabase_migrations;
+
+COPY "app"."notes" (id) FROM stdin;
 `;
 
-  it('follows the artifact, not a hard-coded public schema', () => {
-    expect(schemasInDump({ schemaSql, dataSql, historySchemaSql: historySql })).toEqual([
-      'auth',
-      'extensions',
+  it('drops only the schemas the artifact creates', () => {
+    expect(schemasToReset({ schemaSql, historySchemaSql: historySql })).toEqual([
+      'app',
       'public',
-      'storage',
       'supabase_migrations',
     ]);
+    expect(schemasToReset({ schemaSql })).not.toContain('auth');
+    expect(schemasToReset({ schemaSql })).not.toContain('pg_catalog');
+    expect(schemasToReset({ schemaSql })).not.toContain('information_schema');
   });
 
-  it('never drops a schema Postgres owns', () => {
-    expect(schemasInDump({ schemaSql })).not.toContain('pg_catalog');
-    expect(schemasInDump({ schemaSql })).not.toContain('information_schema');
+  it('reads every table the replay fills', () => {
+    expect(tablesInDump({ dataSql })).toEqual(['app.notes', 'auth.flow_state', 'public.users']);
   });
 
-  it('drops every owned schema and re-creates public, then the roles', () => {
-    const sql = resetScratchSql(['auth', 'public'], ['cli_login_postgres']);
-    expect(sql).toContain('DROP SCHEMA IF EXISTS "auth" CASCADE;');
+  it('truncates the platform-owned tables rather than dropping their schema', () => {
+    expect(truncateTablesSql([])).toBe('');
+    const sql = truncateTablesSql(['auth.flow_state', 'storage.objects']);
+    expect(sql).toContain('TRUNCATE TABLE "auth"."flow_state", "storage"."objects" CASCADE;');
+    expect(sql).toContain('SET session_replication_role = replica;');
+  });
+
+  it('drops each owned schema and re-creates public, then the roles', () => {
+    const sql = resetScratchSql(['app', 'public'], ['cli_login_postgres']);
+    expect(sql).toContain('DROP SCHEMA IF EXISTS "app" CASCADE;');
     expect(sql).toContain('DROP SCHEMA IF EXISTS "public" CASCADE;');
+    expect(sql).not.toContain('"auth"');
     expect(sql.indexOf('CREATE SCHEMA IF NOT EXISTS public;')).toBeGreaterThan(
       sql.indexOf('DROP SCHEMA IF EXISTS "public" CASCADE;')
     );
@@ -137,8 +147,8 @@ CREATE ROLE authenticated WITH LOGIN;
   });
 
   it('asks for the table count over exactly the reset schemas', () => {
-    expect(remainingTablesSql(['auth', "o'brien"])).toBe(
-      "SELECT count(*) FROM information_schema.tables WHERE table_schema IN ('auth', 'o''brien');"
+    expect(remainingTablesSql(['app', "o'brien"])).toBe(
+      "SELECT count(*) FROM information_schema.tables WHERE table_schema IN ('app', 'o''brien');"
     );
   });
 });

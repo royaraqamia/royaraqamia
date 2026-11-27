@@ -336,29 +336,30 @@ for the drill.
    same 64-character hex value to the new project with `PUT .../pgsodium`.
    Backups hold ciphertext, not the key.
 3. Download the newest archive from R2 and unpack it into a directory.
-4. Empty every schema the archive restores, not just `public`: it also holds
-   `auth`, `storage` and the rest of the Supabase schemas, so a reset that
-   touches `public` alone leaves `auth.flow_state` behind and the next replay
-   dies on `flow_state_pkey` (#1954). `node scripts/restore-database.mjs` does
-   this itself — it reads the schema list out of the artifact, drops each with
-   `CASCADE`, re-creates and re-grants `public`, drops the roles `roles.sql`
-   will create, and refuses to replay if a table is left in those schemas.
-   By hand, that is:
-   `drop schema if exists auth cascade;` for each schema the dump creates, then
-   `create schema if not exists public;` and
-   `grant all on schema public to postgres, anon, authenticated, service_role;`,
-   then `drop role if exists cli_login_postgres;`.
+4. Empty the scratch project, but only where the drill owns the objects. Drop
+   the schemas the dump **creates** (`public`, the app schemas, `supabase_migrations`)
+   with `CASCADE`, then re-create and re-grant `public` and drop the roles
+   `roles.sql` will create. Do **not** drop `auth` or `storage`: Supabase's admin
+   roles own them and psql refuses (`must be owner of schema auth`, #1954). Their
+   tables are emptied by truncation between the two files of step 5 instead.
+   `node scripts/restore-database.mjs` does all of this itself, reading both sets
+   out of the artifact, so the manual version is only for a hand restore:
 5. Replay the dump with psql, in this order:
 
    ```sh
    psql --single-transaction --variable ON_ERROR_STOP=1 \
      --file roles.sql --file schema.sql \
+     --command 'TRUNCATE TABLE auth.flow_state, auth.users, storage.objects CASCADE' \
      --command 'SET session_replication_role = replica' \
      --file data.sql --dbname "$SCRATCH_DB_URL"
 
    psql --single-transaction --variable ON_ERROR_STOP=1 \
      --file history_schema.sql --file history_data.sql --dbname "$SCRATCH_DB_URL"
    ```
+
+   The truncate list is every table `data.sql` copies into whose schema the
+   artifact did not create — `auth`, `storage` and their siblings — because
+   those tables survive step 4 and otherwise collide on a second run.
 
 6. Verify with `node scripts/restore-database.mjs --dir <dir> --db-url "$SCRATCH_DB_URL"`.
    It replays the same files, compares every restored count against the
