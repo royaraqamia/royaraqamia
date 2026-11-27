@@ -24,7 +24,6 @@ export const APP_ROUTE_SEGMENTS: readonly string[] = [
   'coding',
   'community',
   'consultation',
-  'downloader',
   'habitflow',
   'hire',
   'linksnap',
