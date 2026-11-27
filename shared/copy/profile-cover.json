@@ -2,7 +2,7 @@
   "surface": "profile",
   "component": "profile-cover",
   "web": {
-    "file": "app/u/[username]/_components/profile-cover-copy.ts",
+    "file": "frontend/ui/shared/profile-cover-copy.ts",
     "export": "PROFILE_COVER_COPY"
   },
   "native": {

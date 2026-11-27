@@ -10,6 +10,10 @@ import { PROFILE_COVER_COPY } from './profile-cover-copy';
  * name, handle and counts sit on the card below it. The avatar's top half
  * overlaps this band, which is what makes the header read as a profile rather
  * than as a decorated card.
+ *
+ * It lives in `frontend/ui/shared` because `/assistant` draws the same header:
+ * the member's assistant is their own copy, and its page is the member's profile
+ * shape rather than a second settings page.
  */
 export function ProfileCover({ memberId }: { memberId: string }) {
   return (

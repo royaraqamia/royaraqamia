@@ -77,10 +77,6 @@ export const CHAT_THREAD_COPY = {
   formatCode: 'كود',
   formatLink: 'رابط',
   formatLinkPrompt: 'عنوان الرَّابط',
-  forgetConversation: 'انسَ ما حفظته من هذه المحادثة',
-  forgetConversationDone: 'نسيتُ {count} من محفوظات هذه المحادثة.',
-  forgetConversationNone: 'لم أكن أتذكّر شيئاً من هذه المحادثة.',
-  forgetConversationFailed: 'تعذّر النسيان.',
 } as const;
 
 export type ChatThreadCopyStrings = typeof CHAT_THREAD_COPY;

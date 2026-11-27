@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import type { ChatThread } from '@/shared/contracts/chat';
 
@@ -245,5 +245,26 @@ describe('AssistantPanel', () => {
     render(<AssistantPanel open onDismiss={vi.fn()} />);
 
     expect(await screen.findAllByText('نور')).not.toHaveLength(0);
+  });
+
+  /**
+   * The header is the door to the assistant's page (ADR-0224). It dismisses and
+   * pushes rather than letting the anchor navigate: the dialog unmounts the
+   * pressed link as it closes, so the default action never runs.
+   */
+  it('opens /assistant from the header and dismisses the panel first', async () => {
+    const onDismiss = vi.fn();
+    render(<AssistantPanel open onDismiss={onDismiss} />);
+
+    const door = screen.getByRole('link', { name: 'افتح صفحة المساعد' });
+    // The name and its line are one column inside the door, so the line starts
+    // under the name rather than under the orb.
+    expect(within(door).getByText('نور')).toBeInTheDocument();
+    expect(within(door).getByText('متاحة الآن')).toBeInTheDocument();
+
+    fireEvent.click(door);
+
+    expect(onDismiss).toHaveBeenCalled();
+    expect(router.push).toHaveBeenCalledWith('/assistant');
   });
 });

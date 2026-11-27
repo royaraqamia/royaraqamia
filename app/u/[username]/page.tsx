@@ -11,10 +11,10 @@ import { LinkifiedText } from '@/frontend/ui/shared/linkified-text';
 import { FollowButton } from '@/frontend/ui/shared/follow-button';
 import { FollowBadge } from '@/frontend/ui/shared/follow-badge';
 import { FollowCountsBar } from '@/frontend/ui/shared/follow-counts';
+import { ProfileHeader } from '@/frontend/ui/shared/profile-header';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { PostCard } from '@/app/community/_components/post-card';
 import { MemberChatCta } from '@/app/community/_components/member-chat-cta';
-import { ProfileCover } from './_components/profile-cover';
 import { PROFILE_COPY } from './profile-copy';
 
 /**
@@ -83,12 +83,9 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
 
   return (
     <div className="mx-auto max-w-4xl">
-      <header
-        data-visual="profile-header"
-        className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/40 shadow-sm"
-      >
-        <ProfileCover memberId={member.id} />
-        <div className="relative -mt-10 flex flex-col items-center gap-5 px-6 pb-8 text-center sm:px-8">
+      <ProfileHeader
+        memberId={member.id}
+        avatar={
           <PresenceAvatar
             name={member.name}
             avatarUrl={member.avatar_url}
@@ -97,56 +94,57 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
             className="group"
             lastSeenAt={member.last_seen_at ?? null}
           />
-          <div className="min-w-0">
-            <h1
-              data-visual="profile-name"
-              className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+        }
+      >
+        <div className="min-w-0">
+          <h1
+            data-visual="profile-name"
+            className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+          >
+            {name}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
+            @{member.username}
+          </p>
+          <LastSeenLine
+            labels={LAST_SEEN_LABELS}
+            lastSeenAt={member.last_seen_at ?? null}
+            className="mt-0.5 text-center text-sm"
+          />
+          <FollowBadge state={follow.state} followsYou={follow.followsYou} />
+          <FollowCountsBar
+            username={member.username}
+            counts={follow.counts}
+            isOwner={follow.state === 'self'}
+          />
+          {member.bio?.trim() && (
+            <p
+              data-visual="profile-bio"
+              className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground"
             >
-              {name}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
-              @{member.username}
+              <LinkifiedText text={member.bio} />
             </p>
-            <LastSeenLine
-              labels={LAST_SEEN_LABELS}
-              lastSeenAt={member.last_seen_at ?? null}
-              className="mt-0.5 text-center text-sm"
-            />
-            <FollowBadge state={follow.state} followsYou={follow.followsYou} />
-            <FollowCountsBar
+          )}
+          {/* The button and the chat door sit on one line: both are "what you
+              can do about this member", and the follower counts above them are
+              the same relationship counted. */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <FollowButton
               username={member.username}
-              counts={follow.counts}
-              isOwner={follow.state === 'self'}
+              name={member.name}
+              memberId={member.id}
+              initialState={follow.state}
+              signedIn={Boolean(viewerId)}
+              size="md"
             />
-            {member.bio?.trim() && (
-              <p
-                data-visual="profile-bio"
-                className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground"
-              >
-                <LinkifiedText text={member.bio} />
-              </p>
-            )}
-            {/* The button and the chat door sit on one line: both are "what you
-                can do about this member", and the follower counts above them are
-                the same relationship counted. */}
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              <FollowButton
-                username={member.username}
-                name={member.name}
-                memberId={member.id}
-                initialState={follow.state}
-                signedIn={Boolean(viewerId)}
-                size="md"
-              />
-              <MemberChatCta
-                username={member.username}
-                isSelf={follow.state === 'self'}
-                signedIn={Boolean(viewerId)}
-              />
-            </div>
+            <MemberChatCta
+              username={member.username}
+              isSelf={follow.state === 'self'}
+              signedIn={Boolean(viewerId)}
+            />
           </div>
         </div>
-      </header>
+      </ProfileHeader>
 
       <section className="mt-10" aria-label={PROFILE_COPY.postsAriaLabel.replace('{name}', name)}>
         <h2

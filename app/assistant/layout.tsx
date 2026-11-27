@@ -4,8 +4,7 @@ import type { Metadata } from 'next';
 import { ASSISTANT_HOME_COPY } from '@/frontend/ui/assistant/assistant-home-copy';
 
 export const metadata: Metadata = {
-  title: ASSISTANT_HOME_COPY.eyebrow,
-  description: ASSISTANT_HOME_COPY.lead,
+  title: ASSISTANT_HOME_COPY.metaTitle,
 };
 
 /**

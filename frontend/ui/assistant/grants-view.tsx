@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, ShieldCheck, ShieldOff } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 import type { AgentGrantableTool, AgentToolGrant } from '@/shared/contracts/agent-tool-grants';
 import {
@@ -11,24 +11,21 @@ import {
 } from '@/frontend/api/agent-tool-grants';
 import { formatHijriDate } from '@/frontend/shared/format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { Switch } from '@/frontend/ui/primitives/switch';
 import { useSession } from '@/frontend/state/session-provider';
 
 const GRANTS_COPY = {
-  title: 'أذون المساعد',
+  title: 'الأذونات',
   body: 'الأدوات التي سمحت لها بالعمل دون تأكيد في كل مرة. يمكنك سحب أي إذن في أي وقت.',
   loading: 'جاري تحميل الأذون...',
   failed: 'تعذّر تحميل الأذون.',
   retry: 'إعادة المحاولة',
   empty: 'لم تمنح أي أداة إذناً بعد. جرّب أداة أولاً ثم امنحها من هنا لتوفير خطوة التأكيد.',
   liveTitle: 'أذون سارية',
-  grantableTitle: 'أدوات جرّبتها ويمكنك منحها',
+  permissionAria: 'إذن {name}',
   granted: 'مُنح {date}',
   lastUsed: 'آخر استخدام: {date}',
   neverUsed: 'لم تُستخدم بعد',
-  revoke: 'سحب الإذن',
-  revokeAria: 'سحب إذن {name}',
-  grant: 'امنح الإذن',
-  grantAria: 'منح إذن {name}',
   grantFailed: 'تعذّر منح الإذن.',
   revokeFailed: 'تعذّر سحب الإذن.',
   confirmRevokeTitle: 'سحب الإذن',
@@ -45,6 +42,11 @@ const GRANTS_COPY = {
  * run and may grant. The server decides both lists: this view never names a
  * tool the service would refuse, so an unseen tool or a tier-2 one is absent
  * here because it is absent from the answer.
+ *
+ * Every row is one switch, because every row is one permission: on means the
+ * assistant may act without asking, off means it asks. A grant is one tap; a
+ * revoke still opens the confirmation, since taking trust away is the one change
+ * a member may want a second look at.
  *
  * It lives on `/assistant` since ADR-0224: the account page and the connected
  * apps list are not where an assistant's permissions belong, and the one place
@@ -167,39 +169,32 @@ export function AssistantGrantsView() {
                     key={row.id}
                     className="flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-                      <div className="min-w-0 space-y-1">
-                        <p className="truncate max-sm:text-sm font-bold text-foreground sm:text-base">
-                          {row.label}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          <span>
-                            {GRANTS_COPY.granted.replace('{date}', formatHijriDate(row.grantedAt))}
-                          </span>
-                          <span aria-hidden="true"> · </span>
-                          <span>
-                            {row.lastUsedAt
-                              ? GRANTS_COPY.lastUsed.replace(
-                                  '{date}',
-                                  formatHijriDate(row.lastUsedAt)
-                                )
-                              : GRANTS_COPY.neverUsed}
-                          </span>
-                        </p>
-                      </div>
+                    <div className="min-w-0 space-y-1">
+                      <p className="truncate max-sm:text-sm font-bold text-foreground sm:text-base">
+                        {row.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        <span>
+                          {GRANTS_COPY.granted.replace('{date}', formatHijriDate(row.grantedAt))}
+                        </span>
+                        <span aria-hidden="true"> · </span>
+                        <span>
+                          {row.lastUsedAt
+                            ? GRANTS_COPY.lastUsed.replace(
+                                '{date}',
+                                formatHijriDate(row.lastUsedAt)
+                              )
+                            : GRANTS_COPY.neverUsed}
+                        </span>
+                      </p>
                     </div>
 
-                    <button
-                      type="button"
+                    <Switch
+                      checked
+                      label={GRANTS_COPY.permissionAria.replace('{name}', row.label)}
                       disabled={busy === row.id}
-                      onClick={() => setRevokeTarget(row)}
-                      aria-label={GRANTS_COPY.revokeAria.replace('{name}', row.label)}
-                      className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2 max-sm:text-xs font-bold text-destructive/90 transition-safe hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 disabled:opacity-60 sm:text-sm"
-                    >
-                      <ShieldOff aria-hidden="true" className="h-4 w-4 shrink-0" />
-                      <span>{GRANTS_COPY.revoke}</span>
-                    </button>
+                      onChange={() => setRevokeTarget(row)}
+                    />
                   </li>
                 ))}
               </ul>
@@ -207,33 +202,24 @@ export function AssistantGrantsView() {
           )}
 
           {grantable.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-xs font-bold text-muted-foreground">
-                {GRANTS_COPY.grantableTitle}
-              </h3>
-              <ul className="space-y-2.5">
-                {grantable.map((tool) => (
-                  <li
-                    key={tool.toolId}
-                    className="flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5"
-                  >
-                    <p className="min-w-0 truncate max-sm:text-sm font-bold text-foreground sm:text-base">
-                      {tool.label}
-                    </p>
-                    <button
-                      type="button"
-                      disabled={busy === tool.toolId}
-                      onClick={() => void grant(tool)}
-                      aria-label={GRANTS_COPY.grantAria.replace('{name}', tool.label)}
-                      className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-3 py-2 max-sm:text-xs font-bold text-foreground transition-safe hover:border-primary/30 hover:bg-primary/10 hover:text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60 sm:text-sm"
-                    >
-                      <ShieldCheck aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-                      <span>{GRANTS_COPY.grant}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ul className="space-y-2.5">
+              {grantable.map((tool) => (
+                <li
+                  key={tool.toolId}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5"
+                >
+                  <p className="min-w-0 truncate max-sm:text-sm font-bold text-foreground sm:text-base">
+                    {tool.label}
+                  </p>
+                  <Switch
+                    checked={false}
+                    label={GRANTS_COPY.permissionAria.replace('{name}', tool.label)}
+                    disabled={busy === tool.toolId}
+                    onChange={() => void grant(tool)}
+                  />
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}
