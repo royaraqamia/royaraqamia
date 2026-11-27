@@ -379,15 +379,17 @@ The psql replay plus row-count verification took **276s**; the whole job,
 including download and database reset, took **4m58s**. Restored counts matched
 the artifact exactly: `public.users` 24, `public.notifications` 11225,
 `public.chat_messages` 97, `public.chat_attachments` 8 and
-`supabase_migrations.schema_migrations` 257. The monthly drill repeats this and
-records each pass in its job summary; a later duration replaces this one only
-when another green run produces it.
+`supabase_migrations.schema_migrations` 257.
 
-A repeat drill on 2026-11-27 failed at `COPY flow_state, line 1` with a duplicate
-key: the reset emptied `public` while the archive also restores `auth`, so the
-second run landed on the first run's rows (#1954). The drill now derives the
-schemas to empty from the artifact and asserts they are empty before replaying,
-so this failure names the schema instead of surfacing as a constraint violation.
+That first run needed an empty scratch project. The drill that could run twice
+came on 2026-11-27 ([run
+46042292094](https://github.com/royaraqamia/royaraqamia/actions/runs/46042292094)):
+it reset `private`, `public` and `supabase_migrations`, truncated the
+platform-owned tables, replayed the same artifact in **174s** with the same
+counts, and finished the whole job in **3m30s** — against a scratch project that
+already held the 2026-11-21 restore, which is the case the old reset could not
+handle (#1954). The monthly drill replaces this record only when another green
+run produces it.
 
 ## Data & access control
 
