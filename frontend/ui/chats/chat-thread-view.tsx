@@ -604,7 +604,7 @@ function ThreadHeader({
   const heading = (
     <>
       {thread.kind === 'agent' ? (
-        <AssistantMark className="size-9" online onlineLabel={lastSeenLabels.assistantOnline} />
+        <AssistantMark className="size-9" />
       ) : (
         counterpart && (
           <MemberAvatar

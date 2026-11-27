@@ -1,5 +1,4 @@
 import { cn } from '@/frontend/shared/cn';
-import { AssistantPresenceDot } from './assistant-presence-dot';
 
 /**
  * نور's mark, at the size the floating door and its panel draw it (ADR-0143).
@@ -10,6 +9,10 @@ import { AssistantPresenceDot } from './assistant-presence-dot';
  * slow halo. It is deliberately the same crescent, so the assistant a member
  * meets in the corner is recognisably the one in their chat list.
  *
+ * There is no presence dot (ADR-0224): the assistant is not a member with a
+ * last-seen, and the line under its name is the phase slot, not a claim about
+ * being online.
+ *
  * The gradient lives in `app/global.css` (`.assistant-orb`) because a conic
  * gradient, the inner shadow that makes it a sphere, and the halo's orbit are
  * not utilities; the classes here only size it.
@@ -17,15 +20,10 @@ import { AssistantPresenceDot } from './assistant-presence-dot';
 export function AssistantOrb({
   className,
   glyphClassName,
-  online = false,
-  onlineLabel,
 }: {
   className?: string;
   /** Sizing for the crescent inside the sphere; defaults to a little under half. */
   glyphClassName?: string;
-  /** The availability dot, where a member's `PresenceAvatar` draws theirs. */
-  online?: boolean;
-  onlineLabel?: string;
 }) {
   return (
     <span className={cn('relative inline-flex shrink-0 size-11', className)}>
@@ -40,7 +38,6 @@ export function AssistantOrb({
           <path d="M12 4a8 8 0 1 0 0 16 10 10 0 0 1 0-16Z" fill="currentColor" />
         </svg>
       </span>
-      {online ? <AssistantPresenceDot label={onlineLabel} /> : null}
     </span>
   );
 }

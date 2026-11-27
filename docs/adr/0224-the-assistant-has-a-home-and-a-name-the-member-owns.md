@@ -151,6 +151,20 @@ stand when they want to see what the assistant is and what it may do.
   redirect table for a string that lives in one row, and a broken link every time
   someone changes their mind.
 
+## Amendment (2026-11-27)
+
+Decision 9 assumed the page would be a pair. `/assistant` is a **document
+surface** — `docs/mobile/screens.json` says `native: null` — so its words live
+beside the view in `frontend/ui/assistant/assistant-home-copy.ts`, with no
+generated Kotlin object and no parity row; a copy source no native component
+draws is exactly what `check:parity` refuses. A `shared/copy` source arrives
+with the first native copy of the page, if one is ever drawn. The app's door is
+the sheet's header, which is a link, not a form.
+
+The first slice also left three things that were listed as phase 1: the sheet's
+header link on Android, the account row that becomes «المساعد», and the
+in-chat «اسمح دائماً». Each needs a Kotlin change and ships with its pair.
+
 ## Consequences
 
 - A migration, a table with owner-only RLS, and a foreign key to `auth.users`
@@ -161,9 +175,10 @@ stand when they want to see what the assistant is and what it may do.
   `variant` prop; `AssistantMark` in the thread and the list read the same
   variant, or the member's chosen mark would not be the one they meet in
   the chat.
-- The copy grows a surface: `shared/copy/assistant-home.json` and its generated
-  pair, and `check:copy`/`check:parity` gate both. The panel's `title` becomes the
-  fallback the identity replaces, not the only name.
+- The page's words live beside its view (`assistant-home-copy.ts`) until a
+  native copy of the page exists, which is when they move to `shared/copy` (see
+  the amendment). The panel's `title` becomes the fallback the identity
+  replaces, not the only name.
 - `perf/surfaces.json` gains `assistant`, `docs/mobile/screens.json` gains its
   document row and `docs/mobile/parity-plan.json` gains its row in the same pull
   request that adds the route — the three of them together, or `check:screens` and

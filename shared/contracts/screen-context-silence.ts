@@ -17,6 +17,7 @@
  * would have to be.
  */
 export const SCREEN_CONTEXT_SILENT_SURFACES: Readonly<Record<string, string>> = {
+  assistant: 'A settings form: the turn already receives it as identity data.',
   admin: 'An operator screen publishes nothing at all (ADR-0181 decision 8).',
   auth: 'An auth screen is never observed: its fields are the credential itself.',
   chats: 'A thread is its body, and a message body is denied by policy; a turn asks instead.',

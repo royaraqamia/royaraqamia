@@ -308,6 +308,47 @@ export type Database = {
         };
         Relationships: [];
       };
+      assistant_identities: {
+        Row: {
+          assistant_key: string;
+          avatar_variant: number | null;
+          created_at: string;
+          name: string | null;
+          note: string | null;
+          tone: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          assistant_key?: string;
+          avatar_variant?: number | null;
+          created_at?: string;
+          name?: string | null;
+          note?: string | null;
+          tone?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          assistant_key?: string;
+          avatar_variant?: number | null;
+          created_at?: string;
+          name?: string | null;
+          note?: string | null;
+          tone?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'assistant_identities_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       availability_slots: {
         Row: {
           created_at: string;

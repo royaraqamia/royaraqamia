@@ -194,6 +194,16 @@
       "ungated": "A data-free shell: the facts and the three scope switches come from a client read of `/api/account/memory`, and every control is a request to it, so with the radio off the page reports the missing connection rather than showing a stale fact. It is not in the precache list — the slot belongs to `/verify`, the link printed on physical certificates (DYNAMIC_BY_DESIGN); the worker caches the document at runtime after the first visit."
     },
     {
+      "id": "assistant",
+      "routes": ["/assistant"],
+      "owner": "server",
+      "read": "needs-connection",
+      "write": "none",
+      "shell": "swr",
+      "specs": [],
+      "ungated": "A data-free shell: the identity, the grants and the three rows are read on the client (`/api/account/assistant/...`), so with the radio off the page reports the missing connection rather than a name it cannot verify. It is not in the precache list: the slot belongs to `/verify`, the link printed on physical certificates (DYNAMIC_BY_DESIGN); the worker caches the document after the first live visit."
+    },
+    {
       "id": "account-faq",
       "routes": ["/account/faq"],
       "owner": "server",

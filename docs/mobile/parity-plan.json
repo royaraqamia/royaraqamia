@@ -182,6 +182,12 @@
       "issue": "#1428"
     },
     {
+      "surface": "assistant",
+      "phase": "core",
+      "state": "document",
+      "why": "A settings form the app opens in the document (ADR-0224): the copy is the web's, the writes are the member's own, and the three rows under it are links to pages the app already opens. The sheet's header is the app's door, so a native copy would be a second form to keep in step with a page whose job is one field."
+    },
+    {
       "surface": "account-faq",
       "phase": "core",
       "state": "native"

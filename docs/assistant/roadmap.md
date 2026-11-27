@@ -129,7 +129,7 @@ a member with no grants.
   is unchanged.
 - `security-review` is mandatory on this change: it is the first time the agent reads the page.
 
-**Exit:** for each of the 39 surfaces in `docs/mobile/screens.json`, a fixture proves the
+**Exit:** for each of the 40 surfaces in `docs/mobile/screens.json`, a fixture proves the
 snapshot is either meaningful or explicitly empty; no password, OTP, token or payment field can
 appear in a captured snapshot, proven by a test that tries.
 

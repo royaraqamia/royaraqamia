@@ -112,6 +112,11 @@
       "enabled": false
     },
     {
+      "surface": "assistant",
+      "native": null,
+      "reason": "The assistant's own page is the document (ADR-0224): a name field, the permissions list and three links, whose words and writes belong to the site. The app's door is the floating sheet's header, so a native copy would be a second form to keep in step for a page that is one field."
+    },
+    {
       "surface": "notifications",
       "native": "android/app/src/main/kotlin/com/royaraqamia/app/notifications/NotificationsScreen.kt",
       "enabled": true

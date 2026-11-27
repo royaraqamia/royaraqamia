@@ -46,8 +46,11 @@ const GRANTS_COPY = {
  * tool the service would refuse, so an unseen tool or a tier-2 one is absent
  * here because it is absent from the answer.
  *
- * It is rendered inside the connected-apps view, which the account page and the
- * apps sheet share, so both hosts draw the same rows from the same source.
+ * It lives on `/assistant` since ADR-0224: the account page and the connected
+ * apps list are not where an assistant's permissions belong, and the one place
+ * a member looks for "what may it do without asking" is the assistant's own
+ * page. The grant itself is still born in the conversation, where the member
+ * sees the tool run.
  */
 export function AssistantGrantsView() {
   const { user, isLoading: sessionLoading } = useSession();
