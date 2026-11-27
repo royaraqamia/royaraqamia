@@ -25,8 +25,12 @@ and the app port is never published on the host.
   and its only image-cache eviction (see _The box reports its own health_).
 - The app port is `expose`d to the Compose network and never published, so health checks run inside
   the container, not with a host `curl`.
-- `Publish origin image` holds its own ed25519 key, constrained to `deploy.sh` by a forced command and
-  a sudoers rule; the owner's key is separate and still opens a shell (see _The deploy key_).
+- `Publish origin image` holds its own ed25519 key, constrained to `ci.sh` by a forced command and a
+  sudoers rule; the key's two verbs are `deploy` and `metrics` (`Origin metrics`), and the owner's key is
+  separate and still opens a shell (see _The deploy key_).
+- Caddy writes an access log — every request that reaches the origin, its duration and its status — to
+  stdout, which Docker keeps as 10 MB × 3 (`json-file`). `metrics.sh` reads that window; nothing ships it
+  off the box, so it is a window, not a history.
 
 ## Getting in, and out of trouble
 
@@ -94,26 +98,52 @@ df -h /
 
 ## The deploy key
 
-`Publish origin image` authenticates with its own ed25519 key, never the owner's. It has three halves,
-and all three are what make the key harmless to hold in Actions:
+`Publish origin image` and `Origin metrics` authenticate with their own ed25519 key, never the owner's.
+It has three halves, and all three are what make the key harmless to hold in Actions:
 
 - `ORIGIN_SSH_KEY` (Actions secret) — the private half.
 - `deploy`'s `~/.ssh/authorized_keys` — one line, with a forced command and no PTY:
 
   ```
-  command="sudo -n /usr/bin/bash /opt/royaraqamia/deploy.sh",no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding ssh-ed25519 AAAA... gh-actions@royaraqamia
+  command="sudo -n /usr/bin/bash /opt/royaraqamia/ci.sh",no-pty,no-port-forwarding,no-agent-forwarding,no-X11-forwarding ssh-ed25519 AAAA... gh-actions@royaraqamia
   ```
 
 - `/etc/sudoers.d/royaraqamia-deploy` — the one command it may run as root:
 
   ```
-  deploy ALL=(root) NOPASSWD: /usr/bin/bash /opt/royaraqamia/deploy.sh
+  deploy ALL=(root) NOPASSWD: /usr/bin/bash /opt/royaraqamia/ci.sh
   ```
+
+`ci.sh` accepts exactly two verbs and nothing else: no argument means `deploy`, and `metrics <window>`
+prints the origin's numbers. The verb is read from `SSH_ORIGINAL_COMMAND`, matched literally, and never
+passed to a shell — so a request that is not one of those two words exits 64 (ADR-0226).
 
 `no-pty` plus the forced command is load-bearing: the key cannot open a shell, so the workflow's
 verification runs over HTTPS from the runner rather than on the box. `sudo -n true` still fails
 afterwards — that is the proof the scope is one command, not sudo. `deploy` stays in the `sudo` group
 for interactive work, which is password-gated and irrelevant to a headless run.
+
+**Installing or rotating it**, as root, with both scripts already copied to `/tmp`:
+
+```bash
+install -o root -g root -m 755 /tmp/ci.sh /opt/royaraqamia/ci.sh
+install -o root -g root -m 755 /tmp/metrics.sh /opt/royaraqamia/metrics.sh
+printf 'deploy ALL=(root) NOPASSWD: /usr/bin/bash /opt/royaraqamia/ci.sh\n' >/etc/sudoers.d/royaraqamia-deploy
+chmod 440 /etc/sudoers.d/royaraqamia-deploy
+visudo -c
+# then point the key's authorized_keys line at ci.sh, as `deploy`:
+sed -i 's|/opt/royaraqamia/deploy.sh|/opt/royaraqamia/ci.sh|' ~deploy/.ssh/authorized_keys
+```
+
+Prove both verbs before trusting them:
+
+```bash
+ssh -p 2222 deploy@91.98.55.148              # runs deploy.sh
+ssh -p 2222 deploy@91.98.55.148 "metrics 1h" # prints requests=, rps=, p95_ms=
+```
+
+An access log is what `metrics` reads, so the Caddyfile needs `log` in the site block; without it the
+verb prints `requests=0` and says so on stderr.
 
 `ORIGIN_KNOWN_HOSTS` pins the box's host keys as `[91.98.55.148]:2222`; `VPS_HOST`, `VPS_PORT` and
 `VPS_USER` are Actions variables. `ssh-keyscan` does not work from the owner's network (the client's

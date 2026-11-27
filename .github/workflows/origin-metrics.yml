@@ -1,0 +1,89 @@
+# Reads the origin's request rate and latency from Caddy's access log, hourly.
+#
+# The read goes through the deploy key's `metrics` verb: authorized_keys forces
+# `ci.sh` through sudo, and ci.sh accepts exactly `deploy` and `metrics [window]`
+# (ADR-0226). So this workflow holds one credential, and it can only redeploy the
+# origin or print its own numbers — never run a shell.
+#
+# Secrets:  ORIGIN_SSH_KEY, ORIGIN_KNOWN_HOSTS  (shared with Publish origin image)
+# Variables: VPS_HOST, VPS_PORT, VPS_USER
+#
+# A request served from Cloudflare's cache never reaches the box, so these are the
+# origin's numbers, not the customers' — which is the number the 10x question asks.
+
+name: 'Origin metrics'
+
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+    inputs:
+      window:
+        description: 'Window for `docker logs --since`: 30m, 1h, 2d'
+        required: false
+        default: '1h'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: origin-metrics
+  cancel-in-progress: true
+
+jobs:
+  read:
+    name: Read the origin's access log
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: The deploy target is configured
+        env:
+          HOST: ${{ vars.VPS_HOST }}
+          PORT: ${{ vars.VPS_PORT }}
+          USER: ${{ vars.VPS_USER }}
+          KEY: ${{ secrets.ORIGIN_SSH_KEY }}
+          HOST_KEYS: ${{ secrets.ORIGIN_KNOWN_HOSTS }}
+        run: |
+          for name in HOST PORT USER KEY HOST_KEYS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is empty; set VPS_HOST, VPS_PORT and VPS_USER as variables and ORIGIN_SSH_KEY, ORIGIN_KNOWN_HOSTS as secrets."
+              exit 1
+            fi
+          done
+
+      - name: Install the deploy key and the pinned host keys
+        env:
+          KEY: ${{ secrets.ORIGIN_SSH_KEY }}
+          HOST_KEYS: ${{ secrets.ORIGIN_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/origin_deploy
+          chmod 600 ~/.ssh/origin_deploy
+          printf '%s\n' "$HOST_KEYS" > ~/.ssh/origin_known_hosts
+          chmod 600 ~/.ssh/origin_known_hosts
+
+      - name: Read the window through the `metrics` verb
+        env:
+          HOST: ${{ vars.VPS_HOST }}
+          PORT: ${{ vars.VPS_PORT }}
+          USER: ${{ vars.VPS_USER }}
+          WINDOW: ${{ inputs.window || '1h' }}
+        run: |
+          out="$(ssh -T -p "$PORT" \
+            -i ~/.ssh/origin_deploy \
+            -o IdentitiesOnly=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/origin_known_hosts" \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 \
+            "$USER@$HOST" "metrics $WINDOW")"
+          printf '%s\n' "$out"
+          {
+            echo "### Origin, last $WINDOW"
+            echo '```'
+            printf '%s\n' "$out"
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+          if printf '%s\n' "$out" | grep -qx 'requests=0'; then
+            echo "::warning::no requests reached the origin in $WINDOW — check that Caddy's access log is enabled and that the edge is not serving everything from cache."
+          fi

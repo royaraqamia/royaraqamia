@@ -240,6 +240,25 @@ The ceilings stay at the Web Vitals thresholds; only the baseline moves.
 Hobby plan, which is why the window is fixed at `7d`. Longer trends are read from
 the dashboard.
 
+## Origin load
+
+The runtime budget answers what a browser felt. It cannot answer the other half of the 10x question:
+whether the box is at 20% or 90% of what it can take. Caddy terminates TLS for every request that
+reaches the origin, so its access log is that answer, and `deploy/vps/metrics.sh` reads it.
+
+```bash
+gh workflow run 'Origin metrics'                    # hourly on its own, at :23 UTC
+ssh -p 2222 deploy@91.98.55.148 "metrics 24h"       # or any window: 30m, 1h, 2d
+```
+
+It prints one `key=value` per line — `requests`, `rps`, `p50_ms`, `p95_ms`, `errors_5xx` — over the
+window. The read goes through the deploy key's `metrics` verb, which is one of exactly two words that
+key can run (ADR-0226), so the numbers come from the box without a second credential or a shell.
+
+One thing to read correctly: **a request served from Cloudflare's cache never reaches Caddy**, so these
+are the origin's numbers, not the customers'. That is the number to scale, and a fall in `rps` next to a
+flat page-view count means the edge is doing more of the work — not that fewer people came.
+
 ## Launch and tap
 
 Web Vitals measure the page the browser rendered; they do not measure what the
