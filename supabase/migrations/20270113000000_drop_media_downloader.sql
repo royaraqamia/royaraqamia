@@ -7,17 +7,18 @@
 -- that no longer exists, and the rest is configuration for a provider we no
 -- longer call.
 --
--- Three things leave with the tables, so they are stated here:
+-- Two things leave with the tables, so they are stated here:
 --   * the pg_cron sweep that reconciled stuck jobs (it would fail on a missing
 --     table);
---   * the `downloader.job.create` counter rows in `usage_action_costs` and
---     `usage_limits` (ADR-0075's catalogue). The `usage_events` rows that point
---     at the cost row go first, or the foreign key refuses the delete;
---   * the plan capability that priced it, which is why `downloads` left
---     `USAGE_COUNTERS` in the same change.
+--   * the `downloader.job.create` rows in `usage_events` and `usage_limits`
+--     (ADR-0075's catalogue) and the plan capability that priced it, which is
+--     why `downloads` left `USAGE_COUNTERS` in the same change.
 --
--- Rollback: the tables and functions are recoverable only from a backup. Nothing
--- in the app reads them, which is the point of doing this after the code went.
+-- `usage_action_costs` is not touched: 20261029120000 retired the credit pool
+-- and dropped that table, so the only catalogue left is `usage_limits`.
+--
+-- Rollback: the tables are recoverable only from a backup. Nothing in the app
+-- reads them, which is the point of doing this after the code went.
 
 -- The sweep is scheduled under this name by 20261007171335_sweep_download_jobs.
 select cron.unschedule(jobid)
@@ -36,9 +37,6 @@ drop table if exists
 
 -- The metered action the route used to record, then the cap it spent.
 delete from public.usage_events
- where action_key = 'downloader.job.create';
-
-delete from public.usage_action_costs
  where action_key = 'downloader.job.create';
 
 delete from public.usage_limits
