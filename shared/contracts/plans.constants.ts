@@ -44,7 +44,6 @@ export type OwnedItemKey = (typeof OWNED_ITEMS)[keyof typeof OWNED_ITEMS];
  * for an action that does not exist.
  */
 export const USAGE_COUNTERS = {
-  downloads: 'downloader.job.create',
   scannerScans: 'scanner.scan',
   quranSurahs: 'quran.surah.read',
   chatAgentTurns: 'chat.agent.turn',
@@ -102,7 +101,6 @@ export const USAGE_WINDOWS = ['lifetime', 'daily'] as const satisfies readonly U
  * to refuse a scan or a surah read offline; the server always reads the table.
  */
 export const VISITOR_COUNTER_CAPS: Record<UsageCounterKey, number> = {
-  'downloader.job.create': 1,
   'scanner.scan': 1,
   'quran.surah.read': 1,
   // The assistant needs an account: its allowance is per member and its thread

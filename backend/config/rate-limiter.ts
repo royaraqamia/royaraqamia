@@ -241,29 +241,6 @@ export function newsSourceRequestRateLimitPolicy(userId: string): RateLimitPolic
   };
 }
 
-const DOWNLOAD_WINDOW_MS = 10 * 60 * 1000;
-
-export function downloaderRateLimitPolicy(ip: string): RateLimitPolicy {
-  return {
-    key: `downloader:${ip}`,
-    failClosed: true,
-    limit: 10,
-    windowMs: DOWNLOAD_WINDOW_MS,
-    message: 'تم تجاوز حدّ الطلب: تنزيل الوسائط محدود بـ 10 طلبات كل 10 دقائق.',
-  };
-}
-
-/** Looser than the download path: an inspect runs on every debounced keystroke. */
-export function downloaderInspectRateLimitPolicy(ip: string): RateLimitPolicy {
-  return {
-    key: `downloader-inspect:${ip}`,
-    failClosed: true,
-    limit: 30,
-    windowMs: DOWNLOAD_WINDOW_MS,
-    message: 'تم تجاوز حدّ الطلب: فحص الروابط محدود بـ 30 طلبًا كل 10 دقائق.',
-  };
-}
-
 export function adminEmailBroadcastRateLimitPolicy(adminEmail: string): RateLimitPolicy {
   return {
     key: `admin-email-broadcast:${adminEmail}`,

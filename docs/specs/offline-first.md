@@ -23,8 +23,7 @@ messenger is_.
 
 ## Non-goals
 
-- Making server-bound features work offline. Media Downloader, rate refresh, MCP, Admin, auth and Web
-  Push keep a clear "needs connection" state (ADR-0031).
+- Making server-bound features work offline. Rate refresh, MCP, Admin, auth and Web Push keep a clear "needs connection" state (ADR-0031).
 - A CRDT or true multi-writer merge. Owned data is single-owner, so last-write-wins is enough
   (ADR-0029).
 - Gating offline writes behind PWA installation.
@@ -41,7 +40,7 @@ messenger is_.
 | Account tools — HabitFlow, SpendTrack, LinkSnap, Notes                   | Yes — from Local Store                                          | Yes — Outbox  |
 | Non-inventory leads — Training Application, Project Request, Retainer    | n/a                                                             | Yes — Outbox  |
 | Consultation Booking (reserves Availability Slots)                       | No — a live read, refused offline with a needs-connection state | No            |
-| Auth, Push, Media Downloader, Rates refresh, MCP, Admin                  | No                                                              | No            |
+| Auth, Push, Rates refresh, MCP, Admin                                    | No                                                              | No            |
 
 Everything in the first and third rows must reach properties 1–3. The fourth row is the one addition
 worth revisiting per surface: drafting a lead offline is already supported, and any other write that
@@ -73,9 +72,9 @@ stated limit.
   no notice drawn over it (#490, ADR-0071's 2026-10-30 amendment). That is the case a profile link
   opened from a message hits. One online visit caches the page like any other navigation, and the next
   offline open renders it in full.
-- **Server-bound surfaces stay server-bound.** Auth, consultation booking, rate refresh, the media
-  downloader, admin and MCP show a needs-connection state by design (ADR-0031); they are not a gap to
-  close. Since #447–#450 that state lives inside a cached document for every one of them except
+- **Server-bound surfaces stay server-bound.** Auth, consultation booking, rate refresh, admin and
+  MCP show a needs-connection state by design (ADR-0031); they are not a gap to
+  close. Since #447—#450 that state lives inside a cached document for every one of them except
   `/admin` and the MCP consent screen, which still ask the network for their document — the boundary
   the next bullet states.
 - **A public surface shows its last-seen rows, read-only.** A digest, a feed page, the rates board,
@@ -294,16 +293,16 @@ Honest list of what stands between us and the bar, each with the file that shows
 
 ### Cache tiers
 
-| Request                                                                                     | Strategy                                                                                                           |
-| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| App shell, icons, fonts                                                                     | cache-first                                                                                                        |
-| Public navigation / RSC payloads                                                            | stale-while-revalidate (+ "updated X ago")                                                                         |
-| Auth + account document shells                                                              | stale-while-revalidate (#447, #448; shell only, no account-bearing render)                                         |
-| Product dashboard shells (HabitFlow, SpendTrack, LinkSnap)                                  | stale-while-revalidate (#449; shell only, painted from the Local Store)                                            |
-| Consultation booking + media downloader shells                                              | stale-while-revalidate (#450; shell only — packages and the link probe are client reads on their never-cache APIs) |
-| MCP guide                                                                                   | stale-while-revalidate (#450; static instructions, no server action)                                               |
-| Public read APIs that declare `public`                                                      | SWR; an absent header is not permission                                                                            |
-| Auth APIs and the OAuth callback, mutations, admin, MCP consent, push, `no-store`/`private` | never cache                                                                                                        |
+| Request                                                                                     | Strategy                                                                                         |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| App shell, icons, fonts                                                                     | cache-first                                                                                      |
+| Public navigation / RSC payloads                                                            | stale-while-revalidate (+ "updated X ago")                                                       |
+| Auth + account document shells                                                              | stale-while-revalidate (#447, #448; shell only, no account-bearing render)                       |
+| Product dashboard shells (HabitFlow, SpendTrack, LinkSnap)                                  | stale-while-revalidate (#449; shell only, painted from the Local Store)                          |
+| Consultation booking shell                                                                  | stale-while-revalidate (#450; shell only — its packages are client reads on its never-cache API) |
+| MCP guide                                                                                   | stale-while-revalidate (#450; static instructions, no server action)                             |
+| Public read APIs that declare `public`                                                      | SWR; an absent header is not permission                                                          |
+| Auth APIs and the OAuth callback, mutations, admin, MCP consent, push, `no-store`/`private` | never cache                                                                                      |
 
 A cached document whose revalidation answers with a redirect — an app root retired under
 [ADR-0156](../adr/0156-an-app-root-is-a-tab.md) — is dropped instead of kept: a navigation revalidates

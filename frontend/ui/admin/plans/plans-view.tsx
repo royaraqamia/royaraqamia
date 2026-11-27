@@ -23,18 +23,12 @@ import {
 } from '@/frontend/ui/admin/plans/plans-view.reducer';
 import { useAdminPlans } from '@/frontend/state/plans/use-admin-plans';
 import { formatCount, formatHijriDate } from '@/frontend/shared/format';
-import type { PlanLimit, UsageLimit } from '@/shared/contracts/plans';
+import type { PlanLimit } from '@/shared/contracts/plans';
 
 const PLAN_LABELS = { free: 'مجاني', pro: 'مدفوع' } as const;
 
 function limitOf(limits: PlanLimit[], key: string, plan: 'free' | 'pro'): number {
   const limit = limits.find((entry) => entry.key === key);
-  if (!limit) return 0;
-  return plan === 'pro' ? limit.proCap : limit.freeCap;
-}
-
-function counterOf(counters: UsageLimit[], key: string, plan: 'free' | 'pro'): number {
-  const limit = counters.find((entry) => entry.key === key);
   if (!limit) return 0;
   return plan === 'pro' ? limit.proCap : limit.freeCap;
 }
@@ -67,7 +61,7 @@ export function PlansView() {
         <ChevronLeft className="size-3.5" aria-hidden="true" />
       </Link>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <SummaryCard
           label="سعر الخطَّة المدفوعة"
           value={
@@ -85,15 +79,6 @@ export function PlansView() {
               : '—'
           }
           hint="مجاني / مدفوع، ولكل عنصر حصّته"
-        />
-        <SummaryCard
-          label="التَّنزيلات"
-          value={
-            result
-              ? `${formatCount(counterOf(result.counters, 'downloader.job.create', 'free'))} / ${formatCount(counterOf(result.counters, 'downloader.job.create', 'pro'))}`
-              : '—'
-          }
-          hint="مجاني / مدفوع، والزّائر تنزيل واحد"
         />
       </div>
 

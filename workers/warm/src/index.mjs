@@ -8,9 +8,9 @@
  * every-hour one: this Worker requests a static file — traffic, but almost no
  * CPU — every five minutes from 05:00 to 20:55 UTC (08:00 to 23:55 in Baghdad).
  *
- * Sixteen hours a day is ~480 of the 750 Free instance hours a month, leaving
- * ~270 for `downloader-host`. If that service starts running long, shorten the
- * window in `wrangler.jsonc`; the arithmetic is in `docs/edge-cache.md`.
+ * Sixteen hours a day is ~480 of the 750 Free instance hours a month. Shorten
+ * the window in `wrangler.jsonc` if the origin needs those hours elsewhere; the
+ * arithmetic is in `docs/edge-cache.md`.
  *
  * Deploy: `npx wrangler@latest deploy` from this directory.
  */

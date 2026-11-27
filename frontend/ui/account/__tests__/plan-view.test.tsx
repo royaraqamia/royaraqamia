@@ -32,7 +32,7 @@ const freeState: UsageState = {
   expiresAt: null,
   counters: [
     {
-      key: 'downloader.job.create',
+      key: 'scanner.scan',
       label: 'تنزيل وسائط',
       window: 'lifetime',
       cap: 5,
@@ -115,7 +115,7 @@ describe('PlanView', () => {
 
     render(<PlanView />);
 
-    // The owned-item caps only: the lifetime downloader count is not a slot.
+    // The owned-item caps only: a counted action is not a slot.
     const bar = screen.getByRole('progressbar', { name: 'الحد الأقصى لما تملكه' });
     expect(bar).toHaveAttribute('aria-valuenow', '17');
     expect(bar).toHaveAttribute('aria-valuemax', '100');

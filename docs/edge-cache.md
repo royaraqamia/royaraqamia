@@ -115,16 +115,17 @@ waits. `workers/warm/` is a Cloudflare Worker with a free Cron Trigger that requ
 `/manifest.json` every five minutes through the active hours. It has no route: it cannot receive
 web traffic, only wake the origin.
 
-The 750 free instance-hours are shared with `downloader-host`, so the window is a budget:
+The 750 free instance-hours are a budget, and the window decides how much of it the warm worker
+spends:
 
-| Window (Baghdad) | UTC         | Hours/day | Instance-hours/month | Left for `downloader-host` |
-| ---------------- | ----------- | --------- | -------------------- | -------------------------- |
-| 08:00–24:00      | 05:00–21:00 | 16        | ~480                 | ~270                       |
-| 10:00–22:00      | 07:00–19:00 | 12        | ~360                 | ~390                       |
-| 24/7             | 24/7        | 24        | ~720–744             | ~6–30 (too tight)          |
+| Window (Baghdad) | UTC         | Hours/day | Instance-hours/month |
+| ---------------- | ----------- | --------- | -------------------- |
+| 08:00—24:00      | 05:00—21:00 | 16        | ~480                 |
+| 10:00—22:00      | 07:00—19:00 | 12        | ~360                 |
+| 24/7             | 24/7        | 24        | ~720—744             |
 
-The config ships the 16-hour window. If `downloader-host` starts running long, shorten the cron in
-`workers/warm/wrangler.jsonc` to the 12-hour one; the arithmetic is the table above.
+The config ships the 16-hour window. Shorten the cron in `workers/warm/wrangler.jsonc` to the
+12-hour one if the origin needs the free hours elsewhere; the arithmetic is the table above.
 
 ```bash
 cd workers/warm

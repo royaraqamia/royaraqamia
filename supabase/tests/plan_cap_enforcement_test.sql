@@ -693,7 +693,7 @@ select throws_ok(
 
 select is(
   (public.record_usage(
-    'downloader.job.create', null, null, 'ip-only-hash'
+    'quran.surah.read', null, null, 'ip-only-hash'
   ) ->> 'allowed')::boolean,
   true,
   'an IP-only visitor records one counted event'
@@ -701,7 +701,7 @@ select is(
 
 select is(
   (public.record_usage(
-    'downloader.job.create', null, null, 'ip-only-hash'
+    'quran.surah.read', null, null, 'ip-only-hash'
   ) ->> 'allowed')::boolean,
   false,
   'a second IP-only request is refused by the visitor cap'
@@ -709,7 +709,7 @@ select is(
 
 select is(
   (public.record_usage(
-    'downloader.job.create', null, null, 'ip-only-hash'
+    'quran.surah.read', null, null, 'ip-only-hash'
   ) -> 'counter' ->> 'remaining')::integer,
   0,
   'the refusal reports the visitor counter as spent rather than raising'
@@ -728,14 +728,14 @@ select is(
 );
 
 select throws_ok(
-  $$select public.record_usage('downloader.job.create', null, null, null)$$,
+  $$select public.record_usage('quran.surah.read', null, null, null)$$,
   '22023',
   null,
   'a subject with neither a user, a cookie nor an address is refused'
 );
 
 select throws_ok(
-  $$select public.record_usage('downloader.job.create', null, '  ', '  ')$$,
+  $$select public.record_usage('quran.surah.read', null, '  ', '  ')$$,
   '22023',
   null,
   'a blank cookie and a blank address are no subject at all'
@@ -743,7 +743,7 @@ select throws_ok(
 
 select is(
   (public.record_usage(
-    'downloader.job.create', null, 'cookie-only-visitor', null
+    'quran.surah.read', null, 'cookie-only-visitor', null
   ) ->> 'allowed')::boolean,
   true,
   'a cookie-only visitor still counts'
@@ -751,7 +751,7 @@ select is(
 
 select is(
   (public.record_usage(
-    'downloader.job.create', '00000000-0000-0000-0000-00000000ca06', null, null
+    'quran.surah.read', '00000000-0000-0000-0000-00000000ca06', null, null
   ) ->> 'allowed')::boolean,
   true,
   'a signed-in caller still counts against their own allowance'
@@ -790,14 +790,14 @@ select is(
 -- ---------------------------------------------------------------------------
 
 -- `record_usage` records the salted address on a member's event too, and the
--- visitor rule matched on the address alone, so a download made while signed in
--- spent the signed-out allowance of the same connection: sign in, download,
+-- visitor rule matched on the address alone, so a read made while signed in
+-- spent the signed-out allowance of the same connection: sign in, read,
 -- sign out, and the visitor was already out. ADR-0093 counts a member by
 -- `user_id` alone.
 
 select is(
   (public.record_usage(
-    'downloader.job.create', '00000000-0000-0000-0000-00000000ca07', null,
+    'quran.surah.read', '00000000-0000-0000-0000-00000000ca07', null,
     'member-address-hash'
   ) ->> 'allowed')::boolean,
   true,
@@ -806,7 +806,7 @@ select is(
 
 select is(
   (public.record_usage(
-    'downloader.job.create', null, null, 'member-address-hash'
+    'quran.surah.read', null, null, 'member-address-hash'
   ) ->> 'allowed')::boolean,
   true,
   'the member event leaves the address-only visitor allowance untouched'
@@ -864,7 +864,7 @@ select is(
 
 select is(
   (public.record_usage(
-    'downloader.job.create', null, null, 'member-address-hash'
+    'quran.surah.read', null, null, 'member-address-hash'
   ) ->> 'allowed')::boolean,
   false,
   'the address-only visitor is refused by its own event, not the member row'

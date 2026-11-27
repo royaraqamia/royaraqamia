@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { env } from '@/backend/config/env';
 import { logger } from '@/backend/shared/logger';
-import { isPublicHttpUrl } from '@/shared/contracts/downloader';
+import { isPublicHttpUrl } from '@/shared/network';
 import {
   URL_EXTRACT_EVIDENCE_CHARS,
   URL_EXTRACT_RETRY_DELAY_MS,
@@ -58,8 +58,9 @@ class TavilyUrlExtractClient implements UrlExtractClient {
     question: string,
     options: { signal?: AbortSignal } = {}
   ): Promise<WebSearchResult> {
-    // The same SSRF guard the downloader uses. Tavily does the fetching, but a
-    // private address must never leave this deployment even inside a request.
+    // The public-target guard the link previews use. Tavily does the fetching,
+    // but a private address must never leave this deployment even inside a
+    // request.
     if (!isPublicHttpUrl(url)) {
       throw new WebSearchError('refused', 'the URL is not a public HTTP URL');
     }

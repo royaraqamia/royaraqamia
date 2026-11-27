@@ -86,7 +86,7 @@ const catalog: PlanCatalog = {
   ],
   counters: [
     {
-      key: 'downloader.job.create',
+      key: 'scanner.scan',
       label: 'تنزيل وسائط',
       window: 'lifetime',
       visitorCap: 1,
