@@ -13,7 +13,7 @@ export const ACCOUNT_ROWS_COPY = {
   navLabel: 'إجراءات الحساب',
   submissions: 'طلباتي',
   blocked: 'الأعضاء المحظورون',
-  memory: 'ذاكرة نور',
+  assistant: 'المساعد',
   pricing: 'خطط التَّسعير',
   admin: 'الإدارة',
   faq: 'الأسئلة الشَّائعة',
