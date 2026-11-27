@@ -73,6 +73,8 @@ jobs:
 
       - name: Summary
         run: |
-          echo "### Zone purged" >> "$GITHUB_STEP_SUMMARY"
-          echo "Trigger: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "Reason: ${{ github.event.inputs.reason || 'no reason given' }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Zone purged"
+            echo "Trigger: ${{ github.event_name }}"
+            echo "Reason: ${{ github.event.inputs.reason || 'no reason given' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
