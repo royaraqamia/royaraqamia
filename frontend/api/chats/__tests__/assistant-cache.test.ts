@@ -45,8 +45,33 @@ describe('assistant cache', () => {
       threadId: 'a-1',
       available: true,
       allowance: ALLOWANCE,
+      name: null,
     });
     expect(readAssistantSnapshot(OTHER)).toBeNull();
+  });
+
+  it('keeps the other fields when one is written alone', () => {
+    writeAssistantSnapshot(IDENTITY, {
+      threadId: 'a-1',
+      available: true,
+      allowance: ALLOWANCE,
+    });
+
+    writeAssistantSnapshot(IDENTITY, { name: 'حكيم' });
+
+    expect(readAssistantSnapshot(IDENTITY)).toEqual({
+      threadId: 'a-1',
+      available: true,
+      allowance: ALLOWANCE,
+      name: 'حكيم',
+    });
+  });
+
+  it('clears the name when a reset writes null', () => {
+    writeAssistantSnapshot(IDENTITY, { name: 'حكيم' });
+    writeAssistantSnapshot(IDENTITY, { name: null });
+
+    expect(readAssistantSnapshot(IDENTITY)?.name).toBeNull();
   });
 
   it('ignores a corrupt or wrongly shaped value', () => {
@@ -61,6 +86,7 @@ describe('assistant cache', () => {
       threadId: 'a-1',
       available: true,
       allowance: null,
+      name: null,
     });
   });
 
@@ -77,6 +103,7 @@ describe('assistant cache', () => {
       threadId: null,
       available: true,
       allowance: null,
+      name: null,
     });
   });
 
