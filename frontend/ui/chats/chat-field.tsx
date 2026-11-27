@@ -4,15 +4,31 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Link2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Link2, Smile } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import { Popover, PopoverTrigger } from '@/frontend/ui/primitives/popover';
+import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import {
   chatDocToMarkdown,
   chatMarkdownToDoc,
   isSafeHref,
   type ProseMirrorNode,
 } from '@/shared/text/chat-markdown';
+import type { ChatEmojiLabels } from './emoji-catalog';
+
+/**
+ * The sheet is a chunk of its own: a conversation nobody decorates loads the
+ * smiley and nothing else. A failed fetch renders nothing rather than taking the
+ * page down (docs/specs/offline-first.md, #332).
+ */
+const EmojiPickerPanel = dynamic(
+  tolerateChunkFailure('emoji picker', () =>
+    import('./emoji-picker').then((module) => ({ default: module.EmojiPickerPanel }))
+  ),
+  { ssr: false }
+);
 
 /** The surface's words for the six marks: the field draws them, it does not own them. */
 export interface ChatFieldLabels {
@@ -24,6 +40,12 @@ export interface ChatFieldLabels {
   code: string;
   link: string;
   linkPrompt: string;
+  /**
+   * The emoji sheet's words. A surface that leaves them out draws no smiley —
+   * the bubble a line is edited in is not a composer, and asking it to word a
+   * picker nobody opens would be copy the pair check cannot see.
+   */
+  emoji?: ChatEmojiLabels;
 }
 
 /**
@@ -80,6 +102,10 @@ export function ChatField({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [bubble, setBubble] = useState<{ top: number; left: number } | null>(null);
+  /** Whether the emoji sheet is open; its chunk arrives with the first press. */
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  /** The bubble a line is edited in is not a composer, so it draws no smiley. */
+  const offersEmoji = Boolean(labels.emoji) && !compact && !disabled;
   /** The newest value this field wrote, so an external reset is not mistaken for typing. */
   const emitted = useRef(value);
 
@@ -133,7 +159,10 @@ export function ChatField({
         class: cn(
           'tiptap outline-none wrap-anywhere whitespace-pre-wrap [&_p]:[font:inherit]',
           compact ? 'min-h-8 text-sm' : 'min-h-11 max-h-32 overflow-y-auto',
-          className
+          className,
+          // The smiley is pinned inside the field at its start edge, so the text
+          // needs the gutter on that side or a long line runs under it.
+          offersEmoji ? 'pr-10' : ''
         ),
       },
       // Enter is a line, never a new block and never a send.
@@ -245,6 +274,17 @@ export function ChatField({
     run((chain) => chain.extendMarkRange('link').setLink({ href: trimmed, class: 'mention' }));
   };
 
+  /**
+   * A picked glyph goes in at the caret, and the sheet stays open so three
+   * hearts are three taps. The command runs on the editor's own selection: the
+   * press moved the DOM focus into the sheet, not the field's place in the text,
+   * which ProseMirror keeps across the blur.
+   */
+  const insertEmoji = (glyph: string) => {
+    if (!editor) return;
+    editor.chain().insertContent(glyph).run();
+  };
+
   if (!editor) {
     return (
       <div
@@ -257,6 +297,30 @@ export function ChatField({
   return (
     <div ref={rootRef} className="relative w-full" onFocusCapture={onFocus}>
       <EditorContent editor={editor} />
+
+      {offersEmoji && labels.emoji ? (
+        <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label={labels.emoji.open}
+              // The press that opens the sheet is also the moment the chunk is
+              // worth fetching, so the sheet is already there by the time the
+              // popover can draw it.
+              onPointerEnter={() => {
+                void import('./emoji-picker').catch(() => undefined);
+              }}
+              onFocus={() => {
+                void import('./emoji-picker').catch(() => undefined);
+              }}
+              className="absolute right-1 bottom-1.5 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground"
+            >
+              <Smile size={16} aria-hidden="true" />
+            </button>
+          </PopoverTrigger>
+          {emojiOpen ? <EmojiPickerPanel labels={labels.emoji} onPick={insertEmoji} /> : null}
+        </Popover>
+      ) : null}
 
       {bubble && !disabled ? (
         <div

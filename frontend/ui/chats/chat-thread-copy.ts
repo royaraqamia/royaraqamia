@@ -77,6 +77,19 @@ export const CHAT_THREAD_COPY = {
   formatCode: 'كود',
   formatLink: 'رابط',
   formatLinkPrompt: 'عنوان الرَّابط',
+  emojiPicker: 'إضافة إيموجي',
+  emojiSearch: 'ابحث عن إيموجي',
+  emojiNoResults: 'لا نتائج',
+  emojiRecent: 'الأخيرة',
+  emojiCategorySmileys: 'الوجوه',
+  emojiCategoryGestures: 'الإيماءات',
+  emojiCategoryHearts: 'القلوب',
+  emojiCategoryAnimals: 'الحيوانات',
+  emojiCategoryFood: 'الطعام',
+  emojiCategoryActivity: 'الأنشطة',
+  emojiCategoryTravel: 'السفر',
+  emojiCategoryObjects: 'الأشياء',
+  emojiCategorySymbols: 'الرموز',
 } as const;
 
 export type ChatThreadCopyStrings = typeof CHAT_THREAD_COPY;

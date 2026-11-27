@@ -1,7 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), error: vi.fn() } }));
+
+/**
+ * The sheet is a chunk of its own; the field's contract is what it hands it.
+ * A panel that immediately reports one glyph stands in for the catalog here —
+ * the sheet's own search and tabs are tested in `emoji-picker.test.tsx`.
+ */
+vi.mock('@/frontend/ui/chats/emoji-picker', () => ({
+  EmojiPickerPanel: ({ onPick }: { labels: unknown; onPick: (glyph: string) => void }) => (
+    <button type="button" onClick={() => onPick('😀')}>
+      pick
+    </button>
+  ),
+}));
 
 import { ChatField } from '@/frontend/ui/chats/chat-field';
 
@@ -15,6 +28,28 @@ const LABELS = {
   code: 'كود',
   link: 'رابط',
   linkPrompt: 'عنوان الرَّابط',
+};
+
+/** The same field on a composer, which is the only surface that words the sheet. */
+const EMOJI_LABELS = {
+  ...LABELS,
+  emoji: {
+    open: 'إضافة إيموجي',
+    search: 'ابحث عن إيموجي',
+    noResults: 'لا نتائج',
+    recent: 'الأخيرة',
+    categories: {
+      smileys: 'الوجوه',
+      gestures: 'الإيماءات',
+      hearts: 'القلوب',
+      animals: 'الحيوانات',
+      food: 'الطعام',
+      activity: 'الأنشطة',
+      travel: 'السفر',
+      objects: 'الأشياء',
+      symbols: 'الرموز',
+    },
+  },
 };
 
 /**
@@ -92,5 +127,62 @@ describe('ChatField', () => {
 
     const field = await screen.findByRole('textbox', { name: 'نص الرسالة' });
     expect(field).toHaveAttribute('contenteditable', 'false');
+  });
+});
+
+describe('ChatField emoji', () => {
+  it('opens the sheet from the field and writes the glyph into the draft', async () => {
+    const onChange = vi.fn();
+    render(
+      <ChatField
+        value=""
+        onChange={onChange}
+        ariaLabel="نص الرسالة"
+        labels={EMOJI_LABELS}
+        maxLength={4000}
+      />
+    );
+    const field = await screen.findByRole('textbox', { name: 'نص الرسالة' });
+
+    // The trigger opens the sheet; the first glyph writes at the caret.
+    const trigger = screen.getByRole('button', { name: 'إضافة إيموجي' });
+    fireEvent.click(trigger);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'pick' }));
+
+    expect(onChange).toHaveBeenCalledWith('😀');
+    expect(field).toHaveTextContent('😀');
+  });
+
+  it('draws the smiley inside the field, where the text will not run under it', async () => {
+    render(
+      <ChatField
+        value=""
+        onChange={vi.fn()}
+        ariaLabel="نص الرسالة"
+        labels={EMOJI_LABELS}
+        maxLength={4000}
+      />
+    );
+
+    const field = await screen.findByRole('textbox', { name: 'نص الرسالة' });
+    expect(field).toHaveClass('pr-10');
+    expect(screen.getByRole('button', { name: 'إضافة إيموجي' })).toHaveClass('right-1');
+  });
+
+  it('draws no smiley in the bubble a line is edited in', async () => {
+    render(
+      <ChatField
+        value="سلام"
+        onChange={vi.fn()}
+        ariaLabel="نص الرسالة"
+        labels={EMOJI_LABELS}
+        maxLength={4000}
+        compact
+      />
+    );
+
+    await screen.findByRole('textbox', { name: 'نص الرسالة' });
+    expect(screen.queryByRole('button', { name: 'إضافة إيموجي' })).not.toBeInTheDocument();
   });
 });
