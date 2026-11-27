@@ -110,8 +110,11 @@ moving to a larger instance.
 ## Early warning
 
 The watch that read Render's API every six hours (`scripts/memory-watch.mjs`) was deleted with
-the blueprint on 2026-11-27. Nothing measures the box's memory automatically yet: `#1885` is that
-work. Until it lands, the evidence is the `[memory]` lines in the container log and Sentry.
+the blueprint on 2026-11-27. It is replaced by `deploy/vps/monitor.sh`, which samples the box's memory
+hourly from `/proc/meminfo` — using `MemAvailable`, so reclaimable page cache is not mistaken for
+pressure — and alerts above `MEM_SOFT_PCT` (85%) (ADR-0225). The app's own `[memory]` line every five
+minutes stays where it was, inside the container. `#1885` owns what is still missing — the origin's
+request rate and latency, not its memory.
 The per-sample judgement still holds: a single 257 MB reading preceded an OOM kill by 39 seconds,
 so an average over a window would have missed it.
 

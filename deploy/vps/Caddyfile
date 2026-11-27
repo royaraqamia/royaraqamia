@@ -5,6 +5,10 @@
 royaraqamia.com, www.royaraqamia.com {
 	encode zstd gzip
 	header -Server
+	# Every request that reaches the origin, with its duration and status, to
+	# stdout. `deploy/vps/metrics.sh` reads it; nothing else does, and Docker's
+	# json-file driver keeps 10 MB x 3 of it (docs/agents/vps-deploy.md).
+	log
 	reverse_proxy app:3000
 }
 
