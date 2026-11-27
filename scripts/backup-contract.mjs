@@ -111,6 +111,103 @@ export function countMismatches(actual, expected) {
   return mismatches;
 }
 
+/**
+ * Schemas a restore must never touch. Anything else the dump creates is owned
+ * by the archive and has to be empty before the replay, or the drill lands on
+ * rows a previous pass left behind (#1954).
+ */
+export const SYSTEM_SCHEMAS = Object.freeze(['pg_catalog', 'information_schema', 'pg_toast']);
+
+/**
+ * Every schema the artifact creates or writes rows into.
+ *
+ * Read from the dump rather than hard-coded: the first version of the drill
+ * reset `public` only while the archive also restores `auth`, so the second
+ * replay died on `flow_state_pkey`. The set has to follow the artifact.
+ *
+ * @param {{ schemaSql?: string, historySchemaSql?: string, dataSql?: string, historyDataSql?: string }} files
+ */
+export function schemasInDump({
+  schemaSql = '',
+  historySchemaSql = '',
+  dataSql = '',
+  historyDataSql = '',
+} = {}) {
+  const names = new Set(['public']);
+
+  for (const sql of [schemaSql, historySchemaSql]) {
+    for (const match of sql.matchAll(
+      /^CREATE SCHEMA (?:IF NOT EXISTS )?(?:"((?:[^"]|"")+)"|([A-Za-z_][\w$]*))\s*;/gm
+    )) {
+      const name = (match[1] ?? match[2]).replace(/""/g, '"');
+      if (!SYSTEM_SCHEMAS.includes(name)) names.add(name);
+    }
+  }
+
+  for (const sql of [dataSql, historyDataSql]) {
+    for (const match of sql.matchAll(/^COPY\s+(\S+)\s+\([^\n]*\)\s+FROM\s+stdin;\s*$/gm)) {
+      const schema = unquoteIdentifier(match[1]).split('.')[0];
+      if (schema && !SYSTEM_SCHEMAS.includes(schema)) names.add(schema);
+    }
+  }
+
+  return [...names].sort();
+}
+
+/**
+ * Roles the scratch project already owns and must keep. `supabase db dump
+ * --role-only` emits the project's own login roles (this project's is
+ * `cli_login_postgres`); dropping a platform role would break the project the
+ * drill is restoring into.
+ */
+export const PLATFORM_ROLES = Object.freeze([
+  'anon',
+  'authenticated',
+  'authenticator',
+  'dashboard_user',
+  'pgbouncer',
+  'postgres',
+  'service_role',
+  'supabase_admin',
+  'supabase_auth_admin',
+  'supabase_storage_admin',
+]);
+
+/** The roles `roles.sql` will try to create, read from the artifact. */
+export function rolesInDump(rolesSql = '') {
+  const names = new Set();
+  for (const match of rolesSql.matchAll(/^CREATE ROLE (?:"((?:[^"]|"")+)"|([A-Za-z_][\w$]*))/gm)) {
+    const name = (match[1] ?? match[2]).replace(/""/g, '"');
+    if (!PLATFORM_ROLES.includes(name)) names.add(name);
+  }
+  return [...names].sort();
+}
+
+/** Drop the roles the replay is about to create, so a second drill can run. */
+export function resetRolesSql(roles) {
+  return roles.map((name) => `DROP ROLE IF EXISTS "${name.replace(/"/g, '""')}";`).join('\n');
+}
+
+/** The reset the drill runs before replaying: drop everything the dump owns. */
+export function resetScratchSql(schemas, roles = []) {
+  const quoted = schemas.map((name) => `"${name.replace(/"/g, '""')}"`);
+  const statements = [
+    ...quoted.map((name) => `DROP SCHEMA IF EXISTS ${name} CASCADE;`),
+    'CREATE SCHEMA IF NOT EXISTS public;',
+    'GRANT ALL ON SCHEMA public TO postgres, anon, authenticated, service_role;',
+  ];
+  // After the schemas: a role cannot be dropped while it still owns objects.
+  const dropRoles = resetRolesSql(roles);
+  if (dropRoles) statements.push(dropRoles);
+  return statements.join('\n');
+}
+
+/** How many tables the reset should have left behind: zero, or stop. */
+export function remainingTablesSql(schemas) {
+  const list = schemas.map((name) => `'${name.replace(/'/g, "''")}'`).join(', ');
+  return `SELECT count(*) FROM information_schema.tables WHERE table_schema IN (${list});`;
+}
+
 /** Markdown for the workflow summary and the drill record. */
 export function summaryMarkdown(stats) {
   const rows = Object.entries(stats.counts ?? {})

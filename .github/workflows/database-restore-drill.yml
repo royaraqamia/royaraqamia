@@ -61,7 +61,7 @@ jobs:
           tar -xzf "$RUNNER_TEMP/$archive" -C restore
           echo "DRILL_ARCHIVE=$archive" >> "$GITHUB_ENV"
 
-      - name: Reset scratch database
+      - name: Refuse to drill against production
         env:
           SCRATCH_DB_URL: ${{ secrets.SCRATCH_DB_URL }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -71,11 +71,10 @@ jobs:
             echo 'SCRATCH_DB_URL points at production; refusing to drill.' >&2
             exit 1
           fi
-          psql --dbname "$SCRATCH_DB_URL" --variable ON_ERROR_STOP=1 \
-            --command 'drop schema if exists public cascade; create schema public;' \
-            --command 'drop role if exists cli_login_postgres;' \
-            --command 'grant all on schema public to postgres, anon, authenticated, service_role;'
 
+      # The reset lives in the script, not here: the schemas to empty are read
+      # from the artifact, because resetting `public` alone left `auth` rows
+      # behind and the replay died on `flow_state_pkey` (#1954).
       - name: Replay and verify
         id: drill
         env:

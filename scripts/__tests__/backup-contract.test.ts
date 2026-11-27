@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PLATFORM_ROLES,
   TABLE_FLOORS,
   countMismatches,
   floorViolations,
   parseCopyRowCounts,
+  remainingTablesSql,
+  resetRolesSql,
+  resetScratchSql,
+  rolesInDump,
+  schemasInDump,
   sizeViolations,
 } from '../backup-contract.mjs';
 
@@ -77,5 +83,62 @@ describe('database backup contract (#1700)', () => {
       'schema.sql: 10 bytes, floor 20000',
     ]);
     expect(sizeViolations({}, { 'data.sql': 50000 })).toEqual(['data.sql: missing']);
+  });
+});
+
+describe('restore drill reset (#1954)', () => {
+  const schemaSql = `CREATE SCHEMA auth;
+CREATE SCHEMA "storage";
+CREATE SCHEMA extensions;
+CREATE SCHEMA pg_catalog;
+`;
+  const dataSql = `COPY auth.flow_state (id) FROM stdin;
+
+COPY public.users (id) FROM stdin;
+`;
+  const historySql = `CREATE SCHEMA supabase_migrations;
+`;
+
+  it('follows the artifact, not a hard-coded public schema', () => {
+    expect(schemasInDump({ schemaSql, dataSql, historySchemaSql: historySql })).toEqual([
+      'auth',
+      'extensions',
+      'public',
+      'storage',
+      'supabase_migrations',
+    ]);
+  });
+
+  it('never drops a schema Postgres owns', () => {
+    expect(schemasInDump({ schemaSql })).not.toContain('pg_catalog');
+    expect(schemasInDump({ schemaSql })).not.toContain('information_schema');
+  });
+
+  it('drops every owned schema and re-creates public, then the roles', () => {
+    const sql = resetScratchSql(['auth', 'public'], ['cli_login_postgres']);
+    expect(sql).toContain('DROP SCHEMA IF EXISTS "auth" CASCADE;');
+    expect(sql).toContain('DROP SCHEMA IF EXISTS "public" CASCADE;');
+    expect(sql.indexOf('CREATE SCHEMA IF NOT EXISTS public;')).toBeGreaterThan(
+      sql.indexOf('DROP SCHEMA IF EXISTS "public" CASCADE;')
+    );
+    expect(sql.indexOf('DROP ROLE IF EXISTS "cli_login_postgres";')).toBeGreaterThan(
+      sql.indexOf('CREATE SCHEMA IF NOT EXISTS public;')
+    );
+  });
+
+  it('keeps the platform roles the scratch project needs', () => {
+    const roles = rolesInDump(`CREATE ROLE cli_login_postgres;
+CREATE ROLE "anon";
+CREATE ROLE authenticated WITH LOGIN;
+`);
+    expect(roles).toEqual(['cli_login_postgres']);
+    expect(PLATFORM_ROLES).toContain('anon');
+    expect(resetRolesSql(roles)).toBe('DROP ROLE IF EXISTS "cli_login_postgres";');
+  });
+
+  it('asks for the table count over exactly the reset schemas', () => {
+    expect(remainingTablesSql(['auth', "o'brien"])).toBe(
+      "SELECT count(*) FROM information_schema.tables WHERE table_schema IN ('auth', 'o''brien');"
+    );
   });
 });

@@ -336,10 +336,18 @@ for the drill.
    same 64-character hex value to the new project with `PUT .../pgsodium`.
    Backups hold ciphertext, not the key.
 3. Download the newest archive from R2 and unpack it into a directory.
-4. Empty the scratch `public` schema and re-grant it:
-   `drop schema if exists public cascade; create schema public;`
-   then `grant all on schema public to postgres, anon, authenticated, service_role;`.
-   Drop `cli_login_postgres` first if a previous drill created it.
+4. Empty every schema the archive restores, not just `public`: it also holds
+   `auth`, `storage` and the rest of the Supabase schemas, so a reset that
+   touches `public` alone leaves `auth.flow_state` behind and the next replay
+   dies on `flow_state_pkey` (#1954). `node scripts/restore-database.mjs` does
+   this itself — it reads the schema list out of the artifact, drops each with
+   `CASCADE`, re-creates and re-grants `public`, drops the roles `roles.sql`
+   will create, and refuses to replay if a table is left in those schemas.
+   By hand, that is:
+   `drop schema if exists auth cascade;` for each schema the dump creates, then
+   `create schema if not exists public;` and
+   `grant all on schema public to postgres, anon, authenticated, service_role;`,
+   then `drop role if exists cli_login_postgres;`.
 5. Replay the dump with psql, in this order:
 
    ```sh
@@ -373,6 +381,12 @@ the artifact exactly: `public.users` 24, `public.notifications` 11225,
 `supabase_migrations.schema_migrations` 257. The monthly drill repeats this and
 records each pass in its job summary; a later duration replaces this one only
 when another green run produces it.
+
+A repeat drill on 2026-11-27 failed at `COPY flow_state, line 1` with a duplicate
+key: the reset emptied `public` while the archive also restores `auth`, so the
+second run landed on the first run's rows (#1954). The drill now derives the
+schemas to empty from the artifact and asserts they are empty before replaying,
+so this failure names the schema instead of surfacing as a constraint violation.
 
 ## Data & access control
 

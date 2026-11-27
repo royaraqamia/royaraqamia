@@ -17,6 +17,11 @@ import {
   countMismatches,
   floorViolations,
   parseCopyRowCounts,
+  remainingTablesSql,
+  resetRolesSql,
+  resetScratchSql,
+  rolesInDump,
+  schemasInDump,
 } from './backup-contract.mjs';
 
 function options(argv) {
@@ -80,6 +85,44 @@ export function restoredCounts(dbUrl, tables) {
   return actual;
 }
 
+/**
+ * Empties the scratch project of everything the artifact owns.
+ *
+ * The set comes from the dump, not from a hard-coded `public`: the archive also
+ * restores `auth`, so resetting one schema left `auth.flow_state` behind and the
+ * replay died on a duplicate key (#1954). The emptiness check is the point — a
+ * dirty scratch project fails here, by name, instead of deep inside `data.sql`.
+ */
+export function resetScratch(dir, dbUrl) {
+  const schemas = schemasInDump({
+    schemaSql: readFileSync(join(dir, 'schema.sql'), 'utf8'),
+    historySchemaSql: readFileSync(join(dir, 'history_schema.sql'), 'utf8'),
+    dataSql: readFileSync(join(dir, 'data.sql'), 'utf8'),
+    historyDataSql: readFileSync(join(dir, 'history_data.sql'), 'utf8'),
+  });
+  const roles = rolesInDump(readFileSync(join(dir, 'roles.sql'), 'utf8'));
+
+  psql(dbUrl, [
+    '--single-transaction',
+    '--variable',
+    'ON_ERROR_STOP=1',
+    '--command',
+    resetScratchSql(schemas, roles),
+  ]);
+
+  const remaining = Number.parseInt(
+    psql(dbUrl, ['--no-align', '--tuples-only', '--command', remainingTablesSql(schemas)]).trim(),
+    10
+  );
+  if (remaining !== 0) {
+    throw new DumpError(
+      `scratch project still holds ${remaining} table(s) in ${schemas.join(', ')} after the reset; refusing to replay onto a dirty database`
+    );
+  }
+
+  return schemas;
+}
+
 export function restoreDump(dir, dbUrl) {
   const expected = expectedCounts(dir);
   const startedAt = Date.now();
@@ -129,7 +172,10 @@ function main() {
   }
 
   try {
-    const result = restoreDump(resolve(opts.dir), opts.dbUrl);
+    const dir = resolve(opts.dir);
+    const schemas = resetScratch(dir, opts.dbUrl);
+    console.log(`Reset ${schemas.length} schema(s): ${schemas.join(', ')}`);
+    const result = restoreDump(dir, opts.dbUrl);
     console.log(`Restore drill passed in ${result.durationSeconds}s`);
     for (const [table, count] of Object.entries(result.actual))
       console.log(`- ${table}: ${count} rows`);
