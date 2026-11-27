@@ -14,7 +14,6 @@ import { usePeerLastSeen } from '@/frontend/state/chats/use-peer-last-seen';
 import { useSession } from '@/frontend/state/session-provider';
 import { useBackAction } from '@/frontend/ui/navbar/use-back';
 import { blockChatUser, getChatAssistant, reportChat } from '@/frontend/api/chats';
-import { forgetConversationMemory } from '@/frontend/api/account-memory';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
@@ -30,6 +29,7 @@ import {
 import { useKeyboardInset } from '@/frontend/ui/shared/keyboard-inset';
 import { ReportChatDialog } from './report-chat-dialog';
 import { AssistantMark } from './assistant-mark';
+import { ASSISTANT_HOME_COPY } from '@/frontend/ui/assistant/assistant-home-copy';
 import { ASSISTANT_PANEL_COPY } from '@/frontend/ui/assistant/assistant-panel-copy';
 import { AssistantFirstScreen } from '@/frontend/ui/assistant/assistant-first-screen';
 import { assistantPhaseText } from './assistant-phase';
@@ -565,30 +565,6 @@ function ThreadHeader({
   };
 
   /**
-   * What "forget this conversation" said. One line, in the header's own chrome,
-   * because the answer is a count: "I forgot 3" and "there was nothing" are
-   * different sentences, and neither is an error.
-   */
-  const [memoryNote, setMemoryNote] = useState<string | null>(null);
-  const [isForgetting, setIsForgetting] = useState(false);
-
-  async function forgetConversation() {
-    setIsForgetting(true);
-    try {
-      const forgotten = await forgetConversationMemory(thread.id);
-      setMemoryNote(
-        forgotten > 0
-          ? CHAT_THREAD_COPY.forgetConversationDone.replace('{count}', String(forgotten))
-          : CHAT_THREAD_COPY.forgetConversationNone
-      );
-    } catch {
-      setMemoryNote(CHAT_THREAD_COPY.forgetConversationFailed);
-    } finally {
-      setIsForgetting(false);
-    }
-  }
-
-  /**
    * The member this thread is about, when the site has a page for them.
    *
    * WhatsApp and Telegram both open the contact from the header, and the site's
@@ -596,11 +572,15 @@ function ThreadHeader({
    * links to. `verified` is exactly the gate that page applies (a hidden or
    * unverified member is 404 there), so the header links only where the link
    * leads somewhere, and a member without a profile keeps a plain title.
+   *
+   * نور's thread has a page of its own too (ADR-0224): the header is the door to
+   * `/assistant`, in the full page exactly as in the floating panel.
    */
   const profileHref =
     thread.kind === 'direct' && counterpart?.verified
       ? `/u/${encodeURIComponent(counterpart.username)}`
       : null;
+  const headingHref = thread.kind === 'agent' ? '/assistant' : profileHref;
   const heading = (
     <>
       {thread.kind === 'agent' ? (
@@ -642,11 +622,10 @@ function ThreadHeader({
   /**
    * An empty menu is not a menu. The assistant's thread has nothing reportable
    * (the only other writer is the server's model, #817) and no counterpart to
-   * block, but it has one thing of its own: forgetting what the assistant
-   * remembered of it (ADR-0182 decision 6, #1428).
+   * block, so it draws no trigger at all.
    */
   const menuItems =
-    (thread.kind !== 'agent' ? 1 : 0) + (thread.kind === 'direct' && counterpart ? 1 : 0) + 1;
+    (thread.kind !== 'agent' ? 1 : 0) + (thread.kind === 'direct' && counterpart ? 1 : 0);
 
   return (
     <>
@@ -669,9 +648,10 @@ function ThreadHeader({
           <ArrowRight className="size-5" aria-hidden="true" />
         </button>
 
-        {profileHref ? (
+        {headingHref ? (
           <Link
-            href={profileHref}
+            href={headingHref}
+            aria-label={thread.kind === 'agent' ? ASSISTANT_HOME_COPY.openPage : undefined}
             className="-mx-1 flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 transition-safe hover:bg-muted/40 focus-ring"
           >
             {heading}
@@ -710,34 +690,10 @@ function ThreadHeader({
                   {CHAT_THREAD_COPY.blockUser.replace('{username}', counterpart.username)}
                 </DropdownMenuItem>
               )}
-              {/*
-              The assistant's own verb: forget what it remembered of this
-              conversation, and nothing else. The thread, its messages and its
-              summary stay — the button says what it does, so it may not do more
-              (ADR-0182 decision 6, #1428).
-            */}
-              {thread.kind === 'agent' && (
-                <DropdownMenuItem
-                  onSelect={() => void forgetConversation()}
-                  disabled={isForgetting}
-                  className="text-xs font-medium text-destructive"
-                >
-                  {CHAT_THREAD_COPY.forgetConversation}
-                </DropdownMenuItem>
-              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
       </div>
-      {memoryNote ? (
-        <p
-          role="status"
-          data-visual="thread-memory-note"
-          className="shrink-0 border-b border-border/40 bg-card px-4 py-2 text-center text-xs text-muted-foreground"
-        >
-          {memoryNote}
-        </p>
-      ) : null}
     </>
   );
 }

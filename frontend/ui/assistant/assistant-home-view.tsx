@@ -4,20 +4,17 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import Link from 'next/link';
 import { Brain, Cpu, Loader2, Plug, RotateCcw } from 'lucide-react';
 
-import {
-  getAssistantIdentity,
-  resetAssistantIdentity,
-  saveAssistantIdentity,
-} from '@/frontend/api/assistant-identity';
+import { getAssistantIdentity, saveAssistantIdentity } from '@/frontend/api/assistant-identity';
 import { writeAssistantSnapshot } from '@/frontend/api/chats/assistant-cache';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
 import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
-import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { LockedCard } from '@/frontend/ui/shared/locked-card';
-import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
+import { ProfileHeader } from '@/frontend/ui/shared/profile-header';
 import { AssistantOrb } from '@/frontend/ui/assistant/assistant-orb';
 import { AssistantGrantsView } from '@/frontend/ui/assistant/grants-view';
+import { LastSeenLine } from '@/frontend/ui/chats/last-seen';
+import { LAST_SEEN_LABELS } from '@/frontend/ui/chats/last-seen-labels';
 import { ASSISTANT_NAME_MAX, type AssistantIdentity } from '@/shared/contracts/assistant-identity';
 
 import { ASSISTANT_HOME_COPY as COPY } from './assistant-home-copy';
@@ -30,6 +27,11 @@ import { ASSISTANT_HOME_COPY as COPY } from './assistant-home-copy';
  * what it remembers, which apps it can call and what it has run. Nothing here is
  * public and nothing here is a profile — a name is a member's own copy, and a
  * shared surface draws the site's neutral «المساعد».
+ *
+ * The header is the member profile's header: the same cover band, the
+ * same avatar-sized mark overlapping it and the same centred name and status
+ * line, because the assistant belongs to the member whose profile draws it. The
+ * band is seeded from the member's id, exactly as `/u/[username]` is.
  *
  * The page is a data-free shell: the read, the save and the guard all run on the
  * client, so the document stays cacheable (the rest of the account area works the
@@ -46,8 +48,6 @@ export function AssistantHomeView() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,26 +102,6 @@ export function AssistantHomeView() {
     }
   }
 
-  async function reset() {
-    setIsResetting(true);
-    setNotice(null);
-    setError(null);
-    try {
-      const result = await resetAssistantIdentity();
-      if (!result.success || !result.identity) {
-        setError(result.error ?? COPY.resetFailed);
-        return;
-      }
-      setIdentity(result.identity);
-      setDraft('');
-      setNotice(COPY.resetDone);
-      setConfirmReset(false);
-      writeAssistantSnapshot(localIdentity, { name: result.identity.name });
-    } finally {
-      setIsResetting(false);
-    }
-  }
-
   if (isSessionLoading) {
     return <HomeSkeleton />;
   }
@@ -160,19 +140,34 @@ export function AssistantHomeView() {
   if (!identity) return null;
 
   const dirty = draft.trim() !== (identity.customName ?? '');
-  const canReset = identity.updatedAt !== null;
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2 text-center">
-        <p className="text-xs font-bold tracking-wide text-primary">{COPY.eyebrow}</p>
-        <SectionTitle as="h1" size="card">
-          <SectionTitleHighlight>{identity.name}</SectionTitleHighlight>
-        </SectionTitle>
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          {COPY.lead}
-        </p>
-      </header>
+      <ProfileHeader
+        memberId={user.id}
+        dataVisual="assistant-header"
+        avatar={
+          <span className="group relative inline-flex size-20 shrink-0 rounded-full bg-linear-to-br from-violet-500/50 via-fuchsia-500/40 to-indigo-500/50 p-[2px] transition-safe duration-300">
+            <span className="flex size-full rounded-full bg-background p-[2px]">
+              <AssistantOrb className="size-full" />
+            </span>
+          </span>
+        }
+      >
+        <div className="min-w-0">
+          <h1
+            data-visual="assistant-name"
+            className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+          >
+            {identity.name}
+          </h1>
+          <LastSeenLine
+            labels={LAST_SEEN_LABELS}
+            alwaysOnline
+            className="mt-0.5 text-center text-sm"
+          />
+        </div>
+      </ProfileHeader>
 
       <section
         aria-label={COPY.nameLabel}
@@ -234,66 +229,27 @@ export function AssistantHomeView() {
               {isSaving && <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />}
               <span>{isSaving ? COPY.saving : COPY.save}</span>
             </button>
-
-            <button
-              type="button"
-              disabled={!canReset || isResetting}
-              onClick={() => setConfirmReset(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 px-4 py-2 text-sm font-bold text-foreground transition-safe hover:border-primary/30 hover:bg-primary/10 hover:text-primary active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-50"
-            >
-              <RotateCcw aria-hidden="true" className="h-4 w-4" />
-              <span>{COPY.reset}</span>
-            </button>
           </div>
         </form>
       </section>
 
-      <section aria-label={COPY.eyebrow} className="space-y-3">
-        <AssistantGrantsView />
-      </section>
+      <AssistantGrantsView />
 
-      <section aria-labelledby="assistant-sections-title" className="space-y-3">
-        <h2 id="assistant-sections-title" className="font-bold text-foreground">
-          {COPY.sectionsTitle}
-        </h2>
-        <nav className="flex flex-col gap-2.5">
-          <HomeRow
-            href="/account/memory"
-            icon={Brain}
-            title={COPY.memoryTitle}
-            body={COPY.memoryBody}
-            openLabel={COPY.open}
-          />
-          <HomeRow
-            href="/mcp/apps?tab=inbound"
-            icon={Plug}
-            title={COPY.appsTitle}
-            body={COPY.appsBody}
-            openLabel={COPY.open}
-          />
-          <HomeRow
-            href="/coding"
-            icon={Cpu}
-            title={COPY.codingTitle}
-            body={COPY.codingBody}
-            openLabel={COPY.open}
-          />
-        </nav>
-      </section>
-
-      <ConfirmDialog
-        open={confirmReset}
-        title={COPY.resetTitle}
-        message={COPY.resetMessage}
-        confirmLabel={COPY.resetConfirm}
-        cancelLabel={COPY.cancel}
-        onConfirm={() => void reset()}
-        onCancel={() => {
-          if (!isResetting) setConfirmReset(false);
-        }}
-        isConfirming={isResetting}
-        variant="danger"
-      />
+      <nav aria-label={COPY.sectionsAria} className="flex flex-col gap-2.5">
+        <HomeRow
+          href="/account/memory"
+          icon={Brain}
+          title={COPY.memoryTitle}
+          body={COPY.memoryBody}
+        />
+        <HomeRow
+          href="/mcp/apps?tab=inbound"
+          icon={Plug}
+          title={COPY.appsTitle}
+          body={COPY.appsBody}
+        />
+        <HomeRow href="/coding" icon={Cpu} title={COPY.codingTitle} body={COPY.codingBody} />
+      </nav>
     </div>
   );
 }
@@ -303,34 +259,27 @@ function HomeRow({
   icon: Icon,
   title,
   body,
-  openLabel,
 }: {
   href: string;
   icon: typeof Brain;
   title: string;
   body: string;
-  openLabel: string;
 }) {
   return (
     <Link
       href={href}
       className={cn(
-        'group flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5',
+        'group flex items-start gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5',
         'text-start transition-safe duration-150 ease-out hover:border-primary/30 hover:bg-primary/10',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
       )}
     >
-      <span className="flex min-w-0 items-center gap-3">
-        <Icon aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-        <span className="min-w-0 space-y-1">
-          <span className="block truncate text-sm font-bold text-foreground sm:text-base">
-            {title}
-          </span>
-          <span className="block text-xs text-muted-foreground">{body}</span>
+      <Icon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+      <span className="min-w-0 space-y-1">
+        <span className="block truncate text-sm font-bold text-foreground sm:text-base">
+          {title}
         </span>
-      </span>
-      <span className="shrink-0 text-xs font-bold text-primary/80 group-hover:text-primary">
-        {openLabel}
+        <span className="block text-xs text-muted-foreground">{body}</span>
       </span>
     </Link>
   );
@@ -339,7 +288,7 @@ function HomeRow({
 function HomeSkeleton() {
   return (
     <div className="space-y-6" aria-busy="true" aria-label={COPY.loading}>
-      <div className="mx-auto h-8 w-40 rounded-lg bg-muted/60 animate-pulse" />
+      <div className="h-60 rounded-3xl border border-border/40 bg-muted/40 animate-pulse" />
       <div className="h-36 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
       <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
       <div className="h-16 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />

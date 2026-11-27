@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { CircleAlert } from 'lucide-react';
 
 import { getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
@@ -36,6 +37,7 @@ import {
 } from '@/shared/contracts/chat';
 import { AssistantFirstScreen } from './assistant-first-screen';
 import { AssistantOrb } from './assistant-orb';
+import { ASSISTANT_HOME_COPY } from './assistant-home-copy';
 import { ASSISTANT_PANEL_COPY } from './assistant-panel-copy';
 import { ScreenContextPublisher } from '@/frontend/ui/ScreenContextPublisher';
 import './assistant.css';
@@ -91,6 +93,7 @@ export function AssistantPanel({
 }) {
   const { user, isLoading: sessionLoading } = useSession();
   const { identity } = useLocalIdentity();
+  const router = useRouter();
   const userId = user?.id ?? null;
   const [threadId, setThreadId] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -375,28 +378,39 @@ export function AssistantPanel({
         <header className="shrink-0 border-b border-border/40 bg-card/40 px-4 py-3 pe-12">
           {/* The mark and the name are the door to the assistant's page
               (ADR-0224): one tap, no second product's word in the conversation.
-              The link dismisses first, because the panel is mounted at the root
-              and would otherwise stay over the page it opened. */}
-          <DialogTitle className="text-xl leading-none text-foreground">
+              The navigation is a router push after the dismissal rather than the
+              anchor's own default: the dialog unmounts the pressed link as it
+              closes, so the browser never reaches the `href`. */}
+          <DialogTitle aria-label={assistantName} className="text-xl leading-none text-foreground">
             <Link
               href="/assistant"
-              onClick={onDismiss}
-              className="inline-flex max-w-full items-center gap-3 rounded-xl text-start transition-safe hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={ASSISTANT_HOME_COPY.openPage}
+              onClick={(event) => {
+                event.preventDefault();
+                onDismiss();
+                router.push('/assistant');
+              }}
+              className="flex max-w-full items-center gap-3 rounded-xl text-start transition-safe hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <AssistantOrb className="size-10" />
-              <span className="truncate">{assistantName}</span>
+              {/* The name and its line are one column, so the line starts where
+                  the name does instead of under the orb (ADR-0224). */}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">{assistantName}</span>
+                {/* The slot is always reserved, so the header does not jump when
+                    a turn starts; it is also the only live region in the panel. */}
+                <span
+                  aria-live="polite"
+                  className="mt-0.5 block min-h-4 truncate text-xs font-medium text-primary"
+                >
+                  {/* The slot is never empty: while no turn is running, the
+                      assistant is simply available (ADR 0212). A turn still owns
+                      the line. */}
+                  {phaseLine ?? <LastSeenLine labels={LAST_SEEN_LABELS} alwaysOnline />}
+                </span>
+              </span>
             </Link>
           </DialogTitle>
-          {/* The slot is always reserved, so the header does not jump when a turn
-              starts; it is also the only live region in the panel. */}
-          <p
-            aria-live="polite"
-            className="mt-0.5 min-h-4 truncate text-xs font-medium text-primary"
-          >
-            {/* The slot is never empty: while no turn is running, the assistant
-                is simply available (ADR 0212). A turn still owns the line. */}
-            {phaseLine ?? <LastSeenLine labels={LAST_SEEN_LABELS} alwaysOnline />}
-          </p>
         </header>
 
         {state === 'ready' && thread ? (

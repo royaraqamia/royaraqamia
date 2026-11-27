@@ -245,25 +245,17 @@ describe('ChatThreadView menu', () => {
   });
 
   /**
-   * The assistant thread's menu is not empty any more (#1428): the one verb it
-   * has is forgetting what the assistant remembered of this conversation. What
-   * it still does not have is a report or a block — the only other writer is the
-   * server's model, and there is no counterpart.
+   * The assistant thread has no counterpart to block and nothing to report, and
+   * its one former verb — forgetting what it remembered of the conversation —
+   * left the menu with the panel's redesign. An empty menu is not a menu:
+   * the trigger itself goes.
    */
-  it('draws one menu item on the assistant thread: forget this conversation', async () => {
+  it('draws no menu on the assistant thread', async () => {
     thread.current = { ...makeThread('agent'), counterpart: null };
     render(<ChatThreadView conversationId="c-1" />);
 
-    fireEvent.pointerDown(screen.getByRole('button', { name: 'خيارات المحادثة' }), {
-      button: 0,
-      pointerType: 'mouse',
-    });
-
-    const menu = await screen.findByRole('menu');
-    expect(
-      within(menu).getByRole('menuitem', { name: 'انسَ ما حفظته من هذه المحادثة' })
-    ).toBeInTheDocument();
-    expect(within(menu).getAllByRole('menuitem')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'خيارات المحادثة' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
   /**
@@ -322,6 +314,21 @@ describe('ChatThreadView header profile link', () => {
     render(<ChatThreadView conversationId="c-1" />);
 
     expect(screen.queryByRole('link', { name: 'سارة @sara' })).toBeNull();
+  });
+
+  /**
+   * The assistant's thread has a page of its own (ADR-0224), and its header is
+   * the door to it — the full page draws the same door as the floating panel
+   *.
+   */
+  it('links the assistant thread header to /assistant', () => {
+    thread.current = { ...makeThread('agent'), counterpart: null };
+    render(<ChatThreadView conversationId="c-1" />);
+
+    expect(screen.getByRole('link', { name: 'افتح صفحة المساعد' })).toHaveAttribute(
+      'href',
+      '/assistant'
+    );
   });
 
   it('treats a group thread as not found, because the group UI is hidden', () => {

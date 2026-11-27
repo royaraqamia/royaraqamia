@@ -79,8 +79,4 @@ object ChatThreadCopy {
     const val FORMAT_CODE = "كود"
     const val FORMAT_LINK = "رابط"
     const val FORMAT_LINK_PROMPT = "عنوان الرَّابط"
-    const val FORGET_CONVERSATION = "انسَ ما حفظته من هذه المحادثة"
-    const val FORGET_CONVERSATION_DONE = "نسيتُ {count} من محفوظات هذه المحادثة."
-    const val FORGET_CONVERSATION_NONE = "لم أكن أتذكّر شيئاً من هذه المحادثة."
-    const val FORGET_CONVERSATION_FAILED = "تعذّر النسيان."
 }

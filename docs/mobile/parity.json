@@ -1248,8 +1248,8 @@
       "issue": "#1564",
       "web": {
         "route": "app/u/[username]/page.tsx",
-        "component": "app/u/[username]/_components/profile-cover.tsx",
-        "copyModule": "app/u/[username]/_components/profile-cover-copy.ts",
+        "component": "frontend/ui/shared/profile-cover.tsx",
+        "copyModule": "frontend/ui/shared/profile-cover-copy.ts",
         "copyExport": "PROFILE_COVER_COPY"
       },
       "native": {
