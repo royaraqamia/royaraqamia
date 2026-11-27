@@ -162,6 +162,12 @@ It refuses to run as `deploy` and refuses a `monitor.env` it cannot read or that
 as the wrong user it cannot read the `600` env file or the docker socket, and the run would report every
 container down into a syslog nobody reads.
 
+Its state lives in `/run/royaraqamia-monitor.state`, not `/var/tmp`: that directory is sticky and
+world-writable, and `fs.protected_regular=2` refuses even root a truncating write to a file another user
+owns there — which is exactly what one wrong-user run left behind. `/run` is emptied at boot, so a
+rebooted box may repeat one alert; that is the right trade against a monitor that cannot remember it
+already spoke.
+
 Thresholds and the bot credentials live in `/opt/royaraqamia/monitor.env` (`600`, root-owned, never in
 the repository). Editing it is enough; nothing restarts.
 
