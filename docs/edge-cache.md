@@ -90,6 +90,11 @@ sibling is public.
 
 ## What must never be cached
 
+- `/account/**` — the account area's shells (`/account`, `/account/faq`, `/account/plan`,
+  `/account/submissions`, `/account/news`, `/account/links`) are data-free documents, but the area is
+  the member's and `next.config.js` gives the whole subtree `private, no-store`. Caching the shells
+  would be harmless today; keeping them private is what makes a future account page safe by default,
+  and it is the posture the public rule already assumes by not matching `/account`.
 - `/community` — the member's feed (`force-dynamic`, `private, no-store`).
 - `/notifications`, `/chats/**`, `/admin/**`, `/auth/**` — signed-in surfaces (`private, no-store`).
 - `/u/**` — the profile renders the viewer's follow state into the HTML (`force-dynamic`).
@@ -100,9 +105,13 @@ sibling is public.
 - `/sw.js`, `sw-*.js`, `/manifest.json` — `no-store` / `no-cache` by design.
 - `/android/latest.json` — the update manifest must be re-read on every visit.
 
-`/account` is the exception that proves the rule: its document is a static shell
-(`<AccountView />`) and the member's data arrives from `/api/me`, which is `private, no-store` and
-never cached. Caching the shell is harmless, so it is not in the list above; the private read is.
+`/account` used to be the area's one contradiction: its document was a static shell
+(`<AccountView />`), Next marked it `s-maxage=31536000`, and the edge answered `DYNAMIC` because the
+public rule did not match it. The member's data arrives from `/api/me`, which stays `private,
+no-store`. The header now agrees with the rule: the subtrees above send `private, no-store` and are in
+the private list, so a path under `/account` is never covered by a widened public pattern. The gate
+reads that as one contract — a private path whose header promises `s-maxage` or `public` fails even
+while the edge refuses to store it.
 
 A response that carries `Set-Cookie` is never cached by Cloudflare, and the public documents are
 cookie-free on purpose (ADR-0176). That is the second line of defence, not a licence to widen a rule.
@@ -150,13 +159,16 @@ npm run check:edge -- --json             # machine-readable
 It requests every public path twice (the first request is what fills the edge), requires the second
 answer to be `HIT` or `REVALIDATED`, checks one real `/_next/static` chunk, one optimized image, the
 public API reads, and the public API row of a profile discovered from the hub; then it asserts that
-`/community`, `/notifications`, `/admin`, `/api/me`, `/api/notifications`, `/api/community/following`
-and the profile page itself are **not** served from the edge — and that the feed and the profile still
-say `private, no-store`.
+`/account`, `/account/faq`, `/account/plan`, `/account/submissions`, `/account/news`,
+`/account/links`, `/community`, `/notifications`, `/admin`, `/api/me`, `/api/notifications`,
+`/api/community/following` and the profile page itself are **not** served from the edge — that the
+account shells, the feed and the profile say `private, no-store`, and that no private path promises a
+shared cache with `s-maxage` or `public`.
 
-It cannot prove the signed-in case: `/account` redirects and `/api/me` answers 401 when the script
-has no cookie, and neither is cacheable anyway. The header assertion is the invariant that carries
-it. For a real signed-in check, use the browser tool against the deployed site.
+It cannot prove the signed-in case: `/api/me` answers 401 when the script has no cookie, and the
+account shells answer the same 200 to everyone because their data arrives on the client. The header
+assertion is the invariant that carries it. For a real signed-in check, use the browser tool against
+the deployed site.
 
 ## Order of operations
 
