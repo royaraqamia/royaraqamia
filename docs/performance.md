@@ -520,6 +520,29 @@ synthetic error after the clean measurement (with the `/monitoring` tunnel
 blocked, so no event is posted) and records the reporter's gzip bytes as
 `reporterOnErrorGzipKb` — the error path is priced from the same run too.
 
+Every surface is measured **twice**: `cold`, in a context that carries no
+storage, and `returning`, in a context seeded with the artifact's `warmHint`
+row. A browser that has opened the assistant once warms its panel chunk while
+the page is idle (ADR-0150), so a member who uses the product downloads it on
+every screen — measured at 184 KB gzip on an idle page in #1930, and 211 KB
+gzip on `/` on 2026-11-28. A gate that only knew the first visit priced a state
+that member is never in. `warmHint` is a top-level row every surface inherits
+(`{ "localStorage": { "royaraqamia:assistant:opened": "1" } }`); a route row may
+override the entries or set `warmHint: false` when its door is not drawn
+(`/auth`, `/chats`), and seeding is a JSON edit rather than a branch in the
+runner, so a surface added to the matrix is priced without touching the script.
+`returningAfterLoadGzipKb` and `warmDeltaGzipKb` record the second column, and
+the ceiling applies to the worse of the two.
+
+The warm-up itself is gated on the connection (`frontend/ui/assistant/assistant-warm-up.ts`,
+ADR-0230): `navigator.connection.saveData` or an `effectiveType` of `slow-2g`/`2g`
+leaves the panel for the tap. Nothing is removed — the door still opens on one
+tap — but the bytes no longer arrive before a member on a metered or very slow
+connection asked for them. A Playwright spec (`e2e/assistant-warm-up.spec.ts`)
+seeds the hint, stubs `navigator.connection`, and asserts the panel chunk is
+absent from the network until the tap, with a fast-connection control proving
+the assertion can see the chunk.
+
 The gate keeps its three-at-a-time pace because the committed ceilings were
 recorded with it: serial visits load more lazy chunks inside the settle window
 and price a surface higher without the origin getting heavier. Under
@@ -549,9 +572,28 @@ lazy `import()` would have kept loading the SDK on a clean visit. The standalone
 bundle is built by `scripts/build-sentry-client.mjs` in `prebuild`, esbuild
 tree-shakes the unused Replay and feedback exports, and the result is about
 31 KB gzip. A clean visit requests no reporter script at all. The committed
-ceilings in `perf/runtime-weight.json` still describe the deployed numbers:
-this gate reads the origin, so a reduction is reflected only after the branch
-is deployed. Ratchet them down then.
+ceilings were ratcheted down in the 2026-11-28 run below, and each was then
+raised to its returning column, because this gate reads the origin: a
+reduction is reflected only after the branch is deployed.
+
+Measured on the deployed origin on 2026-11-28, after the reporter fix and with
+the returning reader priced (gzip KB):
+
+| Surface          | cold  | returning |
+| ---------------- | ----- | --------- |
+| `/terms`         | 6.7   | 260.4     |
+| `/`              | 47.2  | 258.4     |
+| `/quran/1`       | 6.7   | 229.3     |
+| `/notifications` | 16.8  | 210.3     |
+| `/community`     | 96.5  | 296.9     |
+| `/habitflow`     | 160.7 | 361.1     |
+| `/news`          | 134.5 | 345.7     |
+| `/notes`         | 256.6 | 335.6     |
+| `/spendtrack`    | 283.5 | 483.9     |
+
+The gap between the columns is the assistant panel: 211.2 KB on `/`, and the
+same chunk on every surface whose door is drawn. `perf/runtime-weight.json`
+records both columns and holds each surface to the heavier one.
 
 ## CI
 

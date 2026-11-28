@@ -1,11 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { gzipSync } from 'node:zlib';
+import { randomBytes } from 'node:crypto';
 import {
   classifyScripts,
   summarizeRuntime,
   formatRuntimeVerdict,
   checkRuntimeBudget,
   measureRuntimeRoute,
+  measureRuntimeSurface,
+  warmHintFor,
 } from '../perf-runtime-weight.mjs';
 
 const ORIGIN = 'https://perf.local';
@@ -21,8 +24,11 @@ function fakeBrowser({ html, scripts, failures = 0, probeScripts = [], documentS
   let left = failures;
   return {
     contexts: 0,
-    async newContext() {
+    contextOptions: [],
+    async newContext(options = {}) {
       this.contexts += 1;
+      this.contextOptions.push(options);
+      const active = typeof scripts === 'function' ? scripts(options) : scripts;
       const handlers = [];
       const page = {
         on: (_event, fn) => handlers.push(fn),
@@ -47,7 +53,7 @@ function fakeBrowser({ html, scripts, failures = 0, probeScripts = [], documentS
             text: async () => html,
             request: () => ({ isNavigationRequest: () => true }),
           };
-          for (const response of [document, ...scripts]) {
+          for (const response of [document, ...active]) {
             for (const handler of handlers) handler(response);
           }
         },
@@ -115,9 +121,20 @@ describe('summarizeRuntime', () => {
 });
 
 describe('checkRuntimeBudget', () => {
-  const result = (route, bytes) => ({
+  const result = (route, bytes, returningBytes = null) => ({
     route,
     summary: { documentJs: 0, afterLoadJs: bytes, totalJs: bytes, reporter: 0 },
+    returning:
+      returningBytes === null
+        ? null
+        : {
+            summary: {
+              documentJs: 0,
+              afterLoadJs: returningBytes,
+              totalJs: returningBytes,
+              reporter: 0,
+            },
+          },
   });
 
   it('uses the default ceiling when a route has no row', () => {
@@ -139,35 +156,103 @@ describe('checkRuntimeBudget', () => {
     expect(checkRuntimeBudget(result('/quran/2', 155 * 1024), artifact, weights).ok).toBe(false);
   });
 
+  it('gates the worse of the cold and returning columns', () => {
+    const artifact = { default: { ceiling: 200 } };
+    // A cold visit inside the ceiling, a returning one past it: the returning
+    // column is the state the member is actually in, so it decides.
+    const returned = result('/other', 100 * 1024, 230 * 1024);
+    const verdict = checkRuntimeBudget(returned, artifact);
+    expect(verdict.ok).toBe(false);
+    expect(verdict.coldKb).toBe(100);
+    expect(verdict.returningKb).toBe(230);
+    expect(verdict.actualKb).toBe(230);
+
+    // A returning column lighter than the cold one cannot hide a breach.
+    const cold = result('/other', 230 * 1024, 100 * 1024);
+    expect(checkRuntimeBudget(cold, artifact).ok).toBe(false);
+  });
+
   it('does not gate a route with no ceiling at all', () => {
     expect(checkRuntimeBudget(result('/ungated', 900 * 1024), {})).toEqual({
       ok: true,
       ceiling: null,
       actualKb: null,
+      coldKb: null,
+      returningKb: null,
     });
   });
 });
 
 describe('formatRuntimeVerdict', () => {
-  it('prints the three gzip columns and fails a route above its ceiling', () => {
+  it('prints the cold and returning columns and fails a route above its ceiling', () => {
     const results = [
       {
         route: '/terms',
         summary: {
           documentJs: 200 * 1024,
-          afterLoadJs: 190 * 1024,
-          totalJs: 390 * 1024,
+          afterLoadJs: 47 * 1024,
+          totalJs: 247 * 1024,
           reporter: 0,
+        },
+        returning: {
+          summary: {
+            documentJs: 200 * 1024,
+            afterLoadJs: 231 * 1024,
+            totalJs: 431 * 1024,
+            reporter: 0,
+          },
         },
       },
     ];
     const report = formatRuntimeVerdict(results, { default: { ceiling: 180 } });
-    expect(report).toContain('documentJs');
-    expect(report).toContain('afterLoadJs');
-    expect(report).toContain('totalJs');
-    expect(report).toContain('190.0 KB');
+    expect(report).toContain('cold');
+    expect(report).toContain('returning');
+    expect(report).toContain('47.0 KB');
+    expect(report).toContain('231.0 KB');
     expect(report).toContain('OVER');
     expect(report).toContain('0 OK, 1 over budget across 1 route(s)');
+  });
+
+  it('prints a dash for a surface whose door cannot act on the hint', () => {
+    const results = [
+      {
+        route: '/auth/login',
+        summary: { documentJs: 0, afterLoadJs: 211 * 1024, totalJs: 211 * 1024, reporter: 0 },
+        returning: null,
+      },
+    ];
+    const report = formatRuntimeVerdict(results, { default: { ceiling: 220 } });
+    expect(report).toContain('returning —');
+    expect(report).toContain('OK');
+  });
+});
+
+describe('warmHintFor', () => {
+  const artifact = {
+    warmHint: { localStorage: { 'royaraqamia:assistant:opened': '1' } },
+    routes: {
+      '/quran/[surah]': { ceiling: 300 },
+      '/chats/[id]': { ceiling: 200, warmHint: false },
+      '/spendtrack': { ceiling: 400, warmHint: { localStorage: { other: '1' } } },
+    },
+  };
+  const weights = { '/quran/[surah]': ['/quran/1', '/quran/2'], '/chats/[id]': '/chats/new' };
+
+  it('seeds the artifact hint on a surface that has no row of its own', () => {
+    expect(warmHintFor('/', artifact)).toEqual({
+      localStorage: { 'royaraqamia:assistant:opened': '1' },
+    });
+  });
+
+  it('expands a pattern row, so a sample inherits the surface decision', () => {
+    expect(warmHintFor('/quran/2', artifact, weights)).toEqual({
+      localStorage: { 'royaraqamia:assistant:opened': '1' },
+    });
+  });
+
+  it('lets a row opt out and a row override the entries', () => {
+    expect(warmHintFor('/chats/new', artifact, weights)).toBeNull();
+    expect(warmHintFor('/spendtrack', artifact)).toEqual({ localStorage: { other: '1' } });
   });
 });
 
@@ -294,5 +379,66 @@ describe('measureRuntimeRoute', () => {
     expect(measured.summary.afterLoadJs).toBe(0);
     const body = Buffer.from('event_id getCurrentScope');
     expect(measured.reporterOnError).toBe(Math.min(gzipSync(body).length, body.length));
+  });
+
+  it('seeds the storage entries in the context the hint names', async () => {
+    const browser = fakeBrowser({ html, scripts });
+    await measureRuntimeRoute('/', {
+      origin: ORIGIN,
+      browser,
+      settleMs: 0,
+      storage: { localStorage: { 'royaraqamia:assistant:opened': '1' } },
+    });
+
+    expect(browser.contextOptions[0].storageState).toEqual({
+      cookies: [],
+      origins: [
+        {
+          origin: ORIGIN,
+          localStorage: [{ name: 'royaraqamia:assistant:opened', value: '1' }],
+        },
+      ],
+    });
+  });
+});
+
+describe('measureRuntimeSurface', () => {
+  const html = '<html><head><script src="/_next/static/chunks/doc.js"></script></head></html>';
+  const doc = scriptResponse('/_next/static/chunks/doc.js', 'abc'.repeat(2000));
+  // The panel chunk a returning reader warms while idle: incompressible, so the
+  // column has to show it rather than a compressed echo of it.
+  const panel = scriptResponse('/_next/static/chunks/editor.js', randomBytes(400_000));
+
+  it('measures a cold visit and a hinted one, and the hint prices the warmed chunk', async () => {
+    const browser = fakeBrowser({
+      html,
+      scripts: (options) => (options.storageState ? [doc, panel] : [doc]),
+    });
+    const measured = await measureRuntimeSurface('/', {
+      origin: ORIGIN,
+      browser,
+      settleMs: 0,
+      hint: { localStorage: { 'royaraqamia:assistant:opened': '1' } },
+    });
+
+    expect(browser.contexts).toBe(2);
+    expect(measured.summary.afterLoadJs).toBe(0);
+    expect(measured.returning.summary.afterLoadJs / 1024).toBeGreaterThan(120);
+    expect(
+      (measured.returning.summary.afterLoadJs - measured.summary.afterLoadJs) / 1024
+    ).toBeGreaterThan(120);
+  });
+
+  it('measures a surface that cannot act on the hint once', async () => {
+    const browser = fakeBrowser({ html, scripts: [doc] });
+    const measured = await measureRuntimeSurface('/', {
+      origin: ORIGIN,
+      browser,
+      settleMs: 0,
+      hint: null,
+    });
+
+    expect(browser.contexts).toBe(1);
+    expect(measured.returning).toBeNull();
   });
 });

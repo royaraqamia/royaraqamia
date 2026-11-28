@@ -8,7 +8,8 @@
  * cannot live there.
  */
 
-const OPENED_KEY = 'royaraqamia:assistant:opened';
+/** The one storage entry the warm-up reads; `perf/runtime-weight.json` seeds it. */
+export const ASSISTANT_OPENED_KEY = 'royaraqamia:assistant:opened';
 
 function browserStorage(): Storage | null {
   try {
@@ -23,7 +24,7 @@ function browserStorage(): Storage | null {
 /** Marks that this browser has opened the panel. */
 export function rememberAssistantOpened(): void {
   try {
-    browserStorage()?.setItem(OPENED_KEY, '1');
+    browserStorage()?.setItem(ASSISTANT_OPENED_KEY, '1');
   } catch {
     // The warm start is a nicety; the click still loads the chunk.
   }
@@ -32,7 +33,7 @@ export function rememberAssistantOpened(): void {
 /** Whether a previous visit opened the panel in this browser. */
 export function assistantWasOpened(): boolean {
   try {
-    return browserStorage()?.getItem(OPENED_KEY) === '1';
+    return browserStorage()?.getItem(ASSISTANT_OPENED_KEY) === '1';
   } catch {
     return false;
   }
