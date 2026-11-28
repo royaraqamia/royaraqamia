@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.assistant.AssistantName
 import com.royaraqamia.app.assistant.AssistantPanelCopy
 import com.royaraqamia.app.assistant.AssistantPhase
 import com.royaraqamia.app.assistant.AssistantTurn
@@ -489,7 +490,7 @@ private fun AssistantRow(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = ChatsListCopy.ASSISTANT_TITLE,
+                text = AssistantName.inText(ChatsListCopy.ASSISTANT_TITLE),
                 style = type.small.copy(fontWeight = FontWeight.Bold),
                 color = RoyColors.foreground,
             )
@@ -736,7 +737,7 @@ private fun previewOf(thread: ChatThreadsResponseThreadsItem): String {
     if (line.hasAttachments && line.body.isNullOrBlank()) return ChatsListCopy.ATTACHMENT_ONLY
     val prefix =
         if (line.senderKind == ChatThreadsResponseThreadsItemLastMessageSenderKind.AGENT) {
-            ChatsListCopy.AGENT_PREFIX
+            AssistantName.inText(ChatsListCopy.AGENT_PREFIX)
         } else {
             ""
         }

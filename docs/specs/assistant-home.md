@@ -17,8 +17,9 @@ changes that need a Kotlin pair — the sheet's header link, the account row, an
 the in-chat «اسمح دائماً». The grants list moved to the page with them (phase 2's
 UI half). The identity is now edited from the header, with an uploaded face and a
 chosen voice, per [ADR-0228](../adr/0228-the-assistants-face-and-voice-belong-to-the-member.md)
-(2026-11-28); the name, face and voice reach the rest of the site in the next
-slice. Still open: the tone picker, the note and the prompt block (phase 3), the
+(2026-11-28), and the name, face and voice now reach every site label and the
+prompt per [ADR-0229](../adr/0229-the-assistant-is-called-what-the-member-calls-it.md).
+Still open: the tone picker, the note and the prompt block (phase 3), the
 Android half of the door. **Phase 4 is withdrawn** by ADR-0228 decision 3: the
 mark is an uploaded face, the orb is the fallback, and `avatar_variant` stays in
 the table unused. The twelve marks (#1947) are not work; a roster's own mark is a

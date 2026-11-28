@@ -10,8 +10,8 @@
  * A `{name}` is a placeholder the caller substitutes, not a format string.
  */
 export const ASSISTANT_LAUNCHER_COPY = {
-  label: 'اسأل نور',
-  navLabel: 'اسأل نور، مساعدة رؤية رقمية',
+  label: 'اسأل {name}',
+  navLabel: 'افتح المحادثة مع {name}',
 } as const;
 
 export type AssistantLauncherCopyStrings = typeof ASSISTANT_LAUNCHER_COPY;

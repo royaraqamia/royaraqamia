@@ -24,7 +24,7 @@ export const SERVICES_COPY = {
   mcpGuide: 'ربط الـ MCP',
   marketplaceSection: 'تطبيقات خارجية',
   marketplace: 'متجر التطبيقات',
-  marketplaceHint: 'اربط تطبيقًا ليعمل مع نور',
+  marketplaceHint: 'اربط تطبيقًا ليعمل في محادثتك',
 } as const;
 
 export type ServicesCopyStrings = typeof SERVICES_COPY;

@@ -5,7 +5,7 @@ import { McpConnectionView } from '@/frontend/ui/mcp/connection-view';
 
 export const metadata: Metadata = {
   title: 'تطبيق مرتبط',
-  description: 'أدوات التطبيق الذي يستطيع نور استدعاءها، وصلاحيتها، ومفاتيح كل أداة على حدة.',
+  description: 'أدوات التطبيق وصلاحيتها ومفاتيح كل أداة على حدة.',
 };
 
 interface ConnectionSearchParams {

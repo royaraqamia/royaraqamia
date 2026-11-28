@@ -325,7 +325,7 @@ describe('ChatThreadView header profile link', () => {
     thread.current = { ...makeThread('agent'), counterpart: null };
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(screen.getByRole('link', { name: 'افتح صفحة المساعد' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'افتح صفحة نور' })).toHaveAttribute(
       'href',
       '/assistant'
     );
@@ -685,7 +685,7 @@ describe('ChatThreadView assistant', () => {
   it('gives the assistant the same composer as a member thread', async () => {
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
     // ADR-0127: one row, so the paperclip and the microphone beside it are the
     // same controls in both threads.
     expect(screen.getByRole('button', { name: 'إرفاق ملف' })).toBeInTheDocument();
@@ -700,7 +700,7 @@ describe('ChatThreadView assistant', () => {
 
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'ترقية الخطة' })).toBeNull();
     // The count is the plan gate's, and it is the free day's own numbers.
     expect(toastSpies.info).toHaveBeenCalledWith('المتبقي اليوم: 1 من 10', expect.anything());
@@ -723,7 +723,7 @@ describe('ChatThreadView assistant', () => {
 
     render(<ChatThreadView conversationId="c-1" />);
 
-    expect(await screen.findByText('نور غير متاحة حالياً.')).toBeInTheDocument();
+    expect(await screen.findByText('المحادثة غير متاحة حالياً.')).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).toBeNull();
   });
 
@@ -732,7 +732,7 @@ describe('ChatThreadView assistant', () => {
 
     render(<ChatThreadView conversationId="c-1" />);
 
-    const box = await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
+    const box = await screen.findByRole('textbox', { name: 'اكتب سؤالك...' });
     fireEvent.change(box, { target: { value: 'ما هو الذكاء الاصطناعي؟' } });
     fireEvent.click(screen.getByRole('button', { name: 'إرسال السؤال' }));
 
@@ -760,13 +760,13 @@ describe('ChatThreadView assistant', () => {
 
     render(<ChatThreadView conversationId="c-1" />);
 
-    const box = await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
+    const box = await screen.findByRole('textbox', { name: 'اكتب سؤالك...' });
     fireEvent.change(box, { target: { value: 'مرحباً' } });
     fireEvent.click(screen.getByRole('button', { name: 'إرسال السؤال' }));
 
     // The phase is in the header and in the list, where the answer will land:
     // a turn with no text yet still has a line in both places (ADR-0173).
-    const lines = await screen.findAllByText('تفكّر');
+    const lines = await screen.findAllByText(/جاري التفكير/);
     expect(lines).toHaveLength(2);
     expect(lines[0]?.closest('[aria-live="polite"]')).not.toBeNull();
     expect(lines[1]?.closest('[data-chat-list]')).not.toBeNull();
@@ -775,7 +775,7 @@ describe('ChatThreadView assistant', () => {
     await act(async () => {
       release();
     });
-    await waitFor(() => expect(screen.queryAllByText('تفكّر')).toHaveLength(0));
+    await waitFor(() => expect(screen.queryAllByText('جاري التفكير')).toHaveLength(0));
   });
 });
 

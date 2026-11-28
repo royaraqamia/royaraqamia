@@ -12,7 +12,7 @@
 export const ACCOUNT_MEMORY_COPY = {
   pageTitle: 'ذاكرة نور',
   loadingLabel: 'جاري التحميل...',
-  signedOutTitle: 'سجّل الدُّخول لترى ذاكرة نور',
+  signedOutTitle: 'سجّل الدُّخول لترى ذاكرة {name}',
   signIn: 'تسجيل الدُّخول',
   loadFailed: 'تعذّر تحميل المحفوظات.',
   saveFailed: 'تعذّر الحفظ.',

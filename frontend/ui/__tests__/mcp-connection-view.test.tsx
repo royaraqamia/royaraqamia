@@ -59,7 +59,7 @@ describe('a connection whose grant expired', () => {
 
     expect(
       await screen.findByText(
-        'انتهت صلاحية الوصول إلى التطبيق. أعد الربط ليستطيع نور استدعاء أدواته.'
+        'انتهت صلاحية الوصول إلى التطبيق. أعد الربط ليستمر الوصول إلى أدواته.'
       )
     ).toBeInTheDocument();
 

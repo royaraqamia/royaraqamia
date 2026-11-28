@@ -9,6 +9,8 @@ import { useChatThreads, type ChatThreadsState } from '@/frontend/state/chats/us
 import { useChatPresenceList } from '@/frontend/state/chats/use-chat-presence-list';
 import { useAssistantPhase } from '@/frontend/state/chats/assistant-turn';
 import { useLocalIdentity } from '@/frontend/state/use-local-identity';
+import { useSession } from '@/frontend/state/session-provider';
+import { assistantNameIn, assistantNameOr } from '@/frontend/ui/assistant/assistant-name';
 import { startAssistantChat } from '@/frontend/api/chats';
 import { identityUserId } from '@/frontend/shared/local-store/identity';
 import { formatHijriDate, timeAgoParts } from '@/frontend/shared/format';
@@ -86,6 +88,7 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
   // The store is partitioned by identity, resolved before the session answers
   // (#493), so the tab paints the rows this device already holds (#1033).
   const { identity } = useLocalIdentity();
+  const { assistantName } = useSession();
   const { threads, isLoading, painted, error, refresh, respond, nextCursor, loadMore } = chats;
   // The dot comes from the row's own Realtime channel; the list is read once on
   // open and once per page step, never on a timer (#1803).
@@ -199,7 +202,7 @@ function ChatsPanelView({ chats }: { chats: ChatThreadsState }) {
           <AssistantMark className="size-9" />
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-bold text-foreground">
-              {CHATS_LIST_COPY.assistantTitle}
+              {assistantNameIn(CHATS_LIST_COPY.assistantTitle, assistantName)}
             </span>
             <span className="mt-0.5 block text-xs text-muted-foreground/80">
               {CHATS_LIST_COPY.assistantBody}
@@ -346,6 +349,7 @@ function ThreadIdentity({
   thread: ChatConversationSummary;
   presence: ChatPresenceState | null;
 }) {
+  const { assistantName } = useSession();
   const label = thread.counterpart?.name ?? thread.counterpart?.username ?? thread.title;
   /**
    * نور's live line is the member's own turn, which may still be running after
@@ -373,7 +377,9 @@ function ThreadIdentity({
         />
       )}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
+        <p className="truncate text-sm font-bold text-foreground">
+          {thread.kind === 'agent' ? assistantNameOr(assistantName) : thread.title}
+        </p>
         {thread.myStatus === 'requested' || thread.myStatus === 'invited' ? (
           <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
             {CHATS_LIST_COPY.requestDirect}
@@ -386,7 +392,7 @@ function ThreadIdentity({
           <PresenceIndicator label={indicator} className="mt-0.5 text-xs" />
         ) : (
           <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground/80">
-            {thread.lastMessage ? previewOf(thread) : CHATS_LIST_COPY.noMessages}
+            {thread.lastMessage ? previewOf(thread, assistantName) : CHATS_LIST_COPY.noMessages}
           </p>
         )}
       </div>
@@ -400,10 +406,11 @@ function presenceText(state: ChatPresenceState | null): string | null {
   return state === 'recording' ? CHATS_LIST_COPY.recordingNow : CHATS_LIST_COPY.typingNow;
 }
 
-function previewOf(thread: ChatConversationSummary): string {
+function previewOf(thread: ChatConversationSummary, assistantName: string): string {
   const line = thread.lastMessage;
   if (!line) return CHATS_LIST_COPY.noMessages;
   if (line.hasAttachments && !line.body) return CHATS_LIST_COPY.attachmentOnly;
-  const who = line.senderKind === 'agent' ? CHATS_LIST_COPY.agentPrefix : '';
+  const who =
+    line.senderKind === 'agent' ? assistantNameIn(CHATS_LIST_COPY.agentPrefix, assistantName) : '';
   return `${who}${line.body ?? ''}`.trim();
 }

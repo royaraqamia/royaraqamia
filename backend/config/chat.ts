@@ -352,6 +352,10 @@ export function createSupabaseChatAgentService(
       ]);
       return projectIdentity({ profile, plan, connectedApps: connected });
     },
+    // The name and gender the member gave their assistant (ADR-0229): the turn
+    // answers as the page drew it, and the voice decides the Arabic it uses
+    // about itself. Read on the member's own session, like the row is written.
+    assistantIdentity: (userId) => createSupabaseAssistantIdentityService(supabase).read(userId),
     // What the member asked to be remembered, recalled for this message
     // (ADR-0182, decision 3). The search runs on the member's own client, so a
     // fact they deleted is unreachable even with a stale vector; the query

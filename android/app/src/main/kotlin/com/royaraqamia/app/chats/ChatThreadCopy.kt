@@ -60,6 +60,7 @@ object ChatThreadCopy {
     const val RECORDING_NOW = "يُسجِّل رسالة صوتيَّة..."
     const val ONLINE_NOW = "متصل الآن"
     const val ASSISTANT_ONLINE = "متاحة الآن"
+    const val ASSISTANT_ONLINE_MASCULINE = "متاح الآن"
     const val LAST_SEEN_TODAY = "آخر ظهور اليوم الساعة {time}"
     const val LAST_SEEN_YESTERDAY = "آخر ظهور أمس الساعة {time}"
     const val LAST_SEEN_ON = "آخر ظهور {date} الساعة {time}"

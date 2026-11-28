@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import com.royaraqamia.app.assistant.AssistantName
 import com.royaraqamia.app.shared.SignInPrompt
 import com.royaraqamia.app.theme.LocalRoySpacing
 import com.royaraqamia.app.theme.LocalRoyTypeScale
@@ -158,7 +159,7 @@ private fun links(isAdmin: Boolean): List<AccountLink> =
             AccountLink(
                 id = "assistant",
                 icon = LucideVectors.Brain,
-                label = AccountRowsCopy.ASSISTANT,
+                label = AssistantName.inText(AccountRowsCopy.ASSISTANT),
                 route = "/assistant",
                 gated = true,
             )

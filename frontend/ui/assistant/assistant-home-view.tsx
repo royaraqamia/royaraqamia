@@ -27,7 +27,8 @@ import { ProfileHeader } from '@/frontend/ui/shared/profile-header';
 import { AssistantOrb } from '@/frontend/ui/assistant/assistant-orb';
 import { AssistantGrantsView } from '@/frontend/ui/assistant/grants-view';
 import { LastSeenLine } from '@/frontend/ui/chats/last-seen';
-import { LAST_SEEN_LABELS } from '@/frontend/ui/chats/last-seen-labels';
+import { assistantOnlineLabels } from '@/frontend/ui/chats/last-seen-labels';
+import { SITE_NAME } from '@/frontend/shared/metadata';
 import { AVATAR_ALLOWED_MIME_TYPES, AVATAR_MAX_BYTES } from '@/shared/contracts/users';
 import {
   ASSISTANT_DEFAULT_VOICE,
@@ -76,7 +77,7 @@ const VOICE_LABELS: Record<AssistantVoice, string> = {
 };
 
 export function AssistantHomeView() {
-  const { user, isLoading: isSessionLoading } = useSession();
+  const { user, isLoading: isSessionLoading, refreshAssistantIdentity } = useSession();
   const { identity: localIdentity } = useLocalIdentity();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,6 +122,14 @@ export function AssistantHomeView() {
   useEffect(() => {
     setImageFailed(false);
   }, [identity?.avatarUrl]);
+
+  // The tab title is the member's own name (ADR-0229). The route's static title
+  // is the default, because the document is cacheable and carries no member data.
+  const identityName = identity?.name ?? null;
+  useEffect(() => {
+    if (!identityName) return;
+    document.title = `${identityName} | ${SITE_NAME}`;
+  }, [identityName]);
 
   const openNameDialog = () => {
     if (!identity) return;
@@ -175,6 +184,7 @@ export function AssistantHomeView() {
       // The panel paints the name before it asks the server anything (ADR-0150),
       // so the name is written where the panel reads its first face.
       writeAssistantSnapshot(localIdentity, { name: result.identity.name });
+      void refreshAssistantIdentity();
     } catch (error) {
       setNameError(error instanceof Error ? error.message : COPY.nameFailed);
     } finally {
@@ -206,6 +216,7 @@ export function AssistantHomeView() {
       setIdentity(result.identity);
       setAvatarDialogOpen(false);
       toast.success(COPY.avatarSaved);
+      void refreshAssistantIdentity();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : COPY.avatarFailed);
     } finally {
@@ -224,6 +235,7 @@ export function AssistantHomeView() {
       setIdentity(result.identity);
       setAvatarDialogOpen(false);
       toast.success(COPY.avatarRemoved);
+      void refreshAssistantIdentity();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : COPY.avatarRemoveFailed);
     } finally {
@@ -333,7 +345,7 @@ export function AssistantHomeView() {
             </button>
           </div>
           <LastSeenLine
-            labels={LAST_SEEN_LABELS}
+            labels={assistantOnlineLabels(identity.voice)}
             alwaysOnline
             className="mt-0.5 text-center text-sm"
           />

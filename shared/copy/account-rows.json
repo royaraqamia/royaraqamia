@@ -11,14 +11,14 @@
   },
   "notes": {
     "source": "The account page's action rows and sign-out, in both clients (#948). The site's `AccountRows` is the reference: a row label and the question before a sign-out are written there first, and the app reads the same source rather than retyping them (ADR-0098). `assistant` is the account's one door to `/assistant` (ADR-0224 decision 5); the memory page's own title lives in `shared/copy/account-memory.json`, and no row carries it any more because the assistant's page links memory itself.",
-    "placeholders": "No string here carries a placeholder; the support row's destination is a route, not copy.",
+    "placeholders": "`{name}` is the assistant's name as the member set it (ADR-0229); the caller substitutes it with the default «نور». The support row's destination is a route, not copy.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a key the reference component does not render or a state the app declares but does not draw."
   },
   "strings": {
     "navLabel": "إجراءات الحساب",
     "submissions": "طلباتي",
     "blocked": "الأعضاء المحظورون",
-    "assistant": "المساعد",
+    "assistant": "{name}",
     "pricing": "خطط التَّسعير",
     "admin": "الإدارة",
     "faq": "الأسئلة الشَّائعة",

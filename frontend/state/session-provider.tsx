@@ -23,6 +23,7 @@ import {
 } from '@/frontend/shared/local-store/identity';
 import { clearSnapshots } from '@/frontend/shared/local-store/snapshot';
 import { sessionInitialState, sessionReducer } from '@/frontend/state/session-provider.reducer';
+import { ASSISTANT_DEFAULT_NAME, type AssistantVoice } from '@/shared/contracts/assistant-identity';
 import type { Session, User } from '@supabase/supabase-js';
 
 // Auth machinery is loaded lazily so the auth wrapper module stays out of the
@@ -43,9 +44,20 @@ interface SessionContextType {
   profileUsername: string | null;
   /** Public-profile bio from the user's profile row, or null when unavailable. */
   profileBio: string | null;
+  /**
+   * The name the member gave their assistant, resolved to the deployment default
+   * (ADR-0229). Every label that names the assistant reads this one string.
+   */
+  assistantName: string;
+  /** How the assistant is addressed; the site's copy follows it where it must. */
+  assistantVoice: AssistantVoice;
+  /** The member's uploaded face, or null for the orb. */
+  assistantAvatarUrl: string | null;
   signOut: () => Promise<void>;
   /** Re-read the profile row after an edit so the UI reflects it immediately. */
   refreshProfile: () => Promise<void>;
+  /** Re-read the assistant identity after an edit so every label follows it. */
+  refreshAssistantIdentity: () => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextType>({
@@ -57,8 +69,12 @@ const SessionContext = createContext<SessionContextType>({
   profileAvatarUrl: null,
   profileUsername: null,
   profileBio: null,
+  assistantName: ASSISTANT_DEFAULT_NAME,
+  assistantVoice: 'feminine',
+  assistantAvatarUrl: null,
   signOut: async () => {},
   refreshProfile: async () => {},
+  refreshAssistantIdentity: async () => {},
 });
 
 export function useSession() {
@@ -207,6 +223,39 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     };
   }, [userId]);
 
+  // The assistant's name, face and voice are read once for the session, not per
+  // surface (ADR-0229): the panel, the chats row, the account door and the
+  // memory page all paint the member's own name, and each one asking would be
+  // the same no-store read repeated. A signed-out reader gets the default.
+  useEffect(() => {
+    if (!userId) {
+      dispatch({ type: 'assistantCleared' });
+      return;
+    }
+
+    let active = true;
+
+    void import('@/frontend/api/assistant-identity').then(({ getAssistantIdentity }) =>
+      getAssistantIdentity()
+        .then((result) => {
+          if (!active) return;
+          if (result.success && result.identity) {
+            dispatch({ type: 'assistantLoaded', identity: result.identity });
+          } else {
+            dispatch({ type: 'assistantCleared' });
+          }
+        })
+        .catch(() => {
+          // Keep the default name rather than turning every label into an error.
+          if (active) dispatch({ type: 'assistantCleared' });
+        })
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
   // The Realtime socket is the session's, not a screen's (ADR-0169). Opening it
   // as soon as the member is known is what makes the first thread they open
   // join a live socket instead of paying a handshake on a keystroke; a guest
@@ -239,6 +288,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userId]);
 
+  const refreshAssistantIdentity = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { getAssistantIdentity } = await import('@/frontend/api/assistant-identity');
+      const result = await getAssistantIdentity();
+      if (result.success && result.identity) {
+        dispatch({ type: 'assistantLoaded', identity: result.identity });
+      }
+    } catch {
+      // Same rule as the profile: the last known name survives a failed refresh.
+    }
+  }, [userId]);
+
   const value = useMemo(
     () => ({
       user: state.user,
@@ -249,10 +311,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       profileAvatarUrl: state.profileAvatarUrl,
       profileUsername: state.profileUsername,
       profileBio: state.profileBio,
+      assistantName: state.assistantName ?? ASSISTANT_DEFAULT_NAME,
+      assistantVoice: state.assistantVoice,
+      assistantAvatarUrl: state.assistantAvatarUrl,
       signOut,
       refreshProfile,
+      refreshAssistantIdentity,
     }),
-    [state, signOut, refreshProfile]
+    [state, signOut, refreshProfile, refreshAssistantIdentity]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

@@ -15,7 +15,7 @@ object AccountRowsCopy {
     const val NAV_LABEL = "إجراءات الحساب"
     const val SUBMISSIONS = "طلباتي"
     const val BLOCKED = "الأعضاء المحظورون"
-    const val ASSISTANT = "المساعد"
+    const val ASSISTANT = "{name}"
     const val PRICING = "خطط التَّسعير"
     const val ADMIN = "الإدارة"
     const val FAQ = "الأسئلة الشَّائعة"

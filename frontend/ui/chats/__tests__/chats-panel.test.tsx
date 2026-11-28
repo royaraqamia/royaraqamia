@@ -155,7 +155,7 @@ describe('ChatsPanel', () => {
     live.assistantPhase = { kind: 'writing' };
     const view = render(<ChatsPanel />);
 
-    expect(screen.getByText('تكتب')).toBeInTheDocument();
+    expect(screen.getByText(/جاري الكتابة/)).toBeInTheDocument();
 
     live.assistantPhase = { kind: 'tool', label: 'تقرأ شهاداتك' };
     view.rerender(<ChatsPanel />);

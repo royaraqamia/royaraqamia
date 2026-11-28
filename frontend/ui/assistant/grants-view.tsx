@@ -29,8 +29,7 @@ const GRANTS_COPY = {
   grantFailed: 'تعذّر منح الإذن.',
   revokeFailed: 'تعذّر سحب الإذن.',
   confirmRevokeTitle: 'سحب الإذن',
-  confirmRevokeMessage:
-    'هل تريد سحب إذن «{name}»؟ سيعود المساعد إلى طلب تأكيدك قبل كل استخدام لهذه الأداة.',
+  confirmRevokeMessage: 'هل تريد سحب إذن «{name}»؟ سيُطلب تأكيدك قبل كل استخدام لهذه الأداة.',
   confirmRevoke: 'سحب الإذن',
   cancel: 'إلغاء',
 } as const;

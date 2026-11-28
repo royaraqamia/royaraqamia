@@ -418,7 +418,7 @@ fun AssistantSheet(
                 when (shownState) {
                     AssistantUiState.Guest ->
                         AssistantStatePanel(
-                            title = AssistantPanelCopy.GUEST_TITLE,
+                            title = AssistantName.inText(AssistantPanelCopy.GUEST_TITLE),
                             body = AssistantPanelCopy.GUEST_BODY,
                             action = AssistantPanelCopy.SIGN_IN,
                             onAction = onSignIn,
@@ -805,7 +805,7 @@ private fun AssistantIntro() {
             color = RoyColors.foreground,
         )
         Text(
-            text = AssistantPanelCopy.INTRO,
+            text = AssistantName.inText(AssistantPanelCopy.INTRO),
             style = type.small,
             color = RoyColors.mutedForeground.copy(alpha = 0.8f),
             textAlign = TextAlign.Center,

@@ -99,8 +99,8 @@ export function CodingLocalCompanion({ onPaired }: { onPaired?: () => void }) {
       <div>
         <h2 className="text-lg font-bold text-foreground">مجلد على جهازك</h2>
         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          شغّل المرافق داخل المجلد على جهازك، فيعمل المساعد عليه محليًا. لا يصل إلى خادمنا مسار المجلد
-          ولا ملفاته ولا أي اعتماد؛ يصل رمز جهاز قابل للإلغاء فقط.
+          شغّل المرافق داخل المجلد على جهازك، فيعمل محليًا عليه. لا يصل إلى خادمنا مسار المجلد ولا
+          ملفاته ولا أي اعتماد؛ يصل رمز جهاز قابل للإلغاء فقط.
         </p>
       </div>
 

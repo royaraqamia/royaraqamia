@@ -12,6 +12,6 @@ package com.royaraqamia.app.assistant
  * A `{name}` is a placeholder the card substitutes, not a format string.
  */
 object AssistantLauncherCopy {
-    const val LABEL = "اسأل نور"
-    const val NAV_LABEL = "اسأل نور، مساعدة رؤية رقمية"
+    const val LABEL = "اسأل {name}"
+    const val NAV_LABEL = "افتح المحادثة مع {name}"
 }
