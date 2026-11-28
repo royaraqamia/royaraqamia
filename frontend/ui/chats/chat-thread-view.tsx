@@ -131,6 +131,9 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
     request,
     unblock,
     resolveAction,
+    grantableTools,
+    grantedTools,
+    grantTool,
     refresh,
   } = useChatThread(conversationId);
   const { user } = useSession();
@@ -402,6 +405,9 @@ export function ChatThreadView({ conversationId }: { conversationId: string }) {
         onLoadOlder={loadOlder}
         onRetry={retrySend}
         onResolve={resolveAction}
+        grantableTools={grantableTools}
+        grantedTools={grantedTools}
+        onGrant={grantTool}
         onEdit={edit}
         onDelete={(id) => setConfirm({ kind: 'deleteMessage', messageId: id })}
         onDownload={(attachment) => void handleDownload(attachment)}

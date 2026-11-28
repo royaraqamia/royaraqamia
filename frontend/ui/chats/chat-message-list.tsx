@@ -46,6 +46,9 @@ const ACTION_LABELS: ActionCardLabels = {
   applied: ASSISTANT_PANEL_COPY.actionStatusApplied,
   failed: ASSISTANT_PANEL_COPY.actionStatusFailed,
   adminMark: ASSISTANT_PANEL_COPY.actionAdminMark,
+  grant: ASSISTANT_PANEL_COPY.actionGrant,
+  granted: ASSISTANT_PANEL_COPY.actionGranted,
+  grantFailed: ASSISTANT_PANEL_COPY.actionGrantFailed,
 };
 
 /**
@@ -73,6 +76,15 @@ export interface ChatMessageListProps {
   isMine: (message: ChatMessage) => boolean;
   /** The assistant's proposals, drawn under the lines they belong to (#818). */
   actions: ChatAgentAction[];
+  /**
+   * The tier-1 tools this member may grant now, and the ones already granted
+   * (ADR-0180, decision 2). Both come from the server's own answer, so a tier-2
+   * or tier-3 card can never draw the control.
+   */
+  grantableTools?: ReadonlySet<string>;
+  grantedTools?: ReadonlySet<string>;
+  /** Grant one tool from its applied card: `null` when done, else the refusal. */
+  onGrant?: (toolId: string) => Promise<string | null>;
   /** The turn in flight: its phase, its streaming text and its pending question. */
   assistant: ChatAssistantState;
   /** The lines the device still owes the server, keyed by client id (#1033). */
@@ -103,6 +115,9 @@ export function ChatMessageList({
   messages,
   isMine,
   actions,
+  grantableTools,
+  grantedTools,
+  onGrant,
   assistant,
   pending,
   hasOlder,
@@ -215,6 +230,7 @@ export function ChatMessageList({
           ? intro
           : messages.map((message, index) => {
               const mine = isMine(message);
+              const action = actionByMessage.get(message.id) ?? null;
               return (
                 <div key={message.id} className="flex w-full flex-col gap-2">
                   {isNewDay(messages[index - 1], message) && (
@@ -224,7 +240,10 @@ export function ChatMessageList({
                     message={message}
                     mine={mine}
                     receipt={readReceiptOf(thread, message, mine)}
-                    action={actionByMessage.get(message.id) ?? null}
+                    action={action}
+                    canGrant={Boolean(action && grantableTools?.has(action.tool))}
+                    alreadyGranted={Boolean(action && grantedTools?.has(action.tool))}
+                    onGrant={onGrant}
                     /* A line the server has not accepted yet (#1033). */
                     state={message.clientId ? pending[message.clientId] : undefined}
                     onRetry={onRetry}
@@ -342,6 +361,9 @@ export const ChatMessageRow = memo(function ChatMessageRow({
   mine,
   receipt,
   action,
+  canGrant = false,
+  alreadyGranted = false,
+  onGrant,
   state,
   onRetry,
   onResolve,
@@ -358,6 +380,9 @@ export const ChatMessageRow = memo(function ChatMessageRow({
   receipt: ChatReadReceipt | null;
   /** The assistant's proposal on this line, or `null` (#818). */
   action: ChatAgentAction | null;
+  canGrant?: boolean;
+  alreadyGranted?: boolean;
+  onGrant?: (toolId: string) => Promise<string | null>;
   /** The queue's answer for this line, or undefined once the server has it (#1033). */
   state: ChatMessageState | undefined;
   onRetry: () => void;
@@ -397,7 +422,14 @@ export const ChatMessageRow = memo(function ChatMessageRow({
       )}
 
       {action ? (
-        <ActionCard action={action} labels={ACTION_LABELS} onResolve={onResolve} />
+        <ActionCard
+          action={action}
+          labels={ACTION_LABELS}
+          onResolve={onResolve}
+          canGrant={canGrant}
+          alreadyGranted={alreadyGranted}
+          onGrant={onGrant}
+        />
       ) : (
         <div
           className={cn(

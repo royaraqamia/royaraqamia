@@ -29,20 +29,44 @@ export type ActionCardLabels = Record<ChatAgentActionStatus, string> & {
   reject: string;
   /** The visible admin mark an operator's confirm carries (ADR-0180, decision 10). */
   adminMark: string;
+  /** The trust an applied tier-1 card may win in one tap (ADR-0180, decision 2). */
+  grant: string;
+  granted: string;
+  grantFailed: string;
 };
 
 export function ActionCard({
   action,
   labels,
   onResolve,
+  canGrant = false,
+  alreadyGranted = false,
+  onGrant,
 }: {
   action: ChatAgentAction;
   labels: ActionCardLabels;
   onResolve: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
+  /** Whether the server offers this applied tool as a tier-1 grant. */
+  canGrant?: boolean;
+  /** The member already granted this tool, here or on `/assistant`. */
+  alreadyGranted?: boolean;
+  /** Grant one tool from its own applied card: `null` when done, else the refusal. */
+  onGrant?: (toolId: string) => Promise<string | null>;
 }) {
   const [busy, setBusy] = useState(false);
+  const [granting, setGranting] = useState(false);
+  const [grantedHere, setGrantedHere] = useState(false);
+  const [grantError, setGrantError] = useState<string | null>(null);
   const open = chatAgentActionIsOpen(action.status);
   const reason = typeof action.result?.error === 'string' ? action.result.error : null;
+  /**
+   * The grant is born in the conversation, but only after the member has seen
+   * the tool run (ADR-0180, decision 2). The list decides `canGrant` from the
+   * server's own tier-1 answer, so a tier-2 or tier-3 card never draws it.
+   */
+  const applied = action.status === 'applied';
+  const granted = alreadyGranted || grantedHere;
+  const offerGrant = applied && !granted && canGrant && onGrant !== undefined;
 
   const resolve = async (answer: 'confirm' | 'reject') => {
     setBusy(true);
@@ -50,6 +74,19 @@ export function ActionCard({
       await onResolve(action.id, answer);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const grant = async () => {
+    if (!onGrant) return;
+    setGranting(true);
+    setGrantError(null);
+    try {
+      const refusal = await onGrant(action.tool);
+      if (refusal === null) setGrantedHere(true);
+      else setGrantError(refusal || labels.grantFailed);
+    } finally {
+      setGranting(false);
     }
   };
 
@@ -98,6 +135,32 @@ export function ActionCard({
             {labels.reject}
           </button>
         </div>
+      )}
+
+      {applied && granted && (
+        <p
+          role="status"
+          className="mt-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400"
+        >
+          {labels.granted}
+        </p>
+      )}
+      {offerGrant && (
+        <div className="mt-2">
+          <button
+            type="button"
+            disabled={granting}
+            onClick={() => void grant()}
+            className="rounded-lg border border-primary/40 px-3 py-1 text-xs font-bold text-primary transition-safe hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:opacity-60"
+          >
+            {labels.grant}
+          </button>
+        </div>
+      )}
+      {grantError && (
+        <p role="alert" className="mt-1 text-xs leading-relaxed text-destructive">
+          {grantError}
+        </p>
       )}
     </div>
   );

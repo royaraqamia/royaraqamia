@@ -38,6 +38,9 @@ export const ASSISTANT_PANEL_COPY = {
   actionStatusApplied: 'نُفِّذ',
   actionStatusFailed: 'لم يُنفَّذ',
   actionAdminMark: 'إدارة',
+  actionGrant: 'اسمح دائماً',
+  actionGranted: 'تمّ منح الإذن: ستعمل هذه الأداة دون تأكيد في كل مرة.',
+  actionGrantFailed: 'تعذّر منح الإذن.',
 } as const;
 
 export type AssistantPanelCopyStrings = typeof ASSISTANT_PANEL_COPY;

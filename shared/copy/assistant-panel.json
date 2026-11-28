@@ -42,6 +42,9 @@
     "actionStatusRejected": "أُلغي",
     "actionStatusApplied": "نُفِّذ",
     "actionStatusFailed": "لم يُنفَّذ",
-    "actionAdminMark": "إدارة"
+    "actionAdminMark": "إدارة",
+    "actionGrant": "اسمح دائماً",
+    "actionGranted": "تمّ منح الإذن: ستعمل هذه الأداة دون تأكيد في كل مرة.",
+    "actionGrantFailed": "تعذّر منح الإذن."
   }
 }

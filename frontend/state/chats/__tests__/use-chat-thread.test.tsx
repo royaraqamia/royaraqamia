@@ -25,6 +25,16 @@ const attachments = vi.hoisted(() => ({
   uploadChatAttachment: vi.fn(),
 }));
 
+const grantsApi = vi.hoisted(() => ({
+  getAgentToolGrants: vi.fn(),
+  grantAgentTool: vi.fn(),
+}));
+
+vi.mock('@/frontend/api/agent-tool-grants', () => ({
+  getAgentToolGrants: grantsApi.getAgentToolGrants,
+  grantAgentTool: grantsApi.grantAgentTool,
+}));
+
 vi.mock('@/frontend/api/chats', () => ({
   deleteChatMessage: api.deleteChatMessage,
   editChatMessage: api.editChatMessage,
@@ -68,6 +78,12 @@ beforeEach(() => {
     configurable: true,
     writable: true,
   });
+  grantsApi.getAgentToolGrants.mockReset().mockResolvedValue({
+    success: true,
+    grants: [],
+    grantable: [],
+  });
+  grantsApi.grantAgentTool.mockReset();
 });
 
 let captured: ChatThreadState | null = null;
@@ -542,5 +558,107 @@ describe('useChatThread activity', () => {
 
     rerender(<Activity on={false} />);
     expect(unsubscribe).toHaveBeenCalled();
+  });
+});
+
+/**
+ * The grant is born in the conversation, but the tier is the server's to name
+ * (ADR-0180, decision 2): the thread reads the two lists and moves a tool from
+ * grantable to granted when its own card asks.
+ */
+describe('assistant tool grants born in the conversation', () => {
+  const thread = {
+    id: 'c-1',
+    kind: 'agent',
+    status: 'active',
+    title: 'نور',
+    counterpart: null,
+    myStatus: 'active',
+    lastMessage: null,
+    unreadCount: 0,
+    openActions: 0,
+    lastMessageAt: null,
+    createdAt: '2026-11-01T09:00:00.000Z',
+    participants: [],
+    me: null,
+    blockedByMe: false,
+    canWrite: true,
+    attachmentQuota: {
+      fileBytes: 1_000,
+      today: { usedBytes: 0, limitBytes: 10_000 },
+      total: { usedBytes: 0, limitBytes: 100_000 },
+      project: { usedBytes: 0, limitBytes: 500_000 },
+    },
+  } as unknown as ChatThread;
+
+  beforeEach(() => {
+    captured = null;
+    api.getChatThread.mockReset().mockResolvedValue(thread);
+    api.getChatMessages
+      .mockReset()
+      .mockResolvedValue({ messages: [], nextCursor: null, actions: [] });
+    api.subscribeToChatThread.mockReset().mockReturnValue(() => {});
+    api.subscribeToChatRoster.mockReset().mockReturnValue(() => {});
+    api.markChatRead.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('reads the tier-1 lists for an assistant thread', async () => {
+    grantsApi.getAgentToolGrants.mockResolvedValue({
+      success: true,
+      grantable: [{ toolId: 'record_expense', label: 'تسجيل مصروف' }],
+      grants: [],
+    });
+
+    await renderThread();
+
+    await waitFor(() => expect(captured?.grantableTools.has('record_expense')).toBe(true));
+  });
+
+  it('grants from the card and moves the tool to the granted list', async () => {
+    grantsApi.getAgentToolGrants.mockResolvedValue({
+      success: true,
+      grantable: [{ toolId: 'record_expense', label: 'تسجيل مصروف' }],
+      grants: [],
+    });
+    grantsApi.grantAgentTool.mockResolvedValue({
+      success: true,
+      grant: {
+        id: 'g-1',
+        toolId: 'record_expense',
+        label: 'تسجيل مصروف',
+        grantedAt: '2026-11-01T10:00:00.000Z',
+        lastUsedAt: null,
+      },
+    });
+
+    await renderThread();
+    await waitFor(() => expect(captured?.grantableTools.has('record_expense')).toBe(true));
+
+    let refusal: string | null = 'pending';
+    await act(async () => {
+      refusal = await captured!.grantTool('record_expense');
+    });
+
+    expect(grantsApi.grantAgentTool).toHaveBeenCalledWith('record_expense');
+    expect(refusal).toBeNull();
+    await waitFor(() => expect(captured?.grantedTools.has('record_expense')).toBe(true));
+    expect(captured?.grantableTools.has('record_expense')).toBe(false);
+  });
+
+  it('keeps the server refusal as the boundary when a tier-2 tool is posted directly', async () => {
+    grantsApi.grantAgentTool.mockResolvedValue({
+      success: false,
+      error: 'هذه الأداة لا يمكن منحها: لا بدّ من تأكيدها في كل مرة.',
+    });
+
+    await renderThread();
+
+    let refusal: string | null = null;
+    await act(async () => {
+      refusal = await captured!.grantTool('publish_post_draft');
+    });
+
+    expect(refusal).toBe('هذه الأداة لا يمكن منحها: لا بدّ من تأكيدها في كل مرة.');
+    expect(captured?.grantedTools.has('publish_post_draft')).toBe(false);
   });
 });

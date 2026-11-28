@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 // The agent row carries the artifact door (#1952), whose composer navigates
 // after a publish; the thread itself needs no router, so this is the only stub.
@@ -53,6 +53,21 @@ function message(overrides: Partial<ChatMessage> & { id: string }): ChatMessage 
     replyTo: null,
     ...overrides,
   } as unknown as ChatMessage;
+}
+
+function appliedAction(tool: string): ChatAgentAction {
+  return {
+    id: `a-${tool}`,
+    conversationId: 'c-1',
+    messageId: 'm-1',
+    tool,
+    args: {},
+    status: 'applied',
+    result: null,
+    createdAt: '2026-11-01T10:00:00.000Z',
+    resolvedAt: '2026-11-01T10:00:01.000Z',
+    resolvedBy: 'u-1',
+  };
 }
 
 const assistant: ChatAssistantState = {
@@ -120,6 +135,69 @@ describe('ChatMessageList', () => {
     render(list([line], { actions: [action] }));
 
     expect(screen.getByText('إدارة')).toBeInTheDocument();
+  });
+
+  it('offers «اسمح دائماً» on an applied tier-1 card and grants it in one tap', async () => {
+    const line = message({ id: 'm-1', senderKind: 'agent', body: 'تسجيل مصروف' });
+    const action = appliedAction('record_expense');
+    const onGrant = vi.fn(async () => null);
+
+    render(
+      list([line], {
+        actions: [action],
+        grantableTools: new Set(['record_expense']),
+        onGrant,
+      })
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'اسمح دائماً' }));
+
+    await waitFor(() => expect(onGrant).toHaveBeenCalledWith('record_expense'));
+    expect(
+      await screen.findByText('تمّ منح الإذن: ستعمل هذه الأداة دون تأكيد في كل مرة.')
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'اسمح دائماً' })).toBeNull();
+  });
+
+  it('draws no allow control for a tier-2 card the server never offers', () => {
+    const line = message({ id: 'm-1', senderKind: 'agent', body: 'نشر مسودة' });
+    const action = appliedAction('publish_post_draft');
+
+    render(list([line], { actions: [action], grantableTools: new Set(), onGrant: vi.fn() }));
+
+    expect(screen.queryByRole('button', { name: 'اسمح دائماً' })).toBeNull();
+  });
+
+  it('says the grant exists on a card whose tool is already granted', () => {
+    const line = message({ id: 'm-1', senderKind: 'agent', body: 'تسجيل مصروف' });
+    const action = appliedAction('record_expense');
+
+    render(list([line], { actions: [action], grantedTools: new Set(['record_expense']) }));
+
+    expect(
+      screen.getByText('تمّ منح الإذن: ستعمل هذه الأداة دون تأكيد في كل مرة.')
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'اسمح دائماً' })).toBeNull();
+  });
+
+  it('keeps the control and names the refusal when a grant is refused', async () => {
+    const line = message({ id: 'm-1', senderKind: 'agent', body: 'تسجيل مصروف' });
+    const action = appliedAction('record_expense');
+
+    render(
+      list([line], {
+        actions: [action],
+        grantableTools: new Set(['record_expense']),
+        onGrant: vi.fn(async () => 'هذه الأداة لا يمكن منحها: لا بدّ من تأكيدها في كل مرة.'),
+      })
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'اسمح دائماً' }));
+
+    expect(
+      await screen.findByText('هذه الأداة لا يمكن منحها: لا بدّ من تأكيدها في كل مرة.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'اسمح دائماً' })).toBeInTheDocument();
   });
 
   it('offers the community door on نور’s answer, never on a member line', () => {
