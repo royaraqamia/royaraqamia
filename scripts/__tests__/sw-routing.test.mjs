@@ -233,12 +233,20 @@ describe('sw-routing predicates', () => {
     }
   });
 
-  it('refuses to cache no-store / no-cache / private responses', () => {
+  it('refuses to cache no-store / no-cache responses', () => {
     expect(routing.isCacheable(response({ cacheControl: 'no-store' }))).toBe(false);
     expect(routing.isCacheable(response({ cacheControl: 'no-cache' }))).toBe(false);
-    expect(routing.isCacheable(response({ cacheControl: 'private, max-age=0' }))).toBe(false);
     expect(routing.isCacheable(response({ cacheControl: 'public, max-age=60' }))).toBe(true);
     expect(routing.isCacheable(response())).toBe(true);
+  });
+
+  it('keeps a private response, which bans the edge, not the device (#1985)', () => {
+    // Cache Storage is this device's own cache, so `private` is permission, not
+    // a ban. Reading it as one made the account shells unreplaceable (#1985).
+    expect(
+      routing.isCacheable(response({ cacheControl: 'private, max-age=0, must-revalidate' }))
+    ).toBe(true);
+    expect(routing.isCacheable(response({ cacheControl: 'private' }))).toBe(true);
   });
 
   it('refuses to cache a range/206 response', () => {

@@ -2020,6 +2020,61 @@ describe('service worker prefix fallback (#490)', () => {
     expect(await cache.match('https://site.example/u/someone/followers')).toBeUndefined();
   });
 
+  it('drops a copy the server stops letting the worker store (#1985)', async () => {
+    // The production failure: `/account` was a cacheable shell, so a device
+    // stored it; the release that made the subtree `no-store` could not replace
+    // that entry, and stale-while-revalidate serves a cached copy before the
+    // network, so the old build answered every visit. Policy wins: an answer the
+    // worker may not store deletes the copy it failed to replace.
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/account/faq', new Response('old-build'));
+    ctx.sandbox.fetch = vi.fn(
+      async () =>
+        new Response('new-build', {
+          status: 200,
+          headers: { 'cache-control': 'private, no-store' },
+        })
+    );
+
+    const first = fetchEvent(request('/account/faq'));
+    ctx.dispatch('fetch', first);
+    expect(await first.response.then((r) => r.text())).toBe('old-build');
+    await Promise.all(first.waitUntilCalls);
+
+    expect(await cache.match('https://site.example/account/faq')).toBeUndefined();
+
+    // The next visit is a network read, not another old-build paint.
+    const second = fetchEvent(request('/account/faq'));
+    ctx.dispatch('fetch', second);
+    expect(await second.response.then((r) => r.text())).toBe('new-build');
+  });
+
+  it('keeps an account shell private to the device and refreshes it (#1985)', async () => {
+    // `private` is the shared-cache half only: the edge must not store it, the
+    // device may. Reading it as a storage ban would empty the account subtree
+    // out of Cache Storage and take the offline shell from #448 with it.
+    const ctx = await boot({ navigationTimeoutMs: 20 });
+    const cache = await ctx.caches.open(DATA_CACHE);
+    await cache.put('https://site.example/account', new Response('old-build'));
+    ctx.sandbox.fetch = vi.fn(
+      async () =>
+        new Response('new-build', {
+          status: 200,
+          headers: { 'cache-control': 'private, max-age=0, must-revalidate' },
+        })
+    );
+
+    const first = fetchEvent(request('/account'));
+    ctx.dispatch('fetch', first);
+    await first.response;
+    await Promise.all(first.waitUntilCalls);
+
+    const stored = await cache.match('https://site.example/account');
+    expect(stored).toBeTruthy();
+    expect(await stored.text()).toBe('new-build');
+  });
+
   it('answers a plain 503 when no ancestor shell is on the device', async () => {
     const ctx = await boot({ navigationTimeoutMs: 20 });
     // The first-install shape: the install precached the shell, but nothing this

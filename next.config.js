@@ -349,18 +349,25 @@ const nextConfig = {
       // bytes for everyone and Next marks it `s-maxage=31536000` (ADR-0221). The
       // public rule deliberately does not match `/account`, so that promise went
       // unkept and every open reached the origin. The area keeps one posture:
-      // `private, no-store`, the same as the feed and the two children that were
-      // already `force-dynamic`. A future account page that renders a member's
-      // row into the HTML is then private by default rather than cached by a
-      // widened pattern (ADR-0175), and `check:edge` fails a private path whose
-      // header promises a shared cache.
+      // `private`, the same as the feed and the two children that were already
+      // `force-dynamic`. A future account page that renders a member's row into
+      // the HTML is then private by default rather than cached by a widened
+      // pattern (ADR-0175), and `check:edge` fails a private path whose header
+      // promises a shared cache.
+      //
+      // `private` is the shared-cache half only. The device's own service-worker
+      // cache still owns these shells (ADR-0031's #448 amendment), so the value
+      // must stay storable there: `public/sw-routing.js` refuses `no-store` and
+      // `no-cache`, and answers `private` by keeping the copy. `no-store` here
+      // would empty the account subtree out of Cache Storage while a document a
+      // previous build left behind could never be replaced (#1985).
       {
         source: '/account',
-        headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
+        headers: [{ key: 'Cache-Control', value: 'private, max-age=0, must-revalidate' }],
       },
       {
         source: '/account/:path*',
-        headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
+        headers: [{ key: 'Cache-Control', value: 'private, max-age=0, must-revalidate' }],
       },
       // The homepage is fully static (prerendered at build); let the CDN serve
       // it without re-validating while SWR keeps it fresh in the background.

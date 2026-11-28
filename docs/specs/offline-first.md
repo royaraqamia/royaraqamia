@@ -472,6 +472,12 @@ for a failed read instead of routing the failure to `/offline`. The boundary the
 no account fragment in a cached response — is held by the never-cache API prefixes, not by the
 documents.
 
+The other half of that promise is the document's own header: the subtree answers `private, max-age=0,
+must-revalidate`, not `no-store` (ADR-0031's 2026-11-28 amendment). `private` keeps it out of the
+shared edge cache; `no-store` would also empty it out of Cache Storage, and the copy a previous build
+left there could then never be replaced — the state #1985 shipped and had to correct. A revalidation
+the worker may not store now deletes the copy it found, so the device heals on its next visit.
+
 **Phase 2 (#449) landed on 2026-10-21:** the four product dashboard roots are static data-free
 shells painted from their Local Stores (ADR-0073). BlogPress was one of them until it retired as a
 UI door: its editor became the Community composer, whose drafts keep the same local-first store and

@@ -131,13 +131,22 @@
 
   // A response the server marked non-storable must never be persisted: serving
   // it later would fall back to stale authenticated/private data offline.
+  //
+  // `private` is not `no-store`. It tells a *shared* cache (the edge) to keep
+  // the response out; Cache Storage is this device's own cache, and it is the
+  // only cache a data-free shell like `/account` has. Reading `private` as a
+  // storage ban took those shells out of the device cache as well, and the
+  // entry an older build had written could then never be replaced (#1985).
+  // `no-store` and `no-cache` stay refused: the first forbids every cache, and
+  // the second asks every read to revalidate, which is what the worker's
+  // stale-while-revalidate already does for the routes it keeps.
   function isCacheable(response) {
     // A 206 carries only the requested slice of the body. Storing it under the
     // whole-resource key would serve a truncated payload to every later read.
     if (response.status === 206) return false;
     if (response.headers.get('content-range')) return false;
     const cacheControl = response.headers.get('cache-control') || '';
-    return !/no-store|no-cache|private/i.test(cacheControl);
+    return !/no-store|no-cache/i.test(cacheControl);
   }
 
   // API reads are cached only when the server says `public` explicitly. An
