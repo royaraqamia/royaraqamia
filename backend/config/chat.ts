@@ -8,6 +8,7 @@ import { createSupabaseSkillTelemetryRepository } from '@/backend/repositories/c
 import { createSupabaseChatAgentActionRepository } from '@/backend/repositories/chat/chat-agent-action-repository';
 import { createSupabaseAgentToolGrantRepository } from '@/backend/repositories/agent/agent-tool-grant-repository';
 import { createSupabaseAssistantIdentityRepository } from '@/backend/repositories/agent/assistant-identity-repository';
+import { createAvatarStorageRepository } from '@/backend/repositories/users/avatar-storage-repository';
 import { AssistantIdentityService } from '@/backend/services/agent/assistant-identity-service';
 import {
   AgentToolGrantService,
@@ -478,6 +479,9 @@ export function createSupabaseAssistantIdentityService(
 ): AssistantIdentityService {
   return new AssistantIdentityService({
     identities: createSupabaseAssistantIdentityRepository(supabase),
+    // The same bucket and the same folder rule as the member's own avatar; the
+    // object is a second file under `<uid>/`, not a second bucket (ADR-0228).
+    avatars: createAvatarStorageRepository(supabase),
     ...deps,
   });
 }

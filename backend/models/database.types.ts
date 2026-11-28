@@ -311,6 +311,7 @@ export type Database = {
       assistant_identities: {
         Row: {
           assistant_key: string;
+          avatar_url: string | null;
           avatar_variant: number | null;
           created_at: string;
           name: string | null;
@@ -318,9 +319,11 @@ export type Database = {
           tone: string;
           updated_at: string;
           user_id: string;
+          voice: string;
         };
         Insert: {
           assistant_key?: string;
+          avatar_url?: string | null;
           avatar_variant?: number | null;
           created_at?: string;
           name?: string | null;
@@ -328,9 +331,11 @@ export type Database = {
           tone?: string;
           updated_at?: string;
           user_id: string;
+          voice?: string;
         };
         Update: {
           assistant_key?: string;
+          avatar_url?: string | null;
           avatar_variant?: number | null;
           created_at?: string;
           name?: string | null;
@@ -338,6 +343,7 @@ export type Database = {
           tone?: string;
           updated_at?: string;
           user_id?: string;
+          voice?: string;
         };
         Relationships: [
           {

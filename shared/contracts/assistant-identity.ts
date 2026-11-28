@@ -1,11 +1,12 @@
 import { z } from 'zod';
 
 /**
- * The assistant's identity, as the member sets it (ADR-0224).
+ * The assistant's identity, as the member sets it (ADR-0224, ADR-0228).
  *
- * One private row per member: what their copy is called, which mark it wears and
- * which tone it answers in. Nothing here is public — the row is owner-only, and a
- * shared surface draws the site's neutral «المساعد» rather than a member's name.
+ * One private row per member: what their copy is called, how it is addressed,
+ * which mark it wears and which tone it answers in. Nothing here is public — the
+ * row is owner-only, and a shared surface draws the site's neutral «المساعد»
+ * rather than a member's name.
  *
  * The name is *data* handed to the prompt inside a quoted sentence, never an
  * instruction, so it is bounded before it can reach a model: letters (Arabic or
@@ -30,6 +31,18 @@ export const AssistantToneSchema = z.enum(['default', 'concise', 'warm', 'formal
 export type AssistantTone = z.infer<typeof AssistantToneSchema>;
 
 /**
+ * How the assistant is addressed in Arabic (ADR-0228). The name is free text,
+ * so gender is a stored choice rather than a guess from its ending: verbs and
+ * adjectives about the assistant follow this value in the prompt and in the
+ * site's own labels. The default is feminine because that is the wording the
+ * deployment already ships («نور»).
+ */
+export const ASSISTANT_VOICES = ['feminine', 'masculine'] as const;
+export type AssistantVoice = (typeof ASSISTANT_VOICES)[number];
+export const AssistantVoiceSchema = z.enum(ASSISTANT_VOICES, 'صيغة الخطاب غير صالحة');
+export const ASSISTANT_DEFAULT_VOICE: AssistantVoice = 'feminine';
+
+/**
  * The site's own names. A member's copy may not answer as the site, and the
  * reservation is checked here rather than in the form so the API refuses it too.
  */
@@ -52,11 +65,16 @@ export const AssistantNameSchema = z
   .refine((value) => !/\s{2,}/.test(value), 'الاسم لا يقبل مسافتين متتاليتين')
   .refine((value) => !RESERVED_ASSISTANT_NAMES.includes(value), 'هذا الاسم محجوز');
 
-/** What the member sends: every field, because the write replaces the row. */
+/**
+ * What the member sends: every field, because the write replaces the row. The
+ * avatar is not here — it is a file with its own endpoint, exactly as the member
+ * avatar is (#946), and a save must not blank a face it never carried.
+ */
 export const AssistantIdentityInputSchema = z.object({
   /** `null` restores the deployment's name without forgetting the other fields. */
   name: AssistantNameSchema.nullable(),
   avatarVariant: z.number().int().min(1).max(ASSISTANT_AVATAR_VARIANTS).nullable(),
+  voice: AssistantVoiceSchema,
   tone: AssistantToneSchema,
   note: z.string().trim().max(ASSISTANT_NOTE_MAX).nullable(),
 });
@@ -68,6 +86,9 @@ export const AssistantIdentitySchema = z.object({
   name: z.string(),
   customName: z.string().nullable(),
   avatarVariant: z.number().int().nullable(),
+  /** The member's uploaded face, or `null` for the orb (ADR-0228). */
+  avatarUrl: z.string().nullable(),
+  voice: AssistantVoiceSchema,
   tone: AssistantToneSchema,
   note: z.string().nullable(),
   updatedAt: z.string().nullable(),
@@ -89,6 +110,8 @@ export const DEFAULT_ASSISTANT_IDENTITY: AssistantIdentity = {
   name: ASSISTANT_DEFAULT_NAME,
   customName: null,
   avatarVariant: null,
+  avatarUrl: null,
+  voice: ASSISTANT_DEFAULT_VOICE,
   tone: 'default',
   note: null,
   updatedAt: null,

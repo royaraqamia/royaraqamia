@@ -6,10 +6,8 @@ import {
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { isSameOrigin } from '@/backend/transport/http';
 import { NO_STORE } from '@/backend/transport/cache-policy';
-import {
-  AvatarValidationError,
-  UsernameTakenError,
-} from '@/backend/services/users/profile-service';
+import { AvatarValidationError } from '@/backend/services/users/avatar-file';
+import { UsernameTakenError } from '@/backend/services/users/profile-service';
 import {
   UpdateBioSchema,
   UpdateNameSchema,
