@@ -98,7 +98,7 @@ import {
   type WebSource,
 } from '@/shared/contracts/web-search';
 import { behaviourLines } from '@/shared/contracts/agent-behaviour.mjs';
-import { VisualSpecSchema, type VisualSpec } from '@/shared/contracts/visual';
+import { VisualRenderSpecSchema, type VisualSpec } from '@/shared/contracts/visual';
 import {
   CHAT_MEDIA_UNAVAILABLE,
   MEDIA_APP_REGISTRY_NAMES,
@@ -1703,10 +1703,26 @@ export class ChatAgentService {
               }
             }
             if (tool.name === 'render_visual') {
-              const drawn = VisualSpecSchema.safeParse((result as { visual?: unknown }).visual);
+              const drawn = VisualRenderSpecSchema.safeParse(
+                (result as { visual?: unknown }).visual
+              );
               if (drawn.success) {
-                visual = drawn.data;
+                const { animation, ...still } = drawn.data;
+                visual = still;
                 yield { type: 'visual', visual };
+                // Motion is rendered off the request: the member keeps the still
+                // now, and the MP4 arrives as a follow-up line (ADR-0215
+                // amendment). A queue that cannot be written never fails a turn
+                // that already has its drawing.
+                if (animation && this.deps.agent.enqueueVisualRender) {
+                  await this.deps.agent
+                    .enqueueVisualRender(conversationId, userId, drawn.data)
+                    .catch((error: unknown) => {
+                      logger.warn('Assistant visual motion could not be queued', {
+                        error: String(error),
+                      });
+                    });
+                }
               }
             }
             messages.push(toolAnswer(call.id, result, tool.maxResultChars));

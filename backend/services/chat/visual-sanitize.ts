@@ -142,3 +142,22 @@ export function sanitizeVisualSvg(input: string): string | null {
   if (broken || depth !== 0 || out.length === 0 || !out[0]?.startsWith('<svg')) return null;
   return out.join('');
 }
+
+/**
+ * The `id`s the sanitized drawing actually kept, so a motion track can only
+ * target an element that exists. The animation never adds markup of its own.
+ */
+export function svgElementIds(svg: string): Set<string> {
+  const ids = new Set<string>();
+  const parser = new SaxesParser();
+  parser.on('opentag', (tag: SaxesTagPlain) => {
+    const id = tag.attributes.id;
+    if (typeof id === 'string' && id.length > 0) ids.add(id);
+  });
+  try {
+    parser.write(svg).close();
+  } catch {
+    return new Set();
+  }
+  return ids;
+}

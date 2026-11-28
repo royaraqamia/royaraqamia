@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createSupabaseChatRepository } from '@/backend/repositories/chat/supabase-chat-repository';
 import { createSupabaseChatAgentRepository } from '@/backend/repositories/chat/chat-agent-repository';
+import { createSupabaseVisualRenderRepository } from '@/backend/repositories/chat/visual-render-repository';
 import { createSupabaseSkillTelemetryRepository } from '@/backend/repositories/chat/skill-telemetry-repository';
 import { createSupabaseChatAgentActionRepository } from '@/backend/repositories/chat/chat-agent-action-repository';
 import { createSupabaseAgentToolGrantRepository } from '@/backend/repositories/agent/agent-tool-grant-repository';
@@ -21,6 +22,11 @@ import {
   ChatAgentResumeService,
   type ChatAgentResumeDeps,
 } from '@/backend/services/chat/chat-agent-resume-service';
+import {
+  VisualRenderService,
+  type VisualRenderServiceDeps,
+} from '@/backend/services/chat/visual-render-service';
+import { createVisualRender } from '@/backend/services/chat/visual-render';
 import { openAgentTurnSession } from '@/backend/services/chat/agent-turn-session';
 import { createChatAttachmentStorage } from '@/backend/repositories/chat/chat-attachment-storage';
 import { createChatAttachmentSweepRepository } from '@/backend/repositories/chat/chat-attachment-sweep-repository';
@@ -380,6 +386,27 @@ export function createChatAgentResumeService(
     turns: createSupabaseChatAgentRepository(getAdminSupabase()),
     openSession: (userId) => openAgentTurnSession(userId),
     service: (supabase) => createSupabaseChatAgentService(supabase),
+    ...deps,
+  });
+}
+
+/**
+ * The motion worker's wiring (ADR-0215 amendment).
+ *
+ * The queue, the bucket and the assistant's own message are all service-role:
+ * the member reads the finished clip through the same signed media route every
+ * other attachment uses, never the queue row. ffmpeg is the binary the origin
+ * image carries; a test injects its own.
+ */
+export function createVisualRenderService(
+  deps: Partial<VisualRenderServiceDeps> = {}
+): VisualRenderService {
+  const admin = getAdminSupabase();
+  return new VisualRenderService({
+    renders: createSupabaseVisualRenderRepository(admin),
+    attachments: createChatAttachmentStorage(admin),
+    agent: createSupabaseChatAgentRepository(admin),
+    render: createVisualRender(),
     ...deps,
   });
 }

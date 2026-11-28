@@ -4,6 +4,7 @@ import {
   createSupabaseChatAgentActionService,
   createSupabaseChatAgentService,
   createSupabaseChatService,
+  createVisualRenderService,
 } from '@/backend/config/chat';
 import * as Sentry from '@sentry/nextjs';
 
@@ -837,6 +838,35 @@ export async function runChatAgentTurns(headers: Headers): Promise<HttpResult> {
       {
         success: false,
         error: error instanceof Error ? error.message : 'تعذّر إكمال الدور',
+      },
+      { headers: NO_STORE }
+    );
+  }
+}
+
+/**
+ * The motion worker: turns a queued drawing into one MP4 follow-up.
+ *
+ * Called by `wake_visual_renders()` through pg_cron, authenticated with
+ * `CRON_SECRET` like every other sweep. One render per call, because a frame
+ * pass plus the encode is bounded under this function's ceiling; a backlog
+ * drains one wake a minute, which is exactly the case it exists for.
+ */
+export async function runVisualRenders(headers: Headers): Promise<HttpResult> {
+  if (!isCronAuthorized(headers)) {
+    return jsonResult(401, { success: false, error: 'غير مصرح' }, { headers: NO_STORE });
+  }
+
+  try {
+    const result = await createVisualRenderService().run(1);
+    return jsonResult(200, { success: true, ...result }, { headers: NO_STORE });
+  } catch (error) {
+    Sentry.captureException(error);
+    return jsonResult(
+      500,
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'تعذّر إنتاج الرسم المتحرك',
       },
       { headers: NO_STORE }
     );

@@ -75,6 +75,16 @@ COPY --from=build /app/data ./data
 # fewer skills rather than failing, so they are copied explicitly.
 COPY --from=build /app/.opencode/skills/agency ./.opencode/skills/agency
 
+# The assistant's motion renderer paints frames with sharp (already an npm
+# dependency) and muxes them with ffmpeg (ADR-0215 amendment). ffmpeg is a
+# system binary, not a package: the runtime image carries it so a render never
+# reaches out to install anything on the box. librsvg draws `<text>` through
+# fontconfig, so the image also carries one Arabic face rather than falling back
+# to tofu in a clip that is mostly Arabic.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg fonts-hosny-amiri \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN chown -R node:node /app
 USER node
 
