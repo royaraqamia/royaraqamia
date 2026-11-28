@@ -56,17 +56,20 @@ class UsageScreenModelTest {
     }
 
     @Test
-    fun `the bar counts the standing owned-item caps, not the counted actions`() {
-        // The site's `usageShare` sums the same `limits` body (ADR-0098): a daily
-        // count is a number of times that resets, and folding it into a standing
-        // total would make the bar drop at midnight on its own.
-        assertEquals(1L, model.used)
-        assertEquals(5L, model.cap)
-        assertEquals(20, model.share)
+    fun `each key the account holds becomes one meter, not a share of every cap`() {
+        // The site's `standingMeters` draws the same rows from the same `limits`
+        // body (ADR-0098): a daily count is a number of times that resets, and a
+        // key the account holds nothing in is not in use.
+        val meter = model.meters.single()
+        assertEquals("notes", meter.key)
+        assertEquals("notes", meter.label)
+        assertEquals(1L, meter.used)
+        assertEquals(5L, meter.cap)
+        assertEquals(20, meter.share)
     }
 
     @Test
-    fun `a plan with no caps reads as empty rather than dividing by zero`() {
+    fun `a plan holding nothing draws no meter rather than dividing by zero`() {
         val empty =
             UsageScreenModel.from(
                 (
@@ -79,7 +82,7 @@ class UsageScreenModelTest {
                 ).value
             )
 
-        assertEquals(0, empty.share)
+        assertEquals(emptyList<UsageScreenModel.Meter>(), empty.meters)
     }
 
     @Test

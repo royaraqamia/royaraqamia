@@ -35,26 +35,42 @@ function formatMoney(cents: number, currency: string): string {
   return currency === 'USD' ? `$${formatted}` : `${formatted} ${currency}`;
 }
 
+/** One key's standing allowance, as the card draws it. */
+export interface StandingMeter {
+  key: string;
+  label: string;
+  used: number;
+  cap: number;
+  /** [used] as a whole percentage of [cap], capped at 100. */
+  share: number;
+}
+
 /**
- * The share of the plan's standing allowance the account has filled, as a whole
- * percentage.
+ * One meter per owned key the account actually holds something in.
  *
- * The page counts the owned-item caps and nothing else: a counted action
- * (download, scan, surah, assistant question) is a number of times that resets,
- * and folding a daily count into a standing one would make the bar drop back at
- * midnight without the member having given anything up. The app's
- * `UsageScreenModel` derives the same number from the same `limits` body, so the
- * two clients draw one bar (ADR-0098).
+ * The caps are thirteen unrelated keys, and their sum is a number no member can
+ * act on: the fullest plain account in production holds two rows, which reads as
+ * 3% of a 65-slot total and argues against the next tier instead of describing
+ * this account (#1951). A key with no rows draws no meter, because a member who
+ * holds nothing in it is not using it; a key with a cap of zero is an Admin's
+ * unlimited placeholder and has no division to draw.
  *
- * Every cap is a standing limit with a row per slot, so the sum of the caps is a
- * number a member can read as "how full my plan is" — and a plan with no caps
- * reads as empty rather than as a division by zero.
+ * The sorted order puts the key closest to its wall first, which is the one the
+ * member is about to meet. A daily count is not a slot and stays in
+ * `dailyCounters`; the app's `UsageScreenModel` derives the same meters from the
+ * same `limits` body, so both clients draw the same rows (ADR-0098).
  */
-export function usageShare(limits: OwnedItemState[]): number {
-  const cap = limits.reduce((total, item) => total + item.cap, 0);
-  if (cap <= 0) return 0;
-  const used = limits.reduce((total, item) => total + item.used, 0);
-  return Math.min(100, Math.round((used / cap) * 100));
+export function standingMeters(limits: OwnedItemState[]): StandingMeter[] {
+  return limits
+    .filter((item) => item.used > 0 && item.cap > 0)
+    .map((item) => ({
+      key: item.key,
+      label: item.label,
+      used: item.used,
+      cap: item.cap,
+      share: Math.min(100, Math.round((item.used / item.cap) * 100)),
+    }))
+    .sort((a, b) => b.share - a.share || b.used - a.used || a.key.localeCompare(b.key));
 }
 
 /**
@@ -181,17 +197,18 @@ function PlanBody() {
   const { state, limits, activations } = plan;
 
   /**
-   * One bar for the standing allowance. The page used to print one row per item
-   * and per counted action; a member had to read nineteen numbers to learn one
-   * thing — how much of the plan is in use — so the owned-item caps are summed
-   * into one share, named for what it is, while the daily counts get a short
-   * block of their own. Folding the two would make this bar fall at midnight.
+   * One meter per key the account holds. The page used to sum all thirteen caps
+   * into a single share, which read as "how full my plan is" while a real member
+   * holds two rows and the paid ceiling is forty times the free one — a number
+   * that described no decision the member was making (#1951). The heading names
+   * the axis the paid tier changes, in the same words the server's cap refusal
+   * answers with.
    *
    * The bar is a div with a `transform` rather than a `<progress>`: the app fills
    * the same track with `fillMaxWidth(fraction)`, and a recipe only both clients
    * can draw is the point (ADR-0099).
    */
-  const share = usageShare(limits);
+  const meters = standingMeters(limits);
   const today = dailyCounters(usage?.counters ?? []);
 
   return (
@@ -233,30 +250,46 @@ function PlanBody() {
 
         {state.unlimited ? (
           <p className="text-fluid-small font-bold text-foreground">{PLAN_CARD_COPY.unlimited}</p>
-        ) : (
-          <div className="space-y-1">
+        ) : meters.length > 0 ? (
+          <section
+            data-visual="plan-standing"
+            aria-label={PLAN_CARD_COPY.capAxis}
+            className="space-y-2"
+          >
             <p data-visual="plan-standing-label" className="text-fluid-xs text-muted-foreground">
-              {PLAN_CARD_COPY.usageLabel}
+              {PLAN_CARD_COPY.capAxis}
             </p>
-            <div className="roy-progress">
-              <div
-                role="progressbar"
-                aria-label={PLAN_CARD_COPY.usageLabel}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={share}
-                className="roy-progress-track"
-              >
-                <div
-                  className="roy-progress-fill"
-                  style={{ transform: `scaleX(${share / 100})` }}
-                  aria-hidden="true"
-                />
-              </div>
-              <span className="roy-progress-value">{formatCount(share)}%</span>
-            </div>
-          </div>
-        )}
+            <ul className="space-y-2">
+              {meters.map((meter) => (
+                <li key={meter.key} data-visual="plan-standing-row" className="space-y-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-fluid-xs text-muted-foreground">{meter.label}</span>
+                    <span className="roy-row-value">
+                      {formatCount(meter.used)} / {formatCount(meter.cap)}
+                    </span>
+                  </div>
+                  <div className="roy-progress">
+                    <div
+                      role="progressbar"
+                      aria-label={meter.label}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={meter.share}
+                      className="roy-progress-track"
+                    >
+                      <div
+                        className="roy-progress-fill"
+                        style={{ transform: `scaleX(${meter.share / 100})` }}
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <span className="roy-progress-value">{formatCount(meter.share)}%</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {state.plan === 'pro' && state.expiresAt && (
           <p className="text-fluid-xs text-muted-foreground">

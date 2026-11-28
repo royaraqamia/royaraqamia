@@ -19,9 +19,7 @@ class UsageUiStateTest {
             plan = "free",
             unlimited = false,
             expiresAt = null,
-            used = 0L,
-            cap = 0L,
-            share = 0,
+            meters = emptyList(),
             activations = emptyList(),
         )
 
