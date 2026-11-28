@@ -139,6 +139,9 @@ export function AssistantPanel({
     edit,
     remove,
     resolveAction,
+    grantableTools,
+    grantedTools,
+    grantTool,
     refresh,
   } = useChatThread(threadId ?? '', { active: open && Boolean(threadId) });
 
@@ -432,6 +435,9 @@ export function AssistantPanel({
             onLoadOlder={loadOlder}
             onRetry={retrySend}
             onResolve={resolveAction}
+            grantableTools={grantableTools}
+            grantedTools={grantedTools}
+            onGrant={grantTool}
             onEdit={edit}
             onDelete={(id) => setConfirmDelete(id)}
             onDownload={(attachment) => void download(attachment)}

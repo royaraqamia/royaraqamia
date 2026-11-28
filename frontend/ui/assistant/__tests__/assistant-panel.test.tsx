@@ -77,6 +77,9 @@ const conversation = vi.hoisted(() => ({
   edit: vi.fn().mockResolvedValue(true),
   remove: vi.fn().mockResolvedValue(null),
   resolveAction: vi.fn().mockResolvedValue(null),
+  grantableTools: new Set<string>(),
+  grantedTools: new Set<string>(),
+  grantTool: vi.fn().mockResolvedValue(null),
   refresh: vi.fn().mockResolvedValue(undefined),
 }));
 

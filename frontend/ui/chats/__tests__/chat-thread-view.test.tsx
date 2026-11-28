@@ -140,6 +140,9 @@ vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
     unblock: vi.fn(),
     invite: hook.invite,
     resolveAction: hook.resolveAction,
+    grantableTools: new Set<string>(),
+    grantedTools: new Set<string>(),
+    grantTool: vi.fn(),
   }),
 }));
 

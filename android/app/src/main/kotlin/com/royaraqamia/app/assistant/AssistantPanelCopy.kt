@@ -40,4 +40,7 @@ object AssistantPanelCopy {
     const val ACTION_STATUS_APPLIED = "نُفِّذ"
     const val ACTION_STATUS_FAILED = "لم يُنفَّذ"
     const val ACTION_ADMIN_MARK = "إدارة"
+    const val ACTION_GRANT = "اسمح دائماً"
+    const val ACTION_GRANTED = "تمّ منح الإذن: ستعمل هذه الأداة دون تأكيد في كل مرة."
+    const val ACTION_GRANT_FAILED = "تعذّر منح الإذن."
 }

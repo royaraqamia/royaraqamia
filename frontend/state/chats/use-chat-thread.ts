@@ -21,6 +21,7 @@ import {
   withdrawChatRequest,
 } from '@/frontend/api/chats';
 import { touchLastSeen } from '@/frontend/api/presence';
+import { getAgentToolGrants, grantAgentTool } from '@/frontend/api/agent-tool-grants';
 import { clearAssistantTurn } from '@/frontend/state/chats/assistant-turn';
 import {
   removeChatAttachmentObjects,
@@ -99,6 +100,14 @@ export interface ChatThreadState {
    * refusal is a `failed` row with its reason, not a thrown error (#818).
    */
   resolveAction: (actionId: string, answer: 'confirm' | 'reject') => Promise<string | null>;
+  /**
+   * The tier-1 tools this member may grant, and the ones already granted
+   * (ADR-0180, decision 2). Empty for a conversation that is not the assistant's.
+   */
+  grantableTools: ReadonlySet<string>;
+  grantedTools: ReadonlySet<string>;
+  /** Grant a tool from its applied card; `null` when done, else the refusal. */
+  grantTool: (toolId: string) => Promise<string | null>;
 }
 
 /**
@@ -125,6 +134,13 @@ export function useChatThread(
   const storeRef = useRef<ChatsLocalStore | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
   const [pending, setPending] = useState<Record<string, ChatMessageState>>({});
+  /**
+   * The assistant's per-tool trust for this thread (ADR-0180, decision 2). The
+   * server answers both sets, so the card never has to guess a tier: a tool the
+   * member may grant, and a tool they already did.
+   */
+  const [grantableTools, setGrantableTools] = useState<ReadonlySet<string>>(() => new Set());
+  const [grantedTools, setGrantedTools] = useState<ReadonlySet<string>>(() => new Set());
   /** The newest line the screen holds, stamped or not. */
   const newestRef = useRef<string | null>(null);
   /** The newest line this tab has actually shown the reader. */
@@ -195,6 +211,55 @@ export function useChatThread(
       dispatch({ type: 'readFailed' });
     }
   }, [conversationId, markSeen]);
+
+  /**
+   * The assistant's trust lists, read from the server rather than inferred: the
+   * grants service answers what may be granted (tier 1, seen, not granted) and
+   * what already is. A card only offers «اسمح دائماً» for a tool in one of them.
+   */
+  const loadGrants = useCallback(async () => {
+    try {
+      const result = await getAgentToolGrants();
+      if (!result.success) return;
+      setGrantableTools(new Set((result.grantable ?? []).map((tool) => tool.toolId)));
+      setGrantedTools(new Set((result.grants ?? []).map((row) => row.toolId)));
+    } catch (error) {
+      logger.warn('Assistant tool grants could not be read', { error: String(error) });
+    }
+  }, []);
+
+  /**
+   * Fetch the trust lists once the thread is known to be the assistant's, and
+   * again after a confirm so a tool that just ran becomes grantable. A human
+   * conversation never asks, and an inactive panel reads nothing.
+   */
+  useEffect(() => {
+    if (!active || thread?.kind !== 'agent') return;
+    void loadGrants();
+  }, [active, thread?.kind, conversationId, loadGrants]);
+
+  /**
+   * Grant one tool from its own applied card. The server checks the tier and
+   * "seen it run" again, so this is a request, not a decision; the live row it
+   * answers is what the card repeats.
+   */
+  const grantTool = useCallback(async (toolId: string): Promise<string | null> => {
+    try {
+      const result = await grantAgentTool(toolId);
+      if (!result.success) return result.error ?? '';
+
+      setGrantedTools((previous) => new Set(previous).add(toolId));
+      setGrantableTools((previous) => {
+        if (!previous.has(toolId)) return previous;
+        const next = new Set(previous);
+        next.delete(toolId);
+        return next;
+      });
+      return null;
+    } catch (error) {
+      return failureOf(error, '');
+    }
+  }, []);
 
   /**
    * The thread paints from the device first (#1033): the header and the newest
@@ -572,13 +637,18 @@ export function useChatThread(
         // (ADR-0173). A no-op for a thread with no assistant turn.
         clearAssistantTurn(conversationId);
 
+        // An applied tool has now run before the member, which is the one
+        // precondition a grant has (ADR-0180, decision 2). Re-read the lists so
+        // its own card can offer «اسمح دائماً» the moment it settles.
+        if (answer === 'confirm') void loadGrants();
+
         const reason = action.result?.error;
         return action.status === 'failed' && typeof reason === 'string' ? reason : null;
       } catch (error) {
         return failureOf(error, 'تعذّر تنفيذ الإجراء');
       }
     },
-    [conversationId]
+    [conversationId, loadGrants]
   );
 
   return {
@@ -604,5 +674,8 @@ export function useChatThread(
     unblock,
     invite,
     resolveAction,
+    grantableTools,
+    grantedTools,
+    grantTool,
   };
 }
