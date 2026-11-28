@@ -99,6 +99,12 @@
       "until": "2026-12-24"
     },
     {
+      "surface": "home",
+      "reason": "The strip's markup is unchanged: the local route-to-label map it already used moved into `SERVICES_LINK` so the door's document title reads the same entry (#1932). Every pill keeps the same classes, icon, label and order, so neither the recorded contract boxes nor the capture can move; the title is browser chrome, never part of the page.",
+      "issue": "#1932",
+      "until": "2026-12-28"
+    },
+    {
       "surface": "account-plan",
       "reason": "The contract records only the guest at-rest state - the title and guest card. The change gives the signed-in member's empty history a key chosen from the plan in force; shared/visual/account-plan.json explicitly excludes the member's Ready state and the capture never draws it. No recorded box, colour, word or raster can move, and #1806 carries component tests for all three new sentences.",
       "issue": "#1806",

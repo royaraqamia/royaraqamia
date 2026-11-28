@@ -8,7 +8,9 @@ import {
   readRequestedHomeTab,
   writeHomeTab,
 } from '@/frontend/shared/home-services-local';
+import { SITE_NAME, siteTitle } from '@/frontend/shared/metadata';
 import { useHomeServices } from '@/frontend/state/home-services-provider';
+import { SERVICES_BY_ROUTE } from '@/frontend/ui/navbar/services-link';
 import { homeTabHref, type HomeServiceKey } from '@/shared/contracts/home-services-catalog';
 
 import { HomeAppSurface } from './home/HomeAppSurface';
@@ -51,6 +53,21 @@ export function HomePageContent() {
   const addressed =
     requested ?? (remembered && order.includes(remembered) ? remembered : (order[0] ?? null));
   const selected = chosen ?? addressed;
+  const selectedLabel = selected ? SERVICES_BY_ROUTE.get(selected)?.label : undefined;
+
+  // The door is one shared document (ADR-0031, #1932): the server's title is the
+  // site name, so the tab the browser settles on names the document itself, from
+  // the same entry its pill is drawn from. `/` with no apps, and the empty state,
+  // keep the site's name. A route that renders its own metadata has already
+  // replaced the title when the cleanup runs, so only a title still ours is put
+  // back — the door never overwrites the page it left for.
+  useEffect(() => {
+    const title = selectedLabel ? siteTitle(selectedLabel) : SITE_NAME;
+    document.title = title;
+    return () => {
+      if (document.title === title) document.title = SITE_NAME;
+    };
+  }, [selectedLabel]);
 
   // The address is the stronger statement, and a reload after the redirect that
   // brought the member here has to keep landing on that tab. An address naming

@@ -120,3 +120,17 @@ export const SERVICES_LINK: NavLink = {
     },
   ],
 };
+
+/**
+ * The live apps by their route: the strip's pill, the sheet's row and the
+ * door's document title all read this one entry (#1932).
+ *
+ * A retired row keeps its copy for the screens that still draw it (ADR-0152),
+ * and a `pickerOnly` row is not one of our apps (ADR-0155), so neither can name
+ * a tab here.
+ */
+export const SERVICES_BY_ROUTE = new Map(
+  (SERVICES_LINK.subItems ?? [])
+    .filter((item) => !item.retired && !item.pickerOnly)
+    .map((item) => [item.href, item] as const)
+);
