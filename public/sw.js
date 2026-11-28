@@ -411,6 +411,11 @@ async function refreshRouteWindow(cache, urls, budget, held, collect) {
           continue;
         }
         if (!isCacheable(response)) {
+          // The route left the cache (#1985). A shell an older build left here
+          // cannot be replaced by an answer the worker may not store, so drop it
+          // in the same pass rather than letting the idle refresh skip past it on
+          // every later window.
+          if (await cache.match(url)) await forgetCachedDocument(url);
           console.log('[sw] route refresh skipped (not cacheable):', url);
           continue;
         }
@@ -1312,16 +1317,29 @@ async function staleWhileRevalidate(request, onMiss, event, options = {}) {
       // A viewer's own screen is never stored (#1370), whatever the server said:
       // a route that answers a cacheable document is a routing regression, and
       // the entry would be one session's page handed to the next.
-      if (response.ok && !viewerScoped && (runtimeShell || isCacheable(response))) {
-        const write = (async () => {
-          await store(CACHE, key, response.clone());
-          await rememberImageFallback(new URL(request.url), response.clone());
-          await refreshKeptPage(request, response.clone());
-        })().catch((error) => {
-          // A bookkeeping failure must not turn a good response into an error.
-          console.log('[sw] cache write failed', String(error));
-        });
-        await write;
+      if (response.ok && !viewerScoped) {
+        if (runtimeShell || isCacheable(response)) {
+          const write = (async () => {
+            await store(CACHE, key, response.clone());
+            await rememberImageFallback(new URL(request.url), response.clone());
+            await refreshKeptPage(request, response.clone());
+          })().catch((error) => {
+            // A bookkeeping failure must not turn a good response into an error.
+            console.log('[sw] cache write failed', String(error));
+          });
+          await write;
+        } else if (cached) {
+          // Policy wins over the copy (#1985): the server has taken this route
+          // out of the cache, and an answer the worker may not store could never
+          // replace the entry the previous build left. Serving it first on every
+          // visit is exactly how one build's document outlives the release that
+          // changed it. Delete it instead, so the next navigation is a network
+          // read — the same door `forgetCachedDocument` already closes for a
+          // redirect and for a viewer's own screen.
+          await forgetCachedDocument(key).catch((error) => {
+            console.log('[sw] cache delete failed', String(error));
+          });
+        }
       }
       return response;
     })

@@ -250,3 +250,24 @@ is exactly what this amendment says about the never-cache path.
 has no fallback either and is still cut at the deadline so the router can fall back to a full document
 load; a document that fails reports `navigation-offline`, and one answered by an ancestor reports
 `navigation-prefix` (ADR-0074).
+
+## Amendment (2026-11-28, #1985): `private` is not `no-store`, and a copy the server withdrew is deleted
+
+The account subtree left the edge cache by answering `private, no-store`. The shared half was right
+and the storage half was the bug: `no-store` forbids every cache, including Cache Storage, which is
+this device's own copy and the only one the offline account shell has (the [2026-10-21
+amendment](#amendment-2026-10-21-448-the-account-shells-ride-the-cache-the-account-data-keeps-the-never-cache-prefixes)).
+`isCacheable` read `private` as a ban too, so both layers agreed to hold nothing while a third one
+kept answering: the entry a previous build had written. Stale-while-revalidate returns a cached copy
+before the network, and a response the worker may not store could never replace the entry it found.
+Every device that had opened `/account` kept that build's document; a private window, with no Cache
+Storage, was the only place the current one showed.
+
+`private` now means what HTTP says — not in a _shared_ cache. `no-store` and `no-cache` keep their
+meaning, and the subtree answers `private, max-age=0, must-revalidate`: the edge still refuses it
+(`check:edge` asserts that), and the device copy is refreshed like any other shell.
+
+The second half is the invariant this amendment buys: a revalidation the worker may not store deletes
+the copy it could not replace, and the idle route refresh drops an entry whose route has left the
+cache. One build's document answering until the cache is cleared by hand stops being a state this
+policy can reach — for the next route that changes posture as well as this one.

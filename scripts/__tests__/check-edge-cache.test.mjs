@@ -70,8 +70,18 @@ describe('privateVerdict', () => {
     ).toBe(false);
   });
 
-  it('requires the account shells to keep their private, no-store header', () => {
+  it('requires the account shells to stay private to the device, not banned from it (#1985)', () => {
+    // The edge must not store them; the device's worker cache may, and needs to
+    // in order to be able to replace its copy. `private` without `no-store` is
+    // the whole posture, so both the production value and the strict form pass.
     for (const path of ['/account', '/account/faq', '/account/plan', '/account/links']) {
+      expect(
+        privateVerdict({
+          path,
+          cache: 'DYNAMIC',
+          cacheControl: 'private, max-age=0, must-revalidate',
+        }).ok
+      ).toBe(true);
       expect(privateVerdict({ path, cache: 'DYNAMIC', cacheControl: 'private, no-store' }).ok).toBe(
         true
       );
