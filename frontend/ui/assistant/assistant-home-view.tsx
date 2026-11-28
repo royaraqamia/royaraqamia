@@ -411,7 +411,7 @@ export function AssistantHomeView() {
                     key={voice}
                     className={cn(
                       'flex h-11 cursor-pointer items-center justify-center rounded-xl border text-sm font-bold transition-safe duration-200 ease-out',
-                      'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/30',
+                      'focus-within:ring-2 focus-within:ring-primary/30',
                       voiceValue === voice
                         ? 'border-primary/50 bg-primary/10 text-primary'
                         : 'border-border/60 bg-background text-foreground hover:border-primary/30 hover:bg-primary/5'
