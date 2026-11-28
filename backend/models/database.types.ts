@@ -4430,7 +4430,6 @@ export type Database = {
         Args: { p_fields?: Json; p_post_id: string };
         Returns: string;
       };
-      published_author_ids: { Args: never; Returns: string[] };
       recompute_admin_flags: {
         Args: { p_emails: string[] };
         Returns: undefined;

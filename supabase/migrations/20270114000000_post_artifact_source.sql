@@ -40,27 +40,3 @@ comment on column public.posts.source_ref is
 create index if not exists idx_posts_source_kind
   on public.posts (source_kind)
   where source_kind is not null;
-
--- The supply half of the roster (#1952): who has actually published.
---
--- A plain `select author_id` would be capped by PostgREST's row limit and could
--- silently miss an author on a page long enough, which is exactly the number the
--- roster filter branches on. DISTINCT belongs in SQL for that reason; the
--- function runs as the caller, so the posts select policy still decides what it
--- can see (a guest sees published rows, a member also sees their own drafts).
-create or replace function public.published_author_ids()
-returns setof uuid
-language sql
-stable
-security invoker
-set search_path = public
-as $$
-  select distinct author_id
-  from public.posts
-  where status = 'published'
-    and community_visible
-    and deleted_at is null;
-$$;
-
-revoke all on function public.published_author_ids() from public;
-grant execute on function public.published_author_ids() to anon, authenticated, service_role;
