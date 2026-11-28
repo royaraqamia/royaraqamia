@@ -18,8 +18,11 @@ import { pathToFileURL } from 'node:url';
  *     `private, no-store`.
  *
  * It cannot prove the authenticated case without a member's cookie: a signed-out
- * `/account` redirects and a signed-out `/api/me` answers 401, and neither is
- * cacheable anyway. The header assertions are what carry that invariant.
+ * `/api/me` answers 401, and the account shells answer 200 to everyone because
+ * their member data arrives on the client. The header assertions are what carry
+ * that invariant: a private path that promises a shared cache (`s-maxage` or
+ * `public`) fails even while the edge refuses to store it, so the header and the
+ * rule cannot drift apart.
  */
 
 export const DEFAULT_BASE = 'https://royaraqamia.com';
@@ -47,6 +50,12 @@ export const PUBLIC_PATHS = [
 
 /** Paths that must never be cached, whether or not the visitor is signed in. */
 export const PRIVATE_PATHS = [
+  '/account',
+  '/account/faq',
+  '/account/plan',
+  '/account/submissions',
+  '/account/news',
+  '/account/links',
   '/community',
   '/admin',
   '/notifications',
@@ -54,6 +63,9 @@ export const PRIVATE_PATHS = [
   '/api/notifications',
   '/api/community/following',
 ];
+
+/** Private surfaces whose document itself must declare `private`/`no-store`. */
+const PERSONALIZED_PREFIXES = ['/account', '/community', '/u/'];
 
 const CACHE_HITS = new Set(['hit', 'revalidated']);
 
@@ -71,11 +83,23 @@ export function publicVerdict(probe) {
 
 export function privateVerdict(probe) {
   if (isCacheHit(probe.cache)) return { ok: false, reason: `cached (${probe.cache})` };
-  const personalized = probe.path === '/community' || probe.path.startsWith('/u/');
-  if (personalized && !/private|no-store/i.test(probe.cacheControl ?? '')) {
+  const cacheControl = probe.cacheControl ?? '';
+  // The other half of one contract: a path the rule excludes must not ask for a
+  // shared cache. Otherwise the header promises a `s-maxage` the edge refuses,
+  // which is exactly the state this check exists to turn into a failure.
+  if (/s-maxage/i.test(cacheControl) || /^\s*public\b/i.test(cacheControl)) {
     return {
       ok: false,
-      reason: `cache-control ${probe.cacheControl ?? 'missing'} — expected private/no-store`,
+      reason: `cache-control ${cacheControl || 'missing'} promises a shared cache the edge refused`,
+    };
+  }
+  const personalized = PERSONALIZED_PREFIXES.some(
+    (prefix) => probe.path === prefix || probe.path.startsWith(`${prefix.replace(/\/$/, '')}/`)
+  );
+  if (personalized && !/private|no-store/i.test(cacheControl)) {
+    return {
+      ok: false,
+      reason: `cache-control ${cacheControl || 'missing'} — expected private/no-store`,
     };
   }
   return { ok: true, reason: probe.cache ?? 'not cached' };

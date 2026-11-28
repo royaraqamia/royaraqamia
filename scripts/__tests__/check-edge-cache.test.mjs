@@ -69,6 +69,29 @@ describe('privateVerdict', () => {
       }).ok
     ).toBe(false);
   });
+
+  it('requires the account shells to keep their private, no-store header', () => {
+    for (const path of ['/account', '/account/faq', '/account/plan', '/account/links']) {
+      expect(privateVerdict({ path, cache: 'DYNAMIC', cacheControl: 'private, no-store' }).ok).toBe(
+        true
+      );
+    }
+  });
+
+  it('fails a private path whose header promises a shared cache the edge refused', () => {
+    for (const path of ['/account', '/account/faq', '/api/me']) {
+      const verdict = privateVerdict({
+        path,
+        cache: 'DYNAMIC',
+        cacheControl: 'public, s-maxage=31536000',
+      });
+      expect(verdict.ok).toBe(false);
+      expect(verdict.reason).toContain('promises a shared cache');
+    }
+    expect(
+      privateVerdict({ path: '/account', cache: 'DYNAMIC', cacheControl: 's-maxage=60' }).ok
+    ).toBe(false);
+  });
 });
 
 describe('the path lists', () => {
@@ -99,5 +122,19 @@ describe('the path lists', () => {
     expect(PRIVATE_PATHS).toContain('/notifications');
     expect(PRIVATE_PATHS).toContain('/api/me');
     expect(PRIVATE_PATHS).toContain('/api/community/following');
+  });
+
+  it('checks the prerendered account shells on the private side', () => {
+    for (const path of [
+      '/account',
+      '/account/faq',
+      '/account/plan',
+      '/account/submissions',
+      '/account/news',
+      '/account/links',
+    ]) {
+      expect(PRIVATE_PATHS).toContain(path);
+      expect(PUBLIC_PATHS).not.toContain(path);
+    }
   });
 });

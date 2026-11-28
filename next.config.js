@@ -344,6 +344,24 @@ const nextConfig = {
         source: '/community',
         headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
       },
+      // The account area is the member's, and its pages are data-free shells:
+      // the guard and every read live on the client, so the document is the same
+      // bytes for everyone and Next marks it `s-maxage=31536000` (ADR-0221). The
+      // public rule deliberately does not match `/account`, so that promise went
+      // unkept and every open reached the origin. The area keeps one posture:
+      // `private, no-store`, the same as the feed and the two children that were
+      // already `force-dynamic`. A future account page that renders a member's
+      // row into the HTML is then private by default rather than cached by a
+      // widened pattern (ADR-0175), and `check:edge` fails a private path whose
+      // header promises a shared cache.
+      {
+        source: '/account',
+        headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
+      },
+      {
+        source: '/account/:path*',
+        headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
+      },
       // The homepage is fully static (prerendered at build); let the CDN serve
       // it without re-validating while SWR keeps it fresh in the background.
       {
