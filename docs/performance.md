@@ -215,30 +215,28 @@ window (`7d`) and the recorded baseline, so this page cannot drift from it.
 
 **Source.** `<WebVitalsReporter />` in the root layout observes LCP, CLS, INP
 and TTFB and posts one `kind: 'vitals'` record to `/api/app-perf` when the
-document is hidden. The controller writes it as one `[app-perf]` log line with
-the same four numbers and the platform — no URL, path, user or session. Filter
-the log with `kind:vitals` and aggregate the p75; a mean would hide the slow
+document is hidden. The controller writes the record twice: one `[app-perf]` log
+line for a live tail, and one row in `public.perf_samples` for the report. The
+row carries the same four numbers and the platform — no URL, path, user or
+session. Aggregate the `kind: 'vitals'` rows to a p75; a mean would hide the slow
 tail this program targets. This replaces Vercel Speed Insights, which left with
 the origin's move to Render (ADR-0174) because its beacon 404s there and the CSP
 never allowed Vercel's ingest host (#1498). The reporter is same-origin, so no
 `connect-src` change is needed.
 
-**Reading it.** A field number needs a reporter again, and whatever reports has
-to be allowed by `connect-src` in `next.config.js`. Until then the dashboard and
-the Vercel CLI hold only what was collected before the move — history, not the
-current state.
-
-**Not CI-gated.** Runtime is real-user data, not a build artifact, so it cannot
-fail a pull request. It is a monitoring budget: review it after a change lands
-and treat a p75 regression against a ceiling as a bug, not a style choice.
+**Reading it.** `npm run perf:field` reads the table; see [Launch and tap](#launch-and-tap)
+for the command and the window. Nothing here is CI-gated: runtime is real-user data, not a
+build artifact, so it cannot fail a pull request. It is a monitoring budget: review it after a
+change lands and treat a p75 regression against a ceiling as a bug, not a style choice.
 
 **Ratchet policy.** When a change lands an improvement, re-record the baseline in
 `perf/runtime-budget.json` so the next change is measured against a new floor.
 The ceilings stay at the Web Vitals thresholds; only the baseline moves.
 
-**Window limit.** The Speed Insights API exposes only the last 7 days on the
-Hobby plan, which is why the window is fixed at `7d`. Longer trends are read from
-the dashboard.
+**Window limit.** `perf/runtime-budget.json` fixes the aggregation window at
+`7d`, and `public.perf_samples` keeps 60 days (below), so a budget window is
+always answerable from the table. A longer trend is the recorded baseline, not a
+query.
 
 ## Origin load
 
@@ -264,7 +262,7 @@ flat page-view count means the edge is doing more of the work — not that fewer
 Web Vitals measure the page the browser rendered; they do not measure what the
 instant-feel program (#486) is for: **the gap between a tap and the content that
 answers it**. Three numbers carry that, measured in the client and read from one
-log query (#487).
+table (#487).
 
 | Number              | Mark pair          | Ceiling (#486 decision gate) |
 | ------------------- | ------------------ | ---------------------------- |
@@ -299,9 +297,12 @@ log query (#487).
 `performance.mark`/`measure` and posts one record per launch — when the first
 content surface paints — and one per local mutation's tap, to
 `POST /api/app-perf`. The endpoint validates the body, applies a per-IP limit
-(60/min, fail-closed) and writes a single `logger.info('[app-perf]', …)` line.
+(60/min, fail-closed) and writes two things: a single `logger.info('[app-perf]', …)`
+line and one row in `public.perf_samples` (#1885, ADR-0228).
 The beacon is deferred past the paint, uses `keepalive`, is skipped while
 offline and is never retried — as droppable as the offline-miss beacon (ADR-0074).
+The row write is droppable in the same way: a refusal is a lost sample, never a
+failed request, and the row is the copy that outlives the container.
 The decision and its privacy boundary are recorded in
 [ADR-0075](adr/0075-launch-and-tap-timings-are-counted.md).
 
@@ -309,12 +310,19 @@ The decision and its privacy boundary are recorded in
 user agent, no product name and no mutation name. The record is the platform, the
 cold/warm flag and the durations; the log line is safe to grep and to keep.
 
-**Reading it.** One query, one table (example output below):
+**Reading it.** One command, one table (example output below):
 
 ```bash
-npx vercel logs --project royaraqamia --since 1h --json --query '[app-perf]' \
-  | npm run perf:field
+npm run perf:field                    # public.perf_samples, last 24 hours
+npm run perf:field -- --since 7d      # any window: 30m, 1h, 24h, 7d
+npm run perf:field -- --file <jsonl>  # a saved log tail, not the table
 ```
+
+It needs `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`) and
+`SUPABASE_SERVICE_ROLE_KEY`; `npm run` loads `.env` when the file exists, and
+`--env <file>` points at another. The read is the service role on purpose: the
+table grants nothing to a client role and has no policy, because the samples are
+telemetry, not a member's data.
 
 ```text
 kind    platform  open  n   shell p75  content p75  paint p75
@@ -324,19 +332,20 @@ tap     shell     —     41       —           —      42 ms
 ```
 
 `npm run perf:field` is a nearest-rank p75 by platform (and by cold/warm for
-launches); pass `--file <path>` to read saved JSON lines instead of stdin. It
-also reads `kind:vitals` records and prints their LCP, CLS, INP and TTFB p75,
-which is how the table above is now populated.
+launches). It also reads `kind: 'vitals'` rows and prints their LCP, CLS, INP and
+TTFB p75, which is how the table above is now populated. `--file <path>` still
+reads saved JSON lines instead of the table, for a tail that never reached it.
 
-**Window limit.** Vercel keeps runtime logs for an hour on the Hobby plan, so
-this is a recent-window read — the number just after a deploy, not a historical
-trend. Read it while the deployment is fresh, and treat a sample count in the
-single digits as noise.
+**Window limit.** `perf_samples` keeps 60 days, swept nightly at 03:40 UTC by
+`perf-samples-sweep` — the same window the scheduler's own run log keeps, so a
+perf window and the runs that collected it stay joinable for exactly as long as
+both exist. Ask for anything inside that window; a longer trend belongs in the
+recorded baseline below, not in a query.
 
-**Baseline.** There is no field-metrics store on the Hobby plan, so the baseline
-is this table, copied by hand from the query above after a deploy. Read it, then
-replace the row: the ceilings in the first table do not move, only the recorded
-number does.
+**Baseline.** The baseline is this table, copied by hand from `npm run perf:field`
+after a deploy. Read it, then replace the row: the ceilings in the first table do
+not move, only the recorded number does. The table stays the live window; the row
+here is what survives it.
 
 | Read on    | cold open → content        | warm open → content       | tap → paint      |
 | ---------- | -------------------------- | ------------------------- | ---------------- |
@@ -348,17 +357,18 @@ breach the 900 ms / 150 ms ceilings; the web vitals in the same window are insid
 theirs (LCP 1,596 ms, CLS 0.052, INP 128 ms), so this is the shell's launch path
 and not the page's weight (#1639). Tap has no sample yet.
 
-**Cost.** One function invocation per launch and per tap, bounded by the limiter.
-A launch only sends when a content surface paints owned rows; a public/SEO route
-sends nothing, and neither does a dashboard that never paints (that case is the
+**Cost.** One function invocation per launch and per tap, bounded by the limiter,
+and one row per accepted beacon in `perf_samples` (~120 bytes, 60 days). A launch
+only sends when a content surface paints owned rows; a public/SEO route sends
+nothing, and neither does a dashboard that never paints (that case is the
 skeleton in its own state, not a sample).
 
 ### The paint gate
 
 The field numbers above are the authority for real devices, and they cannot fail
-a pull request — no log query runs in CI, and the Hobby plan keeps an hour of
-logs. `e2e/perf-paint.spec.ts` is the web-side gate that closes that gap: it
-measures the same marks, on a build, before the change ships.
+a pull request — no table query runs in CI, and `perf_samples` is a monitoring
+window, not a gate. `e2e/perf-paint.spec.ts` is the web-side gate that closes that
+gap: it measures the same marks, on a build, before the change ships.
 
 ```bash
 npm run perf:paint             # build, measure every budgeted surface, fail on a breach

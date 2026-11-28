@@ -17,6 +17,8 @@ services:
     expose:
       - '3000'
     logging:
+      # 30 MB of stdout is a window, not a history. The perf beacon's rows go to
+      # public.perf_samples instead (docs/agents/vps-deploy.md, ADR-0228).
       driver: json-file
       options:
         max-size: '10m'

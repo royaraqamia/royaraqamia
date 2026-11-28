@@ -3877,6 +3877,51 @@ export type Database = {
           },
         ];
       };
+      perf_samples: {
+        Row: {
+          cls: number | null;
+          cold: boolean | null;
+          content_ms: number | null;
+          id: string;
+          inp_ms: number | null;
+          kind: string;
+          lcp_ms: number | null;
+          paint_ms: number | null;
+          platform: string | null;
+          recorded_at: string;
+          shell_ms: number | null;
+          ttfb_ms: number | null;
+        };
+        Insert: {
+          cls?: number | null;
+          cold?: boolean | null;
+          content_ms?: number | null;
+          id?: string;
+          inp_ms?: number | null;
+          kind: string;
+          lcp_ms?: number | null;
+          paint_ms?: number | null;
+          platform?: string | null;
+          recorded_at?: string;
+          shell_ms?: number | null;
+          ttfb_ms?: number | null;
+        };
+        Update: {
+          cls?: number | null;
+          cold?: boolean | null;
+          content_ms?: number | null;
+          id?: string;
+          inp_ms?: number | null;
+          kind?: string;
+          lcp_ms?: number | null;
+          paint_ms?: number | null;
+          platform?: string | null;
+          recorded_at?: string;
+          shell_ms?: number | null;
+          ttfb_ms?: number | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       agent_embedding_pending: {

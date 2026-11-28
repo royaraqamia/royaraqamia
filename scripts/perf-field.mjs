@@ -2,23 +2,40 @@ import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 /**
- * Reads the launch and tap records the app writes with `logger.info('[app-perf]', …)`
- * (#487) and prints the p75 the instant-feel program is judged against: cold
- * open → content, warm open → content, and tap → paint, per platform.
+ * Reads the launch, tap and vitals records the origin stores in
+ * `public.perf_samples` (#1885, ADR-0228) and prints the p75 the instant-feel
+ * program is judged against: cold open → content, warm open → content, tap →
+ * paint and the four Core Web Vitals, per platform.
  *
- * Input is JSON Lines from the Vercel CLI, so the numbers come from one query:
+ * The table is the default source, so the command answers the last 24 hours:
  *
  * ```bash
- * npx vercel logs --project royaraqamia --since 1h --json --query '[app-perf]' \
- *   | node scripts/perf-field.mjs
+ * npm run perf:field                    # perf_samples, last 24h
+ * npm run perf:field -- --since 7d      # any window: 30m, 1h, 24h, 7d
  * ```
  *
- * Vercel keeps runtime logs for an hour on Hobby, so this is a recent-window
- * read, not a historical report. Nothing here identifies a user or a page: the
- * record itself was built without one (ADR-0074's boundary, #487).
+ * It needs `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`) and
+ * `SUPABASE_SERVICE_ROLE_KEY`; `npm run` loads `.env` when it exists, and
+ * `--env <file>` points at another one. The read is the service role because
+ * the table grants nothing to a client role and has no policy: the samples are
+ * telemetry, not a member's data.
+ *
+ * Two older inputs still work, for a tail that never reached the table: JSON
+ * lines from the app's own stdout (`--file <path>`, or piped on stdin), and the
+ * log form `logger.info('[app-perf]', …)` writes. Both go through the same
+ * grouping, so a number read from a file and a number read from the table are
+ * the same number.
+ *
+ * The row carries no user, page or session (ADR-0074's boundary, #487).
  */
 
 export const PERF_TAG = '[app-perf]';
+
+/** The window a bare `npm run perf:field` answers. */
+export const DEFAULT_WINDOW = '24h';
+
+/** PostgREST answers at most 1,000 rows unless a project raises the limit. */
+const PAGE_SIZE = 1_000;
 
 const PLATFORMS = ['web', 'pwa', 'shell'];
 
@@ -257,6 +274,118 @@ export function readRecords(text) {
   return { records, ignored };
 }
 
+/**
+ * A row of `public.perf_samples` back as the record `parseRecord` returns, or
+ * null. The table's own check constraint already refuses a lying row, so an
+ * unusable one here means a column changed shape - drop it rather than guess.
+ */
+export function rowToRecord(row) {
+  if (!row || typeof row !== 'object') return null;
+  if (!PLATFORMS.includes(row.platform)) return null;
+
+  if (row.kind === 'launch') {
+    const shellMs = duration(row.shell_ms);
+    const contentMs = duration(row.content_ms);
+    if (typeof row.cold !== 'boolean' || shellMs === null || contentMs === null) return null;
+    return { kind: 'launch', platform: row.platform, cold: row.cold, shellMs, contentMs };
+  }
+
+  if (row.kind === 'tap') {
+    const paintMs = duration(row.paint_ms);
+    if (paintMs === null) return null;
+    return { kind: 'tap', platform: row.platform, paintMs };
+  }
+
+  if (row.kind === 'vitals') {
+    const lcpMs = duration(row.lcp_ms);
+    const cls = duration(row.cls);
+    const inpMs = duration(row.inp_ms);
+    const ttfbMs = duration(row.ttfb_ms);
+    if (lcpMs === null || cls === null || inpMs === null || ttfbMs === null) return null;
+    return { kind: 'vitals', platform: row.platform, lcpMs, cls, inpMs, ttfbMs };
+  }
+
+  return null;
+}
+
+/** `30m`, `1h`, `24h`, `7d` or `90s` as a number of seconds. */
+export function parseWindow(text) {
+  const match = /^(\d+)([smhd])$/.exec(String(text ?? '').trim());
+  if (!match) throw new Error(`--since must look like 30m, 1h, 24h or 7d (got "${text}")`);
+  const unit = { s: 1, m: 60, h: 3_600, d: 86_400 }[match[2]];
+  return Number(match[1]) * unit;
+}
+
+function loadEnvFile(path) {
+  if (!path) return;
+  let text;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    throw new Error(`cannot read env file: ${path}`);
+  }
+  for (const line of text.split(/\r?\n/)) {
+    const match = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/.exec(line);
+    if (!match || line.trim().startsWith('#')) continue;
+    const value = match[2].replace(/^['"]|['"]$/g, '');
+    if (value && !process.env[match[1]]) process.env[match[1]] = value;
+  }
+}
+
+/** The PostgREST endpoint and service key, or a message naming what is missing. */
+function supabaseConfig(argv) {
+  const at = argv.indexOf('--env');
+  loadEnvFile(at === -1 ? null : argv[at + 1]);
+
+  const base = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(
+    /\/+$/,
+    ''
+  );
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!base || !key) {
+    throw new Error(
+      'need SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in the environment, in .env, or in --env <file>'
+    );
+  }
+  return { base, key };
+}
+
+/**
+ * Every row the window holds, read in PostgREST's 1,000-row pages so a busy day
+ * is not silently truncated to its first page - a truncated read is a wrong
+ * percentile, not a smaller one.
+ */
+async function fetchWindow(base, key, sinceIso) {
+  const columns =
+    'kind,platform,cold,shell_ms,content_ms,paint_ms,lcp_ms,cls,inp_ms,ttfb_ms,recorded_at';
+  const rows = [];
+
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const url =
+      `${base}/rest/v1/perf_samples?select=${columns}` +
+      `&recorded_at=gte.${encodeURIComponent(sinceIso)}` +
+      `&order=recorded_at.asc&limit=${PAGE_SIZE}&offset=${offset}`;
+    const response = await fetch(url, {
+      headers: { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      const detail = (await response.text().catch(() => '')).slice(0, 300);
+      if (response.status === 404 || /perf_samples/i.test(detail)) {
+        throw new Error(
+          `cannot read perf_samples (${response.status}): ${detail}\n` +
+            'Apply the table with `npm run check:migrations` and the migration on `main`, then retry.'
+        );
+      }
+      throw new Error(`perf_samples read failed (${response.status}): ${detail}`);
+    }
+
+    const page = await response.json();
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) return rows;
+  }
+}
+
 async function readStdin() {
   const chunks = [];
   for await (const chunk of process.stdin) chunks.push(chunk);
@@ -266,33 +395,55 @@ async function readStdin() {
 async function main(argv) {
   const fileIndex = argv.indexOf('--file');
   const file = fileIndex === -1 ? null : argv[fileIndex + 1];
+  const sinceIndex = argv.indexOf('--since');
+  const since = sinceIndex === -1 ? null : argv[sinceIndex + 1];
 
   if (file) {
-    run(readFileSync(file, 'utf8'));
+    if (since)
+      throw new Error('--since reads perf_samples; use --file alone to read saved JSON lines.');
+    print(readRecords(readFileSync(file, 'utf8')), `file ${file}`);
     return;
   }
 
-  if (process.stdin.isTTY) {
-    console.log('perf-field: pipe `npx vercel logs … --json` in, or pass --file <path>.');
+  // `--since` is an explicit request for the table, so it works the same in a
+  // terminal, in a script and in CI - a piped stdin is only the fallback when
+  // nothing asked for a window.
+  if (!since && !process.stdin.isTTY) {
+    print(readRecords(await readStdin()), 'stdin');
     return;
   }
 
-  run(await readStdin());
+  // The table is the default source: a bare `npm run perf:field` is the last
+  // 24 hours, and `--since` widens or narrows it.
+  const window = since ?? DEFAULT_WINDOW;
+  const seconds = parseWindow(window);
+  const { base, key } = supabaseConfig(argv);
+  const sinceIso = new Date(Date.now() - seconds * 1_000).toISOString();
+  const rows = await fetchWindow(base, key, sinceIso);
+
+  const records = [];
+  let ignored = 0;
+  for (const row of rows) {
+    const record = rowToRecord(row);
+    if (record) records.push(record);
+    else ignored += 1;
+  }
+
+  print({ records, ignored }, `perf_samples, last ${window}`);
 }
 
-function run(text) {
-  const { records, ignored } = readRecords(text);
+function print({ records, ignored }, source) {
   if (records.length === 0) {
     console.log(
-      'perf-field: no [app-perf] records in this window. Vercel keeps runtime logs for an hour ' +
-        'on Hobby — widen --since and re-run, or check that the deployment carries #487.'
+      `perf-field: no [app-perf] records in ${source}. A row lands in perf_samples when a ` +
+        'reporter posts to /api/app-perf; widen --since, or check that the deployment carries #487.'
     );
     return;
   }
 
   console.log(formatTable(summarize(records)));
   console.log(
-    `\n${records.length} records read, ${ignored} line(s) ignored. ` +
+    `\n${records.length} records read from ${source}, ${ignored} ignored. ` +
       'Launch durations run from navigation start; a warm open is a document answered from cache.'
   );
 }
