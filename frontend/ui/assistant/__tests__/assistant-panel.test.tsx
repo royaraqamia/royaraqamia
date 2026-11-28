@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 import type { ChatThread } from '@/shared/contracts/chat';
 
@@ -250,7 +250,9 @@ describe('AssistantPanel', () => {
   /**
    * The header is the door to the assistant's page (ADR-0224). It dismisses and
    * pushes rather than letting the anchor navigate: the dialog unmounts the
-   * pressed link as it closes, so the default action never runs.
+   * pressed link as it closes, so the default action never runs. The push waits
+   * for the overlay's history entry to drop first (ADR-0095), or the traversal
+   * that drops it cancels the navigation and the page never changes.
    */
   it('opens /assistant from the header and dismisses the panel first', async () => {
     const onDismiss = vi.fn();
@@ -265,6 +267,6 @@ describe('AssistantPanel', () => {
     fireEvent.click(door);
 
     expect(onDismiss).toHaveBeenCalled();
-    expect(router.push).toHaveBeenCalledWith('/assistant');
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/assistant'));
   });
 });

@@ -2,7 +2,6 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { CircleAlert } from 'lucide-react';
 
 import { getChatAssistant, startAssistantChat } from '@/frontend/api/chats';
@@ -22,6 +21,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dia
 import { LoadingThread } from '@/frontend/ui/shared/loading-skeletons';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { useDismissThenNavigate } from '@/frontend/ui/shared/dismiss-then-navigate';
 import { AssistantComposer } from '@/frontend/ui/chats/chat-assistant-composer';
 import { ChatMessageList } from '@/frontend/ui/chats/chat-message-list';
 import { CHAT_THREAD_COPY } from '@/frontend/ui/chats/chat-thread-copy';
@@ -93,7 +93,7 @@ export function AssistantPanel({
 }) {
   const { user, isLoading: sessionLoading } = useSession();
   const { identity } = useLocalIdentity();
-  const router = useRouter();
+  const navigate = useDismissThenNavigate(onDismiss);
   const userId = user?.id ?? null;
   const [threadId, setThreadId] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -378,18 +378,14 @@ export function AssistantPanel({
         <header className="shrink-0 border-b border-border/40 bg-card/40 px-4 py-3 pe-12">
           {/* The mark and the name are the door to the assistant's page
               (ADR-0224): one tap, no second product's word in the conversation.
-              The navigation is a router push after the dismissal rather than the
-              anchor's own default: the dialog unmounts the pressed link as it
-              closes, so the browser never reaches the `href`. */}
+              The push waits for the history entry the open dialog owns to be
+              dropped, because closing it and navigating in the same gesture used
+              to lose the push and leave the page put (ADR-0095, ADR-0150). */}
           <DialogTitle aria-label={assistantName} className="text-xl leading-none text-foreground">
             <Link
               href="/assistant"
               aria-label={ASSISTANT_HOME_COPY.openPage}
-              onClick={(event) => {
-                event.preventDefault();
-                onDismiss();
-                router.push('/assistant');
-              }}
+              onClick={(event) => navigate(event, '/assistant')}
               className="flex max-w-full items-center gap-3 rounded-xl text-start transition-safe hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <AssistantOrb className="size-10" />
