@@ -24,6 +24,11 @@ mark is an uploaded face, the orb is the fallback, and `avatar_variant` stays in
 the table unused. The twelve marks (#1947) are not work; a roster's own mark is a
 future decision, not this plan's.
 
+Amended 2026-11-28: the «تطبيقاته» row left the page at the owner's request. The
+connected apps still have their door — the apps sheet and `/mcp/apps` — so the
+index keeps two rows, memory and coding, and the page stops being a third route
+into the same surface.
+
 ## What already exists
 
 | Piece                | Where                                                                                                      | Reused how                                                      |

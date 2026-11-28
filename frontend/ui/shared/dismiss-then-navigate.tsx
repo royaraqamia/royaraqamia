@@ -49,17 +49,19 @@ export function DismissThenNavigateLink({
   href,
   dismiss,
   className,
+  dir,
   children,
 }: {
   href: string;
   dismiss: () => void;
   className?: string;
+  dir?: 'ltr' | 'rtl' | 'auto';
   children: ReactNode;
 }) {
   const navigate = useDismissThenNavigate(dismiss);
 
   return (
-    <Link href={href} className={className} onClick={(event) => navigate(event, href)}>
+    <Link href={href} dir={dir} className={className} onClick={(event) => navigate(event, href)}>
       {children}
     </Link>
   );

@@ -18,24 +18,35 @@ export function ChatBody({
   text,
   sources,
   sourceAnchor,
+  dismissOnNavigate,
 }: {
   text: string;
   sources?: WebSource[] | null;
   /** Unique per bubble, so two answers cannot claim the same row. */
   sourceAnchor?: string;
+  /** The surface is an overlay that closes before a handle navigates. */
+  dismissOnNavigate?: () => void;
 }) {
   const nodes = useMemo(() => parseChatMarkdown(text), [text]);
-  return <>{nodes.map((node, index) => renderInline(node, index, sources, sourceAnchor))}</>;
+  return (
+    <>
+      {nodes.map((node, index) =>
+        renderInline(node, index, sources, sourceAnchor, dismissOnNavigate)
+      )}
+    </>
+  );
 }
 
 function renderInline(
   node: ChatInline,
   key: number,
   sources?: WebSource[] | null,
-  sourceAnchor?: string
+  sourceAnchor?: string,
+  dismissOnNavigate?: () => void
 ): React.ReactNode {
   if (node.kind === 'text') {
-    if (!sources?.length || !sourceAnchor) return <LinkifiedText key={key} text={node.value} />;
+    if (!sources?.length || !sourceAnchor)
+      return <LinkifiedText key={key} text={node.value} dismissOnNavigate={dismissOnNavigate} />;
 
     const parts = node.value.split(/(\[\d{1,2}\])/g);
     return (
@@ -55,7 +66,9 @@ function renderInline(
               </a>
             );
           }
-          return <LinkifiedText key={`${key}-${at}`} text={part} />;
+          return (
+            <LinkifiedText key={`${key}-${at}`} text={part} dismissOnNavigate={dismissOnNavigate} />
+          );
         })}
       </>
     );
@@ -72,13 +85,15 @@ function renderInline(
         rel="noopener noreferrer nofollow ugc"
         className="font-medium underline underline-offset-2 decoration-1 break-words"
       >
-        {node.children.map((child, index) => renderInline(child, index, sources, sourceAnchor))}
+        {node.children.map((child, index) =>
+          renderInline(child, index, sources, sourceAnchor, dismissOnNavigate)
+        )}
       </a>
     );
   }
 
   const children = node.children.map((child, index) =>
-    renderInline(child, index, sources, sourceAnchor)
+    renderInline(child, index, sources, sourceAnchor, dismissOnNavigate)
   );
   switch (node.mark) {
     case 'bold':

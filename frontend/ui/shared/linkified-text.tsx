@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import { tokenizeText } from '@/shared/text/linkify';
 import { useMentionHandles } from '@/frontend/state/usernames/use-mention-handles';
+import { DismissThenNavigateLink } from '@/frontend/ui/shared/dismiss-then-navigate';
 
 /** The one anchor style, written once: this file carries no class-merge helper. */
 const ANCHOR =
@@ -27,11 +28,18 @@ export function LinkifiedText({
   linkClassName,
   /** The text is an excerpt cut with `…`: a link cut in half is not a link. */
   truncated = false,
+  /**
+   * The surface this text sits in is an overlay that has to close first (the
+   * floating assistant panel, ADR-0150): a handle's own navigation would
+   * otherwise leave the sheet open over the page it just pushed.
+   */
+  dismissOnNavigate,
 }: {
   text: string;
   /** Applied to every anchor, for a surface that stacks above an overlay link. */
   linkClassName?: string;
   truncated?: boolean;
+  dismissOnNavigate?: () => void;
 }) {
   const tokens = useMemo(() => tokenizeText(text), [text]);
   const handles = useMemo(
@@ -100,13 +108,26 @@ export function LinkifiedText({
           );
         }
 
+        const href = `/u/${encodeURIComponent(token.handle)}`;
+        // The overlay variant is a different component because the dismissal
+        // needs the router, and a surface that is not an overlay (a bubble on
+        // the thread page) must not pay for a router it never uses.
+        if (dismissOnNavigate) {
+          return (
+            <DismissThenNavigateLink
+              key={index}
+              href={href}
+              dismiss={dismissOnNavigate}
+              dir="ltr"
+              className={anchorClass}
+            >
+              {token.value}
+            </DismissThenNavigateLink>
+          );
+        }
+
         return (
-          <Link
-            key={index}
-            href={`/u/${encodeURIComponent(token.handle)}`}
-            dir="ltr"
-            className={anchorClass}
-          >
+          <Link key={index} href={href} dir="ltr" className={anchorClass}>
             {token.value}
           </Link>
         );
