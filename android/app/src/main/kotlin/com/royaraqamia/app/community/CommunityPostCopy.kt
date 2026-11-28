@@ -50,6 +50,7 @@ object CommunityPostCopy {
     const val FORMAT_LINK = "رابط"
     const val FORMAT_LINK_PROMPT = "عنوان الرَّابط"
     const val EMOJI_PICKER = "إضافة إيموجي"
+    const val EMOJI_KEYBOARD = "العودة إلى لوحة المفاتيح"
     const val EMOJI_SEARCH = "ابحث عن إيموجي"
     const val EMOJI_NO_RESULTS = "لا نتائج"
     const val EMOJI_RECENT = "الأخيرة"

@@ -100,3 +100,65 @@ occasionally, and the field already has a selection bubble above it.
 - **The commands the sheet's index serves are the tests'.** The Arabic spelling
   rules are asserted (`frontend/ui/chats/__tests__/emoji-picker.test.tsx`), because
   a normaliser that quietly stops matching «قهوة» is not a visible failure.
+
+## Amendment (2026-11-28): the sheet is a tray under the composer
+
+The decision above says the panel is _the site's bottom sheet on a phone_, and
+justifies it with "a phone does not raise the alphabet keyboard over the sheet it
+just opened". Both halves are reversed.
+
+**The sheet was the wrong surface.** Every popover below `lg` becomes a bottom
+sheet (`frontend/ui/primitives/responsive-sheet.tsx`), so the picker covered the
+composer: a member picking a glyph could not see the draft they were decorating,
+and the scrim + focus handling of a modal surface sat between them and the row
+they were writing in. Telegram and WhatsApp solved this the other way, and the
+tray follows them.
+
+**The tray is in the composer's flow, not over the thread.** Below `lg` the panel
+is drawn as the row's second line: the composer stays visible, the thread shrinks
+by exactly the height the on-screen keyboard would have taken, and no scrim,
+portal, popper math or focus trap is involved. `--roy-keyboard-cover` and
+`100dvh` already carry that arithmetic for the keyboard
+(`frontend/ui/shared/keyboard-inset.ts`, `app/chats/[id]/page.tsx`), so the two
+slots are the same slot. Above `lg` the wrapper is positioned over the message
+list instead, because a docked tray there would cost the thread its room for a
+control a desktop keyboard already has.
+
+**The tray and the keyboard take turns.** Opening the tray leaves the editor, so
+the alphabet keyboard goes down; the smiley becomes a keyboard switch whose press
+closes the tray and puts the caret back, which raises the keyboard again. Tapping
+the field is the same switch, so the field is a way back too. The search box does
+not autofocus — that would raise the keyboard over the panel that was just opened
+— but a member who taps it gets the keyboard with the tray shortened above it
+rather than the composer pushed off screen.
+
+**One dismissal rule for both presentations.** A press outside the tray closes
+it, Escape closes it and returns the caret to the field, and the smiley itself is
+exempt because it reports its own state: closing there and letting the press
+through would close and reopen the tray on one tap. Escape is stopped inside the
+tray so it does not reach the assistant panel's dialog behind it.
+
+**The field still owns the caret, the tray owns the row.** `ChatField` keeps the
+editor and exposes `insertEmoji`/`focus` through a handle
+(`ChatFieldHandle`); `chat-composer.tsx` and `post-comment-field.tsx` draw the
+tray beneath their own row with `EmojiTray`. A composer owns what sits under it,
+and a field that rendered the panel itself would have put the send button beside
+the tray instead of above it. The comment row scrolls with the page instead of a
+fixed footer, so it brings itself to the foot of the screen when the tray opens.
+
+**The picker is no longer a `PopoverContent`.** `EmojiPickerPanel` draws the
+catalog and nothing about placement; the tray's wrapper carries the two
+presentations in CSS (`lg:` variants), so there is one DOM path and one dismissal
+path. It keeps its chunk, its Arabic search, its recents, its copy keys and its
+"a pick writes at the caret" rule. One generated key is added for the switch,
+`emojiKeyboard`, to both copy sources.
+
+**What this costs.** On a phone the tray takes roughly the slot the keyboard had
+(`min(18rem, 40dvh)`), so it is not a full emoji keyboard's worth of rows; the
+grid scrolls, and the categories stay reachable. Safari does not shrink the
+layout viewport for the keyboard, so the route that does not take
+`--roy-keyboard-cover` off its height — a post's comment page, unlike the chat
+thread — can have the lower part of the grid behind the keyboard while the
+search box is focused. The Android shell, which is the shipped client, resizes
+and is unaffected. The native rows still have no picker at all (see the
+consequence above), so this amendment adds nothing to the port.

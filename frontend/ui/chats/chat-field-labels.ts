@@ -20,6 +20,7 @@ export const CHAT_FIELD_LABELS: ChatFieldLabels = {
   linkPrompt: CHAT_THREAD_COPY.formatLinkPrompt,
   emoji: {
     open: CHAT_THREAD_COPY.emojiPicker,
+    keyboard: CHAT_THREAD_COPY.emojiKeyboard,
     search: CHAT_THREAD_COPY.emojiSearch,
     noResults: CHAT_THREAD_COPY.emojiNoResults,
     recent: CHAT_THREAD_COPY.emojiRecent,

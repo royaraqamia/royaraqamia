@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { Lock, Mic, Square, X } from 'lucide-react';
 
@@ -11,7 +11,8 @@ import { holdUnrequestedReload } from '@/frontend/shared/sw-update';
 import { useVoiceRecorder, VOICE_NOTE_MAX_MS } from '@/frontend/state/chats/use-voice-recorder';
 import { formatVoiceDuration, VOICE_COPY } from './voice-copy';
 import { ChatAttachButton, ChatStagedFiles } from './chat-attach-control';
-import { ChatField, type ChatFieldLabels } from './chat-field';
+import { ChatField, type ChatFieldHandle, type ChatFieldLabels } from './chat-field';
+import { EmojiTray } from './emoji-tray';
 
 /** How far a pressed pointer travels before the release counts as a cancel. */
 const CANCEL_DISTANCE_PX = 64;
@@ -104,6 +105,17 @@ export function ChatComposer({
   fieldLabels: ChatFieldLabels;
 }) {
   const recorder = useVoiceRecorder();
+  const fieldRef = useRef<ChatFieldHandle>(null);
+  /**
+   * The emoji tray, drawn under the row (and over the thread on a desktop): the
+   * field is the only thing that knows the caret, so it writes through its
+   * handle.
+   */
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const closeEmoji = useCallback((focusField: boolean) => {
+    setEmojiOpen(false);
+    if (focusField) fieldRef.current?.focus();
+  }, []);
   const [locked, setLocked] = useState(false);
   const origin = useRef<{ x: number; y: number } | null>(null);
   const cancelling = useRef(false);
@@ -172,6 +184,13 @@ export function ChatComposer({
   // A press that is interrupted by the composer going away must not leave its
   // window listeners behind.
   useEffect(() => () => endTracking.current?.(), []);
+
+  // A row that cannot take a glyph closes the tray: a send in flight, or the
+  // recorder having replaced the field, is not a place to keep picking.
+  useEffect(() => {
+    if (!disabled && !recorder.isRecording) return;
+    setEmojiOpen(false);
+  }, [disabled, recorder.isRecording]);
 
   // The cap ends the capture by itself, and the note is still sent: someone who
   // kept talking past the allowance gets their words, not a discarded clip.
@@ -277,69 +296,70 @@ export function ChatComposer({
     <>
       <ChatStagedFiles files={files} onRemoveFile={onRemoveFile} />
 
-      <div className="flex items-end gap-2">
-        {recorder.isRecording ? (
-          <>
-            <div className="flex min-h-11 flex-1 items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-[11px] text-foreground">
-              <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-destructive" />
-              <span className="font-digits shrink-0 tabular-nums" dir="ltr">
-                {formatVoiceDuration(recorder.elapsedMs)}
-              </span>
-              <span aria-hidden className="flex h-5 flex-1 items-end gap-0.5 overflow-hidden">
-                {(recorder.levels.length > 0
-                  ? recorder.levels
-                  : new Array(IDLE_LEVELS).fill(0)
-                ).map((level, index) => (
-                  <span
-                    key={index}
-                    className={cn(
-                      'w-1 shrink-0 rounded-full bg-destructive/70',
-                      level > 0.66 ? 'h-5' : level > 0.4 ? 'h-4' : level > 0.15 ? 'h-3' : 'h-1'
-                    )}
-                  />
-                ))}
-              </span>
-              <span className="hidden shrink-0 text-muted-foreground sm:inline">
-                {locked ? VOICE_COPY.releaseToSend : VOICE_COPY.slideToCancel}
-              </span>
-              <button
-                type="button"
-                onClick={cancel}
-                aria-label={cancelLabel}
-                className="shrink-0 rounded p-0.5 hover:text-destructive"
-              >
-                <X size={13} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setLocked((current) => !current)}
-                aria-label={locked ? VOICE_COPY.unlockRecording : VOICE_COPY.lockRecording}
-                aria-pressed={locked}
-                className={cn(
-                  'shrink-0 rounded p-0.5',
-                  locked ? 'text-primary' : 'hover:text-foreground'
-                )}
-              >
-                <Lock size={13} />
-              </button>
-            </div>
+      <div className="relative">
+        <div className="flex items-end gap-2">
+          {recorder.isRecording ? (
+            <>
+              <div className="flex min-h-11 flex-1 items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-[11px] text-foreground">
+                <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-destructive" />
+                <span className="font-digits shrink-0 tabular-nums" dir="ltr">
+                  {formatVoiceDuration(recorder.elapsedMs)}
+                </span>
+                <span aria-hidden className="flex h-5 flex-1 items-end gap-0.5 overflow-hidden">
+                  {(recorder.levels.length > 0
+                    ? recorder.levels
+                    : new Array(IDLE_LEVELS).fill(0)
+                  ).map((level, index) => (
+                    <span
+                      key={index}
+                      className={cn(
+                        'w-1 shrink-0 rounded-full bg-destructive/70',
+                        level > 0.66 ? 'h-5' : level > 0.4 ? 'h-4' : level > 0.15 ? 'h-3' : 'h-1'
+                      )}
+                    />
+                  ))}
+                </span>
+                <span className="hidden shrink-0 text-muted-foreground sm:inline">
+                  {locked ? VOICE_COPY.releaseToSend : VOICE_COPY.slideToCancel}
+                </span>
+                <button
+                  type="button"
+                  onClick={cancel}
+                  aria-label={cancelLabel}
+                  className="shrink-0 rounded p-0.5 hover:text-destructive"
+                >
+                  <X size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLocked((current) => !current)}
+                  aria-label={locked ? VOICE_COPY.unlockRecording : VOICE_COPY.lockRecording}
+                  aria-pressed={locked}
+                  className={cn(
+                    'shrink-0 rounded p-0.5',
+                    locked ? 'text-primary' : 'hover:text-foreground'
+                  )}
+                >
+                  <Lock size={13} />
+                </button>
+              </div>
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              aria-label={stopLabel}
-              disabled={recorder.isPreparing}
-              onClick={() => void finish()}
-              className="size-11 text-destructive"
-            >
-              <Square size={14} />
-            </Button>
-          </>
-        ) : (
-          <>
-            <div className="relative flex min-h-11 min-w-0 flex-1 items-end">
-              {/* The field is the editor (ADR-0193). Its padding is physical for
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label={stopLabel}
+                disabled={recorder.isPreparing}
+                onClick={() => void finish()}
+                className="size-11 text-destructive"
+              >
+                <Square size={14} />
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="relative flex min-h-11 min-w-0 flex-1 items-end">
+                {/* The field is the editor (ADR-0193). Its padding is physical for
                   the reason the clip is: the clip is pinned to the box while the
                   text's direction follows the draft.
 
@@ -349,67 +369,80 @@ export function ChatComposer({
                   every viewport. It used to be 40px assumed and 46.8px drawn,
                   which put both of them 3.4px low (#1583). Change one of these
                   numbers and the row stops being square. */}
-              <ChatField
-                value={value}
-                onChange={onValueChange}
-                onTyping={onTyping}
-                onDraftEmpty={onDraftEmpty}
-                ariaLabel={ariaLabel}
-                placeholder={placeholder}
-                disabled={disabled}
-                labels={fieldLabels}
-                maxLength={CHAT_BODY_MAX}
-                className="w-full min-h-11 resize-none rounded-xl border border-border/70 bg-background py-2 pl-10 pr-3 text-base leading-[26px] text-foreground focus-visible:ring-2 focus-visible:ring-primary/40"
-              />
-              <ChatAttachButton
-                onAddFiles={onAddFiles}
-                disabled={disabled}
-                className="absolute bottom-1.5 left-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
-              />
-            </div>
+                <ChatField
+                  ref={fieldRef}
+                  value={value}
+                  onChange={onValueChange}
+                  onTyping={onTyping}
+                  onDraftEmpty={onDraftEmpty}
+                  ariaLabel={ariaLabel}
+                  placeholder={placeholder}
+                  disabled={disabled}
+                  labels={fieldLabels}
+                  maxLength={CHAT_BODY_MAX}
+                  emojiOpen={emojiOpen}
+                  onEmojiOpenChange={setEmojiOpen}
+                  className="w-full min-h-11 resize-none rounded-xl border border-border/70 bg-background py-2 pl-10 pr-3 text-base leading-[26px] text-foreground focus-visible:ring-2 focus-visible:ring-primary/40"
+                />
+                <ChatAttachButton
+                  onAddFiles={onAddFiles}
+                  disabled={disabled}
+                  className="absolute bottom-1.5 left-1 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+                />
+              </div>
 
-            {showSend ? (
-              <Button
-                type="submit"
-                variant="hero"
-                size="icon-sm"
-                aria-label={sendLabel}
-                disabled={!canSend}
-                className="size-11"
-                onClick={(event) => {
-                  event.preventDefault();
-                  onSend();
-                }}
-              >
-                {sendIcon}
-              </Button>
-            ) : streaming ? (
-              <Button
-                type="button"
-                variant="hero"
-                size="icon-sm"
-                aria-label={stopAnswerLabel ?? VOICE_COPY.stopAndSend}
-                className="size-11"
-                onClick={onStop}
-              >
-                <Square size={14} />
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label={recordLabel}
-                aria-pressed={false}
-                disabled={disabled || recorder.isPreparing}
-                className="size-11"
-                onPointerDown={onPointerDown}
-              >
-                <Mic size={16} />
-              </Button>
-            )}
-          </>
-        )}
+              {showSend ? (
+                <Button
+                  type="submit"
+                  variant="hero"
+                  size="icon-sm"
+                  aria-label={sendLabel}
+                  disabled={!canSend}
+                  className="size-11"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onSend();
+                  }}
+                >
+                  {sendIcon}
+                </Button>
+              ) : streaming ? (
+                <Button
+                  type="button"
+                  variant="hero"
+                  size="icon-sm"
+                  aria-label={stopAnswerLabel ?? VOICE_COPY.stopAndSend}
+                  className="size-11"
+                  onClick={onStop}
+                >
+                  <Square size={14} />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={recordLabel}
+                  aria-pressed={false}
+                  disabled={disabled || recorder.isPreparing}
+                  className="size-11"
+                  onPointerDown={onPointerDown}
+                >
+                  <Mic size={16} />
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+
+        {fieldLabels.emoji ? (
+          <EmojiTray
+            open={emojiOpen}
+            labels={fieldLabels.emoji}
+            onPick={(glyph) => fieldRef.current?.insertEmoji(glyph)}
+            onClose={closeEmoji}
+          />
+        ) : null}
       </div>
 
       {recorder.isPreparing && (

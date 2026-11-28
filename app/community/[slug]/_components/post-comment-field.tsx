@@ -1,9 +1,15 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Send } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
-import { ChatField, type ChatFieldLabels } from '@/frontend/ui/chats/chat-field';
+import {
+  ChatField,
+  type ChatFieldHandle,
+  type ChatFieldLabels,
+} from '@/frontend/ui/chats/chat-field';
+import { EmojiTray } from '@/frontend/ui/chats/emoji-tray';
 import { Button } from '@/frontend/ui/primitives/button';
 import { POST_COMMENT_MAX_LENGTH } from '@/shared/contracts/community';
 import { COMMUNITY_POST_COPY } from '../community-post-copy';
@@ -20,6 +26,7 @@ export const COMMENT_FIELD_LABELS: ChatFieldLabels = {
   linkPrompt: COMMUNITY_POST_COPY.formatLinkPrompt,
   emoji: {
     open: COMMUNITY_POST_COPY.emojiPicker,
+    keyboard: COMMUNITY_POST_COPY.emojiKeyboard,
     search: COMMUNITY_POST_COPY.emojiSearch,
     noResults: COMMUNITY_POST_COPY.emojiNoResults,
     recent: COMMUNITY_POST_COPY.emojiRecent,
@@ -45,6 +52,10 @@ const NEAR_LIMIT = Math.round(POST_COMMENT_MAX_LENGTH * 0.1);
  * paperclip or the microphone (comments carry text only). The ceiling is the
  * comment contract's, and the counter appears only near it — a row someone is
  * typing in stays as clean as the chat row.
+ *
+ * The emoji tray docks under the row the way it does in a thread, but this row
+ * scrolls with the page instead of sitting in a fixed footer, so opening it
+ * brings the row and its tray to the bottom of the screen by themselves.
  */
 export function PostCommentField({
   value,
@@ -64,12 +75,35 @@ export function PostCommentField({
   sendLabel?: string;
 }) {
   const remaining = POST_COMMENT_MAX_LENGTH - value.length;
+  const fieldRef = useRef<ChatFieldHandle>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const closeEmoji = useCallback((focusField: boolean) => {
+    setEmojiOpen(false);
+    if (focusField) fieldRef.current?.focus();
+  }, []);
+
+  // The tray is in the page's flow here, so opening it grows the document: put
+  // the row and the tray at the screen's foot rather than below the fold. The
+  // thread's own footer is viewport-bound and needs none of this.
+  useEffect(() => {
+    if (!emojiOpen) return;
+    rootRef.current?.scrollIntoView?.({ block: 'end' });
+  }, [emojiOpen]);
+
+  useEffect(() => {
+    if (!disabled) return;
+    setEmojiOpen(false);
+  }, [disabled]);
+
+  const emoji = COMMENT_FIELD_LABELS.emoji;
 
   return (
-    <div className={cn('w-full', className)}>
+    <div ref={rootRef} className={cn('relative w-full', className)}>
       <div className="flex items-end gap-2">
         <div className="relative flex min-h-11 min-w-0 flex-1 items-end">
           <ChatField
+            ref={fieldRef}
             value={value}
             onChange={onChange}
             ariaLabel={COMMUNITY_POST_COPY.commentPlaceholder}
@@ -78,6 +112,8 @@ export function PostCommentField({
             labels={COMMENT_FIELD_LABELS}
             maxLength={POST_COMMENT_MAX_LENGTH}
             className="w-full min-h-11 resize-none rounded-xl border border-border/70 bg-background py-2 pl-3 pr-3 text-base leading-[26px] text-foreground focus-visible:ring-2 focus-visible:ring-primary/40"
+            emojiOpen={emojiOpen}
+            onEmojiOpenChange={setEmojiOpen}
           />
         </div>
         <Button
@@ -105,6 +141,14 @@ export function PostCommentField({
           {COMMUNITY_POST_COPY.commentRemaining.replace('{count}', String(remaining))}
         </p>
       )}
+      {emoji ? (
+        <EmojiTray
+          open={emojiOpen}
+          labels={emoji}
+          onPick={(glyph) => fieldRef.current?.insertEmoji(glyph)}
+          onClose={closeEmoji}
+        />
+      ) : null}
     </div>
   );
 }

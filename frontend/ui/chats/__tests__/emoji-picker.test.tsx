@@ -3,12 +3,12 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), error: vi.fn() } }));
 
-import { Popover } from '@/frontend/ui/primitives/popover';
 import { EmojiPickerPanel, EMOJI_RECENT_STORAGE_KEY } from '@/frontend/ui/chats/emoji-picker';
 import { searchEmoji } from '@/frontend/ui/chats/emoji-catalog';
 
 const LABELS = {
   open: 'إضافة إيموجي',
+  keyboard: 'العودة إلى لوحة المفاتيح',
   search: 'ابحث عن إيموجي',
   noResults: 'لا نتائج',
   recent: 'الأخيرة',
@@ -26,11 +26,7 @@ const LABELS = {
 };
 
 function open(onPick = vi.fn()) {
-  render(
-    <Popover open>
-      <EmojiPickerPanel labels={LABELS} onPick={onPick} />
-    </Popover>
-  );
+  render(<EmojiPickerPanel labels={LABELS} onPick={onPick} />);
   return onPick;
 }
 

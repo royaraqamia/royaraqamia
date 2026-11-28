@@ -48,6 +48,7 @@ export const COMMUNITY_POST_COPY = {
   formatLink: 'رابط',
   formatLinkPrompt: 'عنوان الرَّابط',
   emojiPicker: 'إضافة إيموجي',
+  emojiKeyboard: 'العودة إلى لوحة المفاتيح',
   emojiSearch: 'ابحث عن إيموجي',
   emojiNoResults: 'لا نتائج',
   emojiRecent: 'الأخيرة',
