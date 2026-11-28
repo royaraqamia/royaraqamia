@@ -3092,6 +3092,8 @@ export type Database = {
           published_at: string | null;
           reading_time_minutes: number;
           slug: string;
+          source_kind: string | null;
+          source_ref: string | null;
           status: Database['public']['Enums']['post_status'];
           updated_at: string;
           view_count: number;
@@ -3112,6 +3114,8 @@ export type Database = {
           published_at?: string | null;
           reading_time_minutes?: number;
           slug: string;
+          source_kind?: string | null;
+          source_ref?: string | null;
           status?: Database['public']['Enums']['post_status'];
           updated_at?: string;
           view_count?: number;
@@ -3132,6 +3136,8 @@ export type Database = {
           published_at?: string | null;
           reading_time_minutes?: number;
           slug?: string;
+          source_kind?: string | null;
+          source_ref?: string | null;
           status?: Database['public']['Enums']['post_status'];
           updated_at?: string;
           view_count?: number;

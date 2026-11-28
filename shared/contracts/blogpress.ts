@@ -3,6 +3,12 @@ import { PostSummarySchema } from '@/shared/contracts/community';
 
 export type PostStatus = 'draft' | 'published' | 'scheduled';
 
+/**
+ * The artifact a draft was created from (#1952): a note the member wrote or an
+ * answer نور wrote for them. A hand-written post has no kind.
+ */
+export type PostSourceKind = 'note' | 'answer';
+
 export interface Post {
   id: string;
   author_id: string;
@@ -12,6 +18,9 @@ export interface Post {
   deleted_at?: string | null;
   slug: string;
   content: string | null;
+  /** Where the draft came from, for the supply review. Null is hand-written. */
+  source_kind?: PostSourceKind | null;
+  source_ref?: string | null;
   status: PostStatus;
   cover_image: string | null;
   meta_title: string | null;

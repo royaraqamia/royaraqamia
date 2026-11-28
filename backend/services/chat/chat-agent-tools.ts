@@ -1805,11 +1805,11 @@ const tools: ChatAgentTool[] = [
       const input = CreateDraftArgs.parse(args);
       const id = crypto.randomUUID();
       const created = await depsOf(context)
-        .posts.createRepository(context.supabase)
-        .createPost(context.userId, {
+        .posts.createService(context.supabase)
+        .createDraft(context.userId, {
           slug: slugOf(input.meta_title, id),
           content: input.content,
-          meta_title: input.meta_title,
+          metaTitle: input.meta_title,
         });
       return { post_id: created.id };
     },

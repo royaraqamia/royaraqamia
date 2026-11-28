@@ -1,7 +1,16 @@
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import type { PostPublishedNotifier } from '@/backend/config/notifications';
-import type { RestorePostSnapshot } from '@/shared/contracts/blogpress';
+import type { PostSourceKind, RestorePostSnapshot } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
+
+/** What a draft create carries, and the artifact it came from when there is one. */
+export interface PostDraftInput {
+  slug: string;
+  content: string;
+  metaTitle: string;
+  /** The note or answer this draft was made from (#1952); absent for a typed post. */
+  source?: { kind: PostSourceKind; ref: string };
+}
 
 /**
  * The Blogpress post module. Its interface is only the operations that carry
@@ -28,6 +37,29 @@ export class BlogpressPostsService {
     const result = await this.repository.saveAndPublishPost(postId, authorId, data);
     this.onPostPublished?.({ postId, authorId, slug: result.slug });
     return result;
+  }
+
+  /**
+   * One draft create, wherever the words came from (#1952).
+   *
+   * The assistant's `create_post_draft` tool and the artifact door both come
+   * through here, so a member's byline and the row's shape are decided once.
+   * An artifact draft also records its source in a second write: the create RPC
+   * is the offline contract's and cannot carry a column the client owns, while
+   * the marker is the door's own fact and must never be client-settable.
+   */
+  async createDraft(authorId: string, input: PostDraftInput): Promise<{ id: string }> {
+    const { id } = await this.repository.createPost(authorId, {
+      slug: input.slug,
+      content: input.content,
+      meta_title: input.metaTitle,
+    });
+
+    if (input.source) {
+      await this.repository.setPostSource(id, authorId, input.source);
+    }
+
+    return { id };
   }
 
   /**

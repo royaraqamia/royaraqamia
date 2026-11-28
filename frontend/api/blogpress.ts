@@ -1,6 +1,10 @@
 import { request } from '@/frontend/transport/http';
 import type { BlogpressSyncSnapshot, RestorePostSnapshot } from '@/shared/contracts/blogpress';
-import type { PostStatusInput } from '@/shared/contracts/community';
+import type {
+  ArtifactPostDraftInput,
+  ArtifactPostDraftResponse,
+  PostStatusInput,
+} from '@/shared/contracts/community';
 
 export interface PostFields {
   slug: string;
@@ -42,6 +46,22 @@ export async function createPost(
   return request<{ id: string; slug?: string }>('/api/community/posts', {
     method: 'POST',
     body: payload ? JSON.stringify(payload) : undefined,
+  });
+}
+
+/**
+ * Turns a note or an assistant answer into a community draft (#1952).
+ *
+ * The body sends the artifact's id, not its text: the server reads the member's
+ * own row, so the draft carries exactly what they produced and records its
+ * source. The answer is the draft the composer opens next.
+ */
+export async function createPostFromArtifact(
+  input: ArtifactPostDraftInput
+): Promise<ArtifactPostDraftResponse> {
+  return request<ArtifactPostDraftResponse>('/api/community/posts/from-artifact', {
+    method: 'POST',
+    body: JSON.stringify(input),
   });
 }
 

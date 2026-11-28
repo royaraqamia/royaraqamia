@@ -294,6 +294,33 @@ export const PostSchema = z.object({
 export type PostInput = z.infer<typeof PostSchema>;
 
 /**
+ * «انشر في المجتمع» sends the artifact's identity, never its text (#1952).
+ *
+ * The server reads the note or the answer from the member's own rows, so this
+ * door cannot be used to publish arbitrary words under the member's byline, and
+ * the draft it creates always carries the text the member actually produced.
+ */
+export const ArtifactPostDraftSchema = z.strictObject({
+  kind: z.enum(['note', 'answer']),
+  id: z.string().uuid('معرِّف غير صالح'),
+});
+
+export type ArtifactPostDraftInput = z.infer<typeof ArtifactPostDraftSchema>;
+
+/**
+ * The draft the door created, returned with its own text so the composer that
+ * opens next does not ask the server for the row it just wrote.
+ */
+export const ArtifactPostDraftResponseSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  content: z.string(),
+  metaTitle: z.string(),
+});
+
+export type ArtifactPostDraftResponse = z.infer<typeof ArtifactPostDraftResponseSchema>;
+
+/**
  * The publication state a client may request on create. `published_at` and
  * `community_visible` are server-owned and are never part of this contract.
  */

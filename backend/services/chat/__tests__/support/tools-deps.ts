@@ -16,7 +16,7 @@ type GroupOverrides = {
 export function toolsDepsFor(overrides: GroupOverrides = {}): ChatAgentToolsDeps {
   const deps: ChatAgentToolsDeps = {
     certificates: { createRepository: unwired, verifyByCode: unwired },
-    posts: { createRepository: unwired },
+    posts: { createRepository: unwired, createService: unwired },
     habits: { createService: unwired },
     spendtrack: { createService: unwired },
     consultation: { createService: unwired },

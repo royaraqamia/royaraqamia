@@ -18,6 +18,8 @@ function makeRepo(
     getPublishedPostBySlug: vi.fn(),
     getPostAuthor: vi.fn(),
     getPostAuthors: vi.fn(),
+    getPublishedAuthorIds: vi.fn(),
+    setPostSource: vi.fn(),
     getPublishedCategories: vi.fn(),
     getPublishedPostCategories: vi.fn(),
     incrementPostViewCount: vi.fn(),
@@ -153,6 +155,62 @@ describe('BlogpressPostsService publish visibility', () => {
 
     await service.bulkActionPosts(['p-1'], 'u-1', 'unpublish');
     expect(repository.bulkActionPosts).toHaveBeenCalledWith(['p-1'], 'u-1', 'unpublish');
+  });
+});
+
+describe('BlogpressPostsService.createDraft', () => {
+  it('creates the draft with the member as author and no source for typed text', async () => {
+    const { repository, service } = makeRepo();
+    (repository.createPost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-9' });
+
+    await expect(
+      service.createDraft('u-1', {
+        slug: 'post-abc12345',
+        content: 'نصٌّ كتبه العضو',
+        metaTitle: 'عنوان',
+      })
+    ).resolves.toEqual({ id: 'p-9' });
+
+    expect(repository.createPost).toHaveBeenCalledWith('u-1', {
+      slug: 'post-abc12345',
+      content: 'نصٌّ كتبه العضو',
+      meta_title: 'عنوان',
+    });
+    expect(repository.setPostSource).not.toHaveBeenCalled();
+  });
+
+  it('records the artifact a draft came from, scoped to the author', async () => {
+    const { repository, service } = makeRepo();
+    (repository.createPost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-9' });
+
+    await service.createDraft('u-1', {
+      slug: 'post-abc12345',
+      content: 'ملاحظة',
+      metaTitle: 'ملاحظة',
+      source: { kind: 'note', ref: 'n-1' },
+    });
+
+    expect(repository.setPostSource).toHaveBeenCalledWith('p-9', 'u-1', {
+      kind: 'note',
+      ref: 'n-1',
+    });
+  });
+
+  it('propagates a repository failure without writing a marker', async () => {
+    const { repository, service } = makeRepo();
+    (repository.createPost as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('فشل إنشاء المنشور')
+    );
+
+    await expect(
+      service.createDraft('u-1', {
+        slug: 'post-abc12345',
+        content: 'نصّ',
+        metaTitle: 'عنوان',
+        source: { kind: 'answer', ref: 'm-1' },
+      })
+    ).rejects.toThrow('فشل إنشاء المنشور');
+    expect(repository.setPostSource).not.toHaveBeenCalled();
   });
 });
 

@@ -80,7 +80,7 @@ import {
   createCertificatesRepository,
   verifyCertificateByCode,
 } from '@/backend/config/certificates';
-import { createPostsRepository } from '@/backend/config/blogpress';
+import { createBlogpressPostsService, createPostsRepository } from '@/backend/config/blogpress';
 import { createHabitService } from '@/backend/config/habitflow';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
 import { createPublicConsultationService } from '@/backend/config/consultation';
@@ -199,7 +199,10 @@ export function createChatAgentToolsDeps(supabase?: SupabaseClient<Database>): C
       createRepository: createCertificatesRepository,
       verifyByCode: verifyCertificateByCode,
     },
-    posts: { createRepository: createPostsRepository },
+    posts: {
+      createRepository: createPostsRepository,
+      createService: createBlogpressPostsService,
+    },
     habits: { createService: createHabitService },
     spendtrack: { createService: createSpendtrackService },
     consultation: { createService: createPublicConsultationService },

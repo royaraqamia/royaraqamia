@@ -5,6 +5,7 @@ import type {
   PostAuthor,
   PostAuthorSummary,
   PostSummary,
+  PostSourceKind,
   PublishedPostsResult,
   PublishedFeedResult,
   RestorePostSnapshot,
@@ -42,6 +43,21 @@ export interface PostsRepository {
   getPublishedPostBySlug(slug: string): Promise<Post | null>;
   getPostAuthor(authorId: string): Promise<PostAuthor | null>;
   getPostAuthors(authorIds: string[]): Promise<Record<string, PostAuthorSummary>>;
+  /**
+   * Every author with at least one published post, deduplicated (#1952). The
+   * roster is built from supply: while the product has fewer than three authors,
+   * it lists only the accounts that have published something.
+   */
+  getPublishedAuthorIds(): Promise<string[]>;
+  /**
+   * Records the artifact an already-created draft came from (#1952). Scoped to
+   * the author, so the marker cannot be written onto another member's row.
+   */
+  setPostSource(
+    postId: string,
+    authorId: string,
+    source: { kind: PostSourceKind; ref: string }
+  ): Promise<void>;
   getPublishedCategories(): Promise<PostCategory[]>;
   getPublishedPostCategories(postId: string): Promise<PostCategory[]>;
   incrementPostViewCount(postId: string): Promise<void>;

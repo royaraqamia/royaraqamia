@@ -2,7 +2,10 @@ import type {
   createCertificatesRepository,
   verifyCertificateByCode,
 } from '@/backend/config/certificates';
-import type { createPostsRepository } from '@/backend/config/blogpress';
+import type {
+  createPostsRepository,
+  createBlogpressPostsService,
+} from '@/backend/config/blogpress';
 import type { createHabitService } from '@/backend/config/habitflow';
 import type { createSpendtrackService } from '@/backend/config/spendtrack';
 import type { createPublicConsultationService } from '@/backend/config/consultation';
@@ -76,6 +79,8 @@ export interface ChatAgentToolsDeps {
   };
   posts: {
     createRepository: typeof createPostsRepository;
+    /** The draft write's one rule: the assistant and the artifact door share it (#1952). */
+    createService: typeof createBlogpressPostsService;
   };
   habits: {
     createService: typeof createHabitService;

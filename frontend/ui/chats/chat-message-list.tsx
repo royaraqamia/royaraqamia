@@ -22,6 +22,7 @@ import { VoiceNotePlayer } from './voice-note-player';
 import { WebSources } from './web-sources';
 import { AssistantVisual } from './assistant-visual';
 import { AssistantMedia } from './assistant-media';
+import { PublishArtifactAction } from '@/frontend/ui/community/publish-artifact-action';
 import { readReceiptOf, type ChatReadReceipt } from './read-receipt';
 import { formatDaySeparator, isNewDay } from './thread-days';
 import {
@@ -528,6 +529,17 @@ export const ChatMessageRow = memo(function ChatMessageRow({
         )}
         {message.editedAt && !deleted && <span>· {CHAT_THREAD_COPY.edited}</span>}
         {receipt && <span>· {CHAT_THREAD_COPY.readReceipt}</span>}
+        {/* An answer is text the member already has; the community door turns it
+            into a draft with one confirmation (#1952). Only نور's settled lines
+            carry it — a member's own message is not an artifact. */}
+        {!mine &&
+          !deleted &&
+          settled &&
+          !action &&
+          message.senderKind === 'agent' &&
+          (message.body?.trim().length ?? 0) > 0 && (
+            <PublishArtifactAction kind="answer" artifactId={message.id} variant="quiet" />
+          )}
         {mine && !deleted && !action && settled && (
           <>
             {editable && (

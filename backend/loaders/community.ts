@@ -92,17 +92,56 @@ export const loadCommunityPost = unstable_cache(
 );
 
 /**
- * The "who's here" roster shown on `/community`. Shared by every visitor, so
- * it is cached under its own tag — publishing a post must not evict it.
+ * How many distinct published authors the product needs before the roster may
+ * show members who have not written anything (#1952).
  *
- * The viewer's own row is pinned to the head in the browser, from the session,
- * never here: this read is the same fifty rows for everyone (ADR-0172).
+ * On the audit's evidence the hub listed nineteen follow buttons while one
+ * account had ever published. An empty follow list is not what a reader is
+ * missing; something to read is. Until the supply clears this floor, the roster
+ * is drawn from the accounts that produced it.
+ */
+export const COMMUNITY_ROSTER_AUTHOR_FLOOR = 3;
+
+/**
+ * The roster a page may draw, from the roster read and the supply read (#1952).
+ *
+ * Pure and exported so the rule is asserted without a database: below the floor
+ * only authors remain, at or above it the whole directory returns, and no
+ * authors at all returns nothing (the page omits the roster).
+ */
+export function rosterForSupply<T extends { id: string }>(
+  members: T[],
+  publishedAuthorIds: string[]
+): T[] {
+  const authors = new Set(publishedAuthorIds);
+  if (authors.size >= COMMUNITY_ROSTER_AUTHOR_FLOOR) return members;
+  return members.filter((member) => authors.has(member.id));
+}
+
+/**
+ * The "who's here" roster shown on `/community` and `/community/explore`.
+ *
+ * It is a consequence of supply, not a directory of sign-ups (#1952): while the
+ * product has fewer than three distinct authors, it lists only accounts that
+ * have published a post, so the page never asks a reader to follow someone with
+ * nothing to read. At three authors the full directory returns, because by then
+ * the follow control has something behind it.
+ *
+ * Shared by every visitor, so it is cached under its own tags. The viewer's own
+ * row is pinned to the head in the browser, from the session, never here
+ * (ADR-0172).
  */
 export const loadCommunityMembers = unstable_cache(
-  async (limit: number = COMMUNITY_MEMBERS_LIMIT): Promise<PublicUser[]> =>
-    createPublicUsersRepositoryServer().list(limit),
+  async (limit: number = COMMUNITY_MEMBERS_LIMIT): Promise<PublicUser[]> => {
+    const [members, publishedAuthorIds] = await Promise.all([
+      createPublicUsersRepositoryServer().list(limit),
+      pub().getPublishedAuthorIds(),
+    ]);
+
+    return rosterForSupply(members, publishedAuthorIds);
+  },
   ['community-members'],
-  { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.members] }
+  { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.members, COMMUNITY_TAGS.index] }
 );
 
 /**

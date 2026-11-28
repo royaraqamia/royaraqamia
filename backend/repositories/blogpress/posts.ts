@@ -368,6 +368,42 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return authors;
     },
 
+    /**
+     * The supply half of the roster (#1952): who has actually published.
+     *
+     * A bounded read of the published feed's own visibility rules, deduplicated
+     * here. It is deliberately a table read rather than a new SQL function: the
+     * cached hub prerenders during the build, against the project's current
+     * schema, and a function that only exists after the migration merge would
+     * fail every build before it. The roster is a 50-row display cap and the
+     * check that matters is "three authors": PostgREST's row ceiling is far
+     * above the product's whole supply, so a page of it is the honest bound.
+     */
+    async getPublishedAuthorIds(): Promise<string[]> {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('author_id')
+        .eq('status', 'published')
+        .eq('community_visible', true)
+        .is('deleted_at', null)
+        .order('published_at', { ascending: false })
+        .limit(1000);
+
+      if (error) throw repositoryFailure('blogpress.getPublishedAuthorIds', error);
+
+      return [...new Set((data ?? []).map((row) => row.author_id))];
+    },
+
+    async setPostSource(postId, authorId, source): Promise<void> {
+      const { error } = await supabase
+        .from('posts')
+        .update({ source_kind: source.kind, source_ref: source.ref })
+        .eq('id', postId)
+        .eq('author_id', authorId);
+
+      if (error) throw repositoryFailure('blogpress.setPostSource', error);
+    },
+
     async getPublishedCategories(): Promise<PostCategory[]> {
       const { data, error } = await supabase
         .from('post_categories')
