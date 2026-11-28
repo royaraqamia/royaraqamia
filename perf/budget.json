@@ -47,6 +47,10 @@
       "jsGzipKb": 355,
       "totalGzipKb": 577
     },
+    "/assistant": {
+      "comment": "Live weight gate (#1662): the route rode the 260 KB default as a settings column until #1966 gave it the member profile's own header, and the deployed origin then measured 262.2 KB gzip JS on 2026-11-28. The ceiling sits just above that measurement; lower it as the surface is trimmed.",
+      "jsGzipKb": 264
+    },
     "/chats/new": {
       "comment": "Live weight gate (#1662): 264.4 KB gzip JS on 2026-11-22. This is the concrete sample for the chats surface, including /chats/[id].",
       "jsGzipKb": 266
