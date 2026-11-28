@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { formatTable, parseRecord, percentile, readRecords, summarize } from '../perf-field.mjs';
+import {
+  formatTable,
+  parseRecord,
+  parseWindow,
+  percentile,
+  readRecords,
+  rowToRecord,
+  summarize,
+} from '../perf-field.mjs';
 
 const LAUNCH = {
   version: 1,
@@ -191,5 +199,64 @@ describe('formatTable', () => {
     expect(table).toContain('820 ms');
     expect(table).toContain('38 ms');
     expect(table).toContain('cold');
+  });
+});
+
+describe('rowToRecord', () => {
+  it('reads a row of perf_samples as the same record the log line carried', () => {
+    expect(
+      rowToRecord({
+        kind: 'launch',
+        platform: 'shell',
+        cold: true,
+        shell_ms: 400,
+        content_ms: 820,
+        paint_ms: null,
+        lcp_ms: null,
+        cls: null,
+        inp_ms: null,
+        ttfb_ms: null,
+        recorded_at: '2026-11-28T09:00:00.000Z',
+      })
+    ).toEqual({ kind: 'launch', platform: 'shell', cold: true, shellMs: 400, contentMs: 820 });
+
+    expect(
+      rowToRecord({
+        kind: 'vitals',
+        platform: 'web',
+        lcp_ms: 2100,
+        cls: 0.04,
+        inp_ms: 120,
+        ttfb_ms: 300,
+      })
+    ).toEqual({ kind: 'vitals', platform: 'web', lcpMs: 2100, cls: 0.04, inpMs: 120, ttfbMs: 300 });
+  });
+
+  it('drops a row that is missing what its kind requires', () => {
+    for (const row of [
+      null,
+      { kind: 'launch', platform: 'web', cold: true, shell_ms: 1 },
+      { kind: 'launch', platform: 'desktop', cold: true, shell_ms: 1, content_ms: 2 },
+      { kind: 'tap', platform: 'web', paint_ms: null },
+      { kind: 'vitals', platform: 'web', lcp_ms: 1, cls: null, inp_ms: 1, ttfb_ms: 1 },
+      { kind: 'origin', platform: 'web' },
+    ]) {
+      expect(rowToRecord(row)).toBeNull();
+    }
+  });
+});
+
+describe('parseWindow', () => {
+  it('turns the documented windows into seconds', () => {
+    expect(parseWindow('30m')).toBe(1800);
+    expect(parseWindow('1h')).toBe(3600);
+    expect(parseWindow('24h')).toBe(86_400);
+    expect(parseWindow('7d')).toBe(604_800);
+  });
+
+  it('refuses anything docker logs would not take', () => {
+    for (const value of ['', '24', '1w', '-1h', '1.5h', undefined]) {
+      expect(() => parseWindow(value)).toThrow(/--since/);
+    }
   });
 });

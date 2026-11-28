@@ -1,10 +1,15 @@
 import * as Sentry from '@sentry/nextjs';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
+import type { Database } from '@/backend/models/database.types';
+import { getAdminSupabase } from '@/backend/config/supabase';
+import { createPerfSamplesRepository } from '@/backend/repositories/observability/perf-samples-repository';
 import {
   AppFailureService,
   type AppFailureContext,
   type AppFailureSource,
 } from '@/backend/services/observability/app-failure-service';
+import { AppPerfService } from '@/backend/services/observability/app-perf-service';
 
 /**
  * The app's failures land in the same Sentry project as the web's (#667), under
@@ -25,4 +30,15 @@ const sentrySource: AppFailureSource = {
 
 export function createAppFailureService(): AppFailureService {
   return new AppFailureService({ failures: sentrySource });
+}
+
+/**
+ * The perf beacon's sink (#1885, ADR-0228). The row is written with the service
+ * role because the table grants nothing to a client role and has no policy: the
+ * record is telemetry, not a member's data.
+ */
+export function createAppPerfService(supabase?: SupabaseClient<Database>): AppPerfService {
+  return new AppPerfService({
+    samples: createPerfSamplesRepository(supabase ?? getAdminSupabase()),
+  });
 }

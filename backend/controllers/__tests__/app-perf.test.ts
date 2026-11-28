@@ -2,12 +2,16 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 const mockCheckRateLimitApi = vi.fn();
 const mockInfo = vi.fn();
+const mockRecord = vi.fn();
 
 vi.mock('@/backend/middleware/http', () => ({
   checkRateLimitApi: (config: unknown) => mockCheckRateLimitApi(config),
 }));
 vi.mock('@/backend/shared/logger', () => ({
   logger: { info: (...args: unknown[]) => mockInfo(...args), warn: vi.fn(), error: vi.fn() },
+}));
+vi.mock('@/backend/config/observability', () => ({
+  createAppPerfService: () => ({ record: (report: unknown) => mockRecord(report) }),
 }));
 
 import { recordAppPerf } from '@/backend/controllers/app-perf';
@@ -36,6 +40,7 @@ describe('recordAppPerf', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCheckRateLimitApi.mockResolvedValue(null);
+    mockRecord.mockResolvedValue(undefined);
   });
 
   it('writes a launch as one log line with the platform, the flag and both durations', async () => {
@@ -50,6 +55,7 @@ describe('recordAppPerf', () => {
       shellMs: 120,
       contentMs: 240,
     });
+    expect(mockRecord).toHaveBeenCalledWith(LAUNCH);
   });
 
   it('writes a tap as one log line with the single duration', async () => {
@@ -61,6 +67,7 @@ describe('recordAppPerf', () => {
       platform: 'shell',
       paintMs: 40,
     });
+    expect(mockRecord).toHaveBeenCalledWith(TAP);
   });
 
   it('writes field vitals as one log line with no page or user context', async () => {
@@ -75,6 +82,7 @@ describe('recordAppPerf', () => {
       inpMs: 120,
       ttfbMs: 300,
     });
+    expect(mockRecord).toHaveBeenCalledWith(VITALS);
   });
 
   it('records nothing a reporter did not send', async () => {
@@ -110,6 +118,7 @@ describe('recordAppPerf', () => {
 
     expect(mockCheckRateLimitApi).not.toHaveBeenCalled();
     expect(mockInfo).not.toHaveBeenCalled();
+    expect(mockRecord).not.toHaveBeenCalled();
   });
 
   it('denies when the limiter fails closed', async () => {
@@ -122,6 +131,19 @@ describe('recordAppPerf', () => {
 
     expect(result.status).toBe(429);
     expect(mockInfo).not.toHaveBeenCalled();
+    expect(mockRecord).not.toHaveBeenCalled();
+  });
+
+  it('answers 200 when the sink refuses the row, because the beacon is droppable', async () => {
+    mockRecord.mockRejectedValue(new Error('perf_samples is unavailable'));
+
+    const result = await recordAppPerf(LAUNCH, IP);
+
+    expect(result).toEqual({ status: 200, body: { success: true } });
+    expect(mockInfo).toHaveBeenCalledWith(
+      '[app-perf]',
+      expect.objectContaining({ kind: 'launch' })
+    );
   });
 
   it('counts the beacon per IP and closes the bucket on a limiter outage', async () => {

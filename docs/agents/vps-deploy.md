@@ -31,6 +31,11 @@ and the app port is never published on the host.
 - Caddy writes an access log — every request that reaches the origin, its duration and its status — to
   stdout, which Docker keeps as 10 MB × 3 (`json-file`). `metrics.sh` reads that window; nothing ships it
   off the box, so it is a window, not a history.
+- The app's own stdout is the same shape (`compose.yaml` pins both containers to `json-file`, 10 MB × 3
+  each) and is therefore not a sink either. The one signal that quits the box is the perf beacon:
+  `/api/app-perf` writes one row per launch, tap and vitals report into `public.perf_samples`, kept 60
+  days by a nightly `perf-samples-sweep` (`docs/performance.md`, ADR-0228). Read it with
+  `npm run perf:field`; nothing here needs a log shipper.
 
 ## Getting in, and out of trouble
 
