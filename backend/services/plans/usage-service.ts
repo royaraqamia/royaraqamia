@@ -1,5 +1,6 @@
 import { AppError } from '@/backend/shared/errors';
 import { logger } from '@/backend/shared/logger';
+import { PLAN_CARD_SERVER_COPY } from '@/backend/services/plans/plan-card-copy';
 import type {
   RecordUsageEventInput,
   UsageRepository,
@@ -67,6 +68,10 @@ export class PlanTargetNotFoundError extends AppError {
  * A standing cap, reached. The remedy is the same as an empty allowance —
  * upgrade — so it answers 402 too, with a code the client can tell apart: the
  * account is not out of actions, it is out of slots for one kind of item.
+ *
+ * The sentence names the axis in the words the page heads its meters with
+ * (`shared/copy/plan-card.json`), so the offer and the wall cannot describe the
+ * plan differently (#1951).
  */
 export class OwnedItemCapReachedError extends AppError {
   constructor(
@@ -75,7 +80,7 @@ export class OwnedItemCapReachedError extends AppError {
     readonly count: number
   ) {
     super(
-      `بلغتَ الحدّ الأعلى للخطة الحالية (${cap}). احذف عنصرًا أو ارتقِ إلى الخطَّة المدفوعة.`,
+      `بلغتَ ${PLAN_CARD_SERVER_COPY.capAxis} (${cap}). احذف عنصرًا أو ارتقِ إلى الخطَّة المدفوعة.`,
       402,
       'owned_item_cap'
     );

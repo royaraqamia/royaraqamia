@@ -27,10 +27,13 @@ object UsageCopy {
     fun count(value: Long): String = grouping.format(value)
 
     /**
-     * The bar's share as the site writes it: the whole percentage, ASCII digits,
-     * with the sign the page's own copy uses (`22%`).
+     * The meter's share as the site writes it: the whole percentage, ASCII
+     * digits, with the sign the page's own copy uses (`22%`).
      */
     fun percent(share: Int): String = "${count(share.toLong())}%"
+
+    /** A key's count out of its cap, as the page writes it: `used / cap`. */
+    fun ratio(used: Long, cap: Long): String = "${count(used)} / ${count(cap)}"
 
     /** The site's sentence, with the date substituted into its placeholder. */
     fun expires(date: String): String = PlanCardCopy.EXPIRES.replace("{date}", date)

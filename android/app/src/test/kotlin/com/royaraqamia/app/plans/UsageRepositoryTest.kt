@@ -64,11 +64,12 @@ class UsageRepositoryTest {
         assertTrue(result is ApiResult.Success)
         val model = (result as ApiResult.Success).value
         assertEquals("pro", model.plan)
-        // The card's one bar counts the owned-item caps, so this body reads 1 of 5
-        // — the counted action above is not a slot (ADR-0093, ADR-0098).
-        assertEquals(1L, model.used)
-        assertEquals(5L, model.cap)
-        assertEquals(20, model.share)
+        // The card draws one meter per owned key, so this body reads 1 of 5 for
+        // notes — the counted action above is not a slot (ADR-0093, ADR-0098).
+        val meter = model.meters.single()
+        assertEquals(1L, meter.used)
+        assertEquals(5L, meter.cap)
+        assertEquals(20, meter.share)
 
         val request = transport.requests.single()
         assertEquals("GET", request.method)

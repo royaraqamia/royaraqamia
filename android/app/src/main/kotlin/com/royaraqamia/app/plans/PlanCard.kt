@@ -261,8 +261,8 @@ private fun Counters(model: UsageScreenModel) {
             style = type.small.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
-    } else {
-        UsageProgress(model)
+    } else if (model.meters.isNotEmpty()) {
+        StandingMeters(model.meters)
     }
 
     if (model.plan == "pro" && model.expiresAt != null) {
@@ -275,48 +275,98 @@ private fun Counters(model: UsageScreenModel) {
 }
 
 /**
- * The page's one bar: the standing owned-item caps summed, and how much of them
- * the account is holding. The track is [Recipes.Progress] on both clients, and
- * the fill grows from the track's start, which is its right edge in the app's
- * right-to-left layout — the site's `transform-origin: right` is the same edge.
- *
- * The percentage is drawn in the digits face ([Recipes.Progress.value]), so an
- * Arabic-locale phone shows ASCII figures, as the site does.
+ * The page's standing meters: one per key the account holds, under the heading
+ * that names the axis the paid tier changes. The sum of every cap is not drawn
+ * here or on the page — it described no decision the member was making (#1951).
  */
 @Composable
-private fun UsageProgress(model: UsageScreenModel) {
+private fun StandingMeters(meters: List<UsageScreenModel.Meter>) {
     val type = LocalRoyTypeScale.current
     val spacing = LocalRoySpacing.current
 
-    Row(
-        modifier =
-            Modifier.fillMaxWidth()
-                // The site's progressbar carries the same name, so a screen reader
-                // announces what the bar is before the number it reads.
-                .semantics { contentDescription = PlanCardCopy.USAGE_LABEL },
-        horizontalArrangement = Arrangement.spacedBy(Recipes.Progress.gap(spacing)),
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
     ) {
-        Box(
+        Text(
+            text = PlanCardCopy.CAP_AXIS,
+            style = type.xs,
+            color = Recipes.Row.labelColor,
+        )
+        for (meter in meters) {
+            MeterRow(meter)
+        }
+    }
+}
+
+/**
+ * One key's meter: its label and `used / cap`, then the same pill track the page
+ * draws, filled by that key's own share. The track is [Recipes.Progress] on both
+ * clients, and the fill grows from the track's start, which is its right edge in
+ * the app's right-to-left layout — the site's `transform-origin: right` is the
+ * same edge.
+ *
+ * The percentage is drawn in the digits face ([Recipes.Progress.value]), so an
+ * Arabic-locale phone shows ASCII figures, as the site does. The two lines are
+ * the site's `space-y-1`, which is the page's four-pixel text gap.
+ */
+@Composable
+private fun MeterRow(meter: UsageScreenModel.Meter) {
+    val type = LocalRoyTypeScale.current
+    val spacing = LocalRoySpacing.current
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(PlanScreenMetrics.textGap),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Recipes.Row.gap),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                modifier = Modifier.weight(1f),
+                text = meter.label,
+                style = type.xs,
+                color = Recipes.Row.labelColor,
+            )
+            Text(
+                text = UsageCopy.ratio(meter.used, meter.cap),
+                style = Recipes.Row.value(type),
+                color = Recipes.Row.valueColor,
+            )
+        }
+
+        Row(
             modifier =
-                Modifier.weight(1f)
-                    .height(Recipes.Progress.height)
-                    .clip(Recipes.Progress.radius)
-                    .background(Recipes.Progress.track),
+                Modifier.fillMaxWidth()
+                    // The site's progressbar carries the key's label, so a screen
+                    // reader announces which meter before the number it reads.
+                    .semantics { contentDescription = meter.label },
+            horizontalArrangement = Arrangement.spacedBy(Recipes.Progress.gap(spacing)),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier =
-                    Modifier.fillMaxWidth(model.share / 100f)
+                    Modifier.weight(1f)
                         .height(Recipes.Progress.height)
                         .clip(Recipes.Progress.radius)
-                        .background(Recipes.Progress.fill)
+                        .background(Recipes.Progress.track),
+            ) {
+                Box(
+                    modifier =
+                        Modifier.fillMaxWidth(meter.share / 100f)
+                            .height(Recipes.Progress.height)
+                            .clip(Recipes.Progress.radius)
+                            .background(Recipes.Progress.fill)
+                )
+            }
+            Text(
+                text = UsageCopy.percent(meter.share),
+                style = Recipes.Progress.value(type),
+                color = Recipes.Progress.valueColor,
             )
         }
-        Text(
-            text = UsageCopy.percent(model.share),
-            style = Recipes.Progress.value(type),
-            color = Recipes.Progress.valueColor,
-        )
     }
 }
 

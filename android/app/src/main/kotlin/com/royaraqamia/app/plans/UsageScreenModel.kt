@@ -9,9 +9,9 @@ import com.royaraqamia.app.contracts.generated.MyPlanResponseStatePlan
  *
  * Built from the body `GET /api/me/plan` returns — the same route the site's
  * `/account/plan` reads, so the card cannot show fewer numbers than the page it
- * mirrors. The card draws one bar ([share]) over the standing owned-item caps
- * ([used] of [cap]); the counted actions the same body carries are enforced
- * where they happen, not summed into a standing total (ADR-0093).
+ * mirrors. The card draws one meter per key the account holds ([Meter]); the
+ * counted actions the same body carries are enforced where they happen, not
+ * summed into a standing total (ADR-0093).
  *
  * The generated type is what makes "a contract change breaks the app build" true:
  * remove or rename `state.plan` or `limits[].remaining` in
@@ -21,14 +21,27 @@ data class UsageScreenModel(
     val plan: String,
     val unlimited: Boolean,
     val expiresAt: String?,
-    /** The owned-item slots the account holds, summed. */
-    val used: Long,
-    /** The owned-item slots the plan allows, summed. */
-    val cap: Long,
-    /** [used] as a whole percentage of [cap]: the one bar the card draws. */
-    val share: Int,
+    /**
+     * One meter per owned key the account holds at least one row in, closest to
+     * its cap first. A key it holds nothing in draws no meter: the sum of every
+     * cap described no decision the member was making (#1951).
+     */
+    val meters: List<Meter>,
     val activations: List<Activation>,
 ) {
+    /**
+     * One owned key's standing allowance: the label the API carries, how many
+     * rows the account holds, the plan's cap for that key, and the whole
+     * percentage between them.
+     */
+    data class Meter(
+        val key: String,
+        val label: String,
+        val used: Long,
+        val cap: Long,
+        val share: Int,
+    )
+
     /**
      * One payment behind the plan, as the page's history lists it: what it cost,
      * how it was paid, when it started and when it runs out, and the note the
@@ -47,21 +60,34 @@ data class UsageScreenModel(
 
     companion object {
         fun from(response: MyPlanResponse): UsageScreenModel {
-            // The bar counts the standing owned-item caps only: a counted action
-            // (a download, a scan, a surah) is a number of times that resets, and
-            // folding a daily count into a standing one would make the bar drop at
-            // midnight without the member having given anything up. The site's
-            // `usageShare` derives the same share from the same `limits` body.
-            val used = response.limits.sumOf { it.used }
-            val cap = response.limits.sumOf { it.cap }
+            // One meter per key the account holds something in: a counted action
+            // (a download, a scan, a surah) is a number of times that resets and
+            // is not a slot, and a key with no rows is not in use. The site's
+            // `standingMeters` derives the same rows from the same `limits` body.
+            val meters =
+                response.limits
+                    .filter { it.used > 0L && it.cap > 0L }
+                    .map { limit ->
+                        Meter(
+                            key = limit.key,
+                            label = limit.label,
+                            used = limit.used,
+                            cap = limit.cap,
+                            share = minOf(100, Math.round(100.0 * limit.used / limit.cap).toInt()),
+                        )
+                    }
+                    // The site draws the key closest to its wall first.
+                    .sortedWith(
+                        compareByDescending<Meter> { it.share }
+                            .thenByDescending { it.used }
+                            .thenBy { it.key }
+                    )
 
             return UsageScreenModel(
                 plan = response.state.plan.id(),
                 unlimited = response.state.unlimited,
                 expiresAt = response.state.expiresAt,
-                used = used,
-                cap = cap,
-                share = if (cap <= 0L) 0 else minOf(100, Math.round(100.0 * used / cap).toInt()),
+                meters = meters,
                 activations =
                     response.activations.map { activation ->
                         Activation(

@@ -123,15 +123,17 @@ describe('PlanView counters', () => {
     expect(rows[3]).toHaveTextContent('0 / 5');
     expect(block).toHaveTextContent(PLAN_CARD_COPY.dailyReset);
 
-    // The two dimensions stay apart: no owned-item rows, no lifetime count,
-    // and the standing bar is named for the slots it actually sums.
-    expect(screen.queryByText('الملاحظات')).not.toBeInTheDocument();
+    // The two dimensions stay apart: the standing meters count only the keys
+    // the member holds, and a lifetime count is neither a key nor a slot.
     expect(screen.queryByText('تنزيل وسائط')).not.toBeInTheDocument();
-    expect(screen.getByText(PLAN_CARD_COPY.usageLabel)).toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: PLAN_CARD_COPY.usageLabel })).toHaveAttribute(
+    expect(screen.getByText(PLAN_CARD_COPY.capAxis)).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'الملاحظات' })).toHaveAttribute(
       'aria-valuenow',
-      '17'
+      '20'
     );
+    expect(
+      screen.queryByRole('progressbar', { name: 'تطبيقات MCP المتصلة' })
+    ).not.toBeInTheDocument();
   });
 
   it('keeps the daily block to four rows even when the body carries more', () => {
@@ -147,7 +149,7 @@ describe('PlanView counters', () => {
     expect(within(today()).getAllByRole('listitem')).toHaveLength(4);
   });
 
-  it('still shows the plan and its bar when the counters read failed', () => {
+  it('still shows the plan and its meters when the counters read failed', () => {
     mocks.page.usage = null;
 
     render(<PlanView />);
@@ -155,9 +157,7 @@ describe('PlanView counters', () => {
     expect(
       screen.queryByRole('region', { name: PLAN_CARD_COPY.todayTitle })
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('progressbar', { name: PLAN_CARD_COPY.usageLabel })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'الملاحظات' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: PLAN_CARD_COPY.historyTitle })).toBeInTheDocument();
   });
 });

@@ -9,11 +9,16 @@
     "file": "android/app/src/main/kotlin/com/royaraqamia/app/plans/PlanCardCopy.kt",
     "object": "PlanCardCopy"
   },
+  "server": {
+    "file": "backend/services/plans/plan-card-copy.ts",
+    "export": "PLAN_CARD_SERVER_COPY"
+  },
   "notes": {
-    "source": "The plan card's words, in both clients. `npm run copy:generate` writes the two files named above from this one; neither client may spell these strings itself. Arabic writes a word's marks in more than one order and the two compare unequal while rendering the same, so a retyped label is a label that fails an exact-text test later (ADR-0098).",
+    "source": "The plan card's words, in both clients, and the sentence the server's cap refusal answers with. `npm run copy:generate` writes the three files named above from this one; neither client may spell these strings itself. Arabic writes a word's marks in more than one order and the two compare unequal while rendering the same, so a retyped label is a label that fails an exact-text test later (ADR-0098).",
     "placeholders": "A string may carry `{name}` where a value is interpolated. Each client substitutes it itself rather than formatting around the sentence, so the punctuation stays in one place.",
     "gate": "`npm run check:copy` fails a stale generated output, and `npm run check:parity` fails a copy key the reference component (`frontend/ui/account/plan-view.tsx`) does not render - the site is the design the app is measured against.",
-    "historyStates": "The empty history is a sentence about the plan in force, not about the missing rows: a comped or unlimited member has no payment to show, but the free plan would be a false statement about what they hold. One key per state - free, active with an expiry, unlimited without one."
+    "historyStates": "The empty history is a sentence about the plan in force, not about the missing rows: a comped or unlimited member has no payment to show, but the free plan would be a false statement about what they hold. One key per state - free, active with an expiry, unlimited without one.",
+    "axis": "`capAxis` names the one thing the paid tier changes: the ceiling on a single owned item. The page draws it as the heading over one meter per key the member holds, and the server's `owned_item_cap` refusal reads the same sentence from the generated server module, so the offer and the wall cannot describe the plan differently (#1951)."
   },
   "strings": {
     "pageTitle": "الاشتراك والاستهلاك",
@@ -22,7 +27,7 @@
     "unlimited": "غير محدود",
     "cardTitle": "خطتك الحالية",
     "cardLabel": "خطتك الحالية",
-    "usageLabel": "الحد الأقصى لما تملكه",
+    "capAxis": "الحدّ الأعلى للعنصر الواحد في خطتك",
     "todayTitle": "حصّة اليوم",
     "dailyReset": "تُعاد هذه الحصص عند منتصف الليل بتوقيت دمشق.",
     "expires": "تنتهي الخطَّة في {date}، ثم تعود إلى الخطَّة المجَّانيَّة بحدودها.",

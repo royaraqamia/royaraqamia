@@ -28,6 +28,12 @@ class UsageCopyTest {
     }
 
     @Test
+    fun `a meter's counts are the page's used out of cap`() {
+        assertEquals("1 / 5", UsageCopy.ratio(1, 5))
+        assertEquals("1,200 / 5,000", UsageCopy.ratio(1_200, 5_000))
+    }
+
+    @Test
     fun `a plan id becomes the site's label`() {
         assertEquals(PlanCardCopy.PLAN_FREE, UsageCopy.planLabel("free"))
         assertEquals(PlanCardCopy.PLAN_PRO, UsageCopy.planLabel("pro"))

@@ -24,7 +24,8 @@ vi.mock('@/frontend/state/plans/use-my-plan', () => ({
   usePlanPage: () => mocks.page,
 }));
 
-import { PlanView, usageShare } from '../plan-view';
+import { PLAN_CARD_COPY } from '../plan-card-copy';
+import { PlanView, standingMeters } from '../plan-view';
 
 const freeState: UsageState = {
   plan: 'free',
@@ -69,20 +70,35 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe('usageShare', () => {
-  it('sums the standing caps and the slots they use', () => {
-    expect(usageShare(freeLimits)).toBe(17);
-    expect(usageShare([{ key: 'notes', label: 'الملاحظات', cap: 5, used: 5, remaining: 0 }])).toBe(
-      100
-    );
+describe('standingMeters', () => {
+  it('draws only the keys the account holds, each at its own share', () => {
+    const meters = standingMeters([
+      { key: 'notes', label: 'الملاحظات', cap: 5, used: 2, remaining: 3 },
+      { key: 'expenses', label: 'المصروفات', cap: 5, used: 0, remaining: 5 },
+      // A cap of zero is an Admin's unlimited placeholder, not a division.
+      { key: 'mcp_connected_apps', label: 'تطبيقات MCP المتصلة', cap: 0, used: 0, remaining: 0 },
+    ]);
+
+    expect(meters).toEqual([{ key: 'notes', label: 'الملاحظات', used: 2, cap: 5, share: 40 }]);
   });
 
   it('reads as empty when the plan holds nothing', () => {
-    expect(usageShare([])).toBe(0);
-    // A cap of zero is a division the page must not do.
-    expect(usageShare([{ key: 'notes', label: 'الملاحظات', cap: 0, used: 0, remaining: 0 }])).toBe(
-      0
-    );
+    expect(standingMeters([])).toEqual([]);
+    expect(
+      standingMeters([{ key: 'notes', label: 'الملاحظات', cap: 5, used: 0, remaining: 5 }])
+    ).toEqual([]);
+  });
+
+  it('puts the key closest to its wall first, and caps a grandfathered overrun at 100', () => {
+    const meters = standingMeters([
+      { key: 'notes', label: 'الملاحظات', cap: 10, used: 1, remaining: 9 },
+      { key: 'short_links', label: 'الروابط المختصرة', cap: 5, used: 7, remaining: 0 },
+    ]);
+
+    expect(meters.map((meter) => [meter.key, meter.share])).toEqual([
+      ['short_links', 100],
+      ['notes', 10],
+    ]);
   });
 });
 
@@ -94,7 +110,7 @@ describe('PlanView', () => {
     expect(screen.queryByText('سجل الاشتراك')).not.toBeInTheDocument();
   });
 
-  it('draws one bar for the whole allowance, and every activation behind it', () => {
+  it('draws one meter per key the member holds, and every activation behind it', () => {
     mocks.session.user = { id: 'u1' };
     mocks.page.plan = {
       state: { ...freeState, plan: 'pro', expiresAt: '2026-11-21T12:00:00.000Z' },
@@ -115,22 +131,43 @@ describe('PlanView', () => {
 
     render(<PlanView />);
 
-    // The owned-item caps only: a counted action is not a slot.
-    const bar = screen.getByRole('progressbar', { name: 'الحد الأقصى لما تملكه' });
-    expect(bar).toHaveAttribute('aria-valuenow', '17');
+    // The owned-item caps only: a counted action is not a slot. This account
+    // holds one note of five, and nothing in the second key.
+    const bar = screen.getByRole('progressbar', { name: 'الملاحظات' });
+    expect(bar).toHaveAttribute('aria-valuenow', '20');
     expect(bar).toHaveAttribute('aria-valuemax', '100');
-    expect(screen.getByText('17%')).toBeInTheDocument();
-    expect(screen.getByText('الحد الأقصى لما تملكه')).toBeInTheDocument();
-
-    // The rows and their per-item numbers are gone; the bar is the section.
-    expect(screen.queryByText('الملاحظات')).not.toBeInTheDocument();
-    expect(screen.queryByText('1 / 5')).not.toBeInTheDocument();
-    expect(screen.queryByText('2 / 5')).not.toBeInTheDocument();
+    expect(screen.getByText('1 / 5')).toBeInTheDocument();
+    expect(screen.getByText('20%')).toBeInTheDocument();
+    expect(screen.getByText(PLAN_CARD_COPY.capAxis)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('progressbar', { name: 'تطبيقات MCP المتصلة' })
+    ).not.toBeInTheDocument();
+    // No single share across thirteen unrelated caps survives on the page.
+    expect(screen.queryByText('17%')).not.toBeInTheDocument();
+    expect(screen.queryByText('3 / 5')).not.toBeInTheDocument();
 
     expect(screen.getByText('الخطَّة المدفوعة')).toBeInTheDocument();
     expect(screen.getByText('$12')).toBeInTheDocument();
     expect(screen.getByText('ShamCash')).toBeInTheDocument();
     expect(screen.getByText('«تحويل»')).toBeInTheDocument();
+  });
+
+  it('draws no standing meter for a member holding nothing, and still names the plan', () => {
+    mocks.session.user = { id: 'u1' };
+    mocks.page.plan = {
+      state: freeState,
+      limits: freeLimits.map((item) => ({ ...item, used: 0, remaining: item.cap })),
+      activations: [],
+    };
+
+    render(<PlanView />);
+
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    expect(screen.queryByText(PLAN_CARD_COPY.capAxis)).not.toBeInTheDocument();
+    expect(screen.getByText(PLAN_CARD_COPY.planFree)).toBeInTheDocument();
+    expect(
+      screen.getByText(PLAN_CARD_COPY.historyEmpty.replace('{plan}', PLAN_CARD_COPY.planFree))
+    ).toBeInTheDocument();
   });
 
   it('keeps the payment note off the page', () => {

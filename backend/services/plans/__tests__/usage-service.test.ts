@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { planRefusalResult } from '@/backend/middleware/http';
+import { PLAN_CARD_SERVER_COPY } from '@/backend/services/plans/plan-card-copy';
 import {
   OwnedItemCapReachedError,
   PlanTargetNotFoundError,
@@ -165,6 +167,21 @@ describe('UsageService', () => {
 
     expect(error).toBeInstanceOf(OwnedItemCapReachedError);
     expect(error).toMatchObject({ statusCode: 402, code: 'owned_item_cap', cap: 5, count: 5 });
+  });
+
+  it('answers the cap refusal in the words the page names the axis with', () => {
+    const error = new OwnedItemCapReachedError('habits', 5, 5);
+    const refusal = planRefusalResult(error);
+
+    // The page heads its per-key meters with this generated sentence and the
+    // refusal answers with it, so the offer and the wall cannot diverge (#1951).
+    expect(refusal?.status).toBe(402);
+    expect(refusal?.body).toMatchObject({
+      success: false,
+      code: 'owned_item_cap',
+      error: expect.stringContaining(PLAN_CARD_SERVER_COPY.capAxis),
+    });
+    expect(error.message).toContain('(5)');
   });
 
   it('lets a create through while a slot is free, and counts a batch against it', async () => {

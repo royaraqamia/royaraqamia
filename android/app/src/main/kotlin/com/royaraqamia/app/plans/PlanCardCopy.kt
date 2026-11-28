@@ -18,7 +18,7 @@ object PlanCardCopy {
     const val UNLIMITED = "غير محدود"
     const val CARD_TITLE = "خطتك الحالية"
     const val CARD_LABEL = "خطتك الحالية"
-    const val USAGE_LABEL = "الحد الأقصى لما تملكه"
+    const val CAP_AXIS = "الحدّ الأعلى للعنصر الواحد في خطتك"
     const val TODAY_TITLE = "حصّة اليوم"
     const val DAILY_RESET = "تُعاد هذه الحصص عند منتصف الليل بتوقيت دمشق."
     const val EXPIRES = "تنتهي الخطَّة في {date}، ثم تعود إلى الخطَّة المجَّانيَّة بحدودها."
