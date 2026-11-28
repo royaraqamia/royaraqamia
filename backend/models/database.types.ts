@@ -718,6 +718,63 @@ export type Database = {
         };
         Relationships: [];
       };
+      chat_visual_renders: {
+        Row: {
+          attempts: number;
+          claimed_at: string | null;
+          conversation_id: string;
+          created_at: string;
+          error: string | null;
+          id: string;
+          member_id: string;
+          output_path: string | null;
+          spec: Json;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          attempts?: number;
+          claimed_at?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          error?: string | null;
+          id?: string;
+          member_id: string;
+          output_path?: string | null;
+          spec: Json;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          attempts?: number;
+          claimed_at?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          error?: string | null;
+          id?: string;
+          member_id?: string;
+          output_path?: string | null;
+          spec?: Json;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_visual_renders_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'chat_visual_renders_member_id_fkey';
+            columns: ['member_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       chat_participants: {
         Row: {
           conversation_id: string;
@@ -3948,6 +4005,26 @@ export type Database = {
       agent_turns_due: {
         Args: { p_limit?: number };
         Returns: { id: string }[];
+      };
+      visual_renders_due: {
+        Args: { p_limit?: number };
+        Returns: { id: string }[];
+      };
+      claim_visual_render: {
+        Args: { p_id: string };
+        Returns: {
+          attempts: number;
+          claimed_at: string | null;
+          conversation_id: string;
+          created_at: string;
+          error: string | null;
+          id: string;
+          member_id: string;
+          output_path: string | null;
+          spec: Json;
+          status: string;
+          updated_at: string;
+        }[];
       };
       mcp_tool_nearest_1024: {
         Args: {

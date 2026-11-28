@@ -5,7 +5,11 @@ import type { ChatMessageRecord } from '@/backend/repositories/chat/chat-reposit
 import { repositoryFailure } from '@/backend/shared/repository-error';
 import type { ChatAgentMeters } from '@/shared/contracts/chat';
 import type { WebSource } from '@/shared/contracts/web-search';
-import { VisualSpecSchema, type VisualSpec } from '@/shared/contracts/visual';
+import {
+  VisualSpecSchema,
+  type VisualRenderSpec,
+  type VisualSpec,
+} from '@/shared/contracts/visual';
 import { ChatMediaSchema, type ChatMedia } from '@/shared/contracts/chat-media';
 
 type MessageRow = Database['public']['Tables']['chat_messages']['Row'];
@@ -102,6 +106,16 @@ export interface ChatAgentRepository {
   settleTurn(turnId: string): Promise<void>;
   /** The turn ended without an answer; what streamed and why are kept. */
   failTurn(turnId: string, failure: { error: string; partialText: string }): Promise<void>;
+  /**
+   * Queue the motion a turn drew, so a later wake can render it to MP4
+   * (ADR-0215 amendment). Optional so a test double that never animates needs
+   * no queue, and a failure here never fails the turn that already drew.
+   */
+  enqueueVisualRender?(
+    conversationId: string,
+    memberId: string,
+    spec: VisualRenderSpec
+  ): Promise<void>;
   /** Turns whose request is gone, oldest first. */
   dueTurns(limit: number): Promise<string[]>;
   /** The lease: null when another worker won the turn, or it is not abandoned. */
@@ -218,6 +232,16 @@ export function createSupabaseChatAgentRepository(
         .eq('id', turnId);
 
       if (error) throw repositoryFailure('chat.agent.failTurn', error);
+    },
+
+    async enqueueVisualRender(conversationId, memberId, spec) {
+      const { error } = await supabase.from('chat_visual_renders').insert({
+        conversation_id: conversationId,
+        member_id: memberId,
+        spec,
+      });
+
+      if (error) throw repositoryFailure('chat.agent.enqueueVisualRender', error);
     },
   };
 }

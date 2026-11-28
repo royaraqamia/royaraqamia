@@ -110,8 +110,8 @@ import {
   type WebSearchResult,
 } from '@/shared/contracts/web-search';
 import { logger } from '@/backend/shared/logger';
-import { sanitizeVisualSvg } from '@/backend/services/chat/visual-sanitize';
-import { VISUAL_UNAVAILABLE, VisualSpecSchema } from '@/shared/contracts/visual';
+import { sanitizeVisualSvg, svgElementIds } from '@/backend/services/chat/visual-sanitize';
+import { VISUAL_UNAVAILABLE, VisualRenderSpecSchema } from '@/shared/contracts/visual';
 import { CODING_TASK_MODES } from '@/shared/contracts/coding-agent';
 
 /**
@@ -2611,13 +2611,22 @@ const tools: ChatAgentTool[] = [
     product: 'assistant',
     tier: 0,
     description:
-      'ارسم مخططاً أو ملصقاً أو رسماً توضيحياً باستخدام SVG ثابت. استخدمها حين يطلب العضو صورة توضيحية أو مخططاً أو ملصقاً فيه نص عربي. اكتب SVG بسيطاً بدون سكربتات أو صور خارجية؛ الصفحة تحوّله إلى صورة تعرض في المحادثة.',
-    schema: VisualSpecSchema,
+      'ارسم مخططاً أو ملصقاً أو رسماً توضيحياً باستخدام SVG ثابت. استخدمها حين يطلب العضو صورة توضيحية أو مخططاً أو ملصقاً فيه نص عربي. اكتب SVG بسيطاً بدون سكربتات أو صور خارجية؛ الصفحة تحوّله إلى صورة تعرض في المحادثة. لطلب حركة قصيرة أضف animation بمعرّفات العناصر نفسها، وبمدة لا تزيد على ست ثوانٍ.',
+    schema: VisualRenderSpecSchema,
     async run(args) {
-      const input = VisualSpecSchema.parse(args);
+      const input = VisualRenderSpecSchema.parse(args);
       const svg = sanitizeVisualSvg(input.svg);
       if (!svg) throw new Error(VISUAL_UNAVAILABLE);
-      return { visual: { ...input, svg } };
+      // A motion track may only name an element the sanitizer actually kept;
+      // every other whitelist rule already lives in the sanitizer.
+      let animation = input.animation;
+      if (animation) {
+        const ids = svgElementIds(svg);
+        const tracks = animation.tracks.filter((track) => ids.has(track.id));
+        if (tracks.length === 0) throw new Error(VISUAL_UNAVAILABLE);
+        animation = { ...animation, tracks };
+      }
+      return { visual: { ...input, svg, ...(animation ? { animation } : {}) } };
     },
   },
   {
