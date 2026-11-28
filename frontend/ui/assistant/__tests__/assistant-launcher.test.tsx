@@ -34,34 +34,34 @@ describe('AssistantLauncher', () => {
   it('offers the assistant on a normal screen', () => {
     render(<AssistantLauncher />);
 
-    expect(screen.getByRole('button', { name: 'اسأل نور، مساعدة رؤية رقمية' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'افتح المحادثة مع نور' })).toBeInTheDocument();
   });
 
   it('is not drawn on the assistant thread it would open', () => {
     navigation.pathname = '/chats/a-1';
     render(<AssistantLauncher />);
 
-    expect(screen.queryByRole('button', { name: /اسأل نور/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /افتح المحادثة مع نور/ })).not.toBeInTheDocument();
   });
 
   it('is not drawn inside the sign-in flow', () => {
     navigation.pathname = '/auth/login';
     render(<AssistantLauncher />);
 
-    expect(screen.queryByRole('button', { name: /اسأل نور/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /افتح المحادثة مع نور/ })).not.toBeInTheDocument();
   });
 
   it('is drawn on a page whose path merely starts with the same letters', () => {
     navigation.pathname = '/chatsomething';
     render(<AssistantLauncher />);
 
-    expect(screen.getByRole('button', { name: /اسأل نور/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /افتح المحادثة مع نور/ })).toBeInTheDocument();
   });
 
   it('keeps the conversation mounted after it closes (ADR-0150)', async () => {
     render(<AssistantLauncher />);
 
-    fireEvent.click(screen.getByRole('button', { name: /اسأل نور/ }));
+    fireEvent.click(screen.getByRole('button', { name: /افتح المحادثة مع نور/ }));
 
     const panel = await screen.findByTestId('assistant-panel');
     expect(panel).toHaveAttribute('data-open', 'true');

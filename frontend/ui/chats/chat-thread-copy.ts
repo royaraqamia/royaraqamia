@@ -58,6 +58,7 @@ export const CHAT_THREAD_COPY = {
   recordingNow: 'يُسجِّل رسالة صوتيَّة...',
   onlineNow: 'متصل الآن',
   assistantOnline: 'متاحة الآن',
+  assistantOnlineMasculine: 'متاح الآن',
   lastSeenToday: 'آخر ظهور اليوم الساعة {time}',
   lastSeenYesterday: 'آخر ظهور أمس الساعة {time}',
   lastSeenOn: 'آخر ظهور {date} الساعة {time}',

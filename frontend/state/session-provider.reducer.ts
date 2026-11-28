@@ -1,11 +1,15 @@
 import type { Session, User } from '@supabase/supabase-js';
 import type { MeResponse } from '@/shared/contracts/users';
+import type { AssistantIdentity, AssistantVoice } from '@/shared/contracts/assistant-identity';
 
 /**
- * The session and the profile it resolves. The boot wrote the session, the
- * user and the loading flag together; the profile read wrote the admin flag
- * and four profile fields together; and clearing wrote the same five back. The
- * provider only ever renders these values, so each group is one transition.
+ * The session, the profile it resolves, and the assistant's identity (ADR-0229).
+ *
+ * The boot wrote the session, the user and the loading flag together; the
+ * profile read wrote the admin flag and four profile fields together; the
+ * assistant read wrote its name, face and voice together; and clearing wrote the
+ * same groups back. The provider only ever renders these values, so each group
+ * is one transition.
  */
 export interface SessionState {
   session: Session | null;
@@ -16,6 +20,11 @@ export interface SessionState {
   profileAvatarUrl: string | null;
   profileUsername: string | null;
   profileBio: string | null;
+  /** The member's name for their assistant, or null before the read answers. */
+  assistantName: string | null;
+  /** How the assistant is addressed; the shipped default until the read answers. */
+  assistantVoice: AssistantVoice;
+  assistantAvatarUrl: string | null;
 }
 
 export type SessionAction =
@@ -23,7 +32,9 @@ export type SessionAction =
   | { type: 'resolved'; session: Session | null }
   | { type: 'loadFailed' }
   | { type: 'profileLoaded'; profile: MeResponse }
-  | { type: 'profileCleared' };
+  | { type: 'profileCleared' }
+  | { type: 'assistantLoaded'; identity: AssistantIdentity }
+  | { type: 'assistantCleared' };
 
 export function sessionInitialState(): SessionState {
   return {
@@ -35,6 +46,9 @@ export function sessionInitialState(): SessionState {
     profileAvatarUrl: null,
     profileUsername: null,
     profileBio: null,
+    assistantName: null,
+    assistantVoice: 'feminine',
+    assistantAvatarUrl: null,
   };
 }
 
@@ -75,6 +89,24 @@ export function sessionReducer(state: SessionState, action: SessionAction): Sess
         profileAvatarUrl: null,
         profileUsername: null,
         profileBio: null,
+      };
+
+    // The resolved name, not the custom one: every surface paints a string and
+    // never branches on whether the member renamed their copy.
+    case 'assistantLoaded':
+      return {
+        ...state,
+        assistantName: action.identity.name,
+        assistantVoice: action.identity.voice,
+        assistantAvatarUrl: action.identity.avatarUrl,
+      };
+
+    case 'assistantCleared':
+      return {
+        ...state,
+        assistantName: null,
+        assistantVoice: 'feminine',
+        assistantAvatarUrl: null,
       };
   }
 }

@@ -7,8 +7,7 @@ import { appsTab } from '@/shared/contracts/mcp-marketplace';
 
 export const metadata: Metadata = {
   title: 'متجر التطبيقات',
-  description:
-    'اربط تطبيقًا خارجيًّا ليعمل مع نور عبر بروتوكول سياق النماذج، وراجع ما يستطيع الوصول إلى حسابك.',
+  description: 'اربط تطبيقًا خارجيًّا عبر بروتوكول سياق النماذج، وراجع ما يمكن الوصول إليه في حسابك.',
 };
 
 interface MarketplaceSearchParams {

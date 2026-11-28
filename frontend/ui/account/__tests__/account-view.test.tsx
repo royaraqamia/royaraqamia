@@ -98,7 +98,7 @@ describe('AccountView', () => {
     expect(screen.queryByText('جميع الحقوق محفوظة')).not.toBeInTheDocument();
 
     // Gated rows are visible, but as buttons rather than links.
-    for (const label of ['طلباتي', 'الأعضاء المحظورون', 'المساعد']) {
+    for (const label of ['طلباتي', 'الأعضاء المحظورون', 'نور']) {
       expect(screen.getByRole('button', { name: new RegExp(label) })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: new RegExp(label) })).not.toBeInTheDocument();
     }
@@ -178,7 +178,7 @@ describe('AccountView', () => {
       'href',
       '/account/blocked'
     );
-    expect(screen.getByRole('link', { name: /المساعد/ })).toHaveAttribute('href', '/assistant');
+    expect(screen.getByRole('link', { name: /نور/ })).toHaveAttribute('href', '/assistant');
     expect(screen.getByRole('button', { name: 'تسجيل الخروج' })).toBeInTheDocument();
     expect(screen.queryByText('سجِّل الدُّخول إلى حسابك')).not.toBeInTheDocument();
   });

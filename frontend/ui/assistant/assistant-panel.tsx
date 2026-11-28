@@ -26,7 +26,7 @@ import { AssistantComposer } from '@/frontend/ui/chats/chat-assistant-composer';
 import { ChatMessageList } from '@/frontend/ui/chats/chat-message-list';
 import { CHAT_THREAD_COPY } from '@/frontend/ui/chats/chat-thread-copy';
 import { LastSeenLine } from '@/frontend/ui/chats/last-seen';
-import { LAST_SEEN_LABELS } from '@/frontend/ui/chats/last-seen-labels';
+import { assistantOnlineLabels } from '@/frontend/ui/chats/last-seen-labels';
 import {
   CHAT_ATTACHMENT_QUOTA_BYTES,
   type AssistantOpening,
@@ -38,6 +38,7 @@ import {
 import { AssistantFirstScreen } from './assistant-first-screen';
 import { AssistantOrb } from './assistant-orb';
 import { ASSISTANT_HOME_COPY } from './assistant-home-copy';
+import { assistantNameIn, assistantNameOr } from './assistant-name';
 import { ASSISTANT_PANEL_COPY } from './assistant-panel-copy';
 import { ScreenContextPublisher } from '@/frontend/ui/ScreenContextPublisher';
 import './assistant.css';
@@ -91,7 +92,12 @@ export function AssistantPanel({
   /** The launcher that opened this sheet; focus returns here when it closes. */
   launcherRef?: RefObject<HTMLButtonElement | null>;
 }) {
-  const { user, isLoading: sessionLoading } = useSession();
+  const {
+    user,
+    isLoading: sessionLoading,
+    assistantName: sessionAssistantName,
+    assistantVoice,
+  } = useSession();
   const { identity } = useLocalIdentity();
   const navigate = useDismissThenNavigate(onDismiss);
   const userId = user?.id ?? null;
@@ -349,10 +355,13 @@ export function AssistantPanel({
 
   /**
    * The name the member gave their copy, painted from the snapshot before the
-   * server answers (ADR-0224, ADR-0150). The fallback is the deployment's
-   * default, which is what a member who never saved one sees anyway.
+   * server answers (ADR-0224, ADR-0150), then from the session's one read
+   * (ADR-0229). The fallback is the deployment's default name, which is what a
+   * member who never saved one sees anyway.
    */
-  const assistantName = remembered?.name ?? ASSISTANT_PANEL_COPY.title;
+  const assistantName = assistantNameOr(
+    remembered?.name ?? sessionAssistantName ?? ASSISTANT_PANEL_COPY.title
+  );
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onDismiss()}>
@@ -384,7 +393,7 @@ export function AssistantPanel({
           <DialogTitle aria-label={assistantName} className="text-xl leading-none text-foreground">
             <Link
               href="/assistant"
-              aria-label={ASSISTANT_HOME_COPY.openPage}
+              aria-label={assistantNameIn(ASSISTANT_HOME_COPY.openPage, assistantName)}
               onClick={(event) => navigate(event, '/assistant')}
               className="flex max-w-full items-center gap-3 rounded-xl text-start transition-safe hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
@@ -402,7 +411,9 @@ export function AssistantPanel({
                   {/* The slot is never empty: while no turn is running, the
                       assistant is simply available (ADR 0212). A turn still owns
                       the line. */}
-                  {phaseLine ?? <LastSeenLine labels={LAST_SEEN_LABELS} alwaysOnline />}
+                  {phaseLine ?? (
+                    <LastSeenLine labels={assistantOnlineLabels(assistantVoice)} alwaysOnline />
+                  )}
                 </span>
               </span>
             </Link>
@@ -435,7 +446,7 @@ export function AssistantPanel({
                 // (#1859). The generic sentence is the fallback when there is no
                 // data to lead with, and keeps the copy key bound to this file.
                 <AssistantFirstScreen
-                  lead={opening?.lead ?? ASSISTANT_PANEL_COPY.intro}
+                  lead={assistantNameIn(opening?.lead ?? ASSISTANT_PANEL_COPY.intro, assistantName)}
                   suggestions={opening?.suggestions ?? []}
                   onSuggestion={tapSuggestion}
                   title={thread.title}
@@ -446,7 +457,7 @@ export function AssistantPanel({
         ) : state === 'pre' ? (
           <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto dialog-scrollbar px-4 py-4">
             <AssistantFirstScreen
-              lead={opening?.lead ?? ASSISTANT_PANEL_COPY.intro}
+              lead={assistantNameIn(opening?.lead ?? ASSISTANT_PANEL_COPY.intro, assistantName)}
               suggestions={opening?.suggestions ?? []}
               onSuggestion={tapSuggestion}
             />
@@ -521,12 +532,15 @@ export function AssistantPanel({
 }
 
 function PanelGuest({ onDismiss }: { onDismiss: () => void }) {
+  const { assistantName } = useSession();
   return (
     <div className="flex h-full flex-col items-center justify-center px-2 py-8 text-center">
       <AssistantOrb className="size-20" glyphClassName="size-[54%]" />
-      <p className="mt-5 text-2xl font-bold text-foreground">{ASSISTANT_PANEL_COPY.guestTitle}</p>
+      <p className="mt-5 text-2xl font-bold text-foreground">
+        {assistantNameIn(ASSISTANT_PANEL_COPY.guestTitle, assistantName)}
+      </p>
       <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
-        {ASSISTANT_PANEL_COPY.guestBody}
+        {assistantNameIn(ASSISTANT_PANEL_COPY.guestBody, assistantName)}
       </p>
       <SignInCta
         href="/auth/login"

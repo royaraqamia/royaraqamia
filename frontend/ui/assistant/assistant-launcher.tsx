@@ -11,6 +11,8 @@ import {
 import { usePathname } from 'next/navigation';
 
 import { assistantWasOpened } from './assistant-hint';
+import { useSession } from '@/frontend/state/session-provider';
+import { assistantNameIn } from './assistant-name';
 import { ASSISTANT_LAUNCHER_COPY } from './assistant-launcher-copy';
 import { AssistantOrb } from './assistant-orb';
 
@@ -63,6 +65,7 @@ function isHidden(pathname: string): boolean {
  */
 export function AssistantLauncher() {
   const pathname = usePathname();
+  const { assistantName } = useSession();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [Panel, setPanel] = useState<PanelComponent | null>(null);
@@ -129,7 +132,7 @@ export function AssistantLauncher() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-busy={loading}
-        aria-label={ASSISTANT_LAUNCHER_COPY.navLabel}
+        aria-label={assistantNameIn(ASSISTANT_LAUNCHER_COPY.navLabel, assistantName)}
         onClick={openPanel}
         onPointerEnter={() => void loadPanel()}
         onPointerDown={() => void loadPanel()}
@@ -138,7 +141,7 @@ export function AssistantLauncher() {
       >
         <AssistantOrb className="shrink-0 max-sm:size-14 sm:size-11" />
         <span className="max-sm:hidden pe-1 text-[13px] font-bold leading-none sm:inline">
-          {ASSISTANT_LAUNCHER_COPY.label}
+          {assistantNameIn(ASSISTANT_LAUNCHER_COPY.label, assistantName)}
         </span>
       </button>
 

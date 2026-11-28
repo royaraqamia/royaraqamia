@@ -8,15 +8,15 @@
  * same file (ADR-0098, ADR-0099) — the strings are gathered here so that move is
  * one file, not a search.
  *
- * The assistant is نور (ADR-0143): the name is the product's own, not a second
- * identity invented by this screen, so the thread, the list and the floating
- * panel all read the same word.
+ * Nothing here names the assistant: the name is the member's (ADR-0229), and a
+ * sentence that describes it is written without a gendered verb so it reads the
+ * same at either voice.
  */
 export const ASSISTANT_COPY = {
-  placeholder: 'اكتب سؤالك لنور...',
+  placeholder: 'اكتب سؤالك...',
   send: 'إرسال السؤال',
-  unavailable: 'نور غير متاحة حالياً.',
-  failure: 'تعذّر الحصول على ردّ من نور. حاول مرة أخرى.',
+  unavailable: 'المحادثة غير متاحة حالياً.',
+  failure: 'تعذّر الحصول على ردّ. حاول مرة أخرى.',
   /** `{remaining}` and `{cap}` are filled from the server's own numbers. */
   remaining: 'المتبقي اليوم: {remaining} من {cap}',
   /**

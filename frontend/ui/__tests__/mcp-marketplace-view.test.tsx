@@ -112,7 +112,7 @@ describe('McpMarketplaceView — the ask before the consent (#1230)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'ربط' }));
 
     expect(
-      await screen.findByText('سيطلب نور هذه الصلاحيات من التطبيق عند الربط:')
+      await screen.findByText('ستُطلب هذه الصلاحيات من التطبيق عند الربط:')
     ).toBeInTheDocument();
     expect(screen.getByText('database:read · projects:read')).toBeInTheDocument();
 
@@ -215,7 +215,7 @@ describe('linking a row that does not use OAuth (#1269)', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'ربط' }));
     expect(
-      await screen.findByText('هذا التطبيق لا يحتاج حساباً ولا مفتاحاً: نور يستدعي أدواته مباشرة.')
+      await screen.findByText('هذا التطبيق لا يحتاج حساباً ولا مفتاحاً: تُستدعى أدواته مباشرة.')
     ).toBeInTheDocument();
 
     const confirms = screen.getAllByRole('button', { name: 'ربط' });

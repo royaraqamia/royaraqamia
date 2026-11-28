@@ -23,6 +23,7 @@ import { SignInPromptDialog } from '@/frontend/ui/shared/sign-in-prompt-dialog';
 import { AccountRow } from './account-row';
 import { rowClasses } from './row-classes';
 import { ACCOUNT_ROWS_COPY } from './account-rows-copy';
+import { assistantNameIn } from '@/frontend/ui/assistant/assistant-name';
 
 interface AccountRowsProps {
   /** The signed-in member's sign-out, after the question below is answered. */
@@ -49,7 +50,7 @@ interface AccountRowsProps {
  * so they keep the page's order: after the account actions and before the FAQ.
  */
 export function AccountRows({ onSignOut, children }: AccountRowsProps) {
-  const { user, isAdmin } = useSession();
+  const { user, isAdmin, assistantName } = useSession();
   const [isSignOutOpen, setIsSignOutOpen] = useState(false);
   /** The destination a guest picked; also what the sign-in prompt returns them to. */
   const [promptHref, setPromptHref] = useState<string | null>(null);
@@ -82,7 +83,7 @@ export function AccountRows({ onSignOut, children }: AccountRowsProps) {
         <AccountRow
           href="/assistant"
           icon={Brain}
-          label={ACCOUNT_ROWS_COPY.assistant}
+          label={assistantNameIn(ACCOUNT_ROWS_COPY.assistant, assistantName)}
           onRequireAuth={setPromptHref}
         />
 

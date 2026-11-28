@@ -14,7 +14,7 @@ package com.royaraqamia.app.account
 object AccountMemoryCopy {
     const val PAGE_TITLE = "ذاكرة نور"
     const val LOADING_LABEL = "جاري التحميل..."
-    const val SIGNED_OUT_TITLE = "سجّل الدُّخول لترى ذاكرة نور"
+    const val SIGNED_OUT_TITLE = "سجّل الدُّخول لترى ذاكرة {name}"
     const val SIGN_IN = "تسجيل الدُّخول"
     const val LOAD_FAILED = "تعذّر تحميل المحفوظات."
     const val SAVE_FAILED = "تعذّر الحفظ."

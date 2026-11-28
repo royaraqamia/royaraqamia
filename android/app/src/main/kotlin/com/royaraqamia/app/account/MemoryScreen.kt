@@ -43,6 +43,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.royaraqamia.app.assistant.AssistantName
 import com.royaraqamia.app.chats.ChatFailure
 import com.royaraqamia.app.contracts.ApiResult
 import com.royaraqamia.app.theme.LocalRoySpacing
@@ -223,7 +224,7 @@ fun MemoryScreen(
                     verticalArrangement = Arrangement.spacedBy(spacing.elementGapSm),
                 ) {
                     Text(
-                        text = AccountMemoryCopy.SIGNED_OUT_TITLE,
+                        text = AssistantName.inText(AccountMemoryCopy.SIGNED_OUT_TITLE),
                         style = scale.small,
                         fontWeight = FontWeight.Bold,
                         color = RoyColors.foreground,

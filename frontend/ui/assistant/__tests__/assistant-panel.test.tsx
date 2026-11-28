@@ -199,7 +199,7 @@ describe('AssistantPanel', () => {
     };
     render(<AssistantPanel open onDismiss={vi.fn()} />);
 
-    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'ترقية الخطة' })).toBeNull();
   });
 
@@ -207,7 +207,7 @@ describe('AssistantPanel', () => {
     assistant.available = false;
     render(<AssistantPanel open onDismiss={vi.fn()} />);
 
-    expect(await screen.findByText('نور غير متاحة حالياً.')).toBeInTheDocument();
+    expect(await screen.findByText('المحادثة غير متاحة حالياً.')).toBeInTheDocument();
   });
 
   it('opens on the same first screen as the full thread', async () => {
@@ -223,7 +223,7 @@ describe('AssistantPanel', () => {
       'habitflow.get_habits_summary'
     );
     expect(screen.getByText('كم صرفت هذا الشهر؟')).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
   });
 
   it('holds the pre-conversation state until the first message is sent', async () => {
@@ -231,19 +231,19 @@ describe('AssistantPanel', () => {
     render(<AssistantPanel open onDismiss={vi.fn()} />);
 
     expect(await screen.findByText('ماذا عندي اليوم؟')).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: 'اكتب سؤالك لنور...' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'اكتب سؤالك...' })).toBeInTheDocument();
     // An abandoned open leaves no row: the thread is minted by the first send.
     expect(api.startAssistantChat).not.toHaveBeenCalled();
   });
 
   it('reopening the panel never creates a conversation on its own', async () => {
     const { rerender } = render(<AssistantPanel open onDismiss={vi.fn()} />);
-    await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
+    await screen.findByRole('textbox', { name: 'اكتب سؤالك...' });
 
     rerender(<AssistantPanel open={false} onDismiss={vi.fn()} />);
     rerender(<AssistantPanel open onDismiss={vi.fn()} />);
 
-    await screen.findByRole('textbox', { name: 'اكتب سؤالك لنور...' });
+    await screen.findByRole('textbox', { name: 'اكتب سؤالك...' });
     expect(api.startAssistantChat).not.toHaveBeenCalled();
   });
 
@@ -264,7 +264,7 @@ describe('AssistantPanel', () => {
     const onDismiss = vi.fn();
     render(<AssistantPanel open onDismiss={onDismiss} />);
 
-    const door = screen.getByRole('link', { name: 'افتح صفحة المساعد' });
+    const door = screen.getByRole('link', { name: 'افتح صفحة نور' });
     // The name and its line are one column inside the door, so the line starts
     // under the name rather than under the orb.
     expect(within(door).getByText('نور')).toBeInTheDocument();

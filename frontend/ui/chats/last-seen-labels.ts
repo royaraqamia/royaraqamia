@@ -1,3 +1,4 @@
+import type { AssistantVoice } from '@/shared/contracts/assistant-identity';
 import { CHAT_THREAD_COPY } from './chat-thread-copy';
 
 /**
@@ -20,3 +21,13 @@ export const LAST_SEEN_LABELS: LastSeenLabels = {
   lastSeenYesterday: CHAT_THREAD_COPY.lastSeenYesterday,
   lastSeenOn: CHAT_THREAD_COPY.lastSeenOn,
 };
+
+/**
+ * The same labels with the assistant line agreeing with its voice (ADR-0229).
+ * «متاحة الآن» is a fact about the assistant, so a masculine copy reads «متاح
+ * الآن»; every other line is about a member and is untouched.
+ */
+export function assistantOnlineLabels(voice: AssistantVoice): LastSeenLabels {
+  if (voice !== 'masculine') return LAST_SEEN_LABELS;
+  return { ...LAST_SEEN_LABELS, assistantOnline: CHAT_THREAD_COPY.assistantOnlineMasculine };
+}

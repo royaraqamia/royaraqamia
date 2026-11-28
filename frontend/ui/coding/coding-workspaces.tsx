@@ -169,7 +169,7 @@ export function CodingWorkspaces({ plan }: { plan?: CodingPlan }) {
         <div>
           <h2 className="text-lg font-bold text-foreground">المستودعات المرتبطة</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            يعمل المساعد على مستودعك في بيئة منفصلة، ويعيد إليك تغييراته في فرع وطلب دمج.
+            تعمل المهام على مستودعك في بيئة منفصلة، وتعيد إليك تغييراتها في فرع وطلب دمج.
           </p>
         </div>
         <button

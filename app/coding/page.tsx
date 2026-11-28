@@ -5,7 +5,7 @@ import { CodingTaskList } from '@/frontend/ui/coding/coding-task-list';
 import { CodingWorkspaces } from '@/frontend/ui/coding/coding-workspaces';
 
 export const metadata: Metadata = {
-  title: 'المساعد المبرمج',
+  title: 'مهام البرمجة',
   description: 'اربط مستودعك، راجع الخطة والتغييرات، ثم استلم النتيجة في فرع وطلب دمج.',
   robots: { index: false, follow: false },
 };
@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 export default function CodingPage() {
   return (
     <main id="main-content" dir="rtl" className="mx-auto w-full max-w-5xl px-4 py-8">
-      <h1 className="text-3xl font-extrabold tracking-tight text-foreground">المساعد المبرمج</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight text-foreground">مهام البرمجة</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         يبدأ العمل بخطة وفرق تعرضها عليك للموافقة، ولا يُنشر شيء إلى مستودعك بغير قرار منك.
       </p>

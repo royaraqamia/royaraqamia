@@ -51,14 +51,14 @@ fun AssistantFab(
                 .background(RoyColors.card.copy(alpha = 0.94f), RoundedCornerShape(50))
                 .border(1.dp, RoyColors.border.copy(alpha = 0.7f), RoundedCornerShape(50))
                 .clickable(onClick = onClick)
-                .semantics { contentDescription = AssistantLauncherCopy.NAV_LABEL }
+                .semantics { contentDescription = AssistantName.inText(AssistantLauncherCopy.NAV_LABEL) }
                 .padding(start = 6.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         AssistantMark(size = 40.dp)
         Text(
-            text = AssistantLauncherCopy.LABEL,
+            text = AssistantName.inText(AssistantLauncherCopy.LABEL),
             style = type.small.copy(fontWeight = FontWeight.Bold),
             color = RoyColors.foreground,
             maxLines = 1,

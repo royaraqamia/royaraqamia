@@ -44,6 +44,9 @@ describe('sessionInitialState', () => {
       profileAvatarUrl: null,
       profileUsername: null,
       profileBio: null,
+      assistantName: null,
+      assistantVoice: 'feminine',
+      assistantAvatarUrl: null,
     });
   });
 });
@@ -125,6 +128,44 @@ describe('the profile read', () => {
       profileAvatarUrl: null,
       profileUsername: null,
       profileBio: null,
+    });
+  });
+});
+
+describe('the assistant identity (ADR-0229)', () => {
+  it('writes the resolved name, the voice and the face together', () => {
+    const loaded = sessionReducer(stateOf(), {
+      type: 'assistantLoaded',
+      identity: {
+        name: 'حكيم',
+        customName: 'حكيم',
+        avatarVariant: null,
+        avatarUrl: 'https://example.com/assistant.png',
+        voice: 'masculine',
+        tone: 'default',
+        note: null,
+        updatedAt: null,
+      },
+    });
+
+    expect(loaded).toMatchObject({
+      assistantName: 'حكيم',
+      assistantVoice: 'masculine',
+      assistantAvatarUrl: 'https://example.com/assistant.png',
+    });
+  });
+
+  it('goes back to the deployment defaults when the read answers nothing', () => {
+    const previous = stateOf({
+      assistantName: 'حكيم',
+      assistantVoice: 'masculine',
+      assistantAvatarUrl: 'https://example.com/assistant.png',
+    });
+
+    expect(sessionReducer(previous, { type: 'assistantCleared' })).toMatchObject({
+      assistantName: null,
+      assistantVoice: 'feminine',
+      assistantAvatarUrl: null,
     });
   });
 });

@@ -107,6 +107,8 @@ whether to say متاح or متاحة.
 - The name and face appear on the page only until the next change: the panel's
   header, the chats row and every label that says «المساعد» still need the
   member's identity, and the app's sheet has no identity read at all.
+  [ADR-0229](./0229-the-assistant-is-called-what-the-member-calls-it.md) is that
+  change for the site.
 - The prompt reads the name and the voice in the same slice that turns the name
   into quoted data; the eval case for an instruction-shaped name still applies.
 - No new public URL, no sitemap change, no member-visible surface outside

@@ -35,6 +35,7 @@ import { AssistantFirstScreen } from '@/frontend/ui/assistant/assistant-first-sc
 import { assistantPhaseText } from './assistant-phase';
 import { PresenceIndicator } from './presence-indicator';
 import { LastSeenLine } from './last-seen';
+import { assistantNameIn, assistantNameOr } from '@/frontend/ui/assistant/assistant-name';
 import { AssistantComposer } from './chat-assistant-composer';
 import { ChatComposer } from './chat-composer';
 import { ChatMessageList } from './chat-message-list';
@@ -553,12 +554,19 @@ function ThreadHeader({
   onBlock: () => void;
 }) {
   const goBack = useBackAction('/notifications?tab=chats');
+  const { assistantName, assistantVoice } = useSession();
 
   // The header is the site's reference for these words (ADR 0212): one object,
-  // read from the thread's own copy source and handed to the line it draws.
+  // read from the thread's own copy source and handed to the line it draws. The
+  // assistant's line follows its voice (ADR-0229).
   const lastSeenLabels = {
     onlineNow: CHAT_THREAD_COPY.onlineNow,
-    assistantOnline: CHAT_THREAD_COPY.assistantOnline,
+    // The assistant's line follows the voice the member chose (ADR-0229); the
+    // others are about a member and read the same.
+    assistantOnline:
+      assistantVoice === 'masculine'
+        ? CHAT_THREAD_COPY.assistantOnlineMasculine
+        : CHAT_THREAD_COPY.assistantOnline,
     lastSeenToday: CHAT_THREAD_COPY.lastSeenToday,
     lastSeenYesterday: CHAT_THREAD_COPY.lastSeenYesterday,
     lastSeenOn: CHAT_THREAD_COPY.lastSeenOn,
@@ -597,7 +605,9 @@ function ThreadHeader({
       )}
 
       <div className="min-w-0 flex-1 text-start">
-        <p className="truncate text-sm font-bold text-foreground">{thread.title}</p>
+        <p className="truncate text-sm font-bold text-foreground">
+          {thread.kind === 'agent' ? assistantNameOr(assistantName) : thread.title}
+        </p>
         {/*
           One slot, three sentences: writing/recording wins while it lasts,
           then the last-seen line (or نور's always-available line) takes the
@@ -651,7 +661,11 @@ function ThreadHeader({
         {headingHref ? (
           <Link
             href={headingHref}
-            aria-label={thread.kind === 'agent' ? ASSISTANT_HOME_COPY.openPage : undefined}
+            aria-label={
+              thread.kind === 'agent'
+                ? assistantNameIn(ASSISTANT_HOME_COPY.openPage, assistantName)
+                : undefined
+            }
             className="-mx-1 flex min-w-0 flex-1 items-center gap-3 rounded-xl px-1 py-1 transition-safe hover:bg-muted/40 focus-ring"
           >
             {heading}

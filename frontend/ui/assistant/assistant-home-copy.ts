@@ -1,26 +1,27 @@
 /**
- * `/assistant` in the member's words (ADR-0224, ADR-0228).
+ * `/assistant` in the member's words (ADR-0224, ADR-0228, ADR-0229).
  *
  * The page is a document surface — the app opens it rather than drawing a second
  * copy of the form — so these strings have no generated Kotlin twin and live
  * here, beside the view that renders them, exactly like the grants block's copy
  * before it. A key the view does not draw is a key this file should not have;
- * `metaTitle` is drawn by the route's `<head>`, and `openPage` names the panel's
- * and the thread header's door.
+ * `metaTitle` is the route's `<head>` until the view writes the member's own
+ * name, and `openPage` names the panel's and the thread header's door.
  *
- * The name and face dialogs borrow the account card's shape (#946): one field,
- * one row of actions, and the same words wherever the sentence is about an
- * image rather than a profile. Nothing here says «المساعد»: the page is about
- * the member's own copy, and the copy that names it uses «نور» until the name.
+ * Nothing here says «المساعد»: the page is about the member's own copy, and a
+ * label that has to name it carries `{name}` — the member's choice, or «نور».
+ * Sentences that describe the assistant are written without a gendered verb, so
+ * they read correctly whether the voice is feminine or masculine.
  */
 export const ASSISTANT_HOME_COPY = {
-  metaTitle: 'المساعد',
-  openPage: 'افتح صفحة المساعد',
-  guestTitle: 'مساعدك بعد تسجيل الدُّخول',
-  guestBody: 'سجِّل الدُّخول لترى مساعدك، وتغيّر اسمه، وتراجع ما يفعله دون سؤال.',
+  /** The tab title before the view writes the member's name (ADR-0229). */
+  metaTitle: 'نور',
+  openPage: 'افتح صفحة {name}',
+  guestTitle: 'بياناتك بعد تسجيل الدُّخول',
+  guestBody: 'سجِّل الدُّخول لتغيّر الاسم والصُّورة، وتراجع ما يجري دون سؤالك.',
   signIn: 'تسجيل الدُّخول',
-  loading: 'جاري تحميل بيانات المساعد...',
-  loadFailed: 'تعذّر تحميل بيانات المساعد.',
+  loading: 'جاري تحميل البيانات...',
+  loadFailed: 'تعذّر تحميل البيانات.',
   retry: 'إعادة المحاولة',
 
   /** The name with its pen, and the dialog behind it. */
@@ -61,11 +62,11 @@ export const ASSISTANT_HOME_COPY = {
   avatarRemoveFailed: 'تعذَّر حذف الصُّورة',
   avatarRemoved: 'تمَّ حذف الصُّورة',
 
-  sectionsAria: 'روابط المساعد',
+  sectionsAria: 'روابط إضافية',
   memoryTitle: 'ما يتذكّره',
-  memoryBody: 'الحقائق التي يحفظها عنك، وتصديرها أو حذفها.',
+  memoryBody: 'الحقائق التي تُحفظ عنك، وتصديرها أو حذفها.',
   codingTitle: 'مهام البرمجة',
-  codingBody: 'المستودعات والمهام التي ينفّذها، وحالة كل منها.',
+  codingBody: 'المستودعات والمهام وحالة كل منها.',
 } as const;
 
 export type AssistantHomeCopy = typeof ASSISTANT_HOME_COPY;

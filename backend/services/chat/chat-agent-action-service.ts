@@ -74,7 +74,7 @@ export interface ChatAgentActionResolutionContext {
 
 const ALREADY_RESOLVED = 'تمّت معالجة هذا الإجراء مسبقاً.';
 const NOT_FOUND = 'الإجراء غير موجود.';
-const NOT_ASSISTANT_THREAD = 'هذه المحادثة ليست مع نور.';
+const NOT_ASSISTANT_THREAD = 'هذه المحادثة لا تقبل هذا الإجراء.';
 
 export class ChatAgentActionService {
   constructor(private readonly deps: ChatAgentActionServiceDeps) {}
