@@ -99,5 +99,10 @@ a constant can only be wrong half the time.
 - `SYSTEM_PROMPT` gains no name: the identity block follows it. Prompt tests keep
   asserting the standing rules, and one turn test asserts the block's content.
 - No new route, no schema change, no widening of who may read the identity.
+- The identity's plain values (`ASSISTANT_DEFAULT_NAME`, the voice set) live in
+  `shared/contracts/assistant-identity-constants.ts`, and the contract re-exports
+  them. The root `SessionProvider` needs only the default name; importing the
+  contract itself would put zod in every route's first-load chunk. The split was
+  measured by `perf:check` (+63 KB gzip on `/community/explore`) before it.
 - The Android app still paints its own name until the identity read ships there;
   this decision is what makes that a one-file change.

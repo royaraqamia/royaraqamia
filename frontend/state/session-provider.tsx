@@ -23,7 +23,10 @@ import {
 } from '@/frontend/shared/local-store/identity';
 import { clearSnapshots } from '@/frontend/shared/local-store/snapshot';
 import { sessionInitialState, sessionReducer } from '@/frontend/state/session-provider.reducer';
-import { ASSISTANT_DEFAULT_NAME, type AssistantVoice } from '@/shared/contracts/assistant-identity';
+import {
+  ASSISTANT_DEFAULT_NAME,
+  type AssistantVoice,
+} from '@/shared/contracts/assistant-identity-constants';
 import type { Session, User } from '@supabase/supabase-js';
 
 // Auth machinery is loaded lazily so the auth wrapper module stays out of the

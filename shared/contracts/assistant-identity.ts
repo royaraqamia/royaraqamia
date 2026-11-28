@@ -1,5 +1,25 @@
 import { z } from 'zod';
 
+import {
+  ASSISTANT_AVATAR_VARIANTS,
+  ASSISTANT_DEFAULT_NAME,
+  ASSISTANT_DEFAULT_VOICE,
+  ASSISTANT_NAME_MAX,
+  ASSISTANT_NOTE_MAX,
+  ASSISTANT_VOICES,
+} from '@/shared/contracts/assistant-identity-constants';
+
+export {
+  ASSISTANT_AVATAR_VARIANTS,
+  ASSISTANT_DEFAULT_NAME,
+  ASSISTANT_DEFAULT_VOICE,
+  ASSISTANT_KEY_DEFAULT,
+  ASSISTANT_NAME_MAX,
+  ASSISTANT_NOTE_MAX,
+  ASSISTANT_VOICES,
+  type AssistantVoice,
+} from '@/shared/contracts/assistant-identity-constants';
+
 /**
  * The assistant's identity, as the member sets it (ADR-0224, ADR-0228).
  *
@@ -14,19 +34,6 @@ import { z } from 'zod';
  * Arabic-Indic or Persian digits (ADR-0054's rule, applied to stored content).
  */
 
-export const ASSISTANT_NAME_MAX = 24;
-export const ASSISTANT_NOTE_MAX = 120;
-export const ASSISTANT_AVATAR_VARIANTS = 12;
-
-/** The deployment's name for the assistant when the member has set none. */
-export const ASSISTANT_DEFAULT_NAME = 'نور';
-
-/**
- * The column that turns one assistant into a roster later. One row per member
- * today; a second assistant is a new key, not a new table.
- */
-export const ASSISTANT_KEY_DEFAULT = 'default';
-
 export const AssistantToneSchema = z.enum(['default', 'concise', 'warm', 'formal']);
 export type AssistantTone = z.infer<typeof AssistantToneSchema>;
 
@@ -37,10 +44,7 @@ export type AssistantTone = z.infer<typeof AssistantToneSchema>;
  * site's own labels. The default is feminine because that is the wording the
  * deployment already ships («نور»).
  */
-export const ASSISTANT_VOICES = ['feminine', 'masculine'] as const;
-export type AssistantVoice = (typeof ASSISTANT_VOICES)[number];
 export const AssistantVoiceSchema = z.enum(ASSISTANT_VOICES, 'صيغة الخطاب غير صالحة');
-export const ASSISTANT_DEFAULT_VOICE: AssistantVoice = 'feminine';
 
 /**
  * The site's own names. A member's copy may not answer as the site, and the

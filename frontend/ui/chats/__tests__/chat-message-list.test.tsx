@@ -219,9 +219,9 @@ describe('ChatMessageList', () => {
       })
     );
 
-    expect(screen.getByText('تفكّر')).toBeInTheDocument();
+    expect(screen.getByText(/جاري التفكير/)).toBeInTheDocument();
     // The list is the log: a second live region here would announce the turn twice.
-    expect(screen.getByText('تفكّر').parentElement).not.toHaveAttribute('aria-live');
+    expect(screen.getByText(/جاري التفكير/).parentElement).not.toHaveAttribute('aria-live');
     expect(screen.queryByText('ابدأ')).toBeNull();
   });
 

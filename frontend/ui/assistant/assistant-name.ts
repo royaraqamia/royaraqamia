@@ -1,4 +1,4 @@
-import { ASSISTANT_DEFAULT_NAME } from '@/shared/contracts/assistant-identity';
+import { ASSISTANT_DEFAULT_NAME } from '@/shared/contracts/assistant-identity-constants';
 
 /** The name the site paints: the member's choice, or the deployment default (ADR-0229). */
 export function assistantNameOr(name: string | null | undefined): string {
