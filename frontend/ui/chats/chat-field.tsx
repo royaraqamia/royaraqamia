@@ -1,15 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import dynamic from 'next/dynamic';
-import { Link2, Smile } from 'lucide-react';
+import { Keyboard, Link2, Smile } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
-import { Popover, PopoverTrigger } from '@/frontend/ui/primitives/popover';
-import { tolerateChunkFailure } from '@/frontend/ui/shared/lazy-chunk';
 import {
   chatDocToMarkdown,
   chatMarkdownToDoc,
@@ -17,18 +22,7 @@ import {
   type ProseMirrorNode,
 } from '@/shared/text/chat-markdown';
 import type { ChatEmojiLabels } from './emoji-catalog';
-
-/**
- * The sheet is a chunk of its own: a conversation nobody decorates loads the
- * smiley and nothing else. A failed fetch renders nothing rather than taking the
- * page down (docs/specs/offline-first.md, #332).
- */
-const EmojiPickerPanel = dynamic(
-  tolerateChunkFailure('emoji picker', () =>
-    import('./emoji-picker').then((module) => ({ default: module.EmojiPickerPanel }))
-  ),
-  { ssr: false }
-);
+import { prefetchEmojiPicker } from './emoji-tray';
 
 /** The surface's words for the six marks: the field draws them, it does not own them. */
 export interface ChatFieldLabels {
@@ -49,6 +43,21 @@ export interface ChatFieldLabels {
 }
 
 /**
+ * What a composer's emoji tray writes through.
+ *
+ * The tray sits below the composer's row rather than inside the field, because
+ * a composer owns what sits under it; the field is the only thing that knows
+ * where the caret is, so the composer asks it by name (ADR-0225's 2026-11-28
+ * amendment).
+ */
+export interface ChatFieldHandle {
+  /** Writes a glyph at the caret, which the tray's press did not move. */
+  insertEmoji: (glyph: string) => void;
+  /** Puts the caret back in the field, raising the keyboard on a phone. */
+  focus: () => void;
+}
+
+/**
  * The message field (ADR-0193).
  *
  * It is a rich editor holding *one* paragraph of inline marks, not a document:
@@ -63,20 +72,7 @@ export interface ChatFieldLabels {
  * the selection. A button acts on the press and cancels it, so the selection
  * survives the press that applies the mark.
  */
-export function ChatField({
-  value,
-  onChange,
-  onTyping,
-  onDraftEmpty,
-  ariaLabel,
-  placeholder,
-  disabled,
-  compact = false,
-  className,
-  onFocus,
-  labels,
-  maxLength,
-}: {
+interface ChatFieldProps {
   value: string;
   onChange: (value: string) => void;
   /**
@@ -97,15 +93,37 @@ export function ChatField({
   onFocus?: () => void;
   /** The surface's words for the six marks: the field draws them, it does not own them. */
   labels: ChatFieldLabels;
-}) {
+  /** Whether the composer's tray is open, so the smiley is the switch back. */
+  emojiOpen?: boolean;
+  /** The smiley asks the composer to open or close the tray it draws. */
+  onEmojiOpenChange?: (open: boolean) => void;
+}
+
+export const ChatField = forwardRef<ChatFieldHandle, ChatFieldProps>(function ChatField(
+  {
+    value,
+    onChange,
+    onTyping,
+    onDraftEmpty,
+    ariaLabel,
+    placeholder,
+    disabled,
+    compact = false,
+    className,
+    onFocus,
+    labels,
+    maxLength,
+    emojiOpen = false,
+    onEmojiOpenChange,
+  },
+  ref
+) {
   const editorRef = useRef<Editor | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [bubble, setBubble] = useState<{ top: number; left: number } | null>(null);
-  /** Whether the emoji sheet is open; its chunk arrives with the first press. */
-  const [emojiOpen, setEmojiOpen] = useState(false);
   /** The bubble a line is edited in is not a composer, so it draws no smiley. */
-  const offersEmoji = Boolean(labels.emoji) && !compact && !disabled;
+  const offersEmoji = Boolean(labels.emoji) && Boolean(onEmojiOpenChange) && !compact && !disabled;
   /** The newest value this field wrote, so an external reset is not mistaken for typing. */
   const emitted = useRef(value);
 
@@ -275,15 +293,28 @@ export function ChatField({
   };
 
   /**
-   * A picked glyph goes in at the caret, and the sheet stays open so three
+   * A picked glyph goes in at the caret, and the tray stays open so three
    * hearts are three taps. The command runs on the editor's own selection: the
-   * press moved the DOM focus into the sheet, not the field's place in the text,
+   * press moved the DOM focus into the tray, not the field's place in the text,
    * which ProseMirror keeps across the blur.
+   *
+   * It reads the editor through the ref because the composer reaches it after
+   * the early return that draws the placeholder box.
    */
-  const insertEmoji = (glyph: string) => {
-    if (!editor) return;
-    editor.chain().insertContent(glyph).run();
-  };
+  const insertEmoji = useCallback((glyph: string) => {
+    editorRef.current?.chain().insertContent(glyph).run();
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      insertEmoji,
+      focus: () => {
+        editorRef.current?.chain().focus().run();
+      },
+    }),
+    [insertEmoji]
+  );
 
   if (!editor) {
     return (
@@ -299,27 +330,32 @@ export function ChatField({
       <EditorContent editor={editor} />
 
       {offersEmoji && labels.emoji ? (
-        <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              aria-label={labels.emoji.open}
-              // The press that opens the sheet is also the moment the chunk is
-              // worth fetching, so the sheet is already there by the time the
-              // popover can draw it.
-              onPointerEnter={() => {
-                void import('./emoji-picker').catch(() => undefined);
-              }}
-              onFocus={() => {
-                void import('./emoji-picker').catch(() => undefined);
-              }}
-              className="absolute right-1 bottom-1.5 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground"
-            >
-              <Smile size={16} aria-hidden="true" />
-            </button>
-          </PopoverTrigger>
-          {emojiOpen ? <EmojiPickerPanel labels={labels.emoji} onPick={insertEmoji} /> : null}
-        </Popover>
+        <button
+          type="button"
+          // The tray's outside-press dismisser leaves this press alone: it is
+          // the switch, and closing here would reopen it on the same tap.
+          data-emoji-toggle=""
+          aria-label={emojiOpen ? labels.emoji.keyboard : labels.emoji.open}
+          aria-expanded={emojiOpen}
+          // The press that opens the tray is also the moment the chunk is worth
+          // fetching, so the panel is already there by the time it draws.
+          onPointerEnter={prefetchEmojiPicker}
+          onFocus={prefetchEmojiPicker}
+          onClick={() => {
+            const next = !emojiOpen;
+            onEmojiOpenChange?.(next);
+            // Closing is the keyboard switch: the caret goes back to the field
+            // and a phone raises the alphabet keyboard over it.
+            if (!next) editor.chain().focus().run();
+          }}
+          className="absolute right-1 bottom-1.5 inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-safe hover:bg-muted/60 hover:text-foreground"
+        >
+          {emojiOpen ? (
+            <Keyboard size={16} aria-hidden="true" />
+          ) : (
+            <Smile size={16} aria-hidden="true" />
+          )}
+        </button>
       ) : null}
 
       {bubble && !disabled ? (
@@ -389,7 +425,7 @@ export function ChatField({
       ) : null}
     </div>
   );
-}
+});
 
 function FormatButton({
   label,

@@ -518,6 +518,8 @@ export const EMOJI_CATALOG: Record<EmojiCategory, readonly EmojiEntry[]> = {
  */
 export interface ChatEmojiLabels {
   open: string;
+  /** What the smiley becomes while the tray is open: the keyboard switch. */
+  keyboard: string;
   search: string;
   noResults: string;
   recent: string;

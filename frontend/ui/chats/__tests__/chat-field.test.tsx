@@ -1,22 +1,10 @@
+import { createRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('sonner', () => ({ toast: { info: vi.fn(), error: vi.fn() } }));
 
-/**
- * The sheet is a chunk of its own; the field's contract is what it hands it.
- * A panel that immediately reports one glyph stands in for the catalog here —
- * the sheet's own search and tabs are tested in `emoji-picker.test.tsx`.
- */
-vi.mock('@/frontend/ui/chats/emoji-picker', () => ({
-  EmojiPickerPanel: ({ onPick }: { labels: unknown; onPick: (glyph: string) => void }) => (
-    <button type="button" onClick={() => onPick('😀')}>
-      pick
-    </button>
-  ),
-}));
-
-import { ChatField } from '@/frontend/ui/chats/chat-field';
+import { ChatField, type ChatFieldHandle } from '@/frontend/ui/chats/chat-field';
 
 /** The surface's words, as the thread passes them. */
 const LABELS = {
@@ -35,6 +23,7 @@ const EMOJI_LABELS = {
   ...LABELS,
   emoji: {
     open: 'إضافة إيموجي',
+    keyboard: 'العودة إلى لوحة المفاتيح',
     search: 'ابحث عن إيموجي',
     noResults: 'لا نتائج',
     recent: 'الأخيرة',
@@ -131,25 +120,67 @@ describe('ChatField', () => {
 });
 
 describe('ChatField emoji', () => {
-  it('opens the sheet from the field and writes the glyph into the draft', async () => {
-    const onChange = vi.fn();
+  it('reports the switch rather than drawing the tray itself', async () => {
+    const onEmojiOpenChange = vi.fn();
     render(
       <ChatField
+        value=""
+        onChange={vi.fn()}
+        ariaLabel="نص الرسالة"
+        labels={EMOJI_LABELS}
+        maxLength={4000}
+        onEmojiOpenChange={onEmojiOpenChange}
+      />
+    );
+
+    const trigger = await screen.findByRole('button', { name: 'إضافة إيموجي' });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(trigger);
+
+    expect(onEmojiOpenChange).toHaveBeenCalledWith(true);
+  });
+
+  it('turns into the keyboard switch while the tray is open', async () => {
+    const onEmojiOpenChange = vi.fn();
+    render(
+      <ChatField
+        value=""
+        onChange={vi.fn()}
+        ariaLabel="نص الرسالة"
+        labels={EMOJI_LABELS}
+        maxLength={4000}
+        emojiOpen
+        onEmojiOpenChange={onEmojiOpenChange}
+      />
+    );
+
+    const trigger = await screen.findByRole('button', { name: 'العودة إلى لوحة المفاتيح' });
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(trigger);
+
+    expect(onEmojiOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('writes a glyph at the caret through the handle the composer holds', async () => {
+    const onChange = vi.fn();
+    const ref = createRef<ChatFieldHandle>();
+    render(
+      <ChatField
+        ref={ref}
         value=""
         onChange={onChange}
         ariaLabel="نص الرسالة"
         labels={EMOJI_LABELS}
         maxLength={4000}
+        onEmojiOpenChange={vi.fn()}
       />
     );
     const field = await screen.findByRole('textbox', { name: 'نص الرسالة' });
 
-    // The trigger opens the sheet; the first glyph writes at the caret.
-    const trigger = screen.getByRole('button', { name: 'إضافة إيموجي' });
-    fireEvent.click(trigger);
+    act(() => ref.current?.insertEmoji('😀'));
 
-    fireEvent.click(await screen.findByRole('button', { name: 'pick' }));
-
+    // The tray's press moved the focus, not the caret: the glyph lands where
+    // the member left the cursor, and the row reports the new draft.
     expect(onChange).toHaveBeenCalledWith('😀');
     expect(field).toHaveTextContent('😀');
   });
@@ -162,6 +193,7 @@ describe('ChatField emoji', () => {
         ariaLabel="نص الرسالة"
         labels={EMOJI_LABELS}
         maxLength={4000}
+        onEmojiOpenChange={vi.fn()}
       />
     );
 
