@@ -19,7 +19,10 @@ UI half). The identity is now edited from the header, with an uploaded face and 
 chosen voice, per [ADR-0228](../adr/0228-the-assistants-face-and-voice-belong-to-the-member.md)
 (2026-11-28); the name, face and voice reach the rest of the site in the next
 slice. Still open: the tone picker, the note and the prompt block (phase 3), the
-Android half of the door.
+Android half of the door. **Phase 4 is withdrawn** by ADR-0228 decision 3: the
+mark is an uploaded face, the orb is the fallback, and `avatar_variant` stays in
+the table unused. The twelve marks (#1947) are not work; a roster's own mark is a
+future decision, not this plan's.
 
 ## What already exists
 
@@ -27,14 +30,14 @@ Android half of the door.
 | -------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | The panel header     | `frontend/ui/assistant/assistant-panel.tsx`                                                                | Loses two elements; the mark and name become the door           |
 | The phase slot       | ADR-0172, `ASSISTANT_PANEL_COPY`                                                                           | Unchanged: one reserved line, the turn's own words when it runs |
-| The orb and the mark | `assistant-orb.tsx`, `frontend/ui/chats/assistant-mark.tsx`                                                | Gain a `variant` so the member's mark is the one in the thread  |
+| The orb and the mark | `assistant-orb.tsx`, `frontend/ui/chats/assistant-mark.tsx`                                                | Draw the member's uploaded face; the orb is the fallback        |
 | The tool registry    | `backend/services/chat/chat-agent-tools.ts`                                                                | One `suggestedAskWhen` condition for coding discovery           |
 | The first screen     | `backend/services/chat/assistant-opening.ts`                                                               | Projects suggestions from the registry; no new read             |
 | Coding tools         | `start_coding_task`, `coding_task_status`, `coding_task_diff`, `approve_coding_step`, `reject_coding_step` | Already the unified entry ADR-0219 designed; unchanged          |
 | Grants               | `public.agent_tool_grants`, `agent-tool-grant-service.ts`, `assistant-grants-view.tsx`                     | The service and the API stay; only the host view moves          |
 | Memory               | `/account/memory`, ADR-0182                                                                                | Linked as a section; the route does not move                    |
 | Connected apps       | `/mcp/apps`, `mcp-connected-apps-view.tsx`                                                                 | Linked as a section; loses the grants block                     |
-| The panel cache      | `frontend/api/chats/assistant-cache.ts`, ADR-0150                                                          | Gains `name` and `avatarVariant`                                |
+| The panel cache      | `frontend/api/chats/assistant-cache.ts`, ADR-0150                                                          | Gains `name`; the face joins it in the next slice               |
 | Copy as data         | `shared/copy/*.json` → generated TS and Kotlin, ADR-0098                                                   | One new file, one new Kotlin object                             |
 | The account rows     | `frontend/ui/account/account-rows.tsx`                                                                     | `memory` becomes `المساعد` → `/assistant`                       |
 
@@ -42,14 +45,14 @@ Android half of the door.
 
 | Piece                | Where                                                                                      | Note                                                                           |
 | -------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| Identity contract    | `shared/contracts/assistant-identity.ts`                                                   | Name, variant, tone, note — one source of caps and words                       |
+| Identity contract    | `shared/contracts/assistant-identity.ts`                                                   | Name, face, voice, tone, note — one source of caps and words                   |
 | Table                | `supabase/migrations/*_assistant_identity.sql`                                             | Owner-only RLS, cascade on delete, no backfill                                 |
 | Repository           | `backend/repositories/agent/assistant-identity-repository.ts`                              | The only code that knows the table                                             |
 | Service              | `backend/services/agent/assistant-identity-service.ts`                                     | Resolve, validate, write, reset                                                |
 | Controller and route | `backend/controllers/assistant-identity.ts`, `app/api/account/assistant/identity/route.ts` | `GET`/`PUT`/`DELETE`, `no-store`                                               |
 | The page             | `app/assistant/page.tsx` + `frontend/ui/assistant/assistant-home.tsx`                      | The index; identity and permissions; links to the rest                         |
 | Copy                 | `frontend/ui/assistant/assistant-home-copy.ts`                                             | Beside the view: the page is a document surface, so there is no generated pair |
-| Panel identity       | `frontend/api/chats/assistant-cache.ts`                                                    | Snapshot carries the name and variant                                          |
+| Panel identity       | `frontend/api/chats/assistant-cache.ts`                                                    | Snapshot carries the name                                                      |
 | Prompt block         | `backend/services/chat/chat-agent-service.ts`                                              | The name and the tone line, assembled once                                     |
 | The app              | `AssistantSheet.kt`, `AssistantHomeCopy.kt`                                                | The header gains the door; the page stays the document                         |
 | Plan rows            | `perf/surfaces.json`, `docs/mobile/screens.json`, `docs/mobile/parity-plan.json`           | Land with the route, together                                                  |
@@ -106,6 +109,11 @@ The regex admits Arabic letters without diacritics, Latin letters, ASCII digits
 and the space; it refuses Arabic-Indic and Persian digits, punctuation, emoji,
 tatweel and newlines. `null` means the deployment default, so the resolved
 `name` is never empty and no caller has to branch.
+
+`avatarVariant` is carried and never drawn: ADR-0228 decision 3 replaced the orb
+roster with an uploaded face and kept the column unused, so no surface may map it
+to a look. The face itself is not in this input — it is a file with its own
+endpoint, so a name save can never blank an image it did not carry.
 
 ### 0.2 The migration
 
@@ -173,10 +181,11 @@ Delete the `/coding` pill and the presence dot. What remains:
   `useDismissThenNavigate`, because the panel is mounted at the root and would
   otherwise stay over the page — and the push has to wait for the dialog's own
   history entry to drop, or the traversal cancels it (ADR-0095).
-- The orb is drawn with the member's variant and never with `online`: the dot
-  leaves the panel header, the thread header (`chat-thread-view.tsx`), the chats
-  row (`chats-panel.tsx`) and the sheet's title row together, because it is one
-  claim about one assistant. The text stays.
+- The mark is the member's uploaded face, or the orb when they have none, and
+  never the presence dot: the dot leaves the panel header, the thread header
+  (`chat-thread-view.tsx`), the chats row (`chats-panel.tsx`) and the sheet's
+  title row together, because it is one claim about one assistant. The text
+  stays.
 - The header's `title` comes from the snapshot: `remembered.name ?? copy.title`.
   The first paint before a read is the default, which is what a member with no row
   sees anyway.
@@ -257,16 +266,16 @@ settings" is a real page; the card's confirmation test still refuses tier 2.
 **Exit:** `check:agent-evals`, `check:agent-behaviour`, `check:copy`, and the
 three-run gate in the behaviour spec for the prompt change.
 
-## Phase 4 — the mark
+## Phase 4 — withdrawn (the mark)
 
-- `AssistantOrb` takes `variant: 1..12` and maps it to a hue pair in
-  `app/global.css`; the same value reaches `AssistantMark` in the thread and the
-  list row, so the member meets their own mark in the conversation.
-- The generator is a table, not a function of time: the same variant is the same
-  orb on both clients, and a screenshot is reproducible.
+ADR-0228 decision 3 replaced this phase: the mark is an uploaded face
+(`avatar_url`, edited from the header's camera badge), and the orb is the
+fallback for a member with none. `avatar_variant` stays in the table, unused, and
+no surface draws it — the twelve deterministic hue pairs (#1947) are not work.
 
-**Exit:** `check:visual` on the sheet's header, both clients; a variant chosen on
-the site paints in the app.
+A roster's own mark, if it is ever built, is that design's decision and gets its
+own ADR. The column is the only thing carried forward, and nothing in this plan
+depends on it.
 
 ## What this does not do
 
