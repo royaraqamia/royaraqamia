@@ -19,6 +19,7 @@ import { Label } from '@/frontend/ui/primitives/label';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { PublishArtifactAction } from '@/frontend/ui/community/publish-artifact-action';
 import { NoteBodyEditor } from './note-body-editor';
 import { NOTES_EDITOR_COPY } from './notes-editor-copy';
 
@@ -218,8 +219,22 @@ function NoteEditorDialogBody({
         </div>
 
         {/* The note saves itself, so the only action is the way out: a primary
-            button, the same weight the composers give their save. */}
-        <DialogActions onCancel={onClose} hideCancel>
+            button, the same weight the composers give their save. The artifact
+            door (#1952) sits beside it: the note already exists, and publishing
+            it is one confirmation away. */}
+        <DialogActions
+          onCancel={onClose}
+          hideCancel
+          secondary={
+            <PublishArtifactAction
+              kind="note"
+              artifactId={note.id}
+              beforeRequest={flush}
+              signInReturnTo="/notes"
+              signInTitle="سجِّل الدُّخول للنَّشر في المجتمع"
+            />
+          }
+        >
           <HeroCtaButton type="button" onClick={onClose} className="w-full sm:w-auto">
             تمّ
           </HeroCtaButton>

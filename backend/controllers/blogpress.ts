@@ -2,10 +2,12 @@ import {
   createBlogpressMediaService,
   createBlogpressPostsModule,
 } from '@/backend/config/blogpress';
+import { createArtifactPostService } from '@/backend/config/community';
 import { createPlanGate } from '@/backend/config/plans';
 import { errorResult, errorResultAt } from '@/backend/middleware/http';
 import { OWNED_ITEMS } from '@/shared/contracts/plans';
 import {
+  ArtifactPostDraftSchema,
   PostSchema,
   BulkPostsActionSchema,
   SchedulePostSchema,
@@ -105,6 +107,41 @@ export async function createPost(body?: Record<string, unknown> | null): Promise
       }
       const { id } = await repository.createPost(userId, input);
       return jsonResult(200, { id });
+    },
+    { mapError: errorResult }
+  );
+}
+
+/**
+ * «انشر في المجتمع»: a note or an assistant answer becomes a post draft (#1952).
+ *
+ * The body is the server's read of the artifact, never the request's: this door
+ * cannot be used to publish arbitrary text under the member's byline, and the
+ * draft records where it came from so the supply review can tell it from a
+ * hand-written post. The one confirmation the member saw belongs to the client;
+ * this write is the tier-2 action it confirmed.
+ */
+export async function createPostFromArtifact(
+  body: Record<string, unknown> | null
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const validated = ArtifactPostDraftSchema.safeParse(body);
+      if (!validated.success) {
+        return jsonResult(400, { error: 'بيانات المادَّة غير صالحة' });
+      }
+
+      // A draft takes a draft slot, the same allowance the composer pays. The
+      // gate answers 402 before the write, and the database re-checks under its
+      // own lock so a race cannot take a second slot.
+      await createPlanGate().cap(userId, OWNED_ITEMS.communityDrafts);
+
+      const draft = await createArtifactPostService(supabase).createDraft(
+        userId,
+        validated.data.kind,
+        validated.data.id
+      );
+      return jsonResult(200, draft);
     },
     { mapError: errorResult }
   );

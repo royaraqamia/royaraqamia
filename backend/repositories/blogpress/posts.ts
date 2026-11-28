@@ -368,6 +368,32 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return authors;
     },
 
+    /**
+     * The supply half of the roster (#1952): who has actually published.
+     *
+     * `published_author_ids()` is `DISTINCT author_id` over the published posts
+     * the caller may see. The distinct belongs in SQL — a capped row read would
+     * make the roster's author count depend on which rows PostgREST happened to
+     * return, and that count is the branch the roster takes.
+     */
+    async getPublishedAuthorIds(): Promise<string[]> {
+      const { data, error } = await supabase.rpc('published_author_ids');
+
+      if (error) throw repositoryFailure('blogpress.getPublishedAuthorIds', error);
+
+      return (data ?? []) as string[];
+    },
+
+    async setPostSource(postId, authorId, source): Promise<void> {
+      const { error } = await supabase
+        .from('posts')
+        .update({ source_kind: source.kind, source_ref: source.ref })
+        .eq('id', postId)
+        .eq('author_id', authorId);
+
+      if (error) throw repositoryFailure('blogpress.setPostSource', error);
+    },
+
     async getPublishedCategories(): Promise<PostCategory[]> {
       const { data, error } = await supabase
         .from('post_categories')

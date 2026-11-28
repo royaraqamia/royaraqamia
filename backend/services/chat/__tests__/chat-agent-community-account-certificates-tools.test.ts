@@ -42,7 +42,12 @@ const deps = toolsDepsFor({
     createRepository: createCertificatesRepository,
     verifyByCode: verifyCertificateByCode,
   },
-  posts: { createRepository: createPostsRepository },
+  posts: {
+    createRepository: createPostsRepository,
+    createService: () => {
+      throw new Error('The community tool suite does not create drafts through the service');
+    },
+  },
 });
 
 function turnContext(): ChatAgentToolContext {

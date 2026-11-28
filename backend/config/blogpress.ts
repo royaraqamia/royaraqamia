@@ -41,6 +41,17 @@ export function createBlogpressPostsModule(
 }
 
 /**
+ * The post rules alone, for a caller that only writes drafts through them
+ * (#1952): the assistant's draft tool and the artifact door share this one
+ * service. No publish notifier is wired, because neither door publishes.
+ */
+export function createBlogpressPostsService(
+  supabase: SupabaseClient<Database>
+): BlogpressPostsService {
+  return new BlogpressPostsService(createPostsRepository(supabase));
+}
+
+/**
  * The follow graph and the users table are service-role reads: a publish must
  * see every follower edge, and the harness emails are the only way to tell a
  * seeded post from a member's. The producer is built once per process, the same

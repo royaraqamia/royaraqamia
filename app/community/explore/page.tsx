@@ -1,15 +1,9 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { loadCommunityIndex, loadCommunityMembers } from '@/backend/loaders/community';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-import { CommunityIndexResults } from '../_components/community-index-results';
-import { CommunitySearch } from '../_components/community-search';
-import {
-  ResponsiveCommunityMembersPanel,
-  ResponsiveCommunityMembersStrip,
-} from '../_components/community-members-responsive';
 import { ComposeFab } from '../_components/compose-fab';
 import { COMMUNITY_PAGE_SIZE } from '../_components/constants';
+import { CommunityExploreBody } from './_components/community-explore-body';
 
 /**
  * The public hub: every published community post, one cacheable document for
@@ -24,6 +18,9 @@ import { COMMUNITY_PAGE_SIZE } from '../_components/constants';
  * `canonical` points here, and `sitemap.ts` lists this path in place of
  * `/community`: ranking moves in one hop without breaking a bookmarked link, and
  * the personal page never enters the index.
+ *
+ * The body draws the feed before the roster (#1952): the roster is a consequence
+ * of supply, not the page's opening offer.
  */
 export const revalidate = 300;
 
@@ -48,51 +45,7 @@ export default async function CommunityExplorePage() {
           </SectionTitle>
         </div>
 
-        <div className="grid items-start max-lg:grid-cols-1 max-lg:gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
-          <div className="min-w-0">
-            <Suspense
-              fallback={
-                <div
-                  className="mx-auto mb-8 h-11 w-full max-w-xl rounded-xl bg-muted/20 animate-pulse sm:mb-10"
-                  aria-hidden="true"
-                />
-              }
-            >
-              <div className="mx-auto mb-8 w-full max-w-xl sm:mb-10">
-                <CommunitySearch />
-              </div>
-            </Suspense>
-
-            <ResponsiveCommunityMembersStrip
-              members={members}
-              signInReturnTo="/community/explore"
-            />
-
-            <Suspense
-              fallback={
-                <div className="mx-auto flex w-full max-w-xl flex-col gap-6" aria-hidden="true">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="rounded-3xl border border-border bg-muted/20 overflow-hidden animate-pulse"
-                    >
-                      <div className="aspect-16/10 w-full bg-muted/60" />
-                      <div className="p-6 sm:p-7 space-y-3">
-                        <div className="h-5 w-3/4 rounded-full bg-muted/70" />
-                        <div className="h-3.5 w-full rounded-full bg-muted/50" />
-                        <div className="h-3.5 w-2/3 rounded-full bg-muted/50" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              }
-            >
-              <CommunityIndexResults initialPosts={posts} initialNextCursor={nextCursor} />
-            </Suspense>
-          </div>
-
-          <ResponsiveCommunityMembersPanel members={members} signInReturnTo="/community/explore" />
-        </div>
+        <CommunityExploreBody posts={posts} nextCursor={nextCursor} members={members} />
       </div>
 
       <ComposeFab />

@@ -3086,6 +3086,8 @@ export type Database = {
           published_at: string | null;
           reading_time_minutes: number;
           slug: string;
+          source_kind: string | null;
+          source_ref: string | null;
           status: Database['public']['Enums']['post_status'];
           updated_at: string;
           view_count: number;
@@ -3106,6 +3108,8 @@ export type Database = {
           published_at?: string | null;
           reading_time_minutes?: number;
           slug: string;
+          source_kind?: string | null;
+          source_ref?: string | null;
           status?: Database['public']['Enums']['post_status'];
           updated_at?: string;
           view_count?: number;
@@ -3126,6 +3130,8 @@ export type Database = {
           published_at?: string | null;
           reading_time_minutes?: number;
           slug?: string;
+          source_kind?: string | null;
+          source_ref?: string | null;
           status?: Database['public']['Enums']['post_status'];
           updated_at?: string;
           view_count?: number;
@@ -4424,6 +4430,7 @@ export type Database = {
         Args: { p_fields?: Json; p_post_id: string };
         Returns: string;
       };
+      published_author_ids: { Args: never; Returns: string[] };
       recompute_admin_flags: {
         Args: { p_emails: string[] };
         Returns: undefined;

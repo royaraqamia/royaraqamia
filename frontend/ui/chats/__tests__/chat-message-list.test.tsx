@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
+// The agent row carries the artifact door (#1952), whose composer navigates
+// after a publish; the thread itself needs no router, so this is the only stub.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
+
 import { ChatMessageList } from '@/frontend/ui/chats/chat-message-list';
 import { formatDaySeparator } from '@/frontend/ui/chats/thread-days';
 import type { ChatAssistantState } from '@/frontend/state/chats/use-chat-assistant';
@@ -114,6 +120,17 @@ describe('ChatMessageList', () => {
     render(list([line], { actions: [action] }));
 
     expect(screen.getByText('إدارة')).toBeInTheDocument();
+  });
+
+  it('offers the community door on نور’s answer, never on a member line', () => {
+    render(
+      list([
+        message({ id: 'm-1', senderKind: 'agent', body: 'جوابٌ من نور' }),
+        message({ id: 'm-2', body: 'سؤال العضو' }),
+      ])
+    );
+
+    expect(screen.getAllByRole('button', { name: 'انشر في المجتمع' })).toHaveLength(1);
   });
 
   it('draws the inline marks instead of their operators', () => {
