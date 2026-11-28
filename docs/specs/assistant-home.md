@@ -166,8 +166,10 @@ Delete the `/coding` pill and the presence dot. What remains:
            [phase line, reserved]
 ```
 
-- The mark and the name are one button: `dismiss()` then `router.push('/assistant')`,
-  because the panel is mounted at the root and would otherwise stay over the page.
+- The mark and the name are one button: dismiss, then push `/assistant` through
+  `useDismissThenNavigate`, because the panel is mounted at the root and would
+  otherwise stay over the page — and the push has to wait for the dialog's own
+  history entry to drop, or the traversal cancels it (ADR-0095).
 - The orb is drawn with the member's variant and never with `online`: the dot
   leaves the panel header, the thread header (`chat-thread-view.tsx`), the chats
   row (`chats-panel.tsx`) and the sheet's title row together, because it is one
