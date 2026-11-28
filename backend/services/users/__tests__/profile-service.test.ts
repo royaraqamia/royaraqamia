@@ -1,9 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  AvatarValidationError,
-  ProfileService,
-  UsernameTakenError,
-} from '@/backend/services/users/profile-service';
+import { AvatarValidationError } from '@/backend/services/users/avatar-file';
+import { ProfileService, UsernameTakenError } from '@/backend/services/users/profile-service';
 import type { UserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import type { PublicUsersRepository } from '@/backend/repositories/users/public-users-repository';
 import type { AvatarStorageRepository } from '@/backend/repositories/users/avatar-storage-repository';

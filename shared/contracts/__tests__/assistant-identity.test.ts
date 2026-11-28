@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ASSISTANT_NAME_MAX,
+  DEFAULT_ASSISTANT_IDENTITY,
   AssistantIdentityInputSchema,
+  AssistantIdentitySchema,
   AssistantNameSchema,
 } from '@/shared/contracts/assistant-identity';
 
@@ -51,14 +53,15 @@ describe('the identity write', () => {
       AssistantIdentityInputSchema.parse({
         name: null,
         avatarVariant: null,
+        voice: 'feminine',
         tone: 'default',
         note: null,
       })
-    ).toEqual({ name: null, avatarVariant: null, tone: 'default', note: null });
+    ).toEqual({ name: null, avatarVariant: null, voice: 'feminine', tone: 'default', note: null });
   });
 
-  it('refuses a variant outside the drawn set and an unknown tone', () => {
-    const base = { name: null, tone: 'default', note: null };
+  it('refuses a variant outside the drawn set, an unknown tone and an unknown voice', () => {
+    const base = { name: null, voice: 'feminine', tone: 'default', note: null };
     expect(AssistantIdentityInputSchema.safeParse({ ...base, avatarVariant: 0 }).success).toBe(
       false
     );
@@ -68,15 +71,41 @@ describe('the identity write', () => {
     expect(
       AssistantIdentityInputSchema.safeParse({ ...base, avatarVariant: 1, tone: 'loud' }).success
     ).toBe(false);
+    expect(
+      AssistantIdentityInputSchema.safeParse({ ...base, avatarVariant: 1, voice: 'neutral' })
+        .success
+    ).toBe(false);
+  });
+
+  it('carries the Arabic refusal for a bad voice, not a schema word', () => {
+    const result = AssistantIdentityInputSchema.safeParse({
+      name: null,
+      avatarVariant: null,
+      voice: 'neutral',
+      tone: 'default',
+      note: null,
+    });
+    expect(result.success).toBe(false);
+    expect(result.success ? '' : result.error.issues[0]?.message).toBe('صيغة الخطاب غير صالحة');
   });
 
   it('caps the note at a single line of 120 characters', () => {
-    const base = { name: null, avatarVariant: null, tone: 'default' };
+    const base = { name: null, avatarVariant: null, voice: 'feminine', tone: 'default' };
     expect(AssistantIdentityInputSchema.safeParse({ ...base, note: 'ن'.repeat(120) }).success).toBe(
       true
     );
     expect(AssistantIdentityInputSchema.safeParse({ ...base, note: 'ن'.repeat(121) }).success).toBe(
       false
+    );
+  });
+});
+
+describe('the identity a member without a row reads (ADR-0228)', () => {
+  it('draws the orb and speaks in the shipped feminine wording', () => {
+    expect(DEFAULT_ASSISTANT_IDENTITY.avatarUrl).toBeNull();
+    expect(DEFAULT_ASSISTANT_IDENTITY.voice).toBe('feminine');
+    expect(AssistantIdentitySchema.parse(DEFAULT_ASSISTANT_IDENTITY)).toEqual(
+      DEFAULT_ASSISTANT_IDENTITY
     );
   });
 });

@@ -15,8 +15,11 @@ evidence that says a phase is done.
 Landed (2026-11-27, #1935): phase 0 in full, and phase 1 except the three
 changes that need a Kotlin pair — the sheet's header link, the account row, and
 the in-chat «اسمح دائماً». The grants list moved to the page with them (phase 2's
-UI half). Still open: the tone picker, the note and the prompt block (phase 3),
-the orb variants (phase 4), and the Android half of the door.
+UI half). The identity is now edited from the header, with an uploaded face and a
+chosen voice, per [ADR-0228](../adr/0228-the-assistants-face-and-voice-belong-to-the-member.md)
+(2026-11-28); the name, face and voice reach the rest of the site in the next
+slice. Still open: the tone picker, the note and the prompt block (phase 3), the
+Android half of the door.
 
 ## What already exists
 
@@ -186,9 +189,12 @@ Delete the `/coding` pill and the presence dot. What remains:
 `/assistant`, gated by the session like `/account` (guest → the existing
 `LockedCard` with the assistant's copy). One column, no new navigation:
 
-1. **Identity card** — the mark (tap to pick a variant), the name field, the tone
-   picker, the optional note, `حفظ` and `إعادة التعيين`. Saving is one `PUT`; the
-   snapshot is rewritten, so the panel paints the new name on the next open.
+1. **The header is the editor** — the mark is a camera-badged button and the
+   name carries a pen, each opening the account card's own dialog (ADR-0228). The
+   name dialog also carries the voice choice (مؤنث / مذكر). Saving is one `PUT`;
+   the snapshot is rewritten, so the panel paints the new name on the next open.
+   The face is its own `POST`/`DELETE` on `/api/account/assistant/avatar`, so a
+   name save can never blank an image it did not carry.
 2. **Permissions** — the existing grants list, its grant and revoke, and the
    audit line each grant already carries. This is the block removed from the
    account page (phase 2).
@@ -265,18 +271,18 @@ the site paints in the app.
 ## What this does not do
 
 - No public page, no `/u/` address, no follower, no shareable link.
-- No avatar upload, no free-text personality, no model picker, no voice.
+- No free-text personality, no model picker.
 - No roster UI. The column exists; the screen shows one assistant.
 - No route moves. Memory, apps and coding keep their URLs and become sections.
 - No new trust rule. The grants keep their table, service, API and tiers.
 
 ## Risks and their answers
 
-| Risk                                                   | Answer                                                                     |
-| ------------------------------------------------------ | -------------------------------------------------------------------------- |
-| A member's name is read by the model as an instruction | Bound the charset and length, quote it, and gate with an eval case         |
-| A custom name breaks the gendered copy                 | First person only; neutral phase words; `{name}` placeholders              |
-| Two surfaces disagree about the grants                 | One component, one service, one route; the account keeps only the door     |
-| The panel shows a stale name after a rename            | The snapshot is rewritten on save (ADR-0150), so the next open is right    |
-| The home becomes a second settings graveyard           | Identity, permissions and three links. No nesting, no fourth settings page |
-| A port of the page is expected and never done          | The row is `native: null` with a reason, and the app's door is the sheet   |
+| Risk                                                   | Answer                                                                             |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| A member's name is read by the model as an instruction | Bound the charset and length, quote it, and gate with an eval case                 |
+| A custom name breaks the gendered copy                 | Store the voice (ADR-0228); first person stays ungendered, third person follows it |
+| Two surfaces disagree about the grants                 | One component, one service, one route; the account keeps only the door             |
+| The panel shows a stale name after a rename            | The snapshot is rewritten on save (ADR-0150), so the next open is right            |
+| The home becomes a second settings graveyard           | Identity, permissions and three links. No nesting, no fourth settings page         |
+| A port of the page is expected and never done          | The row is `native: null` with a reason, and the app's door is the sheet           |
