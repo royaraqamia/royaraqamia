@@ -7,15 +7,11 @@ import { cn } from '@/frontend/shared/cn';
 import { useHorizontalScroll } from '@/frontend/shared/use-horizontal-scroll';
 import { useHomeServices } from '@/frontend/state/home-services-provider';
 import { HorizontalScrollArrows } from '@/frontend/ui/HorizontalScrollArrows';
-import { SERVICES_LINK } from '@/frontend/ui/navbar/services-link';
+import { SERVICES_BY_ROUTE } from '@/frontend/ui/navbar/services-link';
 import type { HomeServiceKey } from '@/shared/contracts/home-services-catalog';
 
 import { HOME_STRIP_COPY } from './home-strip-copy';
 import { useHomeTabOrder } from './use-home-tab-order';
-
-const BY_ROUTE = new Map(
-  (SERVICES_LINK.subItems ?? []).filter((item) => !item.retired).map((item) => [item.href, item])
-);
 
 interface HomeTabStripProps {
   /** The app the door is showing, or null while the first one is being chosen. */
@@ -48,7 +44,7 @@ export function HomeTabStrip({ selected, onSelect, onReorder }: HomeTabStripProp
   const selectedRef = useRef<HTMLButtonElement | null>(null);
 
   const describeMove = useCallback((key: HomeServiceKey, position: number, count: number) => {
-    const label = BY_ROUTE.get(key)?.label ?? key;
+    const label = SERVICES_BY_ROUTE.get(key)?.label ?? key;
     return HOME_STRIP_COPY.moved
       .replace('{name}', label)
       .replace('{position}', String(position))
@@ -86,7 +82,7 @@ export function HomeTabStrip({ selected, onSelect, onReorder }: HomeTabStripProp
   }, [selected, arranging]);
 
   const tabs = drawn
-    .map((key) => BY_ROUTE.get(key))
+    .map((key) => SERVICES_BY_ROUTE.get(key))
     .filter((item): item is NonNullable<typeof item> => item !== undefined);
 
   return (

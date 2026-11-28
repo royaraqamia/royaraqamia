@@ -1,4 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
+import { SITE_NAME, siteTitle } from '@/frontend/shared/metadata';
+import { SERVICES_BY_ROUTE } from '@/frontend/ui/navbar/services-link';
+import { HOME_SERVICE_ROUTES } from '@/shared/contracts/home-services-catalog';
 
 import { signIn } from './sign-in';
 
@@ -19,6 +22,7 @@ async function emptyState(page: Page) {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('ابدأ بتطبيقك الأوَّل');
   await expect(page.getByRole('tab', { name: 'القرآن الكريم' })).toHaveCount(0);
+  await expect(page).toHaveTitle(SITE_NAME);
 }
 
 test('a visitor adds an app and keeps it across a reload', async ({ page }) => {
@@ -147,6 +151,63 @@ test('a tab opens its app under the strip and stays on the door', async ({ page 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('tab', { selected: true })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
+/**
+ * The door's document title (WCAG 2.2 SC 2.4.2, #1932): the one shared document
+ * the site serves is titled by the tab the browser settles on, from the same
+ * entry the strip's pill is drawn from. The loop over the catalog is the gate;
+ * nine hand-written titles would drift.
+ */
+test('every app names the door it is drawn in', async ({ page }) => {
+  for (const key of HOME_SERVICE_ROUTES) {
+    const label = SERVICES_BY_ROUTE.get(key)?.label;
+    if (!label) throw new Error(`no shared label for ${key}`);
+
+    await page.goto(`/?tab=${key}`);
+    await expect(page).toHaveTitle(siteTitle(label));
+  }
+});
+
+test('choosing another tab retitles the door, and the empty state keeps the site name', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.evaluate(
+    ({ key, routes }) => window.localStorage.setItem(key, JSON.stringify(routes)),
+    { key: GUEST_KEY, routes: ['/news', '/rates'] }
+  );
+  await page.reload();
+
+  const news = SERVICES_BY_ROUTE.get('/news')?.label;
+  const rates = SERVICES_BY_ROUTE.get('/rates')?.label;
+  if (!news || !rates) throw new Error('the catalog lost one of the two labels this test needs');
+
+  await expect(page).toHaveTitle(siteTitle(news));
+
+  await page.getByRole('tab', { name: rates }).click();
+  await expect(page).toHaveTitle(siteTitle(rates));
+
+  // No apps and no address: the door is the site again, not the last app.
+  await page.evaluate((key) => window.localStorage.removeItem(key), GUEST_KEY);
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page).toHaveTitle(SITE_NAME);
+});
+
+test('the door is still the shared, cached document', async ({ page }) => {
+  const response = await page.goto('/?tab=/news');
+  const cacheControl = response?.headers()['cache-control'] ?? '';
+
+  // One shared, cached document (ADR-0031): `?tab=` is read in the browser, so
+  // it must not make `/` dynamic to name itself. A dev document is never cached,
+  // so the assertion lives where the production build is served — the CI e2e job.
+  // `check:precache` proves `/` prerenders; this proves the tab kept the promise.
+  test.skip(cacheControl === 'no-store', 'the dev server does not send the production header');
+
+  expect(cacheControl).toContain('public');
+  expect(cacheControl).toContain('s-maxage');
+  expect(cacheControl).not.toContain('private');
 });
 
 /**

@@ -18,7 +18,7 @@ import { GlobalPlayer } from '@/frontend/ui/quran/global-player';
 import { BottomTabBar } from '../frontend/ui/navbar/BottomTabBar';
 import { SecondaryHeader } from '../frontend/ui/navbar/SecondaryHeader';
 import { NavHistoryTracker } from '../frontend/ui/navbar/NavHistoryTracker';
-import { SITE_NAME } from '@/frontend/shared/metadata';
+import { SITE_NAME, SITE_TITLE_TEMPLATE } from '@/frontend/shared/metadata';
 import { DIRECTION, getCanonicalOrigin } from '@/frontend/shared/constants';
 import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
 import { ibmPlexSansArabic } from '@/frontend/shared/fonts';
@@ -47,7 +47,7 @@ const ASSET_QUERY = `?v=${ASSET_VERSION}`;
 export const metadata: Metadata = {
   title: {
     default: SITE_NAME,
-    template: `%s | ${SITE_NAME}`,
+    template: SITE_TITLE_TEMPLATE,
   },
   description:
     'نُقدِّم حزمةً متكاملة من المنتجات الرَّقميَّة، بالإضافة إلى خدماتنا الاحترافيَّة في بناء وصيانة المشاريع البرمجيَّة، والتَّدريب، والاستشارات التِّقنيَّة.',

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { HomePageContent } from '../HomePageContent';
 import * as home from '@/frontend/state/home-services-provider';
+import { SITE_NAME, siteTitle } from '@/frontend/shared/metadata';
+import { SERVICES_BY_ROUTE } from '@/frontend/ui/navbar/services-link';
 
 const { replace } = vi.hoisted(() => ({ replace: vi.fn() }));
 
@@ -123,5 +125,30 @@ describe('HomePageContent', () => {
 
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
     expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+  });
+
+  it('titles the document after the app the strip selected (#1932)', () => {
+    const athkar = SERVICES_BY_ROUTE.get('/athkar')?.label;
+    const quran = SERVICES_BY_ROUTE.get('/quran')?.label;
+    if (!athkar || !quran)
+      throw new Error('the catalog lost one of the two labels this test needs');
+
+    says(['/athkar', '/quran']);
+    const { unmount } = render(<HomePageContent />);
+    expect(document.title).toBe(siteTitle(athkar));
+
+    fireEvent.click(screen.getAllByRole('tab')[1]!);
+    expect(document.title).toBe(siteTitle(quran));
+
+    // Leaving the door restores the site's own title, not the last tab's.
+    unmount();
+    expect(document.title).toBe(SITE_NAME);
+  });
+
+  it('keeps the site name on the empty state (#1932)', () => {
+    says([]);
+    render(<HomePageContent />);
+
+    expect(document.title).toBe(SITE_NAME);
   });
 });
