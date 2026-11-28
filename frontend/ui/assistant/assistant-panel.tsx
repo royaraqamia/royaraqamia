@@ -427,6 +427,7 @@ export function AssistantPanel({
             resolveAttachmentUrl={attachmentUrl}
             live
             attachmentOnlyLabel={ASSISTANT_PANEL_COPY.attachmentOnly}
+            dismissOnNavigate={onDismiss}
             intro={
               messages.length === 0 ? (
                 // The same first screen the full-page thread opens on: the mark,

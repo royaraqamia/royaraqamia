@@ -94,6 +94,8 @@ export interface ChatMessageListProps {
   live?: boolean;
   /** What a line with no words says. The assistant's panel names it; a thread does not. */
   attachmentOnlyLabel?: string;
+  /** The surface is an overlay that closes before a handle in a line navigates. */
+  dismissOnNavigate?: () => void;
 }
 
 export function ChatMessageList({
@@ -116,6 +118,7 @@ export function ChatMessageList({
   contentClassName,
   live = false,
   attachmentOnlyLabel,
+  dismissOnNavigate,
 }: ChatMessageListProps) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   /** Whether the reader is at the bottom: only then may a new line move them. */
@@ -231,6 +234,7 @@ export function ChatMessageList({
                     resolveAttachmentUrl={resolveAttachmentUrl}
                     onDelete={onDelete}
                     attachmentOnlyLabel={attachmentOnlyLabel}
+                    dismissOnNavigate={dismissOnNavigate}
                   />
                 </div>
               );
@@ -252,6 +256,7 @@ export function ChatMessageList({
               resolveAttachmentUrl={pendingUrl}
               onDelete={() => undefined}
               attachmentOnlyLabel={attachmentOnlyLabel}
+              dismissOnNavigate={dismissOnNavigate}
             />
           </div>
         )}
@@ -279,6 +284,7 @@ export function ChatMessageList({
                   text={assistant.streamingText}
                   sources={assistant.sources}
                   sourceAnchor="stream"
+                  dismissOnNavigate={dismissOnNavigate}
                 />
               </p>
             </div>
@@ -296,7 +302,7 @@ export function ChatMessageList({
           <div className="flex w-full flex-col items-start gap-1">
             <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted/60 px-3 py-2 text-sm leading-relaxed text-foreground/80">
               <p className="whitespace-pre-wrap wrap-anywhere bidi-lines" dir="auto">
-                <ChatBody text={assistant.interrupted} />
+                <ChatBody text={assistant.interrupted} dismissOnNavigate={dismissOnNavigate} />
               </p>
             </div>
             <p className="text-[11px] italic text-muted-foreground">
@@ -344,6 +350,7 @@ export const ChatMessageRow = memo(function ChatMessageRow({
   resolveAttachmentUrl,
   onDelete,
   attachmentOnlyLabel,
+  dismissOnNavigate,
 }: {
   message: ChatMessage;
   mine: boolean;
@@ -361,6 +368,8 @@ export const ChatMessageRow = memo(function ChatMessageRow({
   resolveAttachmentUrl: (attachment: ChatAttachment) => Promise<string | null>;
   onDelete: (id: string) => void;
   attachmentOnlyLabel?: string;
+  /** The surface is an overlay that closes before a handle in this line navigates. */
+  dismissOnNavigate?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(message.body ?? '');
@@ -382,7 +391,7 @@ export const ChatMessageRow = memo(function ChatMessageRow({
         >
           {message.replyTo.deletedAt ? CHAT_THREAD_COPY.deletedReply : null}
           {!message.replyTo.deletedAt && message.replyTo.body ? (
-            <ChatBody text={message.replyTo.body} />
+            <ChatBody text={message.replyTo.body} dismissOnNavigate={dismissOnNavigate} />
           ) : null}
         </p>
       )}
@@ -442,6 +451,7 @@ export const ChatMessageRow = memo(function ChatMessageRow({
                     text={message.body}
                     sources={message.sources}
                     sourceAnchor={`source-${message.id}`}
+                    dismissOnNavigate={dismissOnNavigate}
                   />
                 </p>
               ) : null}

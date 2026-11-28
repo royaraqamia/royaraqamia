@@ -64,8 +64,6 @@ export const ASSISTANT_HOME_COPY = {
   sectionsAria: 'روابط المساعد',
   memoryTitle: 'ما يتذكّره',
   memoryBody: 'الحقائق التي يحفظها عنك، وتصديرها أو حذفها.',
-  appsTitle: 'تطبيقاته',
-  appsBody: 'التطبيقات المتصلة التي يستطيع العمل بها.',
   codingTitle: 'مهام البرمجة',
   codingBody: 'المستودعات والمهام التي ينفّذها، وحالة كل منها.',
 } as const;

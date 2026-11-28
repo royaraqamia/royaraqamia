@@ -160,3 +160,21 @@ describe('/assistant identity editing (ADR-0228)', () => {
     await screen.findByRole('button', { name: 'إضافة صُورة' });
   });
 });
+
+describe('/assistant sections', () => {
+  /**
+   * The page is the index of what the assistant owns, not a second settings
+   * site: the rows that remain are memory and coding, and connected apps were
+   * removed from it — the apps sheet is that door (ADR-0159).
+   */
+  it('links memory and coding, and no longer lists connected apps', async () => {
+    render(<AssistantHomeView />);
+
+    expect(await screen.findByRole('link', { name: /ما يتذكّره/ })).toHaveAttribute(
+      'href',
+      '/account/memory'
+    );
+    expect(screen.getByRole('link', { name: /مهام البرمجة/ })).toHaveAttribute('href', '/coding');
+    expect(screen.queryByRole('link', { name: /تطبيقاته/ })).toBeNull();
+  });
+});

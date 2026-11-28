@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
-import type { ChatThread } from '@/shared/contracts/chat';
+import type { ChatMessage, ChatThread } from '@/shared/contracts/chat';
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }));
 
@@ -82,6 +82,12 @@ const conversation = vi.hoisted(() => ({
 
 vi.mock('@/frontend/state/chats/use-chat-thread', () => ({
   useChatThread: () => conversation,
+}));
+
+// A handle is a link only when there is a profile behind it (ADR-0192), and the
+// read is one batched call; this test only needs the answer.
+vi.mock('@/frontend/api/usernames', () => ({
+  resolveMentionHandles: vi.fn(async (handles: string[]) => handles),
 }));
 
 const QUOTA = {
@@ -268,5 +274,38 @@ describe('AssistantPanel', () => {
 
     expect(onDismiss).toHaveBeenCalled();
     await waitFor(() => expect(router.push).toHaveBeenCalledWith('/assistant'));
+  });
+
+  /**
+   * A handle in an answer is the member's own line, not the panel's: it opens
+   * `/u/<handle>` in this tab, so the sheet has to close first or it stays open
+   * over the profile it just pushed. The header's door sets the pattern; this is
+   * the same dismissal inside a message (ADR-0095, ADR-0150).
+   */
+  it('closes the panel before a handle in an answer opens its profile', async () => {
+    conversation.messages = [
+      {
+        id: 'm-1',
+        conversationId: 'a-1',
+        senderId: null,
+        senderKind: 'agent',
+        body: 'سارة موجودة، اكتب لها @sara',
+        replyToId: null,
+        editedAt: null,
+        deletedAt: null,
+        createdAt: '2026-11-01T00:01:00.000Z',
+        clientId: null,
+        attachments: [],
+        replyTo: null,
+      } as unknown as ChatMessage,
+    ];
+
+    const onDismiss = vi.fn();
+    render(<AssistantPanel open onDismiss={onDismiss} />);
+
+    fireEvent.click(await screen.findByRole('link', { name: '@sara' }));
+
+    expect(onDismiss).toHaveBeenCalled();
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith('/u/sara'));
   });
 });

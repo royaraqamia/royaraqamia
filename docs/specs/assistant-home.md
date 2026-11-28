@@ -21,6 +21,11 @@ chosen voice, per [ADR-0228](../adr/0228-the-assistants-face-and-voice-belong-to
 slice. Still open: the tone picker, the note and the prompt block (phase 3), the
 Android half of the door.
 
+Amended 2026-11-28: the «تطبيقاته» row left the page at the owner's request. The
+connected apps still have their door — the apps sheet and `/mcp/apps` — so the
+index keeps two rows, memory and coding, and the page stops being a third route
+into the same surface.
+
 ## What already exists
 
 | Piece                | Where                                                                                                      | Reused how                                                      |

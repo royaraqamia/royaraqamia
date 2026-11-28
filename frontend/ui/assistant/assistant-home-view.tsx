@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Brain, Camera, Cpu, Loader2, Pencil, Plug, RotateCcw, Trash2 } from 'lucide-react';
+import { Brain, Camera, Cpu, Loader2, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -44,8 +44,8 @@ import { ASSISTANT_HOME_COPY as COPY } from './assistant-home-copy';
  * `/assistant`: the assistant's own page (ADR-0224, ADR-0228).
  *
  * It is the index, not a second settings site: the member's name and mark at the
- * top, the permissions it holds under them, and three rows to the pages that own
- * what it remembers, which apps it can call and what it has run. Nothing here is
+ * top, the permissions it holds under them, and two rows to the pages that own
+ * what it remembers and what it has run. Nothing here is
  * public and nothing here is a profile — a name is a member's own copy, and a
  * shared surface draws the site's neutral «المساعد».
  *
@@ -309,11 +309,17 @@ export function AssistantHomeView() {
           </button>
         }
       >
-        <div className="min-w-0">
-          <div className="flex items-center justify-center gap-1.5">
+        <div className="w-full">
+          <div className="flex w-full items-center justify-center gap-1.5">
+            {/* The spacer mirrors the pen exactly, so the name sits dead centre
+                whatever it is called: the pen keeps its recognisable place
+                beside the name without the pair pushing the name off-centre. A
+                long name wraps inside its own box instead of sliding under the
+                pen. */}
+            <span aria-hidden="true" className="h-7 w-7 shrink-0" />
             <h1
               data-visual="assistant-name"
-              className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
+              className="min-w-0 text-center text-2xl font-bold tracking-tight text-foreground [overflow-wrap:anywhere] sm:text-3xl"
             >
               {identity.name}
             </h1>
@@ -321,7 +327,7 @@ export function AssistantHomeView() {
               type="button"
               onClick={openNameDialog}
               aria-label={COPY.editName}
-              className={cn(iconButtonClasses, 'h-7 w-7 rounded-lg')}
+              className={cn(iconButtonClasses, 'h-7 w-7 shrink-0 rounded-lg')}
             >
               <Pencil className="size-3.5" aria-hidden="true" />
             </button>
@@ -342,12 +348,6 @@ export function AssistantHomeView() {
           icon={Brain}
           title={COPY.memoryTitle}
           body={COPY.memoryBody}
-        />
-        <HomeRow
-          href="/mcp/apps?tab=inbound"
-          icon={Plug}
-          title={COPY.appsTitle}
-          body={COPY.appsBody}
         />
         <HomeRow href="/coding" icon={Cpu} title={COPY.codingTitle} body={COPY.codingBody} />
       </nav>
