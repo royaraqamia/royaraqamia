@@ -11,6 +11,7 @@ import {
 import { usePathname } from 'next/navigation';
 
 import { assistantWasOpened } from './assistant-hint';
+import { warmUpIsAffordable } from './assistant-warm-up';
 import { useSession } from '@/frontend/state/session-provider';
 import { assistantNameIn } from './assistant-name';
 import { ASSISTANT_LAUNCHER_COPY } from './assistant-launcher-copy';
@@ -92,9 +93,12 @@ export function AssistantLauncher() {
   // A returning reader's chunk warms while the page is idle: the cost lands
   // where nothing is being read, and the first tap opens a conversation that is
   // already parsed. A first visit pays nothing for a door it may never open —
-  // the reason the chunk is not in the shell (ADR-0143).
+  // the reason the chunk is not in the shell (ADR-0143). A metered or very slow
+  // connection is not a first visit and not a fast one, so the same chunk waits
+  // for the tap there instead of being downloaded on the member's behalf
+  // (ADR-0230).
   useEffect(() => {
-    if (Panel || !assistantWasOpened()) return;
+    if (Panel || !assistantWasOpened() || !warmUpIsAffordable()) return;
 
     if (typeof window.requestIdleCallback === 'function') {
       const handle = window.requestIdleCallback(() => void loadPanel(), { timeout: 3000 });

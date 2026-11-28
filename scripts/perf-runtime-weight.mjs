@@ -28,6 +28,13 @@ import {
  * ceiling lives in `perf/runtime-weight.json`, in the same gzip KB unit as
  * `perf/budget.json`, so a future lazy import cannot grow unseen.
  *
+ * Every surface is measured twice: `cold`, in a context that carries no
+ * storage, and `returning`, in a context seeded with the artifact's
+ * `warmHint` rows. A returning reader's browser is the one the assistant's
+ * idle warm-up is written for, and a gate that only knew the first visit
+ * priced a state no member who uses the product is in (#1930). The ceiling
+ * applies to the worse of the two columns.
+ *
  * ```bash
  * npm run perf:runtime                 # report only
  * npm run perf:runtime -- --check      # exit 1 above a ceiling (CI)
@@ -118,6 +125,42 @@ function kb(bytes) {
   return `${(bytes / KB).toFixed(1)} KB`;
 }
 
+/**
+ * The storage a returning visitor carries, or `null` for a surface that cannot
+ * act on it.
+ *
+ * It is a row in the artifact — top-level `warmHint` for every surface, a
+ * route row's own `warmHint` for one, `false` for a surface whose door is not
+ * drawn (the assistant is hidden on `/auth` and `/chats`, so seeding the hint
+ * there would only price a warm-up that cannot run). The runner has no key of
+ * its own: adding a surface, or changing what "returning" means, is a JSON
+ * edit.
+ */
+export function warmHintFor(route, artifact = {}, weightSamples = {}) {
+  const rows = resolveBudgetRoutes(artifact?.routes, weightSamples);
+  const row = rows[normalizeRoute(route)] ?? {};
+  const hint = Object.prototype.hasOwnProperty.call(row, 'warmHint')
+    ? row.warmHint
+    : artifact?.warmHint;
+  if (!hint || !hint.localStorage) return null;
+  const entries = Object.entries(hint.localStorage);
+  if (entries.length === 0) return null;
+  return { localStorage: Object.fromEntries(entries) };
+}
+
+/**
+ * Prices one surface in both states a browser can be in: `cold` (no storage,
+ * the visitor the gate used to price alone) and `returning` (every entry the
+ * artifact seeds for it). A surface with no hint is measured once and its
+ * returning column is `null`.
+ */
+export async function measureRuntimeSurface(route, { hint = null, ...options } = {}) {
+  const cold = await measureRuntimeRoute(route, options);
+  if (!hint) return { ...cold, returning: null };
+  const returning = await measureRuntimeRoute(route, { ...options, storage: hint });
+  return { ...cold, returning };
+}
+
 export function formatRuntimeVerdict(results, artifact, weightSamples = {}) {
   const routes = resolveBudgetRoutes(artifact?.routes, weightSamples);
   const limitFor = (route) => ({
@@ -128,15 +171,17 @@ export function formatRuntimeVerdict(results, artifact, weightSamples = {}) {
   let okCount = 0;
   for (const result of results) {
     const ceiling = limitFor(result.route).ceiling;
-    const actual = result.summary.afterLoadJs / KB;
+    const coldKb = result.summary.afterLoadJs / KB;
+    const returningKb = result.returning ? result.returning.summary.afterLoadJs / KB : null;
+    const actual = returningKb === null ? coldKb : Math.max(coldKb, returningKb);
     const priced = typeof ceiling === 'number' ? ceiling : null;
     const ok = priced === null || actual <= priced;
     if (ok) okCount += 1;
     const reporter = result.summary.reporter > 0 ? `  reporter ${kb(result.summary.reporter)}` : '';
     lines.push(
-      `  ${result.route.padEnd(28)} documentJs ${kb(result.summary.documentJs).padEnd(10)} ` +
-        `afterLoadJs ${kb(result.summary.afterLoadJs).padEnd(10)} ` +
-        `totalJs ${kb(result.summary.totalJs).padEnd(10)} ` +
+      `  ${result.route.padEnd(28)} docJs ${kb(result.summary.documentJs).padEnd(10)} ` +
+        `cold ${kb(result.summary.afterLoadJs).padEnd(10)} ` +
+        `returning ${(returningKb === null ? '—' : kb(result.returning.summary.afterLoadJs)).padEnd(10)} ` +
         `ceiling ${priced === null ? '—' : `${priced} KB`} ${ok ? 'OK' : 'OVER'}${reporter}`
     );
   }
@@ -148,8 +193,10 @@ export function formatRuntimeVerdict(results, artifact, weightSamples = {}) {
 
 /**
  * The single gate on the artifact: a surface's after-load JS has to stay under
- * its committed ceiling. A route with no ceiling is reported but not gated,
- * the same rule `checkBudget` uses for an unconstrained metric.
+ * its committed ceiling in whichever state is heavier — a first visit (`cold`)
+ * or a returning reader seeded with the artifact's hint (`returning`). A route
+ * with no ceiling is reported but not gated, the same rule `checkBudget` uses
+ * for an unconstrained metric.
  */
 export function checkRuntimeBudget(result, artifact, weightSamples = {}) {
   const routes = resolveBudgetRoutes(artifact?.routes, weightSamples);
@@ -157,13 +204,19 @@ export function checkRuntimeBudget(result, artifact, weightSamples = {}) {
     ...(artifact?.default ?? {}),
     ...routes[normalizeRoute(result.route)],
   }.ceiling;
-  if (typeof ceiling !== 'number') return { ok: true, ceiling: null, actualKb: null };
-  const actualKb = result.summary.afterLoadJs / KB;
-  return { ok: actualKb <= ceiling, ceiling, actualKb };
+  if (typeof ceiling !== 'number') {
+    return { ok: true, ceiling: null, actualKb: null, coldKb: null, returningKb: null };
+  }
+  const coldKb = result.summary.afterLoadJs / KB;
+  const returningKb = result.returning ? result.returning.summary.afterLoadJs / KB : null;
+  const actualKb = returningKb === null ? coldKb : Math.max(coldKb, returningKb);
+  return { ok: actualKb <= ceiling, ceiling, actualKb, coldKb, returningKb };
 }
 
 /** Measure one document in a fresh browser context. `browser` is injectable so
-    the pure measurement path is unit-testable without launching Chromium. */
+    the pure measurement path is unit-testable without launching Chromium.
+    `storage` seeds localStorage in that context before the document loads, which
+    is the only way a returning reader differs from a first visit. */
 export async function measureRuntimeRoute(
   route,
   {
@@ -175,12 +228,27 @@ export async function measureRuntimeRoute(
     probeError = false,
     attempts = NETWORK_ATTEMPTS,
     sleepFn = sleep,
+    storage = null,
   } = {}
 ) {
   const normalized = normalizeRoute(route);
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     if (attempt > 1) await sleepFn(RETRY_BASE_MS * 2 ** (attempt - 2));
+    const storageState = storage
+      ? {
+          cookies: [],
+          origins: [
+            {
+              origin: new URL(origin).origin,
+              localStorage: Object.entries(storage.localStorage ?? {}).map(([name, value]) => ({
+                name,
+                value: String(value),
+              })),
+            },
+          ],
+        }
+      : undefined;
     const context = await browser.newContext({
       viewport,
       deviceScaleFactor: 2.75,
@@ -188,6 +256,7 @@ export async function measureRuntimeRoute(
       hasTouch: true,
       locale: 'ar',
       serviceWorkers: 'block',
+      ...(storageState ? { storageState } : {}),
     });
     try {
       // A page that fails during measurement must not post a synthetic event
@@ -388,10 +457,19 @@ async function mapWithLimit(items, limit, worker) {
 }
 
 function measuredRow(result, previous = {}) {
+  const returningKb = result.returning
+    ? Number((result.returning.summary.afterLoadJs / KB).toFixed(1))
+    : null;
   return {
     ...previous,
     documentJsGzipKb: Number((result.summary.documentJs / KB).toFixed(1)),
     afterLoadGzipKb: Number((result.summary.afterLoadJs / KB).toFixed(1)),
+    coldAfterLoadGzipKb: Number((result.summary.afterLoadJs / KB).toFixed(1)),
+    returningAfterLoadGzipKb: returningKb,
+    warmDeltaGzipKb:
+      returningKb === null
+        ? null
+        : Number((returningKb - result.summary.afterLoadJs / KB).toFixed(1)),
     totalJsGzipKb: Number((result.summary.totalJs / KB).toFixed(1)),
     reporterGzipKb: Number((result.summary.reporter / KB).toFixed(1)),
     reporterUrls: result.scripts.filter((script) => script.reporter).map((script) => script.url),
@@ -435,12 +513,13 @@ async function run(argv) {
       Math.max(1, args.concurrency),
       async ({ route, surface }) => {
         try {
-          const measured = await measureRuntimeRoute(route, {
+          const measured = await measureRuntimeSurface(route, {
             origin: args.origin,
             browser,
             settleMs: args.settleMs,
             reporterMatchers: artifact.reporter?.matchers ?? [],
             probeError: args.probeError,
+            hint: warmHintFor(route, artifact, matrix.weightSamples ?? {}),
           });
           results.push({ ...measured, surface });
         } catch (error) {
@@ -459,14 +538,24 @@ async function run(argv) {
       JSON.stringify(
         {
           origin: args.origin,
-          routes: results.map(({ route, surface, finalUrl, budgetRoute, scripts, summary }) => ({
-            route,
-            surface,
-            finalUrl,
-            budgetRoute,
-            scripts,
-            summary,
-          })),
+          routes: results.map(
+            ({ route, surface, finalUrl, budgetRoute, scripts, summary, returning }) => ({
+              route,
+              surface,
+              finalUrl,
+              budgetRoute,
+              scripts,
+              summary,
+              returning: returning
+                ? {
+                    finalUrl: returning.finalUrl,
+                    scripts: returning.scripts,
+                    summary: returning.summary,
+                    reporterOnError: returning.reporterOnError,
+                  }
+                : null,
+            })
+          ),
           failures,
         },
         null,

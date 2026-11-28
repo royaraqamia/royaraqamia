@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 const navigation = vi.hoisted(() => ({ pathname: '/' }));
@@ -30,6 +30,22 @@ describe('AssistantLauncher', () => {
     navigation.pathname = '/';
     window.localStorage.clear();
   });
+
+  afterEach(() => {
+    delete (window as { requestIdleCallback?: unknown }).requestIdleCallback;
+    delete (navigator as { connection?: unknown }).connection;
+  });
+
+  /** jsdom has no idle scheduler; the effect falls back to a timer otherwise. */
+  function stubIdleCallback() {
+    const idle = vi.fn(() => 1);
+    Object.defineProperty(window, 'requestIdleCallback', { configurable: true, value: idle });
+    return idle;
+  }
+
+  function reportConnection(connection: Record<string, unknown> | undefined) {
+    Object.defineProperty(navigator, 'connection', { configurable: true, value: connection });
+  }
 
   it('offers the assistant on a normal screen', () => {
     render(<AssistantLauncher />);
@@ -72,5 +88,42 @@ describe('AssistantLauncher', () => {
     // instead of fetching the same thread again.
     expect(panel).toHaveAttribute('data-open', 'false');
     expect(screen.getByTestId('assistant-panel')).toBe(panel);
+  });
+
+  it('warms the chunk for a returning reader while the page is idle (ADR-0150)', () => {
+    window.localStorage.setItem('royaraqamia:assistant:opened', '1');
+    const idle = stubIdleCallback();
+
+    render(<AssistantLauncher />);
+
+    expect(idle).toHaveBeenCalledTimes(1);
+  });
+
+  it('pays nothing for the warm-up on a first visit', () => {
+    const idle = stubIdleCallback();
+
+    render(<AssistantLauncher />);
+
+    expect(idle).not.toHaveBeenCalled();
+  });
+
+  it('leaves the chunk for the tap when the member asked to save data (ADR-0230)', () => {
+    window.localStorage.setItem('royaraqamia:assistant:opened', '1');
+    reportConnection({ saveData: true, effectiveType: '4g' });
+    const idle = stubIdleCallback();
+
+    render(<AssistantLauncher />);
+
+    expect(idle).not.toHaveBeenCalled();
+  });
+
+  it('leaves the chunk for the tap on a 2g connection (ADR-0230)', () => {
+    window.localStorage.setItem('royaraqamia:assistant:opened', '1');
+    reportConnection({ saveData: false, effectiveType: '2g' });
+    const idle = stubIdleCallback();
+
+    render(<AssistantLauncher />);
+
+    expect(idle).not.toHaveBeenCalled();
   });
 });
